@@ -224,12 +224,14 @@ export default function ComparacionCategoriasCatalogoPageClient({
                   key={presentacion.id}
                   nombre={presentacion.nombre}
                   meta={
-                    presentacion.referenciaCompetencia
-                      ? `Ref. ${presentacion.referenciaCompetencia.competenciaNombre}${
-                          presentacion.referenciaCompetencia.pxMostrar != null
-                            ? ` · $${fmtPrecio(presentacion.referenciaCompetencia.pxMostrar)}`
-                            : ""
-                        }`
+                    presentacion.referenciasCompetencia.length > 0
+                      ? presentacion.referenciasCompetencia.length === 1
+                        ? `Ref. ${presentacion.referenciasCompetencia[0].competenciaNombre}${
+                            presentacion.referenciasCompetencia[0].pxMostrar != null
+                              ? ` · $${fmtPrecio(presentacion.referenciasCompetencia[0].pxMostrar)}`
+                              : ""
+                          }`
+                        : `${presentacion.referenciasCompetencia.length} refs. competencia`
                       : presentacion.costoCompraObjetivo != null
                         ? `Objetivo ${fmtPrecio(presentacion.costoCompraObjetivo)}`
                         : undefined

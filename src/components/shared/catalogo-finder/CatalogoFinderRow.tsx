@@ -1,6 +1,8 @@
 import { ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  CATALOGO_FINDER_ROW_INTERACTIVE_CLASS,
+  CATALOGO_FINDER_ROW_SELECTED_CLASS,
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
@@ -49,8 +51,9 @@ export default function CatalogoFinderRow({
     <div
       className={cn(
         "group relative flex items-center gap-2 border-b px-3 py-2 text-sm transition-colors",
-        isClickable ? "cursor-pointer hover:bg-accent/50" : "cursor-default",
-        selected && "bg-primary/10 hover:bg-primary/15"
+        isClickable && CATALOGO_FINDER_ROW_INTERACTIVE_CLASS,
+        !isClickable && "cursor-default",
+        selected && CATALOGO_FINDER_ROW_SELECTED_CLASS
       )}
       onClick={onClick}
       role={isClickable ? "button" : undefined}

@@ -503,6 +503,23 @@ model ComparacionPxManualItem {
   @@map("prod_comp_px_manual")
 }
 
+model ComparacionPresentacionRefComp {
+  id               String   @id @default(cuid())
+  presentacionId   String   @map("presentacion_id")
+  refCodTienda     String   @map("ref_cod_tienda")
+  refCompetenciaId String   @map("ref_competencia_id")
+  orden            Int      @default(0) @map("orden")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  presentacion          PresentacionComparacion @relation(fields: [presentacionId], references: [id], onDelete: Cascade)
+  referenciaCompetencia ProdPrecioCompetencia   @relation(fields: [refCodTienda, refCompetenciaId], references: [codTienda, competenciaId], onDelete: Cascade)
+
+  @@unique([presentacionId, refCodTienda, refCompetenciaId], map: "prod_comp_present_refs_comp_present_ref_ux")
+  @@index([presentacionId], map: "prod_comp_present_refs_comp_presentacion_id_idx")
+  @@map("prod_comp_present_refs_comp")
+}
+
 // ─── Comparación por categorías (Categoria → Subcategoria → Presentacion) ───
 model CategoriaComparacion {
   id             String   @id @default(cuid())
@@ -533,20 +550,16 @@ model PresentacionComparacion {
   subcategoriaId        String    @map("subcategoria_id")
   nombre               String
   costoCompraObjetivo   Decimal?   @map("costo_compra_objetivo") @db.Decimal(14, 4)
-  /** @deprecated Legacy: referente en prod_precios_provee. Usar referenciaCompetencia. */
+  /** @deprecated Legacy: referente en prod_precios_provee. Usar referenciasCompetencia. */
   productoReferenciaCodExt String? @unique @map("prod_ref_cod_ext")
-  /** Referente Px Competencia: fila en prod_precios_competencia (cod_tienda + competencia_id). */
-  refCodTienda         String?   @map("ref_cod_tienda")
-  refCompetenciaId     String?   @map("ref_competencia_id")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   subcategoria  SubcategoriaComparacion @relation(fields: [subcategoriaId], references: [id], onDelete: Cascade)
   listaPrecios  ListaPrecioProveedor[] @relation("PresentacionItems")
   productoReferencia ListaPrecioProveedor? @relation("PresentacionProductoReferencia", fields: [productoReferenciaCodExt], references: [codExt], onDelete: SetNull)
-  referenciaCompetencia ProdPrecioCompetencia? @relation("PresentacionReferenciaCompetencia", fields: [refCodTienda, refCompetenciaId], references: [codTienda, competenciaId], onDelete: SetNull)
+  referenciasCompetencia ComparacionPresentacionRefComp[]
 
-  @@unique([refCodTienda, refCompetenciaId])
   @@map("prod_comp_presentaciones")
 }
 
@@ -706,7 +719,7 @@ model ProdPrecioCompetencia {
 
   prodTienda ProdTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
   competencia       ProdCompetencia   @relation(fields: [competenciaId], references: [id], onDelete: Cascade)
-  presentacionesReferencia PresentacionComparacion[] @relation("PresentacionReferenciaCompetencia")
+  referenciasPresentacion ComparacionPresentacionRefComp[]
 
   @@id([codTienda, competenciaId])
   @@index([competenciaId], map: "prod_precios_competencia_competencia_id_idx")

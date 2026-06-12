@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Trash2 } from "lucide-react";
 import {
+  calcCostoComparacion,
   calcDifPctPxManualVsReferencia,
   calcMargenSegunPxReferencia,
 } from "@/lib/calculos";
@@ -50,6 +51,7 @@ import {
 } from "@/actions/comparacionCategorias";
 import AsignarProductosModal from "@/components/proveedores/comparacion-categorias/AsignarProductosModal";
 import ElegirReferenciaCompetenciaModal from "@/components/proveedores/comparacion-categorias/ElegirReferenciaCompetenciaModal";
+import CeldaDtoExtraComparacion from "@/components/proveedores/comparacion-categorias/CeldaDtoExtraComparacion";
 import CeldaPxManualComparacion from "@/components/proveedores/comparacion-categorias/CeldaPxManualComparacion";
 import { toast } from "sonner";
 
@@ -63,14 +65,38 @@ function calcVariacionPct(costo: number | null, base: number | null): number | n
   return ((costo - base) / base) * 100;
 }
 
+function resolveDtoExtraVivo(
+  codExt: string,
+  guardado: number | null,
+  draft: Record<string, number | null>
+): number | null {
+  if (Object.prototype.hasOwnProperty.call(draft, codExt)) {
+    return draft[codExt];
+  }
+  return guardado;
+}
+
+function resolveCostoComparacionVivo(
+  producto: ProductoEnCategoria,
+  dtoExtraDraft: Record<string, number | null>
+): number | null {
+  const dtoExtra = resolveDtoExtraVivo(
+    producto.codExt,
+    producto.dtoExtraComparacion,
+    dtoExtraDraft
+  );
+  return calcCostoComparacion(producto.datosCosto, dtoExtra);
+}
+
 /** Base VAR: tilde manual o, si no hay, el costo más bajo entre los productos comparados. */
 function resolveCostoBaseVar(
   productos: ProductoEnCategoria[],
-  baseItemId: string | null
+  baseItemId: string | null,
+  dtoExtraDraft: Record<string, number | null>
 ): { costoBase: number | null; baseIdEfectivo: string | null } {
   if (baseItemId) {
     const manual = productos.find((p) => p.id === baseItemId);
-    const px = manual?.pxCompraFinalSinIva;
+    const px = manual ? resolveCostoComparacionVivo(manual, dtoExtraDraft) : null;
     if (px != null && px > 0) {
       return { costoBase: px, baseIdEfectivo: baseItemId };
     }
@@ -79,7 +105,7 @@ function resolveCostoBaseVar(
   let baseIdEfectivo: string | null = null;
   let costoBase: number | null = null;
   for (const p of productos) {
-    const px = p.pxCompraFinalSinIva;
+    const px = resolveCostoComparacionVivo(p, dtoExtraDraft);
     if (px == null || px <= 0) continue;
     if (costoBase == null || px < costoBase) {
       costoBase = px;
@@ -94,22 +120,25 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
   const [selectedSubcategoriaId, setSelectedSubcategoriaId] = useState<string | null>(null);
   const [selectedPresentacionId, setSelectedPresentacionId] = useState<string | null>(null);
   const [productos, setProductos] = useState<ProductoEnCategoria[]>([]);
-  const [referenciaCompetencia, setReferenciaCompetencia] =
-    useState<ReferenciaCompetenciaPresentacion | null>(null);
+  const [referenciasCompetencia, setReferenciasCompetencia] = useState<
+    ReferenciaCompetenciaPresentacion[]
+  >([]);
+  const [referenciaActivaId, setReferenciaActivaId] = useState<string | null>(null);
   const [labelCompleto, setLabelCompleto] = useState("");
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [modalAsignar, setModalAsignar] = useState(false);
   const [modalReferencia, setModalReferencia] = useState(false);
-  const [quitarReferenciaPending, setQuitarReferenciaPending] = useState(false);
+  const [quitarReferenciaPendingId, setQuitarReferenciaPendingId] = useState<string | null>(null);
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
   const [baseItemId, setBaseItemId] = useState<string | null>(null);
   const [pxManualDraft, setPxManualDraft] = useState<Record<string, number | null>>({});
+  const [dtoExtraDraft, setDtoExtraDraft] = useState<Record<string, number | null>>({});
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
 
   const { costoBase: costoBaseVar, baseIdEfectivo: baseIdEfectivoVar } = useMemo(
-    () => resolveCostoBaseVar(productos, baseItemId),
-    [productos, baseItemId]
+    () => resolveCostoBaseVar(productos, baseItemId, dtoExtraDraft),
+    [productos, baseItemId, dtoExtraDraft]
   );
 
   const hayBaseVar = costoBaseVar != null;
@@ -120,16 +149,25 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
       const res = await getProductosPorPresentacionAction(presentacionId);
       if (res.ok && res.data) {
         setProductos(res.data.productos);
-        setReferenciaCompetencia(res.data.referenciaCompetencia);
+        setReferenciasCompetencia(res.data.referenciasCompetencia);
+        setReferenciaActivaId((prev) => {
+          const refs = res.data.referenciasCompetencia;
+          if (refs.length === 0) return null;
+          if (prev && refs.some((r) => r.id === prev)) return prev;
+          return refs[0]?.id ?? null;
+        });
         setLabelCompleto(res.data.labelCompleto);
         setBaseItemId(null);
         setPxManualDraft({});
+        setDtoExtraDraft({});
       } else {
         setProductos([]);
-        setReferenciaCompetencia(null);
+        setReferenciasCompetencia([]);
+        setReferenciaActivaId(null);
         setLabelCompleto("");
         setBaseItemId(null);
         setPxManualDraft({});
+        setDtoExtraDraft({});
       }
     } finally {
       setLoadingProductos(false);
@@ -141,20 +179,24 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     setSelectedSubcategoriaId(null);
     setSelectedPresentacionId(null);
     setProductos([]);
-    setReferenciaCompetencia(null);
+    setReferenciasCompetencia([]);
+    setReferenciaActivaId(null);
     setLabelCompleto("");
     setBaseItemId(null);
     setPxManualDraft({});
+    setDtoExtraDraft({});
   }, []);
 
   const handleSelectSubcategoria = useCallback((id: string) => {
     setSelectedSubcategoriaId(id);
     setSelectedPresentacionId(null);
     setProductos([]);
-    setReferenciaCompetencia(null);
+    setReferenciasCompetencia([]);
+    setReferenciaActivaId(null);
     setLabelCompleto("");
     setBaseItemId(null);
     setPxManualDraft({});
+    setDtoExtraDraft({});
   }, []);
 
   const handleSelectPresentacion = useCallback(
@@ -162,6 +204,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
       setSelectedPresentacionId(id);
       setBaseItemId(null);
       setPxManualDraft({});
+      setDtoExtraDraft({});
       void loadProductos(id);
     },
     [loadProductos]
@@ -181,21 +224,31 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     if (selectedPresentacionId) void loadProductos(selectedPresentacionId);
   }, [selectedPresentacionId, loadProductos]);
 
-  const handleQuitarReferencia = useCallback(async () => {
-    if (!selectedPresentacionId || quitarReferenciaPending) return;
-    setQuitarReferenciaPending(true);
-    try {
-      const res = await quitarReferenciaCompetenciaAction(selectedPresentacionId);
-      if (!res.ok) {
-        toast.error(res.error ?? "Error al quitar la referencia.");
-        return;
+  const handleQuitarReferencia = useCallback(
+    async (refCompId: string) => {
+      if (quitarReferenciaPendingId != null) return;
+      setQuitarReferenciaPendingId(refCompId);
+      try {
+        const res = await quitarReferenciaCompetenciaAction(refCompId);
+        if (!res.ok) {
+          toast.error(res.error ?? "Error al quitar la referencia.");
+          return;
+        }
+        setReferenciasCompetencia((prev) => {
+          const next = prev.filter((r) => r.id !== refCompId);
+          setReferenciaActivaId((activa) => {
+            if (activa !== refCompId) return activa;
+            return next[0]?.id ?? null;
+          });
+          return next;
+        });
+        toast.success("Referencia de competencia quitada.");
+      } finally {
+        setQuitarReferenciaPendingId(null);
       }
-      setReferenciaCompetencia(null);
-      toast.success("Referencia de competencia quitada.");
-    } finally {
-      setQuitarReferenciaPending(false);
-    }
-  }, [quitarReferenciaPending, selectedPresentacionId]);
+    },
+    [quitarReferenciaPendingId]
+  );
 
   const handleQuitarFila = useCallback(
     async (itemId: string) => {
@@ -216,9 +269,14 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     [removingItemId, selectedPresentacionId]
   );
 
-  const pxReferenciaMargen = referenciaCompetencia?.pxMostrar ?? null;
+  const referenciaActiva = useMemo(
+    () => referenciasCompetencia.find((r) => r.id === referenciaActivaId) ?? null,
+    [referenciasCompetencia, referenciaActivaId]
+  );
 
-  const columnasTabla = puedeEditar ? 10 : 9;
+  const pxReferenciaMargen = referenciaActiva?.pxMostrar ?? null;
+
+  const columnasTabla = puedeEditar ? 11 : 10;
 
   const resolvePxManualVivo = useCallback(
     (codExt: string, guardado: number | null): number | null => {
@@ -250,6 +308,33 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     handlePxManualDraftEnd(codExt);
   }, [handlePxManualDraftEnd]);
 
+  const handleDtoExtraDraft = useCallback((codExt: string, dtoExtra: number | null) => {
+    setDtoExtraDraft((prev) => ({ ...prev, [codExt]: dtoExtra }));
+  }, []);
+
+  const handleDtoExtraDraftEnd = useCallback((codExt: string) => {
+    setDtoExtraDraft((prev) => {
+      if (!Object.prototype.hasOwnProperty.call(prev, codExt)) return prev;
+      const next = { ...prev };
+      delete next[codExt];
+      return next;
+    });
+  }, []);
+
+  const handleDtoExtraSaved = useCallback(
+    (codExt: string, dtoExtra: number | null) => {
+      setProductos((prev) =>
+        prev.map((p) => {
+          if (p.codExt !== codExt) return p;
+          const pxCompraFinalSinIva = calcCostoComparacion(p.datosCosto, dtoExtra);
+          return { ...p, dtoExtraComparacion: dtoExtra, pxCompraFinalSinIva };
+        })
+      );
+      handleDtoExtraDraftEnd(codExt);
+    },
+    [handleDtoExtraDraftEnd]
+  );
+
   return (
     <>
       <ClassicFilteredTableLayout
@@ -266,14 +351,16 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
               selectedSubcategoriaId={selectedSubcategoriaId}
               selectedPresentacionId={selectedPresentacionId}
               loadingReferencia={loadingProductos}
-              referenciaCompetencia={referenciaCompetencia}
+              referenciasCompetencia={referenciasCompetencia}
+              referenciaActivaId={referenciaActivaId}
               puedeEditarReferencia={puedeEditar}
-              quitarReferenciaPending={quitarReferenciaPending}
+              quitarReferenciaPendingId={quitarReferenciaPendingId}
               onSelectCategoria={handleSelectCategoria}
               onSelectSubcategoria={handleSelectSubcategoria}
               onSelectPresentacion={handleSelectPresentacion}
-              onElegirReferencia={() => setModalReferencia(true)}
-              onQuitarReferencia={() => void handleQuitarReferencia()}
+              onSelectReferenciaActiva={setReferenciaActivaId}
+              onAgregarReferencia={() => setModalReferencia(true)}
+              onQuitarReferencia={(refCompId) => void handleQuitarReferencia(refCompId)}
             />
           </div>
 
@@ -291,7 +378,8 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                     <colgroup>
                       <col className="w-[3%]" />
                       <col className="w-[7%]" />
-                      <col className={puedeEditar ? "w-[14%]" : "w-[16%]"} />
+                      <col className={puedeEditar ? "w-[12%]" : "w-[14%]"} />
+                      <col className="w-[6%]" />
                       <col className="w-[8%]" />
                       <col className="w-[7%]" />
                       <col className="w-[9%]" />
@@ -305,6 +393,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                         <TableHead className="text-center">TILDE</TableHead>
                         <TableHead className="text-center">PROVEEDOR</TableHead>
                         <TableHead>DESCRIPCIÓN</TableHead>
+                        <TableHead className="text-center">DTO. EXTRA</TableHead>
                         <TableHead className="text-right">COSTO</TableHead>
                         <TableHead className="text-center">VAR</TableHead>
                         <TableHead className="text-center tabla-bloque-secundario-head-divider">
@@ -355,14 +444,15 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                         productos.map((p) => {
                           const esBaseTilde = baseItemId === p.id;
                           const esBaseVar = p.id === baseIdEfectivoVar;
+                          const costoVivo = resolveCostoComparacionVivo(p, dtoExtraDraft);
                           const variacionPct = !hayBaseVar
                             ? null
                             : esBaseVar
                               ? 0
-                              : calcVariacionPct(p.pxCompraFinalSinIva, costoBaseVar);
+                              : calcVariacionPct(costoVivo, costoBaseVar);
                           const margenPxReferencia = calcMargenSegunPxReferencia(
                             pxReferenciaMargen,
-                            p.pxCompraFinalSinIva
+                            costoVivo
                           );
                           const pxManualGuardado = p.pxManualComparacion;
                           const pxManual = resolvePxManualVivo(p.codExt, pxManualGuardado);
@@ -372,7 +462,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                           );
                           const margenPxManual = calcMargenSegunPxReferencia(
                             pxManual,
-                            p.pxCompraFinalSinIva
+                            costoVivo
                           );
 
                           return (
@@ -400,10 +490,18 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                               <TableCell className="celda-datos min-w-0 truncate">
                                 {p.descripcionProveedor}
                               </TableCell>
+                              <TableCell className="celda-datos text-center">
+                                <CeldaDtoExtraComparacion
+                                  codExt={p.codExt}
+                                  dtoExtra={p.dtoExtraComparacion}
+                                  puedeEditar={puedeEditar}
+                                  onDraftChange={(valor) => handleDtoExtraDraft(p.codExt, valor)}
+                                  onDraftEnd={() => handleDtoExtraDraftEnd(p.codExt)}
+                                  onSaved={(valor) => handleDtoExtraSaved(p.codExt, valor)}
+                                />
+                              </TableCell>
                               <TableCell className="celda-datos celda-numero text-right">
-                                {p.pxCompraFinalSinIva != null
-                                  ? `$${fmtPrecio(p.pxCompraFinalSinIva)}`
-                                  : "—"}
+                                {costoVivo != null ? `$${fmtPrecio(costoVivo)}` : "—"}
                               </TableCell>
                               <TableCell className="celda-datos text-center">
                                 {variacionPct != null ? (

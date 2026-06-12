@@ -7,6 +7,14 @@
 export const BADGE_SUCCESS_TINT_CLASS =
   "bg-primary/10 text-primary border-primary/20";
 
+/** Fila clickeable en columnas `catalogo-finder` (Categoría, Referencia competencia, etc.). */
+export const CATALOGO_FINDER_ROW_INTERACTIVE_CLASS =
+  "cursor-pointer transition-colors hover:bg-accent/50";
+
+/** Fila seleccionada (una sola activa): azul claro de marca, igual que `CatalogoFinderRow`. */
+export const CATALOGO_FINDER_ROW_SELECTED_CLASS =
+  "bg-primary/10 hover:bg-primary/15";
+
 /** Texto de mensaje de éxito con ícono (lista, modal). */
 export const TEXT_SUCCESS_CLASS = "text-primary";
 

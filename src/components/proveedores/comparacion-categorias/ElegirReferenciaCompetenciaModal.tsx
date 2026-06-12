@@ -49,6 +49,7 @@ export default function ElegirReferenciaCompetenciaModal({
     const run = async () => {
       const result = await buscarReferenciaCompetenciaAction({
         q: q.trim() || undefined,
+        presentacionId,
       });
       setLoading(false);
       if (result.ok && result.data) setRows(result.data);
@@ -58,7 +59,7 @@ export default function ElegirReferenciaCompetenciaModal({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [open, q]);
+  }, [open, q, presentacionId]);
 
   async function handleConfirm(ids: string[]) {
     const selectedId = ids[0];
@@ -80,7 +81,7 @@ export default function ElegirReferenciaCompetenciaModal({
         toast.error(res.error ?? "Error al asignar referencia.");
         throw new Error(res.error);
       }
-      toast.success("Referencia de competencia asignada.");
+      toast.success("Referencia de competencia agregada.");
       onSuccess();
     } finally {
       setConfirmPending(false);
@@ -129,14 +130,14 @@ export default function ElegirReferenciaCompetenciaModal({
       open={open}
       onClose={() => onOpenChange(false)}
       selectionMode="multi"
-      title="Elegir Referencia De Competencia"
+      title="Agregar Referencia De Competencia"
       subtitle={`${labelCompleto.toUpperCase()} · PRECIO IGUAL A PX COMPETENCIA (SUGERIDO O SCRAPEADO)`}
       filterContent={filterContent}
       columns={columns}
       rows={rows.filter((r) => r.pxMostrar != null)}
       getRowId={(row) => `${row.codTienda}:${row.competenciaId}`}
       onConfirm={handleConfirm}
-      confirmLabel={() => "USAR COMO REFERENCIA"}
+      confirmLabel={() => "AGREGAR REFERENCIA"}
       confirmPending={confirmPending}
       loading={loading}
       emptyMessage="NO HAY PRODUCTOS EN PX COMPETENCIA CON PRECIO DISPONIBLE."

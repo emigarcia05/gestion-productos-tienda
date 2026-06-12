@@ -4,25 +4,41 @@ export function clampPercent(value: number): number {
   return Math.round(capped * 100) / 100;
 }
 
+/** Base en pesos desde lista proveedor (aplica cotización si `pxDolares`). */
+export function listaPrecioBasePesos(
+  pxListaProveedor: number,
+  pxDolares: boolean,
+  cotizacionDolar: number
+): number {
+  const cotizacion = pxDolares && cotizacionDolar > 0 ? cotizacionDolar : 1;
+  return pxListaProveedor * cotizacion;
+}
+
 /**
  * Precio de compra **sin IVA** (misma lógica que la columna generada `prod_precios_provee.px_compra_final_sin_iva`).
  * Todos los dto y cx_transporte son porcentajes.
  * Fórmula con descuento acumulado:
  *   precioLista × (1 - dtoTotal/100) × (1 + cxTransporte/100)
- * donde dtoTotal = dtoProveedor + dtoMarca + dtoRubro + dtoCantidad + dtoFinanciero (capado 0-100).
- * Parámetros opcionales (dtoProveedor, dtoMarca, dtoFinanciero) default 0 para compatibilidad.
+ * donde dtoTotal = dtoProveedor + dtoMarca + dtoRubro + dtoCantidad + dtoFinanciero (+ dtoExtraComparacion si aplica; capado 0-100).
+ * Parámetros opcionales (dtoProveedor, dtoMarca, dtoFinanciero, dtoExtraComparacion) default 0 para compatibilidad.
  */
 export function calcPxCompraFinal(
-  precioLista:        number,
-  dtoRubro:           number,
-  dtoCantidad:        number,
-  cxTransporte:       number,
-  dtoProveedor:       number = 0,
-  dtoMarca:           number = 0,
-  dtoFinanciero:      number = 0
+  precioLista: number,
+  dtoRubro: number,
+  dtoCantidad: number,
+  cxTransporte: number,
+  dtoProveedor: number = 0,
+  dtoMarca: number = 0,
+  dtoFinanciero: number = 0,
+  dtoExtraComparacion: number = 0
 ): number {
   const dtoTotal = clampPercent(
-    dtoProveedor + dtoMarca + dtoRubro + dtoCantidad + dtoFinanciero
+    dtoProveedor +
+      dtoMarca +
+      dtoRubro +
+      dtoCantidad +
+      dtoFinanciero +
+      dtoExtraComparacion
   );
 
   return (
@@ -30,6 +46,48 @@ export function calcPxCompraFinal(
     (1 - dtoTotal / 100) *
     (1 + cxTransporte / 100)
   );
+}
+
+/** Inputs de `prod_precios_provee` para recalcular costo en Comp. Categorias. */
+export type DatosCostoComparacion = {
+  pxListaProveedor: number;
+  pxDolares: boolean;
+  cotizacionDolar: number;
+  dtoProveedor: number;
+  dtoMarca: number;
+  dtoRubro: number;
+  dtoCantidad: number;
+  dtoFinanciero: number;
+  cxTransporte: number;
+};
+
+/**
+ * Costo sin IVA en **Comparacion por categorías**: misma fórmula que `px_compra_final_sin_iva`
+ * más `dto_extra_comparacion` (persistido en `prod_comp_dto_extra`, no en `prod_precios_provee`).
+ */
+export function calcCostoComparacion(
+  datos: DatosCostoComparacion,
+  dtoExtraComparacion: number | null | undefined
+): number | null {
+  if (!(datos.pxListaProveedor > 0)) return null;
+  const base = listaPrecioBasePesos(
+    datos.pxListaProveedor,
+    datos.pxDolares,
+    datos.cotizacionDolar
+  );
+  const dtoExtra = dtoExtraComparacion ?? 0;
+  const px = calcPxCompraFinal(
+    base,
+    datos.dtoRubro,
+    datos.dtoCantidad,
+    datos.cxTransporte,
+    datos.dtoProveedor,
+    datos.dtoMarca,
+    datos.dtoFinanciero,
+    dtoExtra
+  );
+  if (!Number.isFinite(px) || px <= 0) return null;
+  return roundPrecioListaTienda(px);
 }
 
 /**

@@ -275,6 +275,16 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - Evitar tomar solo `costo_compra` de tienda cuando el contrato sea el precio de lista proveedor calculado en `prod_precios_provee`.
 - Migración de columna física: **`20260514120000_rename_prod_precios_provee_px_compra_final_sin_iva`** (`px_compra_final` → `px_compra_final_sin_iva`, misma expresión GENERATED).
 
+### 1.8b Costo en Comp. Categorias — Comparacion (`dto_extra_comparacion`)
+
+- **Solo** en `/gestion-productos/proveedores/comparacion-categorias`: el **COSTO** mostrado no es la columna generada cruda; se recalcula con **`calcCostoComparacion`** (`@/lib/calculos.ts`) sumando **`dto_extra_comparacion`** al total de descuentos.
+- Fórmula (idéntica a §1.8 + dto extra):  
+  `base = px_lista_proveedor × (cotizacion_dolar si px_dolares, sino 1)`  
+  `dtoTotal = dto_proveedor + dto_marca + dto_rubro + dto_cantidad + dto_financiero + dto_extra_comparacion` (cap 0–100)  
+  `costo = base × (1 − dtoTotal/100) × (1 + cx_transporte/100)` (redondeo 4 dec.)
+- **`dto_extra_comparacion`** se persiste en **`prod_comp_dto_extra`** (`ComparacionDtoExtraItem.dto_extra`, entero 0–99 o `null`), **no** en `prod_precios_provee`. Action: **`actualizarDtoExtraComparacionAction`**; servicio: **`getProductosPorPresentacion`** devuelve `dtoExtraComparacion` + `datosCosto` para recálculo en cliente.
+- Resto del sistema (lista precios, pedidos, Cx Compra, exportaciones) sigue usando **`px_compra_final_sin_iva`** sin dto extra.
+
 ### 1.9 Listado Cx Compra (`getTiendaPageData`)
 
 > **Cx Compra** (nombre vigente; antes «Vinculacion Con Prov.» / «Vinc. Con Prov.»). URL canónica sin cambio: `/gestion-productos/tienda/comp-proveedores`.
@@ -1534,11 +1544,15 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-06-04): **Px Listas — export Excel por lista** — `exportarPxListasMargenAction`; un `.xls` por `nombre_lista` con **CODIGO** + **PORC UTILIDAD** (margen desde precio efectivo).*
 
+*Última actualización (2026-06-10): **Comp. Categorias — dto_extra_comparacion** — `calcCostoComparacion` suma `dto_extra` al dtoTotal solo en Comparacion; persistencia `prod_comp_dto_extra`; UI `CeldaDtoExtraComparacion`.*
+
 *Última actualización (2026-06-12): **Comp. Categorias — px manual** — tabla `prod_comp_px_manual` (`px_manual` entero por `cod_ext`); `actualizarPxManualComparacionAction`; `getProductosPorPresentacion` → `pxManualComparacion`. Migración **`20260612120000_comp_px_manual`**.*
 
 *Última actualización (2026-06-11): **Comp. Categorias — referencia competencia (Px Sugerido)** — `buscarOpcionesReferenciaCompetencia` une `prod_precios_competencia` + `prod_precios_provee.px_vta_sugerido` (catálogo igual cx-px-tienda); `ensureVinculoCompetenciaParaReferencia` crea fila FK si solo hay sugerido.*
 
-*Última actualización (2026-06-11): **Comp. Categorias — referencia competencia** — `prod_comp_presentaciones.ref_cod_tienda` + `ref_competencia_id` → FK a `prod_precios_competencia`; precio vía `resolverPreciosCompetenciaMostrar`. Migración **`20260611120000_comp_present_ref_competencia`**. Actions `asignarReferenciaCompetenciaAction`, `buscarReferenciaCompetenciaAction`, `quitarReferenciaCompetenciaAction`.*
+*Última actualización (2026-06-10): **Comp. Categorias — múltiples referencias competencia** — tabla `prod_comp_present_refs_comp` (`presentacion_id`, `ref_cod_tienda`, `ref_competencia_id`, `orden`); migración **`20260613120000_comp_present_refs_comp`**; radio activa para margen.*
+
+*Última actualización (2026-06-11): **Comp. Categorias — referencia competencia** — FK compuesta migrada a `prod_comp_present_refs_comp` (N por presentación). Actions `asignarReferenciaCompetenciaAction`, `quitarReferenciaCompetenciaAction(refCompId)`.*
 
 *Última actualización (2026-06-10): **Px Competencia — catálogo explícito** — `prod_tienda.comparar_competencia`; actions `comparacionCompetencia.ts`; backfill en migración **`20260610120000`** para productos con filas en `prod_precios_competencia`.*
 

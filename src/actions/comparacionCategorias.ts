@@ -21,7 +21,7 @@ import {
   actualizarPxManualComparacionItem,
   buscarOpcionesReferenciaCompetencia,
   asignarReferenciaCompetenciaPresentacion,
-  quitarReferenciaCompetenciaPresentacion,
+  quitarReferenciaCompetenciaItem,
 } from "@/services/categoriasComparacion.service";
 import { listarProductosProveedoresParaVincular } from "@/services/listaPrecios.service";
 import { getRol } from "@/lib/sesion";
@@ -42,6 +42,7 @@ import {
   actualizarPxManualComparacionSchema,
   asignarReferenciaCompetenciaSchema,
   buscarReferenciaCompetenciaSchema,
+  quitarReferenciaCompetenciaItemSchema,
 } from "@/lib/validations/comparacionCategorias";
 import { z } from "zod";
 import { prismaCuidSchema } from "@/lib/validations/common";
@@ -92,9 +93,9 @@ export async function getProductosPorPresentacionAction(
     productos: Awaited<ReturnType<typeof getProductosPorPresentacion>>["productos"];
     costoCompraObjetivo: number | null;
     labelCompleto: string;
-    referenciaCompetencia: Awaited<
+    referenciasCompetencia: Awaited<
       ReturnType<typeof getProductosPorPresentacion>
-    >["referenciaCompetencia"];
+    >["referenciasCompetencia"];
   }>
 > {
   const rol = await getRol();
@@ -111,7 +112,7 @@ export async function getProductosPorPresentacionAction(
         productos: result.productos,
         costoCompraObjetivo: result.costoCompraObjetivo,
         labelCompleto: result.labelCompleto,
-        referenciaCompetencia: result.referenciaCompetencia,
+        referenciasCompetencia: result.referenciasCompetencia,
       },
     };
   } catch (e) {
@@ -279,8 +280,6 @@ export async function updatePresentacionAction(
     subcategoriaId?: string;
     costoCompraObjetivo?: number | null;
     productoReferenciaCodExt?: string | null;
-    refCodTienda?: string | null;
-    refCompetenciaId?: string | null;
   }
 ): Promise<ActionResult> {
   if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
@@ -389,6 +388,7 @@ export async function actualizarPxManualComparacionAction(
 
 export async function buscarReferenciaCompetenciaAction(params: {
   q?: string;
+  presentacionId?: string;
 }): Promise<
   ActionResult<Awaited<ReturnType<typeof buscarOpcionesReferenciaCompetencia>>>
 > {
@@ -435,13 +435,13 @@ export async function asignarReferenciaCompetenciaAction(
 }
 
 export async function quitarReferenciaCompetenciaAction(
-  presentacionId: string
+  refCompId: string
 ): Promise<ActionResult> {
   if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
-  const parsed = presentacionIdSchema.safeParse(presentacionId);
-  if (!parsed.success) return { ok: false, error: "ID de presentación inválido." };
+  const parsed = quitarReferenciaCompetenciaItemSchema.safeParse({ refCompId });
+  if (!parsed.success) return { ok: false, error: "ID de referencia inválido." };
   try {
-    await quitarReferenciaCompetenciaPresentacion(parsed.data);
+    await quitarReferenciaCompetenciaItem(parsed.data.refCompId);
     revalidateComparacionCategorias();
     return { ok: true, data: undefined };
   } catch (e) {

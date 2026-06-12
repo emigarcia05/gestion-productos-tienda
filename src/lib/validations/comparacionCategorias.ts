@@ -44,8 +44,6 @@ export const updatePresentacionSchema = z.object({
     subcategoriaId: comparacionIdSchema.optional(),
     costoCompraObjetivo: z.number().positive().nullable().optional(),
     productoReferenciaCodExt: listaPreciosCodExtSchema.nullable().optional(),
-    refCodTienda: z.string().min(1).nullable().optional(),
-    refCompetenciaId: comparacionIdSchema.nullable().optional(),
   }),
 });
 
@@ -58,6 +56,11 @@ export const asignarReferenciaCompetenciaSchema = z.object({
 export const buscarReferenciaCompetenciaSchema = z.object({
   q: z.string().max(500).optional(),
   take: z.number().int().min(1).max(200).optional(),
+  presentacionId: comparacionIdSchema.optional(),
+});
+
+export const quitarReferenciaCompetenciaItemSchema = z.object({
+  refCompId: comparacionIdSchema,
 });
 
 export const asignarProductosSchema = z.object({

@@ -4,6 +4,7 @@
  * Referente: `prod_precios_competencia` (scrape o Px. Vta. Sugerido; precio vía `resolverPreciosCompetenciaMostrar`, igual `/cx-px-tienda`).
  */
 
+import { calcCostoComparacion, type DatosCostoComparacion } from "@/lib/calculos";
 import { prisma } from "@/lib/prisma";
 import {
   buildMapPxVtaSugerido,
@@ -16,9 +17,12 @@ const normalizeNombreCategoria = (nombre: string): string =>
   nombre.trim().toUpperCase();
 
 export interface ReferenciaCompetenciaPresentacion {
+  id: string;
   codTienda: string;
   competenciaId: string;
   competenciaNombre: string;
+  /** Abreviatura: `global_proveedores.prefijo` del proveedor del competidor. */
+  competenciaAbreviatura: string;
   descripcionTienda: string | null;
   pxMostrar: number | null;
   etiqueta: string;
@@ -33,54 +37,76 @@ export interface OpcionReferenciaCompetencia {
   etiqueta: string;
 }
 
-async function buildReferenciaCompetenciaPresentacion(
-  presentacion: {
-    refCodTienda: string | null;
-    refCompetenciaId: string | null;
+const REFERENCIAS_COMPETENCIA_INCLUDE = {
+  orderBy: [{ orden: "asc" as const }, { createdAt: "asc" as const }],
+  include: {
     referenciaCompetencia: {
-      codTienda: string;
-      competenciaId: string;
-      competencia: { nombre: string };
-      prodTienda: { descripcionTienda: string | null };
-    } | null;
-  }
-): Promise<ReferenciaCompetenciaPresentacion | null> {
-  if (!presentacion.refCodTienda || !presentacion.refCompetenciaId || !presentacion.referenciaCompetencia) {
-    return null;
-  }
+      include: {
+        competencia: { select: { nombre: true, proveedor: { select: { prefijo: true } } } },
+        prodTienda: { select: { descripcionTienda: true } },
+      },
+    },
+  },
+};
 
-  const resuelto = await resolverPrecioCompetenciaMostrar(
-    presentacion.refCodTienda,
-    presentacion.refCompetenciaId
-  );
-  const competenciaNombre = presentacion.referenciaCompetencia.competencia.nombre;
-  const descripcionTienda = presentacion.referenciaCompetencia.prodTienda.descripcionTienda;
-  const etiqueta = `${competenciaNombre} — ${descripcionTienda ?? presentacion.refCodTienda}`;
+async function buildReferenciaCompetenciaFromRow(row: {
+  id: string;
+  refCodTienda: string;
+  refCompetenciaId: string;
+  referenciaCompetencia: {
+    competencia: { nombre: string; proveedor: { prefijo: string | null } | null };
+    prodTienda: { descripcionTienda: string | null };
+  };
+}): Promise<ReferenciaCompetenciaPresentacion> {
+  const resuelto = await resolverPrecioCompetenciaMostrar(row.refCodTienda, row.refCompetenciaId);
+  const competenciaNombre = row.referenciaCompetencia.competencia.nombre;
+  const prefijo = row.referenciaCompetencia.competencia.proveedor?.prefijo?.trim();
+  const competenciaAbreviatura = prefijo ? prefijo.toUpperCase() : "—";
+  const descripcionTienda = row.referenciaCompetencia.prodTienda.descripcionTienda;
+  const etiqueta = `${competenciaNombre} — ${descripcionTienda ?? row.refCodTienda}`;
 
   return {
-    codTienda: presentacion.refCodTienda,
-    competenciaId: presentacion.refCompetenciaId,
+    id: row.id,
+    codTienda: row.refCodTienda,
+    competenciaId: row.refCompetenciaId,
     competenciaNombre,
+    competenciaAbreviatura,
     descripcionTienda,
     pxMostrar: resuelto?.pxMostrar ?? null,
     etiqueta,
   };
 }
 
+async function buildReferenciasCompetenciaPresentacion(presentacion: {
+  referenciasCompetencia: Array<{
+    id: string;
+    refCodTienda: string;
+    refCompetenciaId: string;
+    referenciaCompetencia: {
+      competencia: { nombre: string; proveedor: { prefijo: string | null } | null };
+      prodTienda: { descripcionTienda: string | null };
+    };
+  }>;
+}): Promise<ReferenciaCompetenciaPresentacion[]> {
+  if (presentacion.referenciasCompetencia.length === 0) return [];
+  return Promise.all(presentacion.referenciasCompetencia.map(buildReferenciaCompetenciaFromRow));
+}
+
 const getObjetivoFromPresentacion = async (p: {
   costoCompraObjetivo: unknown;
   productoReferencia?: { pxCompraFinalSinIva: unknown } | null;
-  refCodTienda: string | null;
-  refCompetenciaId: string | null;
-  referenciaCompetencia: {
-    codTienda: string;
-    competenciaId: string;
-    competencia: { nombre: string };
-    prodTienda: { descripcionTienda: string | null };
-  } | null;
+  referenciasCompetencia: Array<{
+    id: string;
+    refCodTienda: string;
+    refCompetenciaId: string;
+    referenciaCompetencia: {
+      competencia: { nombre: string; proveedor: { prefijo: string | null } | null };
+      prodTienda: { descripcionTienda: string | null };
+    };
+  }>;
 }): Promise<number | null> => {
-  const refComp = await buildReferenciaCompetenciaPresentacion(p);
-  if (refComp?.pxMostrar != null) return refComp.pxMostrar;
+  const refs = await buildReferenciasCompetenciaPresentacion(p);
+  if (refs[0]?.pxMostrar != null) return refs[0].pxMostrar;
   if (p.productoReferencia?.pxCompraFinalSinIva != null) {
     return Number(p.productoReferencia.pxCompraFinalSinIva);
   }
@@ -100,7 +126,7 @@ export interface CategoriaComparacionTree {
       id: string;
       nombre: string;
       costoCompraObjetivo: number | null;
-      referenciaCompetencia: ReferenciaCompetenciaPresentacion | null;
+      referenciasCompetencia: ReferenciaCompetenciaPresentacion[];
       labelCompleto: string;
     }[];
   }[];
@@ -111,14 +137,41 @@ export interface ProductoEnCategoria {
   codExt: string;
   descripcionProveedor: string;
   marca: string | null;
+  /** Costo sin IVA en Comp. Categorias (incluye `dto_extra_comparacion` si aplica). */
   pxCompraFinalSinIva: number | null;
   proveedorPrefijo: string | null;
   /** DTO. EXTRA (0-99) persistido para "Comp. Por Cat." por ítem. */
   dtoExtraComparacion: number | null;
+  /** Campos de lista proveedor para recalcular costo en cliente al editar DTO. EXTRA. */
+  datosCosto: DatosCostoComparacion;
   /** Px. venta manual (entero) en Comparacion por categorías. */
   pxManualComparacion: number | null;
   costoCompraObjetivo: number | null;
   diferenciaVsObjetivo: number | null; // pxCompraFinalSinIva - objetivo (negativo = bajo objetivo)
+}
+
+function mapDatosCostoComparacion(lp: {
+  pxListaProveedor: unknown;
+  pxDolares: boolean;
+  cotizacionDolar: unknown;
+  dtoProveedor: unknown;
+  dtoMarca: unknown;
+  dtoRubro: unknown;
+  dtoCantidad: unknown;
+  dtoFinanciero: unknown;
+  cxTransporte: unknown;
+}): DatosCostoComparacion {
+  return {
+    pxListaProveedor: Number(lp.pxListaProveedor),
+    pxDolares: lp.pxDolares,
+    cotizacionDolar: Number(lp.cotizacionDolar),
+    dtoProveedor: Number(lp.dtoProveedor),
+    dtoMarca: Number(lp.dtoMarca),
+    dtoRubro: Number(lp.dtoRubro),
+    dtoCantidad: Number(lp.dtoCantidad),
+    dtoFinanciero: Number(lp.dtoFinanciero),
+    cxTransporte: Number(lp.cxTransporte),
+  };
 }
 
 /** Árbol completo Categoria → Subcategoria → Presentacion para la UI. */
@@ -133,12 +186,7 @@ export async function getArbolCategorias(): Promise<CategoriaComparacionTree[]> 
             orderBy: { nombre: "asc" },
             include: {
               productoReferencia: { select: { pxCompraFinalSinIva: true } },
-              referenciaCompetencia: {
-                include: {
-                  competencia: { select: { nombre: true } },
-                  prodTienda: { select: { descripcionTienda: true } },
-                },
-              },
+              referenciasCompetencia: REFERENCIAS_COMPETENCIA_INCLUDE,
             },
           },
         },
@@ -159,7 +207,7 @@ export async function getArbolCategorias(): Promise<CategoriaComparacionTree[]> 
               id: p.id,
               nombre: p.nombre,
               costoCompraObjetivo: await getObjetivoFromPresentacion(p),
-              referenciaCompetencia: await buildReferenciaCompetenciaPresentacion(p),
+              referenciasCompetencia: await buildReferenciasCompetenciaPresentacion(p),
               labelCompleto: `${c.nombre} - ${s.nombre} - ${p.nombre}`,
             }))
           ),
@@ -176,18 +224,13 @@ export async function getProductosPorPresentacion(
   productos: ProductoEnCategoria[];
   costoCompraObjetivo: number | null;
   labelCompleto: string;
-  referenciaCompetencia: ReferenciaCompetenciaPresentacion | null;
+  referenciasCompetencia: ReferenciaCompetenciaPresentacion[];
 }> {
   const presentacion = await prisma.presentacionComparacion.findUnique({
     where: { id: presentacionId },
     include: {
       subcategoria: { include: { categoria: true } },
-      referenciaCompetencia: {
-        include: {
-          competencia: { select: { nombre: true } },
-          prodTienda: { select: { descripcionTienda: true } },
-        },
-      },
+      referenciasCompetencia: REFERENCIAS_COMPETENCIA_INCLUDE,
       productoReferencia: { select: { pxCompraFinalSinIva: true } },
       listaPrecios: {
         include: {
@@ -195,7 +238,6 @@ export async function getProductosPorPresentacion(
           dtoExtraComparacion: { select: { dtoExtra: true } },
           pxManualComparacion: { select: { pxManual: true } },
         },
-        orderBy: { pxCompraFinalSinIva: "asc" },
       },
     },
   });
@@ -205,33 +247,45 @@ export async function getProductosPorPresentacion(
       productos: [],
       costoCompraObjetivo: null,
       labelCompleto: "",
-      referenciaCompetencia: null,
+      referenciasCompetencia: [],
     };
   }
 
   const labelCompleto = `${presentacion.subcategoria.categoria.nombre} - ${presentacion.subcategoria.nombre} - ${presentacion.nombre}`;
-  const referenciaCompetencia = await buildReferenciaCompetenciaPresentacion(presentacion);
+  const referenciasCompetencia = await buildReferenciasCompetenciaPresentacion(presentacion);
   const objetivo = await getObjetivoFromPresentacion(presentacion);
 
-  const productos: ProductoEnCategoria[] = presentacion.listaPrecios.map((lp) => {
-    const pxFinal = lp.pxCompraFinalSinIva != null ? Number(lp.pxCompraFinalSinIva) : null;
-    const dif =
-      pxFinal != null && objetivo != null ? pxFinal - objetivo : null;
-    return {
-      id: lp.codExt,
-      codExt: lp.codExt,
-      descripcionProveedor: lp.descripcionProveedor,
-      marca: lp.marca ?? null,
-      pxCompraFinalSinIva: pxFinal,
-      proveedorPrefijo: lp.proveedor?.prefijo ?? null,
-      dtoExtraComparacion: lp.dtoExtraComparacion?.dtoExtra ?? null,
-      pxManualComparacion: lp.pxManualComparacion?.pxManual ?? null,
-      costoCompraObjetivo: objetivo,
-      diferenciaVsObjetivo: dif,
-    };
-  });
+  const productos: ProductoEnCategoria[] = presentacion.listaPrecios
+    .map((lp) => {
+      const dtoExtraComparacion = lp.dtoExtraComparacion?.dtoExtra ?? null;
+      const datosCosto = mapDatosCostoComparacion(lp);
+      const pxFinal = calcCostoComparacion(datosCosto, dtoExtraComparacion);
+      const dif =
+        pxFinal != null && objetivo != null ? pxFinal - objetivo : null;
+      return {
+        id: lp.codExt,
+        codExt: lp.codExt,
+        descripcionProveedor: lp.descripcionProveedor,
+        marca: lp.marca ?? null,
+        pxCompraFinalSinIva: pxFinal,
+        proveedorPrefijo: lp.proveedor?.prefijo ?? null,
+        dtoExtraComparacion,
+        datosCosto,
+        pxManualComparacion: lp.pxManualComparacion?.pxManual ?? null,
+        costoCompraObjetivo: objetivo,
+        diferenciaVsObjetivo: dif,
+      };
+    })
+    .sort((a, b) => {
+      const pa = a.pxCompraFinalSinIva;
+      const pb = b.pxCompraFinalSinIva;
+      if (pa == null && pb == null) return 0;
+      if (pa == null) return 1;
+      if (pb == null) return -1;
+      return pa - pb;
+    });
 
-  return { productos, costoCompraObjetivo: objetivo, labelCompleto, referenciaCompetencia };
+  return { productos, costoCompraObjetivo: objetivo, labelCompleto, referenciasCompetencia };
 }
 
 /** Marcas distintas de lista_tienda (prod_precios_tienda.marca) para filtros. */
@@ -277,7 +331,7 @@ export interface PresentacionParaGestion {
   categoriaId: string;
   subcategoriaId: string;
   costoCompraObjetivo: number | null;
-  referenciaCompetencia: ReferenciaCompetenciaPresentacion | null;
+  referenciasCompetencia: ReferenciaCompetenciaPresentacion[];
   /** @deprecated Legacy prod_precios_provee */
   productoReferencia: { prefijo: string; descripcionProveedor: string } | null;
 }
@@ -297,12 +351,7 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
           pxCompraFinalSinIva: true,
         },
       },
-      referenciaCompetencia: {
-        include: {
-          competencia: { select: { nombre: true } },
-          prodTienda: { select: { descripcionTienda: true } },
-        },
-      },
+      referenciasCompetencia: REFERENCIAS_COMPETENCIA_INCLUDE,
       listaPrecios: {
         select: {
           proveedor: { select: { prefijo: true } },
@@ -315,7 +364,7 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
   return Promise.all(
     presentaciones.map(async (p) => {
       const objetivo = await getObjetivoFromPresentacion(p);
-      const referenciaCompetencia = await buildReferenciaCompetenciaPresentacion(p);
+      const referenciasCompetencia = await buildReferenciasCompetenciaPresentacion(p);
 
       const refExplicito =
         p.productoReferencia && p.productoReferencia.pxCompraFinalSinIva != null
@@ -323,7 +372,7 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
           : null;
 
       const refCalculado =
-        !refExplicito && !referenciaCompetencia && objetivo != null && p.listaPrecios.length > 0
+        !refExplicito && referenciasCompetencia.length === 0 && objetivo != null && p.listaPrecios.length > 0
           ? p.listaPrecios.find(
               (lp) =>
                 lp.pxCompraFinalSinIva != null &&
@@ -339,7 +388,7 @@ export async function getPresentacionesParaGestion(): Promise<PresentacionParaGe
         categoriaId: p.subcategoria.categoria.id,
         subcategoriaId: p.subcategoria.id,
         costoCompraObjetivo: objetivo,
-        referenciaCompetencia,
+        referenciasCompetencia,
         productoReferencia: ref
           ? { prefijo: ref.proveedor?.prefijo ?? "", descripcionProveedor: ref.descripcionProveedor }
           : null,
@@ -356,9 +405,21 @@ function claveOpcionReferenciaCompetencia(codTienda: string, competenciaId: stri
 export async function buscarOpcionesReferenciaCompetencia(params: {
   q?: string;
   take?: number;
+  presentacionId?: string;
 }): Promise<OpcionReferenciaCompetencia[]> {
   const q = params.q?.trim() ?? "";
   const take = params.take ?? 100;
+
+  const excluirKeys = new Set<string>();
+  if (params.presentacionId) {
+    const asignadas = await prisma.comparacionPresentacionRefComp.findMany({
+      where: { presentacionId: params.presentacionId },
+      select: { refCodTienda: true, refCompetenciaId: true },
+    });
+    for (const row of asignadas) {
+      excluirKeys.add(claveOpcionReferenciaCompetencia(row.refCodTienda, row.refCompetenciaId));
+    }
+  }
 
   const textoVinculoWhere = q
     ? {
@@ -397,7 +458,7 @@ export async function buscarOpcionesReferenciaCompetencia(params: {
       select: {
         codTienda: true,
         competenciaId: true,
-        competencia: { select: { nombre: true } },
+        competencia: { select: { nombre: true, proveedor: { select: { prefijo: true } } } },
         prodTienda: { select: { descripcionTienda: true } },
       },
     }),
@@ -469,7 +530,10 @@ export async function buscarOpcionesReferenciaCompetencia(params: {
       if (cmpDesc !== 0) return cmpDesc;
       return a.competenciaNombre.localeCompare(b.competenciaNombre, "es");
     })
-    .slice(0, take);
+    .slice(0, take)
+    .filter(
+      (o) => !excluirKeys.has(claveOpcionReferenciaCompetencia(o.codTienda, o.competenciaId))
+    );
 
   const preciosMap = await resolverPreciosCompetenciaMostrar(
     opciones.map((o) => ({ codTienda: o.codTienda, competenciaId: o.competenciaId }))
@@ -545,24 +609,52 @@ export async function asignarReferenciaCompetenciaPresentacion(
     throw new Error("No hay precio de competencia disponible para esta referencia.");
   }
 
-  await prisma.presentacionComparacion.update({
-    where: { id: presentacionId },
+  const existente = await prisma.comparacionPresentacionRefComp.findUnique({
+    where: {
+      presentacionId_refCodTienda_refCompetenciaId: {
+        presentacionId,
+        refCodTienda: codTienda,
+        refCompetenciaId: competenciaId,
+      },
+    },
+    select: { id: true },
+  });
+  if (existente) {
+    throw new Error("Esta referencia ya está asignada a la presentación.");
+  }
+
+  const refsPrevias = await prisma.comparacionPresentacionRefComp.count({
+    where: { presentacionId },
+  });
+
+  const maxOrden = await prisma.comparacionPresentacionRefComp.aggregate({
+    where: { presentacionId },
+    _max: { orden: true },
+  });
+
+  await prisma.comparacionPresentacionRefComp.create({
     data: {
+      presentacionId,
       refCodTienda: codTienda,
       refCompetenciaId: competenciaId,
-      productoReferenciaCodExt: null,
-      costoCompraObjetivo: null,
+      orden: (maxOrden._max.orden ?? -1) + 1,
     },
   });
+
+  if (refsPrevias === 0) {
+    await prisma.presentacionComparacion.update({
+      where: { id: presentacionId },
+      data: {
+        productoReferenciaCodExt: null,
+        costoCompraObjetivo: null,
+      },
+    });
+  }
 }
 
-export async function quitarReferenciaCompetenciaPresentacion(presentacionId: string): Promise<void> {
-  await prisma.presentacionComparacion.update({
-    where: { id: presentacionId },
-    data: {
-      refCodTienda: null,
-      refCompetenciaId: null,
-    },
+export async function quitarReferenciaCompetenciaItem(refCompId: string): Promise<void> {
+  await prisma.comparacionPresentacionRefComp.delete({
+    where: { id: refCompId },
   });
 }
 
@@ -631,8 +723,6 @@ export type UpdatePresentacionData = {
   costoCompraObjetivo?: number | null;
   /** @deprecated Legacy prod_precios_provee */
   productoReferenciaCodExt?: string | null;
-  refCodTienda?: string | null;
-  refCompetenciaId?: string | null;
 };
 
 export async function updatePresentacion(id: string, data: UpdatePresentacionData) {
@@ -644,13 +734,6 @@ export async function updatePresentacion(id: string, data: UpdatePresentacionDat
   if (data.costoCompraObjetivo !== undefined) payload.costoCompraObjetivo = data.costoCompraObjetivo;
   if (data.productoReferenciaCodExt !== undefined)
     payload.productoReferenciaCodExt = data.productoReferenciaCodExt;
-  if (data.refCodTienda !== undefined) payload.refCodTienda = data.refCodTienda;
-  if (data.refCompetenciaId !== undefined) payload.refCompetenciaId = data.refCompetenciaId;
-
-  if (data.refCodTienda != null && data.refCompetenciaId != null) {
-    payload.productoReferenciaCodExt = null;
-    payload.costoCompraObjetivo = null;
-  }
 
   return prisma.presentacionComparacion.update({ where: { id }, data: payload });
 }

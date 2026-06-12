@@ -21,9 +21,9 @@ export const COMP_CATEGORIAS_SELECTOR_PANEL_CLASS =
 export const COMP_CATEGORIAS_TABLA_PANEL_CLASS =
   "flex min-h-0 flex-[3] flex-col min-w-0";
 
-/** Grid interno del selector: 4 columnas, ocupa todo el panel superior. */
+/** Grid interno del selector: CATEGORÍA 20 % · SUBCATEGORÍA 20 % · PRESENTACIÓN 20 % · REFERENCIA COMPETENCIA 40 %. */
 export const COMP_CATEGORIAS_SELECTOR_GRID_CLASS =
-  "grid h-full min-h-0 grid-cols-4 gap-3";
+  "grid h-full min-h-0 grid-cols-[1fr_1fr_1fr_2fr] gap-3";
 
 /** Modal Asignar Productos: `ModalTablaConFiltros` base `max-w-[84rem]` × 1,5. */
 export const MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS = "max-w-[126rem]";

@@ -17,14 +17,16 @@ interface Props {
   selectedSubcategoriaId: string | null;
   selectedPresentacionId: string | null;
   loadingReferencia: boolean;
-  referenciaCompetencia: ReferenciaCompetenciaPresentacion | null;
+  referenciasCompetencia: ReferenciaCompetenciaPresentacion[];
+  referenciaActivaId: string | null;
   puedeEditarReferencia: boolean;
-  quitarReferenciaPending: boolean;
+  quitarReferenciaPendingId: string | null;
   onSelectCategoria: (id: string) => void;
   onSelectSubcategoria: (id: string) => void;
   onSelectPresentacion: (id: string) => void;
-  onElegirReferencia: () => void;
-  onQuitarReferencia: () => void;
+  onSelectReferenciaActiva: (refCompId: string) => void;
+  onAgregarReferencia: () => void;
+  onQuitarReferencia: (refCompId: string) => void;
 }
 
 const noop = () => {};
@@ -35,13 +37,15 @@ export default function ComparacionCategoriaSelector({
   selectedSubcategoriaId,
   selectedPresentacionId,
   loadingReferencia,
-  referenciaCompetencia,
+  referenciasCompetencia,
+  referenciaActivaId,
   puedeEditarReferencia,
-  quitarReferenciaPending,
+  quitarReferenciaPendingId,
   onSelectCategoria,
   onSelectSubcategoria,
   onSelectPresentacion,
-  onElegirReferencia,
+  onSelectReferenciaActiva,
+  onAgregarReferencia,
   onQuitarReferencia,
 }: Props) {
   const categoriaSeleccionada = useMemo(
@@ -145,10 +149,12 @@ export default function ComparacionCategoriaSelector({
       <ComparacionReferenciaCompetenciaColumn
         presentacionSeleccionada={selectedPresentacionId != null}
         loading={loadingReferencia}
-        referenciaCompetencia={referenciaCompetencia}
+        referenciasCompetencia={referenciasCompetencia}
+        referenciaActivaId={referenciaActivaId}
         puedeEditar={puedeEditarReferencia}
-        quitarPending={quitarReferenciaPending}
-        onElegirReferencia={onElegirReferencia}
+        quitarPendingId={quitarReferenciaPendingId}
+        onSelectReferenciaActiva={onSelectReferenciaActiva}
+        onAgregarReferencia={onAgregarReferencia}
         onQuitarReferencia={onQuitarReferencia}
       />
     </div>
