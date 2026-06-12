@@ -1,6 +1,11 @@
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  CATALOGO_FINDER_COLUMN_HEADER_CLASS,
+  CATALOGO_FINDER_COLUMN_HEADER_COMPACT_CLASS,
+  CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
+} from "@/lib/ui-classes";
 
 export default function CatalogoFinderColumn({
   titulo,
@@ -17,6 +22,8 @@ export default function CatalogoFinderColumn({
   deshabilitada?: boolean;
   children: React.ReactNode;
 }) {
+  const headerCompacto = !subtitulo;
+
   return (
     <section
       className={cn(
@@ -24,7 +31,13 @@ export default function CatalogoFinderColumn({
         deshabilitada && "opacity-95"
       )}
     >
-      <header className="flex shrink-0 items-center justify-between gap-2 border-b bg-muted/60 px-3 py-2">
+      <header
+        className={cn(
+          headerCompacto
+            ? CATALOGO_FINDER_COLUMN_HEADER_COMPACT_CLASS
+            : CATALOGO_FINDER_COLUMN_HEADER_CLASS
+        )}
+      >
         <div className="min-w-0">
           <h2 className="truncate text-xs font-semibold uppercase tracking-[0.08em] text-foreground">
             {titulo}
@@ -36,13 +49,16 @@ export default function CatalogoFinderColumn({
         {mostrarNuevo && (
           <Button
             type="button"
-            size="icon"
+            size="icon-xs"
             onClick={onNuevo}
-            className="size-6 shrink-0 rounded-md"
+            className={cn(
+              headerCompacto && CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
+              !headerCompacto && "shrink-0"
+            )}
             title="Nuevo"
             aria-label="Nuevo"
           >
-            <Plus className="size-3.5" aria-hidden />
+            <Plus aria-hidden />
           </Button>
         )}
       </header>

@@ -28,8 +28,8 @@ interface Props {
 
 function referenciaGridClass(puedeEditar: boolean): string {
   return puedeEditar
-    ? "grid grid-cols-[12fr_70fr_13fr_5fr] items-start gap-x-1.5"
-    : "grid grid-cols-[12fr_73fr_15fr] items-start gap-x-1.5";
+    ? "grid grid-cols-[12fr_70fr_13fr_5fr] items-center gap-x-1.5"
+    : "grid grid-cols-[12fr_73fr_15fr] items-center gap-x-1.5";
 }
 
 export default function ComparacionReferenciaCompetenciaColumn({
@@ -70,11 +70,11 @@ export default function ComparacionReferenciaCompetenciaColumn({
               "border-b bg-muted/60 px-2 py-2 text-[11px] font-bold uppercase tracking-wide text-foreground"
             )}
           >
-            <span className="text-center">COMP.</span>
-            <span>PRODUCTO</span>
-            <span className="text-right">PX.</span>
+            <span className="min-w-0 text-center">COMP.</span>
+            <span className="min-w-0 text-center">PRODUCTO</span>
+            <span className="min-w-0 text-center">PX.</span>
             {puedeEditar && (
-              <span className="flex items-center justify-center" aria-hidden>
+              <span className="flex min-w-0 items-center justify-center" aria-hidden>
                 <Trash2 className="h-4 w-4" />
               </span>
             )}
@@ -106,7 +106,7 @@ export default function ComparacionReferenciaCompetenciaColumn({
               >
                 <span
                   className={cn(
-                    "pt-0.5 text-center font-mono leading-tight",
+                    "min-w-0 w-full text-center font-mono leading-tight",
                     esActiva && "font-semibold text-primary"
                   )}
                 >
@@ -114,7 +114,7 @@ export default function ComparacionReferenciaCompetenciaColumn({
                 </span>
                 <span
                   className={cn(
-                    "min-w-0 line-clamp-2 break-words leading-snug",
+                    "min-w-0 w-full text-center line-clamp-2 break-words leading-snug",
                     esActiva && "font-medium text-foreground"
                   )}
                   title={producto}
@@ -123,14 +123,14 @@ export default function ComparacionReferenciaCompetenciaColumn({
                 </span>
                 <span
                   className={cn(
-                    "pt-0.5 text-right tabular-nums leading-tight",
+                    "min-w-0 w-full text-center tabular-nums leading-tight",
                     esActiva ? "font-medium text-foreground" : "text-muted-foreground"
                   )}
                 >
                   {ref.pxMostrar != null ? `$${fmtPrecio(ref.pxMostrar)}` : "—"}
                 </span>
                 {puedeEditar && (
-                  <div className="flex items-start justify-center pt-0.5">
+                  <div className="flex min-w-0 items-center justify-center">
                     <Button
                       type="button"
                       variant="ghost"

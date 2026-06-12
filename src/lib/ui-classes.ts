@@ -15,6 +15,18 @@ export const CATALOGO_FINDER_ROW_INTERACTIVE_CLASS =
 export const CATALOGO_FINDER_ROW_SELECTED_CLASS =
   "bg-primary/10 hover:bg-primary/15";
 
+/** Header de `CatalogoFinderColumn` con subtítulo (altura según contenido). */
+export const CATALOGO_FINDER_COLUMN_HEADER_CLASS =
+  "flex shrink-0 items-center justify-between gap-2 border-b bg-muted/60 px-3 py-2";
+
+/** Header compacto de `CatalogoFinderColumn` (solo título): altura fija igual en todas las columnas. */
+export const CATALOGO_FINDER_COLUMN_HEADER_COMPACT_CLASS =
+  "flex h-8 shrink-0 items-center justify-between gap-2 border-b bg-muted/60 px-3";
+
+/** Botón + del header compacto Finder: cabe dentro del `h-8` fijo del encabezado. */
+export const CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS =
+  "size-5 shrink-0 rounded-sm p-0 [&_svg:not([class*='size-'])]:size-3";
+
 /** Texto de mensaje de éxito con ícono (lista, modal). */
 export const TEXT_SUCCESS_CLASS = "text-primary";
 
