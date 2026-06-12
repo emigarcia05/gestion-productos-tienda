@@ -60,11 +60,7 @@ export default function ComparacionCategoriaSelector({
 
   return (
     <div className={COMP_CATEGORIAS_SELECTOR_GRID_CLASS}>
-      <CatalogoFinderColumn
-        titulo="CATEGORÍA"
-        subtitulo={`${arbol.length} registro${arbol.length === 1 ? "" : "s"}`}
-        mostrarNuevo={false}
-      >
+      <CatalogoFinderColumn titulo="CATEGORÍA" mostrarNuevo={false}>
         {arbol.length === 0 ? (
           <CatalogoFinderEmpty mensaje="No hay categorías. Creá combinaciones en Categorias." />
         ) : (
@@ -87,11 +83,6 @@ export default function ComparacionCategoriaSelector({
 
       <CatalogoFinderColumn
         titulo="SUBCATEGORÍA"
-        subtitulo={
-          categoriaSeleccionada
-            ? `${categoriaSeleccionada.subcategorias.length} en ${categoriaSeleccionada.nombre}`
-            : "Seleccioná una categoría"
-        }
         mostrarNuevo={false}
         deshabilitada={categoriaSeleccionada === null}
       >
@@ -119,11 +110,6 @@ export default function ComparacionCategoriaSelector({
 
       <CatalogoFinderColumn
         titulo="PRESENTACIÓN"
-        subtitulo={
-          subcategoriaSeleccionada
-            ? `${subcategoriaSeleccionada.presentaciones.length} en ${subcategoriaSeleccionada.nombre}`
-            : "Seleccioná una subcategoría"
-        }
         mostrarNuevo={false}
         deshabilitada={subcategoriaSeleccionada === null}
       >
