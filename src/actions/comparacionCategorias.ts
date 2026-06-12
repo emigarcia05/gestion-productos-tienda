@@ -18,7 +18,7 @@ import {
   asignarProductosAPresentacion,
   quitarAsignacionPresentacion,
   actualizarDtoExtraComparacionItem,
-  actualizarPxManualComparacionItem,
+  actualizarMargenManualComparacionItem,
   buscarOpcionesReferenciaCompetencia,
   asignarReferenciaCompetenciaPresentacion,
   quitarReferenciaCompetenciaItem,
@@ -39,7 +39,7 @@ import {
   idsProductosSchema,
   comparacionIdSchema,
   actualizarDtoExtraComparacionSchema,
-  actualizarPxManualComparacionSchema,
+  actualizarMargenManualComparacionSchema,
   asignarReferenciaCompetenciaSchema,
   buscarReferenciaCompetenciaSchema,
   quitarReferenciaCompetenciaItemSchema,
@@ -361,28 +361,28 @@ export async function actualizarDtoExtraComparacionAction(
   }
 }
 
-/** Persistir px. venta manual (entero o null) por ítem en Comparacion. */
-export async function actualizarPxManualComparacionAction(
+/** Persistir margen manual % (entero o null) por ítem en Comparacion. */
+export async function actualizarMargenManualComparacionAction(
   listaPrecioProveedorId: string,
-  pxManual: number | null
-): Promise<ActionResult<{ pxManual: number | null }>> {
+  margenManual: number | null
+): Promise<ActionResult<{ margenManual: number | null }>> {
   if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
 
-  const parsed = actualizarPxManualComparacionSchema.safeParse({
+  const parsed = actualizarMargenManualComparacionSchema.safeParse({
     listaPrecioProveedorId,
-    pxManual,
+    margenManual,
   });
-  if (!parsed.success) return { ok: false, error: "Px manual inválido." };
+  if (!parsed.success) return { ok: false, error: "Margen manual inválido." };
 
   try {
-    await actualizarPxManualComparacionItem(
+    await actualizarMargenManualComparacionItem(
       parsed.data.listaPrecioProveedorId,
-      parsed.data.pxManual
+      parsed.data.margenManual
     );
     revalidateComparacionCategorias();
-    return { ok: true, data: { pxManual: parsed.data.pxManual } };
+    return { ok: true, data: { margenManual: parsed.data.margenManual } };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Error al guardar px manual." };
+    return { ok: false, error: e instanceof Error ? e.message : "Error al guardar margen manual." };
   }
 }
 

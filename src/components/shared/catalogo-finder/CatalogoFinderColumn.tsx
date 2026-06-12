@@ -7,6 +7,8 @@ import {
   CATALOGO_FINDER_COLUMN_HEADER_SUBTITLE_CLASS,
   CATALOGO_FINDER_COLUMN_HEADER_TITLE_CLASS,
   CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
+  CATALOGO_FINDER_COLUMN_NOVO_BUTTON_COMPACT_CLASS,
+  TABLE_ROW_ACTION_ICON_CLASS,
 } from "@/lib/ui-classes";
 
 export default function CatalogoFinderColumn({
@@ -47,25 +49,28 @@ export default function CatalogoFinderColumn({
             <p className={CATALOGO_FINDER_COLUMN_HEADER_SUBTITLE_CLASS}>{subtitulo}</p>
           )}
         </div>
-        <div className="flex min-w-0 justify-end">
+        <div className="flex min-w-0 items-center justify-end">
           {mostrarNuevo ? (
             <Button
               type="button"
-              variant="outline"
-              size="icon-xs"
+              variant="ghost"
+              size="icon"
               onClick={onNuevo}
-              className={cn(
-                CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
-                !headerCompacto &&
-                  "size-6 [&_svg:not([class*='size-'])]:size-3"
-              )}
+              className={
+                headerCompacto
+                  ? CATALOGO_FINDER_COLUMN_NOVO_BUTTON_COMPACT_CLASS
+                  : CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS
+              }
               title="Nuevo"
               aria-label="Nuevo"
             >
-              <Plus aria-hidden />
+              <Plus className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
             </Button>
           ) : (
-            <span className="size-4 shrink-0" aria-hidden />
+            <span
+              className={cn("shrink-0", headerCompacto ? "size-6" : "size-7")}
+              aria-hidden
+            />
           )}
         </div>
       </header>

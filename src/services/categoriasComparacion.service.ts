@@ -144,8 +144,8 @@ export interface ProductoEnCategoria {
   dtoExtraComparacion: number | null;
   /** Campos de lista proveedor para recalcular costo en cliente al editar DTO. EXTRA. */
   datosCosto: DatosCostoComparacion;
-  /** Px. venta manual (entero) en Comparacion por categorías. */
-  pxManualComparacion: number | null;
+  /** Margen manual % (entero) persistido en Comparacion por categorías. */
+  margenManualComparacion: number | null;
   costoCompraObjetivo: number | null;
   diferenciaVsObjetivo: number | null; // pxCompraFinalSinIva - objetivo (negativo = bajo objetivo)
 }
@@ -236,7 +236,7 @@ export async function getProductosPorPresentacion(
         include: {
           proveedor: { select: { prefijo: true } },
           dtoExtraComparacion: { select: { dtoExtra: true } },
-          pxManualComparacion: { select: { pxManual: true } },
+          margenManualComparacion: { select: { margenManual: true } },
         },
       },
     },
@@ -271,7 +271,7 @@ export async function getProductosPorPresentacion(
         proveedorPrefijo: lp.proveedor?.prefijo ?? null,
         dtoExtraComparacion,
         datosCosto,
-        pxManualComparacion: lp.pxManualComparacion?.pxManual ?? null,
+        margenManualComparacion: lp.margenManualComparacion?.margenManual ?? null,
         costoCompraObjetivo: objetivo,
         diferenciaVsObjetivo: dif,
       };
@@ -784,21 +784,21 @@ export async function actualizarDtoExtraComparacionItem(
   });
 }
 
-/** Persistir px. venta manual (entero) por ítem en Comparacion. */
-export async function actualizarPxManualComparacionItem(
+/** Persistir margen manual % (entero) por ítem en Comparacion. */
+export async function actualizarMargenManualComparacionItem(
   listaPrecioProveedorCodExt: string,
-  pxManual: number | null
+  margenManual: number | null
 ): Promise<void> {
-  if (pxManual === null) {
-    await prisma.comparacionPxManualItem.deleteMany({
+  if (margenManual === null) {
+    await prisma.comparacionMargenManualItem.deleteMany({
       where: { listaPrecioProveedorCodExt },
     });
     return;
   }
 
-  await prisma.comparacionPxManualItem.upsert({
+  await prisma.comparacionMargenManualItem.upsert({
     where: { listaPrecioProveedorCodExt },
-    create: { listaPrecioProveedorCodExt, pxManual },
-    update: { pxManual },
+    create: { listaPrecioProveedorCodExt, margenManual },
+    update: { margenManual },
   });
 }

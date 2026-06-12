@@ -138,6 +138,40 @@ export function calcDifPctPxManualVsReferencia(
   return Math.round(((pxManual - pxVtaReferencia) / pxVtaReferencia) * 100);
 }
 
+/** Px. venta manual entero desde dif. % vs referencia. */
+export function calcPxManualDesdeDifPctReferencia(
+  difPct: number | null | undefined,
+  pxVtaReferencia: number | null | undefined
+): number | null {
+  if (difPct == null || pxVtaReferencia == null) return null;
+  if (!(pxVtaReferencia > 0)) return null;
+  if (!Number.isFinite(difPct) || !Number.isFinite(pxVtaReferencia)) return null;
+  const px = pxVtaReferencia * (1 + difPct / 100);
+  if (!Number.isFinite(px) || px <= 0) return null;
+  return Math.round(px);
+}
+
+/** Margen manual % desde dif. % vs px referencia y costo sin IVA. */
+export function calcMargenManualDesdeDifPctReferencia(
+  difPct: number | null | undefined,
+  pxVtaReferencia: number | null | undefined,
+  costoCompraSinIva: number | null | undefined
+): number | null {
+  const pxManual = calcPxManualDesdeDifPctReferencia(difPct, pxVtaReferencia);
+  return calcMargenSegunPxReferencia(pxManual, costoCompraSinIva);
+}
+
+/** Dif. % vs referencia desde margen manual persistido y costo. */
+export function calcDifPxRefManualDesdeMargen(
+  margenManual: number | null | undefined,
+  costoCompraSinIva: number | null | undefined,
+  pxVtaReferencia: number | null | undefined
+): number | null {
+  if (margenManual == null || costoCompraSinIva == null) return null;
+  const pxManual = calcPxListaDesdeMargenSinIvaPct(margenManual, costoCompraSinIva);
+  return calcDifPctPxManualVsReferencia(pxManual, pxVtaReferencia);
+}
+
 /** Inverso de `calcMargenSinIvaPct`: PX lista con IVA desde margen % sobre costo sin IVA. */
 export function calcPxListaDesdeMargenSinIvaPct(
   margenPct: number,

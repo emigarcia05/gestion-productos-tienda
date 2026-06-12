@@ -15,11 +15,13 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Trash2 } from "lucide-react";
 import {
   calcCostoComparacion,
-  calcDifPctPxManualVsReferencia,
+  calcDifPxRefManualDesdeMargen,
+  calcMargenManualDesdeDifPctReferencia,
   calcMargenSegunPxReferencia,
+  calcPxManualDesdeDifPctReferencia,
 } from "@/lib/calculos";
 import { fmtPrecio } from "@/lib/format";
-import { fmtMargenComparacionPct } from "@/lib/comparacionCategoriasFormat";
+import { fmtMargenComparacionPct, formatPxManualEnteroMask } from "@/lib/comparacionCategoriasFormat";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import {
   COMP_CATEGORIAS_COMPARISON_STACK_CLASS,
@@ -52,7 +54,7 @@ import {
 import AsignarProductosModal from "@/components/proveedores/comparacion-categorias/AsignarProductosModal";
 import ElegirReferenciaCompetenciaModal from "@/components/proveedores/comparacion-categorias/ElegirReferenciaCompetenciaModal";
 import CeldaDtoExtraComparacion from "@/components/proveedores/comparacion-categorias/CeldaDtoExtraComparacion";
-import CeldaPxManualComparacion from "@/components/proveedores/comparacion-categorias/CeldaPxManualComparacion";
+import CeldaDifPxRefManualComparacion from "@/components/proveedores/comparacion-categorias/CeldaDifPxRefManualComparacion";
 import { toast } from "sonner";
 
 interface Props {
@@ -131,7 +133,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
   const [quitarReferenciaPendingId, setQuitarReferenciaPendingId] = useState<string | null>(null);
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
   const [baseItemId, setBaseItemId] = useState<string | null>(null);
-  const [pxManualDraft, setPxManualDraft] = useState<Record<string, number | null>>({});
+  const [difPxRefManualDraft, setDifPxRefManualDraft] = useState<Record<string, number | null>>({});
   const [dtoExtraDraft, setDtoExtraDraft] = useState<Record<string, number | null>>({});
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
@@ -158,7 +160,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
         });
         setLabelCompleto(res.data.labelCompleto);
         setBaseItemId(null);
-        setPxManualDraft({});
+        setDifPxRefManualDraft({});
         setDtoExtraDraft({});
       } else {
         setProductos([]);
@@ -166,7 +168,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
         setReferenciaActivaId(null);
         setLabelCompleto("");
         setBaseItemId(null);
-        setPxManualDraft({});
+        setDifPxRefManualDraft({});
         setDtoExtraDraft({});
       }
     } finally {
@@ -183,7 +185,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     setReferenciaActivaId(null);
     setLabelCompleto("");
     setBaseItemId(null);
-    setPxManualDraft({});
+    setDifPxRefManualDraft({});
     setDtoExtraDraft({});
   }, []);
 
@@ -195,7 +197,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     setReferenciaActivaId(null);
     setLabelCompleto("");
     setBaseItemId(null);
-    setPxManualDraft({});
+    setDifPxRefManualDraft({});
     setDtoExtraDraft({});
   }, []);
 
@@ -203,7 +205,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     (id: string) => {
       setSelectedPresentacionId(id);
       setBaseItemId(null);
-      setPxManualDraft({});
+      setDifPxRefManualDraft({});
       setDtoExtraDraft({});
       void loadProductos(id);
     },
@@ -278,22 +280,27 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
 
   const columnasTabla = puedeEditar ? 11 : 10;
 
-  const resolvePxManualVivo = useCallback(
-    (codExt: string, guardado: number | null): number | null => {
-      if (Object.prototype.hasOwnProperty.call(pxManualDraft, codExt)) {
-        return pxManualDraft[codExt];
+  const resolveDifPxRefManualVivo = useCallback(
+    (
+      codExt: string,
+      margenGuardado: number | null,
+      costo: number | null,
+      pxReferencia: number | null
+    ): number | null => {
+      if (Object.prototype.hasOwnProperty.call(difPxRefManualDraft, codExt)) {
+        return difPxRefManualDraft[codExt];
       }
-      return guardado;
+      return calcDifPxRefManualDesdeMargen(margenGuardado, costo, pxReferencia);
     },
-    [pxManualDraft]
+    [difPxRefManualDraft]
   );
 
-  const handlePxManualDraft = useCallback((codExt: string, pxManual: number | null) => {
-    setPxManualDraft((prev) => ({ ...prev, [codExt]: pxManual }));
+  const handleDifPxRefManualDraft = useCallback((codExt: string, difPxRefManual: number | null) => {
+    setDifPxRefManualDraft((prev) => ({ ...prev, [codExt]: difPxRefManual }));
   }, []);
 
-  const handlePxManualDraftEnd = useCallback((codExt: string) => {
-    setPxManualDraft((prev) => {
+  const handleDifPxRefManualDraftEnd = useCallback((codExt: string) => {
+    setDifPxRefManualDraft((prev) => {
       if (!Object.prototype.hasOwnProperty.call(prev, codExt)) return prev;
       const next = { ...prev };
       delete next[codExt];
@@ -301,12 +308,15 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     });
   }, []);
 
-  const handlePxManualSaved = useCallback((codExt: string, pxManual: number | null) => {
-    setProductos((prev) =>
-      prev.map((p) => (p.codExt === codExt ? { ...p, pxManualComparacion: pxManual } : p))
-    );
-    handlePxManualDraftEnd(codExt);
-  }, [handlePxManualDraftEnd]);
+  const handleMargenManualSaved = useCallback(
+    (codExt: string, margenManual: number | null) => {
+      setProductos((prev) =>
+        prev.map((p) => (p.codExt === codExt ? { ...p, margenManualComparacion: margenManual } : p))
+      );
+      handleDifPxRefManualDraftEnd(codExt);
+    },
+    [handleDifPxRefManualDraftEnd]
+  );
 
   const handleDtoExtraDraft = useCallback((codExt: string, dtoExtra: number | null) => {
     setDtoExtraDraft((prev) => ({ ...prev, [codExt]: dtoExtra }));
@@ -403,10 +413,10 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                           PX MANUAL
                         </TableHead>
                         <TableHead className="text-center tabla-bloque-secundario-head">
-                          DIF C/ REF.
+                          DIF PX REF MANUAL
                         </TableHead>
                         <TableHead className="text-center tabla-bloque-secundario-head">
-                          MARGEN (SEGÚN PX MANUAL)
+                          MARGEN MANUAL
                         </TableHead>
                         {puedeEditar && (
                           <TableHead className="text-center p-0 align-middle">
@@ -454,14 +464,20 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                             pxReferenciaMargen,
                             costoVivo
                           );
-                          const pxManualGuardado = p.pxManualComparacion;
-                          const pxManual = resolvePxManualVivo(p.codExt, pxManualGuardado);
-                          const difManualVsRef = calcDifPctPxManualVsReferencia(
-                            pxManual,
+                          const margenGuardado = p.margenManualComparacion;
+                          const difPxRefManual = resolveDifPxRefManualVivo(
+                            p.codExt,
+                            margenGuardado,
+                            costoVivo,
                             pxReferenciaMargen
                           );
-                          const margenPxManual = calcMargenSegunPxReferencia(
-                            pxManual,
+                          const pxManual = calcPxManualDesdeDifPctReferencia(
+                            difPxRefManual,
+                            pxReferenciaMargen
+                          );
+                          const margenManual = calcMargenManualDesdeDifPctReferencia(
+                            difPxRefManual,
+                            pxReferenciaMargen,
                             costoVivo
                           );
 
@@ -517,26 +533,31 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                                   <span className="text-muted-foreground">—</span>
                                 )}
                               </TableCell>
-                              <TableCell className="celda-datos text-center tabla-bloque-secundario-cell">
-                                <CeldaPxManualComparacion
-                                  codExt={p.codExt}
-                                  pxManual={pxManualGuardado}
-                                  puedeEditar={puedeEditar}
-                                  onDraftChange={(valor) => handlePxManualDraft(p.codExt, valor)}
-                                  onDraftEnd={() => handlePxManualDraftEnd(p.codExt)}
-                                  onSaved={(valor) => handlePxManualSaved(p.codExt, valor)}
-                                />
-                              </TableCell>
-                              <TableCell className="celda-datos text-center tabla-bloque-secundario-cell">
-                                {difManualVsRef != null ? (
-                                  <CeldaDifPct pct={difManualVsRef} />
+                              <TableCell className="celda-datos text-center tabular-nums tabla-bloque-secundario-cell">
+                                {pxManual != null ? (
+                                  formatPxManualEnteroMask(pxManual)
                                 ) : (
                                   <span className="text-muted-foreground">—</span>
                                 )}
                               </TableCell>
+                              <TableCell className="celda-datos text-center tabla-bloque-secundario-cell">
+                                <CeldaDifPxRefManualComparacion
+                                  codExt={p.codExt}
+                                  difPxRefManual={difPxRefManual}
+                                  margenManualGuardado={margenGuardado}
+                                  costoCompra={costoVivo}
+                                  pxVtaReferencia={pxReferenciaMargen}
+                                  puedeEditar={puedeEditar}
+                                  onDraftChange={(valor) =>
+                                    handleDifPxRefManualDraft(p.codExt, valor)
+                                  }
+                                  onDraftEnd={() => handleDifPxRefManualDraftEnd(p.codExt)}
+                                  onSaved={(valor) => handleMargenManualSaved(p.codExt, valor)}
+                                />
+                              </TableCell>
                               <TableCell className="celda-datos text-center tabular-nums tabla-bloque-secundario-cell">
-                                {margenPxManual != null ? (
-                                  fmtMargenComparacionPct(margenPxManual)
+                                {margenManual != null ? (
+                                  fmtMargenComparacionPct(margenManual)
                                 ) : (
                                   <span className="text-muted-foreground">—</span>
                                 )}

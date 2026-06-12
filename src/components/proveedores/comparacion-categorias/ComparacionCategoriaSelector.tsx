@@ -68,9 +68,6 @@ export default function ComparacionCategoriaSelector({
             <CatalogoFinderRow
               key={categoria.id}
               nombre={categoria.nombre}
-              meta={`${categoria.subcategorias.length} subcategoría${
-                categoria.subcategorias.length === 1 ? "" : "s"
-              }`}
               selected={categoria.id === selectedCategoriaId}
               onClick={() => onSelectCategoria(categoria.id)}
               mostrarAcciones={false}
@@ -95,9 +92,6 @@ export default function ComparacionCategoriaSelector({
             <CatalogoFinderRow
               key={subcategoria.id}
               nombre={subcategoria.nombre}
-              meta={`${subcategoria.presentaciones.length} presentación${
-                subcategoria.presentaciones.length === 1 ? "" : "es"
-              }`}
               selected={subcategoria.id === selectedSubcategoriaId}
               onClick={() => onSelectSubcategoria(subcategoria.id)}
               mostrarAcciones={false}

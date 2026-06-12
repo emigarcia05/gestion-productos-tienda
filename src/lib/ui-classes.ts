@@ -31,10 +31,6 @@ export const CATALOGO_FINDER_COLUMN_HEADER_TITLE_CLASS =
 export const CATALOGO_FINDER_COLUMN_HEADER_SUBTITLE_CLASS =
   "truncate text-center text-[11px] text-primary-foreground/75";
 
-/** Botón + del header Finder sobre fondo primary. */
-export const CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS =
-  "size-4 shrink-0 rounded-sm border-primary-foreground/30 bg-primary-foreground/10 p-0 text-primary-foreground shadow-none hover:bg-primary-foreground/20 hover:text-primary-foreground my-0.5 [&_svg:not([class*='size-'])]:size-2.5";
-
 /** Texto de mensaje de éxito con ícono (lista, modal). */
 export const TEXT_SUCCESS_CLASS = "text-primary";
 
@@ -77,6 +73,14 @@ export const TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS =
 
 /** Tamaño uniforme del ícono dentro de botones de acción en tabla. */
 export const TABLE_ROW_ACTION_ICON_CLASS = "h-4 w-4 shrink-0";
+
+/** Botón + header Finder compacto (`h-8`): {@link TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS} adaptado al alto del encabezado. */
+export const CATALOGO_FINDER_COLUMN_NOVO_BUTTON_COMPACT_CLASS =
+  `${TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS} !size-6 max-h-6 min-h-6 min-w-6 shrink-0 !p-0`;
+
+/** Botón + header Finder con subtítulo: mismo tamaño que acciones en `TableHead`. */
+export const CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS =
+  `${TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS} !size-7 max-h-7 min-h-7 min-w-7 shrink-0 !p-0`;
 
 /**
  * Columna **Hist.** en modales de drill-down del balance mensual (borde #0072BB + fondo suave).

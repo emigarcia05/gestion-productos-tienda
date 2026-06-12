@@ -1,4 +1,4 @@
-import { fmtPrecio } from "@/lib/format";
+import { fmtPrecio, fmtPctEntero } from "@/lib/format";
 
 /** Entero positivo desde input con máscara `$` y separador de miles (`.`). Vacío → `null`; inválido → `undefined`. */
 export function parsePxManualEnteroMask(raw: string): number | null | undefined {
@@ -13,6 +13,21 @@ export function parsePxManualEnteroMask(raw: string): number | null | undefined 
 export function formatPxManualEnteroMask(n: number | null | undefined): string {
   if (n == null || n <= 0) return "";
   return `$${fmtPrecio(n)}`;
+}
+
+/** Entero con signo desde input DIF PX REF MANUAL; vacío → `null`; inválido → `undefined`. */
+export function parseDifPxRefManualMask(raw: string): number | null | undefined {
+  const trimmed = raw.replace(/%/g, "").trim();
+  if (trimmed === "" || trimmed === "-") return null;
+  const n = Number(trimmed);
+  if (!Number.isSafeInteger(n)) return undefined;
+  return n;
+}
+
+/** Máscara DIF PX REF MANUAL: entero con signo + `%` (es-AR). */
+export function formatDifPxRefManualMask(n: number | null | undefined): string {
+  if (n == null || Number.isNaN(n)) return "";
+  return fmtPctEntero(n);
 }
 
 /** Entero 0–99 desde input DTO. EXTRA; vacío → `null`; inválido → `undefined`. */

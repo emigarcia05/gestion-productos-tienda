@@ -221,7 +221,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas | `ComprobanteProveedor` | `fin_compras_comprobante` |
 | Finanzas | `FinTesoreriaEntidad`, `FinTesoreriaTipoCaja`, `CajaTesoreria`, `FinTesoreriaCheque` | `fin_tesoreria_entidades`, `fin_tesoreria_tipo_caja`, `fin_tesoreria`, `fin_tesoreria_cheques` |
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual` |
-| Productos / precios | `ListaPrecioProveedor`, `ComparacionDtoExtraItem`, `ComparacionPxManualItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_dto_extra`, `prod_comp_px_manual`, `prod_comp_cat`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
+| Productos / precios | `ListaPrecioProveedor`, `ComparacionDtoExtraItem`, `ComparacionMargenManualItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_dto_extra`, `prod_comp_margen_manual`, `prod_comp_cat`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
 | Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
 | Pedidos / sync | `ProdPedMerc2`, `PedidoHistoria`, `PedidoHistoriaItem`, `ProdPedUltComp`, `ImportProgress`, `SyncDuxStatus` | `prod_ped_merc`, `prod_ped_historial`, `prod_ped_historial_merc`, `prod_ped_ult_comp`, `import_progress`, `sync_dux_status` |
 
@@ -284,6 +284,13 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   `costo = base × (1 − dtoTotal/100) × (1 + cx_transporte/100)` (redondeo 4 dec.)
 - **`dto_extra_comparacion`** se persiste en **`prod_comp_dto_extra`** (`ComparacionDtoExtraItem.dto_extra`, entero 0–99 o `null`), **no** en `prod_precios_provee`. Action: **`actualizarDtoExtraComparacionAction`**; servicio: **`getProductosPorPresentacion`** devuelve `dtoExtraComparacion` + `datosCosto` para recálculo en cliente.
 - Resto del sistema (lista precios, pedidos, Cx Compra, exportaciones) sigue usando **`px_compra_final_sin_iva`** sin dto extra.
+
+### 1.8c Margen manual en Comp. Categorias — Comparacion (`margen_manual`)
+
+- Tabla **`prod_comp_margen_manual`** (`ComparacionMargenManualItem.margenManual`, entero % o `null` por `cod_ext`).
+- UI: input **DIF PX REF MANUAL** (% entero vs px referencia activa); al blur se persiste **`margen_manual`** (`actualizarMargenManualComparacionAction`), no el px.
+- Cálculos (`@/lib/calculos.ts`): `calcPxManualDesdeDifPctReferencia` → px entero; `calcMargenManualDesdeDifPctReferencia` → margen %; al cargar, `calcDifPxRefManualDesdeMargen` reconstruye la dif. desde margen + costo + px ref.
+- Migración **`20260613150000_comp_margen_manual`** renombra `prod_comp_px_manual` → `prod_comp_margen_manual` y anula valores legacy (eran precios, no márgenes).
 
 ### 1.9 Listado Cx Compra (`getTiendaPageData`)
 
@@ -1546,7 +1553,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-06-10): **Comp. Categorias — dto_extra_comparacion** — `calcCostoComparacion` suma `dto_extra` al dtoTotal solo en Comparacion; persistencia `prod_comp_dto_extra`; UI `CeldaDtoExtraComparacion`.*
 
-*Última actualización (2026-06-12): **Comp. Categorias — px manual** — tabla `prod_comp_px_manual` (`px_manual` entero por `cod_ext`); `actualizarPxManualComparacionAction`; `getProductosPorPresentacion` → `pxManualComparacion`. Migración **`20260612120000_comp_px_manual`**.*
+*Última actualización (2026-06-13): **Comp. Categorias — margen manual** — tabla `prod_comp_margen_manual` (`margen_manual` entero % por `cod_ext`); `actualizarMargenManualComparacionAction`; `getProductosPorPresentacion` → `margenManualComparacion`. Input UI **DIF PX REF MANUAL** deriva px/margen en cliente. Migración **`20260613150000_comp_margen_manual`**.*
 
 *Última actualización (2026-06-11): **Comp. Categorias — referencia competencia (Px Sugerido)** — `buscarOpcionesReferenciaCompetencia` une `prod_precios_competencia` + `prod_precios_provee.px_vta_sugerido` (catálogo igual cx-px-tienda); `ensureVinculoCompetenciaParaReferencia` crea fila FK si solo hay sugerido.*
 
