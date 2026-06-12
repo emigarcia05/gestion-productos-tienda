@@ -64,21 +64,6 @@ export default function ComparacionReferenciaCompetenciaColumn({
         <CatalogoFinderEmpty mensaje="Sin referencias para calcular margen. Usá + Nuevo para agregar." />
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div
-            className={cn(
-              gridClass,
-              "border-b bg-muted/60 px-2 py-2 text-[11px] font-bold uppercase tracking-wide text-foreground"
-            )}
-          >
-            <span className="min-w-0 text-center">COMP.</span>
-            <span className="min-w-0 text-center">PRODUCTO</span>
-            <span className="min-w-0 text-center">PX.</span>
-            {puedeEditar && (
-              <span className="flex min-w-0 items-center justify-center" aria-hidden>
-                <Trash2 className="h-4 w-4" />
-              </span>
-            )}
-          </div>
           {referenciasCompetencia.map((ref) => {
             const esActiva = referenciaActivaId === ref.id;
             const producto = ref.descripcionTienda ?? ref.codTienda;

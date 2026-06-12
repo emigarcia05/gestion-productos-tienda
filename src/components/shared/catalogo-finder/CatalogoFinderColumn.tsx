@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import {
   CATALOGO_FINDER_COLUMN_HEADER_CLASS,
   CATALOGO_FINDER_COLUMN_HEADER_COMPACT_CLASS,
+  CATALOGO_FINDER_COLUMN_HEADER_SUBTITLE_CLASS,
+  CATALOGO_FINDER_COLUMN_HEADER_TITLE_CLASS,
   CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
 } from "@/lib/ui-classes";
 
@@ -32,35 +34,40 @@ export default function CatalogoFinderColumn({
       )}
     >
       <header
-        className={cn(
+        className={
           headerCompacto
             ? CATALOGO_FINDER_COLUMN_HEADER_COMPACT_CLASS
             : CATALOGO_FINDER_COLUMN_HEADER_CLASS
-        )}
+        }
       >
-        <div className="min-w-0">
-          <h2 className="truncate text-xs font-semibold uppercase tracking-[0.08em] text-foreground">
-            {titulo}
-          </h2>
+        <span className="min-w-0" aria-hidden />
+        <div className="min-w-0 max-w-full text-center">
+          <h2 className={CATALOGO_FINDER_COLUMN_HEADER_TITLE_CLASS}>{titulo}</h2>
           {subtitulo && (
-            <p className="truncate text-[11px] text-muted-foreground">{subtitulo}</p>
+            <p className={CATALOGO_FINDER_COLUMN_HEADER_SUBTITLE_CLASS}>{subtitulo}</p>
           )}
         </div>
-        {mostrarNuevo && (
-          <Button
-            type="button"
-            size="icon-xs"
-            onClick={onNuevo}
-            className={cn(
-              headerCompacto && CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
-              !headerCompacto && "shrink-0"
-            )}
-            title="Nuevo"
-            aria-label="Nuevo"
-          >
-            <Plus aria-hidden />
-          </Button>
-        )}
+        <div className="flex min-w-0 justify-end">
+          {mostrarNuevo ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-xs"
+              onClick={onNuevo}
+              className={cn(
+                CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
+                !headerCompacto &&
+                  "size-6 [&_svg:not([class*='size-'])]:size-3"
+              )}
+              title="Nuevo"
+              aria-label="Nuevo"
+            >
+              <Plus aria-hidden />
+            </Button>
+          ) : (
+            <span className="size-4 shrink-0" aria-hidden />
+          )}
+        </div>
       </header>
       <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
     </section>

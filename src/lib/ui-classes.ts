@@ -17,15 +17,23 @@ export const CATALOGO_FINDER_ROW_SELECTED_CLASS =
 
 /** Header de `CatalogoFinderColumn` con subtítulo (altura según contenido). */
 export const CATALOGO_FINDER_COLUMN_HEADER_CLASS =
-  "flex shrink-0 items-center justify-between gap-2 border-b bg-muted/60 px-3 py-2";
+  "grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-primary px-3 py-2";
 
 /** Header compacto de `CatalogoFinderColumn` (solo título): altura fija igual en todas las columnas. */
 export const CATALOGO_FINDER_COLUMN_HEADER_COMPACT_CLASS =
-  "flex h-8 shrink-0 items-center justify-between gap-2 border-b bg-muted/60 px-3";
+  "grid h-8 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-primary px-3";
 
-/** Botón + del header compacto Finder: cabe dentro del `h-8` fijo del encabezado. */
+/** Título del header Finder: misma línea visual que `TableHead`. */
+export const CATALOGO_FINDER_COLUMN_HEADER_TITLE_CLASS =
+  "truncate text-center text-xs font-bold uppercase leading-none tracking-[0.08em] text-primary-foreground";
+
+/** Subtítulo opcional del header Finder sobre fondo primary. */
+export const CATALOGO_FINDER_COLUMN_HEADER_SUBTITLE_CLASS =
+  "truncate text-center text-[11px] text-primary-foreground/75";
+
+/** Botón + del header Finder sobre fondo primary. */
 export const CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS =
-  "size-5 shrink-0 rounded-sm p-0 [&_svg:not([class*='size-'])]:size-3";
+  "size-4 shrink-0 rounded-sm border-primary-foreground/30 bg-primary-foreground/10 p-0 text-primary-foreground shadow-none hover:bg-primary-foreground/20 hover:text-primary-foreground my-0.5 [&_svg:not([class*='size-'])]:size-2.5";
 
 /** Texto de mensaje de éxito con ícono (lista, modal). */
 export const TEXT_SUCCESS_CLASS = "text-primary";
