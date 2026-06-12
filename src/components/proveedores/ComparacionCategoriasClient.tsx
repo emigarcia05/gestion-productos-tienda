@@ -106,7 +106,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
 
-  const { costoBaseVar, baseIdEfectivoVar } = useMemo(
+  const { costoBase: costoBaseVar, baseIdEfectivo: baseIdEfectivoVar } = useMemo(
     () => resolveCostoBaseVar(productos, baseItemId),
     [productos, baseItemId]
   );
