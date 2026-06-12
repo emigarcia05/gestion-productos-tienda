@@ -34,9 +34,15 @@ export default function CatalogoFinderColumn({
           )}
         </div>
         {mostrarNuevo && (
-          <Button size="sm" type="button" onClick={onNuevo} className="shrink-0 h-8 gap-1">
-            <Plus className="h-4 w-4" />
-            Nuevo
+          <Button
+            type="button"
+            size="icon"
+            onClick={onNuevo}
+            className="size-6 shrink-0 rounded-md"
+            title="Nuevo"
+            aria-label="Nuevo"
+          >
+            <Plus className="size-3.5" aria-hidden />
           </Button>
         )}
       </header>

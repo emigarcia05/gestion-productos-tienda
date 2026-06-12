@@ -26,8 +26,11 @@ interface Props {
   onQuitarReferencia: (refCompId: string) => void;
 }
 
-/** COMP. 15 % · PRODUCTO 70 % · PX 10 % · acción 5 % */
-const REFERENCIA_GRID_CLASS = "grid grid-cols-[15fr_70fr_10fr_5fr] items-center gap-1.5";
+function referenciaGridClass(puedeEditar: boolean): string {
+  return puedeEditar
+    ? "grid grid-cols-[12fr_70fr_13fr_5fr] items-start gap-x-1.5"
+    : "grid grid-cols-[12fr_73fr_15fr] items-start gap-x-1.5";
+}
 
 export default function ComparacionReferenciaCompetenciaColumn({
   presentacionSeleccionada,
@@ -41,6 +44,7 @@ export default function ComparacionReferenciaCompetenciaColumn({
   onQuitarReferencia,
 }: Props) {
   const cantidad = referenciasCompetencia.length;
+  const gridClass = referenciaGridClass(puedeEditar);
 
   return (
     <CatalogoFinderColumn
@@ -62,14 +66,18 @@ export default function ComparacionReferenciaCompetenciaColumn({
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div
             className={cn(
-              REFERENCIA_GRID_CLASS,
+              gridClass,
               "border-b bg-muted/60 px-2 py-2 text-[11px] font-bold uppercase tracking-wide text-foreground"
             )}
           >
             <span className="text-center">COMP.</span>
             <span>PRODUCTO</span>
             <span className="text-right">PX.</span>
-            <span className="sr-only">Acciones</span>
+            {puedeEditar && (
+              <span className="flex items-center justify-center" aria-hidden>
+                <Trash2 className="h-4 w-4" />
+              </span>
+            )}
           </div>
           {referenciasCompetencia.map((ref) => {
             const esActiva = referenciaActivaId === ref.id;
@@ -80,7 +88,7 @@ export default function ComparacionReferenciaCompetenciaColumn({
               <div
                 key={ref.id}
                 className={cn(
-                  REFERENCIA_GRID_CLASS,
+                  gridClass,
                   "border-b px-2 py-2 text-xs",
                   CATALOGO_FINDER_ROW_INTERACTIVE_CLASS,
                   esActiva && CATALOGO_FINDER_ROW_SELECTED_CLASS
@@ -98,7 +106,7 @@ export default function ComparacionReferenciaCompetenciaColumn({
               >
                 <span
                   className={cn(
-                    "text-center font-mono text-[11px]",
+                    "pt-0.5 text-center font-mono leading-tight",
                     esActiva && "font-semibold text-primary"
                   )}
                 >
@@ -115,21 +123,21 @@ export default function ComparacionReferenciaCompetenciaColumn({
                 </span>
                 <span
                   className={cn(
-                    "text-right tabular-nums text-[11px]",
+                    "pt-0.5 text-right tabular-nums leading-tight",
                     esActiva ? "font-medium text-foreground" : "text-muted-foreground"
                   )}
                 >
                   {ref.pxMostrar != null ? `$${fmtPrecio(ref.pxMostrar)}` : "—"}
                 </span>
-                <span className="flex justify-center">
-                  {puedeEditar ? (
+                {puedeEditar && (
+                  <div className="flex items-start justify-center pt-0.5">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       className={cn(
                         TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-                        "!size-6 max-h-6 min-h-6 min-w-6 shrink-0 !p-0"
+                        "!size-7 max-h-7 min-h-7 min-w-7 shrink-0 !p-0"
                       )}
                       disabled={quitarPending}
                       title="Quitar referencia"
@@ -148,8 +156,8 @@ export default function ComparacionReferenciaCompetenciaColumn({
                         <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                       )}
                     </Button>
-                  ) : null}
-                </span>
+                  </div>
+                )}
               </div>
             );
           })}
