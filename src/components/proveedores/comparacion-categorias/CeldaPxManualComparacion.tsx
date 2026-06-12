@@ -3,22 +3,18 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { fmtPrecio } from "@/lib/format";
+import {
+  formatPxManualEnteroMask,
+  parsePxManualEnteroMask,
+} from "@/lib/comparacionCategoriasFormat";
 import { actualizarPxManualComparacionAction } from "@/actions/comparacionCategorias";
-
-function parsePxManualInput(raw: string): number | null | undefined {
-  const trimmed = raw.trim();
-  if (trimmed === "") return null;
-  if (!/^\d+$/.test(trimmed)) return undefined;
-  const n = Number(trimmed);
-  if (!Number.isSafeInteger(n) || n <= 0) return undefined;
-  return n;
-}
 
 interface Props {
   codExt: string;
   pxManual: number | null;
   puedeEditar: boolean;
+  onDraftChange: (pxManual: number | null) => void;
+  onDraftEnd: () => void;
   onSaved: (pxManual: number | null) => void;
 }
 
@@ -26,36 +22,51 @@ export default function CeldaPxManualComparacion({
   codExt,
   pxManual,
   puedeEditar,
+  onDraftChange,
+  onDraftEnd,
   onSaved,
 }: Props) {
-  const [draft, setDraft] = useState(pxManual != null ? String(pxManual) : "");
+  const [display, setDisplay] = useState(() => formatPxManualEnteroMask(pxManual));
   const [editando, setEditando] = useState(false);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
     if (!editando) {
-      setDraft(pxManual != null ? String(pxManual) : "");
+      setDisplay(formatPxManualEnteroMask(pxManual));
     }
   }, [pxManual, editando]);
 
+  function applyInput(raw: string) {
+    const parsed = parsePxManualEnteroMask(raw);
+    if (parsed === undefined) return;
+    setDisplay(parsed != null ? formatPxManualEnteroMask(parsed) : "");
+    onDraftChange(parsed);
+  }
+
   async function commit(raw: string) {
-    const parsed = parsePxManualInput(raw);
+    const parsed = parsePxManualEnteroMask(raw);
     if (parsed === undefined) {
-      toast.error("Ingresá un número entero mayor a cero.");
-      setDraft(pxManual != null ? String(pxManual) : "");
+      toast.error("Ingresá un importe entero mayor a cero.");
+      setDisplay(formatPxManualEnteroMask(pxManual));
+      onDraftEnd();
       return;
     }
-    if (parsed === pxManual) return;
+    if (parsed === pxManual) {
+      onDraftEnd();
+      return;
+    }
 
     setPending(true);
     try {
       const res = await actualizarPxManualComparacionAction(codExt, parsed);
       if (!res.ok) {
         toast.error(res.error ?? "Error al guardar px manual.");
-        setDraft(pxManual != null ? String(pxManual) : "");
+        setDisplay(formatPxManualEnteroMask(pxManual));
+        onDraftEnd();
         return;
       }
       onSaved(res.data?.pxManual ?? null);
+      onDraftEnd();
     } finally {
       setPending(false);
       setEditando(false);
@@ -65,7 +76,7 @@ export default function CeldaPxManualComparacion({
   if (!puedeEditar) {
     return (
       <span className="tabular-nums text-foreground">
-        {pxManual != null ? `$${fmtPrecio(pxManual)}` : "—"}
+        {pxManual != null ? formatPxManualEnteroMask(pxManual) : "—"}
       </span>
     );
   }
@@ -74,26 +85,33 @@ export default function CeldaPxManualComparacion({
     <Input
       type="text"
       inputMode="numeric"
-      pattern="[0-9]*"
-      value={draft}
+      value={display}
       disabled={pending}
       onChange={(e) => {
         setEditando(true);
-        setDraft(e.target.value.replace(/\D/g, ""));
+        applyInput(e.target.value);
       }}
       onFocus={() => setEditando(true)}
-      onBlur={() => void commit(draft)}
+      onBlur={() => void commit(display)}
+      onPaste={(e) => {
+        e.preventDefault();
+        if (pending) return;
+        setEditando(true);
+        const text = e.clipboardData.getData("text");
+        applyInput(text);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           e.currentTarget.blur();
         }
         if (e.key === "Escape") {
-          setDraft(pxManual != null ? String(pxManual) : "");
+          setDisplay(formatPxManualEnteroMask(pxManual));
+          onDraftEnd();
           setEditando(false);
           e.currentTarget.blur();
         }
       }}
-      className="h-7 min-w-0 w-full max-w-[6.5rem] mx-auto text-center tabular-nums"
+      className="h-7 min-w-0 w-full max-w-[9rem] mx-auto text-center tabular-nums"
       aria-label="Px manual"
       placeholder="—"
     />

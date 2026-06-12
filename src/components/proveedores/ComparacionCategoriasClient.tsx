@@ -18,7 +18,7 @@ import {
   calcMargenSegunPxReferencia,
 } from "@/lib/calculos";
 import { fmtPrecio } from "@/lib/format";
-import { fmtMargenPxListaTabla } from "@/lib/pxListasPreciosFormat";
+import { fmtMargenComparacionPct } from "@/lib/comparacionCategoriasFormat";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import {
   COMP_CATEGORIAS_COMPARISON_STACK_CLASS,
@@ -103,6 +103,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
   const [quitarReferenciaPending, setQuitarReferenciaPending] = useState(false);
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
   const [baseItemId, setBaseItemId] = useState<string | null>(null);
+  const [pxManualDraft, setPxManualDraft] = useState<Record<string, number | null>>({});
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
 
@@ -122,11 +123,13 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
         setReferenciaCompetencia(res.data.referenciaCompetencia);
         setLabelCompleto(res.data.labelCompleto);
         setBaseItemId(null);
+        setPxManualDraft({});
       } else {
         setProductos([]);
         setReferenciaCompetencia(null);
         setLabelCompleto("");
         setBaseItemId(null);
+        setPxManualDraft({});
       }
     } finally {
       setLoadingProductos(false);
@@ -141,6 +144,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     setReferenciaCompetencia(null);
     setLabelCompleto("");
     setBaseItemId(null);
+    setPxManualDraft({});
   }, []);
 
   const handleSelectSubcategoria = useCallback((id: string) => {
@@ -150,12 +154,14 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     setReferenciaCompetencia(null);
     setLabelCompleto("");
     setBaseItemId(null);
+    setPxManualDraft({});
   }, []);
 
   const handleSelectPresentacion = useCallback(
     (id: string) => {
       setSelectedPresentacionId(id);
       setBaseItemId(null);
+      setPxManualDraft({});
       void loadProductos(id);
     },
     [loadProductos]
@@ -214,11 +220,35 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
 
   const columnasTabla = puedeEditar ? 10 : 9;
 
+  const resolvePxManualVivo = useCallback(
+    (codExt: string, guardado: number | null): number | null => {
+      if (Object.prototype.hasOwnProperty.call(pxManualDraft, codExt)) {
+        return pxManualDraft[codExt];
+      }
+      return guardado;
+    },
+    [pxManualDraft]
+  );
+
+  const handlePxManualDraft = useCallback((codExt: string, pxManual: number | null) => {
+    setPxManualDraft((prev) => ({ ...prev, [codExt]: pxManual }));
+  }, []);
+
+  const handlePxManualDraftEnd = useCallback((codExt: string) => {
+    setPxManualDraft((prev) => {
+      if (!Object.prototype.hasOwnProperty.call(prev, codExt)) return prev;
+      const next = { ...prev };
+      delete next[codExt];
+      return next;
+    });
+  }, []);
+
   const handlePxManualSaved = useCallback((codExt: string, pxManual: number | null) => {
     setProductos((prev) =>
       prev.map((p) => (p.codExt === codExt ? { ...p, pxManualComparacion: pxManual } : p))
     );
-  }, []);
+    handlePxManualDraftEnd(codExt);
+  }, [handlePxManualDraftEnd]);
 
   return (
     <>
@@ -334,7 +364,8 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                             pxReferenciaMargen,
                             p.pxCompraFinalSinIva
                           );
-                          const pxManual = p.pxManualComparacion;
+                          const pxManualGuardado = p.pxManualComparacion;
+                          const pxManual = resolvePxManualVivo(p.codExt, pxManualGuardado);
                           const difManualVsRef = calcDifPctPxManualVsReferencia(
                             pxManual,
                             pxReferenciaMargen
@@ -383,7 +414,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                               </TableCell>
                               <TableCell className="celda-datos text-center tabular-nums tabla-bloque-secundario-cell-divider">
                                 {margenPxReferencia != null ? (
-                                  fmtMargenPxListaTabla(margenPxReferencia)
+                                  fmtMargenComparacionPct(margenPxReferencia)
                                 ) : (
                                   <span className="text-muted-foreground">—</span>
                                 )}
@@ -391,8 +422,10 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                               <TableCell className="celda-datos text-center tabla-bloque-secundario-cell">
                                 <CeldaPxManualComparacion
                                   codExt={p.codExt}
-                                  pxManual={pxManual}
+                                  pxManual={pxManualGuardado}
                                   puedeEditar={puedeEditar}
+                                  onDraftChange={(valor) => handlePxManualDraft(p.codExt, valor)}
+                                  onDraftEnd={() => handlePxManualDraftEnd(p.codExt)}
                                   onSaved={(valor) => handlePxManualSaved(p.codExt, valor)}
                                 />
                               </TableCell>
@@ -405,7 +438,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                               </TableCell>
                               <TableCell className="celda-datos text-center tabular-nums tabla-bloque-secundario-cell">
                                 {margenPxManual != null ? (
-                                  fmtMargenPxListaTabla(margenPxManual)
+                                  fmtMargenComparacionPct(margenPxManual)
                                 ) : (
                                   <span className="text-muted-foreground">—</span>
                                 )}
