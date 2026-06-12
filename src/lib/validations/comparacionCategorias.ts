@@ -74,3 +74,8 @@ export const actualizarDtoExtraComparacionSchema = z.object({
   listaPrecioProveedorId: listaPreciosCodExtSchema,
   dtoExtra: z.number().int().min(0).max(99).nullable(),
 });
+
+export const actualizarPxManualComparacionSchema = z.object({
+  listaPrecioProveedorId: listaPreciosCodExtSchema,
+  pxManual: z.number().int().positive().nullable(),
+});

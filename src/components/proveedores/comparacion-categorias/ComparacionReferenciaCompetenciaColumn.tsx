@@ -91,7 +91,7 @@ export default function ComparacionReferenciaCompetenciaColumn({
       ) : (
         <div className="flex flex-col gap-3 px-3 py-3">
           <p className="text-sm text-muted-foreground leading-snug">
-            Sin referencia (VAR usa tilde manual o queda vacía)
+            Sin referencia para calcular margen
           </p>
           {puedeEditar && (
             <Button

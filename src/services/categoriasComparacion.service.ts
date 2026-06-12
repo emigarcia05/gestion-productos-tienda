@@ -115,6 +115,8 @@ export interface ProductoEnCategoria {
   proveedorPrefijo: string | null;
   /** DTO. EXTRA (0-99) persistido para "Comp. Por Cat." por ítem. */
   dtoExtraComparacion: number | null;
+  /** Px. venta manual (entero) en Comparacion por categorías. */
+  pxManualComparacion: number | null;
   costoCompraObjetivo: number | null;
   diferenciaVsObjetivo: number | null; // pxCompraFinalSinIva - objetivo (negativo = bajo objetivo)
 }
@@ -191,6 +193,7 @@ export async function getProductosPorPresentacion(
         include: {
           proveedor: { select: { prefijo: true } },
           dtoExtraComparacion: { select: { dtoExtra: true } },
+          pxManualComparacion: { select: { pxManual: true } },
         },
         orderBy: { pxCompraFinalSinIva: "asc" },
       },
@@ -222,6 +225,7 @@ export async function getProductosPorPresentacion(
       pxCompraFinalSinIva: pxFinal,
       proveedorPrefijo: lp.proveedor?.prefijo ?? null,
       dtoExtraComparacion: lp.dtoExtraComparacion?.dtoExtra ?? null,
+      pxManualComparacion: lp.pxManualComparacion?.pxManual ?? null,
       costoCompraObjetivo: objetivo,
       diferenciaVsObjetivo: dif,
     };
@@ -694,5 +698,24 @@ export async function actualizarDtoExtraComparacionItem(
     where: { listaPrecioProveedorCodExt },
     create: { listaPrecioProveedorCodExt, dtoExtra },
     update: { dtoExtra },
+  });
+}
+
+/** Persistir px. venta manual (entero) por ítem en Comparacion. */
+export async function actualizarPxManualComparacionItem(
+  listaPrecioProveedorCodExt: string,
+  pxManual: number | null
+): Promise<void> {
+  if (pxManual === null) {
+    await prisma.comparacionPxManualItem.deleteMany({
+      where: { listaPrecioProveedorCodExt },
+    });
+    return;
+  }
+
+  await prisma.comparacionPxManualItem.upsert({
+    where: { listaPrecioProveedorCodExt },
+    create: { listaPrecioProveedorCodExt, pxManual },
+    update: { pxManual },
   });
 }

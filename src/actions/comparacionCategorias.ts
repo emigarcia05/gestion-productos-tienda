@@ -18,6 +18,7 @@ import {
   asignarProductosAPresentacion,
   quitarAsignacionPresentacion,
   actualizarDtoExtraComparacionItem,
+  actualizarPxManualComparacionItem,
   buscarOpcionesReferenciaCompetencia,
   asignarReferenciaCompetenciaPresentacion,
   quitarReferenciaCompetenciaPresentacion,
@@ -38,6 +39,7 @@ import {
   idsProductosSchema,
   comparacionIdSchema,
   actualizarDtoExtraComparacionSchema,
+  actualizarPxManualComparacionSchema,
   asignarReferenciaCompetenciaSchema,
   buscarReferenciaCompetenciaSchema,
 } from "@/lib/validations/comparacionCategorias";
@@ -357,6 +359,31 @@ export async function actualizarDtoExtraComparacionAction(
     return { ok: true, data: { dtoExtra: parsed.data.dtoExtra } };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al guardar DTO extra." };
+  }
+}
+
+/** Persistir px. venta manual (entero o null) por ítem en Comparacion. */
+export async function actualizarPxManualComparacionAction(
+  listaPrecioProveedorId: string,
+  pxManual: number | null
+): Promise<ActionResult<{ pxManual: number | null }>> {
+  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+
+  const parsed = actualizarPxManualComparacionSchema.safeParse({
+    listaPrecioProveedorId,
+    pxManual,
+  });
+  if (!parsed.success) return { ok: false, error: "Px manual inválido." };
+
+  try {
+    await actualizarPxManualComparacionItem(
+      parsed.data.listaPrecioProveedorId,
+      parsed.data.pxManual
+    );
+    revalidateComparacionCategorias();
+    return { ok: true, data: { pxManual: parsed.data.pxManual } };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error al guardar px manual." };
   }
 }
 

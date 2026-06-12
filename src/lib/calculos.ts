@@ -50,17 +50,34 @@ export function calcMargenSinIvaPct(
   return ((neto / costoCompra) - 1) * 100;
 }
 
+/** Divisor IVA 21 % para px de venta en Comp. Categorias — MARGEN (SEGÚN PX REFERENCIA). */
+const IVA_PX_VENTA_REFERENCIA_DIVISOR = 1.21;
+
 /**
- * Margen % sin IVA si el ítem se vendiera al px de referencia (competencia / lista tienda con IVA).
- * Usa `calcMargenSinIvaPct`: neto = pxReferencia / (1 + IVA%); margen = (neto / costoSinIva − 1) × 100.
+ * Comp. Categorias — **MARGEN (SEGÚN PX REFERENCIA)**:
+ * `(((pxVtaReferencia / 1.21) / costo) − 1) × 100`
+ * - `pxVtaReferencia`: px de venta del producto referido (competencia).
+ * - `costo`: `px_compra_final_sin_iva` de la fila analizada.
  */
 export function calcMargenSegunPxReferencia(
-  pxReferencia: number | null | undefined,
-  costoCompraSinIva: number | null | undefined,
-  porcIva: number = 21
+  pxVtaReferencia: number | null | undefined,
+  costoCompraSinIva: number | null | undefined
 ): number | null {
-  if (pxReferencia == null || costoCompraSinIva == null) return null;
-  return calcMargenSinIvaPct(pxReferencia, costoCompraSinIva, porcIva);
+  if (pxVtaReferencia == null || costoCompraSinIva == null) return null;
+  if (!(pxVtaReferencia > 0) || !(costoCompraSinIva > 0)) return null;
+  if (!Number.isFinite(pxVtaReferencia) || !Number.isFinite(costoCompraSinIva)) return null;
+  return ((pxVtaReferencia / IVA_PX_VENTA_REFERENCIA_DIVISOR / costoCompraSinIva) - 1) * 100;
+}
+
+/** Dif. % entera: px manual vs px de venta de referencia — `round((manual − ref) / ref × 100)`. */
+export function calcDifPctPxManualVsReferencia(
+  pxManual: number | null | undefined,
+  pxVtaReferencia: number | null | undefined
+): number | null {
+  if (pxManual == null || pxVtaReferencia == null) return null;
+  if (!(pxManual > 0) || !(pxVtaReferencia > 0)) return null;
+  if (!Number.isFinite(pxManual) || !Number.isFinite(pxVtaReferencia)) return null;
+  return Math.round(((pxManual - pxVtaReferencia) / pxVtaReferencia) * 100);
 }
 
 /** Inverso de `calcMargenSinIvaPct`: PX lista con IVA desde margen % sobre costo sin IVA. */

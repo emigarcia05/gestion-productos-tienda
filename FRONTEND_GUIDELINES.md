@@ -786,9 +786,9 @@ Layout compartido en `@/lib/comparacionCategoriasLayout.ts`: **`contentWidth="wi
 
 Submódulo **Comparacion** (`ComparacionCategoriasClient.tsx`): sin `FilterBar`. Arriba, selector en cascada **solo lectura** (`ComparacionCategoriaSelector`, **4 columnas** `catalogo-finder`: **CATEGORÍA** → **SUBCATEGORÍA** → **PRESENTACIÓN** → **REFERENCIA COMPETENCIA**); el mantenimiento del catálogo está en **Categorias**. Al elegir una **presentación**, se cargan los productos asignados (`getProductosPorPresentacionAction` → filas de `prod_precios_provee` vía `id_presentacion`).
 
-**Columna Referencia competencia** (`ComparacionReferenciaCompetenciaColumn`): muestra la referencia asignada (etiqueta + precio resuelto) o estado vacío; botones **Elegir referencia** / **Cambiar** / **Quitar** abren `ElegirReferenciaCompetenciaModal` o quitan la FK. Catálogo Px Competencia + Px. Vta. Sugerido (mismo criterio que `/gestion-productos/tienda/cx-px-tienda`; precio vía `resolverPreciosCompetenciaMostrar`). **VAR**: si hay **tilde** en fila proveedor → base = esa fila; si no hay tilde pero hay referencia → base = precio referencia; tilde anula referencia como base.
+**Columna Referencia competencia** (`ComparacionReferenciaCompetenciaColumn`): muestra la referencia asignada (etiqueta + precio resuelto) o estado vacío; botones **Elegir referencia** / **Cambiar** / **Quitar** abren `ElegirReferenciaCompetenciaModal` o quitan la FK. Catálogo Px Competencia + Px. Vta. Sugerido (mismo criterio que `/gestion-productos/tienda/cx-px-tienda`; precio vía `resolverPreciosCompetenciaMostrar`). **VAR**: solo compara **costos** entre filas proveedor (`px_compra_final_sin_iva`); base = fila con **tilde** manual o, sin tilde, el **costo más bajo** del listado (`resolveCostoBaseVar` en `ComparacionCategoriasClient`). La referencia de competencia alimenta solo **MARGEN (SEGÚN PX REFERENCIA)**.
 
-Columnas bloque principal: **TILDE 5 %** · **PROVEEDOR 10 %** · **DESCRIPCIÓN 41 %** (48 % sin acciones) · **COSTO 12 %** · **VAR 10 %**. Bloque secundario (`tabla-bloque-secundario-*`): **MARGEN (SEGÚN PX REFERENCIA) 14 %** — `calcMargenSegunPxReferencia(pxMostrar referencia, `px_compra_final_sin_iva` fila)` = `calcMargenSinIvaPct` (neto desde px referencia con IVA 21 %). Sin referencia asignada → `—`. Acciones **8 %** (+ asignar / cesto quitar). Modal **Asignar productos** y modal **Elegir referencia**: `max-w-[126rem]`.
+Columnas bloque principal: **TILDE 3 %** · **PROVEEDOR 7 %** · **DESCRIPCIÓN 14 %** · **COSTO 8 %** · **VAR 7 %** (`scrollX` en tabla). Bloque secundario (`tabla-bloque-secundario-*`): **MARGEN (SEGÚN PX REFERENCIA) 9 %** — `(((pxVtaReferencia / 1.21) / costo) − 1) × 100`; **PX MANUAL 8 %** — input entero persistido (`prod_comp_px_manual`, `CeldaPxManualComparacion`, `actualizarPxManualComparacionAction`); **DIF C/ REF. 8 %** — `calcDifPctPxManualVsReferencia` (% entero manual vs `pxMostrar` referencia); **MARGEN (SEGÚN PX MANUAL) 9 %** — misma fórmula con px manual. Acciones **8 %**. Modal **Asignar productos** y modal **Elegir referencia**: `max-w-[126rem]`.
 
 Persistencia de **DTO. EXTRA** (`actualizarDtoExtraComparacionAction`) sigue en backend; la UI de DTO se reintroducirá en pasos posteriores de la reforma.
 
@@ -1219,6 +1219,10 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-06-04): **Act. Cx. — modal PDF aumentos** — Excel **`Act Cx dd-mm hh-mm.xls`**; tras exportar, modal **¿Desea exportar el informe de aumento?**; PDF vía `exportarResumenAumentosPxAction`.*
 
 *Última actualización (2026-06-10): **Sidebar — `Cx y Px Tienda`** — agrupador colapsable en **ANALISIS DE PRECIOS** (sin `href`; hijos **Cx Compra** y **Px Listas**); patrón `SubmoduleItem` sin ruta + `children` en `Sidebar.tsx`.*
+
+*Última actualización (2026-06-12): **Comp. Categorias — px manual + DIF C/ REF. + margen px manual** — bloque secundario ampliado; persistencia `prod_comp_px_manual`.*
+
+*Última actualización (2026-06-11): **Comp. Categorias — VAR solo entre costos** — base automática = costo más bajo; tilde manual opcional; referencia competencia solo para margen.*
 
 *Última actualización (2026-06-11): **Comp. Categorias — columna MARGEN (SEGÚN PX REFERENCIA)** — bloque secundario con divisor; `calcMargenSegunPxReferencia` en `@/lib/calculos.ts`.*
 

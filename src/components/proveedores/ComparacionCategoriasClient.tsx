@@ -13,7 +13,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Trash2 } from "lucide-react";
-import { calcMargenSegunPxReferencia } from "@/lib/calculos";
+import {
+  calcDifPctPxManualVsReferencia,
+  calcMargenSegunPxReferencia,
+} from "@/lib/calculos";
 import { fmtPrecio } from "@/lib/format";
 import { fmtMargenPxListaTabla } from "@/lib/pxListasPreciosFormat";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -47,6 +50,7 @@ import {
 } from "@/actions/comparacionCategorias";
 import AsignarProductosModal from "@/components/proveedores/comparacion-categorias/AsignarProductosModal";
 import ElegirReferenciaCompetenciaModal from "@/components/proveedores/comparacion-categorias/ElegirReferenciaCompetenciaModal";
+import CeldaPxManualComparacion from "@/components/proveedores/comparacion-categorias/CeldaPxManualComparacion";
 import { toast } from "sonner";
 
 interface Props {
@@ -57,6 +61,32 @@ interface Props {
 function calcVariacionPct(costo: number | null, base: number | null): number | null {
   if (costo == null || costo <= 0 || base == null || base <= 0) return null;
   return ((costo - base) / base) * 100;
+}
+
+/** Base VAR: tilde manual o, si no hay, el costo más bajo entre los productos comparados. */
+function resolveCostoBaseVar(
+  productos: ProductoEnCategoria[],
+  baseItemId: string | null
+): { costoBase: number | null; baseIdEfectivo: string | null } {
+  if (baseItemId) {
+    const manual = productos.find((p) => p.id === baseItemId);
+    const px = manual?.pxCompraFinalSinIva;
+    if (px != null && px > 0) {
+      return { costoBase: px, baseIdEfectivo: baseItemId };
+    }
+  }
+
+  let baseIdEfectivo: string | null = null;
+  let costoBase: number | null = null;
+  for (const p of productos) {
+    const px = p.pxCompraFinalSinIva;
+    if (px == null || px <= 0) continue;
+    if (costoBase == null || px < costoBase) {
+      costoBase = px;
+      baseIdEfectivo = p.id;
+    }
+  }
+  return { costoBase, baseIdEfectivo };
 }
 
 export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props) {
@@ -76,17 +106,12 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
 
-  const precioBaseVar = useMemo(() => {
-    if (baseItemId) {
-      const base = productos.find((p) => p.id === baseItemId);
-      const px = base?.pxCompraFinalSinIva;
-      return px != null && px > 0 ? px : null;
-    }
-    const pxRef = referenciaCompetencia?.pxMostrar;
-    return pxRef != null && pxRef > 0 ? pxRef : null;
-  }, [baseItemId, productos, referenciaCompetencia]);
+  const { costoBaseVar, baseIdEfectivoVar } = useMemo(
+    () => resolveCostoBaseVar(productos, baseItemId),
+    [productos, baseItemId]
+  );
 
-  const hayBaseVar = baseItemId != null || referenciaCompetencia?.pxMostrar != null;
+  const hayBaseVar = costoBaseVar != null;
 
   const loadProductos = useCallback(async (presentacionId: string) => {
     setLoadingProductos(true);
@@ -187,7 +212,13 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
 
   const pxReferenciaMargen = referenciaCompetencia?.pxMostrar ?? null;
 
-  const columnasTabla = puedeEditar ? 7 : 6;
+  const columnasTabla = puedeEditar ? 10 : 9;
+
+  const handlePxManualSaved = useCallback((codExt: string, pxManual: number | null) => {
+    setProductos((prev) =>
+      prev.map((p) => (p.codExt === codExt ? { ...p, pxManualComparacion: pxManual } : p))
+    );
+  }, []);
 
   return (
     <>
@@ -226,14 +257,17 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                 </p>
               ) : (
                 <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-                  <Table variant="compact" scrollX={false}>
+                  <Table variant="compact" scrollX>
                     <colgroup>
-                      <col className="w-[5%]" />
-                      <col className="w-[10%]" />
-                      <col className={puedeEditar ? "w-[41%]" : "w-[48%]"} />
-                      <col className="w-[12%]" />
-                      <col className="w-[10%]" />
-                      <col className="w-[14%]" />
+                      <col className="w-[3%]" />
+                      <col className="w-[7%]" />
+                      <col className={puedeEditar ? "w-[14%]" : "w-[16%]"} />
+                      <col className="w-[8%]" />
+                      <col className="w-[7%]" />
+                      <col className="w-[9%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[9%]" />
                       {puedeEditar && <col className="w-[8%]" />}
                     </colgroup>
                     <TableHeader>
@@ -245,6 +279,15 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                         <TableHead className="text-center">VAR</TableHead>
                         <TableHead className="text-center tabla-bloque-secundario-head-divider">
                           MARGEN (SEGÚN PX REFERENCIA)
+                        </TableHead>
+                        <TableHead className="text-center tabla-bloque-secundario-head">
+                          PX MANUAL
+                        </TableHead>
+                        <TableHead className="text-center tabla-bloque-secundario-head">
+                          DIF C/ REF.
+                        </TableHead>
+                        <TableHead className="text-center tabla-bloque-secundario-head">
+                          MARGEN (SEGÚN PX MANUAL)
                         </TableHead>
                         {puedeEditar && (
                           <TableHead className="text-center p-0 align-middle">
@@ -281,13 +324,23 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                       ) : (
                         productos.map((p) => {
                           const esBaseTilde = baseItemId === p.id;
+                          const esBaseVar = p.id === baseIdEfectivoVar;
                           const variacionPct = !hayBaseVar
                             ? null
-                            : esBaseTilde
+                            : esBaseVar
                               ? 0
-                              : calcVariacionPct(p.pxCompraFinalSinIva, precioBaseVar);
+                              : calcVariacionPct(p.pxCompraFinalSinIva, costoBaseVar);
                           const margenPxReferencia = calcMargenSegunPxReferencia(
                             pxReferenciaMargen,
+                            p.pxCompraFinalSinIva
+                          );
+                          const pxManual = p.pxManualComparacion;
+                          const difManualVsRef = calcDifPctPxManualVsReferencia(
+                            pxManual,
+                            pxReferenciaMargen
+                          );
+                          const margenPxManual = calcMargenSegunPxReferencia(
+                            pxManual,
                             p.pxCompraFinalSinIva
                           );
 
@@ -331,6 +384,28 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                               <TableCell className="celda-datos text-center tabular-nums tabla-bloque-secundario-cell-divider">
                                 {margenPxReferencia != null ? (
                                   fmtMargenPxListaTabla(margenPxReferencia)
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="celda-datos text-center tabla-bloque-secundario-cell">
+                                <CeldaPxManualComparacion
+                                  codExt={p.codExt}
+                                  pxManual={pxManual}
+                                  puedeEditar={puedeEditar}
+                                  onSaved={(valor) => handlePxManualSaved(p.codExt, valor)}
+                                />
+                              </TableCell>
+                              <TableCell className="celda-datos text-center tabla-bloque-secundario-cell">
+                                {difManualVsRef != null ? (
+                                  <CeldaDifPct pct={difManualVsRef} />
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="celda-datos text-center tabular-nums tabla-bloque-secundario-cell">
+                                {margenPxManual != null ? (
+                                  fmtMargenPxListaTabla(margenPxManual)
                                 ) : (
                                   <span className="text-muted-foreground">—</span>
                                 )}
