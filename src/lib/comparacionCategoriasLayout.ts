@@ -9,9 +9,21 @@ export const COMP_CATEGORIAS_CONTENT_WIDTH = "wide150" as const;
 /** Padding horizontal reducido para maximizar área de tablas Finder. */
 export const COMP_CATEGORIAS_PAGE_CONTENT_CLASS = "!px-3 sm:!px-4 md:!px-5";
 
-/** Selector Finder Comparacion: 4 columnas (Categoría → Subcategoría → Presentación → Referencia); altura +50 %. */
+/** Stack vertical Comparacion: selector 40 % + tabla 60 % (`flex-[2]` / `flex-[3]`), `gap-3` entre paneles. */
+export const COMP_CATEGORIAS_COMPARISON_STACK_CLASS =
+  "flex flex-1 min-h-0 flex-col gap-3 py-3";
+
+/** Panel superior — selector Finder (Categorías): 40 % del alto útil. */
+export const COMP_CATEGORIAS_SELECTOR_PANEL_CLASS =
+  "flex min-h-0 flex-[2] flex-col overflow-hidden";
+
+/** Panel inferior — ítems a comparar: 60 % del alto útil. */
+export const COMP_CATEGORIAS_TABLA_PANEL_CLASS =
+  "flex min-h-0 flex-[3] flex-col min-w-0";
+
+/** Grid interno del selector: 4 columnas, ocupa todo el panel superior. */
 export const COMP_CATEGORIAS_SELECTOR_GRID_CLASS =
-  "grid shrink-0 grid-cols-4 gap-3 min-h-[330px] max-h-[420px]";
+  "grid h-full min-h-0 grid-cols-4 gap-3";
 
 /** Modal Asignar Productos: `ModalTablaConFiltros` base `max-w-[84rem]` × 1,5. */
 export const MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS = "max-w-[126rem]";

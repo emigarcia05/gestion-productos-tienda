@@ -50,6 +50,19 @@ export function calcMargenSinIvaPct(
   return ((neto / costoCompra) - 1) * 100;
 }
 
+/**
+ * Margen % sin IVA si el ítem se vendiera al px de referencia (competencia / lista tienda con IVA).
+ * Usa `calcMargenSinIvaPct`: neto = pxReferencia / (1 + IVA%); margen = (neto / costoSinIva − 1) × 100.
+ */
+export function calcMargenSegunPxReferencia(
+  pxReferencia: number | null | undefined,
+  costoCompraSinIva: number | null | undefined,
+  porcIva: number = 21
+): number | null {
+  if (pxReferencia == null || costoCompraSinIva == null) return null;
+  return calcMargenSinIvaPct(pxReferencia, costoCompraSinIva, porcIva);
+}
+
 /** Inverso de `calcMargenSinIvaPct`: PX lista con IVA desde margen % sobre costo sin IVA. */
 export function calcPxListaDesdeMargenSinIvaPct(
   margenPct: number,

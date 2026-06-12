@@ -13,11 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Trash2 } from "lucide-react";
+import { calcMargenSegunPxReferencia } from "@/lib/calculos";
 import { fmtPrecio } from "@/lib/format";
+import { fmtMargenPxListaTabla } from "@/lib/pxListasPreciosFormat";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import {
+  COMP_CATEGORIAS_COMPARISON_STACK_CLASS,
   COMP_CATEGORIAS_CONTENT_WIDTH,
   COMP_CATEGORIAS_PAGE_CONTENT_CLASS,
+  COMP_CATEGORIAS_SELECTOR_PANEL_CLASS,
+  COMP_CATEGORIAS_TABLA_PANEL_CLASS,
 } from "@/lib/comparacionCategoriasLayout";
 import ComparacionCategoriaSelector from "@/components/proveedores/comparacion-categorias/ComparacionCategoriaSelector";
 import CeldaDifPct from "@/components/shared/CeldaDifPct";
@@ -180,7 +185,9 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     [removingItemId, selectedPresentacionId]
   );
 
-  const columnasTabla = puedeEditar ? 6 : 5;
+  const pxReferenciaMargen = referenciaCompetencia?.pxMostrar ?? null;
+
+  const columnasTabla = puedeEditar ? 7 : 6;
 
   return (
     <>
@@ -190,24 +197,26 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
         contentWidth={COMP_CATEGORIAS_CONTENT_WIDTH}
         contentClassName={COMP_CATEGORIAS_PAGE_CONTENT_CLASS}
       >
-        <div className="flex flex-1 min-h-0 flex-col gap-3 py-3">
-          <ComparacionCategoriaSelector
-            arbol={arbolInicial}
-            selectedCategoriaId={selectedCategoriaId}
-            selectedSubcategoriaId={selectedSubcategoriaId}
-            selectedPresentacionId={selectedPresentacionId}
-            loadingReferencia={loadingProductos}
-            referenciaCompetencia={referenciaCompetencia}
-            puedeEditarReferencia={puedeEditar}
-            quitarReferenciaPending={quitarReferenciaPending}
-            onSelectCategoria={handleSelectCategoria}
-            onSelectSubcategoria={handleSelectSubcategoria}
-            onSelectPresentacion={handleSelectPresentacion}
-            onElegirReferencia={() => setModalReferencia(true)}
-            onQuitarReferencia={() => void handleQuitarReferencia()}
-          />
+        <div className={COMP_CATEGORIAS_COMPARISON_STACK_CLASS}>
+          <div className={COMP_CATEGORIAS_SELECTOR_PANEL_CLASS}>
+            <ComparacionCategoriaSelector
+              arbol={arbolInicial}
+              selectedCategoriaId={selectedCategoriaId}
+              selectedSubcategoriaId={selectedSubcategoriaId}
+              selectedPresentacionId={selectedPresentacionId}
+              loadingReferencia={loadingProductos}
+              referenciaCompetencia={referenciaCompetencia}
+              puedeEditarReferencia={puedeEditar}
+              quitarReferenciaPending={quitarReferenciaPending}
+              onSelectCategoria={handleSelectCategoria}
+              onSelectSubcategoria={handleSelectSubcategoria}
+              onSelectPresentacion={handleSelectPresentacion}
+              onElegirReferencia={() => setModalReferencia(true)}
+              onQuitarReferencia={() => void handleQuitarReferencia()}
+            />
+          </div>
 
-          <Card className="flex min-h-0 flex-1 flex-col gap-0 pt-0 min-w-0">
+          <Card className={cn("flex flex-col gap-0 pt-0", COMP_CATEGORIAS_TABLA_PANEL_CLASS)}>
             <CardContent className="flex-1 min-h-0 overflow-hidden py-0 pb-3 px-0">
               {loadingProductos ? (
                 <p className="text-sm text-muted-foreground py-4 px-4">Cargando productos…</p>
@@ -221,9 +230,10 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                     <colgroup>
                       <col className="w-[5%]" />
                       <col className="w-[10%]" />
-                      <col className={puedeEditar ? "w-[52%]" : "w-[60%]"} />
-                      <col className="w-[13%]" />
+                      <col className={puedeEditar ? "w-[41%]" : "w-[48%]"} />
                       <col className="w-[12%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[14%]" />
                       {puedeEditar && <col className="w-[8%]" />}
                     </colgroup>
                     <TableHeader>
@@ -233,6 +243,9 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                         <TableHead>DESCRIPCIÓN</TableHead>
                         <TableHead className="text-right">COSTO</TableHead>
                         <TableHead className="text-center">VAR</TableHead>
+                        <TableHead className="text-center tabla-bloque-secundario-head-divider">
+                          MARGEN (SEGÚN PX REFERENCIA)
+                        </TableHead>
                         {puedeEditar && (
                           <TableHead className="text-center p-0 align-middle">
                             <div className="flex h-full min-h-0 w-full items-center justify-center p-1.5">
@@ -273,6 +286,10 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                             : esBaseTilde
                               ? 0
                               : calcVariacionPct(p.pxCompraFinalSinIva, precioBaseVar);
+                          const margenPxReferencia = calcMargenSegunPxReferencia(
+                            pxReferenciaMargen,
+                            p.pxCompraFinalSinIva
+                          );
 
                           return (
                             <TableRow key={p.id} className="hover:bg-transparent">
@@ -307,6 +324,13 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                               <TableCell className="celda-datos text-center">
                                 {variacionPct != null ? (
                                   <CeldaDifPct pct={variacionPct} />
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="celda-datos text-center tabular-nums tabla-bloque-secundario-cell-divider">
+                                {margenPxReferencia != null ? (
+                                  fmtMargenPxListaTabla(margenPxReferencia)
                                 ) : (
                                   <span className="text-muted-foreground">—</span>
                                 )}
