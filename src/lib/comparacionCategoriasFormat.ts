@@ -15,11 +15,25 @@ export function formatPxManualEnteroMask(n: number | null | undefined): string {
   return `$${fmtPrecio(n)}`;
 }
 
-/** Entero con signo desde input DIF PX REF MANUAL; vacío → `null`; inválido → `undefined`. */
+/** Sanitiza texto mientras se escribe DIF PX REF MANUAL (entero con signo + `%` opcional). */
+export function sanitizeDifPxRefManualInput(raw: string): string {
+  const sinPct = raw.replace(/%/g, "").trimStart();
+  const m = sinPct.match(/^([+-]?)(\d*)/);
+  if (!m) return "";
+  const signPrefix = m[1];
+  const digits = m[2] ?? "";
+  if (signPrefix === "-" && digits === "") return "-";
+  if (signPrefix === "+" && digits === "") return "+";
+  if (digits === "") return "";
+  return `${signPrefix === "-" ? "-" : ""}${digits}%`;
+}
+
+/** Entero con signo desde input DIF PX REF MANUAL; vacío o solo signo → `null`; inválido → `undefined`. */
 export function parseDifPxRefManualMask(raw: string): number | null | undefined {
   const trimmed = raw.replace(/%/g, "").trim();
-  if (trimmed === "" || trimmed === "-") return null;
-  const n = Number(trimmed);
+  if (trimmed === "" || trimmed === "-" || trimmed === "+") return null;
+  const normalized = trimmed.startsWith("+") ? trimmed.slice(1) : trimmed;
+  const n = Number(normalized);
   if (!Number.isSafeInteger(n)) return undefined;
   return n;
 }

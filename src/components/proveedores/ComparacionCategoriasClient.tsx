@@ -388,14 +388,14 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                     <colgroup>
                       <col className="w-[3%]" />
                       <col className="w-[7%]" />
-                      <col className={puedeEditar ? "w-[12%]" : "w-[14%]"} />
+                      <col className={puedeEditar ? "w-[32%]" : "w-[40%]"} />
                       <col className="w-[6%]" />
                       <col className="w-[8%]" />
                       <col className="w-[7%]" />
-                      <col className="w-[9%]" />
+                      <col className="w-[7%]" />
                       <col className="w-[8%]" />
-                      <col className="w-[8%]" />
-                      <col className="w-[9%]" />
+                      <col className="w-[7%]" />
+                      <col className="w-[7%]" />
                       {puedeEditar && <col className="w-[8%]" />}
                     </colgroup>
                     <TableHeader>

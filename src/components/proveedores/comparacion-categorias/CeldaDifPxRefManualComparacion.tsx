@@ -9,6 +9,7 @@ import {
   formatDifPxRefManualMask,
   parseDifPxRefManualMask,
   roundMargenComparacionPct,
+  sanitizeDifPxRefManualInput,
 } from "@/lib/comparacionCategoriasFormat";
 import { actualizarMargenManualComparacionAction } from "@/actions/comparacionCategorias";
 
@@ -46,16 +47,17 @@ export default function CeldaDifPxRefManualComparacion({
   }, [difPxRefManual, editando]);
 
   function applyInput(raw: string) {
-    const parsed = parseDifPxRefManualMask(raw);
+    const sanitized = sanitizeDifPxRefManualInput(raw);
+    setDisplay(sanitized);
+    const parsed = parseDifPxRefManualMask(sanitized);
     if (parsed === undefined) return;
-    setDisplay(parsed != null ? formatDifPxRefManualMask(parsed) : "");
     onDraftChange(parsed);
   }
 
   async function commit(raw: string) {
     const parsed = parseDifPxRefManualMask(raw);
     if (parsed === undefined) {
-      toast.error("Ingresá un porcentaje entero válido.");
+      toast.error("Ingresá un porcentaje entero válido (positivo o negativo).");
       setDisplay(formatDifPxRefManualMask(difPxRefManual));
       onDraftEnd();
       return;
@@ -72,6 +74,7 @@ export default function CeldaDifPxRefManualComparacion({
       margenManualGuardado != null ? roundMargenComparacionPct(margenManualGuardado) : null;
 
     if (margenPersistir === margenGuardadoRedondeado) {
+      setDisplay(formatDifPxRefManualMask(parsed));
       onDraftEnd();
       return;
     }
@@ -86,6 +89,7 @@ export default function CeldaDifPxRefManualComparacion({
         return;
       }
       onSaved(res.data?.margenManual ?? null);
+      setDisplay(formatDifPxRefManualMask(parsed));
       onDraftEnd();
     } finally {
       setPending(false);
