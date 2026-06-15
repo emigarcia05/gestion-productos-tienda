@@ -156,6 +156,7 @@ const nextConfig: NextConfig = {
       { source: "/gestion-productos/pedidos/reposicion", destination: "/pedidos/reposicion" },
       { source: "/gestion-productos/pedidos/historial", destination: "/pedidos/historial" },
       { source: "/gestion-productos/procesos", destination: "/procesos" },
+      { source: "/gestion-productos/cargar-gasto", destination: "/cargar-gasto" },
     ];
   },
 };

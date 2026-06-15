@@ -744,7 +744,7 @@ La app se divide en **tres áreas** de alto nivel; el resto de rutas actuales pe
 - Rutas placeholder: **`/estadisticas-productos`** (página “A construir” con `SectionHeader`).
 - **Jerarquía canónica de URLs (2026-03):** para el área **Gestión Productos** usar siempre prefijo **`/gestion-productos`** con estructura **área/módulo/submódulo**:
   - Proveedores: `/gestion-productos/proveedores`, `/gestion-productos/proveedores/lista-precios`, `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/proveedores/comparacion-categorias` (**Comparacion**), `/gestion-productos/proveedores/comparacion-categorias/categorias` (**Categorias**), `/gestion-productos/proveedores/lista`.
-  - Ayuda Vendedor: `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`, `/gestion-productos/procesos`, `/gestion-productos/tienda/control-stock`.
+  - Ayuda Vendedor: `/gestion-productos/proveedores/sugeridos`, `/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`, `/gestion-productos/procesos`, `/gestion-productos/cargar-gasto`, `/gestion-productos/tienda/control-stock`.
   - Análisis de Precios: `/gestion-productos/tienda/comp-proveedores` (**Cx Compra**), `/gestion-productos/tienda/cx-px-tienda` (**Px Competencia**), `/gestion-productos/proveedores/comparacion-categorias` (**Comparacion**), `/gestion-productos/proveedores/comparacion-categorias/categorias` (**Categorias**). `/gestion-productos/precios-competencia` redirige a **Px Competencia**.
   - Procesos: `/gestion-productos/procesos` (guías de importación DUX tras exportar Excel).
   - **Cx Compra** (…): **`ActCxButton`** en header exporta Excel (**CODIGO**, **COSTO** con 2 decimales, archivo **`Act Cx dd-mm hh-mm.xls`**); toast al descargar; si no hay diferencias → **`ModalSinProductosExportar`**: **No hay actualizaciones para mostrar** (sin descarga); tras exportar Excel, modal **¿Desea exportar el informe de aumento?** (**No** / **Sí, Exportar** → PDF con **los mismos ítems** que el Excel, agrupados por marca/rubro; sin marca/rubro → **SIN MARCA** / **SIN RUBRO**). …
@@ -823,7 +823,7 @@ Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-
 
 ### Orden y labels — Sidebar Gestión Productos (`Sidebar.tsx`)
 
-**AYUDA VENDEDOR** (rol **simple**): agrupador **Px Venta** (sin ruta; ícono `CircleDollarSign`) → **Px. Vta. Sugerido** + **Px Tintométrico**; luego **Calc. Litros**, **Procesos**, **Control Stock**. El agrupador auto-expande si la ruta activa es un hijo.
+**AYUDA VENDEDOR** (rol **simple**): agrupador **Px Venta** (sin ruta; ícono `CircleDollarSign`) → **Px. Vta. Sugerido** + **Px Tintométrico**; luego **Calc. Litros**, **Procesos**, **Control Stock**. El agrupador auto-expande si la ruta activa es un hijo. **Cargar Gasto** (`/gestion-productos/cargar-gasto`, solo **editor**): abre al entrar el modal **`GastoUnicoBalanceModal`** (**Nuevo Gasto Eventual**, mismo flujo que **GASTO EVENTUAL** en `/finanzas/balance/gastos`); periodo = mes/año calendario Argentina.
 
 **LISTA PROVEEDORES** (rol **editor**): `Lista Precios`, `Lista Proveedores`.
 
@@ -1224,6 +1224,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-06-10): **Comp. Categorias — múltiples referencias competencia** — panel REFERENCIA COMPETENCIA con lista, radio activa y agregar/quitar por ítem.*
 
 *Última actualización (2026-06-10): **Comp. Categorias — DTO. EXTRA + costo recalculado** — columna editable; `dtoExtraDraft`; `calcCostoComparacion` en COSTO/VAR/márgenes.*
+
+*Última actualización (2026-06-13): **Ayuda Vendedor — Cargar Gasto** — ruta `/gestion-productos/cargar-gasto` (rewrite → `/cargar-gasto`); sidebar en **AYUDA VENDEDOR**; abre **`GastoUnicoBalanceModal`** al cargar; solo **editor** (`PERMISOS.ayudaVendedor.cargarGasto`).*
 
 *Última actualización (2026-06-13): **Comp. Categorias — margen manual** — tabla `prod_comp_margen_manual` (`margen_manual` entero por `cod_ext`); input **DIF PX REF MANUAL** persiste margen vía `actualizarMargenManualComparacionAction`; **PX MANUAL** y **MARGEN MANUAL** calculados en cliente. Migración **`20260613150000_comp_margen_manual`** (reemplaza `prod_comp_px_manual`; valores legacy anulados).*
 

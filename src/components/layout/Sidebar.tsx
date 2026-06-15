@@ -156,6 +156,12 @@ const MODULES: NavModule[] = [
         permiso: PERMISOS.procesos.acceso,
       },
       {
+        href: "/gestion-productos/cargar-gasto",
+        label: "Cargar Gasto",
+        icon: <Receipt className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.ayudaVendedor.cargarGasto,
+      },
+      {
         href: "/gestion-productos/tienda/control-stock",
         label: "Control Stock",
         icon: <PackageSearch className="h-4 w-4 shrink-0" />,
@@ -325,7 +331,9 @@ function getOpenModule(pathname: string): SidebarModuleId {
     pathname === "/gestion-productos/proveedores/sugeridos" ||
     pathname === "/proveedores/sugeridos" ||
     pathname.startsWith("/gestion-productos/procesos") ||
-    pathname.startsWith("/procesos")
+    pathname.startsWith("/procesos") ||
+    pathname.startsWith("/gestion-productos/cargar-gasto") ||
+    pathname.startsWith("/cargar-gasto")
   ) {
     return "ayuda-vendedor";
   }
@@ -414,6 +422,8 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
     return pathname === "/gestion-productos/tienda/calc-litros" || pathname === "/tienda/litros";
   if (href === "/gestion-productos/procesos")
     return pathname === "/gestion-productos/procesos" || pathname === "/procesos";
+  if (href === "/gestion-productos/cargar-gasto")
+    return pathname === "/gestion-productos/cargar-gasto" || pathname === "/cargar-gasto";
   if (href === "/gestion-productos/tienda/comp-proveedores")
     return pathname === "/gestion-productos/tienda/comp-proveedores" || pathname === "/tienda";
   if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";
@@ -429,7 +439,6 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
     return pathname === "/finanzas/balance/mensual" || pathname === "/finanzas/balance";
   if (href === "/finanzas/balance/gastos") return pathname === "/finanzas/balance/gastos";
   if (href === "/finanzas/balance/gastos/catalogo") return pathname === "/finanzas/balance/gastos/catalogo";
-  if (href === "/gestion-productos/procesos") return pathname === "/gestion-productos/procesos" || pathname === "/procesos";
   return pathname === href;
 }
 

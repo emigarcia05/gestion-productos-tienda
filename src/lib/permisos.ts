@@ -102,6 +102,12 @@ export const PERMISOS = {
     acceso: { simple: true, editor: true },
   },
 
+  // ─── Ayuda Vendedor — Cargar Gasto (modal Nuevo Gasto Eventual) ───────────
+  ayudaVendedor: {
+    /** Misma capacidad que **GASTO EVENTUAL** en `/finanzas/balance/gastos` (solo editor). */
+    cargarGasto: { simple: false, editor: true },
+  },
+
   // ─── Página /importar ─────────────────────────────────────────────────────
   importar: {
     acceso: { simple: false, editor: true },
