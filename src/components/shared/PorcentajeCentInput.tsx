@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, type ComponentProps } from "react";
+import { useMemo, useRef, type ComponentProps } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   PORCENTAJE_CENT_MASK_MAX_CENTS,
   porcentajeCentCentsToNormalizedString,
   porcentajeCentNormalizedStringToCents,
-  porcentajeCentNormalizedToDisplay,
+  porcentajeCentNormalizedToDisplayWithPct,
 } from "@/lib/porcentajeCentMask";
 
 export type PorcentajeCentInputProps = Omit<
@@ -21,6 +21,7 @@ export type PorcentajeCentInputProps = Omit<
 /**
  * Input de porcentaje con máscara POS (2 decimales, es-AR).
  * Estado: string normalizado parseable (`"12.26"`). Vacío si el usuario borró todo.
+ * Al enfocar, el primer dígito reemplaza el valor previo; los siguientes desplazan (POS).
  */
 export default function PorcentajeCentInput({
   valueNormalized,
@@ -29,6 +30,8 @@ export default function PorcentajeCentInput({
   disabled,
   ...props
 }: PorcentajeCentInputProps) {
+  const overwriteOnNextInputRef = useRef(true);
+
   const centsValue = useMemo(
     () => porcentajeCentNormalizedStringToCents(valueNormalized),
     [valueNormalized]
@@ -36,7 +39,7 @@ export default function PorcentajeCentInput({
 
   const display = useMemo(() => {
     if (valueNormalized.trim() === "") return "";
-    return porcentajeCentNormalizedToDisplay(valueNormalized);
+    return porcentajeCentNormalizedToDisplayWithPct(valueNormalized);
   }, [valueNormalized]);
 
   return (
@@ -46,6 +49,12 @@ export default function PorcentajeCentInput({
       autoComplete="off"
       disabled={disabled}
       value={display}
+      onFocus={() => {
+        overwriteOnNextInputRef.current = true;
+      }}
+      onBlur={() => {
+        overwriteOnNextInputRef.current = true;
+      }}
       onChange={() => {
         // Entrada solo por teclado / pegado (máscara POS).
       }}
@@ -66,15 +75,18 @@ export default function PorcentajeCentInput({
 
         if (isDigit) {
           event.preventDefault();
-          const next = Math.min(centsValue * 10 + Number(key), PORCENTAJE_CENT_MASK_MAX_CENTS);
+          const base = overwriteOnNextInputRef.current ? 0 : centsValue;
+          const next = Math.min(base * 10 + Number(key), PORCENTAJE_CENT_MASK_MAX_CENTS);
+          overwriteOnNextInputRef.current = false;
           onValueNormalizedChange(porcentajeCentCentsToNormalizedString(next));
           return;
         }
 
         if (key === "Backspace" || key === "Delete") {
           event.preventDefault();
+          overwriteOnNextInputRef.current = false;
           const next = Math.floor(centsValue / 10);
-          onValueNormalizedChange(next === 0 ? "" : porcentajeCentCentsToNormalizedString(next));
+          onValueNormalizedChange(porcentajeCentCentsToNormalizedString(next));
           return;
         }
 
@@ -84,12 +96,13 @@ export default function PorcentajeCentInput({
       onPaste={(event) => {
         event.preventDefault();
         if (disabled) return;
+        overwriteOnNextInputRef.current = false;
         const digits = event.clipboardData.getData("text").replace(/\D/g, "");
         if (!digits) return;
         const pastedCents = Number(digits);
         if (!Number.isFinite(pastedCents)) return;
         const capped = Math.min(pastedCents, PORCENTAJE_CENT_MASK_MAX_CENTS);
-        onValueNormalizedChange(capped === 0 ? "" : porcentajeCentCentsToNormalizedString(capped));
+        onValueNormalizedChange(porcentajeCentCentsToNormalizedString(capped));
       }}
       className={cn("tabular-nums border-primary", className)}
       {...props}

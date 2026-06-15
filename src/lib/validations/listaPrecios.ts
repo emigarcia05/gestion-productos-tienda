@@ -25,7 +25,7 @@ export const actualizacionMasivaListaPreciosSchema = z.object({
   dtoCantidad: porcentajeListaPreciosSchema.optional(),
   dtoFinanciero: porcentajeListaPreciosSchema.optional(),
   cxTransporte: porcentajeListaPreciosSchema.optional(),
-  cotizacionDolar: z.number().positive().optional(),
+  cotizacionDolar: z.number().min(0).optional(),
   /** Precio de lista del proveedor (`prod_precios_provee.px_lista_proveedor`). */
   pxListaProveedor: z.number().min(0).optional(),
   habilitado: z.boolean().optional(),

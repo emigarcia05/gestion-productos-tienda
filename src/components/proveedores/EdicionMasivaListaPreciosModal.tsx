@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
+import MontoArInput from "@/components/shared/MontoArInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -25,6 +26,8 @@ import {
   parsePorcentajeCentNormalized,
   porcentajeCentFromNumber,
 } from "@/lib/porcentajeCentMask";
+import { montoArNumberToNormalizedString, montoArNormalizedStringToPesosNumber } from "@/lib/montoArMask";
+import { roundPrecioListaTienda } from "@/lib/calculos";
 import { cn } from "@/lib/utils";
 
 interface MarcaOption {
@@ -142,7 +145,7 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     Partial<Record<PercentCentKey, string>>
   >({});
   const [cotizacionDolar, setCotizacionDolar] = useState("");
-  const [pxListaProveedor, setPxListaProveedor] = useState("");
+  const [pxListaProveedorNorm, setPxListaProveedorNorm] = useState("");
   const filaActual = filaMode ? props.fila : null;
 
   const filteredIds = filaMode
@@ -157,7 +160,7 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     setRubroNombre(filaActual.rubro ?? "");
     setPercentCentNormalized(centInputsDesdeFila(filaActual));
     setCotizacionDolar("");
-    setPxListaProveedor(String(Math.round(Number(filaActual.pxListaProveedor) || 0)));
+    setPxListaProveedorNorm(montoArNumberToNormalizedString(Number(filaActual.pxListaProveedor) || 0));
   }, [filaMode, open, filaActual]);
 
   function resetForm() {
@@ -165,7 +168,7 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     setRubroNombre("");
     setPercentCentNormalized({});
     setCotizacionDolar("");
-    setPxListaProveedor("");
+    setPxListaProveedorNorm("");
   }
 
   function setPercentCent(key: PercentCentKey, next: string) {
@@ -182,7 +185,7 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
       if (norm === undefined || norm.trim() === "") continue;
       const parsed = parsePorcentajeCentNormalized(norm);
       if (parsed === undefined) {
-        return `${label}: ingresá un valor mayor a 0 y menor a 100.`;
+        return `${label}: ingresá un valor entre 0 y menor a 100.`;
       }
     }
     return null;
@@ -212,11 +215,13 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     applyPercentCentToPayload(data, ["cxTransporte"]);
 
     const cotizacion = parsePxListaProveedor(cotizacionDolar);
-    if (cotizacion !== undefined && cotizacion > 0) data.cotizacionDolar = cotizacion;
+    if (cotizacion !== undefined) data.cotizacionDolar = cotizacion;
 
     if (filaMode) {
-      const px = parsePxListaProveedor(pxListaProveedor);
-      if (px !== undefined) data.pxListaProveedor = px;
+      const norm = pxListaProveedorNorm.trim();
+      if (norm !== "") {
+        data.pxListaProveedor = roundPrecioListaTienda(montoArNormalizedStringToPesosNumber(norm));
+      }
     }
 
     return data;
@@ -282,14 +287,12 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
         {filaMode && (
           <>
             <ModalFormRow id="pxListaProveedor" label="PX. LISTA PROVEEDOR">
-              <Input
+              <MontoArInput
                 id="pxListaProveedor"
-                type="number"
-                min={0}
-                step={1}
                 placeholder="—"
-                value={pxListaProveedor}
-                onChange={(e) => setPxListaProveedor(e.target.value)}
+                valueNormalized={pxListaProveedorNorm}
+                onValueNormalizedChange={setPxListaProveedorNorm}
+                treatEmptyNormalizedAsBlank
                 className={INPUT_CONTROL_CLASS}
               />
             </ModalFormRow>
@@ -335,7 +338,7 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
           <ModalFormRow key={key} id={key} label={label}>
             <PorcentajeCentInput
               id={key}
-              placeholder="0,00"
+              placeholder="0,00%"
               valueNormalized={percentCentNormalized[key] ?? ""}
               onValueNormalizedChange={(next) => setPercentCent(key, next)}
               className={INPUT_CONTROL_CLASS}
@@ -348,7 +351,7 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
         <ModalFormRow id="cxTransporte" label="CX. TRANSPORTE">
           <PorcentajeCentInput
             id="cxTransporte"
-            placeholder="0,00"
+            placeholder="0,00%"
             valueNormalized={percentCentNormalized.cxTransporte ?? ""}
             onValueNormalizedChange={(next) => setPercentCent("cxTransporte", next)}
             className={INPUT_CONTROL_CLASS}

@@ -602,6 +602,7 @@ Input monetario reutilizable (formato **AR**): muestra **`$`**, miles con `.` y 
   - **`className`**: `string?` — para borde/ring (ej. `inputBorderClassName`) u overrides puntuales.
   - **`treatEmptyNormalizedAsBlank`**: `boolean?` — si `true`, `valueNormalized === ""` muestra el campo vacío (no `$0,00`) y al borrar hasta cero centavos se emite `""` (p. ej. **`ActualizarMontoCajaTesoreriaModal`** en tesorería).
 - **Reglas de tipeo**
+  - Máscara **POS**: al **enfocar**, el primer dígito **reemplaza** el valor mostrado; los siguientes desplazan hacia la izquierda (centavos). Mismo comportamiento en **`PorcentajeCentInput`**.
   - Acepta **`,` o `.`** como separador decimal (si aparecen ambos, se toma el más a la derecha).
   - Repeticiones `,,` / `..` se colapsan a una sola.
 
@@ -1055,7 +1056,9 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-27): **`ListaPreciosTablaConFiltros`** — vista principal: **COD. EXT.**, **PROV.** (solo sin filtro proveedor), **DESCRIPCION** (tienda + proveedor + marca/rubro), **PX. LISTA PROV.**, **PX. FINAL**, **DET.** (chevron expande descuentos) y **ACCIONES** (editar). Subfila con **DESC. PROV./MARCA/RUBRO/CANT./FINAN.** y **CX. TRANSP.** reutiliza clases `tabla-fila-detalle-competencia-*`; vacíos numéricos muestran **—**.*
 
-*Última actualización (2026-05-27): **Porcentajes lista precios** — en **`EdicionMasivaListaPreciosModal`**, descuentos y **CX. TRANSPORTE** usan **`PorcentajeCentInput`** + `@/lib/porcentajeCentMask` (máscara POS; válido **&gt; 0** y **&lt; 100**). Tabla/subfila: `fmtPorcentajeTabla`. Backend: `porcentajeListaPreciosSchema`.*
+*Última actualización (2026-06-13): **Lista precios — modal Editar producto** — **PX. LISTA PROVEEDOR** con **`MontoArInput`** (`$`, miles `.`, decimales `,`); descuentos y **CX. TRANSPORTE** con **`PorcentajeCentInput`** + sufijo **`%`**; todos los campos numéricos admiten **0**; al **enfocar**, el **primer dígito** reemplaza el valor previo y los siguientes desplazan (máscara POS).*
+
+*Última actualización (2026-05-27): **Porcentajes lista precios** — en **`EdicionMasivaListaPreciosModal`**, descuentos y **CX. TRANSPORTE** usan **`PorcentajeCentInput`** + `@/lib/porcentajeCentMask` (máscara POS; válido **≥ 0** y **&lt; 100**). Tabla/subfila: `fmtPorcentajeTabla`. Backend: `porcentajeListaPreciosSchema`.*
 
 *Última actualización (2026-05-28): **Px Competencia — limpieza DET PRECIO / export Excel** — se quitan DET PRECIO, PX LISTA, MARCACION editables, `ExportarPxButton`, `exportarPxDiffAction` y filtros `detPrecio` / `ordenMarcacion`. Grilla reducida a comparación competidores (PX PROMEDIO, DIF TIENDA). Reimplementación pendiente.*
 

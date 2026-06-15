@@ -68,3 +68,11 @@ export function montoArPesosEnterosToNormalizedString(pesos: number): string {
   if (!Number.isFinite(pesos) || pesos <= 0) return "";
   return String(Math.trunc(pesos));
 }
+
+/** Inicializar normalizado desde monto con decimales (p. ej. `px_lista_proveedor`; incluye 0). */
+export function montoArNumberToNormalizedString(value: number): string {
+  if (!Number.isFinite(value) || value < 0) return "";
+  if (value === 0) return "0";
+  const cents = Math.min(Math.round(value * 100), MONTO_AR_MASK_MAX_CENTS);
+  return montoArCentsToNormalizedString(cents);
+}

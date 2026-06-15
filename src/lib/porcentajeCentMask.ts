@@ -24,25 +24,31 @@ export function porcentajeCentCentsToNormalizedString(cents: number): string {
   return montoArCentsToNormalizedString(safe);
 }
 
-/** Visual sin símbolo: `12,26`. */
+/** Visual sin símbolo: `12,26` (con `%` en `PorcentajeCentInput`). */
 export function porcentajeCentNormalizedToDisplay(norm: string): string {
   if (norm.trim() === "") return "";
   return montoArCentsToDisplayBody(porcentajeCentNormalizedStringToCents(norm));
 }
 
-/** Valor inicial desde número en BD (0 → vacío). */
+/** Visual con sufijo `%`: `12,26%`. */
+export function porcentajeCentNormalizedToDisplayWithPct(norm: string): string {
+  const body = porcentajeCentNormalizedToDisplay(norm);
+  return body ? `${body}%` : "";
+}
+
+/** Valor inicial desde número en BD (incluye 0). */
 export function porcentajeCentFromNumber(n: number): string {
-  if (!Number.isFinite(n) || n <= 0) return "";
+  if (!Number.isFinite(n) || n < 0) return "";
+  if (n === 0) return "0";
   const cents = Math.min(Math.round(roundPorcentaje0a100(n) * 100), PORCENTAJE_CENT_MASK_MAX_CENTS);
-  if (cents <= 0) return "";
   return montoArCentsToNormalizedString(cents);
 }
 
-/** Vacío → `undefined`. Válido solo si &gt; 0 y &lt; 100. */
+/** Vacío → `undefined` (sin cambio). Válido de 0 inclusive a &lt; 100. */
 export function parsePorcentajeCentNormalized(norm: string): number | undefined {
   const t = norm.trim();
   if (t === "") return undefined;
   const cents = porcentajeCentNormalizedStringToCents(t);
-  if (cents <= 0 || cents >= 10_000) return undefined;
+  if (cents < 0 || cents >= 10_000) return undefined;
   return cents / 100;
 }

@@ -479,7 +479,7 @@ export async function actualizarListaPreciosMasivo(
   if (data.dtoCantidad !== undefined) updatePayload.dtoCantidad = clampPercent(data.dtoCantidad);
   if (data.dtoFinanciero !== undefined) updatePayload.dtoFinanciero = clampPercent(data.dtoFinanciero);
   if (data.cxTransporte !== undefined) updatePayload.cxTransporte = clampPercent(data.cxTransporte);
-  if (data.cotizacionDolar !== undefined && data.cotizacionDolar > 0)
+  if (data.cotizacionDolar !== undefined && data.cotizacionDolar >= 0)
     updatePayload.cotizacionDolar = data.cotizacionDolar;
   if (data.pxListaProveedor !== undefined && data.pxListaProveedor >= 0)
     updatePayload.pxListaProveedor = data.pxListaProveedor;

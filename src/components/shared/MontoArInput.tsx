@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ComponentProps } from "react";
+import { useMemo, useRef, type ComponentProps } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -49,6 +49,7 @@ export default function MontoArInput({
   disabled,
   ...props
 }: MontoArInputProps) {
+  const overwriteOnNextInputRef = useRef(true);
   const centsValue = useMemo(() => montoArNormalizedStringToCents(valueNormalized), [valueNormalized]);
 
   const display = useMemo(() => {
@@ -63,6 +64,12 @@ export default function MontoArInput({
       autoComplete="off"
       disabled={disabled}
       value={display}
+      onFocus={() => {
+        overwriteOnNextInputRef.current = true;
+      }}
+      onBlur={() => {
+        overwriteOnNextInputRef.current = true;
+      }}
       onChange={() => {
         // Entrada solo por teclado / pegado (máscara POS centavos).
       }}
@@ -83,13 +90,16 @@ export default function MontoArInput({
 
         if (isDigit) {
           event.preventDefault();
-          const next = Math.min(centsValue * 10 + Number(key), MONTO_AR_MASK_MAX_CENTS);
+          const base = overwriteOnNextInputRef.current ? 0 : centsValue;
+          const next = Math.min(base * 10 + Number(key), MONTO_AR_MASK_MAX_CENTS);
+          overwriteOnNextInputRef.current = false;
           onValueNormalizedChange(montoArCentsToNormalizedString(next));
           return;
         }
 
         if (key === "Backspace" || key === "Delete") {
           event.preventDefault();
+          overwriteOnNextInputRef.current = false;
           const next = Math.floor(centsValue / 10);
           const normalized =
             treatEmptyNormalizedAsBlank && next === 0
@@ -105,6 +115,7 @@ export default function MontoArInput({
       onPaste={(event) => {
         event.preventDefault();
         if (disabled) return;
+        overwriteOnNextInputRef.current = false;
         const text = event.clipboardData.getData("text");
         const digits = text.replace(/\D/g, "");
         if (!digits) return;
