@@ -492,7 +492,7 @@ Modal reutilizable de **título + filtros + tabla** con modos:
   - **`onConfirmQuantity(items)`**: `{ id, cantidad }[]` solo con filas con cantidad &gt; 0; si resuelve OK, el modal se cierra.
   - **`confirmQuantityLabel(count)`**: texto del botón (default: `AGREGAR N BASE(S)`).
   - **`confirmPending`**: `boolean?` (deshabilita acciones y muestra loader).
-  - Input **CANT**: enteros positivos; fila resaltada cuando tiene cantidad válida; doble clic en fila lo delega al padre (ej. agregar con cantidad 1).
+  - Input **CANT**: enteros positivos; clase global **`tabla-celda-cant`** en la celda para que el input ocupe todo el alto/ancho de la fila (2rem) con borde visible en los cuatro lados; fila resaltada cuando tiene cantidad válida; doble clic en fila lo delega al padre (ej. agregar con cantidad 1).
 
 - **Props singleConfirm**
   - **`selectionMode`**: `"singleConfirm"` (obligatorio).

@@ -49,7 +49,7 @@ const modalTablaBodyCellVariants = cva("text-xs py-2.5 px-3", {
   variants: {
     kind: {
       select: "py-2.5 px-2 w-10",
-      quantity: "py-2.5 px-2 w-14",
+      quantity: "tabla-celda-cant w-14 p-0",
       data: "",
     },
   },
@@ -606,7 +606,8 @@ export default function ModalTablaConFiltros<T>({
                                       inputMode="numeric"
                                       value={cantPorRowId[id] ?? ""}
                                       onChange={(e) => setRowQuantity(id, e.target.value)}
-                                      className="h-7 w-12 px-1 text-center mx-auto tabular-nums"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="h-full w-full min-h-0 rounded-none border-0 px-1 text-center text-xs tabular-nums shadow-none focus-visible:border-0 focus-visible:ring-0"
                                       placeholder="0"
                                       aria-label={`Cantidad para fila ${id}`}
                                     />
