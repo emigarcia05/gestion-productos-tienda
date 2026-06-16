@@ -234,6 +234,8 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
   }
 
   const enConfig = estado === "config" && !!archivoPendiente;
+  const mostrarBotonConversion =
+    !!archivoPendiente && (estado === "config" || estado === "procesando");
   const ocupado = estado === "procesando" || guardando;
 
   return (
@@ -254,7 +256,7 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
             <Button variant="outline" onClick={() => handleClose(false)} disabled={ocupado}>
               Cancelar
             </Button>
-            {enConfig && (
+            {mostrarBotonConversion && (
               <Button onClick={() => void procesarPdf()} className="gap-2 min-w-[150px]" disabled={ocupado}>
                 {estado === "procesando" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
