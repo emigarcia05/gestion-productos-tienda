@@ -52,12 +52,18 @@ const listaPreciosConOpcionesVacio: ListaPreciosConOpcionesResult = {
 export async function getListaPreciosConOpcionesAction(
   raw: unknown
 ): Promise<ListaPreciosConOpcionesResult> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.listaPrecios.acciones.importarLista)) {
-    return listaPreciosConOpcionesVacio;
-  }
   const parsed = listaPreciosFiltrosLecturaSchema.safeParse(raw);
   if (!parsed.success) return listaPreciosConOpcionesVacio;
+
+  const rol = await getRol();
+  const soloPxSugerido = parsed.data.opciones?.soloPxSugerido === true;
+  const permisoLectura = soloPxSugerido
+    ? PERMISOS.proveedores.sugeridos
+    : PERMISOS.proveedores.listaPrecios;
+  if (!puede(rol, permisoLectura)) {
+    return listaPreciosConOpcionesVacio;
+  }
+
   const {
     proveedorId: prov,
     marcaNombre: marca,
@@ -86,7 +92,8 @@ export async function getListaPreciosConOpcionesAction(
       marcasDisponibles,
       rubrosDisponibles,
     };
-  } catch {
+  } catch (e) {
+    console.error("[getListaPreciosConOpcionesAction]", e);
     return listaPreciosConOpcionesVacio;
   }
 }

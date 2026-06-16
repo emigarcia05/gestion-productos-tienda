@@ -4,7 +4,6 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { prisma } from "@/lib/prisma";
 import ListaPreciosPageClient from "@/components/proveedores/ListaPreciosPageClient";
-import { getListaPreciosConOpcionesAction } from "@/actions/listaPrecios";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +38,6 @@ export default async function ListaPreciosPage() {
         marcas={marcas}
         rubros={rubros}
         rol={rol}
-        fetchListaPreciosConOpcionesAction={getListaPreciosConOpcionesAction}
       />
     </div>
   );

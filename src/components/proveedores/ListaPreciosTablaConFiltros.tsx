@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, Link2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import FilterBar, {
+  FiltroIndividualContainer,
   FilterRowSelection,
   FilterRowSearch,
   FilaFiltrosDesplegables,
@@ -19,6 +19,7 @@ import FilterBar, {
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
+import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import {
   Table,
   TableBody,
@@ -43,17 +44,11 @@ import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasi
 import VincularPrecioRexModal from "@/components/proveedores/VincularPrecioRexModal";
 import type { ListaPreciosFiltrosExportSnapshot } from "@/components/proveedores/ExportarListaPreciosButton";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
-
-interface RubroOption {
-  id: string;
-  nombre: string;
-}
-
-import type { ListaPreciosConOpcionesResult, ListaPreciosFiltrosLecturaInput } from "@/actions/listaPrecios";
-
-type FetchListaPreciosConOpcionesAction = (
-  params: ListaPreciosFiltrosLecturaInput
-) => Promise<ListaPreciosConOpcionesResult>;
+import {
+  getListaPreciosConOpcionesAction,
+  type ListaPreciosFiltrosLecturaInput,
+} from "@/actions/listaPrecios";
+import { toast } from "sonner";
 
 interface ProveedorOption {
   id: string;
@@ -62,6 +57,11 @@ interface ProveedorOption {
 }
 
 interface MarcaOption {
+  id: string;
+  nombre: string;
+}
+
+interface RubroOption {
   id: string;
   nombre: string;
 }
@@ -75,7 +75,6 @@ interface ListaPreciosTablaConFiltrosProps {
   onEdicionSuccess?: () => void;
   onFilteredIdsChange?: (ids: string[]) => void;
   onFiltrosExportSnapshotChange?: (snapshot: ListaPreciosFiltrosExportSnapshot) => void;
-  fetchListaPreciosConOpcionesAction: FetchListaPreciosConOpcionesAction;
 }
 
 const MIN_CARACTERES_BUSQUEDA = 3;
@@ -154,7 +153,6 @@ export default function ListaPreciosTablaConFiltros({
   onEdicionSuccess,
   onFilteredIdsChange,
   onFiltrosExportSnapshotChange,
-  fetchListaPreciosConOpcionesAction,
 }: ListaPreciosTablaConFiltrosProps) {
   const [filaEdit, setFilaEdit] = useState<FilaListaPrecioParaCliente | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -174,6 +172,7 @@ export default function ListaPreciosTablaConFiltros({
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [total, setTotal] = useState(0);
+  const busquedaInputRef = useRef<HTMLInputElement>(null);
 
   const showProveedorColumn = !proveedorId;
   const colCount = 5 + (showProveedorColumn ? 1 : 0);
@@ -205,9 +204,40 @@ export default function ListaPreciosTablaConFiltros({
     }
   }, [hasFilterActive, proveedores, marcas]);
 
+  function reiniciarPaginaYDetalle() {
+    setPagina(1);
+    setExpandidos(new Set());
+  }
+
+  function cambiarProveedor(value: string) {
+    setProveedorId(value);
+    reiniciarPaginaYDetalle();
+  }
+
+  function cambiarMarca(value: string) {
+    setMarcaNombre(value);
+    reiniciarPaginaYDetalle();
+  }
+
+  function cambiarRubro(value: string) {
+    setRubroNombre(value);
+    reiniciarPaginaYDetalle();
+  }
+
+  function cambiarHabilitado(value: string) {
+    setHabilitadoFilter(value);
+    reiniciarPaginaYDetalle();
+  }
+
+  function cambiarBusqueda(value: string) {
+    setBusqueda(value);
+    reiniciarPaginaYDetalle();
+  }
+
   useEffect(() => {
     if (!hasFilterActive) {
       queueMicrotask(() => {
+        setLoading(false);
         setFilasData([]);
         setTotal(0);
         setTotalPaginas(1);
@@ -218,16 +248,17 @@ export default function ListaPreciosTablaConFiltros({
     }
     let cancelled = false;
     queueMicrotask(() => setLoading(true));
-    fetchListaPreciosConOpcionesAction({
+    const params: ListaPreciosFiltrosLecturaInput = {
       proveedorId: proveedorId || undefined,
       marcaNombre: marcaNombre || undefined,
       rubroNombre: rubroNombre || undefined,
       busqueda: busqueda.trim() || undefined,
       habilitado: habilitadoFilter === "si" ? true : habilitadoFilter === "no" ? false : undefined,
       pagina,
-    })
+    };
+    getListaPreciosConOpcionesAction(params)
       .then((res) => {
-        if (cancelled) return;
+        if (cancelled || !res) return;
         setFilasData(res.filas);
         setTotal(res.total);
         setTotalPaginas(res.totalPaginas);
@@ -257,6 +288,14 @@ export default function ListaPreciosTablaConFiltros({
           return next;
         });
       })
+      .catch(() => {
+        if (cancelled) return;
+        toast.error("Error al cargar la lista de precios.");
+        setFilasData([]);
+        setTotal(0);
+        setTotalPaginas(1);
+        onFilteredIdsChange?.([]);
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -271,17 +310,9 @@ export default function ListaPreciosTablaConFiltros({
     habilitadoFilter,
     busqueda,
     pagina,
-    fetchListaPreciosConOpcionesAction,
     onFilteredIdsChange,
     reloadNonce,
   ]);
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      setPagina(1);
-      setExpandidos(new Set());
-    });
-  }, [proveedorId, marcaNombre, rubroNombre, habilitadoFilter, busqueda]);
 
   useEffect(() => {
     onFiltrosExportSnapshotChange?.({
@@ -308,8 +339,6 @@ export default function ListaPreciosTablaConFiltros({
   ]);
 
   const filteredFilas = filasData;
-  const hayFiltros =
-    !!proveedorId || !!marcaNombre || !!rubroNombre || !!habilitadoFilter || !!busqueda.trim();
 
   function limpiarFiltros() {
     setProveedorId("");
@@ -317,7 +346,9 @@ export default function ListaPreciosTablaConFiltros({
     setRubroNombre("");
     setHabilitadoFilter("");
     setBusqueda("");
+    setPagina(1);
     setExpandidos(new Set());
+    setLoading(false);
   }
 
   return (
@@ -325,8 +356,12 @@ export default function ListaPreciosTablaConFiltros({
       <FilterBar className="filtros-contenedor-tienda bg-card">
         <FilterRowSelection>
           <FilaFiltrosDesplegables>
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
-              <Select value={proveedorId || undefined} onValueChange={(v) => setProveedorId(v)}>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(proveedorId)}
+              onLimpiar={() => cambiarProveedor("")}
+            >
+              <Select value={proveedorId || undefined} onValueChange={cambiarProveedor}>
                 <SelectTrigger id="filtro-proveedor" className="input-filtro-unificado">
                   <SelectValue placeholder="PROVEEDOR" />
                 </SelectTrigger>
@@ -343,9 +378,13 @@ export default function ListaPreciosTablaConFiltros({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
-              <Select value={marcaNombre || undefined} onValueChange={(v) => setMarcaNombre(v)}>
+            </FiltroIndividualContainer>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(marcaNombre)}
+              onLimpiar={() => cambiarMarca("")}
+            >
+              <Select value={marcaNombre || undefined} onValueChange={cambiarMarca}>
                 <SelectTrigger id="filtro-marca" className="input-filtro-unificado">
                   <SelectValue placeholder="MARCA" />
                 </SelectTrigger>
@@ -362,9 +401,13 @@ export default function ListaPreciosTablaConFiltros({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
-              <Select value={rubroNombre || undefined} onValueChange={(v) => setRubroNombre(v)}>
+            </FiltroIndividualContainer>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(rubroNombre)}
+              onLimpiar={() => cambiarRubro("")}
+            >
+              <Select value={rubroNombre || undefined} onValueChange={cambiarRubro}>
                 <SelectTrigger id="filtro-rubro" className="input-filtro-unificado">
                   <SelectValue placeholder="RUBRO" />
                 </SelectTrigger>
@@ -381,9 +424,13 @@ export default function ListaPreciosTablaConFiltros({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
-              <Select value={habilitadoFilter || undefined} onValueChange={(v) => setHabilitadoFilter(v)}>
+            </FiltroIndividualContainer>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={habilitadoFilter === "si" || habilitadoFilter === "no"}
+              onLimpiar={() => cambiarHabilitado("")}
+            >
+              <Select value={habilitadoFilter || undefined} onValueChange={cambiarHabilitado}>
                 <SelectTrigger id="filtro-habilitado" className="input-filtro-unificado">
                   <SelectValue placeholder="HABILITADO" />
                 </SelectTrigger>
@@ -397,20 +444,21 @@ export default function ListaPreciosTablaConFiltros({
                   <SelectItem value="no">NO HABILITADO</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FiltroIndividualContainer>
           </FilaFiltrosDesplegables>
         </FilterRowSelection>
         <div className="flex items-center gap-3">
           <FilterRowSearch className="flex-1">
-            <Input
+            <FiltroBusquedaInput
               id="filtro-lista-precios-busqueda"
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={cambiarBusqueda}
+              isDebouncing={loading && busqueda.trim().length > 0}
+              inputRef={busquedaInputRef}
               placeholder="BUSCAR POR DESCRIPCIÓN (MÍN. 3 CARACTERES)"
-              className="input-filtro-unificado"
             />
           </FilterRowSearch>
-          <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+          <LimpiarFiltrosButton onClick={limpiarFiltros} />
           <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
             {total.toLocaleString()} PRODUCTO
             {total !== 1 ? "S" : ""}

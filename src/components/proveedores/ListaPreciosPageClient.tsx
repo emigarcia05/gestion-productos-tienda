@@ -29,18 +29,11 @@ interface RubroOption {
   nombre: string;
 }
 
-import type { ListaPreciosConOpcionesResult, ListaPreciosFiltrosLecturaInput } from "@/actions/listaPrecios";
-
-type FetchListaPreciosConOpcionesAction = (
-  params: ListaPreciosFiltrosLecturaInput
-) => Promise<ListaPreciosConOpcionesResult>;
-
 interface Props {
   proveedores: ProveedorParaCliente[];
   marcas: MarcaOption[];
   rubros: RubroOption[];
   rol: Rol;
-  fetchListaPreciosConOpcionesAction: FetchListaPreciosConOpcionesAction;
 }
 
 export default function ListaPreciosPageClient({
@@ -48,7 +41,6 @@ export default function ListaPreciosPageClient({
   marcas,
   rubros,
   rol,
-  fetchListaPreciosConOpcionesAction,
 }: Props) {
   const router = useRouter();
   const [filteredIds, setFilteredIds] = useState<string[]>([]);
@@ -115,7 +107,6 @@ export default function ListaPreciosPageClient({
         onEdicionSuccess={handleEdicionSuccess}
         onFilteredIdsChange={handleFilteredIdsChange}
         onFiltrosExportSnapshotChange={handleFiltrosExportSnapshotChange}
-        fetchListaPreciosConOpcionesAction={fetchListaPreciosConOpcionesAction}
       />
     </ClassicFilteredTableLayout>
   );
