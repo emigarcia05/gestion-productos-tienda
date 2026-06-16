@@ -60,3 +60,27 @@ export type ListaPreciosFiltrosLecturaInput = z.infer<typeof listaPreciosFiltros
 export const listaPreciosFiltrosExportSchema = listaPreciosFiltrosLecturaSchema.omit({ pagina: true });
 
 export type ListaPreciosFiltrosExportInput = z.infer<typeof listaPreciosFiltrosExportSchema>;
+
+/** Alta manual de un producto en `prod_precios_provee` (misma lógica que import CSV). */
+export const crearProductoListaPrecioSchema = z.object({
+  idProveedor: prismaCuidSchema,
+  codProdProveedor: z
+    .string()
+    .trim()
+    .min(1, "El código de proveedor es obligatorio.")
+    .max(128),
+  descripcionProveedor: z
+    .string()
+    .trim()
+    .min(1, "La descripción es obligatoria.")
+    .max(500),
+  pxListaProveedor: z.number().min(0, "El precio de lista debe ser mayor o igual a 0."),
+  marca: z
+    .string()
+    .trim()
+    .max(200)
+    .optional()
+    .transform((s) => (s && s.length > 0 ? s : undefined)),
+});
+
+export type CrearProductoListaPrecioInput = z.infer<typeof crearProductoListaPrecioSchema>;

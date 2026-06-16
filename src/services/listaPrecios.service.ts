@@ -445,6 +445,88 @@ export async function upsertListaPrecios(
   return { creados, actualizados, errores };
 }
 
+export interface CrearProductoListaPrecioServiceInput {
+  idProveedor: string;
+  codProdProveedor: string;
+  descripcionProveedor: string;
+  pxListaProveedor: number;
+  marca?: string;
+}
+
+export type CrearProductoListaPrecioServiceResult =
+  | { ok: true; codExt: string; creado: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Alta manual 1:1 en `prod_precios_provee` — misma clave y defaults que `upsertListaPrecios` (import CSV).
+ */
+export async function crearProductoListaPrecio(
+  input: CrearProductoListaPrecioServiceInput
+): Promise<CrearProductoListaPrecioServiceResult> {
+  const proveedor = await prisma.proveedor.findUnique({
+    where: { id: input.idProveedor },
+    select: { id: true, prefijo: true, proveedorMercaderia: true },
+  });
+
+  if (!proveedor) {
+    return { ok: false, error: "Proveedor no encontrado." };
+  }
+  if (!proveedor.proveedorMercaderia) {
+    return { ok: false, error: "El proveedor no es de mercadería." };
+  }
+  const prefijo = proveedor.prefijo?.trim();
+  if (!prefijo) {
+    return { ok: false, error: "El proveedor no tiene prefijo configurado." };
+  }
+
+  const codProdProveedor = input.codProdProveedor.trim();
+  const codExt = buildCodExt(prefijo, codProdProveedor);
+  const marca = input.marca?.trim() || null;
+
+  const existente = await prisma.listaPrecioProveedor.findUnique({
+    where: {
+      idProveedor_codProdProveedor: {
+        idProveedor: input.idProveedor,
+        codProdProveedor,
+      },
+    },
+    select: { codExt: true },
+  });
+
+  try {
+    await prisma.listaPrecioProveedor.upsert({
+      where: {
+        idProveedor_codProdProveedor: {
+          idProveedor: input.idProveedor,
+          codProdProveedor,
+        },
+      },
+      create: {
+        idProveedor: input.idProveedor,
+        codProdProveedor,
+        descripcionProveedor: input.descripcionProveedor.trim(),
+        codExt,
+        pxListaProveedor: input.pxListaProveedor,
+        marca,
+        habilitado: true,
+        pxDolares: false,
+        cotizacionDolar: 1,
+      },
+      update: {
+        descripcionProveedor: input.descripcionProveedor.trim(),
+        pxListaProveedor: input.pxListaProveedor,
+        marca,
+        habilitado: true,
+      },
+    });
+
+    return { ok: true, codExt, creado: !existente };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "No se pudo guardar el producto.";
+    return { ok: false, error: message };
+  }
+}
+
 export interface ActualizacionMasivaListaPrecios {
   marca?: string | null;
   rubro?: string | null;

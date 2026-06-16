@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import ImportarListaPreciosModal from "@/components/proveedores/ImportarListaPreciosModal";
 import ConvertirPdfListaPreciosModal from "@/components/proveedores/ConvertirPdfListaPreciosModal";
+import CrearProductoListaPreciosModal from "@/components/proveedores/CrearProductoListaPreciosModal";
 import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
 import ExportarListaPreciosButton, {
   type ListaPreciosFiltrosExportSnapshot,
@@ -77,6 +78,11 @@ export default function ListaPreciosPageClient({
         {puedeImportar && (
           <>
             <ExportarListaPreciosButton snapshot={filtrosExportSnapshot} />
+            <CrearProductoListaPreciosModal
+              proveedores={proveedores}
+              marcas={marcas}
+              onSuccess={handleEdicionSuccess}
+            />
             <ImportarListaPreciosModal proveedores={proveedores} />
             <ConvertirPdfListaPreciosModal proveedores={proveedores} />
           </>

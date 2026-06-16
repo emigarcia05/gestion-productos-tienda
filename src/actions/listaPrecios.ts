@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   actualizarListaPreciosMasivo,
+  crearProductoListaPrecio,
   getListaPreciosConTiendaFiltrada,
   getProveedoresDisponiblesListaPrecios,
   getMarcasDisponiblesListaPrecios,
@@ -11,7 +12,7 @@ import {
   type FilaListaPrecioParaCliente,
 } from "@/services/listaPrecios.service";
 import type { ActionResult } from "@/lib/types";
-import { getRol } from "@/lib/sesion";
+import { getRol, esEditor } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { z } from "zod";
 import {
@@ -19,10 +20,11 @@ import {
   actualizacionMasivaListaPreciosSchema,
   listaPreciosFiltrosLecturaSchema,
   listaPreciosFiltrosExportSchema,
+  crearProductoListaPrecioSchema,
 } from "@/lib/validations/listaPrecios";
 
 export type { ActualizacionMasivaListaPrecios, FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
-export type { ListaPreciosFiltrosLecturaInput, ListaPreciosFiltrosExportInput } from "@/lib/validations/listaPrecios";
+export type { ListaPreciosFiltrosLecturaInput, ListaPreciosFiltrosExportInput, CrearProductoListaPrecioInput } from "@/lib/validations/listaPrecios";
 
 export interface ListaPreciosConOpcionesResult {
   filas: FilaListaPrecioParaCliente[];
@@ -158,6 +160,38 @@ export async function exportarListaPreciosAction(
       e instanceof Error ? e.message : "No se pudo exportar la lista de precios.";
     return { ok: false, error: message };
   }
+}
+
+/**
+ * Alta manual de un producto en prod_precios_provee (equivalente a una fila de import CSV).
+ */
+export async function crearProductoListaPrecioAction(
+  raw: unknown
+): Promise<ActionResult<{ codExt: string; creado: boolean }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.listaPrecios.acciones.importarLista)) {
+    return { ok: false, error: "Sin permisos para crear productos en la lista." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const parsed = crearProductoListaPrecioSchema.safeParse(raw);
+  if (!parsed.success) {
+    const flat = parsed.error.flatten();
+    const msg =
+      [...Object.values(flat.fieldErrors).flat(), ...flat.formErrors][0] ??
+      "Datos inválidos para crear el producto.";
+    return { ok: false, error: msg };
+  }
+
+  const result = await crearProductoListaPrecio(parsed.data);
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  revalidatePath("/proveedores/lista-precios");
+  return { ok: true, data: { codExt: result.codExt, creado: result.creado } };
 }
 
 /**
