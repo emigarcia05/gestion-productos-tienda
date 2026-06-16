@@ -350,11 +350,20 @@ export default function NuevoItemTintometricoModal({
         <SeleccionarBaseTintometricaModal
           open={baseModalOpen}
           onOpenChange={setBaseModalOpen}
-          onSeleccionar={(rows) => {
+          onSeleccionar={(items) => {
             setBases((prev) => {
               const existingIds = new Set(prev.map((b) => b.id));
-              const nuevos = rows.filter((r) => !existingIds.has(r.id));
+              const nuevos = items.filter((i) => !existingIds.has(i.base.id)).map((i) => i.base);
               return nuevos.length > 0 ? [...prev, ...nuevos] : prev;
+            });
+            setCantPorBaseId((prev) => {
+              const next = { ...prev };
+              for (const item of items) {
+                if (!(item.base.id in next) || !next[item.base.id]) {
+                  next[item.base.id] = String(item.cantidad);
+                }
+              }
+              return next;
             });
             setBaseModalOpen(false);
           }}

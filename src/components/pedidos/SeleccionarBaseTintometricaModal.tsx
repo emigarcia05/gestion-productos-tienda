@@ -1,13 +1,35 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import ModalTablaConFiltros, { type ColumnaModalTabla } from "@/components/shared/ModalTablaConFiltros";
+import ModalTablaConFiltros, {
+  type ColumnaModalTabla,
+  type ModalTablaQuantityItem,
+} from "@/components/shared/ModalTablaConFiltros";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { buscarBasesTintometricasAction } from "@/actions/tintometrico";
 import type { BaseTintometricaRow } from "@/services/tintometrico.service";
 
 const EMPTY: { items: BaseTintometricaRow[]; total: number } = { items: [], total: 0 };
+
+export type BaseTintometricaSeleccion = {
+  base: BaseTintometricaRow;
+  cantidad: number;
+};
+
+function mapItemsToSeleccion(
+  items: ModalTablaQuantityItem[],
+  rows: BaseTintometricaRow[]
+): BaseTintometricaSeleccion[] {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return items
+    .map((item) => {
+      const base = byId.get(item.id);
+      if (!base) return null;
+      return { base, cantidad: item.cantidad };
+    })
+    .filter((x): x is BaseTintometricaSeleccion => x !== null);
+}
 
 export default function SeleccionarBaseTintometricaModal({
   open,
@@ -16,7 +38,7 @@ export default function SeleccionarBaseTintometricaModal({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onSeleccionar: (rows: BaseTintometricaRow[]) => void;
+  onSeleccionar: (items: BaseTintometricaSeleccion[]) => void;
 }) {
   const [data, setData] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
@@ -83,12 +105,19 @@ export default function SeleccionarBaseTintometricaModal({
     </div>
   );
 
+  const confirmarSeleccion = (items: ModalTablaQuantityItem[]) => {
+    const seleccionadas = mapItemsToSeleccion(items, data.items);
+    if (seleccionadas.length > 0) {
+      onSeleccionar(seleccionadas);
+    }
+  };
+
   return (
     <ModalTablaConFiltros<BaseTintometricaRow>
       open={open}
       onClose={() => onOpenChange(false)}
       title="Seleccione Una Base"
-      selectionMode="multi"
+      selectionMode="multiQuantity"
       filterContent={filterContent}
       columns={columns}
       rows={data.items}
@@ -96,16 +125,11 @@ export default function SeleccionarBaseTintometricaModal({
       loading={loading}
       emptyMessage="Sin Resultados"
       getRowId={(r) => r.id}
+      confirmQuantityLabel={(n) => `AGREGAR ${n} BASE(S)`}
       onRowDoubleClick={(row) => {
-        onSeleccionar([row]);
+        onSeleccionar([{ base: row, cantidad: 1 }]);
       }}
-      onConfirm={(ids) => {
-        const seleccionadas = data.items.filter((r) => ids.includes(r.id));
-        if (seleccionadas.length > 0) {
-          onSeleccionar(seleccionadas);
-        }
-      }}
+      onConfirmQuantity={confirmarSeleccion}
     />
   );
 }
-

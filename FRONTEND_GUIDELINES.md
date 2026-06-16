@@ -462,6 +462,7 @@ Modal reutilizable de **título + filtros + tabla** con modos:
 - **Single** (default): selección por **doble clic** en fila (definido por el padre con `onRowDoubleClick`).
 - **SingleConfirm**: selección por **click** en fila + confirmación con botón (default: `confirmSingleLabel="AGREGAR"`).
 - **Multi**: selección por checkbox + confirmación con botón.
+- **MultiQuantity**: columna **CANT** con input entero positivo por fila + confirmación con botón (ej. **Seleccione Una Base** en pedido tintométrico).
 
 - **Props base**
   - **`open`**, **`onClose`**.
@@ -485,6 +486,13 @@ Modal reutilizable de **título + filtros + tabla** con modos:
   - **`onConfirm(ids)`**: callback async/sync (si resuelve OK, el modal se cierra).
   - **`confirmLabel(count)`**: texto del botón (default: `Asignar N producto(s)`).
   - **`confirmPending`**: `boolean?` (deshabilita acciones y muestra loader).
+
+- **Props multiQuantity**
+  - **`selectionMode`**: `"multiQuantity"` (obligatorio).
+  - **`onConfirmQuantity(items)`**: `{ id, cantidad }[]` solo con filas con cantidad &gt; 0; si resuelve OK, el modal se cierra.
+  - **`confirmQuantityLabel(count)`**: texto del botón (default: `AGREGAR N BASE(S)`).
+  - **`confirmPending`**: `boolean?` (deshabilita acciones y muestra loader).
+  - Input **CANT**: enteros positivos; fila resaltada cuando tiene cantidad válida; doble clic en fila lo delega al padre (ej. agregar con cantidad 1).
 
 - **Props singleConfirm**
   - **`selectionMode`**: `"singleConfirm"` (obligatorio).

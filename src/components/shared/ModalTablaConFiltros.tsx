@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Check, Loader2 } from "lucide-react";
 import {
   TableEmptyState,
@@ -34,6 +35,7 @@ const modalTablaHeadCellVariants = cva(
     variants: {
       kind: {
         select: "py-2 px-2 w-10",
+        quantity: "py-2 px-2 w-14 text-center",
         data: "text-xs py-2 px-3",
       },
     },
@@ -47,6 +49,7 @@ const modalTablaBodyCellVariants = cva("text-xs py-2.5 px-3", {
   variants: {
     kind: {
       select: "py-2.5 px-2 w-10",
+      quantity: "py-2.5 px-2 w-14",
       data: "",
     },
   },
@@ -110,6 +113,8 @@ interface ModalTablaSingleSelect<T> extends ModalTablaConFiltrosBase<T> {
   showSingleConfirmCheckbox?: never;
   onConfirmSingle?: never;
   confirmSingleLabel?: never;
+  onConfirmQuantity?: never;
+  confirmQuantityLabel?: never;
   /** Contenido a la derecha del footer (ej. botón Cancelar). En multi se ignora. */
   footerRight?: React.ReactNode;
 }
@@ -119,6 +124,27 @@ interface ModalTablaMultiSelect<T> extends ModalTablaConFiltrosBase<T> {
   onConfirm: (ids: string[]) => void | Promise<void>;
   confirmLabel?: (count: number) => string;
   confirmPending?: boolean;
+  confirmSingleDisabled?: never;
+  showSingleConfirmCheckbox?: never;
+  onConfirmSingle?: never;
+  confirmSingleLabel?: never;
+  onConfirmQuantity?: never;
+  confirmQuantityLabel?: never;
+  footerRight?: never;
+}
+
+export interface ModalTablaQuantityItem {
+  id: string;
+  cantidad: number;
+}
+
+interface ModalTablaMultiQuantitySelect<T> extends ModalTablaConFiltrosBase<T> {
+  selectionMode: "multiQuantity";
+  onConfirm?: never;
+  onConfirmQuantity: (items: ModalTablaQuantityItem[]) => void | Promise<void>;
+  confirmQuantityLabel?: (count: number) => string;
+  confirmPending?: boolean;
+  confirmLabel?: never;
   confirmSingleDisabled?: never;
   showSingleConfirmCheckbox?: never;
   onConfirmSingle?: never;
@@ -137,12 +163,15 @@ interface ModalTablaSingleConfirmSelect<T> extends ModalTablaConFiltrosBase<T> {
   confirmSingleDisabled?: boolean;
   /** Muestra columna de checkbox para selección singleConfirm (1 fila a la vez). */
   showSingleConfirmCheckbox?: boolean;
+  onConfirmQuantity?: never;
+  confirmQuantityLabel?: never;
   footerRight?: never;
 }
 
 type ModalTablaConFiltrosProps<T> =
   | ModalTablaSingleSelect<T>
   | ModalTablaMultiSelect<T>
+  | ModalTablaMultiQuantitySelect<T>
   | ModalTablaSingleConfirmSelect<T>;
 
 type ModalTablaContentProps = VariantProps<typeof modalTablaContentVariants>;
@@ -161,6 +190,7 @@ function ModalTablaColGroup({ widthsPct }: { widthsPct: readonly number[] }) {
  * Modal reutilizable: título + filtros + tabla.
  * - single: doble clic en fila para seleccionar (ej. vincular producto).
  * - multi: checkboxes para selección múltiple + botón confirmar (ej. asignar productos a categoría).
+ * - multiQuantity: columna CANT con input entero positivo por fila + botón confirmar (ej. bases tintométricas).
  */
 export default function ModalTablaConFiltros<T>({
   open,
@@ -173,9 +203,11 @@ export default function ModalTablaConFiltros<T>({
   getRowId,
   onRowDoubleClick,
   onConfirm,
+  onConfirmQuantity,
   onConfirmSingle,
   selectionMode = "single",
   confirmLabel = (n) => `ASIGNAR ${n} PRODUCTO(S)`,
+  confirmQuantityLabel = (n) => `AGREGAR ${n} BASE(S)`,
   confirmSingleLabel = "AGREGAR",
   confirmPending = false,
   confirmSingleDisabled = false,
@@ -188,24 +220,69 @@ export default function ModalTablaConFiltros<T>({
   footerRight: footerRightProp,
 }: ModalTablaConFiltrosProps<T>) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [cantPorRowId, setCantPorRowId] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (!open) setSelectedIds(new Set());
+    if (!open) {
+      setSelectedIds(new Set());
+      setCantPorRowId({});
+    }
   }, [open]);
 
   const isMulti = selectionMode === "multi";
+  const isMultiQuantity = selectionMode === "multiQuantity";
   const isSingleConfirm = selectionMode === "singleConfirm";
-  const showSelectColumn = isMulti || (isSingleConfirm && showSingleConfirmCheckbox);
+  const showSelectColumn = isMulti || isMultiQuantity || (isSingleConfirm && showSingleConfirmCheckbox);
   const selectHeadClass = cn(
     modalTablaHeadCellVariants({ kind: "select" }),
     tableColumnWidthsPct && "!w-auto"
   );
   const selectBodyClass = cn(
-    modalTablaBodyCellVariants({ kind: "select" }),
+    modalTablaBodyCellVariants({ kind: isMultiQuantity ? "quantity" : "select" }),
+    tableColumnWidthsPct && "!w-auto"
+  );
+  const quantityHeadClass = cn(
+    modalTablaHeadCellVariants({ kind: "quantity" }),
     tableColumnWidthsPct && "!w-auto"
   );
 
+  function getQuantityItems(): ModalTablaQuantityItem[] {
+    return rows
+      .map((row) => {
+        const id = getRowId(row);
+        const n = Math.floor(Number(cantPorRowId[id]) || 0);
+        if (n > 0) return { id, cantidad: n };
+        return null;
+      })
+      .filter((item): item is ModalTablaQuantityItem => item !== null);
+  }
+
+  function hasValidQuantity(id: string) {
+    const n = Number(cantPorRowId[id]);
+    return Number.isFinite(n) && n > 0;
+  }
+
+  function setRowQuantity(id: string, value: string) {
+    setCantPorRowId((prev) => {
+      if (!value) {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      }
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0) return prev;
+      return { ...prev, [id]: String(Math.floor(n)) };
+    });
+  }
+
   function renderSelectHeadCell() {
+    if (isMultiQuantity) {
+      return (
+        <TableHead className={quantityHeadClass}>
+          CANT
+        </TableHead>
+      );
+    }
     if (isMulti) {
       return (
         <TableHead className={selectHeadClass}>
@@ -264,6 +341,18 @@ export default function ModalTablaConFiltros<T>({
     }
   }
 
+  async function handleConfirmQuantity() {
+    if (!isMultiQuantity || !onConfirmQuantity) return;
+    const items = getQuantityItems();
+    if (items.length === 0) return;
+    try {
+      await onConfirmQuantity(items);
+      onClose();
+    } catch {
+      /* El padre muestra toast de error; no cerramos */
+    }
+  }
+
   async function handleConfirmSingle() {
     if (!isSingleConfirm || selectedIds.size === 0 || !onConfirmSingle) return;
     try {
@@ -276,6 +365,8 @@ export default function ModalTablaConFiltros<T>({
       /* El padre muestra toast de error; no cerramos */
     }
   }
+
+  const quantityItems = isMultiQuantity ? getQuantityItems() : [];
 
   const footerRight = isMulti ? (
     <>
@@ -295,6 +386,30 @@ export default function ModalTablaConFiltros<T>({
         disabled={confirmPending || selectedIds.size === 0}
       >
         {confirmPending ? <Loader2 className="h-4 w-4 animate-spin" /> : confirmLabel(selectedIds.size)}
+      </Button>
+    </>
+  ) : isMultiQuantity ? (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onClose}
+        disabled={confirmPending}
+      >
+        Cancelar
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        onClick={handleConfirmQuantity}
+        disabled={confirmPending || quantityItems.length === 0}
+      >
+        {confirmPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          confirmQuantityLabel(quantityItems.length)
+        )}
       </Button>
     </>
   ) : isSingleConfirm ? (
@@ -460,6 +575,7 @@ export default function ModalTablaConFiltros<T>({
                         {rows.map((row) => {
                           const id = getRowId(row);
                           const isSelected = selectedIds.has(id);
+                          const rowHasQuantity = isMultiQuantity && hasValidQuantity(id);
                           return (
                             <TableRow
                               key={id}
@@ -467,8 +583,13 @@ export default function ModalTablaConFiltros<T>({
                               onClick={isSingleConfirm ? () => selectSingle(id) : undefined}
                               className={cn(
                                 modalTablaRowVariants({
-                                  interaction: isMulti ? "none" : "single",
-                                  selected: isMulti || isSingleConfirm ? isSelected : false,
+                                  interaction: isMulti || isMultiQuantity ? "none" : "single",
+                                  selected:
+                                    isMulti || isSingleConfirm
+                                      ? isSelected
+                                      : isMultiQuantity
+                                        ? rowHasQuantity
+                                        : false,
                                 })
                               )}
                               title={
@@ -477,7 +598,19 @@ export default function ModalTablaConFiltros<T>({
                             >
                               {showSelectColumn ? (
                                 <TableCell className={selectBodyClass}>
-                                  {isMulti ? (
+                                  {isMultiQuantity ? (
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      step={1}
+                                      inputMode="numeric"
+                                      value={cantPorRowId[id] ?? ""}
+                                      onChange={(e) => setRowQuantity(id, e.target.value)}
+                                      className="h-7 w-12 px-1 text-center mx-auto tabular-nums"
+                                      placeholder="0"
+                                      aria-label={`Cantidad para fila ${id}`}
+                                    />
+                                  ) : isMulti ? (
                                     <label className="flex items-center justify-center cursor-pointer">
                                       <input
                                         type="checkbox"
