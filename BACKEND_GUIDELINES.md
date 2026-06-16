@@ -197,6 +197,17 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **SQL raw** (`competenciaPreciosFiltrosQuery.ts`): JOIN **`prod_tienda_precios`**.
 - **Migraciones clave**: `20260604180000_prod_tienda_precios_y_listas_catalog` (rename hechos → `prod_tienda_precios`; catálogo nuevo `prod_tienda_listas_precios`; DROP `prod_listas_dux`).
 
+### 1.4.3a Catálogo precios REX (`prod_precios_rex`)
+
+- **Tabla**: **`prod_precios_rex`**. Modelo Prisma **`ProdPrecioRex`**.
+- **Columnas**: `id` (TEXT, PK, `@default(cuid())`), `id_proveedor` (TEXT NOT NULL, FK → `global_proveedores.id` ON DELETE CASCADE), `descripcion` (TEXT NOT NULL), `precio` (`DECIMAL(14,4)` NOT NULL).
+- **Clave lógica de upsert**: **`UNIQUE (id_proveedor, descripcion)`** — actualizaciones por conversión PDF matriz matchean proveedor + texto exportado (`descripcionExport` del parser, normalizado con `limpiarTextoPdfMatriz` / `buildDescripcionExport` en `@/lib/listaPreciosPdfMatriz`).
+- **Migraciones**: `20260616120000_add_prod_precios_rex` (tabla base); `20260616130000_prod_precios_rex_id_proveedor` (FK + índice único).
+- **IDs en Actions futuras**: `idProveedor` con `prismaCuidSchema`; payload filas PDF con `filaPdfMatrizNormalizadaSchema`.
+- **Origen previsto**: **`ConvertirPdfListaPreciosModal`** — `proveedorId` obligatorio al convertir; tras parse exitoso persiste vía **`guardarPreciosRexDesdePdfAction`** (`src/actions/prodPreciosRex.ts`) → **`upsertPreciosRexDesdeFilasPdf`** (`src/services/prodPreciosRex.service.ts`). Clave upsert: **`normalizarDescripcionPrecioRex(descripcionExport)`** + proveedor. Duplicados en el mismo lote: gana el último precio.
+- **Gate**: `PERMISOS.listaPrecios.acciones.importarLista` + `esEditor()` (mismo que import PDF / lista precios).
+- **Validación**: `guardarPreciosRexDesdePdfSchema` en `@/lib/validations/prodPreciosRex.ts`.
+
 ### 1.4.5 Stock multi-depósito DUX (`prod_tienda` + `prod_depositos_dux` + `prod_tienda_stock`)
 
 - **Tabla producto tienda**: sigue siendo **`prod_tienda`** (`ProdTienda`). **Sin** columnas fijas `stock_maipu` / `stock_guaymallen` (DROP `20260604150000`).
@@ -209,7 +220,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 ### 1.4.4 Purga de esquema — auditoría 2026-06-04
 
-**Objetivo:** esquema mínimo alineado al código en `src/`. **Fase 1 (tablas):** ningún `@@map` del `schema.prisma` vigente es candidato a `DROP` — los **34 modelos** tienen uso activo (`prisma.<modelo>` o SQL raw documentado). **Fase 2 (columnas):** en tablas vigentes no quedan columnas huérfanas en Prisma; las retiradas del negocio ya tienen migración.
+**Objetivo:** esquema mínimo alineado al código en `src/`. **Fase 1 (tablas):** ningún `@@map` del `schema.prisma` vigente es candidato a `DROP` — los **35 modelos** tienen uso activo (`prisma.<modelo>` o SQL raw documentado). **Fase 2 (columnas):** en tablas vigentes no quedan columnas huérfanas en Prisma; las retiradas del negocio ya tienen migración.
 
 **Mapa de tablas vigentes (Prisma → SQL):**
 
@@ -221,7 +232,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas | `ComprobanteProveedor` | `fin_compras_comprobante` |
 | Finanzas | `FinTesoreriaEntidad`, `FinTesoreriaTipoCaja`, `CajaTesoreria`, `FinTesoreriaCheque` | `fin_tesoreria_entidades`, `fin_tesoreria_tipo_caja`, `fin_tesoreria`, `fin_tesoreria_cheques` |
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual` |
-| Productos / precios | `ListaPrecioProveedor`, `ComparacionDtoExtraItem`, `ComparacionMargenManualItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_dto_extra`, `prod_comp_margen_manual`, `prod_comp_cat`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
+| Productos / precios | `ListaPrecioProveedor`, `ComparacionDtoExtraItem`, `ComparacionMargenManualItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_dto_extra`, `prod_comp_margen_manual`, `prod_comp_cat`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
 | Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
 | Pedidos / sync | `ProdPedMerc2`, `PedidoHistoria`, `PedidoHistoriaItem`, `ProdPedUltComp`, `ImportProgress`, `SyncDuxStatus` | `prod_ped_merc`, `prod_ped_historial`, `prod_ped_historial_merc`, `prod_ped_ult_comp`, `import_progress`, `sync_dux_status` |
 
@@ -1529,16 +1540,20 @@ La UI de configuración de competidores **debe** permitir asignar `idProveedor` 
 
 *Última actualización (2026-05-30): **Unificación Px Competencia → Px Listas** — grilla con PX PROMEDIO, DIF TIENDA, detalle y URLs; `getPxListasPageData` incluye `competencias`; `/gestion-productos/precios-competencia` redirige a Px Listas. Scraping desde **`PxListasPageClient`** (`SincronizarCompetenciaModal` → `POST /api/sync-competencia-precios`; permiso `competenciaPrecios.editar`).*
 
-### PDF matriz → Excel (Lista Precios, fase 1 — sin BD)
+### PDF matriz → Excel y REX (`prod_precios_rex`)
 
-Conversión de listas en PDF con estructura matricial (filas = descripción, columnas = presentaciones) a filas tabulares para export Excel. **No persiste** en `prod_precios_provee` en esta fase.
+Conversión de listas en PDF con estructura matricial (filas = descripción, columnas = presentaciones) a filas tabulares. **Persistencia** en **`prod_precios_rex`** tras conversión exitosa (upsert por proveedor + descripción).
 
 | Pieza | Ubicación |
 |-------|-----------|
-| Aplanado puro | `@/lib/listaPreciosPdfMatriz` — `aplanarMatrizListaPrecios`, regla `Un.` sin sufijo en `descripcionExport` |
+| Aplanado puro | `@/lib/listaPreciosPdfMatriz` — `aplanarMatrizListaPrecios`, `normalizarDescripcionPrecioRex` |
 | Servicio PDF | `@/services/parseListaPreciosPdfMatriz.service.ts` — `pdfjs-dist` (legacy build), heurística posicional X/Y |
-| Validación | `@/lib/validations/parseListaPreciosPdfMatriz.ts` |
-| API | `POST /api/parse-lista-precios-pdf` — `multipart/form-data` (`file`, `paginaInicio` default **9**, `filasIgnorar` default **0**); gate `guardListaPreciosImportarEsEditor` |
+| Validación parse | `@/lib/validations/parseListaPreciosPdfMatriz.ts` |
+| API parse | `POST /api/parse-lista-precios-pdf` — `multipart/form-data` (`file`, `paginaInicio` default **9**, `filasIgnorar` default **0**); gate `guardListaPreciosImportarEsEditor` |
+| Persistencia REX | `@/services/prodPreciosRex.service.ts` — `upsertPreciosRexDesdeFilasPdf` |
+| Action | `guardarPreciosRexDesdePdfAction` en `src/actions/prodPreciosRex.ts` |
+| Validación guardado | `@/lib/validations/prodPreciosRex.ts` — `guardarPreciosRexDesdePdfSchema` |
+| UI | `ConvertirPdfListaPreciosModal` — proveedor obligatorio; **Iniciar Conversión** parsea + guarda; **Guardar Precios** re-upsert; **Descargar Excel** opcional |
 | Test manual | `npx tsx scripts/test-aplanar-pdf-matriz.ts` |
 
 **Presentaciones de referencia:** `Un.`, `¼`, `½`, `1 L`, `4 L`, `10 L`, `20 L`. Páginas anteriores a `paginaInicio` se omiten (índice). El símbolo **`▲`** se ignora (celda vacía / se quita del texto) vía `limpiarTextoPdfMatriz` en `@/lib/listaPreciosPdfMatriz`.

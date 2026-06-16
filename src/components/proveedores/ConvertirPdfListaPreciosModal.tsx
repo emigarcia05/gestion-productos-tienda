@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
-import { FileText, Upload, Download, Loader2, ChevronDown, ArrowRight } from "lucide-react";
+import { FileText, Upload, Download, Loader2, ChevronDown, ArrowRight, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { descargarExcelListaPreciosPdfMatriz } from "@/lib/exportListaPreciosPdfMatrizExcelClient";
 import type { FilaPdfMatrizNormalizadaDto } from "@/lib/validations/parseListaPreciosPdfMatriz";
 import { PAGINA_INICIO_PDF_MATRIZ_DEFAULT } from "@/lib/validations/parseListaPreciosPdfMatriz";
+import { guardarPreciosRexDesdePdfAction } from "@/actions/prodPreciosRex";
 
 interface Proveedor {
   id: string;
@@ -35,6 +36,13 @@ function fmtPrecio(n: number): string {
   return n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function mensajeGuardadoRex(creados: number, actualizados: number): string {
+  const partes: string[] = [];
+  if (creados > 0) partes.push(`${creados} nuevo(s)`);
+  if (actualizados > 0) partes.push(`${actualizados} actualizado(s)`);
+  return partes.length > 0 ? partes.join(", ") : "Sin cambios en REX";
+}
+
 export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
   const [open, setOpen] = useState(false);
   const [estado, setEstado] = useState<Estado>("idle");
@@ -47,6 +55,7 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
   const [filas, setFilas] = useState<FilaPdfMatrizNormalizadaDto[]>([]);
   const [advertencias, setAdvertencias] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [guardando, setGuardando] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = useCallback(() => {
@@ -56,6 +65,7 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
     setFilas([]);
     setAdvertencias([]);
     setErrorMsg(null);
+    setGuardando(false);
     setPaginaInicio(String(PAGINA_INICIO_PDF_MATRIZ_DEFAULT));
     setFilasIgnorar("0");
   }, []);
@@ -81,8 +91,49 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
     setEstado("config");
   }, []);
 
+  const guardarEnRex = useCallback(
+    async (
+      filasAGuardar: FilaPdfMatrizNormalizadaDto[],
+      provId: string
+    ): Promise<{ ok: true; creados: number; actualizados: number } | { ok: false }> => {
+      if (filasAGuardar.length === 0) return { ok: false };
+
+      setGuardando(true);
+      try {
+        const result = await guardarPreciosRexDesdePdfAction({
+          proveedorId: provId,
+          filas: filasAGuardar,
+        });
+
+        if (!result.ok) {
+          toast.error(result.error);
+          return { ok: false };
+        }
+
+        const { creados, actualizados, errores } = result.data;
+
+        if (errores.length > 0) {
+          toast.warning(`${errores.length} fila(s) con error al guardar.`);
+        }
+
+        return { ok: true, creados, actualizados };
+      } catch {
+        toast.error("Error de conexión al guardar en REX.");
+        return { ok: false };
+      } finally {
+        setGuardando(false);
+      }
+    },
+    []
+  );
+
   const procesarPdf = useCallback(async () => {
     if (!archivoPendiente) return;
+
+    if (!proveedorId.trim()) {
+      toast.error("Seleccioná un proveedor para convertir y guardar en REX.");
+      return;
+    }
 
     const pagina = Number.parseInt(paginaInicio, 10);
     if (!Number.isFinite(pagina) || pagina < 1) {
@@ -133,8 +184,16 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
 
       if (filasResult.length === 0) {
         toast.warning("El PDF no produjo ítems con precio. Revisá página y filas a ignorar.");
+        return;
+      }
+
+      const guardado = await guardarEnRex(filasResult, proveedorId);
+      if (guardado.ok) {
+        toast.success(
+          `${filasResult.length} ítem(s) convertidos — REX: ${mensajeGuardadoRex(guardado.creados, guardado.actualizados)}.`
+        );
       } else {
-        toast.success(`${filasResult.length} ítem(s) listos para exportar.`);
+        toast.warning(`${filasResult.length} ítem(s) convertidos; no se guardaron en REX.`);
       }
     } catch {
       const msg = "Error de conexión al procesar el PDF.";
@@ -142,7 +201,7 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
       setEstado("error");
       toast.error(msg);
     }
-  }, [archivoPendiente, paginaInicio, filasIgnorar]);
+  }, [archivoPendiente, paginaInicio, filasIgnorar, proveedorId, guardarEnRex]);
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -162,7 +221,20 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
     toast.success("Excel descargado.");
   }
 
+  async function handleGuardarPrecios() {
+    if (filas.length === 0) return;
+    if (!proveedorId.trim()) {
+      toast.error("Seleccioná un proveedor para guardar en REX.");
+      return;
+    }
+    const guardado = await guardarEnRex(filas, proveedorId);
+    if (guardado.ok) {
+      toast.success(`REX: ${mensajeGuardadoRex(guardado.creados, guardado.actualizados)}.`);
+    }
+  }
+
   const enConfig = estado === "config" && !!archivoPendiente;
+  const ocupado = estado === "procesando" || guardando;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -179,35 +251,54 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
         title="Convertir PDF a Excel"
         actions={
           <>
-            <Button variant="outline" onClick={() => handleClose(false)}>
+            <Button variant="outline" onClick={() => handleClose(false)} disabled={ocupado}>
               Cancelar
             </Button>
             {enConfig && (
-              <Button onClick={() => void procesarPdf()} className="gap-2 min-w-[150px]">
-                <ArrowRight className="h-4 w-4" />
+              <Button onClick={() => void procesarPdf()} className="gap-2 min-w-[150px]" disabled={ocupado}>
+                {estado === "procesando" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="h-4 w-4" />
+                )}
                 Iniciar Conversión
               </Button>
             )}
             {filas.length > 0 && (
-              <Button onClick={handleDescargarExcel} className="gap-2 min-w-[150px]">
-                <Download className="h-4 w-4" />
-                Descargar Excel
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => void handleGuardarPrecios()}
+                  className="gap-2 min-w-[150px]"
+                  disabled={ocupado}
+                >
+                  {guardando ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Guardar Precios
+                </Button>
+                <Button onClick={handleDescargarExcel} className="gap-2 min-w-[150px]" disabled={ocupado}>
+                  <Download className="h-4 w-4" />
+                  Descargar Excel
+                </Button>
+              </>
             )}
           </>
         }
       >
-        <div className="space-y-3 pt-2 min-w-0 overflow-hidden" aria-busy={estado === "procesando"}>
+        <div className="space-y-3 pt-2 min-w-0 overflow-hidden" aria-busy={ocupado}>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">PROVEEDOR (NOM. ARCHIVO)</label>
+            <label className="text-sm font-medium text-foreground">PROVEEDOR</label>
             <div className="relative">
               <select
                 value={proveedorId}
                 onChange={(e) => setProveedorId(e.target.value)}
-                disabled={estado === "procesando"}
+                disabled={ocupado}
                 className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring border-primary disabled:opacity-50"
               >
-                <option value="">SIN PROVEEDOR…</option>
+                <option value="">SELECCIONAR PROVEEDOR…</option>
                 {proveedores.map((p) => (
                   <option key={p.id} value={p.id}>
                     [{p.prefijo}] {p.nombre}
@@ -216,6 +307,9 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
               </select>
               <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             </div>
+            <p className="text-xs text-muted-foreground">
+              Obligatorio para guardar en REX. También define el nombre del archivo Excel.
+            </p>
           </div>
 
           {enConfig && (
@@ -234,6 +328,7 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
                   min={0}
                   value={filasIgnorar}
                   onChange={(e) => setFilasIgnorar(e.target.value)}
+                  disabled={ocupado}
                   className="input-filtro-unificado w-full text-sm focus:outline-none focus:ring-2 focus:ring-ring border-primary tabular-nums"
                   aria-label="Cantidad de filas a ignorar al inicio del extracto"
                 />
@@ -243,6 +338,7 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
                   min={1}
                   value={paginaInicio}
                   onChange={(e) => setPaginaInicio(e.target.value)}
+                  disabled={ocupado}
                   className="input-filtro-unificado w-full text-sm focus:outline-none focus:ring-2 focus:ring-ring border-primary tabular-nums"
                 />
               </div>
@@ -261,7 +357,7 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
             <div className="flex gap-2 w-full min-w-0">
               <button
                 type="button"
-                disabled={estado === "procesando"}
+                disabled={ocupado}
                 onClick={() => {
                   if (fileName) {
                     resetForm();
@@ -309,7 +405,14 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
           {estado === "procesando" && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-2" role="status">
               <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-              Procesando PDF…
+              Procesando PDF y guardando en REX…
+            </div>
+          )}
+
+          {guardando && estado !== "procesando" && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2" role="status">
+              <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+              Guardando precios en REX…
             </div>
           )}
 

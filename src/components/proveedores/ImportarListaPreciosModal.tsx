@@ -168,7 +168,7 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
       <DialogTrigger asChild>
         <Button variant="default" size="default" className="btn-primario-gestion">
           <Upload className="h-4 w-4" />
-          Importar Lista Precios
+          Importar Lista
         </Button>
       </DialogTrigger>
 

@@ -78,6 +78,11 @@ export function limpiarTextoPdfMatriz(raw: string): string {
   return raw.replace(/▲/g, "").replace(/\s+/g, " ").trim();
 }
 
+/** Clave de upsert en `prod_precios_rex` (proveedor + descripción exportada del PDF). */
+export function normalizarDescripcionPrecioRex(descripcionExport: string): string {
+  return limpiarTextoPdfMatriz(descripcionExport);
+}
+
 /** Celda sin precio utilizable (vacía, guión, consultar, ▲, etc.). */
 export function celdaPrecioEsVacia(raw: string | undefined | null): boolean {
   if (raw == null) return true;

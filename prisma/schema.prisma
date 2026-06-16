@@ -85,6 +85,7 @@ model Proveedor {
   finBalGastoFinal   FinBalGastoFinal[]
   finTesoreriaChequesPago FinTesoreriaCheque[]
   competenciasPrecios ProdCompetencia[]
+  preciosRex          ProdPrecioRex[]
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
   @@map("global_proveedores")
@@ -573,6 +574,20 @@ model Marca {
   prodTiendas ProdTienda[]
 
   @@map("prod_marcas")
+}
+
+/** Catálogo de precios REX por proveedor: descripción + precio unitario por ítem. */
+model ProdPrecioRex {
+  id          String  @id @default(cuid())
+  idProveedor String  @map("id_proveedor")
+  descripcion String  @map("descripcion")
+  precio      Decimal @map("precio") @db.Decimal(14, 4)
+
+  proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+
+  @@unique([idProveedor, descripcion], map: "prod_precios_rex_id_proveedor_descripcion_ux")
+  @@index([idProveedor], map: "prod_precios_rex_id_proveedor_idx")
+  @@map("prod_precios_rex")
 }
 
 /** Catálogo de listas de precio DUX (`precios[].id` en API). Sync: alta/actualiza nombre; baja listas no vistas. */

@@ -58,7 +58,7 @@ export default function ExportarListaPreciosButton({ snapshot }: Props) {
   return (
     <ToolbarActionButton
       type="button"
-      label="Exportar Lista Precios"
+      label="Exportar Lista"
       icon={<Download aria-hidden />}
       loading={exportando}
       loadingLabel="Exportando…"

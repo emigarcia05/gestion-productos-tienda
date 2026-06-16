@@ -1205,7 +1205,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-21): **Etiquetas de campo en modales** — regla global: color `foreground` (negro de UI), no `muted`, en `label` / `Label` / `ModalMicroLabel` / `MODAL_*_LABEL_CLASS`; `globals.css` (`--modal-field-label-color`) en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]`; migración de micro-etiquetas legacy en modales Finanzas a `ModalMicroLabel`.*
 
-*Última actualización (2026-06-02): **PDF matriz lista precios** — **`ConvertirPdfListaPreciosModal`**: configuración (**FILAS A IGNORAR**, **DESDE PÁGINA**), preview **DESCRIPCIÓN | PX. LISTA** (la presentación va embebida en la descripción, ej. `Latex Blanco 10 L`), Excel con columnas **DESCRIPCION** y **PRECIO** solamente.*
+*Última actualización (2026-06-16): **PDF matriz lista precios + REX** — **`ConvertirPdfListaPreciosModal`**: proveedor obligatorio; conversión guarda en **`prod_precios_rex`** (upsert por proveedor + **`descripcionExport`**); botones **Guardar Precios** y **Descargar Excel**; preview **DESCRIPCIÓN | PX. LISTA**.*
 
 *Última actualización (2026-06-04): **Subfilas expandibles** (`.tabla-fila-detalle-competencia`, Cx Compra, Px Competencia, Lista Px): alto fijo **`--tabla-body-row-min-height`** (2rem), igual que filas principales; eliminado override Cx Compra de 4.25rem y layout apilado con espaciadores; **CX PROD.** en subfila Cx Compra = una línea (base + variación | precio).*
 
@@ -1225,7 +1225,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-10): **Comp. Categorias — DTO. EXTRA + costo recalculado** — columna editable; `dtoExtraDraft`; `calcCostoComparacion` en COSTO/VAR/márgenes.*
 
-*Última actualización (2026-06-16): **`/gestion-productos/proveedores/lista-precios`** — botón **Exportar Lista Precios** (`ExportarListaPreciosButton` + `exportarListaPreciosAction`): exporta **todos** los ítems que coinciden con los filtros activos (sin paginación) a Excel `.xls` (`exportListaPreciosExcelClient.ts`).*
+*Última actualización (2026-06-16): **`/gestion-productos/proveedores/lista-precios`** — botones **Exportar Lista** / **Importar Lista**; exportación (`ExportarListaPreciosButton` + `exportarListaPreciosAction`) de **todos** los ítems filtrados (sin paginación) a Excel `.xls` (`exportListaPreciosExcelClient.ts`).*
 
 *Última actualización (2026-06-13): **Ayuda Vendedor — Cargar Gasto** — ruta `/gestion-productos/cargar-gasto` (rewrite → `/cargar-gasto`); sidebar en **AYUDA VENDEDOR**; abre **`GastoUnicoBalanceModal`** al cargar; solo **editor** (`PERMISOS.ayudaVendedor.cargarGasto`).*
 
