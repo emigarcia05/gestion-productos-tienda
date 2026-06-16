@@ -13,8 +13,6 @@ import {
   vincularListaPrecioConPrecioRexSchema,
 } from "@/lib/validations/prodPreciosRex";
 
-export type { PrecioRexParaVincular };
-
 export interface GuardarPreciosRexResult {
   creados: number;
   actualizados: number;
