@@ -37,7 +37,7 @@ interface Props {
   onSuccess?: () => void;
 }
 
-const FORM_GRID_CLASS = "grid grid-cols-[1.35fr_minmax(0,1fr)] gap-x-4 gap-y-2 items-center";
+const FORM_GRID_CLASS = "grid grid-cols-[20%_80%] gap-x-4 gap-y-2 items-center w-full";
 const LABEL_CLASS = "text-right font-medium text-sm";
 const INPUT_CONTROL_CLASS = "tabular-nums border-primary w-full min-w-0";
 
@@ -227,7 +227,7 @@ export default function CrearProductoListaPreciosModal({
       </DialogTrigger>
 
       <AppModal
-        className="max-w-lg"
+        className="max-w-3xl"
         title="Crear Producto"
         actions={
           <>
