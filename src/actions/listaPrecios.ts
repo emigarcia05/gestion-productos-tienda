@@ -7,6 +7,7 @@ import {
   getProveedoresDisponiblesListaPrecios,
   getMarcasDisponiblesListaPrecios,
   getRubrosDisponiblesListaPrecios,
+  listarListaPreciosFiltradaParaExport,
   type FilaListaPrecioParaCliente,
 } from "@/services/listaPrecios.service";
 import type { ActionResult } from "@/lib/types";
@@ -17,10 +18,11 @@ import {
   listaPreciosCodExtListSchema,
   actualizacionMasivaListaPreciosSchema,
   listaPreciosFiltrosLecturaSchema,
+  listaPreciosFiltrosExportSchema,
 } from "@/lib/validations/listaPrecios";
 
 export type { ActualizacionMasivaListaPrecios, FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
-export type { ListaPreciosFiltrosLecturaInput } from "@/lib/validations/listaPrecios";
+export type { ListaPreciosFiltrosLecturaInput, ListaPreciosFiltrosExportInput } from "@/lib/validations/listaPrecios";
 
 export interface ListaPreciosConOpcionesResult {
   filas: FilaListaPrecioParaCliente[];
@@ -86,6 +88,68 @@ export async function getListaPreciosConOpcionesAction(
     };
   } catch {
     return listaPreciosConOpcionesVacio;
+  }
+}
+
+/**
+ * Exporta todos los ítems que coinciden con los filtros activos (sin paginación).
+ * Misma regla de filtros que la grilla (`getListaPreciosConOpcionesAction`).
+ */
+export async function exportarListaPreciosAction(
+  raw: unknown
+): Promise<ActionResult<{ filas: FilaListaPrecioParaCliente[] }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.listaPrecios.acciones.importarLista)) {
+    return { ok: false, error: "Sin permisos para exportar la lista de precios." };
+  }
+
+  const parsed = listaPreciosFiltrosExportSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Filtros inválidos para exportar." };
+  }
+
+  const {
+    proveedorId: prov,
+    marcaNombre: marca,
+    rubroNombre: rubro,
+    busqueda: q,
+    habilitado: hab,
+    opciones: opt,
+  } = parsed.data;
+
+  const provTrim = prov?.trim() || undefined;
+  const marcaTrim = marca?.trim() || undefined;
+  const rubroTrim = rubro?.trim() || undefined;
+  const qTrim = q?.trim() || undefined;
+
+  const tieneFiltro =
+    !!provTrim ||
+    !!marcaTrim ||
+    !!rubroTrim ||
+    hab !== undefined ||
+    (qTrim?.length ?? 0) >= 3;
+
+  if (!tieneFiltro) {
+    return {
+      ok: false,
+      error: "Aplicá un filtro o escribí al menos 3 caracteres en la búsqueda para exportar.",
+    };
+  }
+
+  try {
+    const filas = await listarListaPreciosFiltradaParaExport(
+      provTrim,
+      marcaTrim,
+      rubroTrim,
+      qTrim,
+      hab,
+      opt
+    );
+    return { ok: true, data: { filas } };
+  } catch (e: unknown) {
+    const message =
+      e instanceof Error ? e.message : "No se pudo exportar la lista de precios.";
+    return { ok: false, error: message };
   }
 }
 

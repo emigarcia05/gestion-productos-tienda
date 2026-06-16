@@ -40,6 +40,7 @@ import {
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
+import type { ListaPreciosFiltrosExportSnapshot } from "@/components/proveedores/ExportarListaPreciosButton";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
 interface RubroOption {
@@ -72,6 +73,7 @@ interface ListaPreciosTablaConFiltrosProps {
   reloadNonce?: number;
   onEdicionSuccess?: () => void;
   onFilteredIdsChange?: (ids: string[]) => void;
+  onFiltrosExportSnapshotChange?: (snapshot: ListaPreciosFiltrosExportSnapshot) => void;
   fetchListaPreciosConOpcionesAction: FetchListaPreciosConOpcionesAction;
 }
 
@@ -92,21 +94,11 @@ function DescripcionCelda({ fila }: { fila: FilaListaPrecioParaCliente }) {
   const tienda = fila.descripcionTienda?.trim() || "";
   const proveedor = fila.descripcionProveedor?.trim() || "";
   const principal = tienda || proveedor || "—";
-  const secundaria =
-    tienda && proveedor && tienda !== proveedor ? proveedor : null;
-  const meta = [fila.marca, fila.rubro].filter(Boolean).join(" · ");
-
-  const titleParts = [principal, secundaria, meta, fila.codExt].filter(Boolean).join(" · ");
+  const titleParts = [principal, fila.codExt].filter(Boolean).join(" · ");
 
   return (
     <div className="min-w-0 flex flex-col gap-0.5" title={titleParts}>
       <div className="celda-destacado truncate text-xs font-bold">{principal}</div>
-      {secundaria ? (
-        <div className="truncate text-[0.6875rem] text-muted-foreground">{secundaria}</div>
-      ) : null}
-      {meta ? (
-        <div className="truncate text-[0.6875rem] text-muted-foreground">{meta}</div>
-      ) : null}
     </div>
   );
 }
@@ -164,6 +156,7 @@ export default function ListaPreciosTablaConFiltros({
   reloadNonce = 0,
   onEdicionSuccess,
   onFilteredIdsChange,
+  onFiltrosExportSnapshotChange,
   fetchListaPreciosConOpcionesAction,
 }: ListaPreciosTablaConFiltrosProps) {
   const [filaEdit, setFilaEdit] = useState<FilaListaPrecioParaCliente | null>(null);
@@ -292,6 +285,30 @@ export default function ListaPreciosTablaConFiltros({
     });
   }, [proveedorId, marcaNombre, rubroNombre, habilitadoFilter, busqueda]);
 
+  useEffect(() => {
+    onFiltrosExportSnapshotChange?.({
+      hasFilterActive,
+      filtros: hasFilterActive
+        ? {
+            proveedorId: proveedorId || undefined,
+            marcaNombre: marcaNombre || undefined,
+            rubroNombre: rubroNombre || undefined,
+            busqueda: busqueda.trim() || undefined,
+            habilitado:
+              habilitadoFilter === "si" ? true : habilitadoFilter === "no" ? false : undefined,
+          }
+        : null,
+    });
+  }, [
+    hasFilterActive,
+    proveedorId,
+    marcaNombre,
+    rubroNombre,
+    habilitadoFilter,
+    busqueda,
+    onFiltrosExportSnapshotChange,
+  ]);
+
   const filteredFilas = filasData;
   const hayFiltros =
     !!proveedorId || !!marcaNombre || !!rubroNombre || !!habilitadoFilter || !!busqueda.trim();
@@ -397,8 +414,8 @@ export default function ListaPreciosTablaConFiltros({
           </FilterRowSearch>
           <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
           <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-            {filteredFilas.length.toLocaleString()} PRODUCTO
-            {filteredFilas.length !== 1 ? "S" : ""}
+            {total.toLocaleString()} PRODUCTO
+            {total !== 1 ? "S" : ""}
           </span>
         </div>
       </FilterBar>

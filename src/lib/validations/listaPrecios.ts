@@ -55,3 +55,8 @@ export const listaPreciosFiltrosLecturaSchema = z.object({
 });
 
 export type ListaPreciosFiltrosLecturaInput = z.infer<typeof listaPreciosFiltrosLecturaSchema>;
+
+/** Filtros para exportar lista de precios (sin paginación). */
+export const listaPreciosFiltrosExportSchema = listaPreciosFiltrosLecturaSchema.omit({ pagina: true });
+
+export type ListaPreciosFiltrosExportInput = z.infer<typeof listaPreciosFiltrosExportSchema>;

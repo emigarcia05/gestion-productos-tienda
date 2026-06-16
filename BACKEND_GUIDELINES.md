@@ -1148,7 +1148,7 @@ Antes de entregar código nuevo o modificado, verificar:
 ### 5.1 Cumplen bien
 
 - **proveedores.ts**: `esEditor()`, Zod para crear/editar, `ActionResult`, servicios.
-- **listaPrecios.ts**: `getRol()` + `puede()` para edición masiva y para **lecturas** (`importarLista`); Zod en payload masivo y en filtros de lectura.
+- **listaPrecios.ts**: `getRol()` + `puede()` para edición masiva y para **lecturas** (`importarLista`); Zod en payload masivo y en filtros de lectura. **`exportarListaPreciosAction`**: mismos filtros que la grilla (`listaPreciosFiltrosExportSchema`, sin `pagina`); devuelve todas las filas vía `listarListaPreciosFiltradaParaExport`.
 - **comparacionCategorias.ts**: `getRol()` + `puede()` en todas las Actions; Zod unificado vía `@/lib/validations/comparacionCategorias` y búsqueda de productos a asignar.
 
 ### 5.2 Estado tras auditoría de seguridad (2026-03)
@@ -1186,8 +1186,8 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/actions/duxCompras.ts` | **Eliminado (2026-05-10):** sin call sites; histórico: correlativo DUX para recepción. **2026-05-08:** removidos también `src/services/duxCompras.service.ts` y `src/lib/duxComprobanteCorrelativo.ts`; ver §2.8 y §2.9. |
 | `src/actions/importar.ts` | `importarProductos` e `importarListaPreciosProveedor` devuelven `ImportActionResult` (éxito con `data` o error con `error`) en lugar de lanzar; try/catch en importar lista para devolver error controlado. |
 | `prisma/migrations/20260508140000_precios_natural_pk_cod_tienda_cod_ext/migration.sql` | **`prod_precios_tienda`** PK = **`cod_tienda`**; **`prod_precios_provee`** PK = **`cod_ext`**; vínculo **`prod_precios_provee.cod_tienda`**; satélites comparación (`prod_comp_*`) referencian `cod_ext`. |
-| `src/actions/listaPrecios.ts` | `actualizarListaPreciosMasivoAction`: validación con `listaPreciosCodExtListSchema` (`@/lib/validations/common`, reexport en `listaPrecios.ts`) + `actualizacionMasivaListaPreciosSchema`. |
-| `src/lib/validations/listaPrecios.ts` | Reexport `listaPreciosCodExtListSchema`; `actualizacionMasivaListaPreciosSchema` con `porcentajeListaPreciosSchema` (0–100, máx. 2 decimales) en `dto_*` y `cxTransporte`; `cotizacionDolar` y `pxListaProveedor` con **`.min(0)`** (0 permitido). |
+| `src/actions/listaPrecios.ts` | `actualizarListaPreciosMasivoAction`: validación con `listaPreciosCodExtListSchema` (`@/lib/validations/common`, reexport en `listaPrecios.ts`) + `actualizacionMasivaListaPreciosSchema`. **`exportarListaPreciosAction`**: exportación filtrada sin paginación. |
+| `src/lib/validations/listaPrecios.ts` | Reexport `listaPreciosCodExtListSchema`; `actualizacionMasivaListaPreciosSchema` con `porcentajeListaPreciosSchema` (0–100, máx. 2 decimales) en `dto_*` y `cxTransporte`; `cotizacionDolar` y `pxListaProveedor` con **`.min(0)`** (0 permitido). **`listaPreciosFiltrosExportSchema`** (lectura/export sin `pagina`). |
 | `prisma/migrations/20260527150000_prod_precios_provee_porcentajes_decimal/migration.sql` | Columnas `dto_*` y `cx_transporte`: **INTEGER → NUMERIC(5,2)**. Antes hay que **`DROP`** la columna generada `px_compra_final_sin_iva` y recrearla con la misma expresión (PostgreSQL no permite `ALTER TYPE` en columnas dependientes). Lecturas en servicios: `Number(prisma.Decimal)`. Si falló el primer intento: `npx prisma migrate resolve --rolled-back 20260527150000_prod_precios_provee_porcentajes_decimal` y luego `migrate deploy`. |
 | `src/components/proveedores/ImportarModal.tsx` | Manejo de respuesta: comprueba `res.ok` y usa `res.data` o `res.error` según corresponda. |
 | **Fase 2 (cierre de auditoría)** | |

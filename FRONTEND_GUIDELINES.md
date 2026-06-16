@@ -1225,6 +1225,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-10): **Comp. Categorias — DTO. EXTRA + costo recalculado** — columna editable; `dtoExtraDraft`; `calcCostoComparacion` en COSTO/VAR/márgenes.*
 
+*Última actualización (2026-06-16): **`/gestion-productos/proveedores/lista-precios`** — botón **Exportar Lista Precios** (`ExportarListaPreciosButton` + `exportarListaPreciosAction`): exporta **todos** los ítems que coinciden con los filtros activos (sin paginación) a Excel `.xls` (`exportListaPreciosExcelClient.ts`).*
+
 *Última actualización (2026-06-13): **Ayuda Vendedor — Cargar Gasto** — ruta `/gestion-productos/cargar-gasto` (rewrite → `/cargar-gasto`); sidebar en **AYUDA VENDEDOR**; abre **`GastoUnicoBalanceModal`** al cargar; solo **editor** (`PERMISOS.ayudaVendedor.cargarGasto`).*
 
 *Última actualización (2026-06-13): **Comp. Categorias — margen manual** — tabla `prod_comp_margen_manual` (`margen_manual` entero por `cod_ext`); input **DIF PX REF MANUAL** persiste margen vía `actualizarMargenManualComparacionAction`; **PX MANUAL** y **MARGEN MANUAL** calculados en cliente. Migración **`20260613150000_comp_margen_manual`** (reemplaza `prod_comp_px_manual`; valores legacy anulados).*

@@ -216,6 +216,27 @@ export async function getListaPreciosConTiendaFiltrada(
   return { filas: result, total, totalPaginas };
 }
 
+/** Todos los ítems que coinciden con los filtros activos (sin paginación). */
+export async function listarListaPreciosFiltradaParaExport(
+  proveedorId: string | undefined,
+  marcaNombre: string | undefined,
+  rubroNombre: string | undefined,
+  busqueda: string | undefined,
+  habilitado: boolean | undefined,
+  opciones?: ListaPreciosFiltradoOpciones
+): Promise<FilaListaPrecioParaCliente[]> {
+  const { filas } = await getListaPreciosConTiendaFiltrada(
+    proveedorId,
+    marcaNombre,
+    rubroNombre,
+    busqueda,
+    habilitado,
+    opciones,
+    undefined
+  );
+  return filas;
+}
+
 /** Proveedores con al menos un ítem que cumple (marca, rubro, busqueda, habilitado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
 export async function getProveedoresDisponiblesListaPrecios(
   marcaNombre: string | undefined,
