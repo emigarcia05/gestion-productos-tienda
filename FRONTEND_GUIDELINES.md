@@ -48,6 +48,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 7. **Nuevo modal con tabla**  
    - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección). Para modales genéricos: `AppModal` de `@/components/shared/AppModal.tsx` con cuerpo `bg-card`.
+   - **Botones en modales (obligatorio):** siempre `Button` de `@/components/ui/button`. **Prohibido** `<button>` con utilidades sueltas (`bg-muted/60`, `px-3 py-1.5 rounded-lg`, etc.). CTA principal (adjuntar archivo, confirmar, ítem de lista accionable): `variant="default"` (primary azul, texto blanco). Cancelar / secundario: `variant="outline"`. Pares **SÍ / NO**: **`ModalSiNoChoice`** (`@/components/shared/ModalSiNoChoice.tsx`) — opción activa `default`, inactiva `outline`. Modos o pestañas en el cuerpo: fila de `Button` `size="sm"` con la misma regla activo/inactivo. Excepciones documentadas: celdas de calendario, checkboxes de tabla, disparadores de tooltip, barras de gráfico interactivas.
    - **Etiquetas de campo:** `<label>`, `<Label>` (`data-slot="label"`), **`ModalMicroLabel`** o **`MODAL_FIELD_LABEL_CLASS`** / **`MODAL_MICRO_LABEL_CLASS`** — color **`text-foreground`** (regla global en **`globals.css`**; ver punto 2 de la Guía para IA).
    - Micro-etiquetas de campo en modales densos: **`ModalMicroLabel`** (`@/components/shared/ModalMicroLabel.tsx`, CVA `align`).
    - `AppModal` (wrapper estándar) expone variantes con **CVA** para evitar duplicación de clases:
@@ -1054,7 +1055,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-27): **`/gestion-productos/proveedores/lista-precios`** — la grilla elimina columnas **MARCA** y **RUBRO** (se mantienen en barra de filtros), agrega columna **ACCIONES** con botón ícono **Editar** por fila (`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`) y abre modal en modo individual usando el mismo componente de **Edición Masiva**.*
 
-*Última actualización (2026-05-27): **`ListaPreciosTablaConFiltros`** — vista principal: **COD. EXT.**, **PROV.** (solo sin filtro proveedor), **DESCRIPCION** (tienda + proveedor + marca/rubro), **PX. LISTA PROV.**, **PX. FINAL**, **DET.** (chevron expande descuentos) y **ACCIONES** (editar). Subfila con **DESC. PROV./MARCA/RUBRO/CANT./FINAN.** y **CX. TRANSP.** reutiliza clases `tabla-fila-detalle-competencia-*`; vacíos numéricos muestran **—**.*
+*Última actualización (2026-05-27): **`ListaPreciosTablaConFiltros`** — vista principal: **COD. EXT.**, **PROV.** (solo sin filtro proveedor), **DESCRIPCION** (tienda + proveedor + marca/rubro), **PX. LISTA PROV.**, **PX. FINAL**, **ACCIONES** (chevron detalle + editar + vincular REX si editor). Subfila con **DESC. PROV./MARCA/RUBRO/CANT./FINAN.** y **CX. TRANSP.** reutiliza clases `tabla-fila-detalle-competencia-*`; vacíos numéricos muestran **—**.*
 
 *Última actualización (2026-06-13): **Lista precios — modal Editar producto** — **PX. LISTA PROVEEDOR** con **`MontoArInput`** (`$`, miles `.`, decimales `,`); descuentos y **CX. TRANSPORTE** con **`PorcentajeCentInput`** + sufijo **`%`**; todos los campos numéricos admiten **0**; al **enfocar**, el **primer dígito** reemplaza el valor previo y los siguientes desplazan (máscara POS).*
 
@@ -1206,6 +1207,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-05-21): **Etiquetas de campo en modales** — regla global: color `foreground` (negro de UI), no `muted`, en `label` / `Label` / `ModalMicroLabel` / `MODAL_*_LABEL_CLASS`; `globals.css` (`--modal-field-label-color`) en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]`; migración de micro-etiquetas legacy en modales Finanzas a `ModalMicroLabel`.*
 
 *Última actualización (2026-06-16): **PDF matriz lista precios + REX** — **`ConvertirPdfListaPreciosModal`**: proveedor obligatorio; conversión guarda en **`prod_precios_rex`** (upsert por proveedor + **`descripcionExport`**); botones **Guardar Precios** y **Descargar Excel**; preview **DESCRIPCIÓN | PX. LISTA**.*
+
+*Última actualización (2026-06-16): **Lista precios — vínculo REX** — columna única **ACCIONES** (chevron detalle, **Editar**, **Vincular** `Link2`); modal **`VincularPrecioRexModal`** (estética `modal-app` como **`SeleccionarProductoModal`** en comp-proveedores): filtro descripción, doble clic para vincular 1:1 con **`prod_precios_rex`**; ítems ya vinculados a otro `cod_ext` bloqueados con **`Lock`**.*
 
 *Última actualización (2026-06-04): **Subfilas expandibles** (`.tabla-fila-detalle-competencia`, Cx Compra, Px Competencia, Lista Px): alto fijo **`--tabla-body-row-min-height`** (2rem), igual que filas principales; eliminado override Cx Compra de 4.25rem y layout apilado con espaciadores; **CX PROD.** en subfila Cx Compra = una línea (base + variación | precio).*
 

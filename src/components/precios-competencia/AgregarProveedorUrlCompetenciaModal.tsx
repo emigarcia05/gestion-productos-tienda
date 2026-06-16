@@ -94,18 +94,19 @@ export default function AgregarProveedorUrlCompetenciaModal({
             ) : (
               competidoresDisponibles.map((c) => (
                 <li key={c.id}>
-                  <button
+                  <Button
                     type="button"
+                    variant="default"
                     role="option"
                     aria-selected={false}
-                    className="w-full px-3 py-2.5 text-left text-sm font-medium text-foreground hover:bg-muted"
+                    className="h-auto w-full justify-start px-3 py-2.5 text-sm font-medium"
                     onClick={() => {
                       onSeleccionar(c.id);
                       onOpenChange(false);
                     }}
                   >
                     {c.nombre}
-                  </button>
+                  </Button>
                 </li>
               ))
             )}

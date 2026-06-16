@@ -159,28 +159,23 @@ export default function EditarCostoObjetivoModal({
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
           {/* 1. Manual */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <button
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
                 type="button"
+                variant={modo === "manual" ? "default" : "outline"}
+                size="sm"
                 onClick={() => setModo("manual")}
-                className={cn(
-                  "text-sm font-medium",
-                  modo === "manual" ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                )}
               >
-                1. MANUAL
-              </button>
-              <span className="text-muted-foreground">|</span>
-              <button
+                1. Manual
+              </Button>
+              <Button
                 type="button"
+                variant={modo === "lista" ? "default" : "outline"}
+                size="sm"
                 onClick={() => setModo("lista")}
-                className={cn(
-                  "text-sm font-medium",
-                  modo === "lista" ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                )}
               >
-                2. DESDE LISTA DE PRECIOS
-              </button>
+                2. Desde Lista De Precios
+              </Button>
             </div>
 
             {modo === "manual" && (

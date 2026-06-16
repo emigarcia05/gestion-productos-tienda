@@ -25,6 +25,13 @@ import {
 } from "@/lib/productoProveedoresPage";
 
 const TIPO_URGENTE_MERC2 = "URGENTE";
+
+export interface PrecioRexVinculoCliente {
+  id: string;
+  descripcion: string;
+  precio: number;
+}
+
 export interface FilaListaPrecioParaCliente {
   id: string;
   codExt: string;
@@ -47,6 +54,58 @@ export interface FilaListaPrecioParaCliente {
   cxTransporte: number;
   pxCompraFinalSinIva: number | null;
   proveedor: { id: string; prefijo: string; nombre: string; codigoUnico: string } | null;
+  idPrecioRex: string | null;
+  precioRex: PrecioRexVinculoCliente | null;
+}
+
+const listaPrecioParaClienteInclude = {
+  proveedor: true,
+  prodTienda: { select: { descripcionTienda: true } },
+  precioRex: { select: { id: true, descripcion: true, precio: true } },
+} as const;
+
+type ListaPrecioProveedorParaCliente = Prisma.ListaPrecioProveedorGetPayload<{
+  include: typeof listaPrecioParaClienteInclude;
+}>;
+
+function mapListaPrecioProveedorParaCliente(f: ListaPrecioProveedorParaCliente): FilaListaPrecioParaCliente {
+  const descTienda = f.prodTienda?.descripcionTienda?.trim() || null;
+  return {
+    id: f.codExt,
+    codExt: f.codExt,
+    codProdProveedor: f.codProdProveedor,
+    habilitado: f.habilitado,
+    descripcion: descTienda ?? f.descripcionProveedor,
+    descripcionProveedor: f.descripcionProveedor,
+    descripcionTienda: descTienda,
+    marca: f.marca ?? null,
+    rubro: f.rubro ?? null,
+    pxListaProveedor: Number(f.pxListaProveedor),
+    pxVtaSugerido: f.pxVtaSugerido != null ? Number(f.pxVtaSugerido) : null,
+    dtoProveedor: Number(f.dtoProveedor),
+    dtoMarca: Number(f.dtoMarca),
+    dtoRubro: Number(f.dtoRubro),
+    dtoCantidad: Number(f.dtoCantidad),
+    dtoFinanciero: Number(f.dtoFinanciero),
+    cxTransporte: Number(f.cxTransporte),
+    pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
+    proveedor: f.proveedor
+      ? {
+          id: f.proveedor.id,
+          prefijo: f.proveedor.prefijo ?? "",
+          nombre: f.proveedor.nombre,
+          codigoUnico: f.proveedor.codigoUnico,
+        }
+      : null,
+    idPrecioRex: f.idPrecioRex,
+    precioRex: f.precioRex
+      ? {
+          id: f.precioRex.id,
+          descripcion: f.precioRex.descripcion,
+          precio: Number(f.precioRex.precio),
+        }
+      : null,
+  };
 }
 
 export interface ListaPreciosFiltradoOpciones {
@@ -60,43 +119,11 @@ export interface ListaPreciosFiltradoOpciones {
  */
 export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCliente[]> {
   const filas = await prisma.listaPrecioProveedor.findMany({
-    include: {
-      proveedor: true,
-      prodTienda: { select: { descripcionTienda: true } },
-    },
+    include: listaPrecioParaClienteInclude,
     orderBy: { codExt: "asc" },
   });
 
-  return filas.map((f) => {
-    const descTienda = f.prodTienda?.descripcionTienda?.trim() || null;
-    return {
-      id: f.codExt,
-      codExt: f.codExt,
-      codProdProveedor: f.codProdProveedor,
-      habilitado: f.habilitado,
-      descripcion: descTienda ?? f.descripcionProveedor,
-      descripcionProveedor: f.descripcionProveedor,
-      descripcionTienda: descTienda,
-      marca: f.marca ?? null,
-      rubro: f.rubro ?? null,
-      pxListaProveedor: Number(f.pxListaProveedor),
-      dtoProveedor: Number(f.dtoProveedor),
-      dtoMarca: Number(f.dtoMarca),
-      dtoRubro: Number(f.dtoRubro),
-      dtoCantidad: Number(f.dtoCantidad),
-      dtoFinanciero: Number(f.dtoFinanciero),
-      cxTransporte: Number(f.cxTransporte),
-      pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
-      proveedor: f.proveedor
-        ? {
-            id: f.proveedor.id,
-            prefijo: f.proveedor.prefijo ?? "",
-            nombre: f.proveedor.nombre,
-            codigoUnico: f.proveedor.codigoUnico,
-          }
-        : null,
-    };
-  });
+  return filas.map(mapListaPrecioProveedorParaCliente);
 }
 
 /**
@@ -160,10 +187,7 @@ export async function getListaPreciosConTiendaFiltrada(
   const [filasRaw, total] = await Promise.all([
     prisma.listaPrecioProveedor.findMany({
       where,
-      include: {
-        proveedor: true,
-        prodTienda: { select: { descripcionTienda: true } },
-      },
+      include: listaPrecioParaClienteInclude,
       orderBy: { codExt: "asc" },
       skip,
       take,
@@ -171,39 +195,7 @@ export async function getListaPreciosConTiendaFiltrada(
     prisma.listaPrecioProveedor.count({ where }),
   ]);
 
-  let result: FilaListaPrecioParaCliente[] = filasRaw.map((f) => {
-    const descTienda = f.prodTienda?.descripcionTienda?.trim() || null;
-    return {
-      id: f.codExt,
-      codExt: f.codExt,
-      codProdProveedor: f.codProdProveedor,
-      habilitado: f.habilitado,
-      descripcion: descTienda ?? f.descripcionProveedor,
-      descripcionProveedor: f.descripcionProveedor,
-      descripcionTienda: descTienda,
-      marca: f.marca ?? null,
-      rubro: f.rubro ?? null,
-      pxListaProveedor: Number(f.pxListaProveedor),
-      // Siempre exponer el campo para que módulos como "Px. Vta. Sugeridos"
-      // puedan renderizar la columna aunque no filtren por soloPxSugerido.
-      pxVtaSugerido: f.pxVtaSugerido != null ? Number(f.pxVtaSugerido) : null,
-      dtoProveedor: Number(f.dtoProveedor),
-      dtoMarca: Number(f.dtoMarca),
-      dtoRubro: Number(f.dtoRubro),
-      dtoCantidad: Number(f.dtoCantidad),
-      dtoFinanciero: Number(f.dtoFinanciero),
-      cxTransporte: Number(f.cxTransporte),
-      pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
-      proveedor: f.proveedor
-        ? {
-            id: f.proveedor.id,
-            prefijo: f.proveedor.prefijo ?? "",
-            nombre: f.proveedor.nombre,
-            codigoUnico: f.proveedor.codigoUnico,
-          }
-        : null,
-    };
-  });
+  let result: FilaListaPrecioParaCliente[] = filasRaw.map(mapListaPrecioProveedorParaCliente);
 
   if (q.length >= 3) {
     result = result.filter((f) =>

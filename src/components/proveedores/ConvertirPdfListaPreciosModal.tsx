@@ -356,10 +356,13 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
             <span className="text-sm font-medium text-foreground min-w-0 truncate">
               {fileName ? "CAMBIAR PDF" : "ADJUNTAR PDF"}
             </span>
-            <div className="flex gap-2 w-full min-w-0">
-              <button
+              <div className="flex w-full min-w-0">
+              <Button
                 type="button"
+                variant="default"
+                size="default"
                 disabled={ocupado}
+                className="min-w-0 flex-1"
                 onClick={() => {
                   if (fileName) {
                     resetForm();
@@ -367,10 +370,10 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
                     fileInputRef.current?.click();
                   }
                 }}
-                className="flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-muted/60 text-muted-foreground border border-border hover:bg-muted disabled:opacity-50"
               >
-                {fileName ? "CAMBIAR PDF" : "ADJUNTAR PDF"}
-              </button>
+                <Upload className="h-4 w-4" />
+                {fileName ? "Cambiar PDF" : "Adjuntar PDF"}
+              </Button>
               <input
                 ref={fileInputRef}
                 type="file"

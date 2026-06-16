@@ -26,6 +26,7 @@ import { type MapeoColumnasListaPrecios } from "@/actions/importar";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
 import { cn } from "@/lib/utils";
 import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
+import ModalSiNoChoice from "@/components/shared/ModalSiNoChoice";
 
 interface Proveedor {
   id: string;
@@ -220,9 +221,12 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               <span className="text-sm font-medium text-foreground min-w-0 truncate">
                 {fileName ? "MODIFICAR ARCHIVO" : "ADJUNTAR UN ARCHIVO"}
               </span>
-              <div className="flex gap-2 w-full min-w-0">
-                <button
+              <div className="flex w-full min-w-0">
+                <Button
                   type="button"
+                  variant="default"
+                  size="default"
+                  className="min-w-0 flex-1"
                   onClick={() => {
                     if (fileName) {
                       setFileName(null);
@@ -233,10 +237,10 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
                       fileInputRef.current?.click();
                     }
                   }}
-                  className="flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
                 >
-                  {fileName ? "MODIFICAR ARCHIVO" : "ADJUNTAR ARCHIVO"}
-                </button>
+                  <Upload className="h-4 w-4" />
+                  {fileName ? "Modificar Archivo" : "Adjuntar Archivo"}
+                </Button>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -251,78 +255,15 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
 
               {/* Fila 2: Los datos tienen encabezados — SÍ / NO */}
               <span className="text-sm font-medium text-foreground min-w-0 truncate">LOS DATOS TIENEN ENCABEZADOS</span>
-              <div className="flex gap-2 w-full min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setTieneEncabezados(true)}
-                  className={cn(
-                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                    tieneEncabezados ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  )}
-                >
-                  SÍ
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTieneEncabezados(false)}
-                  className={cn(
-                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                    !tieneEncabezados ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  )}
-                >
-                  NO
-                </button>
-              </div>
+              <ModalSiNoChoice value={tieneEncabezados} onChange={setTieneEncabezados} />
 
               {/* Fila 3: Habilitado — SÍ / NO */}
               <span className="text-sm font-medium text-foreground min-w-0 truncate">HABILITADO</span>
-              <div className="flex gap-2 w-full min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setHabilitado(true)}
-                  className={cn(
-                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                    habilitado ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  )}
-                >
-                  SÍ
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setHabilitado(false)}
-                  className={cn(
-                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                    !habilitado ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  )}
-                >
-                  NO
-                </button>
-              </div>
+              <ModalSiNoChoice value={habilitado} onChange={setHabilitado} />
 
               {/* Fila 4: Precio en dólares — SÍ / NO */}
               <span className="text-sm font-medium text-foreground min-w-0 truncate">PRECIO EN DÓLARES</span>
-              <div className="flex gap-2 w-full min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setPrecioEnDolares(true)}
-                  className={cn(
-                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                    precioEnDolares ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  )}
-                >
-                  SÍ
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPrecioEnDolares(false)}
-                  className={cn(
-                    "flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                    !precioEnDolares ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground border border-border hover:bg-muted"
-                  )}
-                >
-                  NO
-                </button>
-              </div>
+              <ModalSiNoChoice value={precioEnDolares} onChange={setPrecioEnDolares} />
             </div>
 
             {/* Zona de arrastre cuando no hay archivo (opcional, para drag & drop) */}

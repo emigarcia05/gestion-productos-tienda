@@ -202,7 +202,11 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **Tabla**: **`prod_precios_rex`**. Modelo Prisma **`ProdPrecioRex`**.
 - **Columnas**: `id` (TEXT, PK, `@default(cuid())`), `id_proveedor` (TEXT NOT NULL, FK → `global_proveedores.id` ON DELETE CASCADE), `descripcion` (TEXT NOT NULL), `precio` (`DECIMAL(14,4)` NOT NULL).
 - **Clave lógica de upsert**: **`UNIQUE (id_proveedor, descripcion)`** — actualizaciones por conversión PDF matriz matchean proveedor + texto exportado (`descripcionExport` del parser, normalizado con `limpiarTextoPdfMatriz` / `buildDescripcionExport` en `@/lib/listaPreciosPdfMatriz`).
-- **Migraciones**: `20260616120000_add_prod_precios_rex` (tabla base); `20260616130000_prod_precios_rex_id_proveedor` (FK + índice único).
+- **Migraciones**: `20260616120000_add_prod_precios_rex` (tabla base); `20260616130000_prod_precios_rex_id_proveedor` (FK + índice único); `20260616140000_prod_precios_provee_id_precio_rex` (vínculo 1:1 opcional desde lista proveedor).
+- **Vínculo 1:1 con lista proveedor** (`prod_precios_provee`): columna **`id_precio_rex`** (TEXT NULL, **UNIQUE**, FK → `prod_precios_rex.id` ON DELETE SET NULL). Modelo Prisma: `ListaPrecioProveedor.idPrecioRex` → `precioRex`; inversa `ProdPrecioRex.listaPrecioProveedor`. Reglas: un ítem REX solo puede estar vinculado a un `cod_ext`; la fila lista y el REX deben compartir **`id_proveedor`**.
+- **Servicios vínculo**: `listarPreciosRexParaVincular`, `vincularListaPrecioConPrecioRex` en `@/services/prodPreciosRex.service.ts`.
+- **Actions**: `listarPreciosRexParaVincularAction`, `vincularListaPrecioConPrecioRexAction` en `src/actions/prodPreciosRex.ts` — gate `PERMISOS.listaPrecios.acciones.edicionMasiva` + `esEditor()`; validación `listarPreciosRexParaVincularSchema` / `vincularListaPrecioConPrecioRexSchema`.
+- **Lectura lista precios**: `FilaListaPrecioParaCliente` incluye `idPrecioRex` y `precioRex` (`listaPrecios.service.ts`, include `precioRex`).
 - **IDs en Actions futuras**: `idProveedor` con `prismaCuidSchema`; payload filas PDF con `filaPdfMatrizNormalizadaSchema`.
 - **Origen previsto**: **`ConvertirPdfListaPreciosModal`** — `proveedorId` obligatorio al convertir; tras parse exitoso persiste vía **`guardarPreciosRexDesdePdfAction`** (`src/actions/prodPreciosRex.ts`) → **`upsertPreciosRexDesdeFilasPdf`** (`src/services/prodPreciosRex.service.ts`). Clave upsert: **`normalizarDescripcionPrecioRex(descripcionExport)`** + proveedor. Duplicados en el mismo lote: gana el último precio.
 - **Gate**: `PERMISOS.listaPrecios.acciones.importarLista` + `esEditor()` (mismo que import PDF / lista precios).
@@ -1551,6 +1555,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 | Validación parse | `@/lib/validations/parseListaPreciosPdfMatriz.ts` |
 | API parse | `POST /api/parse-lista-precios-pdf` — `multipart/form-data` (`file`, `paginaInicio` default **9**, `filasIgnorar` default **0**); gate `guardListaPreciosImportarEsEditor` |
 | Persistencia REX | `@/services/prodPreciosRex.service.ts` — `upsertPreciosRexDesdeFilasPdf` |
+| Vínculo lista ↔ REX | `@/services/prodPreciosRex.service.ts` — `listarPreciosRexParaVincular`, `vincularListaPrecioConPrecioRex`; Actions en `prodPreciosRex.ts`; UI `VincularPrecioRexModal` desde **Lista Precios** (columna **ACCIONES**, botón **Vincular**) |
 | Action | `guardarPreciosRexDesdePdfAction` en `src/actions/prodPreciosRex.ts` |
 | Validación guardado | `@/lib/validations/prodPreciosRex.ts` — `guardarPreciosRexDesdePdfSchema` |
 | UI | `ConvertirPdfListaPreciosModal` — proveedor obligatorio; **Iniciar Conversión** parsea + guarda; **Guardar Precios** re-upsert; **Descargar Excel** opcional |

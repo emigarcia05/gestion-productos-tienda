@@ -28,6 +28,7 @@ import {
   IMPORT_STAT_BADGE_CLASSES,
   TEXT_SUCCESS_CLASS,
 } from "@/lib/ui-classes";
+import ModalSiNoChoice from "@/components/shared/ModalSiNoChoice";
 
 interface Proveedor {
   id: string;
@@ -203,24 +204,18 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
               )}
             </div>
 
-            {/* Toggle encabezados */}
-            <button
-              type="button"
-              onClick={() => setTieneEncabezados((v) => !v)}
-              className="flex items-center gap-3 w-full rounded-lg border border-border/50 bg-card/30 px-4 py-3 text-sm hover:bg-card/60 transition-colors"
-            >
-              <div className={cn("relative h-5 w-9 rounded-full transition-colors shrink-0", tieneEncabezados ? "bg-primary" : "bg-muted")}>
-                <div className={cn("absolute top-0.5 h-4 w-4 rounded-full bg-card shadow transition-transform", tieneEncabezados ? "translate-x-4" : "translate-x-0.5")} />
-              </div>
-              <div className="text-left">
-                <p className="font-medium">EL ARCHIVO TIENE ENCABEZADOS</p>
+            {/* Encabezados */}
+            <div className="grid grid-cols-[1fr_10rem] gap-x-4 gap-y-3 items-center">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">EL ARCHIVO TIENE ENCABEZADOS</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {tieneEncabezados
                     ? "La primera fila se omitirá y se usará como nombre de columnas"
                     : "Todas las filas se tratarán como datos"}
                 </p>
               </div>
-            </button>
+              <ModalSiNoChoice value={tieneEncabezados} onChange={setTieneEncabezados} />
+            </div>
 
             {/* Zona drag & drop */}
             <div

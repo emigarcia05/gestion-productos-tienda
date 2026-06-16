@@ -462,11 +462,14 @@ model ListaPrecioProveedor {
   pxCompraFinalSinIva Decimal? @map("px_compra_final_sin_iva") @db.Decimal(14, 4) // generada: precio compra sin IVA; base * (1 - dtoTotal/100) * (1 + cx_transporte/100), dtoTotal capado 0-100
   codTiendaVinculo String? @map("cod_tienda") // FK al ítem tienda (`prod_tienda.cod_tienda`; 1 tienda → N proveedores)
   idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
+  /** FK opcional 1:1 → catálogo REX (`prod_precios_rex`). */
+  idPrecioRex         String?  @unique @map("id_precio_rex")
   habilitado         Boolean  @map("habilitado") @default(true) // mapea opción SÍ/NO del modal importar
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   proveedor         Proveedor        @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+  precioRex         ProdPrecioRex?   @relation(fields: [idPrecioRex], references: [id], onDelete: SetNull)
   prodTienda ProdTienda? @relation(fields: [codTiendaVinculo], references: [codTienda], onDelete: SetNull)
   presentacion      PresentacionComparacion? @relation("PresentacionItems", fields: [idPresentacion], references: [id], onDelete: SetNull)
   presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
@@ -584,6 +587,7 @@ model ProdPrecioRex {
   precio      Decimal @map("precio") @db.Decimal(14, 4)
 
   proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+  listaPrecioProveedor ListaPrecioProveedor?
 
   @@unique([idProveedor, descripcion], map: "prod_precios_rex_id_proveedor_descripcion_ux")
   @@index([idProveedor], map: "prod_precios_rex_id_proveedor_idx")

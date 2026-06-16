@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, Link2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -40,6 +40,7 @@ import {
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
+import VincularPrecioRexModal from "@/components/proveedores/VincularPrecioRexModal";
 import type { ListaPreciosFiltrosExportSnapshot } from "@/components/proveedores/ExportarListaPreciosButton";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 
@@ -106,11 +107,9 @@ function DescripcionCelda({ fila }: { fila: FilaListaPrecioParaCliente }) {
 function DetalleDescuentosFila({
   fila,
   showProveedor,
-  conColumnaAcciones,
 }: {
   fila: FilaListaPrecioParaCliente;
   showProveedor: boolean;
-  conColumnaAcciones: boolean;
 }) {
   const items: { label: string; value: string }[] = [
     { label: "DESC. PROV.", value: fmtPorcentajeTabla(fila.dtoProveedor) || "—" },
@@ -121,7 +120,7 @@ function DetalleDescuentosFila({
     { label: "CX. TRANSP.", value: fmtPorcentajeTabla(fila.cxTransporte) || "—" },
   ];
 
-  const colsDetalle = 4;
+  const colsDetalle = 3;
 
   return (
     <TableRow
@@ -141,9 +140,7 @@ function DetalleDescuentosFila({
           ))}
         </div>
       </TableCell>
-      {conColumnaAcciones ? (
-        <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      ) : null}
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
     </TableRow>
   );
 }
@@ -161,6 +158,8 @@ export default function ListaPreciosTablaConFiltros({
 }: ListaPreciosTablaConFiltrosProps) {
   const [filaEdit, setFilaEdit] = useState<FilaListaPrecioParaCliente | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [filaVincular, setFilaVincular] = useState<FilaListaPrecioParaCliente | null>(null);
+  const [vincularOpen, setVincularOpen] = useState(false);
   const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
@@ -177,8 +176,7 @@ export default function ListaPreciosTablaConFiltros({
   const [total, setTotal] = useState(0);
 
   const showProveedorColumn = !proveedorId;
-  const colCount =
-    5 + (showProveedorColumn ? 1 : 0) + (puedeEdicionMasiva ? 1 : 0);
+  const colCount = 5 + (showProveedorColumn ? 1 : 0);
 
   const hasFilterActive =
     !!proveedorId ||
@@ -428,8 +426,7 @@ export default function ListaPreciosTablaConFiltros({
             <col />
             <col className="w-[6.75rem]" />
             <col className="w-[6.75rem]" />
-            <col className="w-[3.25rem]" />
-            {puedeEdicionMasiva ? <col className="w-[3.25rem]" /> : null}
+            <col className="w-[6.5rem]" />
           </colgroup>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -438,10 +435,7 @@ export default function ListaPreciosTablaConFiltros({
               <TableHead>DESCRIPCION</TableHead>
               <TableHead className="text-right">PX. LISTA PROV.</TableHead>
               <TableHead className="text-right">PX. FINAL</TableHead>
-              <TableHead className="text-center">DET.</TableHead>
-              {puedeEdicionMasiva ? (
-                <TableHead className="text-center">ACCIONES</TableHead>
-              ) : null}
+              <TableHead className="text-center">ACCIONES</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -476,7 +470,12 @@ export default function ListaPreciosTablaConFiltros({
                         {fmtPrecioTabla(fila.pxCompraFinalSinIva)}
                       </TableCell>
                       <TableCell className="celda-datos celda-datos--accion-relleno-fila p-0">
-                        <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                        <div
+                          className={cn(
+                            TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+                            "justify-center gap-0.5"
+                          )}
+                        >
                           <Button
                             type="button"
                             variant="ghost"
@@ -492,34 +491,45 @@ export default function ListaPreciosTablaConFiltros({
                               <ChevronDown className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                             )}
                           </Button>
+                          {puedeEdicionMasiva ? (
+                            <>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                aria-label={`Editar ${fila.codExt}`}
+                                onClick={() => {
+                                  setFilaEdit(fila);
+                                  setEditOpen(true);
+                                }}
+                              >
+                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                aria-label={
+                                  fila.precioRex
+                                    ? `Cambiar vínculo REX de ${fila.codExt}`
+                                    : `Vincular REX a ${fila.codExt}`
+                                }
+                                onClick={() => {
+                                  setFilaVincular(fila);
+                                  setVincularOpen(true);
+                                }}
+                              >
+                                <Link2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              </Button>
+                            </>
+                          ) : null}
                         </div>
                       </TableCell>
-                      {puedeEdicionMasiva ? (
-                        <TableCell className="celda-datos celda-datos--accion-relleno-fila p-0">
-                          <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                              aria-label={`Editar ${fila.codExt}`}
-                              onClick={() => {
-                                setFilaEdit(fila);
-                                setEditOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      ) : null}
                     </TableRow>
                     {expandido ? (
-                      <DetalleDescuentosFila
-                        fila={fila}
-                        showProveedor={showProveedorColumn}
-                        conColumnaAcciones={puedeEdicionMasiva}
-                      />
+                      <DetalleDescuentosFila fila={fila} showProveedor={showProveedorColumn} />
                     ) : null}
                   </Fragment>
                 );
@@ -555,18 +565,29 @@ export default function ListaPreciosTablaConFiltros({
       </div>
 
       {puedeEdicionMasiva && (
-        <EdicionMasivaListaPreciosModal
-          mode="fila"
-          fila={filaEdit}
-          open={editOpen}
-          onOpenChange={(next) => {
-            setEditOpen(next);
-            if (!next) setFilaEdit(null);
-          }}
-          marcas={marcas}
-          rubros={rubros}
-          onSuccess={onEdicionSuccess}
-        />
+        <>
+          <EdicionMasivaListaPreciosModal
+            mode="fila"
+            fila={filaEdit}
+            open={editOpen}
+            onOpenChange={(next) => {
+              setEditOpen(next);
+              if (!next) setFilaEdit(null);
+            }}
+            marcas={marcas}
+            rubros={rubros}
+            onSuccess={onEdicionSuccess}
+          />
+          <VincularPrecioRexModal
+            open={vincularOpen}
+            onClose={() => {
+              setVincularOpen(false);
+              setFilaVincular(null);
+            }}
+            fila={filaVincular}
+            onVinculado={onEdicionSuccess}
+          />
+        </>
       )}
 
       <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">

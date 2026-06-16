@@ -44,7 +44,7 @@ interface Props {
   rol: Rol;
 }
 
-export default function SyncStatusIndicator({ rol }: Props) {
+export default function SyncStatusIndicator({ rol: _rol }: Props) {
   const pathname = usePathname();
   const areaId = getMainAppAreaIdFromPathname(pathname);
   const labels = SYNC_LABELS[areaId];
