@@ -26,6 +26,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   items: ReposicionProveedorPrioritarioItem[];
+  /** Proveedor elegido en Generar Pedido (destino del pedido actual). */
+  proveedorPedidoEtiqueta: string;
   pending?: boolean;
   onConfirmar: (seleccionados: ReposicionProveedorPrioritarioSeleccion[]) => void | Promise<void>;
 }
@@ -45,6 +47,7 @@ export default function ReposicionProveedorPrioritarioModal({
   open,
   onOpenChange,
   items,
+  proveedorPedidoEtiqueta,
   pending,
   onConfirmar,
 }: Props) {
@@ -96,7 +99,7 @@ export default function ReposicionProveedorPrioritarioModal({
       <AppModal
         title="Productos Asignados a Otro Proveedor"
         size="lg"
-        className="max-w-[72rem]"
+        className="max-w-[50.4rem]"
         padding="sm"
         scrollBody={false}
         headerClassName="pt-4 pb-3"
@@ -128,7 +131,8 @@ export default function ReposicionProveedorPrioritarioModal({
               <p className="text-sm leading-snug text-foreground">
                 Estos productos están asignados a{" "}
                 <strong className="font-semibold text-primary">{grupo.etiqueta}</strong>, pero por
-                temas de stock y logística podés decidir incluirlos en el pedido de ese proveedor.
+                temas de stock y logística podés incluirlos en el pedido de{" "}
+                <strong className="font-semibold text-primary">{proveedorPedidoEtiqueta}</strong>.
               </p>
             </div>
           ))}

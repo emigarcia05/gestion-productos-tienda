@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ComponentProps,
@@ -199,6 +200,15 @@ export default function GenerarPedidoToolbarButton({
 
   const filtrosCompletos =
     !!sucursal && !!proveedor.trim() && tipos.length > 0;
+
+  const proveedorPedidoEtiqueta = useMemo(() => {
+    const pid = proveedor.trim();
+    const p = proveedoresActivos.find((x) => x.id === pid);
+    if (!p) return "—";
+    const pref = p.prefijo.trim();
+    const nom = p.nombre.trim();
+    return pref ? `[${pref}] ${nom}` : nom;
+  }, [proveedoresActivos, proveedor]);
 
   useEffect(() => {
     if (!open || !filtrosCompletos || !sucursal) {
@@ -693,6 +703,7 @@ export default function GenerarPedidoToolbarButton({
         open={reposicionPrioritarioOpen}
         onOpenChange={(v) => setReposicionPrioritarioOpen(v)}
         items={reposicionPrioritarioItems}
+        proveedorPedidoEtiqueta={proveedorPedidoEtiqueta}
         pending={loading}
         onConfirmar={handleReposicionPrioritarioConfirmar}
       />

@@ -518,8 +518,10 @@ Botón de cabecera que abre el modal **Generar Pedido** (`AppModal` + `Dialog`).
 ### `ReposicionProveedorPrioritarioModal` (`src/components/shared/ReposicionProveedorPrioritarioModal.tsx`)
 
 - **Rol:** opt-in antes de generar pedido de **REPOSICIÓN** cuando hay productos asignados a otro proveedor por menor costo comparable (orquestado por `GenerarPedidoToolbarButton`).
-- **Props:** `open`, `onOpenChange`, `items` (`ReposicionProveedorPrioritarioItem[]`), `pending?`, `onConfirmar(seleccionados)`.
+- **Props:** `open`, `onOpenChange`, `items` (`ReposicionProveedorPrioritarioItem[]`), `proveedorPedidoEtiqueta` (proveedor elegido en Generar Pedido), `pending?`, `onConfirmar(seleccionados)`.
+- **Copy:** *«Estos productos están asignados a [proveedor prioritario], pero por temas de stock y logística podés incluirlos en el pedido de [proveedor del pedido].»*
 - **Tabla:** columna **tilde** (`tabla-check-toggle` cuadrado, alto acorde a fila 2rem), **DESCRIPCIÓN**, **CANT.** Fila seleccionada: `bg-primary/15`. Botón activo: relleno `primary` + ícono `Check`. Copy por grupo de proveedor en el párrafo superior (proveedor asignado ya no va en columna).
+- **Ancho:** `AppModal` `size="lg"` + `className="max-w-[50.4rem]"` (−30 % sobre `72rem` base).
 - **Datos:** `getReposicionProveedorPrioritarioParaModalAction` → `getReposicionItemsProveedorPrioritarioAlternativo`.
 
 ### `SobreStockReposicionAdvertenciaModal` (`src/components/shared/SobreStockReposicionAdvertenciaModal.tsx`)
