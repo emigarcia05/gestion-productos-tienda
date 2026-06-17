@@ -938,6 +938,13 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - **Otra sucursal**: se buscan filas `REPOSICION` por `cod_tienda` en la otra tienda **sin** depender de `cod_ext` persistido; tope con prioridad mismo proveedor → fila con tope &gt; 0 → primera fila; si no hay filas en la otra sucursal pero la línea del pedido tiene `reposicion_cant_conf > 0`, se usa ese tope como referencia frente al stock de la otra tienda.
 - **Datos**: reutiliza **`getItemsYProveedorParaEnviar`** con los mismos `proveedorId`, `sucursal` y `tipos` que el modal, luego **`getSobreStockOtraSucursalParaPedidoEnviar`** sobre esas `rows` (alineado al PDF).
 
+#### `getReposicionProveedorPrioritarioParaModalAction` (modal reposición — proveedor prioritario)
+
+- **Uso**: alimentar **`ReposicionProveedorPrioritarioModal`** tras `REPOSICION_PROVEEDOR_PRIORITARIO_REQUIERE_CONFIRMACION`.
+- **Entrada (Zod)**: `proveedorId`, `sucursal` (`guaymallen` \| `maipu`).
+- **Salida**: `ActionResult<{ tieneItems: boolean; items: ReposicionProveedorPrioritarioItem[] }>`.
+- **Datos**: **`getReposicionItemsProveedorPrioritarioAlternativo`** — filas `REPOSICION` en la sucursal con `cantPedir > 0` (regla runtime) cuyo proveedor ganador (`elegirListaPrecioProveedorReposicion`) ≠ `proveedorId` elegido.
+
 #### `generarPdfEnviarPedidoAction` (sobrestock otra sucursal, obligatorio)
 
 - **Param opcional**: `confirmarSobreStock?: boolean` (default false).
@@ -946,6 +953,10 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - Si `getSobreStockOtraSucursalParaPedidoEnviar` devuelve al menos un ítem y `confirmarSobreStock` es false, la Action responde `{ ok: false, error: "SOBRESTOCK_REQUIERE_CONFIRMACION:{cantidad}" }`.
   - Con `confirmarSobreStock === true`, se omite ese bloqueo y continúa el flujo normal (snapshot + PDF/WhatsApp + borrado de URGENTE/TINTOMETRICO). La UI debe mostrar el modal y reintentar solo con confirmación explícita del usuario.
   - Si la UI envía `ajustesSobreStock`, los ajustes se aplican **antes** de releer ítems para snapshot/PDF. El PDF y `prod_ped_historial` persisten la cantidad ya ajustada desde el modal.
+- **Reposición — proveedor prioritario distinto** (solo si `tipos` incluye `REPOSICION`):
+  - **Params opcionales**: `confirmarReposicionProveedorPrioritario?: boolean` (default false), `itemsReposicionProveedorPrioritario?: { idItemPedidoEnvio, proveedorPrioritarioId }[]`.
+  - Si hay ítems alternativos (`getReposicionItemsProveedorPrioritarioAlternativo`) y `confirmarReposicionProveedorPrioritario` es false → `{ ok: false, error: "REPOSICION_PROVEEDOR_PRIORITARIO_REQUIERE_CONFIRMACION:{n}" }` **sin persistir** (antes del chequeo de sobrestock).
+  - Con confirmación, el PDF del proveedor elegido sigue el flujo normal; cada ítem marcado genera snapshot + PDF adicional para su `proveedorPrioritarioId` (`getItemsYProveedorParaEnviar` con `soloIdsMerc`). La respuesta incluye `pdfAdicionales[]`. Las filas REPOSICIÓN en `prod_ped_merc` **no** se borran.
 
 #### Tabla `/pedidos/enviar` — `getItemsTablaEnviarPedido` / `getEnviarPedidoTablaData`
 

@@ -38,12 +38,20 @@ import {
 import {
   comprobarItemsParaGenerarPedidoAction,
   generarPdfEnviarPedidoAction,
+  getReposicionProveedorPrioritarioParaModalAction,
   getSobreStockReposicionParaModalAction,
   listarProveedoresConPedidoActivoAction,
 } from "@/actions/pedidos";
 import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
 import SobreStockReposicionAdvertenciaModal from "@/components/shared/SobreStockReposicionAdvertenciaModal";
+import ReposicionProveedorPrioritarioModal, {
+  type ReposicionProveedorPrioritarioSeleccion,
+} from "@/components/shared/ReposicionProveedorPrioritarioModal";
 import type { SobreStockReposicionItem } from "@/services/sobreStock.service";
+import type { ReposicionProveedorPrioritarioItem } from "@/services/pedidosEnvio.service";
+
+const PREFIX_SOBRESTOCK = "SOBRESTOCK_REQUIERE_CONFIRMACION:";
+const PREFIX_REPOSICION_PRIORITARIO = "REPOSICION_PROVEEDOR_PRIORITARIO_REQUIERE_CONFIRMACION:";
 
 const SUCURSALES: { value: SucursalPedido; label: string }[] = [
   { value: "guaymallen", label: "GUAYMALLÉN" },
@@ -114,6 +122,12 @@ export default function GenerarPedidoToolbarButton({
   const [sobreStockItems, setSobreStockItems] = useState<
     SobreStockReposicionItem[]
   >([]);
+  const [reposicionPrioritarioOpen, setReposicionPrioritarioOpen] = useState(false);
+  const [reposicionPrioritarioItems, setReposicionPrioritarioItems] = useState<
+    ReposicionProveedorPrioritarioItem[]
+  >([]);
+  const [reposicionPrioritarioSeleccion, setReposicionPrioritarioSeleccion] =
+    useState<ReposicionProveedorPrioritarioSeleccion[] | null>(null);
   const [multiTipoOpen, setMultiTipoOpen] = useState(false);
   const [hayItems, setHayItems] = useState<boolean | null>(null);
   const [verificandoItems, setVerificandoItems] = useState(false);
@@ -141,6 +155,9 @@ export default function GenerarPedidoToolbarButton({
       setErrorVerificacion(null);
       setSobreStockOpen(false);
       setSobreStockItems([]);
+      setReposicionPrioritarioOpen(false);
+      setReposicionPrioritarioItems([]);
+      setReposicionPrioritarioSeleccion(null);
       setProveedoresActivos([]);
       setCargandoProveedores(false);
     }
@@ -266,6 +283,96 @@ export default function GenerarPedidoToolbarButton({
     setSobreStockOpen(true);
   }
 
+  async function abrirModalReposicionPrioritarioDesdeServidor(): Promise<void> {
+    const proveedorId = proveedor.trim();
+    if (!sucursal || !proveedorId) return;
+
+    const res = await getReposicionProveedorPrioritarioParaModalAction({
+      proveedorId,
+      sucursal,
+    });
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    if (!res.data.tieneItems) {
+      toast.error(
+        "No se pudo mostrar el detalle de reposición. Volvé a intentar generar el pedido."
+      );
+      return;
+    }
+    setReposicionPrioritarioItems(res.data.items);
+    setReposicionPrioritarioOpen(true);
+  }
+
+  function finalizarGeneracionExitosa(data: {
+    pdfBase64: string;
+    filename: string;
+    sentViaWhatsApp: boolean;
+    pdfAdicionales?: Array<{ pdfBase64: string; filename: string; nombreProveedor: string }>;
+  }) {
+    onGeneradoExito?.();
+    router.refresh();
+    setReposicionPrioritarioSeleccion(null);
+    setReposicionPrioritarioOpen(false);
+    setSobreStockOpen(false);
+
+    if (data.sentViaWhatsApp) {
+      toast.success("Pedido generado y enviado al proveedor.");
+      setOpen(false);
+      return;
+    }
+
+    descargarPdfBase64(data.pdfBase64, data.filename);
+    for (const extra of data.pdfAdicionales ?? []) {
+      descargarPdfBase64(extra.pdfBase64, extra.filename);
+    }
+    const totalPdfs = 1 + (data.pdfAdicionales?.length ?? 0);
+    toast.success(
+      totalPdfs > 1
+        ? `Se generaron ${totalPdfs} PDF de pedido.`
+        : `PDF generado: ${data.filename}`
+    );
+    setOpen(false);
+  }
+
+  async function ejecutarGenerar(opts?: {
+    confirmarReposicionProveedorPrioritario?: boolean;
+    itemsReposicionProveedorPrioritario?: ReposicionProveedorPrioritarioSeleccion[];
+    confirmarSobreStock?: boolean;
+    ajustesSobreStock?: Array<{ idItemPedidoEnvio: string; cantPedir: number }>;
+  }) {
+    if (!sucursal) return;
+
+    const result = await generarPdfEnviarPedidoAction({
+      proveedorId: proveedor.trim(),
+      sucursal,
+      tipos,
+      confirmarReposicionProveedorPrioritario:
+        opts?.confirmarReposicionProveedorPrioritario ??
+        reposicionPrioritarioSeleccion !== null,
+      itemsReposicionProveedorPrioritario:
+        opts?.itemsReposicionProveedorPrioritario ?? reposicionPrioritarioSeleccion ?? undefined,
+      confirmarSobreStock: opts?.confirmarSobreStock,
+      ajustesSobreStock: opts?.ajustesSobreStock,
+    });
+
+    if (!result.ok) {
+      if (result.error.startsWith(PREFIX_REPOSICION_PRIORITARIO)) {
+        await abrirModalReposicionPrioritarioDesdeServidor();
+        return;
+      }
+      if (result.error.startsWith(PREFIX_SOBRESTOCK)) {
+        await abrirModalSobrestockDesdeServidor();
+        return;
+      }
+      toast.error(result.error);
+      return;
+    }
+
+    finalizarGeneracionExitosa(result.data!);
+  }
+
   async function handleGenerar() {
     if (!puedeGenerar || !sucursal || hayItems !== true) {
       toast.error(
@@ -275,31 +382,22 @@ export default function GenerarPedidoToolbarButton({
     }
     setLoading(true);
     try {
-      const result = await generarPdfEnviarPedidoAction({
-        proveedorId: proveedor.trim(),
-        sucursal,
-        tipos,
+      await ejecutarGenerar();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleReposicionPrioritarioConfirmar(
+    seleccionados: ReposicionProveedorPrioritarioSeleccion[]
+  ) {
+    setReposicionPrioritarioSeleccion(seleccionados);
+    setLoading(true);
+    try {
+      await ejecutarGenerar({
+        confirmarReposicionProveedorPrioritario: true,
+        itemsReposicionProveedorPrioritario: seleccionados,
       });
-      if (!result.ok) {
-        const prefix = "SOBRESTOCK_REQUIERE_CONFIRMACION:";
-        if (result.error.startsWith(prefix)) {
-          await abrirModalSobrestockDesdeServidor();
-          return;
-        }
-        toast.error(result.error);
-        return;
-      }
-      const { pdfBase64, filename, sentViaWhatsApp } = result.data!;
-      onGeneradoExito?.();
-      router.refresh();
-      if (sentViaWhatsApp) {
-        toast.success("Pedido generado y enviado al proveedor.");
-        setOpen(false);
-        return;
-      }
-      descargarPdfBase64(pdfBase64, filename);
-      toast.success(`PDF generado: ${filename}`);
-      setOpen(false);
     } finally {
       setLoading(false);
     }
@@ -311,37 +409,10 @@ export default function GenerarPedidoToolbarButton({
     if (!sucursal) return;
     setLoading(true);
     try {
-      const result = await generarPdfEnviarPedidoAction({
-        proveedorId: proveedor.trim(),
-        sucursal,
-        tipos,
+      await ejecutarGenerar({
         confirmarSobreStock: true,
         ajustesSobreStock,
       });
-      if (!result.ok) {
-        const prefix = "SOBRESTOCK_REQUIERE_CONFIRMACION:";
-        if (result.error.startsWith(prefix)) {
-          await abrirModalSobrestockDesdeServidor();
-          return;
-        }
-        toast.error(result.error);
-        return;
-      }
-
-      const { pdfBase64, filename, sentViaWhatsApp } = result.data!;
-      onGeneradoExito?.();
-      router.refresh();
-      setSobreStockOpen(false);
-
-      if (sentViaWhatsApp) {
-        toast.success("Pedido generado y enviado al proveedor.");
-        setOpen(false);
-        return;
-      }
-
-      descargarPdfBase64(pdfBase64, filename);
-      toast.success(`PDF generado: ${filename}`);
-      setOpen(false);
     } finally {
       setLoading(false);
     }
@@ -616,6 +687,14 @@ export default function GenerarPedidoToolbarButton({
         items={sobreStockItems}
         pending={loading}
         onPedirAlProveedorIgual={handlePedirAlProveedorIgual}
+      />
+
+      <ReposicionProveedorPrioritarioModal
+        open={reposicionPrioritarioOpen}
+        onOpenChange={(v) => setReposicionPrioritarioOpen(v)}
+        items={reposicionPrioritarioItems}
+        pending={loading}
+        onConfirmar={handleReposicionPrioritarioConfirmar}
       />
     </>
   );

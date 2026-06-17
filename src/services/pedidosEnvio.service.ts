@@ -807,7 +807,7 @@ export async function getItemsYProveedorParaEnviar(
   sucursal: string,
   tipos: string[],
   q?: string,
-  opts?: { incluirFilasConCantCero?: boolean }
+  opts?: { incluirFilasConCantCero?: boolean; soloIdsMerc?: Set<string> }
 ): Promise<{
   rows: ItemPedidoEnvioRowParaEnviar[];
   items: ItemPedidoParaPdf[];
@@ -946,6 +946,8 @@ export async function getItemsYProveedorParaEnviar(
   const rowsOut: ItemPedidoEnvioRowParaEnviar[] = [];
 
   for (const r of mercRows) {
+    if (opts?.soloIdsMerc && !opts.soloIdsMerc.has(r.id)) continue;
+
     let codExtOut = "";
     let codProveedor: string | null = null;
     let tintometricoDescripcion: string | null = null;
@@ -1072,6 +1074,120 @@ export async function getItemsYProveedorParaEnviar(
     : null;
 
   return { rows: rowsOut, items: itemsPdf, proveedor: prov };
+}
+
+/** Ítem de reposición con proveedor prioritario distinto al seleccionado en Generar Pedido. */
+export interface ReposicionProveedorPrioritarioItem {
+  idItemPedidoEnvio: string;
+  codTienda: string;
+  descripcion: string;
+  cantPedir: number;
+  proveedorPrioritarioId: string;
+  proveedorPrioritarioNombre: string;
+  proveedorPrioritarioPrefijo: string;
+}
+
+/**
+ * Reposición con cantidad a pedir > 0 cuyo proveedor ganador (menor costo comparable) no es el
+ * proveedor elegido en el modal Generar Pedido.
+ */
+export async function getReposicionItemsProveedorPrioritarioAlternativo(params: {
+  proveedorSeleccionadoId: string;
+  sucursalCodigo: SucursalPedidoEnvio;
+}): Promise<ReposicionProveedorPrioritarioItem[]> {
+  const pid = params.proveedorSeleccionadoId.trim();
+  if (!pid) return [];
+
+  const sucursalRow = await prisma.sucursal.findUnique({
+    where: { codigo: params.sucursalCodigo },
+    select: { id: true, codigo: true },
+  });
+  if (!sucursalRow?.codigo) return [];
+
+  const mercRows = await prisma.prodPedMerc2.findMany({
+    where: {
+      sucursalId: sucursalRow.id,
+      tipoDePedido: TIPO_REPOSICION,
+    },
+    orderBy: [{ id: "asc" }],
+    select: {
+      id: true,
+      reposicionFormaPedido: true,
+      reposicionPuntoPedido: true,
+      reposicionCantConf: true,
+      reposicionCodTienda: true,
+      sucursal: { select: { codigo: true } },
+    },
+  });
+
+  const codTiendasRepos = new Set<string>();
+  for (const r of mercRows) {
+    const codTi = r.reposicionCodTienda?.trim();
+    if (codTi) codTiendasRepos.add(codTi);
+  }
+  if (codTiendasRepos.size === 0) return [];
+
+  const codTiendasArr = [...codTiendasRepos];
+  const tiendaRows = await prisma.prodTienda.findMany({
+    where: { codTienda: { in: codTiendasArr } },
+    select: { codTienda: true, descripcionTienda: true },
+  });
+  const tiendaByCodTienda = new Map(
+    tiendaRows.map((t) => {
+      const ct = (t.codTienda ?? "").trim();
+      return [ct, t] as const;
+    })
+  );
+
+  const [ivaSaldoReposicion, lpPorCodTiendaRepos, stockMaps, stockeableMap] = await Promise.all([
+    sumarIvaSaldoParaReposicion(),
+    cargarListaPrecioReposicionPorCodTiendas([...codTiendasRepos]),
+    buildMapsStockSucursalesPrincipales(codTiendasArr),
+    buildMapStockeable(codTiendasArr),
+  ]);
+
+  const codigoSucursal = (sucursalRow.codigo ?? "").trim();
+  const out: ReposicionProveedorPrioritarioItem[] = [];
+
+  for (const r of mercRows) {
+    const codTi = (r.reposicionCodTienda ?? "").trim();
+    const tienda = codTi ? tiendaByCodTienda.get(codTi) : undefined;
+    if (!tienda) continue;
+
+    const provRow = elegirListaPrecioProveedorReposicion({
+      codTienda: codTi,
+      lpPorCodTienda: lpPorCodTiendaRepos,
+      ivaSaldoAcumulado: ivaSaldoReposicion,
+    });
+    if (!provRow || provRow.idProveedor === pid) continue;
+
+    const stock = stockTiendaParaSucursalCodigo(
+      codigoSucursal || "guaymallen",
+      codTi,
+      stockMaps
+    );
+    const cantPedir = cantPedirReposicionMerc2({
+      forma: r.reposicionFormaPedido,
+      punto: r.reposicionPuntoPedido,
+      cantConf: r.reposicionCantConf,
+      stock,
+      stockeable: getStockeableFromMap(stockeableMap, codTi),
+    });
+    if (cantPedir <= 0) continue;
+
+    out.push({
+      idItemPedidoEnvio: r.id,
+      codTienda: codTi,
+      descripcion: (tienda.descripcionTienda ?? "").trim(),
+      cantPedir,
+      proveedorPrioritarioId: provRow.idProveedor,
+      proveedorPrioritarioNombre: (provRow.proveedor?.nombre ?? "").trim(),
+      proveedorPrioritarioPrefijo: (provRow.proveedor?.prefijo ?? "").trim(),
+    });
+  }
+
+  out.sort((a, b) => a.descripcion.localeCompare(b.descripcion, "es"));
+  return out;
 }
 
 /**

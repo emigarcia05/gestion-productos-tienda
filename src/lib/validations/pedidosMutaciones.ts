@@ -23,6 +23,22 @@ export const comprobarItemsParaGenerarPedidoSchema = z.object({
   tipos: tiposPedidoMercaderiaSchema,
 });
 
+export const getSobreStockReposicionParaModalSchema = z.object({
+  proveedorId: proveedorIdPedidoSchema,
+  sucursal: sucursalPedidoCodigoSchema,
+  tipos: tiposPedidoMercaderiaSchema,
+});
+
+export const getReposicionProveedorPrioritarioParaModalSchema = z.object({
+  proveedorId: proveedorIdPedidoSchema,
+  sucursal: sucursalPedidoCodigoSchema,
+});
+
+export const itemReposicionProveedorPrioritarioSchema = z.object({
+  idItemPedidoEnvio: uuidSchema,
+  proveedorPrioritarioId: proveedorIdPedidoSchema,
+});
+
 export const generarPdfEnviarPedidoSchema = z.object({
   proveedorId: proveedorIdPedidoSchema,
   sucursal: sucursalPedidoCodigoSchema,
@@ -41,12 +57,16 @@ export const generarPdfEnviarPedidoSchema = z.object({
     )
     .max(5_000)
     .optional(),
-});
-
-export const getSobreStockReposicionParaModalSchema = z.object({
-  proveedorId: proveedorIdPedidoSchema,
-  sucursal: sucursalPedidoCodigoSchema,
-  tipos: tiposPedidoMercaderiaSchema,
+  /**
+   * Reposición: si hay ítems con proveedor prioritario distinto al elegido, no se genera el PDF
+   * hasta `confirmarReposicionProveedorPrioritario` (modal previo). Los ítems marcados se agregan
+   * al pedido del proveedor prioritario correspondiente.
+   */
+  confirmarReposicionProveedorPrioritario: z.boolean().optional().default(false),
+  itemsReposicionProveedorPrioritario: z
+    .array(itemReposicionProveedorPrioritarioSchema)
+    .max(5_000)
+    .optional(),
 });
 
 export const syncPedidoUrgenteEnvioSchema = z.object({

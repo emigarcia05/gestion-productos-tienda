@@ -14,6 +14,8 @@ import {
   getProveedoresConPedidoActivo,
   getItemsYProveedorParaEnviar,
   ajustarCantidadesParaGenerarPedido,
+  getReposicionItemsProveedorPrioritarioAlternativo,
+  type ReposicionProveedorPrioritarioItem,
   type SucursalPedidoEnvio,
   type ItemPedidoUrgentePayload,
   upsertPedidoMercaderiaUrgenteItem,
@@ -43,6 +45,7 @@ import {
   comprobarItemsParaGenerarPedidoSchema,
   deleteTintometricoItemSchema,
   generarPdfEnviarPedidoSchema,
+  getReposicionProveedorPrioritarioParaModalSchema,
   getSobreStockReposicionParaModalSchema,
   listarProveedoresConPedidoActivoSchema,
   syncPedidoUrgenteEnvioSchema,
@@ -333,6 +336,48 @@ export async function getSobreStockReposicionParaModalAction(
   return { ok: true, data: res };
 }
 
+export async function getReposicionProveedorPrioritarioParaModalAction(
+  raw: unknown
+): Promise<
+  ActionResult<{
+    tieneItems: boolean;
+    items: ReposicionProveedorPrioritarioItem[];
+  }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return { ok: false, error: "Sin permisos para pedidos." };
+  }
+
+  const parsed = getReposicionProveedorPrioritarioParaModalSchema.safeParse(raw);
+  if (!parsed.success) {
+    const f = parsed.error.flatten().fieldErrors;
+    const msg =
+      f.proveedorId?.[0] ??
+      f.sucursal?.[0] ??
+      "Datos inválidos para obtener ítems de reposición.";
+    return { ok: false, error: msg };
+  }
+
+  const { proveedorId, sucursal } = parsed.data;
+  if (!(await sucursalPedidoHabilitada(sucursal))) {
+    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  }
+
+  const items = await getReposicionItemsProveedorPrioritarioAlternativo({
+    proveedorSeleccionadoId: proveedorId.trim(),
+    sucursalCodigo: sucursal as SucursalPedidoEnvio,
+  });
+
+  return {
+    ok: true,
+    data: {
+      tieneItems: items.length > 0,
+      items,
+    },
+  };
+}
+
 /**
  * Sincroniza el pedido urgente a la tabla pedidos_envio.
  * Recibe sucursal + ítems (id lista precio, cantidad); solo se guardan cant > 0.
@@ -466,6 +511,12 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
     filename: string;
     /** true si se envió por API (no hace falta descargar ni abrir wa.me). */
     sentViaWhatsApp: boolean;
+    /** PDFs adicionales para proveedores prioritarios (reposición opt-in). */
+    pdfAdicionales?: Array<{
+      pdfBase64: string;
+      filename: string;
+      nombreProveedor: string;
+    }>;
   }>
 > {
   const rol = await getRol();
@@ -486,6 +537,8 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
     tipos,
     confirmarSobreStock,
     ajustesSobreStock,
+    confirmarReposicionProveedorPrioritario,
+    itemsReposicionProveedorPrioritario,
   } = parsedParams.data;
   if (!(await sucursalPedidoHabilitada(sucursalValida))) {
     return { ok: false, error: "La sucursal no está habilitada para pedidos." };
@@ -533,6 +586,36 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
       };
     }
 
+    const incluyeReposicion = tipos.includes("REPOSICION");
+    if (incluyeReposicion && !confirmarReposicionProveedorPrioritario) {
+      const alternativos = await getReposicionItemsProveedorPrioritarioAlternativo({
+        proveedorSeleccionadoId: proveedorId.trim(),
+        sucursalCodigo: sucursalValida as SucursalPedidoEnvio,
+      });
+      if (alternativos.length > 0) {
+        return {
+          ok: false,
+          error: `REPOSICION_PROVEEDOR_PRIORITARIO_REQUIERE_CONFIRMACION:${alternativos.length}`,
+        };
+      }
+    }
+
+    if (confirmarReposicionProveedorPrioritario && (itemsReposicionProveedorPrioritario?.length ?? 0) > 0) {
+      const alternativos = await getReposicionItemsProveedorPrioritarioAlternativo({
+        proveedorSeleccionadoId: proveedorId.trim(),
+        sucursalCodigo: sucursalValida as SucursalPedidoEnvio,
+      });
+      const alternativosById = new Map(
+        alternativos.map((a) => [a.idItemPedidoEnvio, a] as const)
+      );
+      for (const sel of itemsReposicionProveedorPrioritario ?? []) {
+        const alt = alternativosById.get(sel.idItemPedidoEnvio);
+        if (!alt || alt.proveedorPrioritarioId !== sel.proveedorPrioritarioId) {
+          return { ok: false, error: "Selección de reposición inválida o desactualizada." };
+        }
+      }
+    }
+
     // Sobrestock en la otra sucursal (ítems con cod_tienda): no persistir snapshot hasta confirmación.
     const sobreStockRes = await getSobreStockOtraSucursalParaPedidoEnviar({
       proveedorId: proveedorId.trim(),
@@ -572,6 +655,67 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
 
     const sentViaWhatsApp = false;
 
+    const pdfAdicionales: Array<{
+      pdfBase64: string;
+      filename: string;
+      nombreProveedor: string;
+    }> = [];
+
+    if (
+      incluyeReposicion &&
+      confirmarReposicionProveedorPrioritario &&
+      (itemsReposicionProveedorPrioritario?.length ?? 0) > 0
+    ) {
+      const idsPorProveedorPrioritario = new Map<string, string[]>();
+      for (const sel of itemsReposicionProveedorPrioritario ?? []) {
+        const arr = idsPorProveedorPrioritario.get(sel.proveedorPrioritarioId) ?? [];
+        arr.push(sel.idItemPedidoEnvio);
+        idsPorProveedorPrioritario.set(sel.proveedorPrioritarioId, arr);
+      }
+
+      for (const [provPrioritarioId, idsMerc] of idsPorProveedorPrioritario) {
+        const tiposReposicion = ["REPOSICION"];
+        const { items: itemsPrior, proveedor: provPrior } = await getItemsYProveedorParaEnviar(
+          provPrioritarioId,
+          sucursalValida,
+          tiposReposicion,
+          undefined,
+          { soloIdsMerc: new Set(idsMerc) }
+        );
+        if (!provPrior || itemsPrior.length === 0) continue;
+
+        const historiaPriorRes = await crearPedidoHistoriaSnapshot({
+          proveedorId: provPrioritarioId,
+          sucursalCodigo: sucursalValida as SucursalPedidoEnvio,
+          tipos: tiposReposicion,
+          soloIdsMerc: idsMerc,
+        });
+        if (!historiaPriorRes.success) {
+          return { ok: false, error: historiaPriorRes.error };
+        }
+
+        const pdfPriorBuffer = generarPdfPedido(
+          itemsPrior,
+          provPrior.nombre,
+          sucursalLabel,
+          TIPO_LABEL.REPOSICION ?? "Reposición"
+        );
+        const prefijoPrior = sanitizeFilenamePart(provPrior.prefijo || "");
+        const filenamePrior = `Nota Pedido - ${prefijoPrior} - ${fechaStr}.pdf`;
+        pdfAdicionales.push({
+          pdfBase64: Buffer.from(pdfPriorBuffer).toString("base64"),
+          filename: filenamePrior,
+          nombreProveedor: provPrior.nombre,
+        });
+
+        await limpiarPedidoMercaderiaTrasGenerarPdf({
+          sucursalId: sucursalRow.id,
+          proveedorId: provPrioritarioId,
+          tipos: tiposReposicion,
+        });
+      }
+    }
+
     // Solo ítems del proveedor del PDF (no borrar URGENTE/TINTOMÉTRICO de otros proveedores).
     await limpiarPedidoMercaderiaTrasGenerarPdf({
       sucursalId: sucursalRow.id,
@@ -590,6 +734,7 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
         nombreProveedor: proveedor.nombre,
         filename,
         sentViaWhatsApp,
+        pdfAdicionales: pdfAdicionales.length > 0 ? pdfAdicionales : undefined,
       },
     };
   } catch (e) {

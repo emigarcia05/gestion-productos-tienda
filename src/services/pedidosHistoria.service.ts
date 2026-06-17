@@ -182,8 +182,10 @@ export async function crearPedidoHistoriaSnapshot(params: {
   proveedorId: string;
   sucursalCodigo: SucursalPedidoEnvio;
   tipos: string[];
+  /** Solo incluir filas de `prod_ped_merc` con estos IDs (p. ej. reposición opt-in a proveedor prioritario). */
+  soloIdsMerc?: string[];
 }): Promise<ServiceResult<{ id: string }>> {
-  const { proveedorId, sucursalCodigo, tipos } = params;
+  const { proveedorId, sucursalCodigo, tipos, soloIdsMerc } = params;
 
   if (!proveedorId.trim()) {
     return { success: false, error: "Proveedor inválido." };
@@ -207,7 +209,11 @@ export async function crearPedidoHistoriaSnapshot(params: {
     const { rows: snapshotRows } = await getItemsYProveedorParaEnviar(
       proveedorId.trim(),
       sucursalCodigo,
-      tipos
+      tipos,
+      undefined,
+      soloIdsMerc?.length
+        ? { soloIdsMerc: new Set(soloIdsMerc) }
+        : undefined
     );
 
     const cantPorCodTienda = new Map<string, number>();
