@@ -1,8 +1,9 @@
 import { z } from "zod";
 
+import { prismaCuidSchema, listaPreciosCodExtSchema } from "@/lib/validations/common";
+
 /** Lista no vacía de `cod_ext` para edición masiva en `prod_precios_provee`. */
-export { listaPreciosCodExtListSchema } from "@/lib/validations/common";
-import { prismaCuidSchema } from "@/lib/validations/common";
+export { listaPreciosCodExtListSchema, listaPreciosCodExtSchema } from "@/lib/validations/common";
 
 function tieneMaxDosDecimales(n: number): boolean {
   return Math.abs(n * 100 - Math.round(n * 100)) < 1e-6;
@@ -47,6 +48,8 @@ export const listaPreciosFiltrosLecturaSchema = z.object({
   rubroNombre: z.string().max(200).optional(),
   busqueda: z.string().max(500).optional(),
   habilitado: z.boolean().optional(),
+  /** Vinculación `prod_precios_provee.id_precio_rex` → `prod_precios_rex`. */
+  vinculado: z.boolean().optional(),
   opciones: listaPreciosOpcionesFiltroSchema.optional(),
   pagina: z.preprocess(
     (v) => (v === undefined || v === null || v === "" ? undefined : v),
@@ -84,3 +87,10 @@ export const crearProductoListaPrecioSchema = z.object({
 });
 
 export type CrearProductoListaPrecioInput = z.infer<typeof crearProductoListaPrecioSchema>;
+
+/** Eliminar un ítem de `prod_precios_provee` por `cod_ext`. */
+export const eliminarListaPrecioSchema = z.object({
+  codExt: listaPreciosCodExtSchema,
+});
+
+export type EliminarListaPrecioInput = z.infer<typeof eliminarListaPrecioSchema>;

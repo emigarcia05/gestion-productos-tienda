@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import {
   actualizarListaPreciosMasivo,
   crearProductoListaPrecio,
+  eliminarListaPrecioProveedor,
   getListaPreciosConTiendaFiltrada,
   getProveedoresDisponiblesListaPrecios,
   getMarcasDisponiblesListaPrecios,
@@ -21,6 +22,7 @@ import {
   listaPreciosFiltrosLecturaSchema,
   listaPreciosFiltrosExportSchema,
   crearProductoListaPrecioSchema,
+  eliminarListaPrecioSchema,
 } from "@/lib/validations/listaPrecios";
 
 export type { ActualizacionMasivaListaPrecios, FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
@@ -72,6 +74,7 @@ export async function getListaPreciosConOpcionesAction(
     rubroNombre: rubro,
     busqueda: q,
     habilitado: hab,
+    vinculado: vin,
     opciones: opt,
     pagina: pag,
   } = parsed.data;
@@ -81,10 +84,10 @@ export async function getListaPreciosConOpcionesAction(
   const qTrim = q?.trim() || undefined;
   try {
     const [tableResult, proveedoresDisponibles, marcasDisponibles, rubrosDisponibles] = await Promise.all([
-      getListaPreciosConTiendaFiltrada(provTrim, marcaTrim, rubroTrim, qTrim, hab, opt, pag),
-      getProveedoresDisponiblesListaPrecios(marcaTrim, rubroTrim, qTrim, hab, opt),
-      getMarcasDisponiblesListaPrecios(provTrim, rubroTrim, qTrim, hab, opt),
-      getRubrosDisponiblesListaPrecios(provTrim, marcaTrim, qTrim, hab, opt),
+      getListaPreciosConTiendaFiltrada(provTrim, marcaTrim, rubroTrim, qTrim, hab, vin, opt, pag),
+      getProveedoresDisponiblesListaPrecios(marcaTrim, rubroTrim, qTrim, hab, vin, opt),
+      getMarcasDisponiblesListaPrecios(provTrim, rubroTrim, qTrim, hab, vin, opt),
+      getRubrosDisponiblesListaPrecios(provTrim, marcaTrim, qTrim, hab, vin, opt),
     ]);
     return {
       filas: tableResult.filas,
@@ -123,6 +126,7 @@ export async function exportarListaPreciosAction(
     rubroNombre: rubro,
     busqueda: q,
     habilitado: hab,
+    vinculado: vin,
     opciones: opt,
   } = parsed.data;
 
@@ -136,6 +140,7 @@ export async function exportarListaPreciosAction(
     !!marcaTrim ||
     !!rubroTrim ||
     hab !== undefined ||
+    vin !== undefined ||
     (qTrim?.length ?? 0) >= 3;
 
   if (!tieneFiltro) {
@@ -152,6 +157,7 @@ export async function exportarListaPreciosAction(
       rubroTrim,
       qTrim,
       hab,
+      vin,
       opt
     );
     return { ok: true, data: { filas } };
@@ -225,4 +231,31 @@ export async function actualizarListaPreciosMasivoAction(
     const message = e instanceof Error ? e.message : "Error al actualizar la lista de precios.";
     return { ok: false, error: message };
   }
+}
+
+/**
+ * Elimina un ítem de prod_precios_provee por cod_ext.
+ * Solo usuarios con permiso listaPrecios.acciones.edicionMasiva.
+ */
+export async function eliminarListaPrecioAction(raw: unknown): Promise<ActionResult<void>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
+    return { ok: false, error: "Sin permisos para eliminar productos de la lista." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const parsed = eliminarListaPrecioSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Código de producto inválido." };
+  }
+
+  const result = await eliminarListaPrecioProveedor(parsed.data.codExt);
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  revalidatePath("/proveedores/lista-precios");
+  return { ok: true, data: undefined };
 }

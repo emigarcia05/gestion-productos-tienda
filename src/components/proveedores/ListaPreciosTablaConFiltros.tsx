@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, Link2, Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, Link2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -42,6 +42,7 @@ import {
 } from "@/lib/ui-classes";
 import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
 import VincularPrecioRexModal from "@/components/proveedores/VincularPrecioRexModal";
+import EliminarListaPrecioModal from "@/components/proveedores/EliminarListaPrecioModal";
 import type { ListaPreciosFiltrosExportSnapshot } from "@/components/proveedores/ExportarListaPreciosButton";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
 import {
@@ -79,7 +80,7 @@ interface ListaPreciosTablaConFiltrosProps {
 
 const MIN_CARACTERES_BUSQUEDA = 3;
 const MENSAJE_SIN_FILTRO =
-  "Aplicá un filtro (Proveedor, Marca, Rubro o Habilitado) o escribí al menos 3 caracteres en la búsqueda para ver productos.";
+  "Aplicá un filtro (Proveedor, Marca, Rubro, Habilitado o Vinculado) o escribí al menos 3 caracteres en la búsqueda para ver productos.";
 
 const SUBFILA_DETALLE_CLASS = "tabla-fila-detalle-competencia";
 const SUBFILA_CELDA_BLOQUE_CLASS = "tabla-fila-detalle-competencia-celda";
@@ -158,11 +159,14 @@ export default function ListaPreciosTablaConFiltros({
   const [editOpen, setEditOpen] = useState(false);
   const [filaVincular, setFilaVincular] = useState<FilaListaPrecioParaCliente | null>(null);
   const [vincularOpen, setVincularOpen] = useState(false);
+  const [filaEliminar, setFilaEliminar] = useState<FilaListaPrecioParaCliente | null>(null);
+  const [eliminarOpen, setEliminarOpen] = useState(false);
   const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
   const [rubroNombre, setRubroNombre] = useState<string>("");
   const [habilitadoFilter, setHabilitadoFilter] = useState<string>("");
+  const [vinculadoFilter, setVinculadoFilter] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
   const [filasData, setFilasData] = useState<FilaListaPrecioParaCliente[]>([]);
   const [proveedoresOptions, setProveedoresOptions] = useState<ProveedorOption[]>(proveedores);
@@ -183,6 +187,8 @@ export default function ListaPreciosTablaConFiltros({
     !!rubroNombre ||
     habilitadoFilter === "si" ||
     habilitadoFilter === "no" ||
+    vinculadoFilter === "si" ||
+    vinculadoFilter === "no" ||
     busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA;
 
   function toggleDetalle(codExt: string) {
@@ -229,6 +235,11 @@ export default function ListaPreciosTablaConFiltros({
     reiniciarPaginaYDetalle();
   }
 
+  function cambiarVinculado(value: string) {
+    setVinculadoFilter(value);
+    reiniciarPaginaYDetalle();
+  }
+
   function cambiarBusqueda(value: string) {
     setBusqueda(value);
     reiniciarPaginaYDetalle();
@@ -254,6 +265,7 @@ export default function ListaPreciosTablaConFiltros({
       rubroNombre: rubroNombre || undefined,
       busqueda: busqueda.trim() || undefined,
       habilitado: habilitadoFilter === "si" ? true : habilitadoFilter === "no" ? false : undefined,
+      vinculado: vinculadoFilter === "si" ? true : vinculadoFilter === "no" ? false : undefined,
       pagina,
     };
     getListaPreciosConOpcionesAction(params)
@@ -308,6 +320,7 @@ export default function ListaPreciosTablaConFiltros({
     marcaNombre,
     rubroNombre,
     habilitadoFilter,
+    vinculadoFilter,
     busqueda,
     pagina,
     onFilteredIdsChange,
@@ -325,6 +338,8 @@ export default function ListaPreciosTablaConFiltros({
             busqueda: busqueda.trim() || undefined,
             habilitado:
               habilitadoFilter === "si" ? true : habilitadoFilter === "no" ? false : undefined,
+            vinculado:
+              vinculadoFilter === "si" ? true : vinculadoFilter === "no" ? false : undefined,
           }
         : null,
     });
@@ -334,6 +349,7 @@ export default function ListaPreciosTablaConFiltros({
     marcaNombre,
     rubroNombre,
     habilitadoFilter,
+    vinculadoFilter,
     busqueda,
     onFiltrosExportSnapshotChange,
   ]);
@@ -345,6 +361,7 @@ export default function ListaPreciosTablaConFiltros({
     setMarcaNombre("");
     setRubroNombre("");
     setHabilitadoFilter("");
+    setVinculadoFilter("");
     setBusqueda("");
     setPagina(1);
     setExpandidos(new Set());
@@ -442,6 +459,26 @@ export default function ListaPreciosTablaConFiltros({
                 >
                   <SelectItem value="si">HABILITADO</SelectItem>
                   <SelectItem value="no">NO HABILITADO</SelectItem>
+                </SelectContent>
+              </Select>
+            </FiltroIndividualContainer>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={vinculadoFilter === "si" || vinculadoFilter === "no"}
+              onLimpiar={() => cambiarVinculado("")}
+            >
+              <Select value={vinculadoFilter || undefined} onValueChange={cambiarVinculado}>
+                <SelectTrigger id="filtro-vinculado" className="input-filtro-unificado">
+                  <SelectValue placeholder="VINCULADO" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value="si">SI</SelectItem>
+                  <SelectItem value="no">NO</SelectItem>
                 </SelectContent>
               </Select>
             </FiltroIndividualContainer>
@@ -571,6 +608,19 @@ export default function ListaPreciosTablaConFiltros({
                               >
                                 <Link2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                aria-label={`Eliminar ${fila.codExt}`}
+                                onClick={() => {
+                                  setFilaEliminar(fila);
+                                  setEliminarOpen(true);
+                                }}
+                              >
+                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              </Button>
                             </>
                           ) : null}
                         </div>
@@ -634,6 +684,15 @@ export default function ListaPreciosTablaConFiltros({
             }}
             fila={filaVincular}
             onVinculado={onEdicionSuccess}
+          />
+          <EliminarListaPrecioModal
+            open={eliminarOpen}
+            onOpenChange={(next) => {
+              setEliminarOpen(next);
+              if (!next) setFilaEliminar(null);
+            }}
+            fila={filaEliminar}
+            onSuccess={onEdicionSuccess}
           />
         </>
       )}

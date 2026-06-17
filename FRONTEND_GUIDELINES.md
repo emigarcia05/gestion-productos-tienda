@@ -1250,6 +1250,10 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-16): **`/gestion-productos/proveedores/lista-precios`** — botones **Exportar Lista** / **Importar Lista**; exportación (`ExportarListaPreciosButton` + `exportarListaPreciosAction`) de **todos** los ítems filtrados (sin paginación) a Excel `.xls` (`exportListaPreciosExcelClient.ts`).*
 
+*Última actualización (2026-06-16): **`ListaPreciosTablaConFiltros`** — filtro desplegable **VINCULADO** (opciones **SI** / **NO**) junto a **HABILITADO**; filtra por vínculo `prod_precios_provee.id_precio_rex` → `prod_precios_rex`. Participa en filtros dinámicos (proveedor/marca/rubro), exportación y mensaje vacío inicial.*
+
+*Última actualización (2026-06-16): **`ListaPreciosTablaConFiltros`** — columna **ACCIONES** (solo editor): botón **Eliminar** (`Trash2` + `EliminarListaPrecioModal`) borra la fila en `prod_precios_provee`; confirmación destructiva con `AppModal`.*
+
 *Última actualización (2026-06-13): **Ayuda Vendedor — Cargar Gasto** — ruta `/gestion-productos/cargar-gasto` (rewrite → `/cargar-gasto`); sidebar en **AYUDA VENDEDOR**; abre **`GastoUnicoBalanceModal`** al cargar; solo **editor** (`PERMISOS.ayudaVendedor.cargarGasto`).*
 
 *Última actualización (2026-06-13): **Comp. Categorias — margen manual** — tabla `prod_comp_margen_manual` (`margen_manual` entero por `cod_ext`); input **DIF PX REF MANUAL** persiste margen vía `actualizarMargenManualComparacionAction`; **PX MANUAL** y **MARGEN MANUAL** calculados en cliente. Migración **`20260613150000_comp_margen_manual`** (reemplaza `prod_comp_px_manual`; valores legacy anulados).*

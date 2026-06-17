@@ -145,6 +145,7 @@ export async function getListaPreciosConTiendaFiltrada(
   rubroNombre: string | undefined,
   busqueda: string | undefined,
   habilitado: boolean | undefined,
+  vinculado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones,
   pagina?: number,
   pageSize: number = PAGE_SIZE
@@ -153,7 +154,8 @@ export async function getListaPreciosConTiendaFiltrada(
   const marca = marcaNombre?.trim() || undefined;
   const rubro = rubroNombre?.trim() || undefined;
   const q = busqueda?.trim() || "";
-  const tieneFiltro = !!prov || !!marca || !!rubro || habilitado !== undefined || q.length >= 3;
+  const tieneFiltro =
+    !!prov || !!marca || !!rubro || habilitado !== undefined || vinculado !== undefined || q.length >= 3;
   if (!tieneFiltro) return { filas: [], total: 0, totalPaginas: 0 };
 
   const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
@@ -162,6 +164,8 @@ export async function getListaPreciosConTiendaFiltrada(
   if (marca) andParts.push({ marca: marca });
   if (rubro) andParts.push({ rubro: rubro });
   if (habilitado !== undefined) andParts.push({ habilitado });
+  if (vinculado === true) andParts.push({ idPrecioRex: { not: null } });
+  if (vinculado === false) andParts.push({ idPrecioRex: null });
   if (opciones?.soloPxSugerido) andParts.push({ pxVtaSugerido: { not: null } });
   if (q.length >= 3) {
     const tokens = q.trim().split(/\s+/).filter(Boolean);
@@ -215,6 +219,7 @@ export async function listarListaPreciosFiltradaParaExport(
   rubroNombre: string | undefined,
   busqueda: string | undefined,
   habilitado: boolean | undefined,
+  vinculado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<FilaListaPrecioParaCliente[]> {
   const { filas } = await getListaPreciosConTiendaFiltrada(
@@ -223,21 +228,31 @@ export async function listarListaPreciosFiltradaParaExport(
     rubroNombre,
     busqueda,
     habilitado,
+    vinculado,
     opciones,
     undefined
   );
   return filas;
 }
 
-/** Proveedores con al menos un ítem que cumple (marca, rubro, busqueda, habilitado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
+/** Proveedores con al menos un ítem que cumple (marca, rubro, busqueda, habilitado, vinculado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
 export async function getProveedoresDisponiblesListaPrecios(
   marcaNombre: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined,
   habilitado: boolean | undefined,
+  vinculado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string; prefijo: string }[]> {
-  const { filas } = await getListaPreciosConTiendaFiltrada(undefined, marcaNombre, rubroNombre, busqueda, habilitado, opciones);
+  const { filas } = await getListaPreciosConTiendaFiltrada(
+    undefined,
+    marcaNombre,
+    rubroNombre,
+    busqueda,
+    habilitado,
+    vinculado,
+    opciones
+  );
   const seen = new Set<string>();
   const out: { id: string; nombre: string; prefijo: string }[] = [];
   for (const f of filas) {
@@ -249,15 +264,24 @@ export async function getProveedoresDisponiblesListaPrecios(
   return out;
 }
 
-/** Marcas con al menos un ítem que cumple (proveedorId, rubro, busqueda, habilitado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
+/** Marcas con al menos un ítem que cumple (proveedorId, rubro, busqueda, habilitado, vinculado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
 export async function getMarcasDisponiblesListaPrecios(
   proveedorId: string | undefined,
   rubroNombre: string | undefined,
   busqueda: string | undefined,
   habilitado: boolean | undefined,
+  vinculado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string }[]> {
-  const { filas } = await getListaPreciosConTiendaFiltrada(proveedorId, undefined, rubroNombre, busqueda, habilitado, opciones);
+  const { filas } = await getListaPreciosConTiendaFiltrada(
+    proveedorId,
+    undefined,
+    rubroNombre,
+    busqueda,
+    habilitado,
+    vinculado,
+    opciones
+  );
   const seen = new Set<string>();
   const out: { id: string; nombre: string }[] = [];
   for (const f of filas) {
@@ -269,15 +293,24 @@ export async function getMarcasDisponiblesListaPrecios(
   return out;
 }
 
-/** Rubros con al menos un ítem que cumple (proveedorId, marcaNombre, busqueda, habilitado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
+/** Rubros con al menos un ítem que cumple (proveedorId, marcaNombre, busqueda, habilitado, vinculado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
 export async function getRubrosDisponiblesListaPrecios(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
   busqueda: string | undefined,
   habilitado: boolean | undefined,
+  vinculado: boolean | undefined,
   opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string }[]> {
-  const { filas } = await getListaPreciosConTiendaFiltrada(proveedorId, marcaNombre, undefined, busqueda, habilitado, opciones);
+  const { filas } = await getListaPreciosConTiendaFiltrada(
+    proveedorId,
+    marcaNombre,
+    undefined,
+    busqueda,
+    habilitado,
+    vinculado,
+    opciones
+  );
   const seen = new Set<string>();
   const out: { id: string; nombre: string }[] = [];
   for (const f of filas) {
@@ -527,6 +560,31 @@ export async function crearProductoListaPrecio(
   }
 }
 
+/** Elimina un ítem de `prod_precios_provee` por `cod_ext`. Cascadas: dto extra / margen manual. */
+export async function eliminarListaPrecioProveedor(
+  codExt: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await prisma.listaPrecioProveedor.delete({ where: { codExt } });
+    return { ok: true };
+  } catch (e: unknown) {
+    const code =
+      e && typeof e === "object" && "code" in e ? String((e as { code: string }).code) : "";
+    if (code === "P2025") {
+      return { ok: false, error: "El producto ya no existe en la lista." };
+    }
+    if (code === "P2003" || code === "P2014") {
+      return {
+        ok: false,
+        error:
+          "No se puede eliminar: el producto tiene datos vinculados que impiden el borrado.",
+      };
+    }
+    const message = e instanceof Error ? e.message : "No se pudo eliminar el producto.";
+    return { ok: false, error: message };
+  }
+}
+
 export interface ActualizacionMasivaListaPrecios {
   marca?: string | null;
   rubro?: string | null;
@@ -655,6 +713,7 @@ export async function listarCodExtListaPreciosPorProveedor(
     undefined,
     undefined,
     undefined,
+    undefined,
     MAX_COD_EXT_ACCION_MASIVA
   );
   return filas.map((f) => f.codExt);
@@ -709,6 +768,7 @@ export async function getProductosProveedoresPageFiltrados(params: {
     undefined,
     undefined,
     params.busqueda,
+    undefined,
     undefined,
     undefined,
     params.pagina
