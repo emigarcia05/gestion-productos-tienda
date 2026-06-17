@@ -93,12 +93,19 @@ export async function upsertPreciosRexDesdeFilasPdf(
   return { creados, actualizados, errores };
 }
 
+export interface VinculoListaPrecioRexResumen {
+  codExt: string;
+  descripcionProveedor: string;
+}
+
 export interface PrecioRexParaVincular {
   id: string;
   descripcion: string;
   precio: number;
-  /** Si el ítem REX ya está vinculado a otra fila `prod_precios_provee`. */
-  listaPrecioVinculada: { codExt: string; descripcionProveedor: string } | null;
+  /** Otros ítems de lista que ya apuntan a este REX (informativo). */
+  otrosVinculosLista: VinculoListaPrecioRexResumen[];
+  /** Este REX ya está vinculado a la fila en edición. */
+  vinculadoAFilaActual: boolean;
 }
 
 const MAX_PRECIOS_REX_VINCULAR = 500;
@@ -117,7 +124,7 @@ export async function listarPreciosRexParaVincular(
   const rows = await prisma.prodPrecioRex.findMany({
     where,
     include: {
-      listaPrecioProveedor: {
+      listaPreciosProveedor: {
         select: { codExt: true, descripcionProveedor: true },
       },
     },
@@ -129,13 +136,13 @@ export async function listarPreciosRexParaVincular(
     id: r.id,
     descripcion: r.descripcion,
     precio: Number(r.precio),
-    listaPrecioVinculada:
-      r.listaPrecioProveedor && r.listaPrecioProveedor.codExt !== codExtLista
-        ? {
-            codExt: r.listaPrecioProveedor.codExt,
-            descripcionProveedor: r.listaPrecioProveedor.descripcionProveedor,
-          }
-        : null,
+    otrosVinculosLista: r.listaPreciosProveedor
+      .filter((lp) => lp.codExt !== codExtLista)
+      .map((lp) => ({
+        codExt: lp.codExt,
+        descripcionProveedor: lp.descripcionProveedor,
+      })),
+    vinculadoAFilaActual: r.listaPreciosProveedor.some((lp) => lp.codExt === codExtLista),
   }));
 }
 
@@ -143,7 +150,7 @@ export type VincularListaPrecioConPrecioRexResult =
   | { ok: true }
   | { ok: false; error: string };
 
-/** Vincula 1:1 una fila lista proveedor con un ítem REX del mismo proveedor. */
+/** Vincula una fila lista proveedor con un ítem REX del mismo proveedor (N:1). */
 export async function vincularListaPrecioConPrecioRex(
   codExtLista: string,
   idPrecioRex: string
@@ -155,9 +162,7 @@ export async function vincularListaPrecioConPrecioRex(
     }),
     prisma.prodPrecioRex.findUnique({
       where: { id: idPrecioRex },
-      include: {
-        listaPrecioProveedor: { select: { codExt: true } },
-      },
+      select: { id: true, idProveedor: true },
     }),
   ]);
 
@@ -170,31 +175,14 @@ export async function vincularListaPrecioConPrecioRex(
   if (lista.idProveedor !== rex.idProveedor) {
     return { ok: false, error: "El precio REX pertenece a otro proveedor." };
   }
-  if (
-    rex.listaPrecioProveedor &&
-    rex.listaPrecioProveedor.codExt !== codExtLista
-  ) {
-    return {
-      ok: false,
-      error: "Este precio REX ya está vinculado a otro producto de lista.",
-    };
-  }
 
   if (lista.idPrecioRex === idPrecioRex) {
     return { ok: true };
   }
 
-  await prisma.$transaction(async (tx) => {
-    if (lista.idPrecioRex && lista.idPrecioRex !== idPrecioRex) {
-      await tx.listaPrecioProveedor.update({
-        where: { codExt: codExtLista },
-        data: { idPrecioRex: null },
-      });
-    }
-    await tx.listaPrecioProveedor.update({
-      where: { codExt: codExtLista },
-      data: { idPrecioRex },
-    });
+  await prisma.listaPrecioProveedor.update({
+    where: { codExt: codExtLista },
+    data: { idPrecioRex },
   });
 
   return { ok: true };
