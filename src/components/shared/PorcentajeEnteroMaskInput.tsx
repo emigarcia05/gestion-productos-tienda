@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useRef, useState, type ComponentProps } from "react";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-export type PorcentajeEnteroMaskInputProps = Omit<
-  ComponentProps<typeof Input>,
+type NativeInputProps = Omit<
+  ComponentProps<"input">,
   "value" | "onChange" | "type" | "inputMode"
-> & {
+>;
+
+export type PorcentajeEnteroMaskInputProps = NativeInputProps & {
   /** Entero; `null` se trata como 0 en pantalla y edición. */
   value: number | null;
   onValueChange: (next: number) => void;
@@ -47,7 +48,7 @@ function parsePastedInt(text: string, signed: boolean): number | null {
 
 /**
  * Porcentaje entero con `%` fijo como sufijo visual (no seleccionable).
- * Entrada tipo POS: Backspace/Delete borran dígitos sin depender del cursor.
+ * Contenedor `.input-mascara-sufijo` + flex: el sufijo no se mueve al hover de fila en tablas.
  */
 export default function PorcentajeEnteroMaskInput({
   value,
@@ -90,9 +91,10 @@ export default function PorcentajeEnteroMaskInput({
   }
 
   return (
-    <div className="relative w-full min-w-0">
-      <Input
+    <div className={cn("input-mascara-sufijo w-full min-w-0", className)}>
+      <input
         type="text"
+        data-slot="input"
         inputMode={signed ? "text" : "numeric"}
         autoComplete="off"
         disabled={disabled}
@@ -182,13 +184,14 @@ export default function PorcentajeEnteroMaskInput({
           if (parsed === null) return;
           applyValue(parsed);
         }}
-        className={cn("tabular-nums text-center pr-6", className)}
+        className={cn(
+          "min-h-0 min-w-0 flex-1 border-0 bg-transparent px-1 py-0 text-center text-sm tabular-nums shadow-none outline-none",
+          "focus-visible:ring-0 focus-visible:outline-none",
+          disabled && "cursor-not-allowed opacity-50"
+        )}
         {...props}
       />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none tabular-nums"
-      >
+      <span className="input-mascara-sufijo__pct tabular-nums" aria-hidden>
         %
       </span>
     </div>

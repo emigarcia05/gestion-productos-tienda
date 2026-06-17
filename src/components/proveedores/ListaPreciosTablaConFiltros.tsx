@@ -95,11 +95,18 @@ function DescripcionCelda({ fila }: { fila: FilaListaPrecioParaCliente }) {
   const tienda = fila.descripcionTienda?.trim() || "";
   const proveedor = fila.descripcionProveedor?.trim() || "";
   const principal = tienda || proveedor || "—";
-  const titleParts = [principal, fila.codExt].filter(Boolean).join(" · ");
+  const marca = fila.marca?.trim() || "";
+  const titleParts = [principal, marca, fila.codExt].filter(Boolean).join(" · ");
 
   return (
-    <div className="min-w-0 flex flex-col gap-0.5" title={titleParts}>
-      <div className="celda-destacado truncate text-xs font-bold">{principal}</div>
+    <div
+      className="flex min-w-0 max-h-full flex-col justify-center gap-0"
+      title={titleParts}
+    >
+      <div className="celda-destacado truncate text-xs font-bold leading-none">{principal}</div>
+      {marca ? (
+        <div className="celda-sublinea-tabla truncate leading-none">{marca}</div>
+      ) : null}
     </div>
   );
 }
@@ -542,7 +549,7 @@ export default function ListaPreciosTablaConFiltros({
                           {fila.proveedor?.prefijo || "—"}
                         </TableCell>
                       ) : null}
-                      <TableCell className="celda-datos min-w-0 overflow-hidden align-top">
+                      <TableCell className="celda-datos min-w-0 overflow-hidden">
                         <DescripcionCelda fila={fila} />
                       </TableCell>
                       <TableCell className="celda-datos celda-numero celda-destacado text-right whitespace-nowrap">

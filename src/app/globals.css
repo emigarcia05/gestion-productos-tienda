@@ -414,6 +414,12 @@
   .celda-destacado {
     font-weight: 400;
   }
+  .celda-sublinea-tabla {
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--muted-foreground);
+  }
   .celda-datos.celda-numero {
     font-variant-numeric: tabular-nums;
     text-align: center;
@@ -855,6 +861,10 @@
   position: static;
   z-index: auto;
 }
+/* Sufijo % fijo: el contenedor debe seguir siendo `relative` (ver `.input-mascara-sufijo`). */
+.tabla-gestion-compacta tbody tr td:hover > .input-mascara-sufijo {
+  position: relative !important;
+}
 /* Contenido interno de celdas: no puede alterar la altura de la fila. */
 .tabla-gestion-compacta tbody td > div {
   max-height: 100% !important;
@@ -874,6 +884,45 @@
 .tabla-gestion-compacta tbody td input:not([type="checkbox"]):focus {
   outline: none;
   box-shadow: 0 0 0 2px color-mix(in oklch, #0072bb 25%, transparent);
+}
+/* Input con sufijo % fijo (máscara): borde en el contenedor; el `<input>` interno sin recuadro propio. */
+.tabla-gestion-compacta tbody td .input-mascara-sufijo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  box-sizing: border-box;
+  background-color: transparent !important;
+  border: 1px solid #0072bb;
+  border-radius: calc(var(--radius) - 2px);
+  max-height: 1.75rem !important;
+  height: 1.75rem !important;
+}
+.tabla-gestion-compacta tbody td .input-mascara-sufijo:focus-within {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklch, #0072bb 25%, transparent);
+}
+.tabla-gestion-compacta tbody td .input-mascara-sufijo input:not([type="checkbox"]) {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+}
+.tabla-gestion-compacta tbody td .input-mascara-sufijo input:not([type="checkbox"]):focus,
+.tabla-gestion-compacta tbody td .input-mascara-sufijo input:not([type="checkbox"]):focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.tabla-gestion-compacta tbody td .input-mascara-sufijo__pct {
+  flex-shrink: 0;
+  padding-right: 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--muted-foreground);
+  user-select: none;
+  pointer-events: none;
 }
 /* Listas desplegables (select) dentro de tabla: mismo estilo que inputs (fondo transparente, recuadro #0072bb); contenido al alto máximo de la fila. */
 .tabla-gestion-compacta tbody td [data-slot="select-trigger"] {
