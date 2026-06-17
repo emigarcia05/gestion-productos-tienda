@@ -956,7 +956,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 - **Reposición — proveedor prioritario distinto** (solo si `tipos` incluye `REPOSICION`):
   - **Params opcionales**: `confirmarReposicionProveedorPrioritario?: boolean` (default false), `itemsReposicionProveedorPrioritario?: { idItemPedidoEnvio, proveedorPrioritarioId }[]`.
   - Si hay ítems alternativos (`getReposicionItemsProveedorPrioritarioAlternativo`) y `confirmarReposicionProveedorPrioritario` es false → `{ ok: false, error: "REPOSICION_PROVEEDOR_PRIORITARIO_REQUIERE_CONFIRMACION:{n}" }` **sin persistir** (antes del chequeo de sobrestock).
-  - Con confirmación, el PDF del proveedor elegido sigue el flujo normal; cada ítem marcado genera snapshot + PDF adicional para su `proveedorPrioritarioId` (`getItemsYProveedorParaEnviar` con `soloIdsMerc`). La respuesta incluye `pdfAdicionales[]`. Las filas REPOSICIÓN en `prod_ped_merc` **no** se borran.
+  - Con confirmación, el PDF del proveedor elegido incluye ítems REPOSICIÓN por defecto **más** los marcados en el modal (`getItemsYProveedorParaEnviar` con `forzarIdsReposicionAlProveedor`; LP del proveedor del pedido vía `resolverListaPrecioReposicionParaProveedor`). Un solo snapshot/PDF. Las filas REPOSICIÓN en `prod_ped_merc` **no** se borran.
 
 #### Tabla `/pedidos/enviar` — `getItemsTablaEnviarPedido` / `getEnviarPedidoTablaData`
 

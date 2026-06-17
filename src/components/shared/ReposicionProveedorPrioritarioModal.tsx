@@ -181,8 +181,8 @@ export default function ReposicionProveedorPrioritarioModal({
                               aria-pressed={seleccionado}
                               aria-label={
                                 seleccionado
-                                  ? `Quitar ${item.descripcion} del pedido del proveedor asignado`
-                                  : `Incluir ${item.descripcion} en el pedido del proveedor asignado`
+                                  ? `Quitar ${item.descripcion} del pedido de ${proveedorPedidoEtiqueta}`
+                                  : `Incluir ${item.descripcion} en el pedido de ${proveedorPedidoEtiqueta}`
                               }
                               title={seleccionado ? "Quitar" : "Incluir"}
                             >

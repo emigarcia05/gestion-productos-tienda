@@ -16,6 +16,7 @@ import {
   elegirListaPrecioProveedorReposicion,
   existeListaPrecioParaReposicionCodTienda,
   proveedorEtiquetaPedidoDesdeRow,
+  resolverListaPrecioReposicionParaProveedor,
   sumarIvaSaldoParaReposicion,
 } from "@/services/pedidosReposicionProveedor.service";
 import {
@@ -807,7 +808,12 @@ export async function getItemsYProveedorParaEnviar(
   sucursal: string,
   tipos: string[],
   q?: string,
-  opts?: { incluirFilasConCantCero?: boolean; soloIdsMerc?: Set<string> }
+  opts?: {
+    incluirFilasConCantCero?: boolean;
+    soloIdsMerc?: Set<string>;
+    /** Reposición: incluir filas aunque el proveedor ganador sea otro; usa LP del proveedor del pedido. */
+    forzarIdsReposicionAlProveedor?: Set<string>;
+  }
 ): Promise<{
   rows: ItemPedidoEnvioRowParaEnviar[];
   items: ItemPedidoParaPdf[];
@@ -960,12 +966,21 @@ export async function getItemsYProveedorParaEnviar(
       const codTi = (r.reposicionCodTienda ?? "").trim();
       const tienda = codTi ? tiendaByCodTienda.get(codTi) : undefined;
       if (!tienda) continue;
-      const provRow = elegirListaPrecioProveedorReposicion({
-        codTienda: codTi,
-        lpPorCodTienda: lpPorCodTiendaReposPdf,
-        ivaSaldoAcumulado: ivaSaldoReposicionPdf,
-      });
-      if (!provRow || provRow.idProveedor !== pid) continue;
+      const forzarAlProveedorPedido =
+        opts?.forzarIdsReposicionAlProveedor?.has(r.id) === true;
+      const provRow = forzarAlProveedorPedido
+        ? resolverListaPrecioReposicionParaProveedor({
+            codTienda: codTi,
+            proveedorId: pid,
+            lpPorCodTienda: lpPorCodTiendaReposPdf,
+          })
+        : elegirListaPrecioProveedorReposicion({
+            codTienda: codTi,
+            lpPorCodTienda: lpPorCodTiendaReposPdf,
+            ivaSaldoAcumulado: ivaSaldoReposicionPdf,
+          });
+      if (!provRow) continue;
+      if (!forzarAlProveedorPedido && provRow.idProveedor !== pid) continue;
       codExtOut = provRow.codExt.trim();
       codProveedor = (provRow.codProdProveedor ?? "").trim() || null;
       tintometricoDescripcion = null;

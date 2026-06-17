@@ -317,15 +317,22 @@ export async function getSobreStockReposicionParaModalAction(
     return { ok: false, error: msg };
   }
 
-  const { proveedorId, sucursal, tipos } = parsed.data;
+  const { proveedorId, sucursal, tipos, forzarIdsReposicionAlProveedor } = parsed.data;
   if (!(await sucursalPedidoHabilitada(sucursal))) {
     return { ok: false, error: "La sucursal no está habilitada para pedidos." };
   }
 
+  const getItemsOpts =
+    (forzarIdsReposicionAlProveedor?.length ?? 0) > 0
+      ? { forzarIdsReposicionAlProveedor: new Set(forzarIdsReposicionAlProveedor) }
+      : undefined;
+
   const { rows } = await getItemsYProveedorParaEnviar(
     proveedorId.trim(),
     sucursal,
-    tipos
+    tipos,
+    undefined,
+    getItemsOpts
   );
   const res = await getSobreStockOtraSucursalParaPedidoEnviar({
     proveedorId: proveedorId.trim(),
@@ -511,12 +518,6 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
     filename: string;
     /** true si se envió por API (no hace falta descargar ni abrir wa.me). */
     sentViaWhatsApp: boolean;
-    /** PDFs adicionales para proveedores prioritarios (reposición opt-in). */
-    pdfAdicionales?: Array<{
-      pdfBase64: string;
-      filename: string;
-      nombreProveedor: string;
-    }>;
   }>
 > {
   const rol = await getRol();
@@ -570,22 +571,6 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
       }
     }
 
-    const result = await getItemsYProveedorParaEnviar(
-      proveedorId.trim(),
-      sucursalValida as SucursalPedidoEnvio,
-      tipos
-    );
-    const { rows: envioRows, items, proveedor } = result;
-    if (!proveedor) {
-      return { ok: false, error: "Proveedor no encontrado." };
-    }
-    if (items.length === 0) {
-      return {
-        ok: false,
-        error: "No hay ítems para generar el pedido con la selección indicada.",
-      };
-    }
-
     const incluyeReposicion = tipos.includes("REPOSICION");
     if (incluyeReposicion && !confirmarReposicionProveedorPrioritario) {
       const alternativos = await getReposicionItemsProveedorPrioritarioAlternativo({
@@ -600,7 +585,11 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
       }
     }
 
-    if (confirmarReposicionProveedorPrioritario && (itemsReposicionProveedorPrioritario?.length ?? 0) > 0) {
+    let forzarIdsReposicionAlProveedor: Set<string> | undefined;
+    if (
+      confirmarReposicionProveedorPrioritario &&
+      (itemsReposicionProveedorPrioritario?.length ?? 0) > 0
+    ) {
       const alternativos = await getReposicionItemsProveedorPrioritarioAlternativo({
         proveedorSeleccionadoId: proveedorId.trim(),
         sucursalCodigo: sucursalValida as SucursalPedidoEnvio,
@@ -614,6 +603,31 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
           return { ok: false, error: "Selección de reposición inválida o desactualizada." };
         }
       }
+      forzarIdsReposicionAlProveedor = new Set(
+        itemsReposicionProveedorPrioritario!.map((s) => s.idItemPedidoEnvio)
+      );
+    }
+
+    const getItemsOpts = forzarIdsReposicionAlProveedor?.size
+      ? { forzarIdsReposicionAlProveedor }
+      : undefined;
+
+    const result = await getItemsYProveedorParaEnviar(
+      proveedorId.trim(),
+      sucursalValida as SucursalPedidoEnvio,
+      tipos,
+      undefined,
+      getItemsOpts
+    );
+    const { rows: envioRows, items, proveedor } = result;
+    if (!proveedor) {
+      return { ok: false, error: "Proveedor no encontrado." };
+    }
+    if (items.length === 0) {
+      return {
+        ok: false,
+        error: "No hay ítems para generar el pedido con la selección indicada.",
+      };
     }
 
     // Sobrestock en la otra sucursal (ítems con cod_tienda): no persistir snapshot hasta confirmación.
@@ -634,6 +648,9 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
       proveedorId: proveedorId.trim(),
       sucursalCodigo: sucursalValida as SucursalPedidoEnvio,
       tipos,
+      forzarIdsReposicionAlProveedor: forzarIdsReposicionAlProveedor
+        ? [...forzarIdsReposicionAlProveedor]
+        : undefined,
     });
     if (!historiaRes.success) {
       return { ok: false, error: historiaRes.error };
@@ -655,67 +672,6 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
 
     const sentViaWhatsApp = false;
 
-    const pdfAdicionales: Array<{
-      pdfBase64: string;
-      filename: string;
-      nombreProveedor: string;
-    }> = [];
-
-    if (
-      incluyeReposicion &&
-      confirmarReposicionProveedorPrioritario &&
-      (itemsReposicionProveedorPrioritario?.length ?? 0) > 0
-    ) {
-      const idsPorProveedorPrioritario = new Map<string, string[]>();
-      for (const sel of itemsReposicionProveedorPrioritario ?? []) {
-        const arr = idsPorProveedorPrioritario.get(sel.proveedorPrioritarioId) ?? [];
-        arr.push(sel.idItemPedidoEnvio);
-        idsPorProveedorPrioritario.set(sel.proveedorPrioritarioId, arr);
-      }
-
-      for (const [provPrioritarioId, idsMerc] of idsPorProveedorPrioritario) {
-        const tiposReposicion = ["REPOSICION"];
-        const { items: itemsPrior, proveedor: provPrior } = await getItemsYProveedorParaEnviar(
-          provPrioritarioId,
-          sucursalValida,
-          tiposReposicion,
-          undefined,
-          { soloIdsMerc: new Set(idsMerc) }
-        );
-        if (!provPrior || itemsPrior.length === 0) continue;
-
-        const historiaPriorRes = await crearPedidoHistoriaSnapshot({
-          proveedorId: provPrioritarioId,
-          sucursalCodigo: sucursalValida as SucursalPedidoEnvio,
-          tipos: tiposReposicion,
-          soloIdsMerc: idsMerc,
-        });
-        if (!historiaPriorRes.success) {
-          return { ok: false, error: historiaPriorRes.error };
-        }
-
-        const pdfPriorBuffer = generarPdfPedido(
-          itemsPrior,
-          provPrior.nombre,
-          sucursalLabel,
-          TIPO_LABEL.REPOSICION ?? "Reposición"
-        );
-        const prefijoPrior = sanitizeFilenamePart(provPrior.prefijo || "");
-        const filenamePrior = `Nota Pedido - ${prefijoPrior} - ${fechaStr}.pdf`;
-        pdfAdicionales.push({
-          pdfBase64: Buffer.from(pdfPriorBuffer).toString("base64"),
-          filename: filenamePrior,
-          nombreProveedor: provPrior.nombre,
-        });
-
-        await limpiarPedidoMercaderiaTrasGenerarPdf({
-          sucursalId: sucursalRow.id,
-          proveedorId: provPrioritarioId,
-          tipos: tiposReposicion,
-        });
-      }
-    }
-
     // Solo ítems del proveedor del PDF (no borrar URGENTE/TINTOMÉTRICO de otros proveedores).
     await limpiarPedidoMercaderiaTrasGenerarPdf({
       sucursalId: sucursalRow.id,
@@ -734,7 +690,6 @@ export async function generarPdfEnviarPedidoAction(raw: unknown): Promise<
         nombreProveedor: proveedor.nombre,
         filename,
         sentViaWhatsApp,
-        pdfAdicionales: pdfAdicionales.length > 0 ? pdfAdicionales : undefined,
       },
     };
   } catch (e) {

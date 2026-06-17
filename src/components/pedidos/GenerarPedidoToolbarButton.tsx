@@ -278,6 +278,8 @@ export default function GenerarPedidoToolbarButton({
       proveedorId,
       sucursal,
       tipos: [...tipos],
+      forzarIdsReposicionAlProveedor:
+        reposicionPrioritarioSeleccion?.map((s) => s.idItemPedidoEnvio) ?? undefined,
     });
     if (!res.ok) {
       toast.error(res.error);
@@ -319,7 +321,6 @@ export default function GenerarPedidoToolbarButton({
     pdfBase64: string;
     filename: string;
     sentViaWhatsApp: boolean;
-    pdfAdicionales?: Array<{ pdfBase64: string; filename: string; nombreProveedor: string }>;
   }) {
     onGeneradoExito?.();
     router.refresh();
@@ -334,15 +335,7 @@ export default function GenerarPedidoToolbarButton({
     }
 
     descargarPdfBase64(data.pdfBase64, data.filename);
-    for (const extra of data.pdfAdicionales ?? []) {
-      descargarPdfBase64(extra.pdfBase64, extra.filename);
-    }
-    const totalPdfs = 1 + (data.pdfAdicionales?.length ?? 0);
-    toast.success(
-      totalPdfs > 1
-        ? `Se generaron ${totalPdfs} PDF de pedido.`
-        : `PDF generado: ${data.filename}`
-    );
+    toast.success(`PDF generado: ${data.filename}`);
     setOpen(false);
   }
 

@@ -182,10 +182,10 @@ export async function crearPedidoHistoriaSnapshot(params: {
   proveedorId: string;
   sucursalCodigo: SucursalPedidoEnvio;
   tipos: string[];
-  /** Solo incluir filas de `prod_ped_merc` con estos IDs (p. ej. reposición opt-in a proveedor prioritario). */
-  soloIdsMerc?: string[];
+  /** Reposición opt-in: forzar filas al proveedor del pedido aunque otro gane por precio. */
+  forzarIdsReposicionAlProveedor?: string[];
 }): Promise<ServiceResult<{ id: string }>> {
-  const { proveedorId, sucursalCodigo, tipos, soloIdsMerc } = params;
+  const { proveedorId, sucursalCodigo, tipos, forzarIdsReposicionAlProveedor } = params;
 
   if (!proveedorId.trim()) {
     return { success: false, error: "Proveedor inválido." };
@@ -211,8 +211,10 @@ export async function crearPedidoHistoriaSnapshot(params: {
       sucursalCodigo,
       tipos,
       undefined,
-      soloIdsMerc?.length
-        ? { soloIdsMerc: new Set(soloIdsMerc) }
+      forzarIdsReposicionAlProveedor?.length
+        ? {
+            forzarIdsReposicionAlProveedor: new Set(forzarIdsReposicionAlProveedor),
+          }
         : undefined
     );
 

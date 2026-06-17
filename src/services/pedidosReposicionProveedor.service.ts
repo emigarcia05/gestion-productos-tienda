@@ -127,6 +127,19 @@ export function elegirListaPrecioProveedorReposicion(params: {
   return ordenados[0] ?? null;
 }
 
+/** Fila de lista proveedor habilitada para un `cod_tienda` y proveedor concreto (sin comparar precios). */
+export function resolverListaPrecioReposicionParaProveedor(params: {
+  codTienda: string;
+  proveedorId: string;
+  lpPorCodTienda: Map<string, LpRowReposicionResuelto[]>;
+}): LpRowReposicionResuelto | null {
+  const ct = params.codTienda.trim();
+  const pid = params.proveedorId.trim();
+  if (!ct || !pid) return null;
+  const vinculados = params.lpPorCodTienda.get(ct) ?? [];
+  return vinculados.find((v) => v.idProveedor === pid) ?? null;
+}
+
 export async function sumarIvaSaldoParaReposicion(): Promise<number> {
   return sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido();
 }
