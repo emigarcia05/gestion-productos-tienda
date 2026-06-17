@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useRef, type ComponentProps } from "react";
+import { useMemo, useRef, useState, type ComponentProps } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { fmtPctEntero } from "@/lib/format";
 
 export type PorcentajeEnteroMaskInputProps = Omit<
   ComponentProps<typeof Input>,
@@ -22,8 +21,17 @@ function clampInt(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
-function formatUnsignedDisplay(n: number): string {
-  return `${n.toLocaleString("es-AR")}%`;
+/** Parte editable del valor (sin `%`). */
+function formatUnsignedEnteroBody(n: number): string {
+  return n.toLocaleString("es-AR");
+}
+
+/** Parte editable con signo (sin `%`). */
+function formatSignedEnteroBody(n: number): string {
+  const entero = Math.round(n);
+  if (entero > 0) return `+${entero.toLocaleString("es-AR")}`;
+  if (entero < 0) return entero.toLocaleString("es-AR");
+  return "0";
 }
 
 function parsePastedInt(text: string, signed: boolean): number | null {
@@ -38,8 +46,8 @@ function parsePastedInt(text: string, signed: boolean): number | null {
 }
 
 /**
- * Porcentaje entero con `%` fijo al final (máscara tipo POS).
- * El cursor no queda después del `%`: Backspace/Delete siempre borran dígitos.
+ * Porcentaje entero con `%` fijo como sufijo visual (no seleccionable).
+ * Entrada tipo POS: Backspace/Delete borran dígitos sin depender del cursor.
  */
 export default function PorcentajeEnteroMaskInput({
   value,
@@ -55,115 +63,134 @@ export default function PorcentajeEnteroMaskInput({
   ...props
 }: PorcentajeEnteroMaskInputProps) {
   const overwriteOnNextInputRef = useRef(true);
-  const pendingNegativeRef = useRef(false);
+  const [pendingNegative, setPendingNegative] = useState(false);
 
   const effectiveMin = min ?? (signed ? -999_999 : 0);
   const effectiveMax = max ?? (signed ? 999_999 : 99);
   const intValue = value ?? 0;
 
-  const display = useMemo(() => {
-    if (signed) return fmtPctEntero(intValue);
-    return formatUnsignedDisplay(intValue);
-  }, [intValue, signed]);
+  const displayBody = useMemo(() => {
+    if (signed && pendingNegative && intValue === 0) return "-";
+    if (signed) return formatSignedEnteroBody(intValue);
+    return formatUnsignedEnteroBody(intValue);
+  }, [intValue, signed, pendingNegative]);
+
+  function resetEditState() {
+    overwriteOnNextInputRef.current = true;
+    setPendingNegative(false);
+  }
 
   function applyValue(next: number) {
+    setPendingNegative(false);
     onValueChange(clampInt(next, effectiveMin, effectiveMax));
   }
 
+  function isMinusKey(key: string): boolean {
+    return key === "-" || key === "Subtract";
+  }
+
   return (
-    <Input
-      type="text"
-      inputMode="numeric"
-      autoComplete="off"
-      disabled={disabled}
-      value={display}
-      onFocus={(event) => {
-        overwriteOnNextInputRef.current = true;
-        pendingNegativeRef.current = false;
-        onFocus?.(event);
-      }}
-      onBlur={(event) => {
-        overwriteOnNextInputRef.current = true;
-        pendingNegativeRef.current = false;
-        onBlur?.(event);
-      }}
-      onChange={() => {
-        // Entrada solo por teclado / pegado (máscara POS).
-      }}
-      onKeyDown={(event) => {
-        if (disabled) return;
-        if (event.ctrlKey || event.metaKey || event.altKey) {
-          onKeyDown?.(event);
-          return;
-        }
-
-        const key = event.key;
-        const isDigit = /^[0-9]$/.test(key);
-        const allowedControl =
-          key === "ArrowLeft" ||
-          key === "ArrowRight" ||
-          key === "Tab" ||
-          key === "Home" ||
-          key === "End";
-
-        if (key === "-" && signed) {
-          event.preventDefault();
-          if (overwriteOnNextInputRef.current && intValue === 0) {
-            pendingNegativeRef.current = true;
-            overwriteOnNextInputRef.current = false;
+    <div className="relative w-full min-w-0">
+      <Input
+        type="text"
+        inputMode={signed ? "text" : "numeric"}
+        autoComplete="off"
+        disabled={disabled}
+        value={displayBody}
+        onFocus={(event) => {
+          resetEditState();
+          onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          resetEditState();
+          onBlur?.(event);
+        }}
+        onChange={() => {
+          // Entrada solo por teclado / pegado (máscara POS).
+        }}
+        onKeyDown={(event) => {
+          if (disabled) return;
+          if (event.ctrlKey || event.metaKey || event.altKey) {
+            onKeyDown?.(event);
             return;
           }
-          overwriteOnNextInputRef.current = false;
-          pendingNegativeRef.current = false;
-          if (intValue > 0) applyValue(-intValue);
-          else if (intValue < 0) applyValue(Math.abs(intValue));
-          return;
-        }
 
-        if (isDigit) {
+          const key = event.key;
+          const isDigit = /^[0-9]$/.test(key);
+          const allowedControl =
+            key === "ArrowLeft" ||
+            key === "ArrowRight" ||
+            key === "Tab" ||
+            key === "Home" ||
+            key === "End";
+
+          if (isMinusKey(key) && signed) {
+            event.preventDefault();
+            if (overwriteOnNextInputRef.current) {
+              setPendingNegative((prev) => !prev);
+              overwriteOnNextInputRef.current = false;
+              return;
+            }
+            if (intValue > 0) applyValue(-intValue);
+            else if (intValue < 0) applyValue(Math.abs(intValue));
+            else setPendingNegative((prev) => !prev);
+            return;
+          }
+
+          if (isDigit) {
+            event.preventDefault();
+            const digit = Number(key);
+            const negative = overwriteOnNextInputRef.current
+              ? pendingNegative
+              : pendingNegative || intValue < 0;
+            const base = overwriteOnNextInputRef.current ? 0 : Math.abs(intValue);
+            let next = base * 10 + digit;
+            if (negative) next = -next;
+            overwriteOnNextInputRef.current = false;
+            applyValue(next);
+            return;
+          }
+
+          if (key === "Backspace" || key === "Delete") {
+            event.preventDefault();
+            overwriteOnNextInputRef.current = false;
+            if (pendingNegative && intValue === 0) {
+              setPendingNegative(false);
+              return;
+            }
+            const abs = Math.floor(Math.abs(intValue) / 10);
+            const next = intValue < 0 ? -abs : abs;
+            applyValue(next);
+            return;
+          }
+
+          if (allowedControl) {
+            onKeyDown?.(event);
+            return;
+          }
+          if (key === "Enter" || key === "Escape") {
+            onKeyDown?.(event);
+            return;
+          }
           event.preventDefault();
-          const digit = Number(key);
-          const negative = pendingNegativeRef.current || intValue < 0;
-          const base = overwriteOnNextInputRef.current ? 0 : Math.abs(intValue);
-          let next = base * 10 + digit;
-          if (negative) next = -next;
-          pendingNegativeRef.current = false;
-          overwriteOnNextInputRef.current = false;
-          applyValue(next);
-          return;
-        }
-
-        if (key === "Backspace" || key === "Delete") {
+        }}
+        onPaste={(event) => {
           event.preventDefault();
-          pendingNegativeRef.current = false;
+          if (disabled) return;
           overwriteOnNextInputRef.current = false;
-          const abs = Math.floor(Math.abs(intValue) / 10);
-          const next = intValue < 0 ? -abs : abs;
-          applyValue(next);
-          return;
-        }
-
-        if (allowedControl) {
-          onKeyDown?.(event);
-          return;
-        }
-        if (key === "Enter" || key === "Escape") {
-          onKeyDown?.(event);
-          return;
-        }
-        event.preventDefault();
-      }}
-      onPaste={(event) => {
-        event.preventDefault();
-        if (disabled) return;
-        overwriteOnNextInputRef.current = false;
-        pendingNegativeRef.current = false;
-        const parsed = parsePastedInt(event.clipboardData.getData("text"), signed);
-        if (parsed === null) return;
-        applyValue(parsed);
-      }}
-      className={cn("tabular-nums", className)}
-      {...props}
-    />
+          const parsed = parsePastedInt(event.clipboardData.getData("text"), signed);
+          if (parsed === null) return;
+          applyValue(parsed);
+        }}
+        className={cn("tabular-nums text-center pr-6", className)}
+        {...props}
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none tabular-nums"
+      >
+        %
+      </span>
+    </div>
   );
 }

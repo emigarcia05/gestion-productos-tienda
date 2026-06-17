@@ -1248,7 +1248,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-10): **Comp. Categorias — múltiples referencias competencia** — panel REFERENCIA COMPETENCIA con lista, radio activa y agregar/quitar por ítem.*
 
-*Última actualización (2026-06-16): **Comp. Categorias — DTO. EXTRA / DIF PX REF MANUAL** — valor por defecto **0%** (`null` → 0 en máscara y grilla); inputs con **`PorcentajeEnteroMaskInput`** (máscara POS: Backspace borra dígitos sin depender del cursor tras `%`).*
+*Última actualización (2026-06-16): **Comp. Categorias — DTO. EXTRA / DIF PX REF MANUAL** — valor por defecto **0%** (`null` → 0 en máscara y grilla); inputs con **`PorcentajeEnteroMaskInput`** (máscara POS; sufijo **`%`** visual fuera del `<input>`, `pointer-events-none`, no seleccionable).*
 
 *Última actualización (2026-06-16): **`/gestion-productos/proveedores/lista-precios`** — botones **Exportar Lista** / **Importar Lista**; exportación (`ExportarListaPreciosButton` + `exportarListaPreciosAction`) de **todos** los ítems filtrados (sin paginación) a Excel `.xls` (`exportListaPreciosExcelClient.ts`).*
 
