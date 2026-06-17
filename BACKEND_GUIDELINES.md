@@ -943,7 +943,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 - **Uso**: alimentar **`ReposicionProveedorPrioritarioModal`** tras `REPOSICION_PROVEEDOR_PRIORITARIO_REQUIERE_CONFIRMACION`.
 - **Entrada (Zod)**: `proveedorId`, `sucursal` (`guaymallen` \| `maipu`).
 - **Salida**: `ActionResult<{ tieneItems: boolean; items: ReposicionProveedorPrioritarioItem[] }>`.
-- **Datos**: **`getReposicionItemsProveedorPrioritarioAlternativo`** — filas `REPOSICION` en la sucursal con `cantPedir > 0` (regla runtime) cuyo proveedor ganador (`elegirListaPrecioProveedorReposicion`) ≠ `proveedorId` elegido.
+- **Datos**: **`getReposicionItemsProveedorPrioritarioAlternativo`** — filas `REPOSICION` en la sucursal con `cantPedir > 0` (regla runtime) cuyo proveedor ganador (`elegirListaPrecioProveedorReposicion`) ≠ `proveedorId` elegido **y** el `cod_tienda` tiene vínculo habilitado con ese `proveedorId` en `prod_precios_provee`.
 
 #### `generarPdfEnviarPedidoAction` (sobrestock otra sucursal, obligatorio)
 

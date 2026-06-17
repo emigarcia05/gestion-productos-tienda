@@ -12,8 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TABLE_ROW_ACTION_ICON_CLASS } from "@/lib/ui-classes";
 import type { ReposicionProveedorPrioritarioItem } from "@/services/pedidosEnvio.service";
 
 export type ReposicionProveedorPrioritarioSeleccion = {
@@ -137,33 +138,55 @@ export default function ReposicionProveedorPrioritarioModal({
               <Table variant="compact" className="table-fixed w-full">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-12 text-center">INCL.</TableHead>
-                    <TableHead className="w-16 text-center">CANT.</TableHead>
+                    <TableHead className="w-[3.5rem] text-center">
+                      <Check
+                        className="mx-auto h-4 w-4 shrink-0 text-primary-foreground"
+                        aria-hidden
+                      />
+                      <span className="sr-only">Incluir</span>
+                    </TableHead>
                     <TableHead>DESCRIPCIÓN</TableHead>
-                    <TableHead className="w-[28%]">PROVEEDOR ASIGNADO</TableHead>
+                    <TableHead className="w-[4.5rem] text-center">CANT.</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {items.map((item) => {
-                    const checked = seleccionados.has(item.idItemPedidoEnvio);
+                    const seleccionado = seleccionados.has(item.idItemPedidoEnvio);
                     return (
                       <TableRow
                         key={item.idItemPedidoEnvio}
-                        className={cn(checked && "bg-primary/5")}
+                        data-state={seleccionado ? "selected" : undefined}
+                        className={cn(
+                          seleccionado &&
+                            "bg-primary/15 odd:bg-primary/15 even:bg-primary/15 hover:!bg-primary/20"
+                        )}
                       >
-                        <TableCell className="celda-datos text-center">
-                          <label className="flex cursor-pointer items-center justify-center">
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleItem(item.idItemPedidoEnvio)}
-                              className="h-4 w-4 cursor-pointer accent-primary"
-                              aria-label={`Incluir ${item.descripcion}`}
-                            />
-                          </label>
-                        </TableCell>
-                        <TableCell className="celda-datos tabular-nums text-center">
-                          {item.cantPedir}
+                        <TableCell className="celda-datos celda-datos--accion-relleno-fila w-[3.5rem]">
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => toggleItem(item.idItemPedidoEnvio)}
+                              disabled={pending}
+                              className={cn(
+                                "tabla-check-toggle tabla-check-toggle--alto-fila shrink-0",
+                                seleccionado &&
+                                  "border-primary !bg-primary !text-primary-foreground hover:!bg-primary/90 hover:!text-primary-foreground [&_svg]:!text-primary-foreground"
+                              )}
+                              aria-pressed={seleccionado}
+                              aria-label={
+                                seleccionado
+                                  ? `Quitar ${item.descripcion} del pedido del proveedor asignado`
+                                  : `Incluir ${item.descripcion} en el pedido del proveedor asignado`
+                              }
+                              title={seleccionado ? "Quitar" : "Incluir"}
+                            >
+                              {seleccionado ? (
+                                <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              ) : null}
+                            </Button>
+                          </div>
                         </TableCell>
                         <TableCell
                           className="celda-datos min-w-0 text-left"
@@ -171,19 +194,8 @@ export default function ReposicionProveedorPrioritarioModal({
                         >
                           <span className="block truncate">{item.descripcion}</span>
                         </TableCell>
-                        <TableCell
-                          className="celda-datos min-w-0 text-left text-xs"
-                          title={etiquetaProveedor(
-                            item.proveedorPrioritarioPrefijo,
-                            item.proveedorPrioritarioNombre
-                          )}
-                        >
-                          <span className="block truncate">
-                            {etiquetaProveedor(
-                              item.proveedorPrioritarioPrefijo,
-                              item.proveedorPrioritarioNombre
-                            )}
-                          </span>
+                        <TableCell className="celda-datos tabular-nums text-center">
+                          {item.cantPedir}
                         </TableCell>
                       </TableRow>
                     );

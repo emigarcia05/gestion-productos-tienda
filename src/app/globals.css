@@ -1065,6 +1065,10 @@
   height: calc(var(--tabla-check-size) - 0.25rem) !important;
   color: #0072bb !important;
 }
+/* Variante: casi todo el alto útil de la celda (modales con celda sin padding). */
+.tabla-gestion-compacta tbody td .tabla-check-toggle.tabla-check-toggle--alto-fila {
+  --tabla-check-size: calc(var(--tabla-body-row-min-height) - 0.25rem);
+}
 .tabla-gestion-compacta tbody tr:nth-child(odd) {
   --tabla-row-bg: var(--card);
   background-color: var(--card);

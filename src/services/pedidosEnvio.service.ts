@@ -1089,7 +1089,8 @@ export interface ReposicionProveedorPrioritarioItem {
 
 /**
  * Reposición con cantidad a pedir > 0 cuyo proveedor ganador (menor costo comparable) no es el
- * proveedor elegido en el modal Generar Pedido.
+ * proveedor elegido en el modal Generar Pedido, pero el producto **sí** tiene vínculo habilitado
+ * con ese proveedor en `prod_precios_provee.cod_tienda`.
  */
 export async function getReposicionItemsProveedorPrioritarioAlternativo(params: {
   proveedorSeleccionadoId: string;
@@ -1153,6 +1154,10 @@ export async function getReposicionItemsProveedorPrioritarioAlternativo(params: 
     const codTi = (r.reposicionCodTienda ?? "").trim();
     const tienda = codTi ? tiendaByCodTienda.get(codTi) : undefined;
     if (!tienda) continue;
+
+    const vinculados = lpPorCodTiendaRepos.get(codTi) ?? [];
+    const vinculadoAlProveedorSeleccionado = vinculados.some((v) => v.idProveedor === pid);
+    if (!vinculadoAlProveedorSeleccionado) continue;
 
     const provRow = elegirListaPrecioProveedorReposicion({
       codTienda: codTi,
