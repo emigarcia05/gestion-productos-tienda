@@ -86,26 +86,74 @@ const SUBFILA_DETALLE_CLASS = "tabla-fila-detalle-competencia";
 const SUBFILA_CELDA_BLOQUE_CLASS = "tabla-fila-detalle-competencia-celda";
 const SUBFILA_CELDA_HUECA_CLASS = "tabla-fila-detalle-competencia-hueca";
 
+const DESCUENTOS_FILA_ITEMS: {
+  abbr: string;
+  label: string;
+  getValue: (fila: FilaListaPrecioParaCliente) => number;
+}[] = [
+  { abbr: "DP", label: "DESC. PROV.", getValue: (f) => f.dtoProveedor },
+  { abbr: "DM", label: "DESC. MARCA", getValue: (f) => f.dtoMarca },
+  { abbr: "DR", label: "DESC. RUBRO", getValue: (f) => f.dtoRubro },
+  { abbr: "DC", label: "DESC. CANT.", getValue: (f) => f.dtoCantidad },
+  { abbr: "DF", label: "DESC. FINAN.", getValue: (f) => f.dtoFinanciero },
+  { abbr: "CT", label: "CX. TRANSP.", getValue: (f) => f.cxTransporte },
+];
+
+function fmtValorDescuentoTabla(valor: number): string {
+  return fmtPorcentajeTabla(valor) || "—";
+}
+
+function fmtDescuentosInlineResumen(fila: FilaListaPrecioParaCliente): string {
+  return DESCUENTOS_FILA_ITEMS.map(
+    ({ abbr, getValue }) => `${abbr} ${fmtValorDescuentoTabla(getValue(fila))}`
+  ).join(" · ");
+}
+
+function fmtDescuentosInlineTitulo(fila: FilaListaPrecioParaCliente): string {
+  return DESCUENTOS_FILA_ITEMS.map(
+    ({ label, getValue }) => `${label} ${fmtValorDescuentoTabla(getValue(fila))}`
+  ).join(" · ");
+}
+
 function fmtPrecioTabla(n: number | null | undefined): string {
   if (n == null || Number.isNaN(n)) return "—";
   return `$${fmtPrecio(n)}`;
 }
 
-function DescripcionCelda({ fila }: { fila: FilaListaPrecioParaCliente }) {
+function DescripcionCelda({
+  fila,
+  modoDescuentosInline,
+}: {
+  fila: FilaListaPrecioParaCliente;
+  modoDescuentosInline: boolean;
+}) {
   const tienda = fila.descripcionTienda?.trim() || "";
   const proveedor = fila.descripcionProveedor?.trim() || "";
   const principal = tienda || proveedor || "—";
   const marca = fila.marca?.trim() || "";
-  const titleParts = [principal, marca, fila.codExt].filter(Boolean).join(" · ");
+  const descuentosResumen = modoDescuentosInline ? fmtDescuentosInlineResumen(fila) : "";
+  const sublineaPartes = [marca, descuentosResumen].filter(Boolean);
+  const sublinea = sublineaPartes.join(" · ");
+  const titleParts = [
+    principal,
+    marca,
+    modoDescuentosInline ? fmtDescuentosInlineTitulo(fila) : "",
+    fila.codExt,
+  ].filter(Boolean);
 
   return (
     <div
       className="flex min-w-0 max-h-full flex-col justify-center gap-0"
-      title={titleParts}
+      title={titleParts.join(" · ")}
     >
       <div className="celda-destacado truncate text-xs font-bold leading-none">{principal}</div>
-      {marca ? (
-        <div className="celda-sublinea-tabla truncate leading-none">{marca}</div>
+      {sublinea ? (
+        <div
+          className="celda-sublinea-tabla truncate leading-none tabular-nums"
+          title={modoDescuentosInline ? fmtDescuentosInlineTitulo(fila) : marca || undefined}
+        >
+          {sublinea}
+        </div>
       ) : null}
     </div>
   );
@@ -118,14 +166,12 @@ function DetalleDescuentosFila({
   fila: FilaListaPrecioParaCliente;
   showProveedor: boolean;
 }) {
-  const items: { label: string; value: string }[] = [
-    { label: "DESC. PROV.", value: fmtPorcentajeTabla(fila.dtoProveedor) || "—" },
-    { label: "DESC. MARCA", value: fmtPorcentajeTabla(fila.dtoMarca) || "—" },
-    { label: "DESC. RUBRO", value: fmtPorcentajeTabla(fila.dtoRubro) || "—" },
-    { label: "DESC. CANT.", value: fmtPorcentajeTabla(fila.dtoCantidad) || "—" },
-    { label: "DESC. FINAN.", value: fmtPorcentajeTabla(fila.dtoFinanciero) || "—" },
-    { label: "CX. TRANSP.", value: fmtPorcentajeTabla(fila.cxTransporte) || "—" },
-  ];
+  const items: { label: string; value: string }[] = DESCUENTOS_FILA_ITEMS.map(
+    ({ label, getValue }) => ({
+      label,
+      value: fmtValorDescuentoTabla(getValue(fila)),
+    })
+  );
 
   const colsDetalle = 3;
 
@@ -168,6 +214,7 @@ export default function ListaPreciosTablaConFiltros({
   const [vincularOpen, setVincularOpen] = useState(false);
   const [filaEliminar, setFilaEliminar] = useState<FilaListaPrecioParaCliente | null>(null);
   const [eliminarOpen, setEliminarOpen] = useState(false);
+  const [modoDescuentosInline, setModoDescuentosInline] = useState(false);
   const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
@@ -197,6 +244,11 @@ export default function ListaPreciosTablaConFiltros({
     vinculadoFilter === "si" ||
     vinculadoFilter === "no" ||
     busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA;
+
+  function toggleModoDescuentosInline() {
+    setModoDescuentosInline((prev) => !prev);
+    setExpandidos(new Set());
+  }
 
   function toggleDetalle(codExt: string) {
     setExpandidos((prev) => {
@@ -503,6 +555,16 @@ export default function ListaPreciosTablaConFiltros({
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton onClick={limpiarFiltros} />
+          <Button
+            type="button"
+            variant={modoDescuentosInline ? "default" : "outline"}
+            size="sm"
+            className="h-8 shrink-0 text-xs uppercase"
+            aria-pressed={modoDescuentosInline}
+            onClick={toggleModoDescuentosInline}
+          >
+            Desc. en fila
+          </Button>
           <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
             {total.toLocaleString()} PRODUCTO
             {total !== 1 ? "S" : ""}
@@ -550,7 +612,7 @@ export default function ListaPreciosTablaConFiltros({
                         </TableCell>
                       ) : null}
                       <TableCell className="celda-datos min-w-0 overflow-hidden">
-                        <DescripcionCelda fila={fila} />
+                        <DescripcionCelda fila={fila} modoDescuentosInline={modoDescuentosInline} />
                       </TableCell>
                       <TableCell className="celda-datos celda-numero celda-destacado text-right whitespace-nowrap">
                         {fmtPrecioTabla(fila.pxListaProveedor)}
@@ -568,21 +630,23 @@ export default function ListaPreciosTablaConFiltros({
                             "justify-center gap-0.5"
                           )}
                         >
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                            aria-label={expandido ? "Ocultar descuentos" : "Ver descuentos"}
-                            aria-expanded={expandido}
-                            onClick={() => toggleDetalle(fila.id)}
-                          >
-                            {expandido ? (
-                              <ChevronUp className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                            ) : (
-                              <ChevronDown className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                            )}
-                          </Button>
+                          {modoDescuentosInline ? null : (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                              aria-label={expandido ? "Ocultar descuentos" : "Ver descuentos"}
+                              aria-expanded={expandido}
+                              onClick={() => toggleDetalle(fila.id)}
+                            >
+                              {expandido ? (
+                                <ChevronUp className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              ) : (
+                                <ChevronDown className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              )}
+                            </Button>
+                          )}
                           {puedeEdicionMasiva ? (
                             <>
                               <Button
@@ -633,7 +697,7 @@ export default function ListaPreciosTablaConFiltros({
                         </div>
                       </TableCell>
                     </TableRow>
-                    {expandido ? (
+                    {expandido && !modoDescuentosInline ? (
                       <DetalleDescuentosFila fila={fila} showProveedor={showProveedorColumn} />
                     ) : null}
                   </Fragment>
