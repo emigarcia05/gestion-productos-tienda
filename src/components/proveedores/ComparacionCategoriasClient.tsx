@@ -290,7 +290,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
       if (Object.prototype.hasOwnProperty.call(difPxRefManualDraft, codExt)) {
         return difPxRefManualDraft[codExt];
       }
-      return calcDifPxRefManualDesdeMargen(margenGuardado, costo, pxReferencia);
+      return calcDifPxRefManualDesdeMargen(margenGuardado, costo, pxReferencia) ?? 0;
     },
     [difPxRefManualDraft]
   );

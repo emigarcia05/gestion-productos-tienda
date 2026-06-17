@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
 import CeldaDifPct from "@/components/shared/CeldaDifPct";
+import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
 import { calcMargenManualDesdeDifPctReferencia } from "@/lib/calculos";
 import {
   formatDifPxRefManualMask,
-  parseDifPxRefManualMask,
   roundMargenComparacionPct,
-  sanitizeDifPxRefManualInput,
 } from "@/lib/comparacionCategoriasFormat";
 import { actualizarMargenManualComparacionAction } from "@/actions/comparacionCategorias";
 
@@ -25,6 +23,10 @@ interface Props {
   onSaved: (margenManual: number | null) => void;
 }
 
+function valorEfectivoDifPxRef(difPxRefManual: number | null): number {
+  return difPxRefManual ?? 0;
+}
+
 export default function CeldaDifPxRefManualComparacion({
   codExt,
   difPxRefManual,
@@ -36,29 +38,21 @@ export default function CeldaDifPxRefManualComparacion({
   onDraftEnd,
   onSaved,
 }: Props) {
-  const [display, setDisplay] = useState(() => formatDifPxRefManualMask(difPxRefManual));
+  const [localValue, setLocalValue] = useState(() => valorEfectivoDifPxRef(difPxRefManual));
   const [editando, setEditando] = useState(false);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
     if (!editando) {
-      setDisplay(formatDifPxRefManualMask(difPxRefManual));
+      setLocalValue(valorEfectivoDifPxRef(difPxRefManual));
     }
   }, [difPxRefManual, editando]);
 
-  function applyInput(raw: string) {
-    const sanitized = sanitizeDifPxRefManualInput(raw);
-    setDisplay(sanitized);
-    const parsed = parseDifPxRefManualMask(sanitized);
-    if (parsed === undefined) return;
-    onDraftChange(parsed);
-  }
-
-  async function commit(raw: string) {
-    const parsed = parseDifPxRefManualMask(raw);
-    if (parsed === undefined) {
+  async function commit() {
+    const parsed = localValue;
+    if (!Number.isSafeInteger(parsed)) {
       toast.error("Ingresá un porcentaje entero válido (positivo o negativo).");
-      setDisplay(formatDifPxRefManualMask(difPxRefManual));
+      setLocalValue(valorEfectivoDifPxRef(difPxRefManual));
       onDraftEnd();
       return;
     }
@@ -74,7 +68,6 @@ export default function CeldaDifPxRefManualComparacion({
       margenManualGuardado != null ? roundMargenComparacionPct(margenManualGuardado) : null;
 
     if (margenPersistir === margenGuardadoRedondeado) {
-      setDisplay(formatDifPxRefManualMask(parsed));
       onDraftEnd();
       return;
     }
@@ -84,12 +77,11 @@ export default function CeldaDifPxRefManualComparacion({
       const res = await actualizarMargenManualComparacionAction(codExt, margenPersistir);
       if (!res.ok) {
         toast.error(res.error ?? "Error al guardar DIF PX REF MANUAL.");
-        setDisplay(formatDifPxRefManualMask(difPxRefManual));
+        setLocalValue(valorEfectivoDifPxRef(difPxRefManual));
         onDraftEnd();
         return;
       }
       onSaved(res.data?.margenManual ?? null);
-      setDisplay(formatDifPxRefManualMask(parsed));
       onDraftEnd();
     } finally {
       setPending(false);
@@ -98,42 +90,32 @@ export default function CeldaDifPxRefManualComparacion({
   }
 
   if (!puedeEditar) {
-    return <CeldaDifPct pct={difPxRefManual} />;
+    return <CeldaDifPct pct={valorEfectivoDifPxRef(difPxRefManual)} />;
   }
 
   return (
-    <Input
-      type="text"
-      inputMode="numeric"
-      value={display}
+    <PorcentajeEnteroMaskInput
+      value={localValue}
+      signed
       disabled={pending}
-      onChange={(e) => {
+      onValueChange={(next) => {
         setEditando(true);
-        applyInput(e.target.value);
+        setLocalValue(next);
+        onDraftChange(next);
       }}
       onFocus={() => setEditando(true)}
-      onBlur={() => void commit(display)}
-      onPaste={(e) => {
-        e.preventDefault();
-        if (pending) return;
-        setEditando(true);
-        const text = e.clipboardData.getData("text");
-        applyInput(text);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.currentTarget.blur();
-        }
+      onBlur={() => void commit()}
+      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Escape") {
-          setDisplay(formatDifPxRefManualMask(difPxRefManual));
+          setLocalValue(valorEfectivoDifPxRef(difPxRefManual));
           onDraftEnd();
           setEditando(false);
           e.currentTarget.blur();
         }
       }}
-      className="h-7 min-w-0 w-full max-w-[5.5rem] mx-auto text-center tabular-nums"
+      className="h-7 min-w-0 w-full max-w-[5.5rem] mx-auto text-center"
       aria-label="DIF PX REF MANUAL"
-      placeholder="—"
+      title={formatDifPxRefManualMask(localValue)}
     />
   );
 }

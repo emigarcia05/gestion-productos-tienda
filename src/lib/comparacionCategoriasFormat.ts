@@ -28,35 +28,35 @@ export function sanitizeDifPxRefManualInput(raw: string): string {
   return `${signPrefix === "-" ? "-" : ""}${digits}%`;
 }
 
-/** Entero con signo desde input DIF PX REF MANUAL; vacío o solo signo → `null`; inválido → `undefined`. */
+/** Entero con signo desde input DIF PX REF MANUAL; vacío → `0`; inválido → `undefined`. */
 export function parseDifPxRefManualMask(raw: string): number | null | undefined {
   const trimmed = raw.replace(/%/g, "").trim();
-  if (trimmed === "" || trimmed === "-" || trimmed === "+") return null;
+  if (trimmed === "" || trimmed === "-" || trimmed === "+") return 0;
   const normalized = trimmed.startsWith("+") ? trimmed.slice(1) : trimmed;
   const n = Number(normalized);
   if (!Number.isSafeInteger(n)) return undefined;
   return n;
 }
 
-/** Máscara DIF PX REF MANUAL: entero con signo + `%` (es-AR). */
+/** Máscara DIF PX REF MANUAL: entero con signo + `%` (es-AR). `null` → `0%`. */
 export function formatDifPxRefManualMask(n: number | null | undefined): string {
-  if (n == null || Number.isNaN(n)) return "";
+  if (n == null || Number.isNaN(n)) return fmtPctEntero(0);
   return fmtPctEntero(n);
 }
 
-/** Entero 0–99 desde input DTO. EXTRA; vacío → `null`; inválido → `undefined`. */
+/** Entero 0–99 desde input DTO. EXTRA; vacío → `0`; inválido → `undefined`. */
 export function parseDtoExtraComparacionMask(raw: string): number | null | undefined {
   const digits = raw.replace(/\D/g, "");
-  if (digits === "") return null;
+  if (digits === "") return 0;
   const n = Number(digits);
   if (!Number.isSafeInteger(n) || n < 0 || n > 99) return undefined;
   return n;
 }
 
-/** Máscara DTO. EXTRA: entero + `%` (es-AR). */
+/** Máscara DTO. EXTRA: entero + `%` (es-AR). `null` → `0%`. */
 export function formatDtoExtraComparacionMask(n: number | null | undefined): string {
-  if (n == null || n < 0) return "";
-  return `${n.toLocaleString("es-AR")}%`;
+  const v = n == null || n < 0 ? 0 : n;
+  return `${v.toLocaleString("es-AR")}%`;
 }
 
 /** Margen % en Comp. Categorias: entero redondeado, sin tope 100 (puede superar 100 %). */

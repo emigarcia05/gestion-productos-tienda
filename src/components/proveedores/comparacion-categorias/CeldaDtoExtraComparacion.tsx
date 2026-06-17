@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import {
-  formatDtoExtraComparacionMask,
-  parseDtoExtraComparacionMask,
-} from "@/lib/comparacionCategoriasFormat";
+import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
+import { formatDtoExtraComparacionMask } from "@/lib/comparacionCategoriasFormat";
 import { actualizarDtoExtraComparacionAction } from "@/actions/comparacionCategorias";
 
 interface Props {
@@ -18,6 +15,10 @@ interface Props {
   onSaved: (dtoExtra: number | null) => void;
 }
 
+function valorEfectivoDtoExtra(dtoExtra: number | null): number {
+  return dtoExtra ?? 0;
+}
+
 export default function CeldaDtoExtraComparacion({
   codExt,
   dtoExtra,
@@ -26,32 +27,25 @@ export default function CeldaDtoExtraComparacion({
   onDraftEnd,
   onSaved,
 }: Props) {
-  const [display, setDisplay] = useState(() => formatDtoExtraComparacionMask(dtoExtra));
+  const [localValue, setLocalValue] = useState(() => valorEfectivoDtoExtra(dtoExtra));
   const [editando, setEditando] = useState(false);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
     if (!editando) {
-      setDisplay(formatDtoExtraComparacionMask(dtoExtra));
+      setLocalValue(valorEfectivoDtoExtra(dtoExtra));
     }
   }, [dtoExtra, editando]);
 
-  function applyInput(raw: string) {
-    const parsed = parseDtoExtraComparacionMask(raw);
-    if (parsed === undefined) return;
-    setDisplay(parsed != null ? formatDtoExtraComparacionMask(parsed) : "");
-    onDraftChange(parsed);
-  }
-
-  async function commit(raw: string) {
-    const parsed = parseDtoExtraComparacionMask(raw);
-    if (parsed === undefined) {
+  async function commit() {
+    const parsed = localValue;
+    if (parsed < 0 || parsed > 99 || !Number.isSafeInteger(parsed)) {
       toast.error("Ingresá un porcentaje entero entre 0 y 99.");
-      setDisplay(formatDtoExtraComparacionMask(dtoExtra));
+      setLocalValue(valorEfectivoDtoExtra(dtoExtra));
       onDraftEnd();
       return;
     }
-    if (parsed === dtoExtra) {
+    if (parsed === valorEfectivoDtoExtra(dtoExtra)) {
       onDraftEnd();
       return;
     }
@@ -61,11 +55,11 @@ export default function CeldaDtoExtraComparacion({
       const res = await actualizarDtoExtraComparacionAction(codExt, parsed);
       if (!res.ok) {
         toast.error(res.error ?? "Error al guardar DTO. EXTRA.");
-        setDisplay(formatDtoExtraComparacionMask(dtoExtra));
+        setLocalValue(valorEfectivoDtoExtra(dtoExtra));
         onDraftEnd();
         return;
       }
-      onSaved(res.data?.dtoExtra ?? null);
+      onSaved(res.data?.dtoExtra ?? parsed);
       onDraftEnd();
     } finally {
       setPending(false);
@@ -76,44 +70,34 @@ export default function CeldaDtoExtraComparacion({
   if (!puedeEditar) {
     return (
       <span className="tabular-nums text-foreground">
-        {dtoExtra != null ? formatDtoExtraComparacionMask(dtoExtra) : "—"}
+        {formatDtoExtraComparacionMask(dtoExtra)}
       </span>
     );
   }
 
   return (
-    <Input
-      type="text"
-      inputMode="numeric"
-      value={display}
+    <PorcentajeEnteroMaskInput
+      value={localValue}
+      min={0}
+      max={99}
       disabled={pending}
-      onChange={(e) => {
+      onValueChange={(next) => {
         setEditando(true);
-        applyInput(e.target.value);
+        setLocalValue(next);
+        onDraftChange(next);
       }}
       onFocus={() => setEditando(true)}
-      onBlur={() => void commit(display)}
-      onPaste={(e) => {
-        e.preventDefault();
-        if (pending) return;
-        setEditando(true);
-        const text = e.clipboardData.getData("text");
-        applyInput(text);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.currentTarget.blur();
-        }
+      onBlur={() => void commit()}
+      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Escape") {
-          setDisplay(formatDtoExtraComparacionMask(dtoExtra));
+          setLocalValue(valorEfectivoDtoExtra(dtoExtra));
           onDraftEnd();
           setEditando(false);
           e.currentTarget.blur();
         }
       }}
-      className="h-7 min-w-0 w-full max-w-[5.5rem] mx-auto text-center tabular-nums"
+      className="h-7 min-w-0 w-full max-w-[5.5rem] mx-auto text-center"
       aria-label="DTO. EXTRA comparación"
-      placeholder="—"
     />
   );
 }
