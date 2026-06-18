@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -17,7 +16,14 @@ import { getProveedores } from "@/actions/vinculos";
 import { buscarProductosParaAsignarAction, asignarProductosAPresentacionAction } from "@/actions/comparacionCategorias";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import { fmtPrecio } from "@/lib/format";
-import { MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS } from "@/lib/comparacionCategoriasLayout";
+import {
+  MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS,
+  MODAL_COMP_CATEGORIAS_CELDA_DESCRIPCION_CLASS,
+  MODAL_COMP_CATEGORIAS_CELDA_ENTIDAD_CLASS,
+  MODAL_COMP_CATEGORIAS_CELDA_PRECIO_CLASS,
+  MODAL_COMP_CATEGORIAS_FILTROS_STACK_CLASS,
+  MODAL_COMP_CATEGORIAS_TABLA_COLUMN_WIDTHS_PCT,
+} from "@/lib/comparacionCategoriasLayout";
 
 interface Props {
   open: boolean;
@@ -27,9 +33,6 @@ interface Props {
 }
 
 type ProveedorOption = { id: string; nombre: string; prefijo: string };
-
-/** TILDE + PROVEEDOR + DESCRIPCIÓN + COSTO */
-const COLUMN_WIDTHS_PCT = [5, 10, 75, 10] as const;
 
 export default function AsignarProductosModal({
   open,
@@ -47,7 +50,10 @@ export default function AsignarProductosModal({
 
   useEffect(() => {
     if (!open) return;
-    queueMicrotask(() => setQ(""));
+    queueMicrotask(() => {
+      setProveedorId("");
+      setQ("");
+    });
     getProveedores().then(setProveedores);
   }, [open]);
 
@@ -86,7 +92,7 @@ export default function AsignarProductosModal({
   }
 
   const filterContent = (
-    <div className="flex flex-col gap-2">
+    <div className={MODAL_COMP_CATEGORIAS_FILTROS_STACK_CLASS}>
       <FiltroIndividualContainer
         className="w-full"
         activo={!!proveedorId}
@@ -118,7 +124,7 @@ export default function AsignarProductosModal({
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="BUSCAR POR PROVEEDOR, DESCRIPCIÓN, CÓDIGO, MARCA O RUBRO..."
+          placeholder="BUSCAR POR DESCRIPCIÓN, CÓDIGO, MARCA O RUBRO..."
           className="input-filtro-unificado w-full min-w-0"
         />
       </FiltroIndividualContainer>
@@ -127,19 +133,15 @@ export default function AsignarProductosModal({
 
   const columns: ColumnaModalTabla<ProductoProveedorParaVincular>[] = [
     {
-      key: "prefijo",
+      key: "proveedor",
       label: "PROVEEDOR",
-      className: "py-2.5 px-3 text-xs text-center",
-      render: (row) => (
-        <Badge variant="secondary" className="font-mono text-xs">
-          {row.proveedor.prefijo}
-        </Badge>
-      ),
+      className: MODAL_COMP_CATEGORIAS_CELDA_ENTIDAD_CLASS,
+      render: (row) => row.proveedor.prefijo,
     },
     {
       key: "descripcion",
       label: "DESCRIPCIÓN",
-      className: "py-2.5 px-3 text-xs",
+      className: MODAL_COMP_CATEGORIAS_CELDA_DESCRIPCION_CLASS,
       render: (row) => (
         <span className="block truncate" title={row.descripcionProveedor}>
           {row.descripcionProveedor}
@@ -147,9 +149,9 @@ export default function AsignarProductosModal({
       ),
     },
     {
-      key: "px",
+      key: "costo",
       label: "COSTO",
-      className: "py-2.5 px-3 text-xs text-right tabular-nums",
+      className: MODAL_COMP_CATEGORIAS_CELDA_PRECIO_CLASS,
       render: (row) => (
         <span>
           {row.pxCompraFinalSinIva != null ? `$${fmtPrecio(row.pxCompraFinalSinIva)}` : "—"}
@@ -176,7 +178,7 @@ export default function AsignarProductosModal({
       emptyMessage="NO HAY PRODUCTOS O NO COINCIDEN LOS FILTROS."
       count={rows.length}
       contentClassName={MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS}
-      tableColumnWidthsPct={COLUMN_WIDTHS_PCT}
+      tableColumnWidthsPct={MODAL_COMP_CATEGORIAS_TABLA_COLUMN_WIDTHS_PCT}
     />
   );
 }

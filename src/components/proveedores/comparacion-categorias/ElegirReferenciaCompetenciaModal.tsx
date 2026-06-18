@@ -2,16 +2,31 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { FiltroIndividualContainer } from "@/components/FilterBar";
 import ModalTablaConFiltros, { type ColumnaModalTabla } from "@/components/shared/ModalTablaConFiltros";
 import {
   asignarReferenciaCompetenciaAction,
   buscarReferenciaCompetenciaAction,
+  listCompetidoresParaReferenciaAction,
 } from "@/actions/comparacionCategorias";
 import type { OpcionReferenciaCompetencia } from "@/services/categoriasComparacion.service";
 import { fmtPrecio } from "@/lib/format";
-import { MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS } from "@/lib/comparacionCategoriasLayout";
+import {
+  MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS,
+  MODAL_COMP_CATEGORIAS_CELDA_DESCRIPCION_CLASS,
+  MODAL_COMP_CATEGORIAS_CELDA_ENTIDAD_CLASS,
+  MODAL_COMP_CATEGORIAS_CELDA_PRECIO_CLASS,
+  MODAL_COMP_CATEGORIAS_FILTROS_STACK_CLASS,
+  MODAL_COMP_CATEGORIAS_TABLA_COLUMN_WIDTHS_PCT,
+} from "@/lib/comparacionCategoriasLayout";
 
 interface Props {
   open: boolean;
@@ -21,8 +36,7 @@ interface Props {
   onSuccess: () => void;
 }
 
-/** TILDE + COMPETIDOR + DESCRIPCIÓN + PRECIO */
-const COLUMN_WIDTHS_PCT = [5, 15, 65, 15] as const;
+type CompetidorOption = { id: string; nombre: string; prefijoProveedor: string | null };
 
 export default function ElegirReferenciaCompetenciaModal({
   open,
@@ -31,15 +45,26 @@ export default function ElegirReferenciaCompetenciaModal({
   labelCompleto,
   onSuccess,
 }: Props) {
+  const [competidores, setCompetidores] = useState<CompetidorOption[]>([]);
+  const [competenciaId, setCompetenciaId] = useState("");
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<OpcionReferenciaCompetencia[]>([]);
   const [loading, setLoading] = useState(false);
   const [confirmPending, setConfirmPending] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const rowsVisibles = rows.filter((r) => r.pxMostrar != null);
+
   useEffect(() => {
     if (!open) return;
-    queueMicrotask(() => setQ(""));
+    queueMicrotask(() => {
+      setCompetenciaId("");
+      setQ("");
+    });
+    listCompetidoresParaReferenciaAction().then((result) => {
+      if (result.ok && result.data) setCompetidores(result.data);
+      else setCompetidores([]);
+    });
   }, [open]);
 
   useEffect(() => {
@@ -49,6 +74,7 @@ export default function ElegirReferenciaCompetenciaModal({
     const run = async () => {
       const result = await buscarReferenciaCompetenciaAction({
         q: q.trim() || undefined,
+        competenciaId: competenciaId || undefined,
         presentacionId,
       });
       setLoading(false);
@@ -59,12 +85,12 @@ export default function ElegirReferenciaCompetenciaModal({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [open, q, presentacionId]);
+  }, [open, q, competenciaId, presentacionId]);
 
   async function handleConfirm(ids: string[]) {
     const selectedId = ids[0];
     if (!selectedId) return;
-    const row = rows.find((r) => `${r.codTienda}:${r.competenciaId}` === selectedId);
+    const row = rowsVisibles.find((r) => `${r.codTienda}:${r.competenciaId}` === selectedId);
     if (!row || row.pxMostrar == null) {
       toast.error("Elegí una fila con precio disponible.");
       throw new Error("Sin precio");
@@ -89,27 +115,53 @@ export default function ElegirReferenciaCompetenciaModal({
   }
 
   const filterContent = (
-    <FiltroIndividualContainer className="w-full" activo={!!q.trim()} onLimpiar={() => setQ("")}>
-      <Input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="BUSCAR POR COMPETIDOR, DESCRIPCIÓN O CÓDIGO TIENDA..."
-        className="input-filtro-unificado w-full min-w-0"
-      />
-    </FiltroIndividualContainer>
+    <div className={MODAL_COMP_CATEGORIAS_FILTROS_STACK_CLASS}>
+      <FiltroIndividualContainer
+        className="w-full"
+        activo={!!competenciaId}
+        onLimpiar={() => setCompetenciaId("")}
+      >
+        <Select
+          value={competenciaId || "none"}
+          onValueChange={(v) => setCompetenciaId(v === "none" ? "" : v)}
+        >
+          <SelectTrigger className="input-filtro-unificado w-full">
+            <SelectValue placeholder="COMPETIDOR" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">TODOS LOS COMPETIDORES</SelectItem>
+            {competidores.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.prefijoProveedor ? `[${c.prefijoProveedor}] ` : ""}
+                {c.nombre}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FiltroIndividualContainer>
+
+      <FiltroIndividualContainer className="w-full" activo={!!q.trim()} onLimpiar={() => setQ("")}>
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO TIENDA..."
+          className="input-filtro-unificado w-full min-w-0"
+        />
+      </FiltroIndividualContainer>
+    </div>
   );
 
   const columns: ColumnaModalTabla<OpcionReferenciaCompetencia>[] = [
     {
       key: "competidor",
       label: "COMPETIDOR",
-      className: "py-2.5 px-3 text-xs",
+      className: MODAL_COMP_CATEGORIAS_CELDA_ENTIDAD_CLASS,
       render: (row) => row.competenciaNombre,
     },
     {
       key: "descripcion",
       label: "DESCRIPCIÓN",
-      className: "py-2.5 px-3 text-xs",
+      className: MODAL_COMP_CATEGORIAS_CELDA_DESCRIPCION_CLASS,
       render: (row) => (
         <span className="block truncate" title={row.descripcionTienda ?? row.codTienda}>
           {row.descripcionTienda ?? row.codTienda}
@@ -119,7 +171,7 @@ export default function ElegirReferenciaCompetenciaModal({
     {
       key: "precio",
       label: "PRECIO",
-      className: "py-2.5 px-3 text-xs text-right tabular-nums",
+      className: MODAL_COMP_CATEGORIAS_CELDA_PRECIO_CLASS,
       render: (row) =>
         row.pxMostrar != null ? `$${fmtPrecio(row.pxMostrar)}` : "—",
     },
@@ -131,19 +183,19 @@ export default function ElegirReferenciaCompetenciaModal({
       onClose={() => onOpenChange(false)}
       selectionMode="multi"
       title="Agregar Referencia De Competencia"
-      subtitle={`${labelCompleto.toUpperCase()} · PRECIO IGUAL A PX COMPETENCIA (SUGERIDO O SCRAPEADO)`}
+      subtitle={`${labelCompleto.toUpperCase()} · FILTRÁ POR COMPETIDOR Y DESCRIPCIÓN. PRESIONÁ AGREGAR REFERENCIA.`}
       filterContent={filterContent}
       columns={columns}
-      rows={rows.filter((r) => r.pxMostrar != null)}
+      rows={rowsVisibles}
       getRowId={(row) => `${row.codTienda}:${row.competenciaId}`}
       onConfirm={handleConfirm}
       confirmLabel={() => "AGREGAR REFERENCIA"}
       confirmPending={confirmPending}
       loading={loading}
-      emptyMessage="NO HAY PRODUCTOS EN PX COMPETENCIA CON PRECIO DISPONIBLE."
-      count={rows.filter((r) => r.pxMostrar != null).length}
+      emptyMessage="NO HAY REFERENCIAS O NO COINCIDEN LOS FILTROS."
+      count={rowsVisibles.length}
       contentClassName={MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS}
-      tableColumnWidthsPct={COLUMN_WIDTHS_PCT}
+      tableColumnWidthsPct={MODAL_COMP_CATEGORIAS_TABLA_COLUMN_WIDTHS_PCT}
     />
   );
 }

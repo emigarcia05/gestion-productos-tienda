@@ -1586,6 +1586,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-06-13): **Comp. Categorias — margen manual** — tabla `prod_comp_margen_manual` (`margen_manual` entero % por `cod_ext`); `actualizarMargenManualComparacionAction`; `getProductosPorPresentacion` → `margenManualComparacion`. Input UI **DIF PX REF MANUAL** deriva px/margen en cliente. Migración **`20260613150000_comp_margen_manual`**.*
 
+*Última actualización (2026-06-16): **Comp. Categorias — filtro competidor referencia** — `buscarOpcionesReferenciaCompetencia` acepta `competenciaId`; `listCompetidoresParaReferenciaAction` alimenta el select del modal.*
+
 *Última actualización (2026-06-16): **Comp. Categorias — búsqueda asignar productos** — `listarProductosProveedoresParaVincular` (modal Asignar + vincular) usa AND por término en descripción, `cod_ext`, `cod_prod_prov`, marca, rubro y proveedor; post-filtro `matchByMultiTerm`.*
 
 *Última actualización (2026-06-16): **Comp. Categorias — búsqueda referencia competencia** — `buscarOpcionesReferenciaCompetencia` usa AND por término (`recu fibr` → `recu` + `fibr` en descripción/código/competidor) vía `matchByMultiTerm`; antes buscaba la cadena literal completa.*

@@ -55,6 +55,7 @@ export const asignarReferenciaCompetenciaSchema = z.object({
 
 export const buscarReferenciaCompetenciaSchema = z.object({
   q: z.string().max(500).optional(),
+  competenciaId: comparacionIdSchema.optional(),
   take: z.number().int().min(1).max(200).optional(),
   presentacionId: comparacionIdSchema.optional(),
 });

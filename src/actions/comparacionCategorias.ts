@@ -20,6 +20,7 @@ import {
   actualizarDtoExtraComparacionItem,
   actualizarMargenManualComparacionItem,
   buscarOpcionesReferenciaCompetencia,
+  listarCompetidoresParaReferencia,
   asignarReferenciaCompetenciaPresentacion,
   quitarReferenciaCompetenciaItem,
 } from "@/services/categoriasComparacion.service";
@@ -388,6 +389,7 @@ export async function actualizarMargenManualComparacionAction(
 
 export async function buscarReferenciaCompetenciaAction(params: {
   q?: string;
+  competenciaId?: string;
   presentacionId?: string;
 }): Promise<
   ActionResult<Awaited<ReturnType<typeof buscarOpcionesReferenciaCompetencia>>>
@@ -405,6 +407,24 @@ export async function buscarReferenciaCompetenciaAction(params: {
     return {
       ok: false,
       error: e instanceof Error ? e.message : "Error al buscar referencias de competencia.",
+    };
+  }
+}
+
+export async function listCompetidoresParaReferenciaAction(): Promise<
+  ActionResult<Awaited<ReturnType<typeof listarCompetidoresParaReferencia>>>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.comparacionCategorias.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  try {
+    const data = await listarCompetidoresParaReferencia();
+    return { ok: true, data };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Error al cargar competidores.",
     };
   }
 }

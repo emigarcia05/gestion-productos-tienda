@@ -446,9 +446,11 @@ export async function buscarOpcionesReferenciaCompetencia(params: {
   q?: string;
   take?: number;
   presentacionId?: string;
+  competenciaId?: string;
 }): Promise<OpcionReferenciaCompetencia[]> {
   const q = params.q?.trim() ?? "";
   const take = params.take ?? 100;
+  const competenciaId = params.competenciaId?.trim() || undefined;
 
   const excluirKeys = new Set<string>();
   if (params.presentacionId) {
@@ -463,11 +465,16 @@ export async function buscarOpcionesReferenciaCompetencia(params: {
 
   const textoVinculoWhere = whereBusquedaReferenciaVinculo(q);
   const textoSugeridoWhere = whereBusquedaReferenciaSugerido(q);
+  const filtroCompetenciaVinculo = competenciaId ? { competenciaId } : {};
+  const filtroCompetenciaSugerido = competenciaId
+    ? { proveedor: { competenciasPrecios: { some: { id: competenciaId } } } }
+    : { proveedor: { competenciasPrecios: { some: {} } } };
 
   const [preciosRows, sugeridoRows] = await Promise.all([
     prisma.prodPrecioCompetencia.findMany({
       where: {
         prodTienda: { compararCompetencia: true },
+        ...filtroCompetenciaVinculo,
         ...textoVinculoWhere,
       },
       take: take * 2,
@@ -485,7 +492,7 @@ export async function buscarOpcionesReferenciaCompetencia(params: {
         pxVtaSugerido: { not: null, gt: 0 },
         codTiendaVinculo: { not: null },
         prodTienda: { compararCompetencia: true },
-        proveedor: { competenciasPrecios: { some: {} } },
+        ...filtroCompetenciaSugerido,
         ...textoSugeridoWhere,
       },
       take: take * 2,
@@ -496,6 +503,7 @@ export async function buscarOpcionesReferenciaCompetencia(params: {
         proveedor: {
           select: {
             competenciasPrecios: {
+              where: competenciaId ? { id: competenciaId } : undefined,
               select: { id: true, nombre: true },
               orderBy: { nombre: "asc" },
               take: 1,
@@ -610,6 +618,29 @@ export async function buscarOpcionesReferenciaCompetencia(params: {
       etiqueta: `${o.competenciaNombre} — ${o.descripcionTienda ?? o.codTienda}`,
     };
   });
+}
+
+export interface CompetidorParaReferenciaModal {
+  id: string;
+  nombre: string;
+  prefijoProveedor: string | null;
+}
+
+/** Lista competidores para el select del modal Agregar Referencia De Competencia. */
+export async function listarCompetidoresParaReferencia(): Promise<CompetidorParaReferenciaModal[]> {
+  const rows = await prisma.prodCompetencia.findMany({
+    orderBy: { nombre: "asc" },
+    select: {
+      id: true,
+      nombre: true,
+      proveedor: { select: { prefijo: true } },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    nombre: r.nombre,
+    prefijoProveedor: r.proveedor?.prefijo ?? null,
+  }));
 }
 
 export async function asignarReferenciaCompetenciaPresentacion(

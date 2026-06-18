@@ -36,3 +36,13 @@ export const MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS = "!max-w-[151.2rem]
 export const MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS = MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS;
 
 export const MODAL_REFERENCIA_COMPETENCIA_MAX_WIDTH_CLASS = MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS;
+
+/** Stack de filtros compartido (select entidad + búsqueda texto). */
+export const MODAL_COMP_CATEGORIAS_FILTROS_STACK_CLASS = "flex flex-col gap-2";
+
+/** TILDE + entidad (proveedor/competidor) + descripción + precio/costo. */
+export const MODAL_COMP_CATEGORIAS_TABLA_COLUMN_WIDTHS_PCT = [5, 15, 65, 15] as const;
+
+export const MODAL_COMP_CATEGORIAS_CELDA_ENTIDAD_CLASS = "py-2.5 px-3 text-xs";
+export const MODAL_COMP_CATEGORIAS_CELDA_DESCRIPCION_CLASS = "py-2.5 px-3 text-xs";
+export const MODAL_COMP_CATEGORIAS_CELDA_PRECIO_CLASS = "py-2.5 px-3 text-xs text-right tabular-nums";
