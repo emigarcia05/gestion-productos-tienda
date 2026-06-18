@@ -22,6 +22,7 @@ import {
   type ActualizacionMasivaListaPrecios,
   type FilaListaPrecioParaCliente,
 } from "@/actions/listaPrecios";
+import type { ListaPreciosFiltrosExportSnapshot } from "@/components/proveedores/ExportarListaPreciosButton";
 import {
   parsePorcentajeCentNormalized,
   porcentajeCentFromNumber,
@@ -94,7 +95,7 @@ interface BaseProps {
 
 interface MasivaProps extends BaseProps {
   mode?: "masiva";
-  filteredIds: string[];
+  filtrosSnapshot: ListaPreciosFiltrosExportSnapshot;
   disabled?: boolean;
 }
 
@@ -148,11 +149,15 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   const [pxListaProveedorNorm, setPxListaProveedorNorm] = useState("");
   const filaActual = filaMode ? props.fila : null;
 
+  const filtrosSnapshot = filaMode ? null : props.filtrosSnapshot;
+  const totalFiltrados =
+    filtrosSnapshot?.hasFilterActive && filtrosSnapshot.filtros ? filtrosSnapshot.total : 0;
+
   const filteredIds = filaMode
     ? filaActual
       ? [filaActual.id]
       : []
-    : props.filteredIds;
+    : [];
 
   useEffect(() => {
     if (!filaMode || !open || !filaActual) return;
@@ -239,13 +244,22 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
       toast.error("Ingresá al menos un valor para actualizar.");
       return;
     }
-    if (filteredIds.length === 0) {
-      toast.error("No hay producto seleccionado.");
+    if (filaMode) {
+      if (filteredIds.length === 0) {
+        toast.error("No hay producto seleccionado.");
+        return;
+      }
+    } else if (!filtrosSnapshot?.hasFilterActive || !filtrosSnapshot.filtros || totalFiltrados === 0) {
+      toast.error("No hay productos en el filtro actual.");
       return;
     }
     setPending(true);
     try {
-      const result = await actualizarListaPreciosMasivoAction({ ids: filteredIds, data });
+      const result = await actualizarListaPreciosMasivoAction(
+        filaMode
+          ? { ids: filteredIds, data }
+          : { filtros: filtrosSnapshot!.filtros!, data }
+      );
       if (!result.ok) {
         toast.error(result.error ?? "Error al actualizar.");
         return;
@@ -264,7 +278,7 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     }
   }
 
-  const cantidad = filteredIds.length;
+  const cantidad = filaMode ? filteredIds.length : totalFiltrados;
   const titulo = filaMode ? "Editar producto" : "Edición Masiva";
 
   const formulario = (
@@ -407,7 +421,12 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
           variant="default"
           size="default"
           className="btn-primario-gestion gap-2 shrink-0"
-          disabled={props.disabled || cantidad === 0}
+          disabled={
+            props.disabled ||
+            !props.filtrosSnapshot.hasFilterActive ||
+            !props.filtrosSnapshot.filtros ||
+            totalFiltrados === 0
+          }
         >
           <Pencil className="h-4 w-4 shrink-0" />
           Edición Masiva

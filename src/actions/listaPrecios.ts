@@ -201,14 +201,34 @@ export async function crearProductoListaPrecioAction(
 }
 
 /**
- * Edición masiva: actualiza Desc. rubro, Desc. cant. y/o Cx. aprox. transporte
- * en los registros de prod_precios_provee cuyos id están en ids.
+ * Edición masiva: actualiza campos permitidos en `prod_precios_provee`.
+ * Payload: `{ ids, data }` (fila única) o `{ filtros, data }` (todos los ítems del filtro, sin paginación).
  * Solo usuarios con permiso listaPrecios.acciones.edicionMasiva.
  */
-const actualizarListaPreciosMasivoPayloadSchema = z.object({
-  ids: listaPreciosCodExtListSchema,
-  data: actualizacionMasivaListaPreciosSchema,
-});
+const actualizarListaPreciosMasivoPayloadSchema = z
+  .object({
+    ids: listaPreciosCodExtListSchema.optional(),
+    filtros: listaPreciosFiltrosExportSchema.optional(),
+    data: actualizacionMasivaListaPreciosSchema,
+  })
+  .superRefine((val, ctx) => {
+    const hasIds = (val.ids?.length ?? 0) > 0;
+    const hasFiltros = val.filtros != null;
+    if (!hasIds && !hasFiltros) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Se requiere ids o filtros.",
+        path: ["ids"],
+      });
+    }
+    if (hasIds && hasFiltros) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Usá solo ids o solo filtros.",
+        path: ["filtros"],
+      });
+    }
+  });
 
 export async function actualizarListaPreciosMasivoAction(
   raw: unknown
@@ -223,7 +243,56 @@ export async function actualizarListaPreciosMasivoAction(
     return { ok: false, error: msg ?? "Datos inválidos." };
   }
   try {
-    const result = await actualizarListaPreciosMasivo(parsed.data.ids, parsed.data.data);
+    let ids: string[];
+    if (parsed.data.filtros) {
+      const {
+        proveedorId: prov,
+        marcaNombre: marca,
+        rubroNombre: rubro,
+        busqueda: q,
+        habilitado: hab,
+        vinculado: vin,
+        opciones: opt,
+      } = parsed.data.filtros;
+
+      const provTrim = prov?.trim() || undefined;
+      const marcaTrim = marca?.trim() || undefined;
+      const rubroTrim = rubro?.trim() || undefined;
+      const qTrim = q?.trim() || undefined;
+
+      const tieneFiltro =
+        !!provTrim ||
+        !!marcaTrim ||
+        !!rubroTrim ||
+        hab !== undefined ||
+        vin !== undefined ||
+        (qTrim?.length ?? 0) >= 3;
+
+      if (!tieneFiltro) {
+        return {
+          ok: false,
+          error: "Aplicá un filtro o escribí al menos 3 caracteres en la búsqueda.",
+        };
+      }
+
+      const filas = await listarListaPreciosFiltradaParaExport(
+        provTrim,
+        marcaTrim,
+        rubroTrim,
+        qTrim,
+        hab,
+        vin,
+        opt
+      );
+      if (filas.length === 0) {
+        return { ok: false, error: "Ningún producto coincide con los filtros." };
+      }
+      ids = filas.map((fila) => fila.id);
+    } else {
+      ids = parsed.data.ids ?? [];
+    }
+
+    const result = await actualizarListaPreciosMasivo(ids, parsed.data.data);
     if (result.error) return { ok: false, error: result.error };
     revalidatePath("/proveedores/lista-precios");
     return { ok: true, data: { actualizados: result.actualizados } };

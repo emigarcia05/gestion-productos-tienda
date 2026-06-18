@@ -11,6 +11,8 @@ import { descargarExcelListaPrecios } from "@/lib/exportListaPreciosExcelClient"
 export interface ListaPreciosFiltrosExportSnapshot {
   filtros: ListaPreciosFiltrosExportInput | null;
   hasFilterActive: boolean;
+  /** Total de ítems que coinciden con los filtros (sin paginación). */
+  total: number;
 }
 
 interface Props {

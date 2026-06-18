@@ -44,22 +44,18 @@ export default function ListaPreciosPageClient({
   rol,
 }: Props) {
   const router = useRouter();
-  const [filteredIds, setFilteredIds] = useState<string[]>([]);
   const [reloadNonce, setReloadNonce] = useState(0);
   const [filtrosExportSnapshot, setFiltrosExportSnapshot] =
     useState<ListaPreciosFiltrosExportSnapshot>({
       filtros: null,
       hasFilterActive: false,
+      total: 0,
     });
 
   const handleEdicionSuccess = useCallback(() => {
     setReloadNonce((n) => n + 1);
     router.refresh();
   }, [router]);
-
-  const handleFilteredIdsChange = useCallback((ids: string[]) => {
-    setFilteredIds(ids);
-  }, []);
 
   const handleFiltrosExportSnapshotChange = useCallback(
     (snapshot: ListaPreciosFiltrosExportSnapshot) => {
@@ -89,7 +85,7 @@ export default function ListaPreciosPageClient({
         )}
         {puedeEdicionMasiva && (
           <EdicionMasivaListaPreciosModal
-            filteredIds={filteredIds}
+            filtrosSnapshot={filtrosExportSnapshot}
             marcas={marcas}
             rubros={rubros}
             onSuccess={handleEdicionSuccess}
@@ -111,7 +107,6 @@ export default function ListaPreciosPageClient({
         puedeEdicionMasiva={puedeEdicionMasiva}
         reloadNonce={reloadNonce}
         onEdicionSuccess={handleEdicionSuccess}
-        onFilteredIdsChange={handleFilteredIdsChange}
         onFiltrosExportSnapshotChange={handleFiltrosExportSnapshotChange}
       />
     </ClassicFilteredTableLayout>

@@ -74,7 +74,6 @@ interface ListaPreciosTablaConFiltrosProps {
   puedeEdicionMasiva?: boolean;
   reloadNonce?: number;
   onEdicionSuccess?: () => void;
-  onFilteredIdsChange?: (ids: string[]) => void;
   onFiltrosExportSnapshotChange?: (snapshot: ListaPreciosFiltrosExportSnapshot) => void;
 }
 
@@ -280,7 +279,6 @@ export default function ListaPreciosTablaConFiltros({
   puedeEdicionMasiva = false,
   reloadNonce = 0,
   onEdicionSuccess,
-  onFilteredIdsChange,
   onFiltrosExportSnapshotChange,
 }: ListaPreciosTablaConFiltrosProps) {
   const [filaEdit, setFilaEdit] = useState<FilaListaPrecioParaCliente | null>(null);
@@ -387,7 +385,6 @@ export default function ListaPreciosTablaConFiltros({
         setTotal(0);
         setTotalPaginas(1);
         setExpandidos(new Set());
-        onFilteredIdsChange?.([]);
       });
       return;
     }
@@ -408,7 +405,6 @@ export default function ListaPreciosTablaConFiltros({
         setFilasData(res.filas);
         setTotal(res.total);
         setTotalPaginas(res.totalPaginas);
-        onFilteredIdsChange?.(res.filas.map((f) => f.id));
         setProveedoresOptions((prev) => {
           const next = res.proveedoresDisponibles;
           const selected = prev.find((p) => p.id === proveedorId);
@@ -440,7 +436,6 @@ export default function ListaPreciosTablaConFiltros({
         setFilasData([]);
         setTotal(0);
         setTotalPaginas(1);
-        onFilteredIdsChange?.([]);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -457,13 +452,13 @@ export default function ListaPreciosTablaConFiltros({
     vinculadoFilter,
     busqueda,
     pagina,
-    onFilteredIdsChange,
     reloadNonce,
   ]);
 
   useEffect(() => {
     onFiltrosExportSnapshotChange?.({
       hasFilterActive,
+      total: hasFilterActive ? total : 0,
       filtros: hasFilterActive
         ? {
             proveedorId: proveedorId || undefined,
@@ -485,6 +480,7 @@ export default function ListaPreciosTablaConFiltros({
     habilitadoFilter,
     vinculadoFilter,
     busqueda,
+    total,
     onFiltrosExportSnapshotChange,
   ]);
 
