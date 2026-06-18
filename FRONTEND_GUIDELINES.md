@@ -1261,7 +1261,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-16): **`ListaPreciosTablaConFiltros`** — columna **DESCRIPCION**: bajo el título principal (`celda-destacado`) muestra **`marca`** de `prod_precios_provee` en segunda línea con **`.celda-sublinea-tabla`** (solo si hay valor); fila mantiene alto fijo **2rem**.*
 
-*Última actualización (2026-06-16): **`ListaPreciosTablaConFiltros`** — botón **Desc. en fila** (toggle en barra de filtros): sublínea en **`.lista-precios-sublinea-grid`** (marca + **Prov./Marca/Rubro/Cant./Finan.** con **`ArrowDown`** + **Transp.** con **`ArrowUp`**), columnas fijas centradas y separadas por **`.lista-precios-sublinea-divisor`**; oculta chevron y subfila expandible mientras el modo está activo.*
+*Última actualización (2026-06-16): **`ListaPreciosTablaConFiltros`** — botón **Desc. en fila** (toggle en barra de filtros): sublínea en **`.lista-precios-sublinea-grid`** (marca + **Prov./Marca/Rubro/Cant./Finan.** con **`ArrowDown`** + **Transp.** con **`ArrowUp`**), columnas fijas centradas y separadas por **`.lista-precios-sublinea-divisor`**; oculta chevron y subfila expandible mientras el modo está activo. Subfila del chevron (▼/▲) reutiliza el mismo componente bajo **DESCRIPCION**.*
 
 *Última actualización (2026-06-16): **`ImportarListaPreciosModal`** — mapeo CSV opcional **MARCA** (`campoDestinoListaPreciosSchema` / `aplicarMapeoListaPrecios`); no es requerida en badges de validación.*
 

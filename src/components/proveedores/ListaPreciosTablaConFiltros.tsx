@@ -227,20 +227,7 @@ function DetalleDescuentosFila({
   fila: FilaListaPrecioParaCliente;
   showProveedor: boolean;
 }) {
-  const itemsDescuento: { label: string; value: string }[] = DESCUENTOS_RESTAN_ITEMS.map(
-    ({ label, getValue }) => ({
-      label,
-      value: fmtValorDescuentoTabla(getValue(fila)),
-    })
-  );
-  const itemsCosto: { label: string; value: string }[] = COSTOS_SUMA_ITEMS.map(
-    ({ label, getValue }) => ({
-      label,
-      value: fmtValorDescuentoTabla(getValue(fila)),
-    })
-  );
-
-  const colsDetalle = 3;
+  const marca = fila.marca?.trim() || "";
 
   return (
     <TableRow
@@ -250,23 +237,13 @@ function DetalleDescuentosFila({
       {showProveedor ? (
         <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
       ) : null}
-      <TableCell colSpan={colsDetalle} className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
-          {itemsDescuento.map(({ label, value }) => (
-            <span key={label} className="tabular-nums whitespace-nowrap">
-              <span className="font-semibold text-foreground">{label}</span>{" "}
-              <span className="text-foreground">{value}</span>
-            </span>
-          ))}
-          <span className="celda-sublinea-tabla-divisor h-3" aria-hidden />
-          {itemsCosto.map(({ label, value }) => (
-            <span key={label} className="tabular-nums whitespace-nowrap">
-              <span className="font-semibold text-foreground">{label}</span>{" "}
-              <span className="text-foreground">{value}</span>
-            </span>
-          ))}
-        </div>
+      <TableCell
+        className={cn("celda-datos min-w-0 overflow-hidden", SUBFILA_CELDA_BLOQUE_CLASS)}
+      >
+        <SublineaDescuentosInline fila={fila} marca={marca} />
       </TableCell>
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
     </TableRow>
   );
