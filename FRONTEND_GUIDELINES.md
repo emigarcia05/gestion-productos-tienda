@@ -1231,7 +1231,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-16): **Lista precios — Crear Producto** — botón **`CrearProductoListaPreciosModal`** (`btn-primario-gestion`, ícono **Plus**) en toolbar (permiso **`importarLista`** + editor); modal **`max-w-3xl`**; formulario en grilla **20% etiqueta / 80% control** (**PROVEEDOR**, **MARCA** opc., **CÓD. PROVEEDOR**, **DESCRIPCIÓN PROV.**, **PX. LISTA** con **`MontoArInput`**); persiste en **`prod_precios_provee`** vía **`crearProductoListaPrecioAction`** (upsert como import CSV).*
 
-*Última actualización (2026-06-16): **Lista precios — vínculo REX** — columna **ACCIONES** (chevron detalle, **Editar**, **Vincular** `Link2`); modal **`VincularPrecioRexModal`**: filtro descripción, doble clic para vincular con **`prod_precios_rex`**; relación **N:1** (varios `cod_ext` pueden compartir el mismo REX). Badge **`+N`** informativo si el REX ya está vinculado a otros ítems; sin bloqueo por `Lock`.*
+*Última actualización (2026-06-16): **Lista precios — vínculo REX** — columna **ACCIONES** (chevron detalle, **Editar**, **Vincular** `Link2`); modal **`VincularPrecioRexModal`**: ancho **`max-w-[126rem]`** (+50 % sobre base `84rem`); filtro descripción, doble clic para vincular con **`prod_precios_rex`**; relación **N:1** (varios `cod_ext` pueden compartir el mismo REX). Badge **`+N`** informativo si el REX ya está vinculado a otros ítems; sin bloqueo por `Lock`.*
 
 *Última actualización (2026-06-16): **Lista precios — vínculo REX (histórico 1:1)** — versión anterior bloqueaba REX ya usados en otro `cod_ext`; reemplazada por N:1 en migración `20260616150000`.*
 

@@ -46,6 +46,9 @@ interface Props {
 const MENSAJE_SIN_FILTRO =
   "ESCRIBÍ EN EL FILTRO DE DESCRIPCIÓN PARA VER LOS PRECIOS REX DEL PROVEEDOR.";
 
+/** Base modal `max-w-[84rem]` × 1,5. */
+const MODAL_VINCULAR_PRECIO_REX_MAX_WIDTH_CLASS = "max-w-[126rem]";
+
 function fmtPrecioTabla(n: number): string {
   return `$${fmtPrecio(n)}`;
 }
@@ -141,7 +144,8 @@ export default function VincularPrecioRexModal({ open, onClose, fila, onVinculad
     >
       <DialogContent
         className={cn(
-          "modal-app max-w-[84rem] w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden"
+          "modal-app w-[calc(100%-2rem)] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden",
+          MODAL_VINCULAR_PRECIO_REX_MAX_WIDTH_CLASS
         )}
       >
         <DialogHeader className="modal-app__header shrink-0">
