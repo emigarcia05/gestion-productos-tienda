@@ -17,7 +17,7 @@ import { getProveedores } from "@/actions/vinculos";
 import { buscarProductosParaAsignarAction, asignarProductosAPresentacionAction } from "@/actions/comparacionCategorias";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import { fmtPrecio } from "@/lib/format";
-import { MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS } from "@/lib/comparacionCategoriasLayout";
+import { MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS } from "@/lib/comparacionCategoriasLayout";
 
 interface Props {
   open: boolean;
@@ -47,6 +47,7 @@ export default function AsignarProductosModal({
 
   useEffect(() => {
     if (!open) return;
+    queueMicrotask(() => setQ(""));
     getProveedores().then(setProveedores);
   }, [open]);
 
@@ -117,7 +118,7 @@ export default function AsignarProductosModal({
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+          placeholder="BUSCAR POR PROVEEDOR, DESCRIPCIÓN, CÓDIGO, MARCA O RUBRO..."
           className="input-filtro-unificado w-full min-w-0"
         />
       </FiltroIndividualContainer>
@@ -174,7 +175,7 @@ export default function AsignarProductosModal({
       loading={loading}
       emptyMessage="NO HAY PRODUCTOS O NO COINCIDEN LOS FILTROS."
       count={rows.length}
-      contentClassName={MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS}
+      contentClassName={MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS}
       tableColumnWidthsPct={COLUMN_WIDTHS_PCT}
     />
   );

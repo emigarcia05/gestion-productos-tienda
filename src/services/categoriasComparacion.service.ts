@@ -6,6 +6,7 @@
 
 import { calcCostoComparacion, type DatosCostoComparacion } from "@/lib/calculos";
 import { prisma } from "@/lib/prisma";
+import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   buildMapPxVtaSugerido,
   resolverPrecioCompetenciaMostrar,
@@ -401,6 +402,45 @@ function claveOpcionReferenciaCompetencia(codTienda: string, competenciaId: stri
   return `${codTienda}:${competenciaId}`;
 }
 
+function tokensBusquedaReferenciaCompetencia(q: string): string[] {
+  return q.trim().split(/\s+/).filter(Boolean);
+}
+
+/** Cada término debe coincidir en al menos un campo (AND entre términos). */
+function whereBusquedaReferenciaVinculo(q: string) {
+  const tokens = tokensBusquedaReferenciaCompetencia(q);
+  if (tokens.length === 0) return {};
+  return {
+    AND: tokens.map((token) => ({
+      OR: [
+        { codTienda: { contains: token, mode: "insensitive" as const } },
+        { prodTienda: { descripcionTienda: { contains: token, mode: "insensitive" as const } } },
+        { competencia: { nombre: { contains: token, mode: "insensitive" as const } } },
+      ],
+    })),
+  };
+}
+
+function whereBusquedaReferenciaSugerido(q: string) {
+  const tokens = tokensBusquedaReferenciaCompetencia(q);
+  if (tokens.length === 0) return {};
+  return {
+    AND: tokens.map((token) => ({
+      OR: [
+        { codTiendaVinculo: { contains: token, mode: "insensitive" as const } },
+        { prodTienda: { descripcionTienda: { contains: token, mode: "insensitive" as const } } },
+        {
+          proveedor: {
+            competenciasPrecios: {
+              some: { nombre: { contains: token, mode: "insensitive" as const } },
+            },
+          },
+        },
+      ],
+    })),
+  };
+}
+
 /** Opciones para elegir referente: catálogo Px Competencia (scrape + Px. Vta. Sugerido, igual `/cx-px-tienda`). */
 export async function buscarOpcionesReferenciaCompetencia(params: {
   q?: string;
@@ -421,31 +461,8 @@ export async function buscarOpcionesReferenciaCompetencia(params: {
     }
   }
 
-  const textoVinculoWhere = q
-    ? {
-        OR: [
-          { codTienda: { contains: q, mode: "insensitive" as const } },
-          { prodTienda: { descripcionTienda: { contains: q, mode: "insensitive" as const } } },
-          { competencia: { nombre: { contains: q, mode: "insensitive" as const } } },
-        ],
-      }
-    : {};
-
-  const textoSugeridoWhere = q
-    ? {
-        OR: [
-          { codTiendaVinculo: { contains: q, mode: "insensitive" as const } },
-          { prodTienda: { descripcionTienda: { contains: q, mode: "insensitive" as const } } },
-          {
-            proveedor: {
-              competenciasPrecios: {
-                some: { nombre: { contains: q, mode: "insensitive" as const } },
-              },
-            },
-          },
-        ],
-      }
-    : {};
+  const textoVinculoWhere = whereBusquedaReferenciaVinculo(q);
+  const textoSugeridoWhere = whereBusquedaReferenciaSugerido(q);
 
   const [preciosRows, sugeridoRows] = await Promise.all([
     prisma.prodPrecioCompetencia.findMany({
@@ -521,7 +538,13 @@ export async function buscarOpcionesReferenciaCompetencia(params: {
     });
   }
 
-  const opciones = [...opcionesMap.values()]
+  let opciones = [...opcionesMap.values()];
+  if (q) {
+    opciones = opciones.filter((o) =>
+      matchByMultiTerm([o.descripcionTienda, o.codTienda, o.competenciaNombre], q)
+    );
+  }
+  opciones = opciones
     .sort((a, b) => {
       const cmpDesc = (a.descripcionTienda ?? a.codTienda).localeCompare(
         b.descripcionTienda ?? b.codTienda,

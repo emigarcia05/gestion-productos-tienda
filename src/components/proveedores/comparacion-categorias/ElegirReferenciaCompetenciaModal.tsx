@@ -11,7 +11,7 @@ import {
 } from "@/actions/comparacionCategorias";
 import type { OpcionReferenciaCompetencia } from "@/services/categoriasComparacion.service";
 import { fmtPrecio } from "@/lib/format";
-import { MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS } from "@/lib/comparacionCategoriasLayout";
+import { MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS } from "@/lib/comparacionCategoriasLayout";
 
 interface Props {
   open: boolean;
@@ -142,7 +142,7 @@ export default function ElegirReferenciaCompetenciaModal({
       loading={loading}
       emptyMessage="NO HAY PRODUCTOS EN PX COMPETENCIA CON PRECIO DISPONIBLE."
       count={rows.filter((r) => r.pxMostrar != null).length}
-      contentClassName={MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS}
+      contentClassName={MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS}
       tableColumnWidthsPct={COLUMN_WIDTHS_PCT}
     />
   );

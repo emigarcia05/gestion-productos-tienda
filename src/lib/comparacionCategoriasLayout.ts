@@ -25,5 +25,14 @@ export const COMP_CATEGORIAS_TABLA_PANEL_CLASS =
 export const COMP_CATEGORIAS_SELECTOR_GRID_CLASS =
   "grid h-full min-h-0 grid-cols-[1fr_1fr_1fr_2fr] gap-3";
 
-/** Modal Asignar Productos: `ModalTablaConFiltros` base `max-w-[84rem]` × 1,5. */
-export const MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS = "max-w-[126rem]";
+/**
+ * Ancho compartido modales Comp. Categorías con tabla de búsqueda
+ * (Asignar Productos + Agregar Referencia De Competencia).
+ * Base `ModalTablaConFiltros` `max-w-[84rem]` × 1,5 × 1,2.
+ */
+export const MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS = "!max-w-[151.2rem]";
+
+/** @deprecated Alias — usar `MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS`. */
+export const MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS = MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS;
+
+export const MODAL_REFERENCIA_COMPETENCIA_MAX_WIDTH_CLASS = MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS;

@@ -9,7 +9,7 @@ import { IvaProveedor } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildCodExt } from "@/lib/codigos";
 import { clampPercent } from "@/lib/calculos";
-import { filtroTexto, matchByMultiTerm } from "@/lib/busqueda";
+import { matchByMultiTerm } from "@/lib/busqueda";
 import type { Prisma } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { cantPedirReposicionMerc2 } from "@/services/pedidosEnvio.service";
@@ -330,6 +330,7 @@ export interface ProductoProveedorParaVincular {
   codProdProv: string;
   descripcionProveedor: string;
   rubro: string | null;
+  marca: string | null;
   proveedor: { prefijo: string; nombre: string };
   /** Precio final de compra (para usar como costo objetivo al seleccionar desde lista). */
   pxCompraFinalSinIva: number | null;
@@ -339,9 +340,32 @@ export interface ProductoProveedorParaVincular {
 
 const MAX_PRODUCTOS_VINCULAR = 500;
 
+function tokensBusquedaProductosVincular(q: string): string[] {
+  return q.trim().split(/\s+/).filter(Boolean);
+}
+
+/** Cada término debe coincidir en al menos un campo (AND entre términos). */
+function whereBusquedaProductosVincular(q: string): Prisma.ListaPrecioProveedorWhereInput {
+  const tokens = tokensBusquedaProductosVincular(q);
+  if (tokens.length === 0) return {};
+  return {
+    AND: tokens.map((token) => ({
+      OR: [
+        { descripcionProveedor: { contains: token, mode: "insensitive" as const } },
+        { codExt: { contains: token, mode: "insensitive" as const } },
+        { codProdProveedor: { contains: token, mode: "insensitive" as const } },
+        { rubro: { contains: token, mode: "insensitive" as const } },
+        { marca: { contains: token, mode: "insensitive" as const } },
+        { proveedor: { nombre: { contains: token, mode: "insensitive" as const } } },
+        { proveedor: { prefijo: { contains: token, mode: "insensitive" as const } } },
+      ],
+    })),
+  };
+}
+
 /**
  * Lista ítems de prod_precios_provee para el modal "Vincular nuevo producto".
- * Filtros: proveedor (opcional), descripción/código (q, multi-término).
+ * Filtros: proveedor (opcional), descripción/código/marca/rubro/proveedor (q, multi-término).
  */
 export async function listarProductosProveedoresParaVincular(
   proveedorId?: string,
@@ -349,8 +373,9 @@ export async function listarProductosProveedoresParaVincular(
 ): Promise<ProductoProveedorParaVincular[]> {
   const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
   if (proveedorId) andParts.push({ idProveedor: proveedorId });
-  const textFilter = filtroTexto(q ?? "", ["descripcionProveedor", "codExt"]);
-  if (textFilter.AND?.length) andParts.push(textFilter);
+  const qTrim = (q ?? "").trim();
+  const textFilter = whereBusquedaProductosVincular(qTrim);
+  if (qTrim) andParts.push(textFilter);
   const where: Prisma.ListaPrecioProveedorWhereInput = andParts.length ? { AND: andParts } : {};
 
   const rows = await prisma.listaPrecioProveedor.findMany({
@@ -363,13 +388,14 @@ export async function listarProductosProveedoresParaVincular(
     take: MAX_PRODUCTOS_VINCULAR,
   });
 
-  return rows.map((r) => ({
+  const mapped = rows.map((r) => ({
     id: r.codExt,
     idProveedor: r.idProveedor,
     codExt: r.codExt,
     codProdProv: r.codProdProveedor,
     descripcionProveedor: r.descripcionProveedor,
     rubro: r.rubro ?? null,
+    marca: r.marca ?? null,
     proveedor: { prefijo: r.proveedor.prefijo ?? "", nombre: r.proveedor.nombre },
     pxCompraFinalSinIva: r.pxCompraFinalSinIva != null ? Number(r.pxCompraFinalSinIva) : null,
     tiendaVinculada: r.prodTienda
@@ -379,6 +405,23 @@ export async function listarProductosProveedoresParaVincular(
         }
       : null,
   }));
+
+  if (!qTrim) return mapped;
+
+  return mapped.filter((r) =>
+    matchByMultiTerm(
+      [
+        r.descripcionProveedor,
+        r.codExt,
+        r.codProdProv,
+        r.rubro,
+        r.marca,
+        r.proveedor.prefijo,
+        r.proveedor.nombre,
+      ],
+      qTrim
+    )
+  );
 }
 
 export interface UpsertListaPreciosResult {
