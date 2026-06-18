@@ -25,6 +25,7 @@ export const campoDestinoListaPreciosSchema = z.enum([
   "codigoExterno",
   "codProdProv",
   "descripcion",
+  "marca",
   "precioLista",
   "precioVentaSugerido",
   "ignorar",

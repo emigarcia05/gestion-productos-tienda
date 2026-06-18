@@ -118,38 +118,11 @@ function EtiquetaDescuentoInline({
 }) {
   const Icon = item.tipo === "descuento" ? ArrowDown : ArrowUp;
   return (
-    <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
+    <span className="inline-flex w-full min-w-0 items-center justify-center gap-0.5">
       <Icon className={DESCUENTO_INLINE_ICON_CLASS} aria-hidden />
-      <span>{item.etiquetaCorta}</span>
-      <span>{valor}</span>
+      <span className="truncate">{item.etiquetaCorta}</span>
+      <span className="shrink-0">{valor}</span>
     </span>
-  );
-}
-
-function GrupoDescuentosInline({
-  items,
-  fila,
-}: {
-  items: typeof DESCUENTOS_FILA_ITEMS;
-  fila: FilaListaPrecioParaCliente;
-}) {
-  return (
-    <>
-      {items.map((item, index) => (
-        <Fragment key={item.label}>
-          {index > 0 ? (
-            <span className="shrink-0 opacity-60" aria-hidden>
-              {" "}
-              ·{" "}
-            </span>
-          ) : null}
-          <EtiquetaDescuentoInline
-            item={item}
-            valor={fmtValorDescuentoTabla(item.getValue(fila))}
-          />
-        </Fragment>
-      ))}
-    </>
   );
 }
 
@@ -162,10 +135,13 @@ function fmtItemsDescuentosTitulo(
     .join(" · ");
 }
 
-function fmtDescuentosInlineTitulo(fila: FilaListaPrecioParaCliente): string {
-  const descuentos = fmtItemsDescuentosTitulo(DESCUENTOS_RESTAN_ITEMS, fila);
-  const costos = fmtItemsDescuentosTitulo(COSTOS_SUMA_ITEMS, fila);
-  return [descuentos, costos].filter(Boolean).join(" | ");
+function fmtDescuentosInlineTitulo(fila: FilaListaPrecioParaCliente, marca: string): string {
+  const partes = [
+    marca,
+    fmtItemsDescuentosTitulo(DESCUENTOS_RESTAN_ITEMS, fila),
+    fmtItemsDescuentosTitulo(COSTOS_SUMA_ITEMS, fila),
+  ].filter(Boolean);
+  return partes.join(" · ");
 }
 
 function SublineaDescuentosInline({
@@ -175,25 +151,31 @@ function SublineaDescuentosInline({
   fila: FilaListaPrecioParaCliente;
   marca: string;
 }) {
+  const titulo = fmtDescuentosInlineTitulo(fila, marca);
+
   return (
     <div
-      className="celda-sublinea-tabla flex min-w-0 max-w-full items-center gap-1 overflow-hidden leading-none tabular-nums"
-      title={fmtDescuentosInlineTitulo(fila)}
+      className="lista-precios-sublinea-grid celda-sublinea-tabla leading-none tabular-nums"
+      title={titulo}
     >
-      {marca ? (
-        <>
-          <span className="min-w-0 truncate">{marca}</span>
-          <span className="shrink-0 opacity-60" aria-hidden>
-            ·
+      <span className="lista-precios-sublinea-celda">{marca}</span>
+      <span className="lista-precios-sublinea-divisor" aria-hidden />
+      {DESCUENTOS_RESTAN_ITEMS.map((item) => (
+        <Fragment key={item.label}>
+          <span className="lista-precios-sublinea-celda">
+            <EtiquetaDescuentoInline
+              item={item}
+              valor={fmtValorDescuentoTabla(item.getValue(fila))}
+            />
           </span>
-        </>
-      ) : null}
-      <span className="flex min-w-0 items-center overflow-hidden">
-        <GrupoDescuentosInline items={DESCUENTOS_RESTAN_ITEMS} fila={fila} />
-      </span>
-      <span className="celda-sublinea-tabla-divisor" aria-hidden />
-      <span className="shrink-0">
-        <GrupoDescuentosInline items={COSTOS_SUMA_ITEMS} fila={fila} />
+          <span className="lista-precios-sublinea-divisor" aria-hidden />
+        </Fragment>
+      ))}
+      <span className="lista-precios-sublinea-celda">
+        <EtiquetaDescuentoInline
+          item={COSTOS_SUMA_ITEMS[0]}
+          valor={fmtValorDescuentoTabla(COSTOS_SUMA_ITEMS[0].getValue(fila))}
+        />
       </span>
     </div>
   );
@@ -218,7 +200,7 @@ function DescripcionCelda({
   const titleParts = [
     principal,
     marca,
-    modoDescuentosInline ? fmtDescuentosInlineTitulo(fila) : "",
+    modoDescuentosInline ? fmtDescuentosInlineTitulo(fila, marca) : "",
     fila.codExt,
   ].filter(Boolean);
 

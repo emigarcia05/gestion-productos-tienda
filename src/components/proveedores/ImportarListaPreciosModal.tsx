@@ -43,6 +43,7 @@ type CampoDestinoListaPrecios =
   | "codigoExterno"
   | "codProdProv"
   | "descripcion"
+  | "marca"
   | "precioLista"
   | "precioVentaSugerido"
   | "ignorar";
@@ -50,6 +51,7 @@ type CampoDestinoListaPrecios =
 const CAMPOS: { value: CampoDestinoListaPrecios; label: string; required: boolean }[] = [
   { value: "codProdProv", label: "COD. PROVEEDOR", required: true },          // cod_prod_proveedor
   { value: "descripcion", label: "DESCRIPCIÓN PROVEEDOR", required: false },
+  { value: "marca", label: "MARCA", required: false },
   { value: "precioLista", label: "PX. LISTA PROVEEDOR", required: true },
   { value: "precioVentaSugerido", label: "PX. VENTA SUGERIDO", required: false },
   { value: "ignorar", label: "IGNORAR / (SIN ASIGNAR)", required: false },

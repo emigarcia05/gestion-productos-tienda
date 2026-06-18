@@ -398,6 +398,7 @@ export interface UpsertListaPreciosOptions {
  * Si existe, actualiza; si no, crea con descuentos y cx_transporte en 0 (defaults BD).
  * precioEnDolares: mapea al switch SÍ/NO del modal; se persiste en px_dolares. Si true, cotizacion_dolar = COTIZACION_DOLAR (env) o 1.
  * habilitado: mapea opción Habilitado SÍ/NO del modal importar; por defecto true.
+ * marca: opcional en mapeo CSV; si no se asigna columna MARCA, no se modifica en update; si se asigna, persiste texto (vacío → null).
  */
 export async function upsertListaPrecios(
   proveedorId: string,
@@ -453,6 +454,7 @@ export async function upsertListaPrecios(
           cotizacionDolar,
           pxVtaSugerido: fila.precioVentaSugerido || null,
           habilitado,
+          ...(fila.marca !== undefined ? { marca: fila.marca } : {}),
         },
         update: {
           idProveedor: proveedorId,
@@ -463,6 +465,7 @@ export async function upsertListaPrecios(
           cotizacionDolar,
           pxVtaSugerido: fila.precioVentaSugerido || null,
           habilitado,
+          ...(fila.marca !== undefined ? { marca: fila.marca } : {}),
         },
       });
 

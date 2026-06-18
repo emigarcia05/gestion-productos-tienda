@@ -325,6 +325,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `.celda-destacado` | Celdas “destacadas” sin negrita (font-weight normal) para cumplir el estilo de tablas. |
 | `.celda-sublinea-tabla` | Segunda línea compacta en celdas de tabla (`font-size: 10px`, `line-height: 1`, `color: muted-foreground`); usar con `truncate` y `leading-none` bajo el texto principal sin alterar **`--tabla-body-row-min-height`**. |
 | `.celda-sublinea-tabla-divisor` | Línea vertical **1px** entre bloques de sublínea (p. ej. descuentos que restan vs **CX. TRANSP.** que suma en lista precios); `height: 0.625rem`, `muted-foreground` al 45%. |
+| `.lista-precios-sublinea-grid`, `.lista-precios-sublinea-celda`, `.lista-precios-sublinea-divisor` | Modo **Desc. en fila** (`ListaPreciosTablaConFiltros`): grilla de **7 columnas fijas** (marca + 5 descuentos + transp.) con divisores verticales; celdas centradas y vacías si no hay marca; misma plantilla en todas las filas para alinear columnas. |
 | `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS` (`@/lib/ui-classes`) | Botones **solo ícono** relleno **`#0072BB`**: **`tabla-row-btn-filled-brand`**, **`aspect-square`**, **`!h-full`**, **`max-h-full`**, **`!w-auto`**, **`max-w-full`**, **`self-center`**, `size="icon"` + `variant="ghost"`. **Padding interno** **`0.5rem`** en **`globals.css`**. No usar **`!w-full`** (rompe el cuadrado). |
 | `tabla-row-btn-filled-brand` | Marca botones excluidos de **`tbody td button`** fijo **1.75rem** en **`globals.css`**; **`padding: 0.5rem !important`**, **`max-height: 100%`**. |
 | `TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS` (`@/lib/ui-classes`) | `flex` con **`h-full`**, **`min-h-0`**, **`p-1.5`**, **`items-center`**, **`justify-center`**, **`gap-1.5`**, **`box-border`** para agrupar botones **`TABLE_ROW_*`**. |
@@ -1260,7 +1261,9 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-16): **`ListaPreciosTablaConFiltros`** — columna **DESCRIPCION**: bajo el título principal (`celda-destacado`) muestra **`marca`** de `prod_precios_provee` en segunda línea con **`.celda-sublinea-tabla`** (solo si hay valor); fila mantiene alto fijo **2rem**.*
 
-*Última actualización (2026-06-16): **`ListaPreciosTablaConFiltros`** — botón **Desc. en fila** (toggle en barra de filtros): sublínea con íconos **`ArrowDown`** + **Prov./Marca/Rubro/Cant./Finan.** (descuentos) y **`ArrowUp`** + **Transp.** (costo), separados por **`.celda-sublinea-tabla-divisor`**; oculta chevron y subfila expandible mientras el modo está activo.*
+*Última actualización (2026-06-16): **`ListaPreciosTablaConFiltros`** — botón **Desc. en fila** (toggle en barra de filtros): sublínea en **`.lista-precios-sublinea-grid`** (marca + **Prov./Marca/Rubro/Cant./Finan.** con **`ArrowDown`** + **Transp.** con **`ArrowUp`**), columnas fijas centradas y separadas por **`.lista-precios-sublinea-divisor`**; oculta chevron y subfila expandible mientras el modo está activo.*
+
+*Última actualización (2026-06-16): **`ImportarListaPreciosModal`** — mapeo CSV opcional **MARCA** (`campoDestinoListaPreciosSchema` / `aplicarMapeoListaPrecios`); no es requerida en badges de validación.*
 
 *Última actualización (2026-06-13): **Ayuda Vendedor — Cargar Gasto** — ruta `/gestion-productos/cargar-gasto` (rewrite → `/cargar-gasto`); sidebar en **AYUDA VENDEDOR**; abre **`GastoUnicoBalanceModal`** al cargar; solo **editor** (`PERMISOS.ayudaVendedor.cargarGasto`).*
 

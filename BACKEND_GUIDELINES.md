@@ -1605,3 +1605,5 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-06-04): **Sync DUX lista tienda — UX progreso** — fases `sincronizando` / `guardando` en `syncListaPrecioTiendaFromDux`; `maxDuration = 300` en POST/GET bloqueante; sidebar distingue mensajes y toast al finalizar. **Import status polling** solo con rol editor (evita 403 en logs).*
 
 *Última actualización (2026-06-02): **PDF matriz lista precios** — parse + aplanado + API; export Excel en cliente; sin import a BD.*
+
+*Última actualización (2026-06-16): **Import CSV lista precios — MARCA opcional** — `campoDestinoListaPreciosSchema` incluye **`marca`**; `aplicarMapeoListaPrecios` rellena `FilaListaPrecio.marca` solo si el usuario mapeó una columna; `upsertListaPrecios` persiste `prod_precios_provee.marca` en create/update únicamente cuando viene en la fila mapeada (sin mapeo no altera marca existente).*

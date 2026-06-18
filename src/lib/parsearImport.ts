@@ -46,6 +46,7 @@ export type CampoDestinoListaPrecios =
   | "codigoExterno"
   | "codProdProv"
   | "descripcion"
+  | "marca"
   | "precioLista"
   | "precioVentaSugerido"
   | "ignorar";
@@ -60,6 +61,8 @@ export interface FilaListaPrecio {
   descripcion: string;
   precioLista: number;
   precioVentaSugerido: number;
+  /** Solo si el CSV mapeó columna MARCA; `null` = celda vacía. */
+  marca?: string | null;
 }
 
 /**
@@ -75,6 +78,8 @@ export function aplicarMapeoListaPrecios(
     if (idx === undefined) return "";
     return cols[Number(idx)] ?? "";
   };
+
+  const tieneMapeoMarca = Object.values(mapeo).includes("marca");
 
   return filas
     .map((cols) => {
@@ -95,13 +100,19 @@ export function aplicarMapeoListaPrecios(
           ? 0
           : precioVentaSugerido;
 
-      return {
+      const fila: FilaListaPrecio = {
         codigoExterno: codigoExterno || codProdProv,
         codProdProv,
         descripcion,
         precioLista: precioListaFinal,
         precioVentaSugerido: precioVentaFinal,
       };
+
+      if (tieneMapeoMarca) {
+        fila.marca = get(cols, "marca").trim() || null;
+      }
+
+      return fila;
     })
     .filter((f): f is FilaListaPrecio => f !== null);
 }
