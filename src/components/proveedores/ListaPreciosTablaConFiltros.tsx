@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, Link2, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Link2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -86,33 +86,117 @@ const SUBFILA_DETALLE_CLASS = "tabla-fila-detalle-competencia";
 const SUBFILA_CELDA_BLOQUE_CLASS = "tabla-fila-detalle-competencia-celda";
 const SUBFILA_CELDA_HUECA_CLASS = "tabla-fila-detalle-competencia-hueca";
 
+const DESCUENTO_INLINE_ICON_CLASS = "h-2.5 w-2.5 shrink-0 opacity-80";
+
 const DESCUENTOS_FILA_ITEMS: {
-  abbr: string;
+  etiquetaCorta: string;
   label: string;
+  tipo: "descuento" | "costo";
   getValue: (fila: FilaListaPrecioParaCliente) => number;
 }[] = [
-  { abbr: "DP", label: "DESC. PROV.", getValue: (f) => f.dtoProveedor },
-  { abbr: "DM", label: "DESC. MARCA", getValue: (f) => f.dtoMarca },
-  { abbr: "DR", label: "DESC. RUBRO", getValue: (f) => f.dtoRubro },
-  { abbr: "DC", label: "DESC. CANT.", getValue: (f) => f.dtoCantidad },
-  { abbr: "DF", label: "DESC. FINAN.", getValue: (f) => f.dtoFinanciero },
-  { abbr: "CT", label: "CX. TRANSP.", getValue: (f) => f.cxTransporte },
+  { etiquetaCorta: "Prov.", label: "DESC. PROV.", tipo: "descuento", getValue: (f) => f.dtoProveedor },
+  { etiquetaCorta: "Marca", label: "DESC. MARCA", tipo: "descuento", getValue: (f) => f.dtoMarca },
+  { etiquetaCorta: "Rubro", label: "DESC. RUBRO", tipo: "descuento", getValue: (f) => f.dtoRubro },
+  { etiquetaCorta: "Cant.", label: "DESC. CANT.", tipo: "descuento", getValue: (f) => f.dtoCantidad },
+  { etiquetaCorta: "Finan.", label: "DESC. FINAN.", tipo: "descuento", getValue: (f) => f.dtoFinanciero },
+  { etiquetaCorta: "Transp.", label: "CX. TRANSP.", tipo: "costo", getValue: (f) => f.cxTransporte },
 ];
+
+const DESCUENTOS_RESTAN_ITEMS = DESCUENTOS_FILA_ITEMS.filter((item) => item.tipo === "descuento");
+const COSTOS_SUMA_ITEMS = DESCUENTOS_FILA_ITEMS.filter((item) => item.tipo === "costo");
 
 function fmtValorDescuentoTabla(valor: number): string {
   return fmtPorcentajeTabla(valor) || "—";
 }
 
-function fmtDescuentosInlineResumen(fila: FilaListaPrecioParaCliente): string {
-  return DESCUENTOS_FILA_ITEMS.map(
-    ({ abbr, getValue }) => `${abbr} ${fmtValorDescuentoTabla(getValue(fila))}`
-  ).join(" · ");
+function EtiquetaDescuentoInline({
+  item,
+  valor,
+}: {
+  item: (typeof DESCUENTOS_FILA_ITEMS)[number];
+  valor: string;
+}) {
+  const Icon = item.tipo === "descuento" ? ArrowDown : ArrowUp;
+  return (
+    <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
+      <Icon className={DESCUENTO_INLINE_ICON_CLASS} aria-hidden />
+      <span>{item.etiquetaCorta}</span>
+      <span>{valor}</span>
+    </span>
+  );
+}
+
+function GrupoDescuentosInline({
+  items,
+  fila,
+}: {
+  items: typeof DESCUENTOS_FILA_ITEMS;
+  fila: FilaListaPrecioParaCliente;
+}) {
+  return (
+    <>
+      {items.map((item, index) => (
+        <Fragment key={item.label}>
+          {index > 0 ? (
+            <span className="shrink-0 opacity-60" aria-hidden>
+              {" "}
+              ·{" "}
+            </span>
+          ) : null}
+          <EtiquetaDescuentoInline
+            item={item}
+            valor={fmtValorDescuentoTabla(item.getValue(fila))}
+          />
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+function fmtItemsDescuentosTitulo(
+  items: typeof DESCUENTOS_FILA_ITEMS,
+  fila: FilaListaPrecioParaCliente
+): string {
+  return items
+    .map(({ label, getValue }) => `${label} ${fmtValorDescuentoTabla(getValue(fila))}`)
+    .join(" · ");
 }
 
 function fmtDescuentosInlineTitulo(fila: FilaListaPrecioParaCliente): string {
-  return DESCUENTOS_FILA_ITEMS.map(
-    ({ label, getValue }) => `${label} ${fmtValorDescuentoTabla(getValue(fila))}`
-  ).join(" · ");
+  const descuentos = fmtItemsDescuentosTitulo(DESCUENTOS_RESTAN_ITEMS, fila);
+  const costos = fmtItemsDescuentosTitulo(COSTOS_SUMA_ITEMS, fila);
+  return [descuentos, costos].filter(Boolean).join(" | ");
+}
+
+function SublineaDescuentosInline({
+  fila,
+  marca,
+}: {
+  fila: FilaListaPrecioParaCliente;
+  marca: string;
+}) {
+  return (
+    <div
+      className="celda-sublinea-tabla flex min-w-0 max-w-full items-center gap-1 overflow-hidden leading-none tabular-nums"
+      title={fmtDescuentosInlineTitulo(fila)}
+    >
+      {marca ? (
+        <>
+          <span className="min-w-0 truncate">{marca}</span>
+          <span className="shrink-0 opacity-60" aria-hidden>
+            ·
+          </span>
+        </>
+      ) : null}
+      <span className="flex min-w-0 items-center overflow-hidden">
+        <GrupoDescuentosInline items={DESCUENTOS_RESTAN_ITEMS} fila={fila} />
+      </span>
+      <span className="celda-sublinea-tabla-divisor" aria-hidden />
+      <span className="shrink-0">
+        <GrupoDescuentosInline items={COSTOS_SUMA_ITEMS} fila={fila} />
+      </span>
+    </div>
+  );
 }
 
 function fmtPrecioTabla(n: number | null | undefined): string {
@@ -131,9 +215,6 @@ function DescripcionCelda({
   const proveedor = fila.descripcionProveedor?.trim() || "";
   const principal = tienda || proveedor || "—";
   const marca = fila.marca?.trim() || "";
-  const descuentosResumen = modoDescuentosInline ? fmtDescuentosInlineResumen(fila) : "";
-  const sublineaPartes = [marca, descuentosResumen].filter(Boolean);
-  const sublinea = sublineaPartes.join(" · ");
   const titleParts = [
     principal,
     marca,
@@ -147,12 +228,11 @@ function DescripcionCelda({
       title={titleParts.join(" · ")}
     >
       <div className="celda-destacado truncate text-xs font-bold leading-none">{principal}</div>
-      {sublinea ? (
-        <div
-          className="celda-sublinea-tabla truncate leading-none tabular-nums"
-          title={modoDescuentosInline ? fmtDescuentosInlineTitulo(fila) : marca || undefined}
-        >
-          {sublinea}
+      {modoDescuentosInline ? (
+        <SublineaDescuentosInline fila={fila} marca={marca} />
+      ) : marca ? (
+        <div className="celda-sublinea-tabla truncate leading-none" title={marca}>
+          {marca}
         </div>
       ) : null}
     </div>
@@ -166,7 +246,13 @@ function DetalleDescuentosFila({
   fila: FilaListaPrecioParaCliente;
   showProveedor: boolean;
 }) {
-  const items: { label: string; value: string }[] = DESCUENTOS_FILA_ITEMS.map(
+  const itemsDescuento: { label: string; value: string }[] = DESCUENTOS_RESTAN_ITEMS.map(
+    ({ label, getValue }) => ({
+      label,
+      value: fmtValorDescuentoTabla(getValue(fila)),
+    })
+  );
+  const itemsCosto: { label: string; value: string }[] = COSTOS_SUMA_ITEMS.map(
     ({ label, getValue }) => ({
       label,
       value: fmtValorDescuentoTabla(getValue(fila)),
@@ -185,7 +271,14 @@ function DetalleDescuentosFila({
       ) : null}
       <TableCell colSpan={colsDetalle} className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
-          {items.map(({ label, value }) => (
+          {itemsDescuento.map(({ label, value }) => (
+            <span key={label} className="tabular-nums whitespace-nowrap">
+              <span className="font-semibold text-foreground">{label}</span>{" "}
+              <span className="text-foreground">{value}</span>
+            </span>
+          ))}
+          <span className="celda-sublinea-tabla-divisor h-3" aria-hidden />
+          {itemsCosto.map(({ label, value }) => (
             <span key={label} className="tabular-nums whitespace-nowrap">
               <span className="font-semibold text-foreground">{label}</span>{" "}
               <span className="text-foreground">{value}</span>

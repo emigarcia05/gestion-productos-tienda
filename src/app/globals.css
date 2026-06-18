@@ -420,6 +420,15 @@
     line-height: 1;
     color: var(--muted-foreground);
   }
+  .celda-sublinea-tabla-divisor {
+    display: inline-block;
+    width: 1px;
+    flex-shrink: 0;
+    align-self: center;
+    height: 0.625rem;
+    background-color: var(--muted-foreground);
+    opacity: 0.45;
+  }
   .celda-datos.celda-numero {
     font-variant-numeric: tabular-nums;
     text-align: center;
