@@ -19,8 +19,8 @@ const EMPTY: { items: ProductoTiendaParaComparacionRow[]; total: number } = {
 /** CHECK + COD. TIENDA + MARCA + DESCRIPCIÓN */
 const COLUMN_WIDTHS_PCT = [5, 10, 20, 65] as const;
 
-/** `ModalTablaConFiltros` base `max-w-[84rem]` × 1,3 */
-const MODAL_AGREGAR_PRODUCTO_COMPARACION_MAX_WIDTH = "max-w-[109.2rem]";
+/** `ModalTablaConFiltros` base `max-w-[84rem]` × 1,25 */
+const MODAL_AGREGAR_PRODUCTO_COMPARACION_MAX_WIDTH = "!max-w-[105rem]";
 
 export default function AgregarProductoComparacionModal({
   open,
@@ -116,7 +116,7 @@ export default function AgregarProductoComparacionModal({
     <div className="flex flex-col gap-2">
       <FiltroBusquedaInput
         id="agregar-producto-comparacion-filtro"
-        placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+        placeholder="BUSCAR POR DESCRIPCIÓN, CÓDIGO, MARCA O RUBRO..."
         value={q}
         onChange={handleQChange}
         isDebouncing={isDebouncing}

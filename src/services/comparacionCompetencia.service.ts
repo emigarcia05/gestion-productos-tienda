@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { filtroTexto } from "@/lib/busqueda";
+import { matchByMultiTerm } from "@/lib/busqueda";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types";
 
@@ -11,11 +11,26 @@ export interface ProductoTiendaParaComparacionRow {
   rubro: string | null;
 }
 
+const CAMPOS_BUSQUEDA_COMPARACION = [
+  "descripcionTienda",
+  "codTienda",
+  "marca",
+  "rubro",
+] as const;
+
+const MAX_BUSQUEDA_COMPARACION_DB = 500;
+
 function buildWhereBusquedaProductosTienda(q: string): Prisma.ProdTiendaWhereInput {
   const andParts: Prisma.ProdTiendaWhereInput[] = [{ compararCompetencia: false }];
-  const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
-  if (textFilter.AND?.length) {
-    andParts.push(textFilter);
+  const tokens = q.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length > 0) {
+    andParts.push({
+      AND: tokens.map((token) => ({
+        OR: CAMPOS_BUSQUEDA_COMPARACION.map((campo) => ({
+          [campo]: { contains: token, mode: "insensitive" as const },
+        })),
+      })),
+    });
   } else {
     andParts.push(
       { descripcionTienda: { not: null } },
@@ -25,40 +40,81 @@ function buildWhereBusquedaProductosTienda(q: string): Prisma.ProdTiendaWhereInp
   return { AND: andParts };
 }
 
+function mapRowProductoComparacion(r: {
+  codTienda: string;
+  descripcionTienda: string | null;
+  marca: string | null;
+  rubro: string | null;
+}): ProductoTiendaParaComparacionRow {
+  return {
+    id: r.codTienda,
+    codTienda: r.codTienda,
+    descripcionTienda: (r.descripcionTienda ?? "").trim(),
+    marca: r.marca,
+    rubro: r.rubro,
+  };
+}
+
 export async function buscarProductosTiendaParaComparacion(params: {
   q?: string;
   take?: number;
 }): Promise<ServiceResult<{ items: ProductoTiendaParaComparacionRow[]; total: number }>> {
   const take = Math.max(1, Math.floor(Number(params.take) || 100));
-  const where = buildWhereBusquedaProductosTienda(params.q ?? "");
+  const q = (params.q ?? "").trim();
+  const hasSearch = q.length > 0;
+  const where = buildWhereBusquedaProductosTienda(q);
 
   try {
-    const [rows, total] = await Promise.all([
-      prisma.prodTienda.findMany({
-        where,
-        select: {
-          codTienda: true,
-          descripcionTienda: true,
-          marca: true,
-          rubro: true,
+    if (!hasSearch) {
+      const [rows, total] = await Promise.all([
+        prisma.prodTienda.findMany({
+          where,
+          select: {
+            codTienda: true,
+            descripcionTienda: true,
+            marca: true,
+            rubro: true,
+          },
+          orderBy: [{ descripcionTienda: "asc" }, { codTienda: "asc" }],
+          take,
+        }),
+        prisma.prodTienda.count({ where }),
+      ]);
+
+      return {
+        success: true,
+        data: {
+          items: rows.map(mapRowProductoComparacion),
+          total,
         },
-        orderBy: [{ descripcionTienda: "asc" }, { codTienda: "asc" }],
-        take,
-      }),
-      prisma.prodTienda.count({ where }),
-    ]);
+      };
+    }
+
+    const rows = await prisma.prodTienda.findMany({
+      where,
+      select: {
+        codTienda: true,
+        descripcionTienda: true,
+        marca: true,
+        rubro: true,
+      },
+      orderBy: [{ descripcionTienda: "asc" }, { codTienda: "asc" }],
+      take: Math.max(take, MAX_BUSQUEDA_COMPARACION_DB),
+    });
+
+    const filtered = rows
+      .map(mapRowProductoComparacion)
+      .filter((row) =>
+        matchByMultiTerm([row.descripcionTienda, row.codTienda, row.marca, row.rubro], q)
+      );
+
+    const items = filtered.slice(0, take);
 
     return {
       success: true,
       data: {
-        items: rows.map((r) => ({
-          id: r.codTienda,
-          codTienda: r.codTienda,
-          descripcionTienda: (r.descripcionTienda ?? "").trim(),
-          marca: r.marca,
-          rubro: r.rubro,
-        })),
-        total,
+        items,
+        total: filtered.length,
       },
     };
   } catch (e) {

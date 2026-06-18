@@ -1279,7 +1279,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-11): **Comp. Categorias — referencia competencia** — banner + `ElegirReferenciaCompetenciaModal`; VAR con tilde manual o precio referencia (Px Competencia).*
 
-*Última actualización (2026-06-10): **`AgregarProductoComparacionModal`** — ancho **`max-w-[109.2rem]`** (+30 % sobre `ModalTablaConFiltros` `84rem`); columnas CHECK 5 % / COD. TIENDA 10 % / MARCA 20 % / DESCRIPCIÓN 65 %.*
+*Última actualización (2026-06-16): **`AgregarProductoComparacionModal`** — ancho **`max-w-[105rem]`** (+25 % sobre `ModalTablaConFiltros` `84rem`); columnas CHECK 5 % / COD. TIENDA 10 % / MARCA 20 % / DESCRIPCIÓN 65 %; búsqueda multi-término por contiene (`matchByMultiTerm` en `buscarProductosTiendaParaComparacion`).*
 
 *Última actualización (2026-06-10): **`FiltroBusquedaInput`** — limpiar con **`Trash2`** + **`primaryIcon`** / **`filtro-individual-clear-btn`** (fondo primary, ícono blanco); deja de usar botón ghost con **X**.*
 

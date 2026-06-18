@@ -1609,3 +1609,5 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-06-16): **Import CSV lista precios — MARCA opcional** — `campoDestinoListaPreciosSchema` incluye **`marca`**; `aplicarMapeoListaPrecios` rellena `FilaListaPrecio.marca` solo si el usuario mapeó una columna; `upsertListaPrecios` persiste `prod_precios_provee.marca` en create/update únicamente cuando viene en la fila mapeada (sin mapeo no altera marca existente).*
 
 *Última actualización (2026-06-16): **Edición masiva lista precios** — `actualizarListaPreciosMasivoAction` acepta `{ filtros, data }` y resuelve todos los `cod_ext` coincidentes (sin paginación), igual que exportación; la UI muestra el **total** del filtro, no solo la página visible.*
+
+*Última actualización (2026-06-16): **`buscarProductosTiendaParaComparacion`** — búsqueda multi-término por contiene en **descripción / código / marca / rubro** (`contains` en BD + `matchByMultiTerm`); ej. `Recu 20` → *Membrana Recuplast Fibrado 20 kg*.*
