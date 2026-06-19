@@ -144,7 +144,6 @@ export default function ListaPreciosTablaConFiltros({
   const [reglaModalOpen, setReglaModalOpen] = useState(false);
   const [reglaModalDescuento, setReglaModalDescuento] =
     useState<DescuentoActivoListaPrecio | null>(null);
-  const [reglaModalCodExt, setReglaModalCodExt] = useState<string | undefined>(undefined);
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
   const [rubroNombre, setRubroNombre] = useState<string>("");
@@ -176,9 +175,8 @@ export default function ListaPreciosTablaConFiltros({
     setDescuentosModalOpen(true);
   }
 
-  function abrirReglaDescuento(descuento: DescuentoActivoListaPrecio, codExt: string) {
+  function abrirReglaDescuento(descuento: DescuentoActivoListaPrecio) {
     setReglaModalDescuento(descuento);
-    setReglaModalCodExt(codExt);
     setReglaModalOpen(true);
   }
 
@@ -670,7 +668,7 @@ export default function ListaPreciosTablaConFiltros({
         descuentos={filaDescuentos?.descuentosActivos ?? []}
         onVerRegla={(descuento) => {
           if (filaDescuentos) {
-            abrirReglaDescuento(descuento, filaDescuentos.codExt);
+            abrirReglaDescuento(descuento);
           }
         }}
       />
@@ -681,11 +679,9 @@ export default function ListaPreciosTablaConFiltros({
           setReglaModalOpen(next);
           if (!next) {
             setReglaModalDescuento(null);
-            setReglaModalCodExt(undefined);
           }
         }}
         descuento={reglaModalDescuento}
-        codExt={reglaModalCodExt}
       />
 
       <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">

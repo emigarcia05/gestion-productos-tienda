@@ -186,12 +186,6 @@ const MODULES: NavModule[] = [
             permiso: PERMISOS.proveedores.listaPrecios,
           },
           {
-            href: GP_ROUTES.analisisPrecios.listaProveedores.reglasDescuentos,
-            label: "Reglas Descuentos",
-            icon: <Percent className="h-4 w-4 shrink-0" />,
-            permiso: PERMISOS.listaPrecios.acciones.gestionarReglasDescuentos,
-          },
-          {
             href: GP_ROUTES.analisisPrecios.listaProveedores.lista,
             label: "Lista Proveedores",
             icon: <List className="h-4 w-4 shrink-0" />,

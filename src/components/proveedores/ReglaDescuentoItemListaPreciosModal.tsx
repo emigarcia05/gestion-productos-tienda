@@ -4,15 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { fmtPorcentajeTabla } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import {
   labelCampoReglaDescuento,
   lineasCondicionReglaDescuento,
 } from "@/lib/descuentosListaPrecioReglasUi";
 import type { DescuentoActivoListaPrecio } from "@/services/listaPrecios.service";
-
-/** Sangría de líneas 2+ para alinear dimensiones bajo la primera. */
-const CONDICION_DETALLE_INDENT_CLASS = "pl-[5.25rem]";
 
 function CondicionesReglaDetalle({
   regla,
@@ -27,11 +23,8 @@ function CondicionesReglaDetalle({
 
   return (
     <div className="space-y-0.5 text-sm leading-snug">
-      {lineas.map((linea, index) => (
-        <p
-          key={linea.dimension}
-          className={index === 0 ? "text-foreground" : cn(CONDICION_DETALLE_INDENT_CLASS, "text-foreground")}
-        >
+      {lineas.map((linea) => (
+        <p key={linea.dimension} className="text-foreground">
           {linea.dimension} = &quot;{linea.valor}&quot;
         </p>
       ))}
@@ -43,14 +36,12 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   descuento: DescuentoActivoListaPrecio | null;
-  codExt?: string;
 }
 
 export default function ReglaDescuentoItemListaPreciosModal({
   open,
   onOpenChange,
   descuento,
-  codExt,
 }: Props) {
   const titulo = descuento ? labelCampoReglaDescuento(descuento.campo) : "Regla De Descuento";
 
@@ -70,12 +61,6 @@ export default function ReglaDescuentoItemListaPreciosModal({
           <p className="text-sm text-muted-foreground">Sin datos de descuento.</p>
         ) : (
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
-            {codExt ? (
-              <>
-                <dt className="font-medium text-foreground">Cód. Ext.</dt>
-                <dd className="celda-mono tabular-nums">{codExt}</dd>
-              </>
-            ) : null}
             <dt className="font-medium text-foreground">Valor</dt>
             <dd className="tabular-nums">{fmtPorcentajeTabla(descuento.valor)}</dd>
             {descuento.regla ? (
