@@ -185,12 +185,6 @@ const MODULES: NavModule[] = [
             permiso: PERMISOS.proveedores.listaPrecios,
           },
           {
-            href: "/gestion-productos/proveedores/lista-precios/reglas-descuentos",
-            label: "Reglas Descuentos",
-            icon: <Percent className="h-4 w-4 shrink-0" />,
-            permiso: PERMISOS.listaPrecios.acciones.gestionarReglasDescuentos,
-          },
-          {
             href: "/gestion-productos/proveedores/lista",
             label: "Lista Proveedores",
             icon: <List className="h-4 w-4 shrink-0" />,
@@ -357,8 +351,6 @@ function getOpenModule(pathname: string): SidebarModuleId {
     pathname.startsWith("/proveedores/competencia-precios") ||
     pathname.startsWith("/gestion-productos/proveedores/comparacion-categorias") ||
     pathname.startsWith("/proveedores/comparacion-categorias") ||
-    pathname.startsWith("/gestion-productos/proveedores/lista-precios/reglas-descuentos") ||
-    pathname.startsWith("/proveedores/lista-precios/reglas-descuentos") ||
     pathname.startsWith("/gestion-productos/proveedores/lista-precios") ||
     pathname.startsWith("/proveedores/lista-precios") ||
     pathname.startsWith("/gestion-productos/proveedores/lista") ||
@@ -373,17 +365,10 @@ function getOpenModule(pathname: string): SidebarModuleId {
 
 function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === "/gestion-productos/proveedores/sugeridos") return pathname === "/gestion-productos/proveedores/sugeridos" || pathname === "/proveedores/sugeridos";
-  if (href === "/gestion-productos/proveedores/lista-precios/reglas-descuentos") {
-    return (
-      pathname === "/gestion-productos/proveedores/lista-precios/reglas-descuentos" ||
-      pathname === "/proveedores/lista-precios/reglas-descuentos"
-    );
-  }
   if (href === "/gestion-productos/proveedores/lista-precios") {
     return (
-      (pathname === "/gestion-productos/proveedores/lista-precios" ||
-        pathname === "/proveedores/lista-precios") &&
-      !pathname.includes("/reglas-descuentos")
+      pathname === "/gestion-productos/proveedores/lista-precios" ||
+      pathname === "/proveedores/lista-precios"
     );
   }
   if (href === "/gestion-productos/proveedores/comparacion-categorias/categorias")

@@ -172,7 +172,7 @@ export default function ImportarListaPreciosModal({ proveedores, cotizacionUsd }
       <DialogTrigger asChild>
         <Button variant="default" size="default" className="btn-primario-gestion">
           <Upload className="h-4 w-4" />
-          Importar Lista
+          Imp. Lista
         </Button>
       </DialogTrigger>
 

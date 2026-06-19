@@ -243,7 +243,7 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
       <DialogTrigger asChild>
         <Button variant="default" size="default" className="btn-primario-gestion gap-2 shrink-0">
           <FileText className="h-4 w-4 shrink-0" />
-          Convertir PDF a Excel
+          Imp. Lista PDF
         </Button>
       </DialogTrigger>
 

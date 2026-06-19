@@ -12,6 +12,7 @@ import ExportarListaPreciosButton, {
 } from "@/components/proveedores/ExportarListaPreciosButton";
 import ListaPreciosTablaConFiltros from "@/components/proveedores/ListaPreciosTablaConFiltros";
 import CotizacionUsdListaPreciosControl from "@/components/proveedores/CotizacionUsdListaPreciosControl";
+import ReglasDescuentosListaPrecioModal from "@/components/proveedores/ReglasDescuentosListaPrecioModal";
 import type { CotizacionUsdEstado } from "@/actions/cotizacionUsd";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
@@ -72,14 +73,15 @@ export default function ListaPreciosPageClient({
   const puedeImportar = puede(rol, p.acciones.importarLista);
   const puedeEdicionMasiva = puede(rol, p.acciones.edicionMasiva);
   const puedeGestionarCotizacion = puede(rol, p.acciones.gestionarCotizacionUsd);
+  const puedeGestionarReglas = puede(rol, p.acciones.gestionarReglasDescuentos);
   const puedeVerCotizacion =
     puedeGestionarCotizacion ||
     puedeImportar ||
     puede(rol, PERMISOS.proveedores.listaPrecios);
 
   const actions =
-    puedeImportar || puedeEdicionMasiva || puedeVerCotizacion ? (
-      <div className="flex items-center gap-2">
+    puedeImportar || puedeEdicionMasiva || puedeVerCotizacion || puedeGestionarReglas ? (
+      <div className="flex flex-wrap items-center gap-2">
         {puedeVerCotizacion && (
           <CotizacionUsdListaPreciosControl
             puedeEditar={puedeGestionarCotizacion}
@@ -88,16 +90,11 @@ export default function ListaPreciosPageClient({
           />
         )}
         {puedeImportar && (
-          <>
-            <ExportarListaPreciosButton snapshot={filtrosExportSnapshot} />
-            <CrearProductoListaPreciosModal
-              proveedores={proveedores}
-              marcas={marcas}
-              onSuccess={handleEdicionSuccess}
-            />
-            <ImportarListaPreciosModal proveedores={proveedores} cotizacionUsd={cotizacionUsd.valor} />
-            <ConvertirPdfListaPreciosModal proveedores={proveedores} />
-          </>
+          <CrearProductoListaPreciosModal
+            proveedores={proveedores}
+            marcas={marcas}
+            onSuccess={handleEdicionSuccess}
+          />
         )}
         {puedeEdicionMasiva && (
           <EdicionMasivaListaPreciosModal
@@ -106,6 +103,16 @@ export default function ListaPreciosPageClient({
             rubros={rubros}
             onSuccess={handleEdicionSuccess}
           />
+        )}
+        {puedeImportar && (
+          <>
+            <ExportarListaPreciosButton snapshot={filtrosExportSnapshot} />
+            <ImportarListaPreciosModal proveedores={proveedores} cotizacionUsd={cotizacionUsd.valor} />
+            <ConvertirPdfListaPreciosModal proveedores={proveedores} />
+          </>
+        )}
+        {puedeGestionarReglas && (
+          <ReglasDescuentosListaPrecioModal onSuccess={handleEdicionSuccess} />
         )}
       </div>
     ) : undefined;

@@ -193,15 +193,6 @@ export default function CrearEditarReglaDescuentoListaPrecioModal({
               </Select>
             </ModalFormRow>
 
-            <ModalFormRow id="valor-regla" label="VALOR">
-              <PorcentajeCentInput
-                id="valor-regla"
-                valueNormalized={valorNorm}
-                onValueNormalizedChange={setValorNorm}
-                placeholder="0,00%"
-              />
-            </ModalFormRow>
-
             <ModalFormRow id="proveedor-regla" label="PROVEEDOR">
               <Select
                 value={idProveedor || "none"}
@@ -252,6 +243,15 @@ export default function CrearEditarReglaDescuentoListaPrecioModal({
                   ))}
                 </SelectContent>
               </Select>
+            </ModalFormRow>
+
+            <ModalFormRow id="valor-regla" label="VALOR">
+              <PorcentajeCentInput
+                id="valor-regla"
+                valueNormalized={valorNorm}
+                onValueNormalizedChange={setValorNorm}
+                placeholder="0,00%"
+              />
             </ModalFormRow>
           </div>
 
