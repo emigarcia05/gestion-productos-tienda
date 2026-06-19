@@ -31,7 +31,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 3. **Texto en mayúscula inicial (title case)**  
    - **Títulos de modales** y **textos de botones**: cada palabra con primera letra en mayúscula. Ejemplos: "Importar Lista De Precios", "Nueva Importación".  
-   - **Sidebar**: nombre del **módulo** en MAYÚSCULAS (ej. "LISTA PROVEEDORES", "PEDIDO MERCADERIA"). Nombre del **submódulo**: primera letra de cada palabra en mayúscula (title case) (ej. "Lista Precios", "Cx Compra", "Pedido Urgente", "Px. Vta. Sugerido").  
+   - **Sidebar**: nombre del **módulo** en MAYÚSCULAS (ej. "PEDIDO MERCADERIA", "ANALISIS DE PRECIOS"). Nombre del **submódulo** o **agrupador desplegable** dentro de un módulo: title case (ej. "Lista Precios", "Lista Proveedores", "Cx Compra", "Pedido Urgente", "Px. Vta. Sugerido").  
    - Encabezados de página (SectionHeader/ClassicPageHeader): title case. Aplicar también a `title`/`aria-label` cuando sean etiquetas de UI.
 4. **Abreviaciones con punto**  
    - Toda abreviatura en la UI (encabezados, labels, placeholders, tooltips, nombres de archivo generados) debe terminar en punto. Ejemplos: Px., Cx., Dto., Desc., Cant., Prov., Cod., Cód., Sug., Disp., Ext., Transp., Finan., Vta., Comp., Cat., Últ., Mín., Act.
@@ -1299,7 +1299,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-19): **Rubros en lista precios** — desplegables de **RUBRO** (filtros, edición masiva, reglas descuentos) usan nombres distintos de **`prod_tienda.rubro`** (`rubrosProdTienda.service.ts`); reglas resuelven FK en `prod_rubros_lista` al listar catálogo.*
 
-*Última actualización (2026-06-19): **Sidebar — LISTA PROVEEDORES dentro de ANALISIS DE PRECIOS** — el módulo top-level **LISTA PROVEEDORES** deja de existir; sus submódulos (**Lista Precios**, **Reglas Descuentos**, **Lista Proveedores**) pasan al agrupador desplegable homónimo dentro de **ANALISIS DE PRECIOS** (primer ítem del módulo; ícono `Handshake`). `getOpenModule` abre **ANALISIS DE PRECIOS** para rutas `/gestion-productos/proveedores/lista-precios*`, `/lista` y `/proveedores`.*
+*Última actualización (2026-06-19): **Sidebar — Lista Proveedores dentro de ANALISIS DE PRECIOS** — agrupador desplegable **Lista Proveedores** (title case; ícono `Handshake`) con **Lista Precios**, **Reglas Descuentos** y **Lista Proveedores** (ruta `/lista`).*
 
 *Última actualización (2026-06-19): **Lista precios / Reglas descuentos — navegación** — sin botones cruzados en toolbar (**Reglas Descuentos** en Lista Precios; **Volver A Lista Precios** en Reglas Descuentos); acceso solo vía sidebar **ANALISIS DE PRECIOS → LISTA PROVEEDORES**.*
 
@@ -1307,7 +1307,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-06-19): **`ListaPreciosTablaConFiltros`** — retirado botón **Ver descuentos** (chevron ▼/▲) por fila en **ACCIONES**. Dos vistas globales: (1) descripción + marca en sublínea; (2) toggle **Desc. en fila** muestra descuentos inline en **DESCRIPCION**. Sin subfila expandible ni estado `expandidos` por ítem.*
 
-*Última actualización (2026-06-19): **Desc. en fila — solo activos + regla** — `SublineaDescuentosListaPrecios`: marca + descuentos con valor &gt; 0; botón **Info** (`lista-precios-sublinea-regla-btn`) abre **`ReglaDescuentoItemListaPreciosModal`** (`AppModal` `sm`) con valor, condiciones y especificidad de la regla ganadora (`descuentosActivos` en `FilaListaPrecioParaCliente`, servicio `enriquecerFilasConDescuentosActivos`).*
+*Última actualización (2026-06-19): **Lista precios — columnas %** — `ListaPreciosTablaConFiltros` (`tabla-lista-precios-proveedor`): **COD. EXT.** 8%, **DESCRIPCION** 51%, **MARCA** 8%, **RUBRO** 8%, **DESC.** 2% (ícono `%` → `DescuentosAplicadosListaPreciosModal`; cada ítem con **Info** → `ReglaDescuentoItemListaPreciosModal`), **PX. FINAL** 8%, **ACCIONES** 9%. Retirados **PROV.**, **PX. LISTA PROV.** y toggle **Desc. en fila**.*
 
 ---
 

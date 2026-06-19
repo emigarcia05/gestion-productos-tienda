@@ -29,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import PaginacionClient from "@/components/shared/PaginacionClient";
-import { fmtPrecio, fmtPorcentajeTabla } from "@/lib/format";
+import { fmtPrecio } from "@/lib/format";
 import {
   tableEmptyStateContainerVariants,
   tableEmptyStateMessageVariants,
@@ -43,7 +43,8 @@ import {
 import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
 import VincularPrecioRexModal from "@/components/proveedores/VincularPrecioRexModal";
 import EliminarListaPrecioModal from "@/components/proveedores/EliminarListaPrecioModal";
-import SublineaDescuentosListaPrecios from "@/components/proveedores/SublineaDescuentosListaPrecios";
+import DescuentosListaPreciosCelda from "@/components/proveedores/DescuentosListaPreciosCelda";
+import DescuentosAplicadosListaPreciosModal from "@/components/proveedores/DescuentosAplicadosListaPreciosModal";
 import ReglaDescuentoItemListaPreciosModal from "@/components/proveedores/ReglaDescuentoItemListaPreciosModal";
 import type { ListaPreciosFiltrosExportSnapshot } from "@/components/proveedores/ExportarListaPreciosButton";
 import type {
@@ -82,7 +83,11 @@ interface ListaPreciosTablaConFiltrosProps {
   onFiltrosExportSnapshotChange?: (snapshot: ListaPreciosFiltrosExportSnapshot) => void;
 }
 
+/** Anchos de columna en % (COD / DESCR / MARCA / RUBRO / DESC / PX FINAL / ACC). */
+const COL_WIDTHS_PCT = [8, 51, 8, 8, 2, 8, 9] as const;
+
 const MIN_CARACTERES_BUSQUEDA = 3;
+const COL_COUNT = COL_WIDTHS_PCT.length;
 const MENSAJE_SIN_FILTRO =
   "Aplicá un filtro (Proveedor, Marca, Rubro, Habilitado o Vinculado) o escribí al menos 3 caracteres en la búsqueda para ver productos.";
 
@@ -91,53 +96,27 @@ function fmtPrecioTabla(n: number | null | undefined): string {
   return `$${fmtPrecio(n)}`;
 }
 
-function DescripcionCelda({
-  fila,
-  modoDescuentosInline,
-  onVerRegla,
-}: {
-  fila: FilaListaPrecioParaCliente;
-  modoDescuentosInline: boolean;
-  onVerRegla: (descuento: DescuentoActivoListaPrecio, codExt: string) => void;
-}) {
+function DescripcionCelda({ fila }: { fila: FilaListaPrecioParaCliente }) {
   const tienda = fila.descripcionTienda?.trim() || "";
   const proveedor = fila.descripcionProveedor?.trim() || "";
   const principal = tienda || proveedor || "—";
-  const marca = fila.marca?.trim() || "";
-  const titleParts = [
-    principal,
-    marca,
-    modoDescuentosInline
-      ? [
-          marca,
-          ...(fila.descuentosActivos ?? []).map(
-            (d) => `${d.label} ${fmtPorcentajeTabla(d.valor)}`
-          ),
-        ]
-          .filter(Boolean)
-          .join(" · ")
-      : "",
-    fila.codExt,
-  ].filter(Boolean);
 
   return (
     <div
       className="flex min-w-0 max-h-full flex-col justify-center gap-0"
-      title={titleParts.join(" · ")}
+      title={[principal, fila.codExt].filter(Boolean).join(" · ")}
     >
       <div className="celda-destacado truncate text-xs font-bold leading-none">{principal}</div>
-      {modoDescuentosInline ? (
-        <SublineaDescuentosListaPrecios
-          fila={fila}
-          marca={marca}
-          onVerRegla={onVerRegla}
-        />
-      ) : marca ? (
-        <div className="celda-sublinea-tabla truncate leading-none" title={marca}>
-          {marca}
-        </div>
-      ) : null}
     </div>
+  );
+}
+
+function CeldaTextoTabla({ valor }: { valor: string | null | undefined }) {
+  const texto = valor?.trim() || "—";
+  return (
+    <span className="block truncate" title={texto !== "—" ? texto : undefined}>
+      {texto}
+    </span>
   );
 }
 
@@ -156,7 +135,8 @@ export default function ListaPreciosTablaConFiltros({
   const [vincularOpen, setVincularOpen] = useState(false);
   const [filaEliminar, setFilaEliminar] = useState<FilaListaPrecioParaCliente | null>(null);
   const [eliminarOpen, setEliminarOpen] = useState(false);
-  const [modoDescuentosInline, setModoDescuentosInline] = useState(false);
+  const [descuentosModalOpen, setDescuentosModalOpen] = useState(false);
+  const [filaDescuentos, setFilaDescuentos] = useState<FilaListaPrecioParaCliente | null>(null);
   const [reglaModalOpen, setReglaModalOpen] = useState(false);
   const [reglaModalDescuento, setReglaModalDescuento] =
     useState<DescuentoActivoListaPrecio | null>(null);
@@ -177,9 +157,6 @@ export default function ListaPreciosTablaConFiltros({
   const [total, setTotal] = useState(0);
   const busquedaInputRef = useRef<HTMLInputElement>(null);
 
-  const showProveedorColumn = !proveedorId;
-  const colCount = 5 + (showProveedorColumn ? 1 : 0);
-
   const hasFilterActive =
     !!proveedorId ||
     !!marcaNombre ||
@@ -190,8 +167,9 @@ export default function ListaPreciosTablaConFiltros({
     vinculadoFilter === "no" ||
     busqueda.trim().length >= MIN_CARACTERES_BUSQUEDA;
 
-  function toggleModoDescuentosInline() {
-    setModoDescuentosInline((prev) => !prev);
+  function abrirDescuentos(fila: FilaListaPrecioParaCliente) {
+    setFilaDescuentos(fila);
+    setDescuentosModalOpen(true);
   }
 
   function abrirReglaDescuento(descuento: DescuentoActivoListaPrecio, codExt: string) {
@@ -491,16 +469,6 @@ export default function ListaPreciosTablaConFiltros({
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton onClick={limpiarFiltros} />
-          <Button
-            type="button"
-            variant={modoDescuentosInline ? "default" : "outline"}
-            size="sm"
-            className="h-8 shrink-0 text-xs uppercase"
-            aria-pressed={modoDescuentosInline}
-            onClick={toggleModoDescuentosInline}
-          >
-            Desc. en fila
-          </Button>
           <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
             {total.toLocaleString()} PRODUCTO
             {total !== 1 ? "S" : ""}
@@ -509,21 +477,19 @@ export default function ListaPreciosTablaConFiltros({
       </FilterBar>
 
       <div className="contenedor-tabla-gestion no-scroll-x">
-        <Table variant="compact" scrollX={false}>
+        <Table variant="compact" scrollX={false} className="tabla-lista-precios-proveedor">
           <colgroup>
-            <col className="w-[5rem]" />
-            {showProveedorColumn ? <col className="w-[3.25rem]" /> : null}
-            <col />
-            <col className="w-[6.75rem]" />
-            <col className="w-[6.75rem]" />
-            <col className="w-[6.5rem]" />
+            {COL_WIDTHS_PCT.map((pct, i) => (
+              <col key={i} style={{ width: `${pct}%` }} />
+            ))}
           </colgroup>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead>COD. EXT.</TableHead>
-              {showProveedorColumn ? <TableHead>PROV.</TableHead> : null}
               <TableHead>DESCRIPCION</TableHead>
-              <TableHead className="text-right">PX. LISTA PROV.</TableHead>
+              <TableHead>MARCA</TableHead>
+              <TableHead>RUBRO</TableHead>
+              <TableHead>DESC.</TableHead>
               <TableHead className="text-right">PX. FINAL</TableHead>
               <TableHead className="text-center">ACCIONES</TableHead>
             </TableRow>
@@ -536,23 +502,20 @@ export default function ListaPreciosTablaConFiltros({
                   <TableCell className="celda-datos celda-mono whitespace-nowrap">
                     {fila.codExt}
                   </TableCell>
-                  {showProveedorColumn ? (
-                    <TableCell
-                      className="celda-datos celda-mono text-center font-semibold whitespace-nowrap"
-                      title={fila.proveedor?.nombre}
-                    >
-                      {fila.proveedor?.prefijo || "—"}
-                    </TableCell>
-                  ) : null}
-                      <TableCell className="celda-datos min-w-0 overflow-hidden">
-                        <DescripcionCelda
-                          fila={fila}
-                          modoDescuentosInline={modoDescuentosInline}
-                          onVerRegla={abrirReglaDescuento}
-                        />
-                      </TableCell>
-                  <TableCell className="celda-datos celda-numero celda-destacado text-right whitespace-nowrap">
-                    {fmtPrecioTabla(fila.pxListaProveedor)}
+                  <TableCell className="celda-datos min-w-0 overflow-hidden text-left">
+                    <DescripcionCelda fila={fila} />
+                  </TableCell>
+                  <TableCell className="celda-datos min-w-0 overflow-hidden">
+                    <CeldaTextoTabla valor={fila.marca} />
+                  </TableCell>
+                  <TableCell className="celda-datos min-w-0 overflow-hidden">
+                    <CeldaTextoTabla valor={fila.rubro} />
+                  </TableCell>
+                  <TableCell className="celda-datos celda-datos--accion-relleno-fila p-0">
+                    <DescuentosListaPreciosCelda
+                      fila={fila}
+                      onAbrir={() => abrirDescuentos(fila)}
+                    />
                   </TableCell>
                   <TableCell
                     className="celda-datos celda-numero celda-destacado text-right whitespace-nowrap"
@@ -628,7 +591,7 @@ export default function ListaPreciosTablaConFiltros({
                       textSize: "sm",
                     })
                   )}
-                  colSpan={colCount}
+                  colSpan={COL_COUNT}
                 >
                   <span
                     className={tableEmptyStateMessageVariants({
@@ -682,6 +645,21 @@ export default function ListaPreciosTablaConFiltros({
           />
         </>
       )}
+
+      <DescuentosAplicadosListaPreciosModal
+        open={descuentosModalOpen}
+        onOpenChange={(next) => {
+          setDescuentosModalOpen(next);
+          if (!next) setFilaDescuentos(null);
+        }}
+        codExt={filaDescuentos?.codExt}
+        descuentos={filaDescuentos?.descuentosActivos ?? []}
+        onVerRegla={(descuento) => {
+          if (filaDescuentos) {
+            abrirReglaDescuento(descuento, filaDescuentos.codExt);
+          }
+        }}
+      />
 
       <ReglaDescuentoItemListaPreciosModal
         open={reglaModalOpen}

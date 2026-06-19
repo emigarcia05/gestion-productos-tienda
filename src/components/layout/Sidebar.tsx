@@ -175,7 +175,7 @@ const MODULES: NavModule[] = [
     icon: <LineChart className={iconClass} />,
     submodules: [
       {
-        label: "LISTA PROVEEDORES",
+        label: "Lista Proveedores",
         icon: <Handshake className="h-4 w-4 shrink-0" />,
         children: [
           {
