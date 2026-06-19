@@ -357,7 +357,7 @@ Por cada ítem (`id_proveedor`, `marca` texto, `rubro` texto) y cada `campo`:
 | `eliminarReglaDescuentosListaPrecioAction` | idem |
 | `listarCatalogosReglasDescuentosAction` | idem |
 
-Validación Zod: `@/lib/validations/descuentosListaPrecioReglas.ts`. Payloads `unknown` + `.safeParse()`.
+Validación Zod: `@/lib/validations/descuentosListaPrecioReglas.ts`. Payloads `unknown` + `.safeParse()`. FKs `idProveedor` / `idMarca` / `idRubro` usan **`prismaIdOptionalNullableSchema`** (`prismaCuidOrUuidSchema` + `""`→`null`): proveedores y marcas legacy en BD tienen **UUID** (`gen_random_uuid()` en migraciones iniciales), no solo CUID.
 
 #### Handoff UI (Fase 2 Full Stack)
 

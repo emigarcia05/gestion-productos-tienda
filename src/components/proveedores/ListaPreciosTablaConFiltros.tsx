@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Link2, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, Link2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -489,7 +489,10 @@ export default function ListaPreciosTablaConFiltros({
               <TableHead>DESCRIPCION</TableHead>
               <TableHead>MARCA</TableHead>
               <TableHead>RUBRO</TableHead>
-              <TableHead>DESC.</TableHead>
+              <TableHead className="text-center">
+                <ArrowDown className="mx-auto h-4 w-4 text-primary-foreground" aria-hidden />
+                <span className="sr-only">Descuentos</span>
+              </TableHead>
               <TableHead className="text-right">PX. FINAL</TableHead>
               <TableHead className="text-center">ACCIONES</TableHead>
             </TableRow>

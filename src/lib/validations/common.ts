@@ -14,6 +14,22 @@ export const prismaCuidOrUuidSchema = z.union([
   z.string().cuid("ID inválido."),
 ]);
 
+function emptyFkToNull(value: unknown): unknown {
+  return value === "" || value === undefined ? null : value;
+}
+
+/** FK Prisma requerida: CUID (altas nuevas) o UUID (filas legacy). */
+export const prismaIdSchema = prismaCuidOrUuidSchema;
+
+/**
+ * FK Prisma opcional (`null` = comodín en reglas, etc.).
+ * Acepta CUID o UUID; normaliza `""` → `null`.
+ */
+export const prismaIdOptionalNullableSchema = z.preprocess(
+  emptyFkToNull,
+  prismaCuidOrUuidSchema.nullable().optional()
+);
+
 /**
  * `global_sucursales.id`: CUID, UUID, o id fijo de seed **CORPORATIVO** (`suc_corporativo`, migración `20260418150000_seed_sucursal_corporativo`).
  */

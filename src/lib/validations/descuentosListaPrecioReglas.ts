@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-import { prismaCuidSchema } from "@/lib/validations/common";
+import {
+  prismaIdOptionalNullableSchema,
+  prismaIdSchema,
+} from "@/lib/validations/common";
 import { porcentajeListaPreciosSchema } from "@/lib/validations/listaPrecios";
 
 /** Campos materializables gobernados por reglas (columnas prod_precios_provee). */
@@ -40,9 +43,9 @@ export const crearReglaDescuentoListaPrecioSchema = z
   .object({
     campo: campoReglaDescuentoListaPrecioSchema,
     valor: porcentajeListaPreciosSchema,
-    idProveedor: prismaCuidSchema.nullable().optional(),
-    idMarca: prismaCuidSchema.nullable().optional(),
-    idRubro: prismaCuidSchema.nullable().optional(),
+    idProveedor: prismaIdOptionalNullableSchema,
+    idMarca: prismaIdOptionalNullableSchema,
+    idRubro: prismaIdOptionalNullableSchema,
   })
   .superRefine(refineAlMenosUnaCondicion);
 
@@ -52,12 +55,12 @@ export type CrearReglaDescuentoListaPrecioInput = z.infer<
 
 export const actualizarReglaDescuentoListaPrecioSchema = z
   .object({
-    id: prismaCuidSchema,
+    id: prismaIdSchema,
     campo: campoReglaDescuentoListaPrecioSchema,
     valor: porcentajeListaPreciosSchema,
-    idProveedor: prismaCuidSchema.nullable().optional(),
-    idMarca: prismaCuidSchema.nullable().optional(),
-    idRubro: prismaCuidSchema.nullable().optional(),
+    idProveedor: prismaIdOptionalNullableSchema,
+    idMarca: prismaIdOptionalNullableSchema,
+    idRubro: prismaIdOptionalNullableSchema,
   })
   .superRefine(refineAlMenosUnaCondicion);
 
@@ -66,7 +69,7 @@ export type ActualizarReglaDescuentoListaPrecioInput = z.infer<
 >;
 
 export const eliminarReglaDescuentoListaPrecioSchema = z.object({
-  id: prismaCuidSchema,
+  id: prismaIdSchema,
 });
 
 export type EliminarReglaDescuentoListaPrecioInput = z.infer<
