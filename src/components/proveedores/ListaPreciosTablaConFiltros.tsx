@@ -655,7 +655,6 @@ export default function ListaPreciosTablaConFiltros({
           setDescuentosModalOpen(next);
           if (!next) setFilaDescuentos(null);
         }}
-        codExt={filaDescuentos?.codExt}
         descuentos={filaDescuentos?.descuentosActivos ?? []}
         onVerRegla={(descuento) => {
           if (filaDescuentos) {

@@ -96,7 +96,7 @@ export default function CotizacionUsdListaPreciosControl({
       <div className="flex items-center gap-2 shrink-0 text-sm text-muted-foreground tabular-nums">
         <DollarSign className="h-4 w-4 shrink-0" aria-hidden />
         <span>
-          Cotización U$S= <strong className="text-foreground">{labelValor}</strong>
+          Cot. U$S= <strong className="text-foreground">{labelValor}</strong>
         </span>
       </div>
     );
@@ -112,7 +112,7 @@ export default function CotizacionUsdListaPreciosControl({
           className="gap-2 shrink-0 tabular-nums"
         >
           <DollarSign className="h-4 w-4 shrink-0" />
-          Cotización U$S= {labelValor}
+          Cot. U$S= {labelValor}
         </Button>
       </DialogTrigger>
       <AppModal

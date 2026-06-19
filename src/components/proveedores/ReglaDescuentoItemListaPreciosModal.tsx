@@ -5,10 +5,44 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { fmtPorcentajeTabla } from "@/lib/format";
 import {
-  fmtCondicionesReglaDescuento,
   labelCampoReglaDescuento,
+  lineasCondicionReglaDescuento,
 } from "@/lib/descuentosListaPrecioReglasUi";
 import type { DescuentoActivoListaPrecio } from "@/services/listaPrecios.service";
+
+/** Sangría de líneas 2+ bajo el prefijo `CONDICION:` del modal detalle. */
+const CONDICION_DETALLE_INDENT_CLASS = "pl-[5.75rem]";
+
+function CondicionesReglaDetalle({
+  regla,
+}: {
+  regla: NonNullable<DescuentoActivoListaPrecio["regla"]>;
+}) {
+  const lineas = lineasCondicionReglaDescuento(regla);
+
+  if (lineas.length === 0) {
+    return <span className="text-muted-foreground">TODOS</span>;
+  }
+
+  return (
+    <div className="space-y-0.5 text-sm leading-snug">
+      {lineas.map((linea, index) => (
+        <p key={linea.dimension} className="text-foreground">
+          {index === 0 ? (
+            <>
+              <span className="font-medium">CONDICION:</span> {linea.dimension} = &quot;
+              {linea.valor}&quot;
+            </>
+          ) : (
+            <span className={CONDICION_DETALLE_INDENT_CLASS}>
+              {linea.dimension} = &quot;{linea.valor}&quot;
+            </span>
+          )}
+        </p>
+      ))}
+    </div>
+  );
+}
 
 interface Props {
   open: boolean;
@@ -52,7 +86,9 @@ export default function ReglaDescuentoItemListaPreciosModal({
             {descuento.regla ? (
               <>
                 <dt className="font-medium text-foreground">Condiciones</dt>
-                <dd>{fmtCondicionesReglaDescuento(descuento.regla)}</dd>
+                <dd>
+                  <CondicionesReglaDetalle regla={descuento.regla} />
+                </dd>
                 <dt className="font-medium text-foreground">Especificidad</dt>
                 <dd className="tabular-nums">{descuento.regla.especificidad}</dd>
               </>

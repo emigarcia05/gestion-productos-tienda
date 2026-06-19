@@ -11,7 +11,6 @@ import type { DescuentoActivoListaPrecio } from "@/services/listaPrecios.service
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  codExt?: string;
   descuentos: DescuentoActivoListaPrecio[];
   onVerRegla: (descuento: DescuentoActivoListaPrecio) => void;
 }
@@ -19,7 +18,6 @@ interface Props {
 export default function DescuentosAplicadosListaPreciosModal({
   open,
   onOpenChange,
-  codExt,
   descuentos,
   onVerRegla,
 }: Props) {
@@ -35,11 +33,6 @@ export default function DescuentosAplicadosListaPreciosModal({
           </Button>
         }
       >
-        {codExt ? (
-          <p className="mb-3 text-sm text-muted-foreground">
-            Cód. ext.: <span className="celda-mono text-foreground">{codExt}</span>
-          </p>
-        ) : null}
         {descuentos.length === 0 ? (
           <p className="text-sm text-muted-foreground">No hay descuentos activos en este ítem.</p>
         ) : (

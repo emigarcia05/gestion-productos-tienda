@@ -80,3 +80,39 @@ export function fmtCondicionesReglaDescuento(regla: {
   }
   return partes.length > 0 ? partes.join(" + ") : "TODOS";
 }
+
+export type LineaCondicionReglaDescuento = {
+  dimension: "Proveedor" | "Marca" | "Rubro";
+  valor: string;
+};
+
+/** Líneas para el detalle de regla (modal ítem): Proveedor / Marca / Rubro activos en orden fijo. */
+export function lineasCondicionReglaDescuento(regla: {
+  idProveedor?: string | null;
+  idMarca?: string | null;
+  idRubro?: string | null;
+  proveedorNombre?: string | null;
+  marcaNombre?: string | null;
+  rubroNombre?: string | null;
+}): LineaCondicionReglaDescuento[] {
+  const lineas: LineaCondicionReglaDescuento[] = [];
+  if (regla.idProveedor) {
+    lineas.push({
+      dimension: "Proveedor",
+      valor: regla.proveedorNombre?.trim() || "—",
+    });
+  }
+  if (regla.idMarca) {
+    lineas.push({
+      dimension: "Marca",
+      valor: regla.marcaNombre?.trim() || "—",
+    });
+  }
+  if (regla.idRubro) {
+    lineas.push({
+      dimension: "Rubro",
+      valor: regla.rubroNombre?.trim() || "—",
+    });
+  }
+  return lineas;
+}
