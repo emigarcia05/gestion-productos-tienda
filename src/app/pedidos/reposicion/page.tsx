@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getReposicionData, type SucursalReposicion } from "@/actions/reposicion";
@@ -23,7 +24,7 @@ interface Props {
 
 export default async function PedidoReposicionPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/gestion-productos/proveedores");
+  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect(GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios);
 
   const {
     sucursal,

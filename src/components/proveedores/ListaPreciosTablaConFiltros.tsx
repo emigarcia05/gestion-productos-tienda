@@ -56,6 +56,10 @@ import {
   type ListaPreciosFiltrosLecturaInput,
 } from "@/actions/listaPrecios";
 import { toast } from "sonner";
+import {
+  LISTA_PRECIOS_FILTRO_SIN_VALOR,
+  LISTA_PRECIOS_FILTRO_SIN_VALOR_LABEL,
+} from "@/lib/listaPreciosFiltros";
 
 interface ProveedorOption {
   id: string;
@@ -259,6 +263,7 @@ export default function ListaPreciosTablaConFiltros({
         });
         setMarcasOptions((prev) => {
           const next = res.marcasDisponibles;
+          if (marcaNombre === LISTA_PRECIOS_FILTRO_SIN_VALOR) return next;
           const selected = prev.find((m) => m.nombre === marcaNombre);
           if (marcaNombre && selected && !next.some((m) => m.nombre === marcaNombre)) {
             return [selected, ...next];
@@ -267,6 +272,7 @@ export default function ListaPreciosTablaConFiltros({
         });
         setRubrosOptions((prev) => {
           const next = res.rubrosDisponibles;
+          if (rubroNombre === LISTA_PRECIOS_FILTRO_SIN_VALOR) return next;
           const selected = prev.find((r) => r.nombre === rubroNombre);
           if (rubroNombre && selected && !next.some((r) => r.nombre === rubroNombre)) {
             return [selected, ...next];
@@ -384,6 +390,9 @@ export default function ListaPreciosTablaConFiltros({
                   align="start"
                   className="select-content-filtro"
                 >
+                  <SelectItem value={LISTA_PRECIOS_FILTRO_SIN_VALOR}>
+                    {LISTA_PRECIOS_FILTRO_SIN_VALOR_LABEL}
+                  </SelectItem>
                   {marcasOptions.map((m) => (
                     <SelectItem key={m.id} value={m.nombre}>
                       {m.nombre}
@@ -407,6 +416,9 @@ export default function ListaPreciosTablaConFiltros({
                   align="start"
                   className="select-content-filtro"
                 >
+                  <SelectItem value={LISTA_PRECIOS_FILTRO_SIN_VALOR}>
+                    {LISTA_PRECIOS_FILTRO_SIN_VALOR_LABEL}
+                  </SelectItem>
                   {rubrosOptions.map((r) => (
                     <SelectItem key={r.id} value={r.nombre}>
                       {r.nombre}

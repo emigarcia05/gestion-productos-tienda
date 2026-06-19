@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getArbolCategorias } from "@/services/categoriasComparacion.service";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function CategoriasComparacionPage() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.comparacionCategorias.editar)) {
-    redirect("/gestion-productos/proveedores/comparacion-categorias");
+    redirect(GP_ROUTES.analisisPrecios.compCategorias.comparacion);
   }
 
   const arbol = await getArbolCategorias();

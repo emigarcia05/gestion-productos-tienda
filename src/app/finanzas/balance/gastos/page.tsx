@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import FinanzasBalanceGastosPageClient from "@/components/finanzas/FinanzasBalanceGastosPageClient";
 import { mesAnioQuerySchema } from "@/lib/validations/finBalGastoMensualBalance";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -33,7 +34,7 @@ function primerSearchParam(v: string | string[] | undefined): string | undefined
 export default async function BalanceGastosPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    redirect("/gestion-productos/proveedores/sugeridos");
+    redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
   }
   const esEditor = rol === "editor";
 

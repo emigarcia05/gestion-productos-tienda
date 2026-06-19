@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { getProveedoresPageData } from "@/actions/proveedores";
 import ImportarModal from "@/components/proveedores/ImportarModal";
 import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltrada";
@@ -21,7 +22,7 @@ interface Props {
 
 export default async function ProveedoresPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (rol === "simple") redirect("/gestion-productos/proveedores/sugeridos");
+  if (rol === "simple") redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
 
   const { q = "", proveedor = "" } = await searchParams;
   const p = PERMISOS.proveedores;

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import FinanzasBalancePosicionIvaPage from "@/components/finanzas/FinanzasBalancePosicionIvaPage";
 import { mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance.service";
 import { listarIvaDebitoFinBalPorAnio } from "@/services/finBalIvaDeb.service";
@@ -19,7 +20,7 @@ function clampAnio(a: number): number {
 export default async function FinanzasPosicionIvaPage() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    redirect("/gestion-productos/proveedores/sugeridos");
+    redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
   }
 
   const editor = await esEditor();

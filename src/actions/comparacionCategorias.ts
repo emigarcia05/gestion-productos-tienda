@@ -1,5 +1,7 @@
 "use server";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+
 import { revalidatePath } from "next/cache";
 import {
   getArbolCategorias,
@@ -55,9 +57,9 @@ const buscarProductosAsignarSchema = z.object({
 
 const PATHS_COMPARACION_CATEGORIAS = [
   "/proveedores/comparacion-categorias",
-  "/gestion-productos/proveedores/comparacion-categorias",
+  GP_ROUTES.analisisPrecios.compCategorias.comparacion,
   "/proveedores/comparacion-categorias/categorias",
-  "/gestion-productos/proveedores/comparacion-categorias/categorias",
+  GP_ROUTES.analisisPrecios.compCategorias.categorias,
 ] as const;
 
 function revalidateComparacionCategorias() {

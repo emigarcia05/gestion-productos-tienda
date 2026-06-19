@@ -1,4 +1,5 @@
 import { AlarmClock, RotateCw, Pipette, History } from "lucide-react";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 
 export const PEDIDOS_TAB_KEYS = ["urgente", "tintometrico", "reposicion", "historial"] as const;
 export type PedidosTabKey = (typeof PEDIDOS_TAB_KEYS)[number];
@@ -9,22 +10,22 @@ const TAB_CONFIG: Record<
 > = {
   urgente: {
     label: "Pedido Urgente",
-    href: "/gestion-productos/pedidos/urgente",
+    href: GP_ROUTES.pedidoMercaderia.confPedido.urgente,
     icon: <AlarmClock className="h-3.5 w-3.5 text-accent2" />,
   },
   tintometrico: {
     label: "Pedido Tintométrico",
-    href: "/gestion-productos/pedidos/tintometrico",
+    href: GP_ROUTES.pedidoMercaderia.confPedido.tintometrico,
     icon: <Pipette className="h-3.5 w-3.5 text-accent2" />,
   },
   reposicion: {
     label: "Pedido Reposición",
-    href: "/gestion-productos/pedidos/reposicion",
+    href: GP_ROUTES.pedidoMercaderia.confPedido.reposicion,
     icon: <RotateCw className="h-3.5 w-3.5 text-accent2" />,
   },
   historial: {
     label: "Recepcion Pedido",
-    href: "/gestion-productos/pedidos/historial",
+    href: GP_ROUTES.pedidoMercaderia.recepcionPedido,
     icon: <History className="h-3.5 w-3.5 text-accent2" />,
   },
 };

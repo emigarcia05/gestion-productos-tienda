@@ -3,6 +3,8 @@
  * La mayoría de rutas actuales pertenecen a **Gestión Productos**; las demás tienen prefijo dedicado.
  */
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+
 export type MainAppAreaId = "gestion-productos" | "finanzas" | "estadisticas-productos";
 
 export interface MainAppAreaDefinition {
@@ -20,7 +22,7 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
     id: "gestion-productos",
     label: "Gestión Productos",
     statusLabel: "Terminada",
-    href: "/gestion-productos/proveedores",
+    href: GP_ROUTES.defaultEntry,
   },
   {
     id: "finanzas",

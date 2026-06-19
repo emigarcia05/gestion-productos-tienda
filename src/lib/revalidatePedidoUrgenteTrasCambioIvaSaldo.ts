@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import { REVALIDATE_PEDIDOS_MERCADERIA } from "@/lib/gestionProductosRoutes";
 
 /**
  * Invalida pantallas de pedido que resuelven proveedor por menor costo comparable (Posición IVA).
@@ -8,10 +9,7 @@ import { revalidatePath } from "next/cache";
  * para cubrir rutas API o llamadas que no pasen por Server Actions.
  */
 export function revalidatePedidoUrgenteTrasCambioIvaSaldo(): void {
-  revalidatePath("/pedidos/urgente");
-  revalidatePath("/pedidos/enviar");
-  revalidatePath("/pedidos/reposicion");
-  revalidatePath("/gestion-productos/pedidos/urgente");
-  revalidatePath("/gestion-productos/pedidos/generar-pedido");
-  revalidatePath("/gestion-productos/pedidos/reposicion");
+  for (const path of REVALIDATE_PEDIDOS_MERCADERIA) {
+    revalidatePath(path);
+  }
 }

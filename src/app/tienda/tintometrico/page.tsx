@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getProveedoresTintoLts } from "@/actions/tienda";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TiendaCalcTintometricoPage() {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.tintoLts)) redirect("/gestion-productos/tienda/control-stock");
+  if (!puede(rol, PERMISOS.tienda.tintoLts)) redirect(GP_ROUTES.ayudaVendedor.controlStock);
 
   const proveedores = await getProveedoresTintoLts();
   const esEditor = rol === "editor";

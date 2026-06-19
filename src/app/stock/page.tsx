@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getControlStock, type Sucursal } from "@/actions/stock";
@@ -21,7 +22,7 @@ interface Props {
 
 export default async function StockPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.stock.acceso)) redirect("/gestion-productos/proveedores");
+  if (!puede(rol, PERMISOS.stock.acceso)) redirect(GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios);
   const esEditor = rol === "editor";
 
   const {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { revalidatePath } from "next/cache";
 import { guardCompetenciaPreciosSyncEsEditor } from "@/lib/apiRouteAuth";
 import { syncCompetenciaPreciosBodySchema } from "@/lib/validations/competenciaPrecios";
@@ -169,8 +170,8 @@ export async function POST(request: Request) {
       errores: result.errores,
     });
     revalidatePath("/precios-competencia");
-    revalidatePath("/gestion-productos/precios-competencia");
-    revalidatePath("/gestion-productos/tienda/cx-px-tienda");
+    revalidatePath(GP_ROUTES.analisisPrecios.pxCompetencia);
+    revalidatePath(GP_ROUTES.analisisPrecios.pxCompetencia);
     revalidatePath("/tienda/cx-px");
     const competenciaNombre =
       parsed.data.todos === true

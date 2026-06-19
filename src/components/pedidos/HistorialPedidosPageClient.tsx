@@ -1,5 +1,6 @@
 "use client";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -267,7 +268,7 @@ export default function HistorialPedidosPageClient({
         {!showingEmpty && totalPaginas > 1 ? (
           <div className="flex justify-end pt-2 shrink-0">
             <PaginacionTabla
-              basePath="/gestion-productos/pedidos/historial"
+              basePath={GP_ROUTES.pedidoMercaderia.recepcionPedido}
               params={{
                 proveedor: proveedorId,
                 sucursal: sucursalCodigo,

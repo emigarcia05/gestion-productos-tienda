@@ -1,5 +1,6 @@
 "use client";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import ActCxButton from "@/components/tienda/ActCxButton";
@@ -91,7 +92,7 @@ export default function CompProveedoresPageClient({
           {totalPaginas > 1 && (
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
-                basePath="/gestion-productos/tienda/comp-proveedores"
+                basePath={GP_ROUTES.analisisPrecios.cxYPxTienda.cxCompra}
                 params={{ q, rubro, cxCompra, marca, proveedor, vinculado }}
                 paginaActual={paginaNum}
                 totalPaginas={totalPaginas}

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { getProveedoresMercaderia } from "@/actions/proveedores";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ListaPreciosPage() {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.proveedores.listaPrecios)) redirect("/gestion-productos/proveedores/sugeridos");
+  if (!puede(rol, PERMISOS.proveedores.listaPrecios)) redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
 
   const [proveedores, marcasRows, rubros, cotizacionUsd] = await Promise.all([
     getProveedoresMercaderia(),

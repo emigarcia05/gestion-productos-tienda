@@ -1,5 +1,6 @@
 "use client";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, RefreshCw, Users } from "lucide-react";
@@ -18,7 +19,7 @@ import type { ItemPxListasParaTabla } from "@/lib/pxListas";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
-const BASE_PATH = "/gestion-productos/tienda/cx-px-tienda";
+const BASE_PATH = GP_ROUTES.analisisPrecios.pxCompetencia;
 
 interface Props {
   items: ItemPxListasParaTabla[];

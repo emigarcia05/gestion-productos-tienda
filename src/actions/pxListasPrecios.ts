@@ -1,5 +1,7 @@
 "use server";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+
 import { revalidatePath } from "next/cache";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -13,7 +15,7 @@ import {
 } from "@/services/exportPxListasMargen.service";
 
 const PX_LISTAS_PATHS = [
-  "/gestion-productos/tienda/px-listas",
+  GP_ROUTES.analisisPrecios.cxYPxTienda.pxListas,
   "/tienda/px-listas",
 ] as const;
 

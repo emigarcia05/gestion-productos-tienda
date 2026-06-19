@@ -47,6 +47,7 @@ import SidebarMainAppArea from "@/components/shared/SidebarMainAppArea";
 import type { Rol } from "@/lib/permisos";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
+import { GP_ROUTES, getGpSidebarModule, isGpRouteActive } from "@/lib/gestionProductosRoutes";
 
 const iconClass = "h-5 w-5 shrink-0";
 
@@ -82,7 +83,7 @@ const MODULES: NavModule[] = [
     icon: <ClipboardList className={iconClass} />,
     submodules: [
       {
-        href: "/gestion-productos/pedidos/generar-pedido",
+        href: GP_ROUTES.pedidoMercaderia.generarPedido,
         label: "Generar Pedido",
         icon: <Send className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.pedidos.acceso,
@@ -92,20 +93,20 @@ const MODULES: NavModule[] = [
         icon: <ListChecks className="h-4 w-4 shrink-0" />,
         children: [
           {
-            href: "/gestion-productos/pedidos/urgente",
+            href: GP_ROUTES.pedidoMercaderia.confPedido.urgente,
             label: "Urgente",
             icon: <AlarmClock className="h-4 w-4 shrink-0 text-accent2" />,
             isUrgente: true,
             permiso: PERMISOS.pedidos.acceso,
           },
           {
-            href: "/gestion-productos/pedidos/tintometrico",
+            href: GP_ROUTES.pedidoMercaderia.confPedido.tintometrico,
             label: "Tintométrico",
             icon: <Pipette className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.pedidos.acceso,
           },
           {
-            href: "/gestion-productos/pedidos/reposicion",
+            href: GP_ROUTES.pedidoMercaderia.confPedido.reposicion,
             label: "Reposición",
             icon: <RotateCw className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.pedidos.acceso,
@@ -113,7 +114,7 @@ const MODULES: NavModule[] = [
         ],
       },
       {
-        href: "/gestion-productos/pedidos/historial",
+        href: GP_ROUTES.pedidoMercaderia.recepcionPedido,
         label: "Recepcion Pedido",
         icon: <PackageCheck className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.pedidos.acceso,
@@ -130,13 +131,13 @@ const MODULES: NavModule[] = [
         icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
         children: [
           {
-            href: "/gestion-productos/proveedores/sugeridos",
+            href: GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido,
             label: "Px. Vta. Sugerido",
             icon: <FileSearch className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.proveedores.sugeridos,
           },
           {
-            href: "/gestion-productos/tienda/calc-tintometrico",
+            href: GP_ROUTES.ayudaVendedor.pxVenta.pxTintometrico,
             label: "Px Tintométrico",
             icon: <Pipette className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.tienda.tintoLts,
@@ -144,25 +145,25 @@ const MODULES: NavModule[] = [
         ],
       },
       {
-        href: "/gestion-productos/tienda/calc-litros",
+        href: GP_ROUTES.ayudaVendedor.calcLitros,
         label: "Calc. Litros",
         icon: <Droplets className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.tienda.tintoLts,
       },
       {
-        href: "/gestion-productos/procesos",
+        href: GP_ROUTES.ayudaVendedor.procesos,
         label: "Procesos",
         icon: <ListChecks className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.procesos.acceso,
       },
       {
-        href: "/gestion-productos/cargar-gasto",
+        href: GP_ROUTES.ayudaVendedor.cargarGasto,
         label: "Cargar Gasto",
         icon: <Receipt className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.ayudaVendedor.cargarGasto,
       },
       {
-        href: "/gestion-productos/tienda/control-stock",
+        href: GP_ROUTES.ayudaVendedor.controlStock,
         label: "Control Stock",
         icon: <PackageSearch className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.stock.acceso,
@@ -179,13 +180,19 @@ const MODULES: NavModule[] = [
         icon: <Handshake className="h-4 w-4 shrink-0" />,
         children: [
           {
-            href: "/gestion-productos/proveedores/lista-precios",
+            href: GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios,
             label: "Lista Precios",
             icon: <FileSearch className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.proveedores.listaPrecios,
           },
           {
-            href: "/gestion-productos/proveedores/lista",
+            href: GP_ROUTES.analisisPrecios.listaProveedores.reglasDescuentos,
+            label: "Reglas Descuentos",
+            icon: <Percent className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.listaPrecios.acciones.gestionarReglasDescuentos,
+          },
+          {
+            href: GP_ROUTES.analisisPrecios.listaProveedores.lista,
             label: "Lista Proveedores",
             icon: <List className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.proveedores.lista,
@@ -197,13 +204,13 @@ const MODULES: NavModule[] = [
         icon: <Layers className="h-4 w-4 shrink-0" />,
         children: [
           {
-            href: "/gestion-productos/tienda/comp-proveedores",
+            href: GP_ROUTES.analisisPrecios.cxYPxTienda.cxCompra,
             label: "Cx Compra",
             icon: <Link2 className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.tienda.acceso,
           },
           {
-            href: "/gestion-productos/tienda/px-listas",
+            href: GP_ROUTES.analisisPrecios.cxYPxTienda.pxListas,
             label: "Px Listas",
             icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.cxPxTienda.acceso,
@@ -211,7 +218,7 @@ const MODULES: NavModule[] = [
         ],
       },
       {
-        href: "/gestion-productos/tienda/cx-px-tienda",
+        href: GP_ROUTES.analisisPrecios.pxCompetencia,
         label: "Px Competencia",
         icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.cxPxTienda.acceso,
@@ -221,13 +228,13 @@ const MODULES: NavModule[] = [
         icon: <FolderTree className="h-4 w-4 shrink-0" />,
         children: [
           {
-            href: "/gestion-productos/proveedores/comparacion-categorias",
+            href: GP_ROUTES.analisisPrecios.compCategorias.comparacion,
             label: "Comparacion",
             icon: <GitCompare className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.comparacionCategorias.acceso,
           },
           {
-            href: "/gestion-productos/proveedores/comparacion-categorias/categorias",
+            href: GP_ROUTES.analisisPrecios.compCategorias.categorias,
             label: "Categorias",
             icon: <FolderTree className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.comparacionCategorias.editar,
@@ -318,115 +325,13 @@ const FINANZAS_MODULES: NavModule[] = [
 function getOpenModule(pathname: string): SidebarModuleId {
   if (pathname.startsWith("/finanzas/balance")) return "balance";
   if (pathname.startsWith("/finanzas")) return "finanzas-main";
-  if (pathname.startsWith("/gestion-productos/pedidos") || pathname.startsWith("/pedidos")) return "pedidos";
-  if (
-    pathname.startsWith("/gestion-productos/tienda/calc-tintometrico") ||
-    pathname.startsWith("/gestion-productos/tienda/calc-litros") ||
-    pathname.startsWith("/gestion-productos/tienda/control-stock") ||
-    pathname.startsWith("/tienda/tintometrico") ||
-    pathname.startsWith("/tienda/litros") ||
-    pathname.startsWith("/tienda/tinto-lts") ||
-    pathname.startsWith("/stock") ||
-    pathname === "/gestion-productos/proveedores/sugeridos" ||
-    pathname === "/proveedores/sugeridos" ||
-    pathname.startsWith("/gestion-productos/procesos") ||
-    pathname.startsWith("/procesos") ||
-    pathname.startsWith("/gestion-productos/cargar-gasto") ||
-    pathname.startsWith("/cargar-gasto")
-  ) {
-    return "ayuda-vendedor";
-  }
-  if (
-    pathname.startsWith("/gestion-productos/tienda/comp-proveedores") ||
-    pathname.startsWith("/gestion-productos/tienda/cx-px-tienda") ||
-    pathname.startsWith("/gestion-productos/tienda/px-listas") ||
-    pathname === "/gestion-productos/tienda" ||
-    pathname.startsWith("/tienda/comp-proveedores") ||
-    pathname.startsWith("/tienda/cx-px") ||
-    pathname.startsWith("/tienda/px-listas") ||
-    pathname === "/tienda" ||
-    pathname.startsWith("/gestion-productos/precios-competencia") ||
-    pathname.startsWith("/precios-competencia") ||
-    pathname.startsWith("/gestion-productos/proveedores/competencia-precios") ||
-    pathname.startsWith("/proveedores/competencia-precios") ||
-    pathname.startsWith("/gestion-productos/proveedores/comparacion-categorias") ||
-    pathname.startsWith("/proveedores/comparacion-categorias") ||
-    pathname.startsWith("/gestion-productos/proveedores/lista-precios") ||
-    pathname.startsWith("/proveedores/lista-precios") ||
-    pathname.startsWith("/gestion-productos/proveedores/lista") ||
-    pathname.startsWith("/proveedores/lista") ||
-    pathname === "/gestion-productos/proveedores" ||
-    pathname === "/proveedores"
-  ) {
-    return "analisis-precios";
-  }
-  return "pedidos";
+  return getGpSidebarModule(pathname);
 }
 
 function isSubmoduleActive(pathname: string, href: string): boolean {
-  if (href === "/gestion-productos/proveedores/sugeridos") return pathname === "/gestion-productos/proveedores/sugeridos" || pathname === "/proveedores/sugeridos";
-  if (href === "/gestion-productos/proveedores/lista-precios") {
-    return (
-      pathname === "/gestion-productos/proveedores/lista-precios" ||
-      pathname === "/proveedores/lista-precios"
-    );
+  if (href.startsWith("/gestion-productos")) {
+    return isGpRouteActive(pathname, href);
   }
-  if (href === "/gestion-productos/proveedores/comparacion-categorias/categorias")
-    return (
-      pathname === "/gestion-productos/proveedores/comparacion-categorias/categorias" ||
-      pathname === "/proveedores/comparacion-categorias/categorias"
-    );
-  if (href === "/gestion-productos/proveedores/comparacion-categorias")
-    return (
-      (pathname === "/gestion-productos/proveedores/comparacion-categorias" ||
-        pathname === "/proveedores/comparacion-categorias") &&
-      !pathname.endsWith("/categorias")
-    );
-  if (href === "/gestion-productos/proveedores") return pathname === "/gestion-productos/proveedores" || pathname === "/proveedores" || pathname === "/";
-  if (href === "/gestion-productos/proveedores/lista") return pathname === "/gestion-productos/proveedores/lista" || pathname === "/proveedores/lista";
-  if (href === "/gestion-productos/tienda/px-listas")
-    return (
-      pathname === "/gestion-productos/tienda/px-listas" ||
-      pathname.startsWith("/tienda/px-listas")
-    );
-  if (href === "/gestion-productos/tienda/cx-px-tienda")
-    return (
-      pathname === "/gestion-productos/tienda/cx-px-tienda" ||
-      pathname.startsWith("/tienda/cx-px") ||
-      pathname === "/gestion-productos/precios-competencia" ||
-      pathname === "/precios-competencia" ||
-      pathname === "/gestion-productos/proveedores/competencia-precios" ||
-      pathname === "/proveedores/competencia-precios"
-    );
-  if (href === "/gestion-productos/pedidos/generar-pedido")
-    return (
-      pathname === "/gestion-productos/pedidos/generar-pedido" || pathname === "/pedidos/enviar"
-    );
-  if (href === "/gestion-productos/pedidos/urgente")
-    return pathname === "/gestion-productos/pedidos/urgente" || pathname === "/pedidos/urgente";
-  if (href === "/gestion-productos/pedidos/tintometrico")
-    return (
-      pathname === "/gestion-productos/pedidos/tintometrico" || pathname === "/pedidos/tintometrico"
-    );
-  if (href === "/gestion-productos/pedidos/reposicion")
-    return pathname === "/gestion-productos/pedidos/reposicion" || pathname === "/pedidos/reposicion";
-  if (href === "/gestion-productos/pedidos/historial")
-    return pathname === "/gestion-productos/pedidos/historial" || pathname === "/pedidos/historial";
-  if (href === "/gestion-productos/tienda/calc-tintometrico")
-    return (
-      pathname === "/gestion-productos/tienda/calc-tintometrico" ||
-      pathname === "/tienda/tintometrico" ||
-      pathname === "/tienda/tinto-lts"
-    );
-  if (href === "/gestion-productos/tienda/calc-litros")
-    return pathname === "/gestion-productos/tienda/calc-litros" || pathname === "/tienda/litros";
-  if (href === "/gestion-productos/procesos")
-    return pathname === "/gestion-productos/procesos" || pathname === "/procesos";
-  if (href === "/gestion-productos/cargar-gasto")
-    return pathname === "/gestion-productos/cargar-gasto" || pathname === "/cargar-gasto";
-  if (href === "/gestion-productos/tienda/comp-proveedores")
-    return pathname === "/gestion-productos/tienda/comp-proveedores" || pathname === "/tienda";
-  if (href === "/gestion-productos/tienda/control-stock") return pathname === "/gestion-productos/tienda/control-stock" || pathname === "/stock";
   if (href === "/finanzas/tesoreria")
     return pathname === "/finanzas/tesoreria" || pathname === "/finanzas";
   if (href === "/finanzas/deuda-proveedores") return pathname === "/finanzas/deuda-proveedores";

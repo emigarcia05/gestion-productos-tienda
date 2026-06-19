@@ -24,14 +24,10 @@ export type {
   CatalogosReglasDescuentosListaPrecio,
 } from "@/services/descuentosListaPrecioReglas.service";
 
-const PATHS_REVALIDAR = [
-  "/proveedores/lista-precios",
-  "/proveedores/lista-precios/reglas-descuentos",
-  "/proveedores",
-] as const;
+import { REVALIDATE_LISTA_PRECIOS } from "@/lib/gestionProductosRoutes";
 
 function revalidarListaPrecios(): void {
-  for (const path of PATHS_REVALIDAR) {
+  for (const path of REVALIDATE_LISTA_PRECIOS) {
     revalidatePath(path);
   }
 }

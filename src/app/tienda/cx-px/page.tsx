@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { getPxListasPageData } from "@/actions/pxListas";
 import { esFiltroPxPromedioPxListas } from "@/lib/pxListasFiltros";
 import type { FiltroPxPromedioPxListas } from "@/lib/pxListasFiltros";
@@ -21,7 +22,7 @@ interface Props {
 export default async function PxListasPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
-    redirect("/gestion-productos/proveedores/sugeridos");
+    redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
   }
 
   const sp = await searchParams;

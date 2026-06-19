@@ -1,5 +1,6 @@
 "use client";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { useRef, useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaStock from "@/components/stock/TablaStock";
@@ -97,7 +98,7 @@ export default function StockPageWithActions({
           {tieneSucursal && data.totalPaginas > 1 && (
             <div className="flex justify-end pt-2 shrink-0">
               <PaginacionTabla
-                basePath="/gestion-productos/tienda/control-stock"
+                basePath={GP_ROUTES.ayudaVendedor.controlStock}
                 params={paramsPagina}
                 paginaActual={paginaNum}
                 totalPaginas={data.totalPaginas}

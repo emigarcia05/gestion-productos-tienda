@@ -1,5 +1,6 @@
 "use client";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import FiltrosPxListasPrecios from "@/components/px-listas-precios/FiltrosPxListasPrecios";
@@ -9,7 +10,7 @@ import { PAGE_SIZE } from "@/lib/pagination";
 import type { ItemPxListasPreciosTabla, ListaPrecioPxListasColumna } from "@/lib/pxListasPrecios";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
-const BASE_PATH = "/gestion-productos/tienda/px-listas";
+const BASE_PATH = GP_ROUTES.analisisPrecios.cxYPxTienda.pxListas;
 
 interface Props {
   items: ItemPxListasPreciosTabla[];

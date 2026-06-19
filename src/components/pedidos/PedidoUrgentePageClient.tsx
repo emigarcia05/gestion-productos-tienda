@@ -1,5 +1,6 @@
 "use client";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { useEffect, useMemo, useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
@@ -255,7 +256,7 @@ export default function PedidoUrgentePageClient({
         {!sinFiltros && sucursalValida && totalPaginas > 1 ? (
           <div className="flex justify-end pt-2 shrink-0">
             <PaginacionTabla
-              basePath="/gestion-productos/pedidos/urgente"
+              basePath={GP_ROUTES.pedidoMercaderia.confPedido.urgente}
               params={{
                 sucursal: sucursalValida,
                 proveedor,

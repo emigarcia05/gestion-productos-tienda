@@ -1,5 +1,6 @@
 "use client";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { useState } from "react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosReposicion from "@/components/pedidos/FiltrosReposicion";
@@ -85,7 +86,7 @@ export default function ReposicionPageClient({
         {tieneSucursal && data.totalPaginas > 1 && (
           <div className="flex justify-end pt-2 shrink-0">
             <PaginacionTabla
-              basePath="/gestion-productos/pedidos/reposicion"
+              basePath={GP_ROUTES.pedidoMercaderia.confPedido.reposicion}
               params={paramsPagina}
               paginaActual={paginaNum}
               totalPaginas={data.totalPaginas}

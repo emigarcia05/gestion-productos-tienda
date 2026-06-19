@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance.service";
@@ -16,7 +17,7 @@ function clampAnio(a: number): number {
 export default async function BalanceIndexPage() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    redirect("/gestion-productos/proveedores/sugeridos");
+    redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
   }
   const { mes, anio: anioRaw } = mesAnioCalendarioArgentina();
   const anio = clampAnio(anioRaw);

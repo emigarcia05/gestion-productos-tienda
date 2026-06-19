@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 
 export const dynamic = "force-dynamic";
 
 export default function GenerarPedidoPage() {
-  redirect("/gestion-productos/pedidos/historial");
+  redirect(GP_ROUTES.pedidoMercaderia.recepcionPedido);
 }

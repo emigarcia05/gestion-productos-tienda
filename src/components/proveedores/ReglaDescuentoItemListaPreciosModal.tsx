@@ -4,14 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { fmtPorcentajeTabla } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   labelCampoReglaDescuento,
   lineasCondicionReglaDescuento,
 } from "@/lib/descuentosListaPrecioReglasUi";
 import type { DescuentoActivoListaPrecio } from "@/services/listaPrecios.service";
 
-/** Sangría de líneas 2+ bajo el prefijo `CONDICION:` del modal detalle. */
-const CONDICION_DETALLE_INDENT_CLASS = "pl-[5.75rem]";
+/** Sangría de líneas 2+ para alinear dimensiones bajo la primera. */
+const CONDICION_DETALLE_INDENT_CLASS = "pl-[5.25rem]";
 
 function CondicionesReglaDetalle({
   regla,
@@ -27,17 +28,11 @@ function CondicionesReglaDetalle({
   return (
     <div className="space-y-0.5 text-sm leading-snug">
       {lineas.map((linea, index) => (
-        <p key={linea.dimension} className="text-foreground">
-          {index === 0 ? (
-            <>
-              <span className="font-medium">CONDICION:</span> {linea.dimension} = &quot;
-              {linea.valor}&quot;
-            </>
-          ) : (
-            <span className={CONDICION_DETALLE_INDENT_CLASS}>
-              {linea.dimension} = &quot;{linea.valor}&quot;
-            </span>
-          )}
+        <p
+          key={linea.dimension}
+          className={index === 0 ? "text-foreground" : cn(CONDICION_DETALLE_INDENT_CLASS, "text-foreground")}
+        >
+          {linea.dimension} = &quot;{linea.valor}&quot;
         </p>
       ))}
     </div>

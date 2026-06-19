@@ -165,6 +165,7 @@ const GP_ROUTE_ALIASES: Record<string, readonly string[]> = {
 };
 
 const PEDIDO_MERCADERIA_PREFIXES = [
+  `${GP}/pedido-mercaderia`,
   GP_ROUTES.pedidoMercaderia.generarPedido,
   `${GP}/pedido-mercaderia/conf-pedido`,
   GP_ROUTES.pedidoMercaderia.recepcionPedido,
@@ -174,7 +175,6 @@ const PEDIDO_MERCADERIA_PREFIXES = [
 
 const AYUDA_VENDEDOR_PREFIXES = [
   `${GP}/ayuda-vendedor`,
-  GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido,
   "/gestion-productos/proveedores/sugeridos",
   "/proveedores/sugeridos",
   "/gestion-productos/tienda/calc-tintometrico",

@@ -1,4 +1,5 @@
 import { getEnviarPedidoData, getEnviarPedidoTablaData } from "@/actions/pedidos";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { redirect } from "next/navigation";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -42,7 +43,7 @@ interface Props {
 
 export default async function EnviarPedidoPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect("/gestion-productos/proveedores");
+  if (!puede(rol, PERMISOS.pedidos.acceso)) redirect(GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios);
 
   const { sucursal = "", proveedor = "", tipo = "", q = "" } = await searchParams;
   const sucursalesPedido = await prisma.sucursal.findMany({

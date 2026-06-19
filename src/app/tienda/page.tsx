@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { getTiendaPageData } from "@/actions/tienda";
 import CompProveedoresPageClient from "@/components/tienda/CompProveedoresPageClient";
 import { getRol } from "@/lib/sesion";
@@ -20,7 +21,7 @@ interface Props {
 
 export default async function TiendaPage({ searchParams }: Props) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acceso)) redirect("/gestion-productos/proveedores/sugeridos");
+  if (!puede(rol, PERMISOS.tienda.acceso)) redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
 
   const sp = await searchParams;
   const {

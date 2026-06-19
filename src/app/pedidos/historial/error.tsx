@@ -1,5 +1,6 @@
 "use client";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -55,7 +56,7 @@ export default function HistorialPedidosError({
             type="button"
             variant="outline"
             onClick={() => {
-              window.location.href = "/gestion-productos/proveedores";
+              window.location.href = GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios;
             }}
           >
             Volver al inicio

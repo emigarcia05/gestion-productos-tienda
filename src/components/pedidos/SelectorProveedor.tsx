@@ -1,5 +1,6 @@
 "use client";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { ChevronDown } from "lucide-react";
 
 interface Proveedor {
@@ -29,7 +30,7 @@ export default function SelectorProveedor({
   proveedores,
   proveedorActual,
   paramsActuales,
-  basePath = "/gestion-productos/pedidos/urgente",
+  basePath = GP_ROUTES.pedidoMercaderia.confPedido.urgente,
 }: Props) {
   function handleChange(value: string) {
     const url = buildHref(value, paramsActuales, basePath);

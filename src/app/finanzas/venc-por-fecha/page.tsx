@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import FinanzasVencPorFechaPageClient from "@/components/finanzas/FinanzasVencPorFechaPageClient";
 import {
   addDaysToIsoYmdArgentina,
@@ -47,7 +48,7 @@ interface Props {
 export default async function VencPorFechaPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    redirect("/gestion-productos/proveedores/sugeridos");
+    redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
   }
   const { pagina = "1" } = await searchParams;
   const paginaSolicitada = Math.max(1, parseInt(pagina, 10) || 1);

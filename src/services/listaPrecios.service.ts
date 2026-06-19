@@ -19,6 +19,9 @@ import {
   type DescuentoActivoListaPrecio,
 } from "@/services/descuentosListaPrecioReglas.service";
 import { listarRubrosOpcionesDesdeProdTienda } from "@/services/rubrosProdTienda.service";
+import {
+  esFiltroListaPreciosSinValor,
+} from "@/lib/listaPreciosFiltros";
 import type { Prisma } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { cantPedirReposicionMerc2 } from "@/services/pedidosEnvio.service";
@@ -152,6 +155,30 @@ export interface ListaPreciosFiltradaResult {
   totalPaginas: number;
 }
 
+function whereCampoTextoSinDetalle(campo: "marca" | "rubro"): Prisma.ListaPrecioProveedorWhereInput {
+  return {
+    OR: [{ [campo]: null }, { [campo]: "" }],
+  };
+}
+
+function aplicaFiltroMarcaRubro(
+  andParts: Prisma.ListaPrecioProveedorWhereInput[],
+  campo: "marca" | "rubro",
+  valor: string | undefined
+): void {
+  const v = valor?.trim();
+  if (!v) return;
+  if (esFiltroListaPreciosSinValor(v)) {
+    andParts.push(whereCampoTextoSinDetalle(campo));
+    return;
+  }
+  andParts.push({ [campo]: v });
+}
+
+function filtroMarcaRubroActivo(valor: string | undefined): boolean {
+  return !!valor?.trim();
+}
+
 export async function getListaPreciosConTiendaFiltrada(
   proveedorId: string | undefined,
   marcaNombre: string | undefined,
@@ -168,14 +195,19 @@ export async function getListaPreciosConTiendaFiltrada(
   const rubro = rubroNombre?.trim() || undefined;
   const q = busqueda?.trim() || "";
   const tieneFiltro =
-    !!prov || !!marca || !!rubro || habilitado !== undefined || vinculado !== undefined || q.length >= 3;
+    !!prov ||
+    filtroMarcaRubroActivo(marca) ||
+    filtroMarcaRubroActivo(rubro) ||
+    habilitado !== undefined ||
+    vinculado !== undefined ||
+    q.length >= 3;
   if (!tieneFiltro) return { filas: [], total: 0, totalPaginas: 0 };
 
   const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [];
   andParts.push({ proveedor: { proveedorMercaderia: true } });
   if (prov) andParts.push({ idProveedor: prov });
-  if (marca) andParts.push({ marca: marca });
-  if (rubro) andParts.push({ rubro: rubro });
+  aplicaFiltroMarcaRubro(andParts, "marca", marca);
+  aplicaFiltroMarcaRubro(andParts, "rubro", rubro);
   if (habilitado !== undefined) andParts.push({ habilitado });
   if (vinculado === true) andParts.push({ idPrecioRex: { not: null } });
   if (vinculado === false) andParts.push({ idPrecioRex: null });

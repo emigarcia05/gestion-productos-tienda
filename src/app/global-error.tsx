@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
@@ -73,7 +74,7 @@ export default function GlobalError({
               Reintentar
             </button>
             <a
-              href="/gestion-productos/proveedores"
+              href={GP_ROUTES.defaultEntry}
               className={cn(
                 "inline-flex items-center rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground no-underline"
               )}

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getTiposPinturaRendimientosAction } from "@/actions/tiposPinturaRendimientos";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TiendaCalcLitrosPage() {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.tintoLts)) redirect("/gestion-productos/tienda/control-stock");
+  if (!puede(rol, PERMISOS.tienda.tintoLts)) redirect(GP_ROUTES.ayudaVendedor.controlStock);
 
   const tiposPintura = await getTiposPinturaRendimientosAction();
   const esEditor = rol === "editor";

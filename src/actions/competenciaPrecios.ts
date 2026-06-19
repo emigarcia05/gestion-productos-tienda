@@ -1,5 +1,7 @@
 "use server";
 
+import { REVALIDATE_PX_COMPETENCIA } from "@/lib/gestionProductosRoutes";
+
 import { revalidatePath } from "next/cache";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -29,13 +31,10 @@ import {
 } from "@/services/competenciaPreciosList.service";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 
-const PATH = "/precios-competencia";
-
 function revalidateCompetenciaPreciosPaths() {
-  revalidatePath(PATH);
-  revalidatePath("/gestion-productos/precios-competencia");
-  revalidatePath("/gestion-productos/tienda/cx-px-tienda");
-  revalidatePath("/tienda/cx-px");
+  for (const path of REVALIDATE_PX_COMPETENCIA) {
+    revalidatePath(path);
+  }
 }
 
 async function gateAcceso(): Promise<{ ok: false; error: string } | null> {

@@ -1,5 +1,7 @@
 "use server";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { filtroTexto } from "@/lib/busqueda";
@@ -385,7 +387,7 @@ export async function setProductoPropioTiendaAction(
       parsed.data.esProductoPropio
     );
     revalidatePath("/tienda");
-    revalidatePath("/gestion-productos/tienda/comp-proveedores");
+    revalidatePath(GP_ROUTES.analisisPrecios.cxYPxTienda.cxCompra);
     return { ok: true, data };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "No se pudo actualizar el producto propio.";

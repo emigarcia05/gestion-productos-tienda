@@ -1,5 +1,7 @@
 "use server";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+
 import { revalidatePath } from "next/cache";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -226,6 +228,6 @@ export async function establecerCostoListaTiendaAction(
     if (!res.success) return { ok: false, error: res.error };
   }
   revalidatePath("/tienda");
-  revalidatePath("/gestion-productos/tienda/comp-proveedores");
+  revalidatePath(GP_ROUTES.analisisPrecios.cxYPxTienda.cxCompra);
   return { ok: true, data: undefined };
 }

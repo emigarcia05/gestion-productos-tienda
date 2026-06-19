@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { DollarSign, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -89,16 +89,21 @@ export default function CotizacionUsdListaPreciosControl({
     });
   }
 
-  const labelValor = `$ ${fmtCotizacion(estadoToolbar.valor)}`;
+  const labelValor = fmtCotizacion(estadoToolbar.valor);
+  const labelBoton = `US$= ${labelValor}`;
 
   if (!puedeEditar) {
     return (
-      <div className="flex items-center gap-2 shrink-0 text-sm text-muted-foreground tabular-nums">
-        <DollarSign className="h-4 w-4 shrink-0" aria-hidden />
-        <span>
-          Cot. U$S= <strong className="text-foreground">{labelValor}</strong>
-        </span>
-      </div>
+      <Button
+        type="button"
+        variant="default"
+        size="default"
+        className="btn-primario-gestion shrink-0 tabular-nums pointer-events-none"
+        tabIndex={-1}
+        aria-label={`Cotización dólar ${labelValor}`}
+      >
+        {labelBoton}
+      </Button>
     );
   }
 
@@ -107,12 +112,11 @@ export default function CotizacionUsdListaPreciosControl({
       <DialogTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           size="default"
-          className="gap-2 shrink-0 tabular-nums"
+          className="btn-primario-gestion shrink-0 tabular-nums"
         >
-          <DollarSign className="h-4 w-4 shrink-0" />
-          Cot. U$S= {labelValor}
+          {labelBoton}
         </Button>
       </DialogTrigger>
       <AppModal

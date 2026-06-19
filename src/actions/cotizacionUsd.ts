@@ -1,5 +1,7 @@
 "use server";
 
+import { REVALIDATE_LISTA_PRECIOS } from "@/lib/gestionProductosRoutes";
+
 import { revalidatePath } from "next/cache";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -13,14 +15,8 @@ import {
 
 export type { CotizacionUsdEstado } from "@/services/cotizacionUsd.service";
 
-const PATHS_REVALIDAR = [
-  "/proveedores/lista-precios",
-  "/proveedores",
-  "/gestion-productos/proveedores/lista-precios",
-] as const;
-
 function revalidarListaPrecios(): void {
-  for (const path of PATHS_REVALIDAR) {
+  for (const path of REVALIDATE_LISTA_PRECIOS) {
     revalidatePath(path);
   }
 }

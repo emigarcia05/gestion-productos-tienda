@@ -1,5 +1,7 @@
 "use server";
 
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+
 import { revalidatePath } from "next/cache";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -11,7 +13,7 @@ import {
 import * as comparacionCompetenciaService from "@/services/comparacionCompetencia.service";
 
 function revalidatePxCompetenciaPaths() {
-  revalidatePath("/gestion-productos/tienda/cx-px-tienda");
+  revalidatePath(GP_ROUTES.analisisPrecios.pxCompetencia);
   revalidatePath("/tienda/cx-px");
 }
 
