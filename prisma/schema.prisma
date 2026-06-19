@@ -92,6 +92,15 @@ model Proveedor {
   @@map("global_proveedores")
 }
 
+/** Cotización USD→ARS única para lista de precios proveedor (singleton: id = `USD`). */
+model GlobalCotizacionUsd {
+  id        String   @id
+  valor     Decimal  @db.Decimal(14, 4)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("global_cotizacion_usd")
+}
+
 /** Campo materializable en `prod_precios_provee` gobernado por reglas de descuento. */
 enum CampoReglaDescuentoListaPrecio {
   dto_proveedor
@@ -493,8 +502,9 @@ model ListaPrecioProveedor {
   codProdProveedor  String   @map("cod_prod_proveedor")
   descripcionProveedor String  @map("descripcion_proveedor")
   pxListaProveedor  Decimal  @map("px_lista_proveedor") @db.Decimal(14, 4)
-  pxDolares         Boolean  @map("px_dolares") @default(false) // mapea switch SÍ/NO del modal importar: true = precio × cotizacion_dolar
-  cotizacionDolar   Decimal  @map("cotizacion_dolar") @db.Decimal(14, 4) @default(1) // cotización USD → pesos; se usa cuando px_dolares = true
+  pxDolares         Boolean  @map("px_dolares") @default(false) // mapea switch SÍ/NO del modal importar: true = precio × cotización global USD
+  /** Caché de `global_cotizacion_usd.valor` cuando `px_dolares`; 1 si false. Solo escribe el servicio de cotización / import. */
+  cotizacionDolar   Decimal  @map("cotizacion_dolar") @db.Decimal(14, 4) @default(1)
   pxVtaSugerido     Decimal? @map("px_vta_sugerido") @db.Decimal(14, 4)
   marca             String?  // texto marca (proveedor / lista)
   rubro             String?  @map("rubro")

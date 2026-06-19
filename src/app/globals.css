@@ -429,7 +429,45 @@
     background-color: var(--muted-foreground);
     opacity: 0.45;
   }
-  /* Lista precios — sublínea «Desc. en fila»: columnas fijas alineadas entre filas. */
+  /* Lista precios — sublínea «Desc. en fila»: marca + descuentos activos (> 0) con botón de regla. */
+  .lista-precios-sublinea-descuentos {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.125rem 0.5rem;
+  }
+  .lista-precios-sublinea-marca {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .lista-precios-sublinea-descuentos-lista {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.625rem;
+  }
+  .lista-precios-sublinea-descuento-item {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.125rem;
+  }
+  .lista-precios-sublinea-descuento-valor {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.125rem;
+    white-space: nowrap;
+  }
+  .lista-precios-sublinea-regla-btn {
+    padding: 0;
+  }
+  /* Legacy: grilla fija de 7 columnas (retirada en favor de `.lista-precios-sublinea-descuentos`). */
   .lista-precios-sublinea-grid {
     display: grid;
     width: 100%;

@@ -50,7 +50,7 @@ import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
 
 const iconClass = "h-5 w-5 shrink-0";
 
-type ModuleId = "pedidos" | "ayuda-vendedor" | "proveedores" | "analisis-precios";
+type ModuleId = "pedidos" | "ayuda-vendedor" | "analisis-precios";
 type FinanzasModuleId = "balance" | "finanzas-main";
 type SidebarModuleId = ModuleId | FinanzasModuleId;
 
@@ -170,35 +170,34 @@ const MODULES: NavModule[] = [
     ],
   },
   {
-    id: "proveedores",
-    label: "LISTA PROVEEDORES",
-    icon: <Handshake className={iconClass} />,
-    submodules: [
-      {
-        href: "/gestion-productos/proveedores/lista-precios",
-        label: "Lista Precios",
-        icon: <FileSearch className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.proveedores.listaPrecios,
-      },
-      {
-        href: "/gestion-productos/proveedores/lista-precios/reglas-descuentos",
-        label: "Reglas Descuentos",
-        icon: <Percent className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.listaPrecios.acciones.gestionarReglasDescuentos,
-      },
-      {
-        href: "/gestion-productos/proveedores/lista",
-        label: "Lista Proveedores",
-        icon: <List className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.proveedores.lista,
-      },
-    ],
-  },
-  {
     id: "analisis-precios",
     label: "ANALISIS DE PRECIOS",
     icon: <LineChart className={iconClass} />,
     submodules: [
+      {
+        label: "LISTA PROVEEDORES",
+        icon: <Handshake className="h-4 w-4 shrink-0" />,
+        children: [
+          {
+            href: "/gestion-productos/proveedores/lista-precios",
+            label: "Lista Precios",
+            icon: <FileSearch className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.proveedores.listaPrecios,
+          },
+          {
+            href: "/gestion-productos/proveedores/lista-precios/reglas-descuentos",
+            label: "Reglas Descuentos",
+            icon: <Percent className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.listaPrecios.acciones.gestionarReglasDescuentos,
+          },
+          {
+            href: "/gestion-productos/proveedores/lista",
+            label: "Lista Proveedores",
+            icon: <List className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.proveedores.lista,
+          },
+        ],
+      },
       {
         label: "Cx y Px Tienda",
         icon: <Layers className="h-4 w-4 shrink-0" />,
@@ -357,11 +356,7 @@ function getOpenModule(pathname: string): SidebarModuleId {
     pathname.startsWith("/gestion-productos/proveedores/competencia-precios") ||
     pathname.startsWith("/proveedores/competencia-precios") ||
     pathname.startsWith("/gestion-productos/proveedores/comparacion-categorias") ||
-    pathname.startsWith("/proveedores/comparacion-categorias")
-  ) {
-    return "analisis-precios";
-  }
-  if (
+    pathname.startsWith("/proveedores/comparacion-categorias") ||
     pathname.startsWith("/gestion-productos/proveedores/lista-precios/reglas-descuentos") ||
     pathname.startsWith("/proveedores/lista-precios/reglas-descuentos") ||
     pathname.startsWith("/gestion-productos/proveedores/lista-precios") ||
@@ -371,7 +366,7 @@ function getOpenModule(pathname: string): SidebarModuleId {
     pathname === "/gestion-productos/proveedores" ||
     pathname === "/proveedores"
   ) {
-    return "proveedores";
+    return "analisis-precios";
   }
   return "pedidos";
 }

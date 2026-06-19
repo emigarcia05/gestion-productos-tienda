@@ -13,6 +13,11 @@ import {
   materializarDescuentosEnFila,
   materializarDescuentosEnFilas,
 } from "@/services/descuentosListaPrecioReglas.service";
+import { resolverCotizacionDolarParaItem } from "@/services/cotizacionUsd.service";
+import {
+  enriquecerFilasConDescuentosActivos,
+  type DescuentoActivoListaPrecio,
+} from "@/services/descuentosListaPrecioReglas.service";
 import { listarRubrosOpcionesDesdeProdTienda } from "@/services/rubrosProdTienda.service";
 import type { Prisma } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -35,6 +40,8 @@ export interface PrecioRexVinculoCliente {
   descripcion: string;
   precio: number;
 }
+
+export type { DescuentoActivoListaPrecio } from "@/services/descuentosListaPrecioReglas.service";
 
 export interface FilaListaPrecioParaCliente {
   id: string;
@@ -60,6 +67,8 @@ export interface FilaListaPrecioParaCliente {
   proveedor: { id: string; prefijo: string; nombre: string; codigoUnico: string } | null;
   idPrecioRex: string | null;
   precioRex: PrecioRexVinculoCliente | null;
+  /** Descuentos/costos > 0 con regla ganadora (modo «Desc. en fila»). */
+  descuentosActivos?: DescuentoActivoListaPrecio[];
 }
 
 const listaPrecioParaClienteInclude = {
@@ -210,6 +219,8 @@ export async function getListaPreciosConTiendaFiltrada(
       matchByMultiTerm([f.descripcionProveedor, f.descripcionTienda, f.marca ?? "", f.rubro ?? ""], q)
     );
   }
+
+  result = await enriquecerFilasConDescuentosActivos(result);
 
   const totalPaginas = pagina != null && total > 0 ? Math.ceil(total / pageSize) : 1;
 
@@ -426,7 +437,7 @@ export interface UpsertListaPreciosOptions {
  * Upsert de filas en prod_precios_provee.
  * Clave lógica: cod_ext (único) = [SUFIJO]-[codProdProv].
  * Si existe, actualiza; si no, crea con descuentos y cx_transporte en 0 (defaults BD).
- * precioEnDolares: mapea al switch SÍ/NO del modal; se persiste en px_dolares. Si true, cotizacion_dolar = COTIZACION_DOLAR (env) o 1.
+ * precioEnDolares: mapea al switch SÍ/NO del modal; se persiste en px_dolares. Si true, cotizacion_dolar = cotización global USD (§1.8e).
  * habilitado: mapea opción Habilitado SÍ/NO del modal importar; por defecto true.
  * marca: opcional en mapeo CSV; si no se asigna columna MARCA, no se modifica en update; si se asigna, persiste texto (vacío → null).
  */
@@ -441,7 +452,7 @@ export async function upsertListaPrecios(
   let creados = 0;
   let actualizados = 0;
   const errores: string[] = [];
-  const cotizacionDolar = precioEnDolares ? Number(process.env.COTIZACION_DOLAR ?? 1) : 1;
+  const cotizacionDolar = await resolverCotizacionDolarParaItem(precioEnDolares);
   const onProgress = options?.onProgress;
   const total = filas.length;
   const codExtsMaterializar: string[] = [];
@@ -629,7 +640,6 @@ export async function eliminarListaPrecioProveedor(
 export interface ActualizacionMasivaListaPrecios {
   marca?: string | null;
   rubro?: string | null;
-  cotizacionDolar?: number;
   pxListaProveedor?: number;
   habilitado?: boolean;
 }
@@ -648,14 +658,11 @@ export async function actualizarListaPreciosMasivo(
   const updatePayload: {
     marca?: string | null;
     rubro?: string | null;
-    cotizacionDolar?: number;
     pxListaProveedor?: number;
     habilitado?: boolean;
   } = {};
   if (data.marca !== undefined) updatePayload.marca = data.marca;
   if (data.rubro !== undefined) updatePayload.rubro = data.rubro;
-  if (data.cotizacionDolar !== undefined && data.cotizacionDolar >= 0)
-    updatePayload.cotizacionDolar = data.cotizacionDolar;
   if (data.pxListaProveedor !== undefined && data.pxListaProveedor >= 0)
     updatePayload.pxListaProveedor = data.pxListaProveedor;
   if (data.habilitado !== undefined) updatePayload.habilitado = data.habilitado;
@@ -671,10 +678,6 @@ export async function actualizarListaPreciosMasivo(
   if (updatePayload.rubro !== undefined) {
     setClauses.push(`rubro = $${params.length + 1}`);
     params.push(updatePayload.rubro ?? null);
-  }
-  if (updatePayload.cotizacionDolar !== undefined) {
-    setClauses.push(`cotizacion_dolar = $${params.length + 1}`);
-    params.push(updatePayload.cotizacionDolar);
   }
   if (updatePayload.pxListaProveedor !== undefined) {
     setClauses.push(`px_lista_proveedor = $${params.length + 1}`);

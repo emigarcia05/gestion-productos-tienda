@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEditarReglaDescuentoListaPrecioModal from "@/components/proveedores/CrearEditarReglaDescuentoListaPrecioModal";
@@ -108,24 +107,16 @@ export default function ReglasDescuentosListaPrecioPageClient() {
   }
 
   const actions = (
-    <div className="flex items-center gap-2">
-      <Button type="button" variant="outline" size="default" className="gap-2 shrink-0" asChild>
-        <Link href="/gestion-productos/proveedores/lista-precios">
-          <ArrowLeft className="h-4 w-4 shrink-0" />
-          Volver A Lista Precios
-        </Link>
-      </Button>
-      <Button
-        type="button"
-        variant="default"
-        size="default"
-        className="btn-primario-gestion gap-2 shrink-0"
-        onClick={abrirCrear}
-      >
-        <Plus className="h-4 w-4 shrink-0" />
-        Nueva Regla
-      </Button>
-    </div>
+    <Button
+      type="button"
+      variant="default"
+      size="default"
+      className="btn-primario-gestion gap-2 shrink-0"
+      onClick={abrirCrear}
+    >
+      <Plus className="h-4 w-4 shrink-0" />
+      Nueva Regla
+    </Button>
   );
 
   return (

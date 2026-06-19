@@ -1,7 +1,7 @@
 "use client";
 
-import { Fragment, useState, useEffect, useRef } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Link2, Pencil, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Link2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -43,8 +43,13 @@ import {
 import EdicionMasivaListaPreciosModal from "@/components/proveedores/EdicionMasivaListaPreciosModal";
 import VincularPrecioRexModal from "@/components/proveedores/VincularPrecioRexModal";
 import EliminarListaPrecioModal from "@/components/proveedores/EliminarListaPrecioModal";
+import SublineaDescuentosListaPrecios from "@/components/proveedores/SublineaDescuentosListaPrecios";
+import ReglaDescuentoItemListaPreciosModal from "@/components/proveedores/ReglaDescuentoItemListaPreciosModal";
 import type { ListaPreciosFiltrosExportSnapshot } from "@/components/proveedores/ExportarListaPreciosButton";
-import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
+import type {
+  DescuentoActivoListaPrecio,
+  FilaListaPrecioParaCliente,
+} from "@/services/listaPrecios.service";
 import {
   getListaPreciosConOpcionesAction,
   type ListaPreciosFiltrosLecturaInput,
@@ -81,105 +86,6 @@ const MIN_CARACTERES_BUSQUEDA = 3;
 const MENSAJE_SIN_FILTRO =
   "Aplicá un filtro (Proveedor, Marca, Rubro, Habilitado o Vinculado) o escribí al menos 3 caracteres en la búsqueda para ver productos.";
 
-const SUBFILA_DETALLE_CLASS = "tabla-fila-detalle-competencia";
-const SUBFILA_CELDA_BLOQUE_CLASS = "tabla-fila-detalle-competencia-celda";
-const SUBFILA_CELDA_HUECA_CLASS = "tabla-fila-detalle-competencia-hueca";
-
-const DESCUENTO_INLINE_ICON_CLASS = "h-2.5 w-2.5 shrink-0 opacity-80";
-
-const DESCUENTOS_FILA_ITEMS: {
-  etiquetaCorta: string;
-  label: string;
-  tipo: "descuento" | "costo";
-  getValue: (fila: FilaListaPrecioParaCliente) => number;
-}[] = [
-  { etiquetaCorta: "Prov.", label: "DESC. PROV.", tipo: "descuento", getValue: (f) => f.dtoProveedor },
-  { etiquetaCorta: "Marca", label: "DESC. MARCA", tipo: "descuento", getValue: (f) => f.dtoMarca },
-  { etiquetaCorta: "Rubro", label: "DESC. RUBRO", tipo: "descuento", getValue: (f) => f.dtoRubro },
-  { etiquetaCorta: "Cant.", label: "DESC. CANT.", tipo: "descuento", getValue: (f) => f.dtoCantidad },
-  { etiquetaCorta: "Finan.", label: "DESC. FINAN.", tipo: "descuento", getValue: (f) => f.dtoFinanciero },
-  { etiquetaCorta: "Transp.", label: "CX. TRANSP.", tipo: "costo", getValue: (f) => f.cxTransporte },
-];
-
-const DESCUENTOS_RESTAN_ITEMS = DESCUENTOS_FILA_ITEMS.filter((item) => item.tipo === "descuento");
-const COSTOS_SUMA_ITEMS = DESCUENTOS_FILA_ITEMS.filter((item) => item.tipo === "costo");
-
-function fmtValorDescuentoTabla(valor: number): string {
-  return fmtPorcentajeTabla(valor) || "—";
-}
-
-function EtiquetaDescuentoInline({
-  item,
-  valor,
-}: {
-  item: (typeof DESCUENTOS_FILA_ITEMS)[number];
-  valor: string;
-}) {
-  const Icon = item.tipo === "descuento" ? ArrowDown : ArrowUp;
-  return (
-    <span className="inline-flex w-full min-w-0 items-center justify-center gap-0.5">
-      <Icon className={DESCUENTO_INLINE_ICON_CLASS} aria-hidden />
-      <span className="truncate">{item.etiquetaCorta}</span>
-      <span className="shrink-0">{valor}</span>
-    </span>
-  );
-}
-
-function fmtItemsDescuentosTitulo(
-  items: typeof DESCUENTOS_FILA_ITEMS,
-  fila: FilaListaPrecioParaCliente
-): string {
-  return items
-    .map(({ label, getValue }) => `${label} ${fmtValorDescuentoTabla(getValue(fila))}`)
-    .join(" · ");
-}
-
-function fmtDescuentosInlineTitulo(fila: FilaListaPrecioParaCliente, marca: string): string {
-  const partes = [
-    marca,
-    fmtItemsDescuentosTitulo(DESCUENTOS_RESTAN_ITEMS, fila),
-    fmtItemsDescuentosTitulo(COSTOS_SUMA_ITEMS, fila),
-  ].filter(Boolean);
-  return partes.join(" · ");
-}
-
-function SublineaDescuentosInline({
-  fila,
-  marca,
-}: {
-  fila: FilaListaPrecioParaCliente;
-  marca: string;
-}) {
-  const titulo = fmtDescuentosInlineTitulo(fila, marca);
-
-  return (
-    <div
-      className="lista-precios-sublinea-grid celda-sublinea-tabla leading-none tabular-nums"
-      title={titulo}
-    >
-      <span className="lista-precios-sublinea-celda">{marca}</span>
-      <span className="lista-precios-sublinea-divisor" aria-hidden />
-      {DESCUENTOS_RESTAN_ITEMS.map((item) => (
-        <Fragment key={item.label}>
-          <span className="lista-precios-sublinea-celda">
-            <EtiquetaDescuentoInline
-              item={item}
-              valor={fmtValorDescuentoTabla(item.getValue(fila))}
-            />
-          </span>
-          <span className="lista-precios-sublinea-divisor" aria-hidden />
-        </Fragment>
-      ))}
-      <span className="lista-precios-sublinea-celda">
-        <EtiquetaDescuentoInline
-          item={COSTOS_SUMA_ITEMS[0]}
-          valor={fmtValorDescuentoTabla(COSTOS_SUMA_ITEMS[0].getValue(fila))}
-        />
-      </span>
-    </div>
-  );
-}
-
 function fmtPrecioTabla(n: number | null | undefined): string {
   if (n == null || Number.isNaN(n)) return "—";
   return `$${fmtPrecio(n)}`;
@@ -188,9 +94,11 @@ function fmtPrecioTabla(n: number | null | undefined): string {
 function DescripcionCelda({
   fila,
   modoDescuentosInline,
+  onVerRegla,
 }: {
   fila: FilaListaPrecioParaCliente;
   modoDescuentosInline: boolean;
+  onVerRegla: (descuento: DescuentoActivoListaPrecio, codExt: string) => void;
 }) {
   const tienda = fila.descripcionTienda?.trim() || "";
   const proveedor = fila.descripcionProveedor?.trim() || "";
@@ -199,7 +107,16 @@ function DescripcionCelda({
   const titleParts = [
     principal,
     marca,
-    modoDescuentosInline ? fmtDescuentosInlineTitulo(fila, marca) : "",
+    modoDescuentosInline
+      ? [
+          marca,
+          ...(fila.descuentosActivos ?? []).map(
+            (d) => `${d.label} ${fmtPorcentajeTabla(d.valor)}`
+          ),
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : "",
     fila.codExt,
   ].filter(Boolean);
 
@@ -210,42 +127,17 @@ function DescripcionCelda({
     >
       <div className="celda-destacado truncate text-xs font-bold leading-none">{principal}</div>
       {modoDescuentosInline ? (
-        <SublineaDescuentosInline fila={fila} marca={marca} />
+        <SublineaDescuentosListaPrecios
+          fila={fila}
+          marca={marca}
+          onVerRegla={onVerRegla}
+        />
       ) : marca ? (
         <div className="celda-sublinea-tabla truncate leading-none" title={marca}>
           {marca}
         </div>
       ) : null}
     </div>
-  );
-}
-
-function DetalleDescuentosFila({
-  fila,
-  showProveedor,
-}: {
-  fila: FilaListaPrecioParaCliente;
-  showProveedor: boolean;
-}) {
-  const marca = fila.marca?.trim() || "";
-
-  return (
-    <TableRow
-      className={cn(SUBFILA_DETALLE_CLASS, "tabla-fila-detalle-competencia--cierre", "hover:bg-transparent")}
-    >
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      {showProveedor ? (
-        <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      ) : null}
-      <TableCell
-        className={cn("celda-datos min-w-0 overflow-hidden", SUBFILA_CELDA_BLOQUE_CLASS)}
-      >
-        <SublineaDescuentosInline fila={fila} marca={marca} />
-      </TableCell>
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
-    </TableRow>
   );
 }
 
@@ -265,7 +157,10 @@ export default function ListaPreciosTablaConFiltros({
   const [filaEliminar, setFilaEliminar] = useState<FilaListaPrecioParaCliente | null>(null);
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [modoDescuentosInline, setModoDescuentosInline] = useState(false);
-  const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set());
+  const [reglaModalOpen, setReglaModalOpen] = useState(false);
+  const [reglaModalDescuento, setReglaModalDescuento] =
+    useState<DescuentoActivoListaPrecio | null>(null);
+  const [reglaModalCodExt, setReglaModalCodExt] = useState<string | undefined>(undefined);
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
   const [rubroNombre, setRubroNombre] = useState<string>("");
@@ -297,16 +192,12 @@ export default function ListaPreciosTablaConFiltros({
 
   function toggleModoDescuentosInline() {
     setModoDescuentosInline((prev) => !prev);
-    setExpandidos(new Set());
   }
 
-  function toggleDetalle(codExt: string) {
-    setExpandidos((prev) => {
-      const next = new Set(prev);
-      if (next.has(codExt)) next.delete(codExt);
-      else next.add(codExt);
-      return next;
-    });
+  function abrirReglaDescuento(descuento: DescuentoActivoListaPrecio, codExt: string) {
+    setReglaModalDescuento(descuento);
+    setReglaModalCodExt(codExt);
+    setReglaModalOpen(true);
   }
 
   useEffect(() => {
@@ -319,39 +210,38 @@ export default function ListaPreciosTablaConFiltros({
     }
   }, [hasFilterActive, proveedores, marcas]);
 
-  function reiniciarPaginaYDetalle() {
+  function reiniciarPagina() {
     setPagina(1);
-    setExpandidos(new Set());
   }
 
   function cambiarProveedor(value: string) {
     setProveedorId(value);
-    reiniciarPaginaYDetalle();
+    reiniciarPagina();
   }
 
   function cambiarMarca(value: string) {
     setMarcaNombre(value);
-    reiniciarPaginaYDetalle();
+    reiniciarPagina();
   }
 
   function cambiarRubro(value: string) {
     setRubroNombre(value);
-    reiniciarPaginaYDetalle();
+    reiniciarPagina();
   }
 
   function cambiarHabilitado(value: string) {
     setHabilitadoFilter(value);
-    reiniciarPaginaYDetalle();
+    reiniciarPagina();
   }
 
   function cambiarVinculado(value: string) {
     setVinculadoFilter(value);
-    reiniciarPaginaYDetalle();
+    reiniciarPagina();
   }
 
   function cambiarBusqueda(value: string) {
     setBusqueda(value);
-    reiniciarPaginaYDetalle();
+    reiniciarPagina();
   }
 
   useEffect(() => {
@@ -361,7 +251,6 @@ export default function ListaPreciosTablaConFiltros({
         setFilasData([]);
         setTotal(0);
         setTotalPaginas(1);
-        setExpandidos(new Set());
       });
       return;
     }
@@ -471,7 +360,6 @@ export default function ListaPreciosTablaConFiltros({
     setVinculadoFilter("");
     setBusqueda("");
     setPagina(1);
-    setExpandidos(new Set());
     setLoading(false);
   }
 
@@ -643,114 +531,93 @@ export default function ListaPreciosTablaConFiltros({
           <TableBody>
             {hasFilterActive &&
               !loading &&
-              filteredFilas.map((fila) => {
-                const expandido = expandidos.has(fila.id);
-                return (
-                  <Fragment key={fila.id}>
-                    <TableRow>
-                      <TableCell className="celda-datos celda-mono whitespace-nowrap">
-                        {fila.codExt}
-                      </TableCell>
-                      {showProveedorColumn ? (
-                        <TableCell
-                          className="celda-datos celda-mono text-center font-semibold whitespace-nowrap"
-                          title={fila.proveedor?.nombre}
-                        >
-                          {fila.proveedor?.prefijo || "—"}
-                        </TableCell>
-                      ) : null}
+              filteredFilas.map((fila) => (
+                <TableRow key={fila.id}>
+                  <TableCell className="celda-datos celda-mono whitespace-nowrap">
+                    {fila.codExt}
+                  </TableCell>
+                  {showProveedorColumn ? (
+                    <TableCell
+                      className="celda-datos celda-mono text-center font-semibold whitespace-nowrap"
+                      title={fila.proveedor?.nombre}
+                    >
+                      {fila.proveedor?.prefijo || "—"}
+                    </TableCell>
+                  ) : null}
                       <TableCell className="celda-datos min-w-0 overflow-hidden">
-                        <DescripcionCelda fila={fila} modoDescuentosInline={modoDescuentosInline} />
+                        <DescripcionCelda
+                          fila={fila}
+                          modoDescuentosInline={modoDescuentosInline}
+                          onVerRegla={abrirReglaDescuento}
+                        />
                       </TableCell>
-                      <TableCell className="celda-datos celda-numero celda-destacado text-right whitespace-nowrap">
-                        {fmtPrecioTabla(fila.pxListaProveedor)}
-                      </TableCell>
-                      <TableCell
-                        className="celda-datos celda-numero celda-destacado text-right whitespace-nowrap"
-                        title="Precio compra final sin IVA"
-                      >
-                        {fmtPrecioTabla(fila.pxCompraFinalSinIva)}
-                      </TableCell>
-                      <TableCell className="celda-datos celda-datos--accion-relleno-fila p-0">
-                        <div
-                          className={cn(
-                            TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
-                            "justify-center gap-0.5"
-                          )}
-                        >
-                          {modoDescuentosInline ? null : (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                              aria-label={expandido ? "Ocultar descuentos" : "Ver descuentos"}
-                              aria-expanded={expandido}
-                              onClick={() => toggleDetalle(fila.id)}
-                            >
-                              {expandido ? (
-                                <ChevronUp className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                              ) : (
-                                <ChevronDown className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                              )}
-                            </Button>
-                          )}
-                          {puedeEdicionMasiva ? (
-                            <>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                aria-label={`Editar ${fila.codExt}`}
-                                onClick={() => {
-                                  setFilaEdit(fila);
-                                  setEditOpen(true);
-                                }}
-                              >
-                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                aria-label={
-                                  fila.precioRex
-                                    ? `Cambiar vínculo REX de ${fila.codExt}`
-                                    : `Vincular REX a ${fila.codExt}`
-                                }
-                                onClick={() => {
-                                  setFilaVincular(fila);
-                                  setVincularOpen(true);
-                                }}
-                              >
-                                <Link2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                aria-label={`Eliminar ${fila.codExt}`}
-                                onClick={() => {
-                                  setFilaEliminar(fila);
-                                  setEliminarOpen(true);
-                                }}
-                              >
-                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                              </Button>
-                            </>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {expandido && !modoDescuentosInline ? (
-                      <DetalleDescuentosFila fila={fila} showProveedor={showProveedorColumn} />
-                    ) : null}
-                  </Fragment>
-                );
-              })}
+                  <TableCell className="celda-datos celda-numero celda-destacado text-right whitespace-nowrap">
+                    {fmtPrecioTabla(fila.pxListaProveedor)}
+                  </TableCell>
+                  <TableCell
+                    className="celda-datos celda-numero celda-destacado text-right whitespace-nowrap"
+                    title="Precio compra final sin IVA"
+                  >
+                    {fmtPrecioTabla(fila.pxCompraFinalSinIva)}
+                  </TableCell>
+                  <TableCell className="celda-datos celda-datos--accion-relleno-fila p-0">
+                    <div
+                      className={cn(
+                        TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+                        "justify-center gap-0.5"
+                      )}
+                    >
+                      {puedeEdicionMasiva ? (
+                        <>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            aria-label={`Editar ${fila.codExt}`}
+                            onClick={() => {
+                              setFilaEdit(fila);
+                              setEditOpen(true);
+                            }}
+                          >
+                            <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            aria-label={
+                              fila.precioRex
+                                ? `Cambiar vínculo REX de ${fila.codExt}`
+                                : `Vincular REX a ${fila.codExt}`
+                            }
+                            onClick={() => {
+                              setFilaVincular(fila);
+                              setVincularOpen(true);
+                            }}
+                          >
+                            <Link2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            aria-label={`Eliminar ${fila.codExt}`}
+                            onClick={() => {
+                              setFilaEliminar(fila);
+                              setEliminarOpen(true);
+                            }}
+                          >
+                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                          </Button>
+                        </>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
             {(!hasFilterActive || loading || filteredFilas.length === 0) && (
               <TableRow>
                 <TableCell
@@ -815,6 +682,19 @@ export default function ListaPreciosTablaConFiltros({
           />
         </>
       )}
+
+      <ReglaDescuentoItemListaPreciosModal
+        open={reglaModalOpen}
+        onOpenChange={(next) => {
+          setReglaModalOpen(next);
+          if (!next) {
+            setReglaModalDescuento(null);
+            setReglaModalCodExt(undefined);
+          }
+        }}
+        descuento={reglaModalDescuento}
+        codExt={reglaModalCodExt}
+      />
 
       <div className="flex items-center justify-between gap-2 py-1.5 px-1 border-t bg-gris rounded-b-lg shrink-0">
         <span className="text-sm text-muted-foreground tabular-nums">

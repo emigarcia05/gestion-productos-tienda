@@ -231,6 +231,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Dominio | Modelo Prisma | Tabla SQL |
 |--------|----------------|-----------|
 | Global | `Proveedor` | `global_proveedores` |
+| Global | `GlobalCotizacionUsd` | `global_cotizacion_usd` |
 | Global | `Sucursal` | `global_sucursales` |
 | Global | `GlobalPersonal` | `global_personal` |
 | Finanzas | `ComprobanteProveedor` | `fin_compras_comprobante` |
@@ -338,7 +339,8 @@ Por cada ítem (`id_proveedor`, `marca` texto, `rubro` texto) y cada `campo`:
 #### Servicio y hooks
 
 - **Servicio:** `@/services/descuentosListaPrecioReglas.service.ts`
-  - `resolverDescuentosParaItem`, `materializarDescuentosEnFila`, `materializarDescuentosEnFilas`, `recalcularTodasLasFilas`, `recalcularFilasAfectadasPorRegla` (v1: recalcula **todas** las filas), `validarReglaSinConflicto`, CRUD interno + `listarCatalogosReglasDescuentos`.
+  - `resolverDescuentosParaItem`, `resolverReglaGanadoraCampo` (interno), `resolverDescuentosActivosParaItem`, `enriquecerFilasConDescuentosActivos`, `materializarDescuentosEnFila`, `materializarDescuentosEnFilas`, `recalcularTodasLasFilas`, `recalcularFilasAfectadasPorRegla` (v1: recalcula **todas** las filas), `validarReglaSinConflicto`, CRUD interno + `listarCatalogosReglasDescuentos`.
+- **Lecturas lista precios (modo Desc. en fila):** `getListaPreciosConTiendaFiltrada` enriquece cada `FilaListaPrecioParaCliente` con `descuentosActivos` (solo valores &gt; 0 + `ReglaDescuentoAplicadaResumen` de la regla ganadora por campo).
 - **Hooks obligatorios:**
   - `upsertListaPrecios` / `crearProductoListaPrecio` → materializar filas afectadas tras alta/import.
   - `actualizarListaPreciosMasivo` → si cambia `marca` o `rubro`, re-materializar esas filas.
@@ -390,6 +392,24 @@ interface ReglaDescuentoListaPrecio {
 Ítem P1 + marca texto = `M1.nombre` → `dto_marca` materializado = **18** (regla P1+M1 gana sobre solo M1).
 
 **Lecturas lista precios:** `FilaListaPrecioParaCliente` sigue exponiendo `dtoProveedor`, `dtoMarca`, `dtoRubro`, `dtoCantidad`, `dtoFinanciero`, `cxTransporte`, `pxCompraFinalSinIva` como **solo lectura** (caché del motor). **`prod_comp_dto_extra`** no se modifica (override solo Comp. Categorías).
+
+### 1.8e Cotización USD única (`global_cotizacion_usd`)
+
+**Regla de negocio:** un solo tipo de cambio USD→ARS para toda la app. El operador define el valor **una vez**; los ítems con `px_dolares = true` usan siempre esa cotización. **No** se edita cotización por ítem ni edición masiva.
+
+| Pieza | Implementación |
+|-------|----------------|
+| **Fuente de verdad** | `global_cotizacion_usd` — PK fija `id = 'USD'`, `valor DECIMAL(14,4)`, `updated_at`. Migración `20260619130000_global_cotizacion_usd`. |
+| **Caché por ítem** | `prod_precios_provee.cotizacion_dolar` — escrita por `cotizacionUsd.service` / import; `1` si `px_dolares = false`. Mantiene compatibilidad con `px_compra_final_sin_iva` GENERATED. |
+| **Servicio** | `@/services/cotizacionUsd.service.ts` — `getCotizacionUsd`, `getCotizacionUsdEstado`, `resolverCotizacionDolarParaItem`, `actualizarCotizacionUsd` (propaga a `WHERE px_dolares = true`). |
+| **Actions** | `@/actions/cotizacionUsd.ts` — `getCotizacionUsdAction`, `actualizarCotizacionUsdAction`. Gate mutación: `PERMISOS.listaPrecios.acciones.gestionarCotizacionUsd` + `esEditor()`. Lectura: lista precios / import. |
+| **Import** | `upsertListaPrecios` usa `resolverCotizacionDolarParaItem(precioEnDolares)` (ya no `process.env.COTIZACION_DOLAR`). |
+| **ENV** | `COTIZACION_DOLAR` solo fallback si la fila `USD` no existe al primer `getCotizacionUsd()`. Ver `.env.example`. |
+| **UI** | `CotizacionUsdListaPreciosControl` en toolbar lista-precios; retirado campo cotización de `EdicionMasivaListaPreciosModal`. |
+
+**Validación:** `@/lib/validations/cotizacionUsd.ts` — `actualizarCotizacionUsdSchema` (`valor` &gt; 0).
+
+**Tipo handoff UI:** `CotizacionUsdEstado` `{ valor: number; updatedAt: string }`.
 
 ### 1.9 Listado Cx Compra (`getTiendaPageData`)
 

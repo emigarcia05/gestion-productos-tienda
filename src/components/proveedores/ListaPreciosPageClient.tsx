@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Percent } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import ImportarListaPreciosModal from "@/components/proveedores/ImportarListaPreciosModal";
 import ConvertirPdfListaPreciosModal from "@/components/proveedores/ConvertirPdfListaPreciosModal";
@@ -13,7 +11,8 @@ import ExportarListaPreciosButton, {
   type ListaPreciosFiltrosExportSnapshot,
 } from "@/components/proveedores/ExportarListaPreciosButton";
 import ListaPreciosTablaConFiltros from "@/components/proveedores/ListaPreciosTablaConFiltros";
-import { Button } from "@/components/ui/button";
+import CotizacionUsdListaPreciosControl from "@/components/proveedores/CotizacionUsdListaPreciosControl";
+import type { CotizacionUsdEstado } from "@/actions/cotizacionUsd";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
 interface ProveedorParaCliente {
@@ -38,6 +37,7 @@ interface Props {
   marcas: MarcaOption[];
   rubros: RubroOption[];
   rol: Rol;
+  cotizacionUsd: CotizacionUsdEstado;
 }
 
 export default function ListaPreciosPageClient({
@@ -45,6 +45,7 @@ export default function ListaPreciosPageClient({
   marcas,
   rubros,
   rol,
+  cotizacionUsd,
 }: Props) {
   const router = useRouter();
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -70,18 +71,21 @@ export default function ListaPreciosPageClient({
   const p = PERMISOS.listaPrecios;
   const puedeImportar = puede(rol, p.acciones.importarLista);
   const puedeEdicionMasiva = puede(rol, p.acciones.edicionMasiva);
-  const puedeGestionarReglas = puede(rol, p.acciones.gestionarReglasDescuentos);
+  const puedeGestionarCotizacion = puede(rol, p.acciones.gestionarCotizacionUsd);
+  const puedeVerCotizacion =
+    puedeGestionarCotizacion ||
+    puedeImportar ||
+    puede(rol, PERMISOS.proveedores.listaPrecios);
 
   const actions =
-    puedeImportar || puedeEdicionMasiva || puedeGestionarReglas ? (
+    puedeImportar || puedeEdicionMasiva || puedeVerCotizacion ? (
       <div className="flex items-center gap-2">
-        {puedeGestionarReglas && (
-          <Button type="button" variant="outline" size="default" className="gap-2 shrink-0" asChild>
-            <Link href="/gestion-productos/proveedores/lista-precios/reglas-descuentos">
-              <Percent className="h-4 w-4 shrink-0" />
-              Reglas Descuentos
-            </Link>
-          </Button>
+        {puedeVerCotizacion && (
+          <CotizacionUsdListaPreciosControl
+            puedeEditar={puedeGestionarCotizacion}
+            estadoInicial={cotizacionUsd}
+            onActualizada={handleEdicionSuccess}
+          />
         )}
         {puedeImportar && (
           <>
@@ -91,7 +95,7 @@ export default function ListaPreciosPageClient({
               marcas={marcas}
               onSuccess={handleEdicionSuccess}
             />
-            <ImportarListaPreciosModal proveedores={proveedores} />
+            <ImportarListaPreciosModal proveedores={proveedores} cotizacionUsd={cotizacionUsd.valor} />
             <ConvertirPdfListaPreciosModal proveedores={proveedores} />
           </>
         )}

@@ -147,12 +147,12 @@ function reglaMatcheaItem(
   return true;
 }
 
-function resolverValorCampo(
+function resolverReglaGanadoraCampo(
   campo: CampoReglaDescuentoListaPrecio,
   item: ItemParaResolverDescuentos,
   reglasPorCampo: Map<CampoReglaDescuentoListaPrecio, ReglaInterna[]>,
   catalogos: CatalogosResolver
-): number {
+): ReglaInterna | null {
   const reglas = reglasPorCampo.get(campo) ?? [];
   let mejor: ReglaInterna | null = null;
   let mejorEspecificidad = -1;
@@ -166,7 +166,201 @@ function resolverValorCampo(
     }
   }
 
-  return mejor ? clampPercent(mejor.valor) : 0;
+  return mejor;
+}
+
+function resolverValorCampo(
+  campo: CampoReglaDescuentoListaPrecio,
+  item: ItemParaResolverDescuentos,
+  reglasPorCampo: Map<CampoReglaDescuentoListaPrecio, ReglaInterna[]>,
+  catalogos: CatalogosResolver
+): number {
+  const regla = resolverReglaGanadoraCampo(campo, item, reglasPorCampo, catalogos);
+  return regla ? clampPercent(regla.valor) : 0;
+}
+
+export interface ReglaDescuentoAplicadaResumen {
+  id: string;
+  campo: CampoReglaDescuentoListaPrecioInput;
+  valor: number;
+  idProveedor: string | null;
+  idMarca: string | null;
+  idRubro: string | null;
+  proveedorNombre: string | null;
+  marcaNombre: string | null;
+  rubroNombre: string | null;
+  especificidad: number;
+}
+
+export interface DescuentoActivoListaPrecio {
+  campo: CampoReglaDescuentoListaPrecioInput;
+  etiquetaCorta: string;
+  label: string;
+  tipo: "descuento" | "costo";
+  valor: number;
+  regla: ReglaDescuentoAplicadaResumen | null;
+}
+
+const METADATA_CAMPOS_DESCUENTO_UI = [
+  {
+    campo: "dto_proveedor" as const,
+    etiquetaCorta: "Prov.",
+    label: "DESC. PROV.",
+    tipo: "descuento" as const,
+    propiedad: "dtoProveedor" as const,
+  },
+  {
+    campo: "dto_marca" as const,
+    etiquetaCorta: "Marca",
+    label: "DESC. MARCA",
+    tipo: "descuento" as const,
+    propiedad: "dtoMarca" as const,
+  },
+  {
+    campo: "dto_rubro" as const,
+    etiquetaCorta: "Rubro",
+    label: "DESC. RUBRO",
+    tipo: "descuento" as const,
+    propiedad: "dtoRubro" as const,
+  },
+  {
+    campo: "dto_cantidad" as const,
+    etiquetaCorta: "Cant.",
+    label: "DESC. CANT.",
+    tipo: "descuento" as const,
+    propiedad: "dtoCantidad" as const,
+  },
+  {
+    campo: "dto_financiero" as const,
+    etiquetaCorta: "Finan.",
+    label: "DESC. FINAN.",
+    tipo: "descuento" as const,
+    propiedad: "dtoFinanciero" as const,
+  },
+  {
+    campo: "cx_transporte" as const,
+    etiquetaCorta: "Transp.",
+    label: "CX. TRANSP.",
+    tipo: "costo" as const,
+    propiedad: "cxTransporte" as const,
+  },
+] satisfies {
+  campo: CampoReglaDescuentoListaPrecio;
+  etiquetaCorta: string;
+  label: string;
+  tipo: "descuento" | "costo";
+  propiedad: keyof DescuentosMaterializadosItem;
+}[];
+
+function mapReglaInternaAResumen(
+  regla: ReglaInterna,
+  catalogos: CatalogosResolver,
+  proveedoresPorId: Map<string, string>
+): ReglaDescuentoAplicadaResumen {
+  return {
+    id: regla.id,
+    campo: regla.campo,
+    valor: clampPercent(regla.valor),
+    idProveedor: regla.idProveedor,
+    idMarca: regla.idMarca,
+    idRubro: regla.idRubro,
+    proveedorNombre: regla.idProveedor
+      ? (proveedoresPorId.get(regla.idProveedor) ?? null)
+      : null,
+    marcaNombre: regla.idMarca ? (catalogos.marcasPorId.get(regla.idMarca) ?? null) : null,
+    rubroNombre: regla.idRubro ? (catalogos.rubrosPorId.get(regla.idRubro) ?? null) : null,
+    especificidad: especificidadRegla(regla),
+  };
+}
+
+export function resolverDescuentosActivosParaItem(
+  item: ItemParaResolverDescuentos,
+  valores: DescuentosMaterializadosItem,
+  reglasPorCampo: Map<CampoReglaDescuentoListaPrecio, ReglaInterna[]>,
+  catalogos: CatalogosResolver,
+  proveedoresPorId: Map<string, string>
+): DescuentoActivoListaPrecio[] {
+  const activos: DescuentoActivoListaPrecio[] = [];
+
+  for (const meta of METADATA_CAMPOS_DESCUENTO_UI) {
+    const valor = valores[meta.propiedad];
+    if (!(valor > 0)) continue;
+
+    const reglaGanadora = resolverReglaGanadoraCampo(
+      meta.campo,
+      item,
+      reglasPorCampo,
+      catalogos
+    );
+
+    activos.push({
+      campo: meta.campo,
+      etiquetaCorta: meta.etiquetaCorta,
+      label: meta.label,
+      tipo: meta.tipo,
+      valor,
+      regla: reglaGanadora
+        ? mapReglaInternaAResumen(reglaGanadora, catalogos, proveedoresPorId)
+        : null,
+    });
+  }
+
+  return activos;
+}
+
+/** Resuelve descuentos activos (> 0) y la regla ganadora por campo para filas de lista precios. */
+export async function enriquecerFilasConDescuentosActivos<
+  TFila extends {
+    marca: string | null;
+    rubro: string | null;
+    proveedor: { id: string } | null;
+    dtoProveedor: number;
+    dtoMarca: number;
+    dtoRubro: number;
+    dtoCantidad: number;
+    dtoFinanciero: number;
+    cxTransporte: number;
+  },
+>(filas: TFila[]): Promise<(TFila & { descuentosActivos: DescuentoActivoListaPrecio[] })[]> {
+  if (filas.length === 0) return [];
+
+  const [reglasPorCampo, catalogos, proveedores] = await Promise.all([
+    cargarReglasAgrupadasPorCampo(),
+    cargarCatalogosResolver(),
+    prisma.proveedor.findMany({ select: { id: true, nombre: true } }),
+  ]);
+
+  const proveedoresPorId = new Map(proveedores.map((p) => [p.id, p.nombre]));
+
+  return filas.map((fila) => {
+    const idProveedor = fila.proveedor?.id;
+    if (!idProveedor) {
+      return { ...fila, descuentosActivos: [] };
+    }
+
+    const valores: DescuentosMaterializadosItem = {
+      dtoProveedor: fila.dtoProveedor,
+      dtoMarca: fila.dtoMarca,
+      dtoRubro: fila.dtoRubro,
+      dtoCantidad: fila.dtoCantidad,
+      dtoFinanciero: fila.dtoFinanciero,
+      cxTransporte: fila.cxTransporte,
+    };
+
+    const descuentosActivos = resolverDescuentosActivosParaItem(
+      {
+        idProveedor,
+        marca: fila.marca,
+        rubro: fila.rubro,
+      },
+      valores,
+      reglasPorCampo,
+      catalogos,
+      proveedoresPorId
+    );
+
+    return { ...fila, descuentosActivos };
+  });
 }
 
 export function resolverDescuentosParaItem(

@@ -1,16 +1,57 @@
 import type { CampoReglaDescuentoListaPrecioInput } from "@/lib/validations/descuentosListaPrecioReglas";
-import type { ReglaDescuentoListaPrecio } from "@/services/descuentosListaPrecioReglas.service";
 
 export const CAMPOS_REGLA_DESCUENTO_OPCIONES: {
   value: CampoReglaDescuentoListaPrecioInput;
   label: string;
+  etiquetaCorta: string;
+  tipo: "descuento" | "costo";
+  propiedadFila: keyof Pick<
+    import("@/services/descuentosListaPrecioReglas.service").DescuentosMaterializadosItem,
+    "dtoProveedor" | "dtoMarca" | "dtoRubro" | "dtoCantidad" | "dtoFinanciero" | "cxTransporte"
+  >;
 }[] = [
-  { value: "dto_proveedor", label: "DESC. PROV." },
-  { value: "dto_marca", label: "DESC. MARCA" },
-  { value: "dto_rubro", label: "DESC. RUBRO" },
-  { value: "dto_cantidad", label: "DESC. CANT." },
-  { value: "dto_financiero", label: "DESC. FINAN." },
-  { value: "cx_transporte", label: "CX. TRANSP." },
+  {
+    value: "dto_proveedor",
+    label: "DESC. PROV.",
+    etiquetaCorta: "Prov.",
+    tipo: "descuento",
+    propiedadFila: "dtoProveedor",
+  },
+  {
+    value: "dto_marca",
+    label: "DESC. MARCA",
+    etiquetaCorta: "Marca",
+    tipo: "descuento",
+    propiedadFila: "dtoMarca",
+  },
+  {
+    value: "dto_rubro",
+    label: "DESC. RUBRO",
+    etiquetaCorta: "Rubro",
+    tipo: "descuento",
+    propiedadFila: "dtoRubro",
+  },
+  {
+    value: "dto_cantidad",
+    label: "DESC. CANT.",
+    etiquetaCorta: "Cant.",
+    tipo: "descuento",
+    propiedadFila: "dtoCantidad",
+  },
+  {
+    value: "dto_financiero",
+    label: "DESC. FINAN.",
+    etiquetaCorta: "Finan.",
+    tipo: "descuento",
+    propiedadFila: "dtoFinanciero",
+  },
+  {
+    value: "cx_transporte",
+    label: "CX. TRANSP.",
+    etiquetaCorta: "Transp.",
+    tipo: "costo",
+    propiedadFila: "cxTransporte",
+  },
 ];
 
 export function labelCampoReglaDescuento(
@@ -19,7 +60,14 @@ export function labelCampoReglaDescuento(
   return CAMPOS_REGLA_DESCUENTO_OPCIONES.find((o) => o.value === campo)?.label ?? campo;
 }
 
-export function fmtCondicionesReglaDescuento(regla: ReglaDescuentoListaPrecio): string {
+export function fmtCondicionesReglaDescuento(regla: {
+  idProveedor?: string | null;
+  idMarca?: string | null;
+  idRubro?: string | null;
+  proveedorNombre?: string | null;
+  marcaNombre?: string | null;
+  rubroNombre?: string | null;
+}): string {
   const partes: string[] = [];
   if (regla.idProveedor) {
     partes.push(regla.proveedorNombre ?? "PROVEEDOR");
@@ -30,5 +78,5 @@ export function fmtCondicionesReglaDescuento(regla: ReglaDescuentoListaPrecio): 
   if (regla.idRubro) {
     partes.push(regla.rubroNombre ?? "RUBRO");
   }
-  return partes.length > 0 ? partes.join(" + ") : "—";
+  return partes.length > 0 ? partes.join(" + ") : "TODOS";
 }

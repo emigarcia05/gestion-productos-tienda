@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import MontoArInput from "@/components/shared/MontoArInput";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -97,14 +96,6 @@ function isFilaMode(props: Props): props is FilaProps {
   return props.mode === "fila";
 }
 
-function parsePxListaProveedor(value: string): number | undefined {
-  const trimmed = value.trim();
-  if (trimmed === "") return undefined;
-  const n = Number(trimmed.replace(",", "."));
-  if (!Number.isFinite(n) || n < 0) return undefined;
-  return Math.round(n);
-}
-
 export default function EdicionMasivaListaPreciosModal(props: Props) {
   const { marcas, rubros, onSuccess } = props;
   const filaMode = isFilaMode(props);
@@ -116,7 +107,6 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   const [pending, setPending] = useState(false);
   const [marcaNombre, setMarcaNombre] = useState("");
   const [rubroNombre, setRubroNombre] = useState("");
-  const [cotizacionDolar, setCotizacionDolar] = useState("");
   const [pxListaProveedorNorm, setPxListaProveedorNorm] = useState("");
   const filaActual = filaMode ? props.fila : null;
 
@@ -134,14 +124,12 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     if (!filaMode || !open || !filaActual) return;
     setMarcaNombre(filaActual.marca ?? "");
     setRubroNombre(filaActual.rubro ?? "");
-    setCotizacionDolar("");
     setPxListaProveedorNorm(montoArNumberToNormalizedString(Number(filaActual.pxListaProveedor) || 0));
   }, [filaMode, open, filaActual]);
 
   function resetForm() {
     setMarcaNombre("");
     setRubroNombre("");
-    setCotizacionDolar("");
     setPxListaProveedorNorm("");
   }
 
@@ -149,9 +137,6 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     const data: ActualizacionMasivaListaPrecios = {};
     if (marcaNombre) data.marca = marcaNombre;
     if (rubroNombre) data.rubro = rubroNombre;
-
-    const cotizacion = parsePxListaProveedor(cotizacionDolar);
-    if (cotizacion !== undefined) data.cotizacionDolar = cotizacion;
 
     if (filaMode) {
       const norm = pxListaProveedorNorm.trim();
@@ -269,21 +254,6 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
               ))}
             </SelectContent>
           </Select>
-        </ModalFormRow>
-
-        <ModalFormDivider />
-
-        <ModalFormRow id="cotizacionDolar" label="COTIZACIÓN DÓLAR">
-          <Input
-            id="cotizacionDolar"
-            type="number"
-            min={1}
-            step={1}
-            placeholder="—"
-            value={cotizacionDolar}
-            onChange={(e) => setCotizacionDolar(e.target.value)}
-            className={INPUT_CONTROL_CLASS}
-          />
         </ModalFormRow>
       </div>
     </div>

@@ -37,6 +37,7 @@ interface Proveedor {
 
 interface Props {
   proveedores: Proveedor[];
+  cotizacionUsd: number;
 }
 
 type CampoDestinoListaPrecios =
@@ -57,7 +58,7 @@ const CAMPOS: { value: CampoDestinoListaPrecios; label: string; required: boolea
   { value: "ignorar", label: "IGNORAR / (SIN ASIGNAR)", required: false },
 ];
 
-export default function ImportarListaPreciosModal({ proveedores }: Props) {
+export default function ImportarListaPreciosModal({ proveedores, cotizacionUsd }: Props) {
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [proveedorId, setProveedorId] = useState("");
@@ -266,6 +267,15 @@ export default function ImportarListaPreciosModal({ proveedores }: Props) {
               {/* Fila 4: Precio en dólares — SÍ / NO */}
               <span className="text-sm font-medium text-foreground min-w-0 truncate">PRECIO EN DÓLARES</span>
               <ModalSiNoChoice value={precioEnDolares} onChange={setPrecioEnDolares} />
+              {precioEnDolares && (
+                <p className="col-span-2 text-xs text-muted-foreground">
+                  Se aplicará la cotización global vigente:{" "}
+                  <strong className="text-foreground tabular-nums">
+                    $ {cotizacionUsd.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                  </strong>
+                  . Editá el valor en <strong className="text-foreground">Cotiz. US$</strong> en la barra de acciones.
+                </p>
+              )}
             </div>
 
             {/* Zona de arrastre cuando no hay archivo (opcional, para drag & drop) */}
