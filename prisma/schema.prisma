@@ -86,9 +86,54 @@ model Proveedor {
   finTesoreriaChequesPago FinTesoreriaCheque[]
   competenciasPrecios ProdCompetencia[]
   preciosRex          ProdPrecioRex[]
+  reglasDescuentosListaPrecio ProdPrecioProveeRegla[]
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
   @@map("global_proveedores")
+}
+
+/** Campo materializable en `prod_precios_provee` gobernado por reglas de descuento. */
+enum CampoReglaDescuentoListaPrecio {
+  dto_proveedor
+  dto_marca
+  dto_rubro
+  dto_cantidad
+  dto_financiero
+  cx_transporte
+}
+
+/** Catálogo de rubros para condiciones de reglas de descuento en lista de precios proveedor. */
+model ProdRubroLista {
+  id        String   @id @default(cuid())
+  nombre    String   @unique(map: "prod_rubros_lista_nombre_key")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  reglasDescuentos ProdPrecioProveeRegla[]
+
+  @@map("prod_rubros_lista")
+}
+
+/** Regla de descuento/cx para materializar columnas dto_* y cx_transporte en prod_precios_provee. */
+model ProdPrecioProveeRegla {
+  id          String                        @id @default(cuid())
+  campo       CampoReglaDescuentoListaPrecio
+  valor       Decimal                       @db.Decimal(5, 2)
+  idProveedor String?                       @map("id_proveedor")
+  idMarca     String?                       @map("id_marca")
+  idRubro     String?                       @map("id_rubro")
+  createdAt   DateTime                      @default(now()) @map("created_at")
+  updatedAt   DateTime                      @updatedAt @map("updated_at")
+
+  proveedor Proveedor?    @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
+  marca     Marca?        @relation(fields: [idMarca], references: [id], onDelete: Cascade)
+  rubro     ProdRubroLista? @relation(fields: [idRubro], references: [id], onDelete: Cascade)
+
+  @@index([campo], map: "prod_precios_provee_reglas_campo_idx")
+  @@index([idProveedor], map: "prod_precios_provee_reglas_id_proveedor_idx")
+  @@index([idMarca], map: "prod_precios_provee_reglas_id_marca_idx")
+  @@index([idRubro], map: "prod_precios_provee_reglas_id_rubro_idx")
+  @@map("prod_precios_provee_reglas")
 }
 
 // Comprobantes de compra sincronizados desde API DUX `/compras`.
@@ -576,6 +621,7 @@ model Marca {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   prodTiendas ProdTienda[]
+  reglasDescuentosListaPrecio ProdPrecioProveeRegla[]
 
   @@map("prod_marcas")
 }

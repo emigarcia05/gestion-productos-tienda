@@ -16,16 +16,10 @@ export const porcentajeListaPreciosSchema = z
   .max(100)
   .refine(tieneMaxDosDecimales, "El porcentaje admite hasta 2 decimales.");
 
-/** Campos permitidos en actualización masiva de lista de precios. */
+/** Campos permitidos en actualización masiva de lista de precios (dto_* / cx_transporte solo vía motor de reglas). */
 export const actualizacionMasivaListaPreciosSchema = z.object({
   marca: z.string().nullable().optional(),
   rubro: z.string().nullable().optional(),
-  dtoProveedor: porcentajeListaPreciosSchema.optional(),
-  dtoMarca: porcentajeListaPreciosSchema.optional(),
-  dtoRubro: porcentajeListaPreciosSchema.optional(),
-  dtoCantidad: porcentajeListaPreciosSchema.optional(),
-  dtoFinanciero: porcentajeListaPreciosSchema.optional(),
-  cxTransporte: porcentajeListaPreciosSchema.optional(),
   cotizacionDolar: z.number().min(0).optional(),
   /** Precio de lista del proveedor (`prod_precios_provee.px_lista_proveedor`). */
   pxListaProveedor: z.number().min(0).optional(),

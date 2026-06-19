@@ -11,6 +11,7 @@ export interface ProductoProveedoresPage {
   descuentoRubro: number;
   descuentoCantidad: number;
   cxTransporte: number;
+  pxCompraFinalSinIva: number | null;
   disponible: boolean;
   proveedor: { id: string; nombre: string; codigoUnico: string; prefijo: string };
 }
@@ -29,6 +30,7 @@ export function mapFilaListaPrecioToProductoProveedoresPage(
     descuentoRubro: f.dtoRubro,
     descuentoCantidad: f.dtoCantidad,
     cxTransporte: f.cxTransporte,
+    pxCompraFinalSinIva: f.pxCompraFinalSinIva,
     disponible: f.habilitado,
     proveedor: {
       id: f.proveedor.id,

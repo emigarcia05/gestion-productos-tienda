@@ -57,7 +57,7 @@ Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
 
 ### 1.2.4 Edición inline en `/proveedores` (`productos.ts`)
 
-- `editarProducto` / `aplicarCampoMasivo`: permiso `puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)`; payload `unknown` + Zod; persistencia en **`prod_precios_provee`** (no mock). Revalida `/proveedores` y `/proveedores/lista-precios`.
+- `editarProducto` / `aplicarCampoMasivo`: permiso `puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)`; payload `unknown` + Zod; solo `habilitado` (descuentos vía motor §1.8d). Revalida `/proveedores` y `/proveedores/lista-precios`.
 
 ### 1.2.5 Auditoría de seguridad — patrones obligatorios (cierre 2026-05)
 
@@ -130,7 +130,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 **Integración real `/proveedores` (2026-06-04, eficiencia/DRY):**
 
 - **`getProveedoresPageData`**: delega en `getProductosProveedoresPageFiltrados` (`listaPrecios.service.ts`) — misma query que lista-precios (`getListaPreciosConTiendaFiltrada`), sin `MOCK_PRODUCTOS`.
-- **`productos.ts`**: `editarProducto` / `aplicarCampoMasivo` persisten en **`prod_precios_provee`** vía `actualizarListaPreciosMasivo` / `aplicarCampoMasivoListaPrecios` (mapeo UI: `descuentoRubro`→`dto_rubro`, `disponible`→`habilitado`).
+- **`productos.ts`**: `editarProducto` / `aplicarCampoMasivo` solo permiten **`disponible`→`habilitado`**; descuentos gobernados por motor §1.8d.
 - **Tipo compartido:** `ProductoProveedoresPage` en `src/lib/productoProveedoresPage.ts` (mapper desde `FilaListaPrecioParaCliente`).
 - **`FilaListaPrecioParaCliente`**: incluye `codProdProveedor`, `habilitado` y `proveedor.codigoUnico` para todas las lecturas de lista.
 - **`proveedoresPageParamsSchema`**: `proveedor` = `prismaCuidSchema.optional()`; `pagina` numérica acotada.
@@ -236,7 +236,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas | `ComprobanteProveedor` | `fin_compras_comprobante` |
 | Finanzas | `FinTesoreriaEntidad`, `FinTesoreriaTipoCaja`, `CajaTesoreria`, `FinTesoreriaCheque` | `fin_tesoreria_entidades`, `fin_tesoreria_tipo_caja`, `fin_tesoreria`, `fin_tesoreria_cheques` |
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual` |
-| Productos / precios | `ListaPrecioProveedor`, `ComparacionDtoExtraItem`, `ComparacionMargenManualItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_dto_extra`, `prod_comp_margen_manual`, `prod_comp_cat`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
+| Productos / precios | `ListaPrecioProveedor`, `ComparacionDtoExtraItem`, `ComparacionMargenManualItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_dto_extra`, `prod_comp_margen_manual`, `prod_comp_cat`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
 | Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
 | Pedidos / sync | `ProdPedMerc2`, `PedidoHistoria`, `PedidoHistoriaItem`, `ProdPedUltComp`, `ImportProgress`, `SyncDuxStatus` | `prod_ped_merc`, `prod_ped_historial`, `prod_ped_historial_merc`, `prod_ped_ult_comp`, `import_progress`, `sync_dux_status` |
 
@@ -306,6 +306,90 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - UI: input **DIF PX REF MANUAL** (% entero vs px referencia activa); al blur se persiste **`margen_manual`** (`actualizarMargenManualComparacionAction`), no el px.
 - Cálculos (`@/lib/calculos.ts`): `calcPxManualDesdeDifPctReferencia` → px entero; `calcMargenManualDesdeDifPctReferencia` → margen %; al cargar, `calcDifPxRefManualDesdeMargen` reconstruye la dif. desde margen + costo + px ref.
 - Migración **`20260613150000_comp_margen_manual`** renombra `prod_comp_px_manual` → `prod_comp_margen_manual` y anula valores legacy (eran precios, no márgenes).
+
+### 1.8d Reglas descuentos lista precios (`prod_precios_provee_reglas`)
+
+**Decisión de negocio:** los seis valores `dto_proveedor`, `dto_marca`, `dto_rubro`, `dto_cantidad`, `dto_financiero`, `cx_transporte` en **`prod_precios_provee`** son **caché materializada** escrita **solo** por el motor de reglas. No hay override manual por ítem. La columna GENERATED **`px_compra_final_sin_iva`** no se rediseña; sigue la fórmula de §1.8 / migración `20260527150000_*`.
+
+#### Modelo de datos
+
+| Modelo Prisma | Tabla SQL | Rol |
+|---------------|-----------|-----|
+| `ProdRubroLista` | `prod_rubros_lista` | Catálogo técnico FK de reglas (`id_rubro`). **Opciones UI de rubro:** nombres distintos de **`prod_tienda.rubro`** (`listarRubrosOpcionesDesdeProdTienda` / `listarRubrosCatalogoReglasDesdeProdTienda` en `rubrosProdTienda.service.ts`; crea fila en `prod_rubros_lista` si falta al armar catálogo de reglas). |
+| `ProdPrecioProveeRegla` | `prod_precios_provee_reglas` | Regla por `campo` + `valor` NUMERIC(5,2) + hasta 3 condiciones AND (proveedor / marca / rubro; `NULL` = comodín). |
+
+- **Enum** `CampoReglaDescuentoListaPrecio`: `dto_proveedor` \| `dto_marca` \| `dto_rubro` \| `dto_cantidad` \| `dto_financiero` \| `cx_transporte`.
+- **CHECK** al menos una condición no nula; **UNIQUE** `(campo, COALESCE(id_proveedor,''), COALESCE(id_marca,''), COALESCE(id_rubro,''))`.
+- **Migración:** `20260619120000_prod_precios_provee_reglas_descuentos`. **No** se infieren reglas desde `dto_*` históricos; tabla de reglas arranca vacía.
+- **Post-deploy obligatorio:** `npm run db:recalc-descuentos-lista-precio` → con reglas vacías, todos los `dto_*` / `cx_transporte` → **0** (impacto masivo en `px_compra_final_sin_iva` hasta cargar reglas).
+
+#### Algoritmo de resolución (`descuentosListaPrecioReglas.service.ts`)
+
+Por cada ítem (`id_proveedor`, `marca` texto, `rubro` texto) y cada `campo`:
+
+1. Cargar reglas del campo.
+2. Filtrar: `id_proveedor` null o igual al ítem; `id_marca` null o nombre catálogo `prod_marcas` coincide con `item.marca` (**trim + case-insensitive**, locale `es`); `id_rubro` null o nombre `prod_rubros_lista` coincide con `item.rubro` (misma normalización).
+3. **Marca no catalogada:** si el ítem tiene texto libre que **no** matchea ningún `prod_marcas.nombre`, las reglas con `id_marca` **no aplican** (ese eje queda en 0 para matching de marca).
+4. De las que matchean, gana **mayor especificidad** (= cantidad de condiciones no nulas: 3 > 2 > 1).
+5. Sin match → **0** (`clampPercent` en persistencia).
+
+**Anti-empate al guardar:** `validarReglaSinConflicto` rechaza otra regla del mismo `campo` con **igual especificidad**, condiciones distintas y **solapamiento** (existiría un ítem que matchea ambas). Duplicado exacto de condiciones también se rechaza.
+
+#### Servicio y hooks
+
+- **Servicio:** `@/services/descuentosListaPrecioReglas.service.ts`
+  - `resolverDescuentosParaItem`, `materializarDescuentosEnFila`, `materializarDescuentosEnFilas`, `recalcularTodasLasFilas`, `recalcularFilasAfectadasPorRegla` (v1: recalcula **todas** las filas), `validarReglaSinConflicto`, CRUD interno + `listarCatalogosReglasDescuentos`.
+- **Hooks obligatorios:**
+  - `upsertListaPrecios` / `crearProductoListaPrecio` → materializar filas afectadas tras alta/import.
+  - `actualizarListaPreciosMasivo` → si cambia `marca` o `rubro`, re-materializar esas filas.
+  - CRUD regla → `recalcularFilasAfectadasPorRegla`.
+- **Bloqueo escritura manual:** `actualizacionMasivaListaPreciosSchema` y `editarProducto` / `aplicarCampoMasivo` **no** aceptan `dto_*` ni `cx_transporte`.
+
+#### Server Actions (`src/actions/descuentosListaPrecioReglas.ts`)
+
+| Action | Gate |
+|--------|------|
+| `listarReglasDescuentosListaPrecioAction` | `PERMISOS.listaPrecios.acciones.gestionarReglasDescuentos` + `esEditor()` |
+| `crearReglaDescuentosListaPrecioAction` | idem |
+| `actualizarReglaDescuentosListaPrecioAction` | idem |
+| `eliminarReglaDescuentosListaPrecioAction` | idem |
+| `listarCatalogosReglasDescuentosAction` | idem |
+
+Validación Zod: `@/lib/validations/descuentosListaPrecioReglas.ts`. Payloads `unknown` + `.safeParse()`.
+
+#### Handoff UI (Fase 2 Full Stack)
+
+**Tipos exportados** (desde `@/services/descuentosListaPrecioReglas.service` / re-export Actions):
+
+```typescript
+interface ReglaDescuentoListaPrecio {
+  id: string;
+  campo: "dto_proveedor" | "dto_marca" | "dto_rubro" | "dto_cantidad" | "dto_financiero" | "cx_transporte";
+  valor: number;
+  idProveedor: string | null;
+  idMarca: string | null;
+  idRubro: string | null;
+  proveedorNombre: string | null;
+  marcaNombre: string | null;
+  rubroNombre: string | null;
+  especificidad: number;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+**`listarCatalogosReglasDescuentosAction`** → `{ proveedores: { id, nombre, prefijo }[], marcas: { id, nombre }[], rubros: { id, nombre }[] }` (proveedores solo `proveedorMercaderia = true`; **rubros** = distinct **`prod_tienda.rubro`** con `id` de `prod_rubros_lista`).
+
+**Ejemplos JSON de reglas:**
+
+```json
+{ "campo": "dto_marca", "valor": 18, "idProveedor": "clxxxP1", "idMarca": "clxxxM1", "idRubro": null }
+{ "campo": "dto_marca", "valor": 25, "idProveedor": null, "idMarca": "clxxxM1", "idRubro": null }
+```
+
+Ítem P1 + marca texto = `M1.nombre` → `dto_marca` materializado = **18** (regla P1+M1 gana sobre solo M1).
+
+**Lecturas lista precios:** `FilaListaPrecioParaCliente` sigue exponiendo `dtoProveedor`, `dtoMarca`, `dtoRubro`, `dtoCantidad`, `dtoFinanciero`, `cxTransporte`, `pxCompraFinalSinIva` como **solo lectura** (caché del motor). **`prod_comp_dto_extra`** no se modifica (override solo Comp. Categorías).
 
 ### 1.9 Listado Cx Compra (`getTiendaPageData`)
 

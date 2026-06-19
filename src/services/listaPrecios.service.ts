@@ -8,8 +8,12 @@ import type { FilaListaPrecio } from "@/lib/parsearImport";
 import { IvaProveedor } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildCodExt } from "@/lib/codigos";
-import { clampPercent } from "@/lib/calculos";
 import { matchByMultiTerm } from "@/lib/busqueda";
+import {
+  materializarDescuentosEnFila,
+  materializarDescuentosEnFilas,
+} from "@/services/descuentosListaPrecioReglas.service";
+import { listarRubrosOpcionesDesdeProdTienda } from "@/services/rubrosProdTienda.service";
 import type { Prisma } from "@prisma/client";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { cantPedirReposicionMerc2 } from "@/services/pedidosEnvio.service";
@@ -293,33 +297,16 @@ export async function getMarcasDisponiblesListaPrecios(
   return out;
 }
 
-/** Rubros con al menos un ítem que cumple (proveedorId, marcaNombre, busqueda, habilitado, vinculado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
+/** Rubros desde `prod_tienda.rubro` (catálogo de tienda). */
 export async function getRubrosDisponiblesListaPrecios(
-  proveedorId: string | undefined,
-  marcaNombre: string | undefined,
-  busqueda: string | undefined,
-  habilitado: boolean | undefined,
-  vinculado: boolean | undefined,
-  opciones?: ListaPreciosFiltradoOpciones
+  _proveedorId: string | undefined,
+  _marcaNombre: string | undefined,
+  _busqueda: string | undefined,
+  _habilitado: boolean | undefined,
+  _vinculado: boolean | undefined,
+  _opciones?: ListaPreciosFiltradoOpciones
 ): Promise<{ id: string; nombre: string }[]> {
-  const { filas } = await getListaPreciosConTiendaFiltrada(
-    proveedorId,
-    marcaNombre,
-    undefined,
-    busqueda,
-    habilitado,
-    vinculado,
-    opciones
-  );
-  const seen = new Set<string>();
-  const out: { id: string; nombre: string }[] = [];
-  for (const f of filas) {
-    const r = (f.rubro ?? "").trim();
-    if (!r || seen.has(r)) continue;
-    seen.add(r);
-    out.push({ id: r, nombre: r });
-  }
-  return out;
+  return listarRubrosOpcionesDesdeProdTienda();
 }
 
 /** Item mínimo para modal de vinculación: solo prefijo y descripción en tabla; datos completos para onSeleccionar. pxCompraFinalSinIva para selector de costo objetivo. */
@@ -457,6 +444,7 @@ export async function upsertListaPrecios(
   const cotizacionDolar = precioEnDolares ? Number(process.env.COTIZACION_DOLAR ?? 1) : 1;
   const onProgress = options?.onProgress;
   const total = filas.length;
+  const codExtsMaterializar: string[] = [];
 
   // Prefetch: evita el `findUnique()` por fila (N+1).
   // Solo usamos esto para el conteo (creados/actualizados); el estado final lo define el `upsert`.
@@ -516,9 +504,14 @@ export async function upsertListaPrecios(
       else creados++;
       // Para duplicados en el input: si lo creamos en esta corrida, luego debe contarse como "update".
       existentesCodProdSet.add(fila.codProdProv);
+      codExtsMaterializar.push(codExt);
     } catch (e) {
       errores.push(`Fila ${i + 1}: ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  if (codExtsMaterializar.length > 0) {
+    await materializarDescuentosEnFilas(codExtsMaterializar);
   }
 
   return { creados, actualizados, errores };
@@ -599,6 +592,8 @@ export async function crearProductoListaPrecio(
       },
     });
 
+    await materializarDescuentosEnFila(codExt);
+
     return { ok: true, codExt, creado: !existente };
   } catch (e) {
     const message = e instanceof Error ? e.message : "No se pudo guardar el producto.";
@@ -634,22 +629,15 @@ export async function eliminarListaPrecioProveedor(
 export interface ActualizacionMasivaListaPrecios {
   marca?: string | null;
   rubro?: string | null;
-  dtoProveedor?: number;
-  dtoMarca?: number;
-  dtoRubro?: number;
-  dtoCantidad?: number;
-  dtoFinanciero?: number;
-  cxTransporte?: number;
   cotizacionDolar?: number;
   pxListaProveedor?: number;
   habilitado?: boolean;
 }
 
 /**
- * Actualiza dto_rubro, dto_cantidad y/o cx_transporte en los registros con id en la lista.
- * Valores en porcentaje (0–100, hasta 2 decimales). Solo actualiza los campos presentes en data.
- * Usa SQL crudo para evitar fallos con Prisma 7 + adapter-pg ("column not available").
- * Un solo UPDATE en BD; eficiente para 100–10.000 filas.
+ * Actualiza campos editables manualmente en prod_precios_provee.
+ * Los dto_* y cx_transporte solo los escribe el motor de reglas (`descuentosListaPrecioReglas.service`).
+ * Si cambia marca o rubro, re-materializa descuentos en las filas afectadas.
  */
 export async function actualizarListaPreciosMasivo(
   ids: string[],
@@ -660,24 +648,12 @@ export async function actualizarListaPreciosMasivo(
   const updatePayload: {
     marca?: string | null;
     rubro?: string | null;
-    dtoProveedor?: number;
-    dtoMarca?: number;
-    dtoRubro?: number;
-    dtoCantidad?: number;
-    dtoFinanciero?: number;
-    cxTransporte?: number;
     cotizacionDolar?: number;
     pxListaProveedor?: number;
     habilitado?: boolean;
   } = {};
   if (data.marca !== undefined) updatePayload.marca = data.marca;
   if (data.rubro !== undefined) updatePayload.rubro = data.rubro;
-  if (data.dtoProveedor !== undefined) updatePayload.dtoProveedor = clampPercent(data.dtoProveedor);
-  if (data.dtoMarca !== undefined) updatePayload.dtoMarca = clampPercent(data.dtoMarca);
-  if (data.dtoRubro !== undefined) updatePayload.dtoRubro = clampPercent(data.dtoRubro);
-  if (data.dtoCantidad !== undefined) updatePayload.dtoCantidad = clampPercent(data.dtoCantidad);
-  if (data.dtoFinanciero !== undefined) updatePayload.dtoFinanciero = clampPercent(data.dtoFinanciero);
-  if (data.cxTransporte !== undefined) updatePayload.cxTransporte = clampPercent(data.cxTransporte);
   if (data.cotizacionDolar !== undefined && data.cotizacionDolar >= 0)
     updatePayload.cotizacionDolar = data.cotizacionDolar;
   if (data.pxListaProveedor !== undefined && data.pxListaProveedor >= 0)
@@ -696,30 +672,6 @@ export async function actualizarListaPreciosMasivo(
     setClauses.push(`rubro = $${params.length + 1}`);
     params.push(updatePayload.rubro ?? null);
   }
-  if (updatePayload.dtoProveedor !== undefined) {
-    setClauses.push(`dto_proveedor = $${params.length + 1}`);
-    params.push(updatePayload.dtoProveedor);
-  }
-  if (updatePayload.dtoMarca !== undefined) {
-    setClauses.push(`dto_marca = $${params.length + 1}`);
-    params.push(updatePayload.dtoMarca);
-  }
-  if (updatePayload.dtoRubro !== undefined) {
-    setClauses.push(`dto_rubro = $${params.length + 1}`);
-    params.push(updatePayload.dtoRubro);
-  }
-  if (updatePayload.dtoCantidad !== undefined) {
-    setClauses.push(`dto_cantidad = $${params.length + 1}`);
-    params.push(updatePayload.dtoCantidad);
-  }
-  if (updatePayload.dtoFinanciero !== undefined) {
-    setClauses.push(`dto_financiero = $${params.length + 1}`);
-    params.push(updatePayload.dtoFinanciero);
-  }
-  if (updatePayload.cxTransporte !== undefined) {
-    setClauses.push(`cx_transporte = $${params.length + 1}`);
-    params.push(updatePayload.cxTransporte);
-  }
   if (updatePayload.cotizacionDolar !== undefined) {
     setClauses.push(`cotizacion_dolar = $${params.length + 1}`);
     params.push(updatePayload.cotizacionDolar);
@@ -737,6 +689,11 @@ export async function actualizarListaPreciosMasivo(
   try {
     const sql = `UPDATE prod_precios_provee SET ${setClauses.join(", ")} WHERE cod_ext = ANY($${params.length}::text[])`;
     const actualizados = await prisma.$executeRawUnsafe(sql, ...params);
+
+    if (updatePayload.marca !== undefined || updatePayload.rubro !== undefined) {
+      await materializarDescuentosEnFilas(ids);
+    }
+
     return { actualizados: Number(actualizados) };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -766,23 +723,13 @@ export async function listarCodExtListaPreciosPorProveedor(
 }
 
 /** Campos editables desde `/proveedores` (tabla legacy) → columnas `prod_precios_provee`. */
-export type CampoEditableProductoProveedoresPage =
-  | "descuentoRubro"
-  | "descuentoCantidad"
-  | "cxTransporte"
-  | "disponible";
+export type CampoEditableProductoProveedoresPage = "disponible";
 
 export function camposEditableProductoProveedoresToActualizacion(
   campo: CampoEditableProductoProveedoresPage,
   valor: number | boolean
 ): ActualizacionMasivaListaPrecios {
   switch (campo) {
-    case "descuentoRubro":
-      return { dtoRubro: valor as number };
-    case "descuentoCantidad":
-      return { dtoCantidad: valor as number };
-    case "cxTransporte":
-      return { cxTransporte: valor as number };
     case "disponible":
       return { habilitado: valor as boolean };
     default:

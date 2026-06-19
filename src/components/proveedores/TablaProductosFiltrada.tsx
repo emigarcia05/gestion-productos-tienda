@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -15,12 +15,7 @@ import {
 } from "@/components/ui/table";
 import { editarProducto } from "@/actions/productos";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
-import { calcPxCompraFinal } from "@/lib/calculos";
-import { fmtPrecio } from "@/lib/format";
-
-function fmtPorcentaje(n: number): string {
-  return `${Math.round(n)}%`;
-}
+import { fmtPrecio, fmtPorcentajeTabla } from "@/lib/format";
 
 import type { ProductoProveedoresPage } from "@/lib/productoProveedoresPage";
 
@@ -34,74 +29,11 @@ interface Props {
   sinFiltros?: boolean;
 }
 
-
-// ─── Celda editable de porcentaje ──────────────────────────────────────────
-function CeldaPorcentaje({
-  productoId,
-  campo,
-  valor,
-  onUpdate,
-}: {
-  productoId: string;
-  campo: "descuentoRubro" | "descuentoCantidad" | "cxTransporte";
-  valor: number;
-  onUpdate: (id: string, campo: string, val: number) => void;
-}) {
-  const [editando, setEditando] = useState(false);
-  const [draft, setDraft] = useState(String(valor));
-  const [saving, startTransition] = useTransition();
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  function handleBlur() {
-    const num = parseFloat(draft.replace(",", "."));
-    if (isNaN(num) || num < 0 || num > 100) {
-      setDraft(String(valor));
-      setEditando(false);
-      return;
-    }
-    if (num === valor) { setEditando(false); return; }
-
-    startTransition(async () => {
-      const res = await editarProducto({ id: productoId, campos: { [campo]: num } });
-      if (res.ok) {
-        onUpdate(productoId, campo, num);
-      } else {
-        toast.error(res.error);
-        setDraft(String(valor));
-      }
-      setEditando(false);
-    });
-  }
-
-  if (editando) {
-    return (
-      <div className="flex items-center justify-center gap-1">
-        <input
-          ref={inputRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={handleBlur}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") inputRef.current?.blur();
-            if (e.key === "Escape") { setDraft(String(valor)); setEditando(false); }
-          }}
-          className="w-12 text-center text-xs bg-background border border-input rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring"
-          autoFocus
-        />
-        <span className="text-xs text-muted-foreground">%</span>
-        {saving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-      </div>
-    );
-  }
-
+function CeldaPorcentajeSoloLectura({ valor }: { valor: number }) {
   return (
-    <button
-      onClick={() => { setDraft(String(valor)); setEditando(true); }}
-      className="w-full text-center text-xs tabular-nums text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-      title="Clic Para Editar"
-    >
-      {valor > 0 ? fmtPorcentaje(valor) : ""}
-    </button>
+    <span className="block w-full text-center text-xs tabular-nums text-muted-foreground">
+      {valor > 0 ? fmtPorcentajeTabla(valor) : "—"}
+    </span>
   );
 }
 
@@ -141,9 +73,9 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
   const [productos, setProductos] = useState(inicial);
   const col = PERMISOS.proveedores.tabla;
 
-  function handleUpdate(id: string, campo: string, val: number | boolean) {
+  function handleUpdate(id: string, campo: string, val: boolean) {
     setProductos((prev) =>
-      prev.map((p) => p.id === id ? { ...p, [campo]: val } : p)
+      prev.map((p) => (p.id === id ? { ...p, [campo]: val } : p))
     );
   }
 
@@ -232,22 +164,22 @@ export default function TablaProductosFiltrada({ productos: inicial, rol, sinFil
               )}
               {puede(rol, col.descuentoRubro) && (
                 <TableCell className="celda-datos text-center">
-                  <CeldaPorcentaje productoId={prod.id} campo="descuentoRubro" valor={prod.descuentoRubro} onUpdate={handleUpdate} />
+                  <CeldaPorcentajeSoloLectura valor={prod.descuentoRubro} />
                 </TableCell>
               )}
               {puede(rol, col.descuentoCantidad) && (
                 <TableCell className="celda-datos text-center">
-                  <CeldaPorcentaje productoId={prod.id} campo="descuentoCantidad" valor={prod.descuentoCantidad} onUpdate={handleUpdate} />
+                  <CeldaPorcentajeSoloLectura valor={prod.descuentoCantidad} />
                 </TableCell>
               )}
               {puede(rol, col.cxTransporte) && (
                 <TableCell className="celda-datos text-center">
-                  <CeldaPorcentaje productoId={prod.id} campo="cxTransporte" valor={prod.cxTransporte} onUpdate={handleUpdate} />
+                  <CeldaPorcentajeSoloLectura valor={prod.cxTransporte} />
                 </TableCell>
               )}
               {puede(rol, col.precioCompraFinal) && (
                 <TableCell className="celda-datos tabular-nums font-bold whitespace-nowrap">
-                  ${fmtPrecio(calcPxCompraFinal(prod.precioLista, prod.descuentoRubro, prod.descuentoCantidad, prod.cxTransporte))}
+                  ${fmtPrecio(prod.pxCompraFinalSinIva ?? 0)}
                 </TableCell>
               )}
               {puede(rol, col.disponible) && (

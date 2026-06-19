@@ -135,6 +135,10 @@ const nextConfig: NextConfig = {
     return [
       { source: "/gestion-productos/proveedores", destination: "/proveedores" },
       { source: "/gestion-productos/proveedores/lista-precios", destination: "/proveedores/lista-precios" },
+      {
+        source: "/gestion-productos/proveedores/lista-precios/reglas-descuentos",
+        destination: "/proveedores/lista-precios/reglas-descuentos",
+      },
       { source: "/gestion-productos/proveedores/sugeridos", destination: "/proveedores/sugeridos" },
       { source: "/gestion-productos/proveedores/comparacion-categorias", destination: "/proveedores/comparacion-categorias" },
       {

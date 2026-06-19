@@ -18,12 +18,7 @@ import {
 
 export type CampoMasivo = CampoMasivoInput;
 
-const CAMPOS_EDITABLES: CampoEditableProductoProveedoresPage[] = [
-  "descuentoRubro",
-  "descuentoCantidad",
-  "cxTransporte",
-  "disponible",
-];
+const CAMPOS_EDITABLES: CampoEditableProductoProveedoresPage[] = ["disponible"];
 
 function esCampoEditable(campo: string): campo is CampoEditableProductoProveedoresPage {
   return (CAMPOS_EDITABLES as string[]).includes(campo);
@@ -42,9 +37,6 @@ export async function editarProducto(raw: unknown): Promise<ActionResult> {
 
   const { campos } = parsed.data;
   const entries: [CampoEditableProductoProveedoresPage, number | boolean][] = [];
-  if (campos.descuentoRubro !== undefined) entries.push(["descuentoRubro", campos.descuentoRubro]);
-  if (campos.descuentoCantidad !== undefined) entries.push(["descuentoCantidad", campos.descuentoCantidad]);
-  if (campos.cxTransporte !== undefined) entries.push(["cxTransporte", campos.cxTransporte]);
   if (campos.disponible !== undefined) entries.push(["disponible", campos.disponible]);
 
   let data: Parameters<typeof actualizarListaPreciosMasivo>[1] = {};

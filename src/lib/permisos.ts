@@ -43,6 +43,7 @@ export const PERMISOS = {
     acciones: {
       importarLista:   { simple: true,  editor: true },
       edicionMasiva:  { simple: false, editor: true },
+      gestionarReglasDescuentos: { simple: false, editor: true },
     },
   },
 

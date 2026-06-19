@@ -1,11 +1,8 @@
 import { z } from "zod";
 import { listaPreciosCodExtSchema } from "@/lib/validations/common";
 
-/** Campos editables de un producto (mock/ futuro). */
+/** Campos editables inline en `/proveedores` (descuentos gobernados por motor de reglas). */
 export const camposEditablesProductoSchema = z.object({
-  descuentoRubro: z.number().min(0).max(100).optional(),
-  descuentoCantidad: z.number().min(0).max(100).optional(),
-  cxTransporte: z.number().min(0).optional(),
   disponible: z.boolean().optional(),
 });
 
@@ -19,12 +16,7 @@ export const editarProductoSchema = z.object({
   ),
 });
 
-export const campoMasivoSchema = z.enum([
-  "descuentoRubro",
-  "descuentoCantidad",
-  "cxTransporte",
-  "disponible",
-]);
+export const campoMasivoSchema = z.enum(["disponible"]);
 
 export type CampoMasivoInput = z.infer<typeof campoMasivoSchema>;
 

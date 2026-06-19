@@ -6,7 +6,6 @@ import { Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
-import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import MontoArInput from "@/components/shared/MontoArInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,10 +23,9 @@ import {
 } from "@/actions/listaPrecios";
 import type { ListaPreciosFiltrosExportSnapshot } from "@/components/proveedores/ExportarListaPreciosButton";
 import {
-  parsePorcentajeCentNormalized,
-  porcentajeCentFromNumber,
-} from "@/lib/porcentajeCentMask";
-import { montoArNumberToNormalizedString, montoArNormalizedStringToPesosNumber } from "@/lib/montoArMask";
+  montoArNumberToNormalizedString,
+  montoArNormalizedStringToPesosNumber,
+} from "@/lib/montoArMask";
 import { roundPrecioListaTienda } from "@/lib/calculos";
 import { cn } from "@/lib/utils";
 
@@ -40,19 +38,6 @@ interface RubroOption {
   id: string;
   nombre: string;
 }
-
-type PercentCentKey = keyof Pick<
-  ActualizacionMasivaListaPrecios,
-  "dtoProveedor" | "dtoMarca" | "dtoRubro" | "dtoCantidad" | "dtoFinanciero" | "cxTransporte"
->;
-
-const CAMPOS_DESCUENTO_CENT: { key: Exclude<PercentCentKey, "cxTransporte">; label: string }[] = [
-  { key: "dtoProveedor", label: "DESC. PROVEEDOR" },
-  { key: "dtoMarca", label: "DESC. MARCA" },
-  { key: "dtoRubro", label: "DESC. RUBRO" },
-  { key: "dtoCantidad", label: "DESC. CANTIDAD" },
-  { key: "dtoFinanciero", label: "DESC. FINANCIERO" },
-];
 
 const FORM_GRID_CLASS = "grid grid-cols-[1.35fr_minmax(0,1fr)] gap-x-4 gap-y-2 items-center";
 const LABEL_CLASS = "text-right font-medium text-sm";
@@ -120,17 +105,6 @@ function parsePxListaProveedor(value: string): number | undefined {
   return Math.round(n);
 }
 
-function centInputsDesdeFila(fila: FilaListaPrecioParaCliente): Partial<Record<PercentCentKey, string>> {
-  return {
-    dtoProveedor: porcentajeCentFromNumber(fila.dtoProveedor),
-    dtoMarca: porcentajeCentFromNumber(fila.dtoMarca),
-    dtoRubro: porcentajeCentFromNumber(fila.dtoRubro),
-    dtoCantidad: porcentajeCentFromNumber(fila.dtoCantidad),
-    dtoFinanciero: porcentajeCentFromNumber(fila.dtoFinanciero),
-    cxTransporte: porcentajeCentFromNumber(fila.cxTransporte),
-  };
-}
-
 export default function EdicionMasivaListaPreciosModal(props: Props) {
   const { marcas, rubros, onSuccess } = props;
   const filaMode = isFilaMode(props);
@@ -142,9 +116,6 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   const [pending, setPending] = useState(false);
   const [marcaNombre, setMarcaNombre] = useState("");
   const [rubroNombre, setRubroNombre] = useState("");
-  const [percentCentNormalized, setPercentCentNormalized] = useState<
-    Partial<Record<PercentCentKey, string>>
-  >({});
   const [cotizacionDolar, setCotizacionDolar] = useState("");
   const [pxListaProveedorNorm, setPxListaProveedorNorm] = useState("");
   const filaActual = filaMode ? props.fila : null;
@@ -163,7 +134,6 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     if (!filaMode || !open || !filaActual) return;
     setMarcaNombre(filaActual.marca ?? "");
     setRubroNombre(filaActual.rubro ?? "");
-    setPercentCentNormalized(centInputsDesdeFila(filaActual));
     setCotizacionDolar("");
     setPxListaProveedorNorm(montoArNumberToNormalizedString(Number(filaActual.pxListaProveedor) || 0));
   }, [filaMode, open, filaActual]);
@@ -171,53 +141,14 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   function resetForm() {
     setMarcaNombre("");
     setRubroNombre("");
-    setPercentCentNormalized({});
     setCotizacionDolar("");
     setPxListaProveedorNorm("");
-  }
-
-  function setPercentCent(key: PercentCentKey, next: string) {
-    setPercentCentNormalized((prev) => ({ ...prev, [key]: next }));
-  }
-
-  function validatePercentInputs(): string | null {
-    const all: { key: PercentCentKey; label: string }[] = [
-      ...CAMPOS_DESCUENTO_CENT,
-      { key: "cxTransporte", label: "CX. TRANSPORTE" },
-    ];
-    for (const { key, label } of all) {
-      const norm = percentCentNormalized[key];
-      if (norm === undefined || norm.trim() === "") continue;
-      const parsed = parsePorcentajeCentNormalized(norm);
-      if (parsed === undefined) {
-        return `${label}: ingresá un valor entre 0 y menor a 100.`;
-      }
-    }
-    return null;
-  }
-
-  function applyPercentCentToPayload(
-    data: ActualizacionMasivaListaPrecios,
-    keys: readonly PercentCentKey[]
-  ) {
-    for (const key of keys) {
-      const norm = percentCentNormalized[key];
-      if (norm === undefined || norm.trim() === "") continue;
-      const parsed = parsePorcentajeCentNormalized(norm);
-      if (parsed !== undefined) data[key] = parsed;
-    }
   }
 
   function buildPayload(): ActualizacionMasivaListaPrecios {
     const data: ActualizacionMasivaListaPrecios = {};
     if (marcaNombre) data.marca = marcaNombre;
     if (rubroNombre) data.rubro = rubroNombre;
-
-    applyPercentCentToPayload(
-      data,
-      CAMPOS_DESCUENTO_CENT.map((c) => c.key)
-    );
-    applyPercentCentToPayload(data, ["cxTransporte"]);
 
     const cotizacion = parsePxListaProveedor(cotizacionDolar);
     if (cotizacion !== undefined) data.cotizacionDolar = cotizacion;
@@ -233,12 +164,6 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   }
 
   async function handleGuardar() {
-    const percentError = validatePercentInputs();
-    if (percentError) {
-      toast.error(percentError);
-      return;
-    }
-
     const data = buildPayload();
     if (Object.keys(data).length === 0) {
       toast.error("Ingresá al menos un valor para actualizar.");
@@ -344,32 +269,6 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
               ))}
             </SelectContent>
           </Select>
-        </ModalFormRow>
-
-        <ModalFormDivider />
-
-        {CAMPOS_DESCUENTO_CENT.map(({ key, label }) => (
-          <ModalFormRow key={key} id={key} label={label}>
-            <PorcentajeCentInput
-              id={key}
-              placeholder="0,00%"
-              valueNormalized={percentCentNormalized[key] ?? ""}
-              onValueNormalizedChange={(next) => setPercentCent(key, next)}
-              className={INPUT_CONTROL_CLASS}
-            />
-          </ModalFormRow>
-        ))}
-
-        <ModalFormDivider />
-
-        <ModalFormRow id="cxTransporte" label="CX. TRANSPORTE">
-          <PorcentajeCentInput
-            id="cxTransporte"
-            placeholder="0,00%"
-            valueNormalized={percentCentNormalized.cxTransporte ?? ""}
-            onValueNormalizedChange={(next) => setPercentCent("cxTransporte", next)}
-            className={INPUT_CONTROL_CLASS}
-          />
         </ModalFormRow>
 
         <ModalFormDivider />
