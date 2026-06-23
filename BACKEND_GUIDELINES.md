@@ -372,6 +372,7 @@ interface ReglaDescuentoListaPrecio {
   idMarca: string | null;
   idRubro: string | null;
   proveedorNombre: string | null;
+  proveedorPrefijo: string | null;
   marcaNombre: string | null;
   rubroNombre: string | null;
   especificidad: number;

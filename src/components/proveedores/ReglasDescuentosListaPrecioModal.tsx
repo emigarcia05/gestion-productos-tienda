@@ -58,9 +58,12 @@ const CATALOGOS_VACIOS: CatalogosReglasDescuentosListaPrecio = {
   rubros: [],
 };
 
-/** Anchos de columna (suma 100 %): CAMPO · VALOR · PROV · MARCA · RUBRO · ESPEC · ACC. */
-const COL_WIDTHS_PCT = [12, 7, 18, 18, 18, 8, 14] as const;
+/** Anchos de columna (suma 100 %): PROV · MARCA · RUBRO · CAMPO · DESC · ACC. */
+const COL_WIDTHS_PCT = [10, 22, 22, 18, 10, 18] as const;
 const COL_COUNT = COL_WIDTHS_PCT.length;
+
+const TH_DIVIDER_CLASS = "tabla-bloque-secundario-head-divider";
+const TD_DIVIDER_CLASS = "tabla-bloque-secundario-cell-divider";
 
 interface Props {
   onSuccess?: () => void;
@@ -321,13 +324,12 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                 </colgroup>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead>CAMPO</TableHead>
-                    <TableHead className="text-right">VALOR</TableHead>
                     <TableHead>PROVEEDOR</TableHead>
                     <TableHead>MARCA</TableHead>
                     <TableHead>RUBRO</TableHead>
-                    <TableHead className="text-center">ESPEC.</TableHead>
-                    <TableHead className="text-center">ACCIONES</TableHead>
+                    <TableHead className={TH_DIVIDER_CLASS}>CAMPO</TableHead>
+                    <TableHead className="text-right">DESC</TableHead>
+                    <TableHead className={cn("text-center", TH_DIVIDER_CLASS)}>ACCIONES</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -350,12 +352,6 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                   ) : (
                     reglasFiltradas.map((regla) => (
                       <TableRow key={regla.id}>
-                        <TableCell className="celda-datos font-medium">
-                          {labelCampoReglaDescuento(regla.campo)}
-                        </TableCell>
-                        <TableCell className="celda-datos text-right tabular-nums">
-                          {fmtPorcentajeTabla(regla.valor)}
-                        </TableCell>
                         <TableCell className="celda-datos whitespace-normal break-words">
                           {celdaCondicionReglaDescuento(regla, "proveedor")}
                         </TableCell>
@@ -365,10 +361,18 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                         <TableCell className="celda-datos whitespace-normal break-words">
                           {celdaCondicionReglaDescuento(regla, "rubro")}
                         </TableCell>
-                        <TableCell className="celda-datos text-center tabular-nums">
-                          {regla.especificidad}
+                        <TableCell className={cn("celda-datos font-medium", TD_DIVIDER_CLASS)}>
+                          {labelCampoReglaDescuento(regla.campo)}
                         </TableCell>
-                        <TableCell className="celda-datos celda-datos--accion-relleno-fila p-0">
+                        <TableCell className="celda-datos text-right tabular-nums">
+                          {fmtPorcentajeTabla(regla.valor)}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "celda-datos celda-datos--accion-relleno-fila p-0",
+                            TD_DIVIDER_CLASS
+                          )}
+                        >
                           <div
                             className={cn(
                               TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,

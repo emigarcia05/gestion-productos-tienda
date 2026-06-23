@@ -36,6 +36,7 @@ export interface ReglaDescuentoListaPrecio {
   idMarca: string | null;
   idRubro: string | null;
   proveedorNombre: string | null;
+  proveedorPrefijo: string | null;
   marcaNombre: string | null;
   rubroNombre: string | null;
   especificidad: number;
@@ -691,7 +692,7 @@ function mapReglaRow(row: {
   idRubro: string | null;
   createdAt: Date;
   updatedAt: Date;
-  proveedor: { nombre: string } | null;
+  proveedor: { nombre: string; prefijo: string | null } | null;
   marca: { nombre: string } | null;
   rubro: { nombre: string } | null;
 }): ReglaDescuentoListaPrecio {
@@ -708,6 +709,7 @@ function mapReglaRow(row: {
     idMarca: row.idMarca,
     idRubro: row.idRubro,
     proveedorNombre: row.proveedor?.nombre ?? null,
+    proveedorPrefijo: row.proveedor?.prefijo ?? null,
     marcaNombre: row.marca?.nombre ?? null,
     rubroNombre: row.rubro?.nombre ?? null,
     especificidad: especificidadRegla(condiciones),
@@ -719,7 +721,7 @@ function mapReglaRow(row: {
 export async function listarReglasDescuentosListaPrecio(): Promise<ReglaDescuentoListaPrecio[]> {
   const rows = await prisma.prodPrecioProveeRegla.findMany({
     include: {
-      proveedor: { select: { nombre: true } },
+      proveedor: { select: { nombre: true, prefijo: true } },
       marca: { select: { nombre: true } },
       rubro: { select: { nombre: true } },
     },
@@ -744,7 +746,7 @@ export async function crearReglaDescuentosListaPrecio(
         idRubro: input.idRubro ?? null,
       },
       include: {
-        proveedor: { select: { nombre: true } },
+        proveedor: { select: { nombre: true, prefijo: true } },
         marca: { select: { nombre: true } },
         rubro: { select: { nombre: true } },
       },
@@ -776,7 +778,7 @@ export async function actualizarReglaDescuentosListaPrecio(
         idRubro: input.idRubro ?? null,
       },
       include: {
-        proveedor: { select: { nombre: true } },
+        proveedor: { select: { nombre: true, prefijo: true } },
         marca: { select: { nombre: true } },
         rubro: { select: { nombre: true } },
       },

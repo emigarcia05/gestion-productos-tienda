@@ -88,6 +88,7 @@ export function celdaCondicionReglaDescuento(
     idMarca?: string | null;
     idRubro?: string | null;
     proveedorNombre?: string | null;
+    proveedorPrefijo?: string | null;
     marcaNombre?: string | null;
     rubroNombre?: string | null;
   },
@@ -95,7 +96,7 @@ export function celdaCondicionReglaDescuento(
 ): string {
   switch (dimension) {
     case "proveedor":
-      return regla.idProveedor ? regla.proveedorNombre?.trim() ?? "" : "";
+      return regla.idProveedor ? regla.proveedorPrefijo?.trim() ?? "" : "";
     case "marca":
       return regla.idMarca ? regla.marcaNombre?.trim() ?? "" : "";
     case "rubro":
