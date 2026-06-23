@@ -81,6 +81,28 @@ export function fmtCondicionesReglaDescuento(regla: {
   return partes.length > 0 ? partes.join(" + ") : "TODOS";
 }
 
+/** Valor de celda PROVEEDOR / MARCA / RUBRO en grilla de reglas (vacío = comodín o sin dato). */
+export function celdaCondicionReglaDescuento(
+  regla: {
+    idProveedor?: string | null;
+    idMarca?: string | null;
+    idRubro?: string | null;
+    proveedorNombre?: string | null;
+    marcaNombre?: string | null;
+    rubroNombre?: string | null;
+  },
+  dimension: "proveedor" | "marca" | "rubro"
+): string {
+  switch (dimension) {
+    case "proveedor":
+      return regla.idProveedor ? regla.proveedorNombre?.trim() ?? "" : "";
+    case "marca":
+      return regla.idMarca ? regla.marcaNombre?.trim() ?? "" : "";
+    case "rubro":
+      return regla.idRubro ? regla.rubroNombre?.trim() ?? "" : "";
+  }
+}
+
 export type LineaCondicionReglaDescuento = {
   dimension: "Proveedor" | "Marca" | "Rubro";
   valor: string;

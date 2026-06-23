@@ -40,7 +40,7 @@ import {
 } from "@/actions/descuentosListaPrecioReglas";
 import {
   CAMPOS_REGLA_DESCUENTO_OPCIONES,
-  fmtCondicionesReglaDescuento,
+  celdaCondicionReglaDescuento,
   labelCampoReglaDescuento,
 } from "@/lib/descuentosListaPrecioReglasUi";
 import type { CampoReglaDescuentoListaPrecioInput } from "@/lib/validations/descuentosListaPrecioReglas";
@@ -58,8 +58,9 @@ const CATALOGOS_VACIOS: CatalogosReglasDescuentosListaPrecio = {
   rubros: [],
 };
 
-/** Anchos de columna (suma 100 %) para lectura cómoda en modal ancho. */
-const COL_WIDTHS_PCT = [14, 8, 54, 8, 16] as const;
+/** Anchos de columna (suma 100 %): CAMPO · VALOR · PROV · MARCA · RUBRO · ESPEC · ACC. */
+const COL_WIDTHS_PCT = [12, 7, 18, 18, 18, 8, 14] as const;
+const COL_COUNT = COL_WIDTHS_PCT.length;
 
 interface Props {
   onSuccess?: () => void;
@@ -322,7 +323,9 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                   <TableRow className="hover:bg-transparent">
                     <TableHead>CAMPO</TableHead>
                     <TableHead className="text-right">VALOR</TableHead>
-                    <TableHead>CONDICIONES</TableHead>
+                    <TableHead>PROVEEDOR</TableHead>
+                    <TableHead>MARCA</TableHead>
+                    <TableHead>RUBRO</TableHead>
                     <TableHead className="text-center">ESPEC.</TableHead>
                     <TableHead className="text-center">ACCIONES</TableHead>
                   </TableRow>
@@ -331,7 +334,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                   {loading ? (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={COL_COUNT}
                         className="celda-datos text-center text-sm text-muted-foreground"
                       >
                         <span className="inline-flex items-center gap-2">
@@ -341,9 +344,9 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                       </TableCell>
                     </TableRow>
                   ) : reglas.length === 0 ? (
-                    <EmptyTableRow colSpan={5} message="No hay reglas de descuento configuradas." />
+                    <EmptyTableRow colSpan={COL_COUNT} message="No hay reglas de descuento configuradas." />
                   ) : reglasFiltradas.length === 0 ? (
-                    <EmptyTableRow colSpan={5} message="Ninguna regla coincide con los filtros." />
+                    <EmptyTableRow colSpan={COL_COUNT} message="Ninguna regla coincide con los filtros." />
                   ) : (
                     reglasFiltradas.map((regla) => (
                       <TableRow key={regla.id}>
@@ -354,7 +357,13 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                           {fmtPorcentajeTabla(regla.valor)}
                         </TableCell>
                         <TableCell className="celda-datos whitespace-normal break-words">
-                          {fmtCondicionesReglaDescuento(regla)}
+                          {celdaCondicionReglaDescuento(regla, "proveedor")}
+                        </TableCell>
+                        <TableCell className="celda-datos whitespace-normal break-words">
+                          {celdaCondicionReglaDescuento(regla, "marca")}
+                        </TableCell>
+                        <TableCell className="celda-datos whitespace-normal break-words">
+                          {celdaCondicionReglaDescuento(regla, "rubro")}
                         </TableCell>
                         <TableCell className="celda-datos text-center tabular-nums">
                           {regla.especificidad}
