@@ -385,23 +385,39 @@ export default function Sidebar({ rol }: { rol: Rol }) {
         : mainAreaId === "finanzas"
           ? FINANZAS_MODULES
           : [];
-    const autoOpen = new Set<string>();
+    const autoOpenByModule = new Map<SidebarModuleId, string>();
     for (const navModule of areaModules) {
       for (const sub of navModule.submodules) {
         if (!sub.href && sub.children?.length && isSubmoduleGroupActive(sub, pathname)) {
-          autoOpen.add(submoduleGroupKey(navModule.id, sub.label));
+          autoOpenByModule.set(navModule.id, submoduleGroupKey(navModule.id, sub.label));
         }
       }
     }
-    if (autoOpen.size === 0) return;
-    setOpenSubGroups((prev) => new Set([...prev, ...autoOpen]));
-  }, [pathname, mainAreaId]);
-
-  function toggleSubGroup(key: string, open: boolean) {
+    if (autoOpenByModule.size === 0) return;
     setOpenSubGroups((prev) => {
       const next = new Set(prev);
-      if (open) next.add(key);
-      else next.delete(key);
+      for (const [moduleId, key] of autoOpenByModule) {
+        for (const k of [...next]) {
+          if (k.startsWith(`${moduleId}:`)) next.delete(k);
+        }
+        next.add(key);
+      }
+      return next;
+    });
+  }, [pathname, mainAreaId]);
+
+  function toggleSubGroup(moduleId: SidebarModuleId, key: string, open: boolean) {
+    setOpenSubGroups((prev) => {
+      if (!open) {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      }
+      const next = new Set(prev);
+      for (const k of [...next]) {
+        if (k.startsWith(`${moduleId}:`)) next.delete(k);
+      }
+      next.add(key);
       return next;
     });
   }
@@ -422,7 +438,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             <Collapsible
               key={groupKey}
               open={isSubOpen}
-              onOpenChange={(open) => toggleSubGroup(groupKey, open)}
+              onOpenChange={(open) => toggleSubGroup(moduleId, groupKey, open)}
               className="group/subcollapsible"
             >
               <CollapsibleTrigger
