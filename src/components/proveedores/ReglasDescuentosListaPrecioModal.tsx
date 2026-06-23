@@ -12,7 +12,9 @@ import FilterBar, {
   FilterRowSelection,
   FilaFiltrosDesplegables,
   FILTER_COUNT_CLASS,
+  FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
+  LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -178,7 +180,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
         <AppModal
           title="Reglas Descuentos"
           size="xl"
-          className="sm:max-w-[72rem]"
+          className="sm:max-w-[57.6rem]"
           padding="sm"
           bodyShellClassName="p-2 sm:p-3"
           bodyClassName="flex min-h-0 flex-col"
@@ -305,17 +307,18 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                     </Select>
                   </FiltroIndividualContainer>
 
-                  <div className="flex min-w-0 items-center justify-end">
+                  <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-2 gap-2")}>
                     <span className={cn(FILTER_COUNT_CLASS, "whitespace-nowrap")}>
                       {reglasFiltradas.length.toLocaleString()} REGLA
                       {reglasFiltradas.length !== 1 ? "S" : ""}
                     </span>
+                    <LimpiarFiltrosButton onClick={limpiarFiltros} />
                   </div>
                 </FilaFiltrosDesplegables>
               </FilterRowSelection>
             </FilterBar>
 
-            <div className="contenedor-tabla-gestion min-h-0 max-h-[min(58vh,32rem)] flex-1">
+            <div className="contenedor-tabla-gestion min-h-0 max-h-[min(46.4vh,25.6rem)] flex-1">
               <Table variant="compact" className="tabla-vinculos-modal w-full min-w-0">
                 <colgroup>
                   {COL_WIDTHS_PCT.map((pct, i) => (
