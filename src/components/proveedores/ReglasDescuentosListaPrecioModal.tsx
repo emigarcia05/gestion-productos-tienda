@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Pencil, Percent, Plus, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Percent, Plus, Trash2, ArrowDown, ArrowUp } from "lucide-react";
 import { toast } from "sonner";
 import AppModal from "@/components/shared/AppModal";
 import CrearEditarReglaDescuentoListaPrecioModal from "@/components/proveedores/CrearEditarReglaDescuentoListaPrecioModal";
@@ -11,10 +11,7 @@ import FilterBar, {
   FiltroIndividualContainer,
   FilterRowSelection,
   FilaFiltrosDesplegables,
-  FILTER_COUNT_CLASS,
-  FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
-  LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -44,6 +41,8 @@ import {
   CAMPOS_REGLA_DESCUENTO_OPCIONES,
   celdaCondicionReglaDescuento,
   labelCampoReglaDescuento,
+  ordenarReglasDescuentoListaPrecio,
+  tipoCampoReglaDescuento,
 } from "@/lib/descuentosListaPrecioReglasUi";
 import type { CampoReglaDescuentoListaPrecioInput } from "@/lib/validations/descuentosListaPrecioReglas";
 import { fmtPorcentajeTabla } from "@/lib/format";
@@ -130,13 +129,14 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
   }, [open, cargarDatos, limpiarFiltros]);
 
   const reglasFiltradas = useMemo(() => {
-    return reglas.filter((regla) => {
+    const filtradas = reglas.filter((regla) => {
       if (filtroCampo && regla.campo !== filtroCampo) return false;
       if (filtroProveedorId && regla.idProveedor !== filtroProveedorId) return false;
       if (filtroMarcaId && regla.idMarca !== filtroMarcaId) return false;
       if (filtroRubroId && regla.idRubro !== filtroRubroId) return false;
       return true;
     });
+    return ordenarReglasDescuentoListaPrecio(filtradas);
   }, [reglas, filtroCampo, filtroProveedorId, filtroMarcaId, filtroRubroId]);
 
   const handleSuccess = useCallback(() => {
@@ -306,14 +306,6 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                       </SelectContent>
                     </Select>
                   </FiltroIndividualContainer>
-
-                  <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-2 gap-2")}>
-                    <span className={cn(FILTER_COUNT_CLASS, "whitespace-nowrap")}>
-                      {reglasFiltradas.length.toLocaleString()} REGLA
-                      {reglasFiltradas.length !== 1 ? "S" : ""}
-                    </span>
-                    <LimpiarFiltrosButton onClick={limpiarFiltros} />
-                  </div>
                 </FilaFiltrosDesplegables>
               </FilterRowSelection>
             </FilterBar>
@@ -368,7 +360,20 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                           {labelCampoReglaDescuento(regla.campo)}
                         </TableCell>
                         <TableCell className="celda-datos text-right tabular-nums">
-                          {fmtPorcentajeTabla(regla.valor)}
+                          <span className="inline-flex items-center justify-end gap-1">
+                            {fmtPorcentajeTabla(regla.valor)}
+                            {tipoCampoReglaDescuento(regla.campo) === "descuento" ? (
+                              <ArrowDown
+                                className="h-3.5 w-3.5 shrink-0 opacity-80"
+                                aria-hidden
+                              />
+                            ) : (
+                              <ArrowUp
+                                className="h-3.5 w-3.5 shrink-0 opacity-80"
+                                aria-hidden
+                              />
+                            )}
+                          </span>
                         </TableCell>
                         <TableCell
                           className={cn(

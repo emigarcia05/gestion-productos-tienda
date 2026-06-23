@@ -60,6 +60,45 @@ export function labelCampoReglaDescuento(
   return CAMPOS_REGLA_DESCUENTO_OPCIONES.find((o) => o.value === campo)?.label ?? campo;
 }
 
+export function tipoCampoReglaDescuento(
+  campo: CampoReglaDescuentoListaPrecioInput
+): "descuento" | "costo" {
+  return CAMPOS_REGLA_DESCUENTO_OPCIONES.find((o) => o.value === campo)?.tipo ?? "descuento";
+}
+
+/** Orden alfabético: proveedor → marca → rubro (comodín = cadena vacía). */
+export function ordenarReglasDescuentoListaPrecio<
+  T extends {
+    idProveedor?: string | null;
+    idMarca?: string | null;
+    idRubro?: string | null;
+    proveedorPrefijo?: string | null;
+    marcaNombre?: string | null;
+    rubroNombre?: string | null;
+  },
+>(reglas: T[]): T[] {
+  const localeOpts: Intl.CollatorOptions = { sensitivity: "base" };
+  return [...reglas].sort((a, b) => {
+    const cmpProv = celdaCondicionReglaDescuento(a, "proveedor").localeCompare(
+      celdaCondicionReglaDescuento(b, "proveedor"),
+      "es",
+      localeOpts
+    );
+    if (cmpProv !== 0) return cmpProv;
+    const cmpMarca = celdaCondicionReglaDescuento(a, "marca").localeCompare(
+      celdaCondicionReglaDescuento(b, "marca"),
+      "es",
+      localeOpts
+    );
+    if (cmpMarca !== 0) return cmpMarca;
+    return celdaCondicionReglaDescuento(a, "rubro").localeCompare(
+      celdaCondicionReglaDescuento(b, "rubro"),
+      "es",
+      localeOpts
+    );
+  });
+}
+
 export function fmtCondicionesReglaDescuento(regla: {
   idProveedor?: string | null;
   idMarca?: string | null;
