@@ -35,7 +35,7 @@ function legacyGestionProductosRedirects(): { source: string; destination: strin
     { source: "/gestion-productos/tienda/cx-px-tienda", destination: R.analisisPrecios.pxCompetencia, permanent: true },
     {
       source: "/gestion-productos/proveedores/comparacion-categorias/categorias",
-      destination: R.analisisPrecios.compCategorias.categorias,
+      destination: R.analisisPrecios.compCategorias.comparacion,
       permanent: true,
     },
     {
@@ -78,10 +78,6 @@ function canonicalGestionProductosRewrites(): { source: string; destination: str
     {
       source: R.analisisPrecios.compCategorias.comparacion,
       destination: I.analisisPrecios.compCategorias.comparacion,
-    },
-    {
-      source: R.analisisPrecios.compCategorias.categorias,
-      destination: I.analisisPrecios.compCategorias.categorias,
     },
   ];
 }
@@ -128,7 +124,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/proveedores/comparacion-categorias/categorias",
-        destination: R.analisisPrecios.compCategorias.categorias,
+        destination: R.analisisPrecios.compCategorias.comparacion,
+        permanent: true,
+      },
+      {
+        source: R.analisisPrecios.compCategorias.categorias,
+        destination: R.analisisPrecios.compCategorias.comparacion,
         permanent: true,
       },
       {

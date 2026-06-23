@@ -19,17 +19,25 @@ interface Props {
   loadingReferencia: boolean;
   referenciasCompetencia: ReferenciaCompetenciaPresentacion[];
   referenciaActivaId: string | null;
+  puedeEditarCatalogo: boolean;
   puedeEditarReferencia: boolean;
   quitarReferenciaPendingId: string | null;
   onSelectCategoria: (id: string) => void;
   onSelectSubcategoria: (id: string) => void;
   onSelectPresentacion: (id: string) => void;
   onSelectReferenciaActiva: (refCompId: string) => void;
+  onNuevoCategoria: () => void;
+  onNuevoSubcategoria: () => void;
+  onNuevoPresentacion: () => void;
+  onEditarCategoria: (id: string, nombre: string) => void;
+  onEliminarCategoria: (id: string, nombre: string) => void;
+  onEditarSubcategoria: (id: string, nombre: string) => void;
+  onEliminarSubcategoria: (id: string, nombre: string) => void;
+  onEditarPresentacion: (id: string, nombre: string) => void;
+  onEliminarPresentacion: (id: string, nombre: string) => void;
   onAgregarReferencia: () => void;
   onQuitarReferencia: (refCompId: string) => void;
 }
-
-const noop = () => {};
 
 export default function ComparacionCategoriaSelector({
   arbol,
@@ -39,12 +47,22 @@ export default function ComparacionCategoriaSelector({
   loadingReferencia,
   referenciasCompetencia,
   referenciaActivaId,
+  puedeEditarCatalogo,
   puedeEditarReferencia,
   quitarReferenciaPendingId,
   onSelectCategoria,
   onSelectSubcategoria,
   onSelectPresentacion,
   onSelectReferenciaActiva,
+  onNuevoCategoria,
+  onNuevoSubcategoria,
+  onNuevoPresentacion,
+  onEditarCategoria,
+  onEliminarCategoria,
+  onEditarSubcategoria,
+  onEliminarSubcategoria,
+  onEditarPresentacion,
+  onEliminarPresentacion,
   onAgregarReferencia,
   onQuitarReferencia,
 }: Props) {
@@ -60,9 +78,13 @@ export default function ComparacionCategoriaSelector({
 
   return (
     <div className={COMP_CATEGORIAS_SELECTOR_GRID_CLASS}>
-      <CatalogoFinderColumn titulo="CATEGORÍA" mostrarNuevo={false}>
+      <CatalogoFinderColumn
+        titulo="CATEGORÍA"
+        mostrarNuevo={puedeEditarCatalogo}
+        onNuevo={onNuevoCategoria}
+      >
         {arbol.length === 0 ? (
-          <CatalogoFinderEmpty mensaje="No hay categorías. Creá combinaciones en Categorias." />
+          <CatalogoFinderEmpty mensaje="No hay categorías. Usá + para crear una." />
         ) : (
           arbol.map((categoria) => (
             <CatalogoFinderRow
@@ -70,9 +92,9 @@ export default function ComparacionCategoriaSelector({
               nombre={categoria.nombre}
               selected={categoria.id === selectedCategoriaId}
               onClick={() => onSelectCategoria(categoria.id)}
-              mostrarAcciones={false}
-              onEditar={noop}
-              onEliminar={noop}
+              mostrarAcciones={puedeEditarCatalogo}
+              onEditar={() => onEditarCategoria(categoria.id, categoria.nombre)}
+              onEliminar={() => onEliminarCategoria(categoria.id, categoria.nombre)}
             />
           ))
         )}
@@ -80,7 +102,8 @@ export default function ComparacionCategoriaSelector({
 
       <CatalogoFinderColumn
         titulo="SUBCATEGORÍA"
-        mostrarNuevo={false}
+        mostrarNuevo={puedeEditarCatalogo && categoriaSeleccionada !== null}
+        onNuevo={onNuevoSubcategoria}
         deshabilitada={categoriaSeleccionada === null}
       >
         {!categoriaSeleccionada ? (
@@ -94,9 +117,9 @@ export default function ComparacionCategoriaSelector({
               nombre={subcategoria.nombre}
               selected={subcategoria.id === selectedSubcategoriaId}
               onClick={() => onSelectSubcategoria(subcategoria.id)}
-              mostrarAcciones={false}
-              onEditar={noop}
-              onEliminar={noop}
+              mostrarAcciones={puedeEditarCatalogo}
+              onEditar={() => onEditarSubcategoria(subcategoria.id, subcategoria.nombre)}
+              onEliminar={() => onEliminarSubcategoria(subcategoria.id, subcategoria.nombre)}
             />
           ))
         )}
@@ -104,7 +127,8 @@ export default function ComparacionCategoriaSelector({
 
       <CatalogoFinderColumn
         titulo="PRESENTACIÓN"
-        mostrarNuevo={false}
+        mostrarNuevo={puedeEditarCatalogo && subcategoriaSeleccionada !== null}
+        onNuevo={onNuevoPresentacion}
         deshabilitada={subcategoriaSeleccionada === null}
       >
         {!subcategoriaSeleccionada ? (
@@ -118,9 +142,9 @@ export default function ComparacionCategoriaSelector({
               nombre={presentacion.nombre}
               selected={presentacion.id === selectedPresentacionId}
               onClick={() => onSelectPresentacion(presentacion.id)}
-              mostrarAcciones={false}
-              onEditar={noop}
-              onEliminar={noop}
+              mostrarAcciones={puedeEditarCatalogo}
+              onEditar={() => onEditarPresentacion(presentacion.id, presentacion.nombre)}
+              onEliminar={() => onEliminarPresentacion(presentacion.id, presentacion.nombre)}
             />
           ))
         )}

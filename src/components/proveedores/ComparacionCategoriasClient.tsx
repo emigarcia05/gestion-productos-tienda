@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -31,6 +32,10 @@ import {
   COMP_CATEGORIAS_TABLA_PANEL_CLASS,
 } from "@/lib/comparacionCategoriasLayout";
 import ComparacionCategoriaSelector from "@/components/proveedores/comparacion-categorias/ComparacionCategoriaSelector";
+import CrearEditarComparacionCategoriaModal, {
+  type NivelComparacionCategoria,
+} from "@/components/proveedores/comparacion-categorias/CrearEditarComparacionCategoriaModal";
+import EliminarComparacionCategoriaModal from "@/components/proveedores/comparacion-categorias/EliminarComparacionCategoriaModal";
 import CeldaDifPct from "@/components/shared/CeldaDifPct";
 import { TableEmptyState } from "@/components/shared/TableEmptyState";
 import type { CategoriaComparacionTree } from "@/services/categoriasComparacion.service";
@@ -61,6 +66,27 @@ interface Props {
   arbolInicial: CategoriaComparacionTree[];
   rol: Rol;
 }
+
+type ModalCrearEditarCatalogoState =
+  | { open: false }
+  | {
+      open: true;
+      nivel: NivelComparacionCategoria;
+      modo: "crear" | "editar";
+      id?: string;
+      nombreInicial?: string;
+      parentId?: string;
+      parentNombre?: string;
+    };
+
+type ModalEliminarCatalogoState =
+  | { open: false }
+  | {
+      open: true;
+      nivel: NivelComparacionCategoria;
+      id: string;
+      nombre: string;
+    };
 
 function calcVariacionPct(costo: number | null, base: number | null): number | null {
   if (costo == null || costo <= 0 || base == null || base <= 0) return null;
@@ -117,7 +143,47 @@ function resolveCostoBaseVar(
   return { costoBase, baseIdEfectivo };
 }
 
+type SeleccionCascadaComparacion = {
+  categoriaId: string | null;
+  subcategoriaId: string | null;
+  presentacionId: string | null;
+};
+
+/** Si un nivel tiene una sola opción, la selecciona en cascada (categoría → subcategoría → presentación). */
+function resolverSeleccionCascadaUnica(
+  arbol: CategoriaComparacionTree[],
+  categoriaId: string | null,
+  subcategoriaId: string | null,
+  presentacionId: string | null
+): SeleccionCascadaComparacion {
+  let catId = categoriaId;
+  let subId = subcategoriaId;
+  let presId = presentacionId;
+
+  if (!catId && arbol.length === 1) {
+    catId = arbol[0].id;
+  }
+
+  if (catId && !subId) {
+    const categoria = arbol.find((c) => c.id === catId);
+    if (categoria?.subcategorias.length === 1) {
+      subId = categoria.subcategorias[0].id;
+    }
+  }
+
+  if (catId && subId && !presId) {
+    const categoria = arbol.find((c) => c.id === catId);
+    const subcategoria = categoria?.subcategorias.find((s) => s.id === subId);
+    if (subcategoria?.presentaciones.length === 1) {
+      presId = subcategoria.presentaciones[0].id;
+    }
+  }
+
+  return { categoriaId: catId, subcategoriaId: subId, presentacionId: presId };
+}
+
 export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props) {
+  const router = useRouter();
   const [selectedCategoriaId, setSelectedCategoriaId] = useState<string | null>(null);
   const [selectedSubcategoriaId, setSelectedSubcategoriaId] = useState<string | null>(null);
   const [selectedPresentacionId, setSelectedPresentacionId] = useState<string | null>(null);
@@ -135,8 +201,24 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
   const [baseItemId, setBaseItemId] = useState<string | null>(null);
   const [difPxRefManualDraft, setDifPxRefManualDraft] = useState<Record<string, number | null>>({});
   const [dtoExtraDraft, setDtoExtraDraft] = useState<Record<string, number | null>>({});
+  const [crearEditarCatalogo, setCrearEditarCatalogo] = useState<ModalCrearEditarCatalogoState>({
+    open: false,
+  });
+  const [eliminarCatalogo, setEliminarCatalogo] = useState<ModalEliminarCatalogoState>({
+    open: false,
+  });
 
   const puedeEditar = puede(rol, PERMISOS.comparacionCategorias.editar);
+
+  const categoriaSeleccionada = useMemo(
+    () => arbolInicial.find((c) => c.id === selectedCategoriaId) ?? null,
+    [arbolInicial, selectedCategoriaId]
+  );
+
+  const subcategoriaSeleccionada = useMemo(
+    () => categoriaSeleccionada?.subcategorias.find((s) => s.id === selectedSubcategoriaId) ?? null,
+    [categoriaSeleccionada, selectedSubcategoriaId]
+  );
 
   const { costoBase: costoBaseVar, baseIdEfectivo: baseIdEfectivoVar } = useMemo(
     () => resolveCostoBaseVar(productos, baseItemId, dtoExtraDraft),
@@ -144,6 +226,47 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
   );
 
   const hayBaseVar = costoBaseVar != null;
+
+  const limpiarSeleccionProductos = useCallback(() => {
+    setProductos([]);
+    setReferenciasCompetencia([]);
+    setReferenciaActivaId(null);
+    setLabelCompleto("");
+    setBaseItemId(null);
+    setDifPxRefManualDraft({});
+    setDtoExtraDraft({});
+  }, []);
+
+  const onSuccessCatalogoRefresh = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
+  const handleEliminarCatalogoSuccess = useCallback(
+    (nivel: NivelComparacionCategoria, id: string) => {
+      setEliminarCatalogo({ open: false });
+      if (nivel === "categoria" && selectedCategoriaId === id) {
+        setSelectedCategoriaId(null);
+        setSelectedSubcategoriaId(null);
+        setSelectedPresentacionId(null);
+        limpiarSeleccionProductos();
+      } else if (nivel === "subcategoria" && selectedSubcategoriaId === id) {
+        setSelectedSubcategoriaId(null);
+        setSelectedPresentacionId(null);
+        limpiarSeleccionProductos();
+      } else if (nivel === "presentacion" && selectedPresentacionId === id) {
+        setSelectedPresentacionId(null);
+        limpiarSeleccionProductos();
+      }
+      onSuccessCatalogoRefresh();
+    },
+    [
+      limpiarSeleccionProductos,
+      onSuccessCatalogoRefresh,
+      selectedCategoriaId,
+      selectedPresentacionId,
+      selectedSubcategoriaId,
+    ]
+  );
 
   const loadProductos = useCallback(async (presentacionId: string) => {
     setLoadingProductos(true);
@@ -176,30 +299,65 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     }
   }, []);
 
-  const handleSelectCategoria = useCallback((id: string) => {
-    setSelectedCategoriaId(id);
-    setSelectedSubcategoriaId(null);
-    setSelectedPresentacionId(null);
-    setProductos([]);
-    setReferenciasCompetencia([]);
-    setReferenciaActivaId(null);
-    setLabelCompleto("");
-    setBaseItemId(null);
-    setDifPxRefManualDraft({});
-    setDtoExtraDraft({});
-  }, []);
+  const aplicarSeleccionCascada = useCallback(
+    (categoriaId: string | null, subcategoriaId: string | null, presentacionId: string | null) => {
+      const next = resolverSeleccionCascadaUnica(
+        arbolInicial,
+        categoriaId,
+        subcategoriaId,
+        presentacionId
+      );
+      setSelectedCategoriaId(next.categoriaId);
+      setSelectedSubcategoriaId(next.subcategoriaId);
+      setSelectedPresentacionId(next.presentacionId);
+      if (next.presentacionId) {
+        void loadProductos(next.presentacionId);
+      } else {
+        limpiarSeleccionProductos();
+      }
+    },
+    [arbolInicial, limpiarSeleccionProductos, loadProductos]
+  );
 
-  const handleSelectSubcategoria = useCallback((id: string) => {
-    setSelectedSubcategoriaId(id);
-    setSelectedPresentacionId(null);
-    setProductos([]);
-    setReferenciasCompetencia([]);
-    setReferenciaActivaId(null);
-    setLabelCompleto("");
-    setBaseItemId(null);
-    setDifPxRefManualDraft({});
-    setDtoExtraDraft({});
-  }, []);
+  useEffect(() => {
+    const next = resolverSeleccionCascadaUnica(
+      arbolInicial,
+      selectedCategoriaId,
+      selectedSubcategoriaId,
+      selectedPresentacionId
+    );
+    if (
+      next.categoriaId === selectedCategoriaId &&
+      next.subcategoriaId === selectedSubcategoriaId &&
+      next.presentacionId === selectedPresentacionId
+    ) {
+      return;
+    }
+    setSelectedCategoriaId(next.categoriaId);
+    setSelectedSubcategoriaId(next.subcategoriaId);
+    setSelectedPresentacionId(next.presentacionId);
+    if (next.presentacionId && next.presentacionId !== selectedPresentacionId) {
+      void loadProductos(next.presentacionId);
+    } else if (!next.presentacionId && selectedPresentacionId) {
+      limpiarSeleccionProductos();
+    }
+    // Solo re-cascada al cambiar el árbol (p. ej. tras crear ítem o refresh).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- no reaccionar a cada click manual
+  }, [arbolInicial]);
+
+  const handleSelectCategoria = useCallback(
+    (id: string) => {
+      aplicarSeleccionCascada(id, null, null);
+    },
+    [aplicarSeleccionCascada]
+  );
+
+  const handleSelectSubcategoria = useCallback(
+    (id: string) => {
+      aplicarSeleccionCascada(selectedCategoriaId, id, null);
+    },
+    [aplicarSeleccionCascada, selectedCategoriaId]
+  );
 
   const handleSelectPresentacion = useCallback(
     (id: string) => {
@@ -349,7 +507,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     <>
       <ClassicFilteredTableLayout
         title="Lista Proveedores"
-        subtitle="Comparacion"
+        subtitle="Categorias"
         contentWidth={COMP_CATEGORIAS_CONTENT_WIDTH}
         contentClassName={COMP_CATEGORIAS_PAGE_CONTENT_CLASS}
       >
@@ -363,12 +521,78 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
               loadingReferencia={loadingProductos}
               referenciasCompetencia={referenciasCompetencia}
               referenciaActivaId={referenciaActivaId}
+              puedeEditarCatalogo={puedeEditar}
               puedeEditarReferencia={puedeEditar}
               quitarReferenciaPendingId={quitarReferenciaPendingId}
               onSelectCategoria={handleSelectCategoria}
               onSelectSubcategoria={handleSelectSubcategoria}
               onSelectPresentacion={handleSelectPresentacion}
               onSelectReferenciaActiva={setReferenciaActivaId}
+              onNuevoCategoria={() =>
+                setCrearEditarCatalogo({ open: true, nivel: "categoria", modo: "crear" })
+              }
+              onNuevoSubcategoria={() =>
+                categoriaSeleccionada &&
+                setCrearEditarCatalogo({
+                  open: true,
+                  nivel: "subcategoria",
+                  modo: "crear",
+                  parentId: categoriaSeleccionada.id,
+                  parentNombre: categoriaSeleccionada.nombre,
+                })
+              }
+              onNuevoPresentacion={() =>
+                subcategoriaSeleccionada &&
+                setCrearEditarCatalogo({
+                  open: true,
+                  nivel: "presentacion",
+                  modo: "crear",
+                  parentId: subcategoriaSeleccionada.id,
+                  parentNombre: subcategoriaSeleccionada.nombre,
+                })
+              }
+              onEditarCategoria={(id, nombre) =>
+                setCrearEditarCatalogo({
+                  open: true,
+                  nivel: "categoria",
+                  modo: "editar",
+                  id,
+                  nombreInicial: nombre,
+                })
+              }
+              onEliminarCategoria={(id, nombre) =>
+                setEliminarCatalogo({ open: true, nivel: "categoria", id, nombre })
+              }
+              onEditarSubcategoria={(id, nombre) =>
+                categoriaSeleccionada &&
+                setCrearEditarCatalogo({
+                  open: true,
+                  nivel: "subcategoria",
+                  modo: "editar",
+                  id,
+                  nombreInicial: nombre,
+                  parentId: categoriaSeleccionada.id,
+                  parentNombre: categoriaSeleccionada.nombre,
+                })
+              }
+              onEliminarSubcategoria={(id, nombre) =>
+                setEliminarCatalogo({ open: true, nivel: "subcategoria", id, nombre })
+              }
+              onEditarPresentacion={(id, nombre) =>
+                subcategoriaSeleccionada &&
+                setCrearEditarCatalogo({
+                  open: true,
+                  nivel: "presentacion",
+                  modo: "editar",
+                  id,
+                  nombreInicial: nombre,
+                  parentId: subcategoriaSeleccionada.id,
+                  parentNombre: subcategoriaSeleccionada.nombre,
+                })
+              }
+              onEliminarPresentacion={(id, nombre) =>
+                setEliminarCatalogo({ open: true, nivel: "presentacion", id, nombre })
+              }
               onAgregarReferencia={() => setModalReferencia(true)}
               onQuitarReferencia={(refCompId) => void handleQuitarReferencia(refCompId)}
             />
@@ -615,6 +839,36 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
             onSuccess={onReferenciaSuccess}
           />
         </>
+      )}
+
+      {crearEditarCatalogo.open && (
+        <CrearEditarComparacionCategoriaModal
+          open={crearEditarCatalogo.open}
+          onOpenChange={(next) => !next && setCrearEditarCatalogo({ open: false })}
+          nivel={crearEditarCatalogo.nivel}
+          modo={crearEditarCatalogo.modo}
+          id={crearEditarCatalogo.id}
+          nombreInicial={crearEditarCatalogo.nombreInicial}
+          parentId={crearEditarCatalogo.parentId}
+          parentNombre={crearEditarCatalogo.parentNombre}
+          onSuccess={() => {
+            setCrearEditarCatalogo({ open: false });
+            onSuccessCatalogoRefresh();
+          }}
+        />
+      )}
+
+      {eliminarCatalogo.open && (
+        <EliminarComparacionCategoriaModal
+          open={eliminarCatalogo.open}
+          onOpenChange={(next) => !next && setEliminarCatalogo({ open: false })}
+          nivel={eliminarCatalogo.nivel}
+          id={eliminarCatalogo.id}
+          nombre={eliminarCatalogo.nombre}
+          onSuccess={() =>
+            handleEliminarCatalogoSuccess(eliminarCatalogo.nivel, eliminarCatalogo.id)
+          }
+        />
       )}
     </>
   );

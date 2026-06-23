@@ -230,8 +230,12 @@ export function isGpRouteActive(pathname: string, canonicalHref: string): boolea
   }
 
   if (canonicalHref === GP_ROUTES.analisisPrecios.compCategorias.comparacion) {
-    const aliases = GP_ROUTE_ALIASES[canonicalHref] ?? [];
-    return aliases.some((alias) => pathname === alias && !pathname.endsWith("/categorias"));
+    const comparacionAliases = GP_ROUTE_ALIASES[canonicalHref] ?? [];
+    const categoriasAliases =
+      GP_ROUTE_ALIASES[GP_ROUTES.analisisPrecios.compCategorias.categorias] ?? [];
+    return [...comparacionAliases, ...categoriasAliases].some(
+      (alias) => pathname === alias || pathname.startsWith(`${alias}/`)
+    );
   }
 
   const aliases = GP_ROUTE_ALIASES[canonicalHref] ?? [];
