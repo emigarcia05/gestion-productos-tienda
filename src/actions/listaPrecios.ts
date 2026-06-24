@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { REVALIDATE_LISTA_PRECIOS } from "@/lib/gestionProductosRoutes";
 import {
   actualizarListaPreciosMasivo,
   crearProductoListaPrecio,
@@ -179,7 +180,10 @@ export async function crearProductoListaPrecioAction(
     return { ok: false, error: "Sin permisos para crear productos en la lista." };
   }
   if (!(await esEditor())) {
-    return { ok: false, error: "Sin permisos de editor." };
+    return {
+      ok: false,
+      error: "Activá el modo editor en el sidebar (CAMBIAR USUARIO) para crear productos.",
+    };
   }
 
   const parsed = crearProductoListaPrecioSchema.safeParse(raw);
@@ -191,13 +195,20 @@ export async function crearProductoListaPrecioAction(
     return { ok: false, error: msg };
   }
 
-  const result = await crearProductoListaPrecio(parsed.data);
-  if (!result.ok) {
-    return { ok: false, error: result.error };
-  }
+  try {
+    const result = await crearProductoListaPrecio(parsed.data);
+    if (!result.ok) {
+      return { ok: false, error: result.error };
+    }
 
-  revalidatePath("/proveedores/lista-precios");
-  return { ok: true, data: { codExt: result.codExt, creado: result.creado } };
+    for (const path of REVALIDATE_LISTA_PRECIOS) {
+      revalidatePath(path);
+    }
+    return { ok: true, data: { codExt: result.codExt, creado: result.creado } };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "No se pudo crear el producto.";
+    return { ok: false, error: message };
+  }
 }
 
 /**

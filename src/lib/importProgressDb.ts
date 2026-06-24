@@ -24,19 +24,24 @@ export interface ImportProgressState {
   result: ImportProgressResult | null;
 }
 
+/** Respuesta neutra para clientes sin permiso de import (evita 403 en polling). */
+export function importProgressIdleState(): ImportProgressState {
+  return {
+    running: false,
+    processed: 0,
+    total: 0,
+    done: false,
+    error: null,
+    result: null,
+  };
+}
+
 export async function getImportProgressFromDb(): Promise<ImportProgressState> {
   const row = await prisma.importProgress.findUnique({
     where: { id: IMPORT_PROGRESS_ID },
   });
   if (!row) {
-    return {
-      running: false,
-      processed: 0,
-      total: 0,
-      done: false,
-      error: null,
-      result: null,
-    };
+    return importProgressIdleState();
   }
   const result: ImportProgressResult | null =
     row.resultCreados != null

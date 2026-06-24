@@ -8,11 +8,11 @@ import { useImportResult } from "@/components/import/ImportResultContext";
 const POLL_INTERVAL_MS = 1000;
 
 interface Props {
-  /** Solo editor puede importar; evita polling 403 en usuarios simple. */
+  /** Solo editor puede importar; evita polling innecesario en usuarios simple. */
   pollEnabled?: boolean;
 }
 
-export default function ImportStatusIndicator({ pollEnabled = true }: Props) {
+export default function ImportStatusIndicator({ pollEnabled = false }: Props) {
   const { openResult, openError } = useImportResult();
   const [running, setRunning] = useState(false);
   const [processed, setProcessed] = useState(0);

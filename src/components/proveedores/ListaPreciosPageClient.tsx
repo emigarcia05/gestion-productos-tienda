@@ -70,8 +70,9 @@ export default function ListaPreciosPageClient({
   );
 
   const p = PERMISOS.listaPrecios;
-  const puedeImportar = puede(rol, p.acciones.importarLista);
-  const puedeEdicionMasiva = puede(rol, p.acciones.edicionMasiva);
+  const esEditorActivo = rol === "editor";
+  const puedeImportar = esEditorActivo && puede(rol, p.acciones.importarLista);
+  const puedeEdicionMasiva = esEditorActivo && puede(rol, p.acciones.edicionMasiva);
   const puedeGestionarCotizacion = puede(rol, p.acciones.gestionarCotizacionUsd);
   const puedeGestionarReglas = puede(rol, p.acciones.gestionarReglasDescuentos);
   const puedeVerCotizacion =

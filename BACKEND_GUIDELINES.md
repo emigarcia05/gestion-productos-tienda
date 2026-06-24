@@ -210,7 +210,8 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **Lectura lista precios**: `FilaListaPrecioParaCliente` incluye `idPrecioRex` y `precioRex` (`listaPrecios.service.ts`, include `precioRex`). Filtro **`vinculado`** en `listaPreciosFiltrosLecturaSchema`: `true` → `idPrecioRex IS NOT NULL`; `false` → `idPrecioRex IS NULL`. Aplica en grilla, exportación y opciones dinámicas de proveedor/marca/rubro (`getListaPreciosConTiendaFiltrada`).
 - **IDs en Actions futuras**: `idProveedor` con `prismaCuidSchema`; payload filas PDF con `filaPdfMatrizNormalizadaSchema`.
 - **Origen previsto**: **`ConvertirPdfListaPreciosModal`** — `proveedorId` obligatorio al convertir; tras parse exitoso persiste vía **`guardarPreciosRexDesdePdfAction`** (`src/actions/prodPreciosRex.ts`) → **`upsertPreciosRexDesdeFilasPdf`** (`src/services/prodPreciosRex.service.ts`). Clave upsert: **`normalizarDescripcionPrecioRex(descripcionExport)`** + proveedor. Duplicados en el mismo lote: gana el último precio.
-- **Gate**: `PERMISOS.listaPrecios.acciones.importarLista` + `esEditor()` (mismo que import PDF / lista precios).
+- **Gate**: `PERMISOS.listaPrecios.acciones.importarLista` + `esEditor()` (mismo que import PDF / lista precios / **Crear Producto**). Permiso `importarLista`: solo **editor** (`permisos.ts`).
+- **GET `/api/import-lista-precios/status`**: sin permiso → **200** + `importProgressIdleState()` (no 403); el POST de importación mantiene **403** vía `guardListaPreciosImportarEsEditor`.
 - **Validación**: `guardarPreciosRexDesdePdfSchema` en `@/lib/validations/prodPreciosRex.ts`.
 
 ### 1.4.5 Stock multi-depósito DUX (`prod_tienda` + `prod_depositos_dux` + `prod_tienda_stock`)
