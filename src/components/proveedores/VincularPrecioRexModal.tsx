@@ -111,10 +111,6 @@ export default function VincularPrecioRexModal({ open, onClose, fila, onVinculad
 
   async function vincularRow(row: PrecioRexParaVincular) {
     if (!fila) return;
-    if (row.vinculadoAFilaActual) {
-      toast.info("Este precio REX ya está vinculado a este producto.");
-      return;
-    }
     setVinculando(true);
     try {
       const result = await vincularListaPrecioConPrecioRexAction({
@@ -125,7 +121,11 @@ export default function VincularPrecioRexModal({ open, onClose, fila, onVinculad
         toast.error(result.error);
         return;
       }
-      toast.success("Precio REX vinculado.");
+      toast.success(
+        row.vinculadoAFilaActual
+          ? "Precio de lista sincronizado desde REX."
+          : "Precio REX vinculado y sincronizado en lista."
+      );
       onVinculado?.();
       onClose();
     } finally {
@@ -232,8 +232,8 @@ export default function VincularPrecioRexModal({ open, onClose, fila, onVinculad
                           const otrosCount = row.otrosVinculosLista.length;
                           const titleParts = [
                             row.vinculadoAFilaActual
-                              ? "Ya vinculado a este producto"
-                              : "Doble clic para vincular",
+                              ? "Ya vinculado — doble clic para re-sincronizar precio"
+                              : "Doble clic para vincular y sincronizar precio",
                             otrosCount > 0
                               ? `También vinculado a ${otrosCount} otro(s) ítem(s) de lista`
                               : null,
@@ -266,7 +266,7 @@ export default function VincularPrecioRexModal({ open, onClose, fila, onVinculad
                                 </span>
                               </TableCell>
                               <TableCell className="celda-datos celda-numero text-right tabular-nums whitespace-nowrap">
-                                {fmtPrecioTabla(row.precio)}
+                                {fmtPrecioTabla(row.pxListaProveedor)}
                               </TableCell>
                             </TableRow>
                           );

@@ -41,7 +41,7 @@ const TIPO_URGENTE_MERC2 = "URGENTE";
 export interface PrecioRexVinculoCliente {
   id: string;
   descripcion: string;
-  precio: number;
+  pxListaProveedor: number;
 }
 
 export type { DescuentoActivoListaPrecio } from "@/services/descuentosListaPrecioReglas.service";
@@ -77,7 +77,7 @@ export interface FilaListaPrecioParaCliente {
 const listaPrecioParaClienteInclude = {
   proveedor: true,
   prodTienda: { select: { descripcionTienda: true } },
-  precioRex: { select: { id: true, descripcion: true, precio: true } },
+  precioRex: { select: { id: true, descripcion: true, pxListaProveedor: true } },
 } as const;
 
 type ListaPrecioProveedorParaCliente = Prisma.ListaPrecioProveedorGetPayload<{
@@ -118,7 +118,7 @@ function mapListaPrecioProveedorParaCliente(f: ListaPrecioProveedorParaCliente):
       ? {
           id: f.precioRex.id,
           descripcion: f.precioRex.descripcion,
-          precio: Number(f.precioRex.precio),
+          pxListaProveedor: Number(f.precioRex.pxListaProveedor),
         }
       : null,
   };

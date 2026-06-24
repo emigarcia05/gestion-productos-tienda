@@ -12,10 +12,33 @@ import type { Prisma } from "@prisma/client";
 export interface UpsertPreciosRexResult {
   creados: number;
   actualizados: number;
+  /** Filas `prod_precios_provee` cuyo `px_lista_proveedor` se actualizó desde REX vinculado. */
+  listaPreciosSincronizadas: number;
   errores: string[];
 }
 
 const CHUNK_PREFETCH = 500;
+
+/**
+ * Copia `prod_precios_rex.px_lista_proveedor` → `prod_precios_provee.px_lista_proveedor`
+ * en todas las filas lista con `id_precio_rex` apuntando a esos REX.
+ */
+export async function sincronizarPxListaProveedorDesdePreciosRex(
+  idsPrecioRex: string[]
+): Promise<{ filasActualizadas: number }> {
+  const uniqueIds = [...new Set(idsPrecioRex.filter(Boolean))];
+  if (uniqueIds.length === 0) return { filasActualizadas: 0 };
+
+  const filasActualizadas = await prisma.$executeRaw`
+    UPDATE prod_precios_provee AS lp
+    SET px_lista_proveedor = r.px_lista_proveedor
+    FROM prod_precios_rex AS r
+    WHERE lp.id_precio_rex = r.id
+      AND r.id = ANY(${uniqueIds}::text[])
+  `;
+
+  return { filasActualizadas: Number(filasActualizadas) };
+}
 
 function deduplicarFilasPorDescripcion(
   filas: FilaPdfMatrizNormalizadaDto[]
@@ -39,7 +62,12 @@ export async function upsertPreciosRexDesdeFilasPdf(
 ): Promise<UpsertPreciosRexResult> {
   const filasUnicas = deduplicarFilasPorDescripcion(filas);
   if (filasUnicas.length === 0) {
-    return { creados: 0, actualizados: 0, errores: ["No hay filas con descripción válida para guardar."] };
+    return {
+      creados: 0,
+      actualizados: 0,
+      listaPreciosSincronizadas: 0,
+      errores: ["No hay filas con descripción válida para guardar."],
+    };
   }
 
   const existentesSet = new Set<string>();
@@ -57,12 +85,13 @@ export async function upsertPreciosRexDesdeFilasPdf(
   let creados = 0;
   let actualizados = 0;
   const errores: string[] = [];
+  const idsPrecioRexActualizados: string[] = [];
 
   for (const fila of filasUnicas) {
     try {
       const existia = existentesSet.has(fila.descripcion);
 
-      await prisma.prodPrecioRex.upsert({
+      const rex = await prisma.prodPrecioRex.upsert({
         where: {
           idProveedor_descripcion: {
             idProveedor: proveedorId,
@@ -72,15 +101,18 @@ export async function upsertPreciosRexDesdeFilasPdf(
         create: {
           idProveedor: proveedorId,
           descripcion: fila.descripcion,
-          precio: fila.precio,
+          pxListaProveedor: fila.precio,
         },
         update: {
-          precio: fila.precio,
+          pxListaProveedor: fila.precio,
         },
+        select: { id: true },
       });
 
-      if (existia) actualizados++;
-      else {
+      if (existia) {
+        actualizados++;
+        idsPrecioRexActualizados.push(rex.id);
+      } else {
         creados++;
         existentesSet.add(fila.descripcion);
       }
@@ -90,7 +122,12 @@ export async function upsertPreciosRexDesdeFilasPdf(
     }
   }
 
-  return { creados, actualizados, errores };
+  const { filasActualizadas: listaPreciosSincronizadas } =
+    idsPrecioRexActualizados.length > 0
+      ? await sincronizarPxListaProveedorDesdePreciosRex(idsPrecioRexActualizados)
+      : { filasActualizadas: 0 };
+
+  return { creados, actualizados, listaPreciosSincronizadas, errores };
 }
 
 export interface VinculoListaPrecioRexResumen {
@@ -101,7 +138,7 @@ export interface VinculoListaPrecioRexResumen {
 export interface PrecioRexParaVincular {
   id: string;
   descripcion: string;
-  precio: number;
+  pxListaProveedor: number;
   /** Otros ítems de lista que ya apuntan a este REX (informativo). */
   otrosVinculosLista: VinculoListaPrecioRexResumen[];
   /** Este REX ya está vinculado a la fila en edición. */
@@ -135,7 +172,7 @@ export async function listarPreciosRexParaVincular(
   return rows.map((r) => ({
     id: r.id,
     descripcion: r.descripcion,
-    precio: Number(r.precio),
+    pxListaProveedor: Number(r.pxListaProveedor),
     otrosVinculosLista: r.listaPreciosProveedor
       .filter((lp) => lp.codExt !== codExtLista)
       .map((lp) => ({
@@ -162,7 +199,7 @@ export async function vincularListaPrecioConPrecioRex(
     }),
     prisma.prodPrecioRex.findUnique({
       where: { id: idPrecioRex },
-      select: { id: true, idProveedor: true },
+      select: { id: true, idProveedor: true, pxListaProveedor: true },
     }),
   ]);
 
@@ -176,13 +213,12 @@ export async function vincularListaPrecioConPrecioRex(
     return { ok: false, error: "El precio REX pertenece a otro proveedor." };
   }
 
-  if (lista.idPrecioRex === idPrecioRex) {
-    return { ok: true };
-  }
-
   await prisma.listaPrecioProveedor.update({
     where: { codExt: codExtLista },
-    data: { idPrecioRex },
+    data: {
+      idPrecioRex,
+      pxListaProveedor: rex.pxListaProveedor,
+    },
   });
 
   return { ok: true };

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
+import { REVALIDATE_LISTA_PRECIOS } from "@/lib/gestionProductosRoutes";
 import { getProveedorById } from "@/services/proveedor.service";
 import { upsertPreciosRexDesdeFilasPdf, listarPreciosRexParaVincular, vincularListaPrecioConPrecioRex } from "@/services/prodPreciosRex.service";
 import type { PrecioRexParaVincular } from "@/services/prodPreciosRex.service";
@@ -16,6 +17,7 @@ import {
 export interface GuardarPreciosRexResult {
   creados: number;
   actualizados: number;
+  listaPreciosSincronizadas: number;
   errores: string[];
 }
 
@@ -47,15 +49,18 @@ export async function guardarPreciosRexDesdePdfAction(
   }
 
   try {
-    const { creados, actualizados, errores } = await upsertPreciosRexDesdeFilasPdf(proveedorId, filas);
+    const { creados, actualizados, listaPreciosSincronizadas, errores } =
+      await upsertPreciosRexDesdeFilasPdf(proveedorId, filas);
 
     if (creados === 0 && actualizados === 0 && errores.length > 0) {
       return { ok: false, error: errores[0] ?? "No se pudieron guardar los precios." };
     }
 
-    revalidatePath("/proveedores/lista-precios");
+    for (const path of REVALIDATE_LISTA_PRECIOS) {
+      revalidatePath(path);
+    }
 
-    return { ok: true, data: { creados, actualizados, errores } };
+    return { ok: true, data: { creados, actualizados, listaPreciosSincronizadas, errores } };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Error al guardar precios REX.";
     return { ok: false, error: message };
@@ -116,7 +121,9 @@ export async function vincularListaPrecioConPrecioRexAction(
       return { ok: false, error: result.error };
     }
 
-    revalidatePath("/proveedores/lista-precios");
+    for (const path of REVALIDATE_LISTA_PRECIOS) {
+      revalidatePath(path);
+    }
     return { ok: true, data: undefined };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Error al vincular precio REX.";

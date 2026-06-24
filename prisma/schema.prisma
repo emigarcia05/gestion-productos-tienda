@@ -636,12 +636,12 @@ model Marca {
   @@map("prod_marcas")
 }
 
-/** Catálogo de precios REX por proveedor: descripción + precio unitario por ítem. */
+/** Catálogo de precios REX por proveedor: descripción + precio lista por ítem. */
 model ProdPrecioRex {
-  id          String  @id @default(cuid())
-  idProveedor String  @map("id_proveedor")
-  descripcion String  @map("descripcion")
-  precio      Decimal @map("precio") @db.Decimal(14, 4)
+  id               String  @id @default(cuid())
+  idProveedor      String  @map("id_proveedor")
+  descripcion      String  @map("descripcion")
+  pxListaProveedor Decimal @map("px_lista_proveedor") @db.Decimal(14, 4)
 
   proveedor Proveedor @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
   listaPreciosProveedor ListaPrecioProveedor[]
