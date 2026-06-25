@@ -1002,7 +1002,9 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-05-27): **Vinc. Con Prov.** — solo **editor** (`PERMISOS.tienda.acceso`); módulo **ANALISIS DE PRECIOS** en sidebar.*
 
-*Última actualización (2026-06-24): **`/finanzas/posicion-iva`** — botón **`ConfigurarIvaComparacionPedidosControl`** en `actions` de `ClassicFilteredTableLayout` (patrón **`CotizacionUsdListaPreciosControl`**): modo **Automático** (acumulado calculado) vs **Configurado** (saldo manual para decidir SIN IVA / CON IVA en pedidos). Solo **editor**; lectores ven etiqueta sin modal. Input de saldo con enteros y signo (como **`EditarIvaSaldoManualModal`**).*
+*Última actualización (2026-06-24): **`/finanzas/posicion-iva`** — **`ConfigurarIvaComparacionPedidosControl`**: modal **Conf. IVA Saldo para Comparacion Costo** con una sola fila **POSICION IVA** + **`MontoArSaldoEnteroInput`** (máscara `$` / miles `.` / enteros; tecla **`-`** para signo). Solo **editor**.*
+
+*Última actualización (2026-06-24): **`MontoArSaldoEnteroInput`** (`@/components/shared/MontoArSaldoEnteroInput.tsx`) — variante de **`MontoArInput`** para saldos enteros con signo (p. ej. posición IVA). Helpers en **`montoArMask`**: `montoArPesosEnterosSignedToDisplay`, `montoArSaldoEnteroPartsToPesos`.*
 
 *Última actualización (2026-05-27): **`/finanzas/posicion-iva`** — import solo **TXT alícuotas** (62 caracteres). Modal **Importar IVA Débito (Alícuotas)**; IVA de columna **IVA DÉBITO** = valor del archivo (sin fórmula 21 %).*
 

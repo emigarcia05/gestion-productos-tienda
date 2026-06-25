@@ -53,6 +53,55 @@ export function montoArPesosEnterosToDisplay(pesos: number): string {
   return montoArCentsToDisplayWithCurrency(cents);
 }
 
+/** Saldo entero con signo: `$-36.013,00` / `$36.013,00` (máscara AR, sin decimales fraccionarios). */
+export function montoArPesosEnterosSignedToDisplay(pesos: number): string {
+  if (!Number.isFinite(pesos) || pesos === 0) {
+    return montoArCentsToDisplayWithCurrency(0);
+  }
+  const neg = pesos < 0;
+  const ent = Math.abs(Math.trunc(pesos));
+  const cents = Math.min(ent * 100, MONTO_AR_MASK_MAX_CENTS);
+  const body = montoArCentsToDisplayBody(cents);
+  return neg ? `$-${body}` : `$${body}`;
+}
+
+/** Toolbar / etiquetas compactas: `$-36.013` (sin `,00`). */
+export function montoArPesosEnterosSignedToDisplayCompact(pesos: number): string {
+  if (!Number.isFinite(pesos) || pesos === 0) return "$0";
+  const neg = pesos < 0;
+  const entFmt = Math.abs(Math.trunc(pesos)).toLocaleString("es-AR", {
+    useGrouping: true,
+    maximumFractionDigits: 0,
+  });
+  return neg ? `$-${entFmt}` : `$${entFmt}`;
+}
+
+/** Magnitud y signo desde pesos enteros (p. ej. saldo IVA negativo). */
+export function montoArPesosEnterosSignedToParts(pesos: number): {
+  negativo: boolean;
+  magnitudeNormalized: string;
+} {
+  if (!Number.isFinite(pesos) || pesos === 0) {
+    return { negativo: false, magnitudeNormalized: "" };
+  }
+  const ent = Math.trunc(pesos);
+  return {
+    negativo: ent < 0,
+    magnitudeNormalized: String(Math.abs(ent)),
+  };
+}
+
+/** Pesos enteros con signo desde magnitud normalizada + flag negativo. */
+export function montoArSaldoEnteroPartsToPesos(
+  magnitudeNormalized: string,
+  negativo: boolean
+): number | null {
+  const t = magnitudeNormalized.trim();
+  if (t === "") return null;
+  const mag = montoArNormalizedStringToPesosIntRounded(t);
+  return negativo ? -mag : mag;
+}
+
 /** Pesos (2 decimales) desde string normalizado. */
 export function montoArNormalizedStringToPesosNumber(norm: string): number {
   return montoArNormalizedStringToCents(norm) / 100;
