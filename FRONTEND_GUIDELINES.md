@@ -82,7 +82,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
    - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
     - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`pt-3 px-4`). Abajo (`mt-auto`, `px-4 pb-4`): **sync/import** → bloque **usuario + área/logo** (una misma sección visual): **regla horizontal** clara arriba del usuario (`flex justify-center` + `h-px w-[80%] bg-sidebar-foreground/85`) → **`SelectorRol` `compact`** (`mt-2` + wrapper `rounded-lg p-2`) → **`SidebarMainAppArea`** (`flex w-full min-w-0 flex-col` **`pt-2 pb-2`** + `className="pt-2"`), sin mezclar usuario y área en el mismo nodo DOM.
-    - **Progreso import / sync** (`ImportStatusIndicator`, `SyncStatusIndicator`): **`MensajeProceso` `variant="sidebar"`** solo cuando hay **proceso en curso** (fondo/borde azul proceso en `globals.css`). `ImportStatusIndicator` solo visible con import activa; su polling a **`GET /api/import-lista-precios/status`** solo si **`pollEnabled`** (`rol === "editor"` en `Sidebar.tsx`) — evita **403** en usuarios simple. `SyncStatusIndicator` en **reposo**: textos según **área** (`getMainAppAreaIdFromPathname`): **Gestión Productos** y **Estadísticas Productos** → **`SINCRONIZACION PROD.`** / hover **`SINCRONIZAR PROD.`**; **Finanzas** → **`SINCRONIZACION COMPRAS`** / hover **`SINCRONIZAR COMPRAS`**. Línea 2 **`Últ. Act.: Hace …`** (regla de tiempo: bloques de **15 min.** bajo 1 h; luego horas/días). En **sync lista precios** (polling API): **`SINCRONIZANDO PROD.`** o **`GUARDANDO PROD.`** (`phase` del status) + detalle X de Y; al finalizar, toast de éxito. En **sync compras** (Finanzas): **`SINCRONIZANDO COMPRAS`** + detalle **X de Y** (sucursales ya procesadas / total con `id_dux`), vía polling `GET /api/sync-compras-proveedor-dux/status` y hook **`useSyncComprasProveedorDuxStatusPoll`** (mientras corre la action).
+    - **Progreso import / sync** (`ImportStatusIndicator`, `SyncStatusIndicator`): `ImportStatusIndicator` solo visible con import activa; polling solo si **`pollEnabled`** (`rol === "editor"`). **`SyncStatusIndicator`**: botón fijo **`SINCRONIZAR`** + línea **`Últ. Act.: Hace …`** (más reciente entre productos y compras). **Simple**: click → sync **productos**. **Editor**: click → modal **`SincronizarDuxOpcionesModal`** (**Productos** / **Compras**). Con cualquier sync en curso el botón queda **deshabilitado** (sin reemplazar el slot por barra de progreso); detalle opcional en `title` del botón. Toasts al finalizar productos/compras.
      - Resto de botones de sidebar (navegación, etc.): tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
 
 **Referencia rápida de tokens (usar en lugar de valores fijos):**
@@ -791,15 +791,18 @@ En la slidenav se usa `SelectorRol` con `compact` para renderizar un **botón de
 
 ### Slidenav — Sincronización DUX (`src/components/layout/SyncStatusIndicator.tsx`)
 
-Botón/indicador persistente en la parte inferior de la slidenav. El markup del reposo se delega a **`DuxSyncStyleButton`** (`surface="sidebar"`).
+Botón persistente en la parte inferior de la slidenav. Markup en **`DuxSyncStyleButton`** (`surface="sidebar"`).
 
-- **Estados**
-  - **Reposo**: etiquetas por área (ver bullet **Ritmo vertical** arriba). **`Últ. Act.:** en **Gestión Productos** / **Estadísticas Productos** viene del polling (`lastCompletedAt` de lista precios). En **Finanzas** refleja la **última sync de compras exitosa en el cliente** (misma sesión; no es el timestamp de lista precios).
-  - **Sync lista precios en curso** (polling): **`SINCRONIZANDO PROD.`** / **`GUARDANDO PROD.`** (limpieza final). El cliente encadena **`POST /api/sync-lista-precios-tienda`** mientras **`continuing: true`**. Reanuda solo al recargar si quedó `running`. Toast al finalizar; doble clic → cancelar.
-  - **Sync compras en curso** (Finanzas, action): **`MensajeProceso`** **`SINCRONIZANDO COMPRAS`** + detalle **X de Y** (mismo patrón que productos; ver `useSyncComprasProveedorDuxStatusPoll`).
-- **Feedback visual por estado**
-  - **Reposo**: `bg-sidebar-accent` con hover suave (componente compartido).
-  - **Consulta**: **fondo amarillo de marca** `bg-accent2` (token `--accent2`) para indicar proceso activo.
+- **Etiqueta:** siempre **`SINCRONIZAR`** (sin variantes por área ni hover distinto).
+- **Simple:** un click inicia sync de **productos** (`POST /api/sync-lista-precios-tienda` encadenado).
+- **Editor:** click abre **`SincronizarDuxOpcionesModal`** con **Productos** y **Compras** (`sincronizarComprobantesProveedorDesdeDuxAction`).
+- **Mutex UI:** si corre sync de productos, compras o arranque pendiente → botón **disabled** + `busy` (no segundo click).
+- **Últ. Act.:** timestamp más reciente entre lista precios y compras (`formatLastCompletedAtElapsed`).
+- **Progreso:** no ocupa el slot del botón; opcional en `title` durante sync de productos. Toasts al completar.
+
+### Sincronización DUX — Slidenav
+
+Regla de UX: la sincronización DUX **no debe duplicarse** en encabezados de módulos; se inicia desde **`SyncStatusIndicator`** en la slidenav (modal de opciones para **editor**).
 
 ### Comp. Categorias — Comparacion
 
@@ -811,35 +814,29 @@ Submódulo **Comparacion** (`ComparacionCategoriasClient.tsx`): sin `FilterBar`.
 
 Columnas bloque principal: **TILDE 3 %** · **PROVEEDOR 7 %** · **DESCRIPCIÓN 40 %** (32 % si hay columna acciones) · **DTO. EXTRA 6 %** · **COSTO 8 %** · **VAR 7 %** (`scrollX` en tabla). **DTO. EXTRA** — input entero 0–99 con máscara `%` (`PorcentajeEnteroMaskInput`, `formatDtoExtraComparacionMask` / `parseDtoExtraComparacionMask` en `comparacionCategoriasFormat.ts`; default **0%**); componente **`CeldaDtoExtraComparacion`**; recálculo instantáneo de **COSTO**, **VAR** y márgenes vía `dtoExtraDraft`; persistencia al blur (`actualizarDtoExtraComparacionAction`, `prod_comp_dto_extra`). Bloque secundario (`tabla-bloque-secundario-*`): **MARGEN (SEGÚN PX REFERENCIA) 7 %** — `calcMargenSegunPxReferencia`; **PX MANUAL 8 %** — calculado (`calcPxManualDesdeDifPctReferencia`, máscara **`formatPxManualEnteroMask`**); **DIF PX REF MANUAL 7 %** — **input** (`CeldaDifPxRefManualComparacion`, `PorcentajeEnteroMaskInput` con `signed`; default **0%**); **MARGEN MANUAL 7 %** — calculado (`calcMargenManualDesdeDifPctReferencia`, `fmtMargenComparacionPct`); recálculo en cliente vía `difPxRefManualDraft`; persistencia al blur del input → **`margen_manual`** (`actualizarMargenManualComparacionAction`, `prod_comp_margen_manual`). Acciones **8 %**. Modales **Asignar productos** y **Elegir referencia**: **`MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS`** (`!max-w-[151.2rem]`); stack de filtros **`MODAL_COMP_CATEGORIAS_FILTROS_STACK_CLASS`** (select entidad + input búsqueda); tabla **`MODAL_COMP_CATEGORIAS_TABLA_COLUMN_WIDTHS_PCT`** `[5,15,65,15]`; búsqueda multi-término (AND).
 
-### Sincronización DUX — Slidenav y excepción Finanzas
+### Sincronización DUX — Slidenav (detalle técnico)
 
-Regla de UX: la sincronización de **lista de precios tienda** (`POST /api/sync-lista-precios-tienda`) **no debe duplicarse** como botón en encabezados de módulos; debe iniciarse desde **`SyncStatusIndicator`** en la slidenav.
-
-**Finanzas — compras DUX:** la consulta/sincronización de **comprobantes de compra** (`sincronizarComprobantesProveedorDesdeDuxAction`) se inicia solo desde **`SyncStatusIndicator`** en slidenav cuando la ruta activa es **Finanzas** (etiquetas **COMPRAS**; solo **editor** en la action). No hay botón duplicado en **`/finanzas/tesoreria`**.
+Regla de UX: la sincronización de **lista de precios tienda** y **comprobantes de compra** no debe duplicarse en encabezados de módulos; ambas se disparan desde **`SyncStatusIndicator`** (modal **Productos** / **Compras** para **editor**). No hay botón duplicado en **`/finanzas/tesoreria`**.
 
 ### SSOT — Progreso de consultas API DUX (GET/POST)
 
 **Regla canónica (obligatoria para nuevos flujos DUX ERP):** todo proceso largo que consulte la **API DUX ERP** (`erp.duxsoftware.com.ar`, ítems, compras, modificación de costos, etc.) — ya sea **GET** o **POST** — debe:
 
-1. **Mostrar progreso** en el **mismo slot** de sidebar: **`SyncStatusIndicator`** → **`MensajeProceso` `variant="sidebar"`** (reemplaza el botón **SINCRONIZAR PROD.** / **COMPRAS** mientras corre; **un solo** mensaje activo a la vez en ese componente).
-2. **Exclusión mutua:** mientras un flujo DUX ocupa el slot, **no** debe iniciarse otro que pegue a la misma API (mutex en `sync_dux_status` y/o rechazo **409** en rutas API; deshabilitar acciones en UI).
-3. **No** duplicar banners de progreso en páginas/modales para esos flujos (el botón disparador puede quedar en la página; el avance va al sidebar).
-4. **Lotes y pausa** (backend, `BACKEND_GUIDELINES` §1.10c): **50 ítems por lote** (`DUX_API_BATCH_SIZE`); **≥ 5 s** entre lote y lote o entre peticiones consecutivas (`DUX_API_BATCH_INTERVAL_MS` / env `DUX_SYNC_DELAY_MS`). Aplica a GET paginados y POST con arrays de ítems.
+1. **Mutex en UI:** mientras un flujo DUX está activo, **`SyncStatusIndicator`** queda **deshabilitado** (sin iniciar otro sync). Backend: mutex en `sync_dux_status` y/o **409** en rutas API cuando aplique.
+2. **No** duplicar banners de progreso en páginas/modales para esos flujos (el disparador es el botón **SINCRONIZAR** en sidebar).
+3. **Lotes y pausa** (backend, `BACKEND_GUIDELINES` §1.10c): **50 ítems por lote**; **≥ 5 s** entre lotes (`duxApiBatchPolicy.ts`).
 
-**Prioridad en `SyncStatusIndicator` (un mensaje visible):** sync lista precios → sync compras (Finanzas). Solo uno se renderiza.
-
-| Flujo | API | Progreso UI | Mutex |
-|-------|-----|-------------|-------|
-| Sync lista precios tienda | `GET`/`POST` `/api/sync-lista-precios-tienda` | Sidebar ✅ | — |
-| Act. Cx. costos | Excel (import manual DUX) | Botón **Act. Cx.** en Cx Compra | independiente |
-| Sync compras (Finanzas) | DUX comprobantes | Sidebar ✅ | área Finanzas |
+| Flujo | API | Disparo UI | Mutex |
+|-------|-----|------------|-------|
+| Sync lista precios tienda | `GET`/`POST` `/api/sync-lista-precios-tienda` | **SINCRONIZAR** (simple o modal **Productos**) | botón disabled |
+| Sync compras | DUX comprobantes | Modal **Compras** (solo **editor**) | botón disabled |
 | Import lista proveedor | Excel (no DUX ERP) | **`ImportStatusIndicator`** (segundo nodo sidebar) | independiente |
 | Sync competencia (scraping URLs) | HTTP externo, no DUX ERP | **`CompetenciaSyncProgresoBanner`** en página ⚠️ pendiente migrar | independiente |
 | Recepción pedido → DUX | POST `v2/compras` | Estado local en modal ⚠️ pendiente migrar | sin mutex global |
 
 **Excepciones documentadas (no extrapolar sin actualizar esta tabla):** import Excel y scraping competencia no usan la API DUX ERP; hoy tienen UI propia. **Act. Cx.** exporta Excel en la página (sin sidebar). **Recepción DUX** es POST puntual en modal — aún sin slot sidebar.
 
-**Checklist PR (flujos DUX nuevos):** ¿progreso en `SyncStatusIndicator`? ¿sin banner duplicado en la página? ¿lotes de **50** y pausa **5 s** vía `duxApiBatchPolicy.ts`?
+**Checklist PR (flujos DUX nuevos):** ¿mutex en botón **SINCRONIZAR**? ¿sin banner duplicado en la página? ¿lotes de **50** y pausa **5 s** vía `duxApiBatchPolicy.ts`?
 
 ### Orden y labels — Sidebar Gestión Productos (`Sidebar.tsx`)
 
@@ -946,7 +943,7 @@ Pasada de consistencia **desktop-only** y tokens/`AppModal` / `ModalMicroLabel`:
 - **Componentes con `cn()`**: UploadZone, ProveedorAlternativoRow, ImportarModal, ImportarListaPreciosModal (botones SÍ/NO y zona drag), SugeridosTablaConFiltros, ListaPreciosTablaConFiltros — todas las combinaciones de clase pasan por `cn()`.
 - **Encabezados de tabla abreviados (2026-03):** para convivir con el header global de 2 líneas y recorte, se acortan labels largos en columnas angostas (`CANT. VINCULADOS`, `COL. ARCHIVO`, `DESC. PROVEEDOR`, `PX. VTA. SUG.`, `CANT. URG.`, `PX. FINAL`, `MARGEN`, `CANT. PED.`, `CANT. REC.`).
 - **Eliminación de estilos inline estructurales**: anchos de columnas en `TablaPedidoUrgente`, `TablaReposicion` y `ComparacionCategoriasClient` migrados a utilidades Tailwind (`w-[x%]`) y clases globales; plantilla de impresión de stock (`PrintStock`) sin atributos `style`, usando solo clases CSS internas.
-- **Sidebar — Sincronización DUX (persistente y accionable)**: `SyncStatusIndicator` permanece siempre visible en la slidenav. En reposo usa **`DuxSyncStyleButton`** con textos según área (**PROD.** vs **COMPRAS**). Fuera de **Finanzas**, el click ejecuta **`POST /api/sync-lista-precios-tienda`**. En **Finanzas**, el mismo botón ejecuta **`sincronizarComprobantesProveedorDesdeDuxAction`** (**sonner** en el cliente). Durante ejecución: **`SINCRONIZANDO PROD.`** + X de Y (lista precios) o **`SINCRONIZANDO COMPRAS`** + X de Y (compras; sucursales / total).
+- **Sidebar — Sincronización DUX**: `SyncStatusIndicator` con botón **`SINCRONIZAR`**; **simple** → productos; **editor** → modal **Productos** / **Compras**; deshabilitado mientras corre cualquier sync.
 - **Pedido Reposición — Configuración (2026-03)**: `PUNTO REPOSIC.` admite valor `0` en el flujo completo (modal + action + servicio). La validación de `cant` configurada se mantiene en entero mínimo `1`. Desde 2026-04, el modal/Action ya no envía `idProveedor` para guardar: la configuración se persiste por `cod_tienda`. El **proveedor mostrado** en filtros/Generar pedido se **recalcula en cada carga** (`getReposicionData`, `getItemsTablaEnviarPedido`): vínculos `prod_precios_provee.cod_tienda` + menor costo comparable según Posición IVA (misma regla que Urgente: sin IVA si saldo acumulado &gt; 0, con IVA si ≤ 0). Al cambiar Posición IVA, recargar **Generar pedido** o **Reposición** para ver proveedores actualizados.
 - **`/tienda/litros` — Cálculo de Lts**: selector **FORMA DE CÁLCULO** (`POR PAREDES`, `POR MÓDULO`, `PILETA`) + selector **TIPO DE PINTURA** (fuente `prod_rendimientos`, antes `tipos_pintura_rendimientos`).  
   - **POR PAREDES**: ocho columnas (anchos aprox. 20% / 15% / 15% / 15% / 10% / 10% / 10% / 5%): `SUPERFICIE` (texto `Pared 1`, `Pared 2`, … por fila), `CANT.`, `LARGO`, `ANCHO` (**LARGO** y **ANCHO**: `InputDimensionMts` + sufijo **Mts.**; **CANT.** sin unidad), `MTS2` (`cant × largo × ancho`), `1 MANO`, `2 MANOS`, `ACCIONES` (eliminar). Cálculos en vivo: `1 MANO = MTS2 / rendimiento`, `2 MANOS = 1 MANO × 2`; totales y litros con un decimal. Fila `TOTAL`: celda vacía con `colSpan={3}` (superficie + cant + largo) y texto `TOTAL` en la columna **ANCHO** alineado a la derecha (`!text-right`, `celda-datos--flush-right`) para acercarlo a los totales numéricos; pie resaltado con `border-t-2 border-primary`, `bg-muted/50`, totales en **`font-bold`** (`CALC_LITROS_FOOTER_*` en `TiendaCalcLitrosPageClient.tsx`); botón `+` debajo (mismo bloque, borde superior continuo).  
@@ -1003,6 +1000,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-05-27): **Vinc. Con Prov.** — solo **editor** (`PERMISOS.tienda.acceso`); módulo **ANALISIS DE PRECIOS** en sidebar.*
 
 *Última actualización (2026-06-24): **`/finanzas/posicion-iva`** — **`ConfigurarIvaComparacionPedidosControl`**: modal **Conf. IVA Saldo para Comparacion Costo** con una sola fila **POSICION IVA** + **`MontoArSaldoEnteroInput`** (máscara `$` / miles `.` / enteros; tecla **`-`** para signo). Solo **editor**.*
+
+*Última actualización (2026-06-24): **Sidebar — SINCRONIZAR** — botón unificado; **simple** sync productos al click; **editor** modal **Productos**/**Compras** (`SincronizarDuxOpcionesModal`); sin barra de progreso en el slot; botón disabled durante sync.*
 
 *Última actualización (2026-06-24): **Flujo De Fondo** (`/finanzas/venc-por-fecha`) — eliminada columna **VTOS ACUMULADOS**; nueva fórmula **SALDO**/**CAJA** en **`calcularFilasFlujoDeFondo`** (ver `BACKEND_GUIDELINES` §2.5a).*
 

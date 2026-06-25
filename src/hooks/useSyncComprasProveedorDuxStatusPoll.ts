@@ -8,25 +8,26 @@ export interface SyncComprasProveedorDuxPollState {
   running: boolean;
   processed: number;
   total: number;
+  lastCompletedAt: string | null;
 }
 
 /**
  * Polling del estado de sync de compras DUX (`sync_dux_status` id `compras-proveedor-dux`).
- * Usar con `enabled` mientras corre `sincronizarComprobantesProveedorDesdeDuxAction`.
  */
 export function useSyncComprasProveedorDuxStatusPoll(
-  enabled: boolean
+  pollEnabled: boolean
 ): SyncComprasProveedorDuxPollState {
   const [state, setState] = useState<SyncComprasProveedorDuxPollState>({
     running: false,
     processed: 0,
     total: 0,
+    lastCompletedAt: null,
   });
 
   useEffect(() => {
-    if (!enabled) {
+    if (!pollEnabled) {
       queueMicrotask(() => {
-        setState({ running: false, processed: 0, total: 0 });
+        setState({ running: false, processed: 0, total: 0, lastCompletedAt: null });
       });
       return;
     }
@@ -36,14 +37,24 @@ export function useSyncComprasProveedorDuxStatusPoll(
     function poll() {
       fetch("/api/sync-compras-proveedor-dux/status")
         .then((res) => (res.ok ? res.json() : null))
-        .then((data: { running?: boolean; processed?: number; total?: number } | null) => {
-          if (cancelled || !data) return;
-          setState({
-            running: !!data.running,
-            processed: data.processed ?? 0,
-            total: data.total ?? 0,
-          });
-        })
+        .then(
+          (
+            data: {
+              running?: boolean;
+              processed?: number;
+              total?: number;
+              lastCompletedAt?: string | null;
+            } | null
+          ) => {
+            if (cancelled || !data) return;
+            setState({
+              running: !!data.running,
+              processed: data.processed ?? 0,
+              total: data.total ?? 0,
+              lastCompletedAt: data.lastCompletedAt ?? null,
+            });
+          }
+        )
         .catch(() => {});
     }
 
@@ -53,7 +64,7 @@ export function useSyncComprasProveedorDuxStatusPoll(
       cancelled = true;
       clearInterval(id);
     };
-  }, [enabled]);
+  }, [pollEnabled]);
 
   return state;
 }
