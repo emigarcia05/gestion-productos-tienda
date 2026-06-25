@@ -12,7 +12,7 @@ const ACUM_PEDIDO_COMPARE_IVA_MES = 4;
  * si no, débito − crédito como en Posición IVA) desde abril 2026 inclusive hasta el mes
  * calendario actual en Argentina (inclusive). Meses futuros no entran.
  */
-export async function sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido(): Promise<number> {
+export async function calcularIvaSaldoAcumuladoDesdePosicionIva(): Promise<number> {
   try {
     const { mes: mesActual, anio: anioActual } = mesAnioCalendarioArgentina();
     let total = 0;
@@ -41,7 +41,9 @@ export async function sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido(): 
 
     return total;
   } catch (e) {
-    console.error("sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido", e);
+    console.error("calcularIvaSaldoAcumuladoDesdePosicionIva", e);
     return 0;
   }
 }
+
+export { sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido } from "@/services/finBalPosicionIvaComparacionPedido.service";

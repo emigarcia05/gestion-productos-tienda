@@ -1,5 +1,12 @@
 import { IvaProveedor } from "@prisma/client";
 
+export type ModoComparacionCostoIva = "SIN_IVA" | "CON_IVA";
+
+/** >0 → sin IVA; ≤0 → con IVA (según política del proveedor). */
+export function modoComparacionCostoDesdeSaldo(saldo: number): ModoComparacionCostoIva {
+  return saldo > 0 ? "SIN_IVA" : "CON_IVA";
+}
+
 /**
  * Precio final con IVA a partir del costo lista sin IVA y la política `Proveedor.iva`.
  * `SIEMPRE` → ×1,21; `NUNCA` y `PREGUNTA` → ×1 (PREGUNTA se trata como NUNCA).

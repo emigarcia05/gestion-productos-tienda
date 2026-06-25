@@ -5,6 +5,7 @@ import { mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance
 import { listarIvaDebitoFinBalPorAnio } from "@/services/finBalIvaDeb.service";
 import { sumarIvaCreditoPorMesAnio } from "@/services/finBalPosicionIva.service";
 import { listarSaldoManualPosicionIvaPorAnio } from "@/services/finBalPosicionIvaSaldoManual.service";
+import { getEstadoIvaComparacionPedido } from "@/services/finBalPosicionIvaComparacionPedido.service";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { esEditor, getRol } from "@/lib/sesion";
 
@@ -27,10 +28,11 @@ export default async function FinanzasPosicionIvaPage() {
   const { anio: anioCalendarioActualRaw } = mesAnioCalendarioArgentina();
   const anio = clampAnio(anioCalendarioActualRaw);
 
-  const [ivaDebitoPorMes, ivaCreditoPorMes, saldoManualPorMes] = await Promise.all([
+  const [ivaDebitoPorMes, ivaCreditoPorMes, saldoManualPorMes, comparacionPedidos] = await Promise.all([
     listarIvaDebitoFinBalPorAnio(anio),
     sumarIvaCreditoPorMesAnio(anio),
     listarSaldoManualPosicionIvaPorAnio(anio),
+    getEstadoIvaComparacionPedido(),
   ]);
 
   return (
@@ -40,6 +42,7 @@ export default async function FinanzasPosicionIvaPage() {
       ivaDebitoPorMes={ivaDebitoPorMes}
       ivaCreditoPorMes={ivaCreditoPorMes}
       saldoManualPorMes={saldoManualPorMes}
+      comparacionPedidos={comparacionPedidos}
     />
   );
 }

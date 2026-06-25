@@ -495,6 +495,19 @@ model FinBalPosicionIvaSaldoManual {
   @@map("fin_bal_posicion_iva_saldo_manual")
 }
 
+/**
+ * Singleton: saldo IVA efectivo para comparar proveedores en pedidos (urgente / reposición).
+ * Si `usar_valor_configurado`, reemplaza el acumulado calculado desde Posición IVA.
+ */
+model FinBalPosicionIvaComparacionPedido {
+  id                   String   @id
+  usarValorConfigurado Boolean  @default(false) @map("usar_valor_configurado")
+  saldoPesos           Decimal  @default(0) @map("saldo_pesos") @db.Decimal(14, 2)
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("fin_bal_posicion_iva_comparacion_pedido")
+}
+
 model ListaPrecioProveedor {
   /** PK lógica: prefijo proveedor + código producto en import (único global). */
   codExt            String   @id @map("cod_ext")

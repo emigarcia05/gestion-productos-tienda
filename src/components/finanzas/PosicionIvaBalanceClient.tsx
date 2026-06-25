@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Pencil, Upload } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -30,6 +31,8 @@ import type {
 import type { DetalleLineaIvaDebitoBalance } from "@/services/finBalIvaDeb.service";
 import ImportarIvaDebitoCsvModal from "@/components/finanzas/ImportarIvaDebitoCsvModal";
 import EditarIvaSaldoManualModal from "@/components/finanzas/EditarIvaSaldoManualModal";
+import ConfigurarIvaComparacionPedidosControl from "@/components/finanzas/ConfigurarIvaComparacionPedidosControl";
+import type { EstadoIvaComparacionPedido } from "@/actions/finBalPosicionIvaComparacionPedido";
 import { toast } from "sonner";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -76,6 +79,7 @@ interface Props {
   ivaCreditoPorMes: number[];
   /** Índice 0 = enero; si no es null, ese mes usa saldo manual y débito/crédito se muestran vacíos. */
   saldoManualPorMes: (number | null)[];
+  comparacionPedidos: EstadoIvaComparacionPedido;
 }
 
 function celdaMontoPesos(pesos: number) {
@@ -91,7 +95,9 @@ export default function PosicionIvaBalanceClient({
   ivaDebitoPorMes,
   ivaCreditoPorMes,
   saldoManualPorMes,
+  comparacionPedidos,
 }: Props) {
+  const router = useRouter();
   const [mesModalVentasIva, setMesModalVentasIva] = useState<number | null>(null);
   const [mesModalSaldoManual, setMesModalSaldoManual] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -258,9 +264,26 @@ export default function PosicionIvaBalanceClient({
     }
   }
 
+  const handleComparacionActualizada = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
+  const toolbarActions = (
+    <ConfigurarIvaComparacionPedidosControl
+      puedeEditar={esEditor}
+      estadoInicial={comparacionPedidos}
+      onActualizado={handleComparacionActualizada}
+    />
+  );
+
   return (
     <div className="area-page-shell">
-      <ClassicFilteredTableLayout title="Finanzas" subtitle="Posición de IVA" contentWidth="full">
+      <ClassicFilteredTableLayout
+        title="Finanzas"
+        subtitle="Posición de IVA"
+        contentWidth="full"
+        actions={toolbarActions}
+      >
         <div className="flex flex-1 min-h-0 flex-col pb-4">
           <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">

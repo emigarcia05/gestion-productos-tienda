@@ -5,7 +5,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { TIPO_COMP_FACTURA_IVA_CREDITO } from "@/services/finBalPosicionIva.service";
-import { sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido } from "@/services/finBalPosicionIvaSaldoAcumuladoPedido.service";
+import { getEstadoIvaComparacionPedido } from "@/services/finBalPosicionIvaComparacionPedido.service";
 
 function isoMaxUpdatedAt(d: Date | null | undefined): string {
   if (!d) return "";
@@ -17,8 +17,8 @@ function isoMaxUpdatedAt(d: Date | null | undefined): string {
  * en débito, crédito (gastos con IVA y facturas) y saldos manuales.
  */
 export async function getPosicionIvaComparacionRevisionToken(): Promise<string> {
-  const [acumulado, debMax, gastoMax, manualMax, facturaMax] = await Promise.all([
-    sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido(),
+  const [estadoComparacion, debMax, gastoMax, manualMax, facturaMax] = await Promise.all([
+    getEstadoIvaComparacionPedido(),
     prisma.finBalIvaDebImportLine.aggregate({ _max: { updatedAt: true } }),
     prisma.finBalGastoMensual.aggregate({
       where: { iva: true },
@@ -33,12 +33,15 @@ export async function getPosicionIvaComparacionRevisionToken(): Promise<string> 
     }),
   ]);
 
+  const acumulado = estadoComparacion.saldoEfectivoComparacion;
   const sign = acumulado > 0 ? "P" : acumulado < 0 ? "N" : "Z";
   const acumRounded = Math.round(acumulado);
 
   return [
+    estadoComparacion.usarValorConfigurado ? "C" : "A",
     sign,
     String(acumRounded),
+    isoMaxUpdatedAt(estadoComparacion.updatedAt),
     isoMaxUpdatedAt(debMax._max.updatedAt),
     isoMaxUpdatedAt(gastoMax._max.updatedAt),
     isoMaxUpdatedAt(manualMax._max.updatedAt),
