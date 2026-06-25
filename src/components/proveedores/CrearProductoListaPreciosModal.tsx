@@ -44,15 +44,17 @@ const INPUT_CONTROL_CLASS = "tabular-nums border-primary w-full min-w-0";
 function ModalFormRow({
   id,
   label,
+  labelClassName,
   children,
 }: {
   id: string;
   label: string;
+  labelClassName?: string;
   children: ReactNode;
 }) {
   return (
     <>
-      <Label htmlFor={id} className={LABEL_CLASS}>
+      <Label htmlFor={id} className={cn(LABEL_CLASS, labelClassName)}>
         {label}
       </Label>
       <div className="min-w-0">{children}</div>
@@ -193,7 +195,11 @@ export default function CrearProductoListaPreciosModal({
         />
       </ModalFormRow>
 
-      <ModalFormRow id="crear-prod-desc" label="DESCRIPCIÓN PROV.">
+      <ModalFormRow
+        id="crear-prod-desc"
+        label="DESCRIPCIÓN PROV."
+        labelClassName="text-left"
+      >
         <Input
           id="crear-prod-desc"
           value={descripcionProveedor}
