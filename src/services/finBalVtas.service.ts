@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import type { CrearFinBalVtasInput } from "@/lib/validations/finBalVtas";
+import type {
+  CrearFinBalVtasInput,
+  GuardarFinBalVtasCargaPeriodoInput,
+} from "@/lib/validations/finBalVtas";
 import type { ServiceResult } from "@/types";
 
 export interface SucursalGeneraBalanceOption {
@@ -110,22 +113,76 @@ export async function crearFinBalVtas(
     });
     return {
       success: true,
-      data: {
-        id: row.id,
-        sucursalId: row.sucursalId,
-        mes: row.mes,
-        anio: row.anio,
-        monto: row.monto,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-        sucursal: {
-          id: row.sucursal.id,
-          nombre: row.sucursal.nombre.toLocaleUpperCase("es"),
-        },
-      },
+      data: mapFinBalVtasRow(row),
     };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "No se pudo registrar la venta.";
+    return { success: false, error: msg };
+  }
+}
+
+function mapFinBalVtasRow(row: {
+  id: string;
+  sucursalId: string;
+  mes: number;
+  anio: number;
+  monto: number;
+  createdAt: Date;
+  updatedAt: Date;
+  sucursal: { id: string; nombre: string };
+}): FinBalVtasItem {
+  return {
+    id: row.id,
+    sucursalId: row.sucursalId,
+    mes: row.mes,
+    anio: row.anio,
+    monto: row.monto,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    sucursal: {
+      id: row.sucursal.id,
+      nombre: row.sucursal.nombre.toLocaleUpperCase("es"),
+    },
+  };
+}
+
+/** Upsert de una o más sucursales para el mismo mes/año (carga masiva del modal). */
+export async function guardarFinBalVtasCargaPeriodo(
+  input: GuardarFinBalVtasCargaPeriodoInput
+): Promise<ServiceResult<{ guardados: number }>> {
+  for (const linea of input.lineas) {
+    if (!(await sucursalGeneraBalance(linea.sucursalId))) {
+      return {
+        success: false,
+        error: "Una sucursal no existe o no tiene activado “generar balance”.",
+      };
+    }
+  }
+
+  try {
+    await prisma.$transaction(
+      input.lineas.map((linea) =>
+        prisma.finBalVtas.upsert({
+          where: {
+            sucursalId_mes_anio: {
+              sucursalId: linea.sucursalId,
+              mes: input.mes,
+              anio: input.anio,
+            },
+          },
+          create: {
+            sucursalId: linea.sucursalId,
+            mes: input.mes,
+            anio: input.anio,
+            monto: linea.monto,
+          },
+          update: { monto: linea.monto },
+        })
+      )
+    );
+    return { success: true, data: { guardados: input.lineas.length } };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "No se pudo guardar la carga de ventas.";
     return { success: false, error: msg };
   }
 }
