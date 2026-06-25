@@ -91,7 +91,7 @@ export function ordenarDetallesFlujoDia(
 /**
  * Suma de saldos pendientes cuya **fecha de vencimiento** es **estrictamente anterior** a `fechaIso`
  * (misma regla de `fecha_venc` que {@link listarVencimientosEnRango}). Sirve para arrastrar a
- * **VTOS ACUMULADOS** todo lo vencido antes de la ventana que muestra la tabla.
+ * Pendiente vencido antes de la ventana (insumo del **SALDO** de la primera fila en Flujo de Fondo).
  */
 export async function sumarSaldoVencimientosConFechaVencAnteriorA(
   fechaIso: string

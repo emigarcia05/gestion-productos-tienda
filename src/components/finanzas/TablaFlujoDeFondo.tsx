@@ -11,6 +11,7 @@ import {
   formatIsoYmdDdMmYyyyArgentina,
   formatMesDiaMayusculasDesdeIsoYmd,
 } from "@/lib/fechaArgentina";
+import type { FilaFlujoDeFondoCalculada } from "@/lib/flujoDeFondoFilas";
 import { cn } from "@/lib/utils";
 import type { FlujoFondoDetalleDiaFila } from "@/services/vencimientosPorFecha.service";
 import {
@@ -30,17 +31,7 @@ function fmtMontoAr(n: number): string {
   })}`;
 }
 
-/**
- * Anchos por columna (Tailwind arbitrary values). Se mantienen como `className` para alinear con el
- * resto de la app (`<col className="w-[x%]" />`) y evitar `style` inline en columnas estáticas.
- */
-const COL_WIDTH_CLASSES_MAIN = [
-  "w-[20%]",
-  "w-[20%]",
-  "w-[20%]",
-  "w-[20%]",
-  "w-[20%]",
-] as const;
+const COL_WIDTH_CLASSES_MAIN = ["w-[25%]", "w-[25%]", "w-[25%]", "w-[25%]"] as const;
 const COL_WIDTH_CLASSES_MODAL = [
   "w-[14%]",
   "w-[14%]",
@@ -63,13 +54,7 @@ function ColgroupAnchos({ anchos }: { anchos: readonly string[] }) {
   );
 }
 
-export interface FilaFlujoDeFondoVista {
-  isoYmd: string;
-  vencimientoDelDia: number;
-  vtosAcumulados: number;
-  cajaDisponible: number;
-  saldo: number;
-}
+export type FilaFlujoDeFondoVista = FilaFlujoDeFondoCalculada;
 
 export interface TablaFlujoDeFondoProps {
   filas: FilaFlujoDeFondoVista[];
@@ -78,7 +63,7 @@ export interface TablaFlujoDeFondoProps {
 }
 
 /**
- * Grilla paginada principal: cinco columnas 20% (`table-layout: fixed`), doble clic en fila = detalle.
+ * Grilla paginada principal: cuatro columnas 25% (`table-layout: fixed`), doble clic en fila = detalle.
  */
 export function TablaFlujoDeFondo({
   filas,
@@ -98,7 +83,6 @@ export function TablaFlujoDeFondo({
             <TableRow className="hover:bg-transparent">
               <TableHead className={CELL_MIN}>FECHA</TableHead>
               <TableHead className={cn(TH_NUM, CELL_MIN)}>VENCIMIENTO DEL DÍA</TableHead>
-              <TableHead className={cn(TH_NUM, CELL_MIN)}>VTOS ACUMULADOS</TableHead>
               <TableHead className={cn(TH_NUM, CELL_MIN)}>CAJA DISPONIBLE</TableHead>
               <TableHead className={cn(TH_NUM, CELL_MIN)}>SALDO</TableHead>
             </TableRow>
@@ -106,7 +90,7 @@ export function TablaFlujoDeFondo({
           <TableBody>
             {filas.length === 0 ? (
               <EmptyTableRow
-                colSpan={5}
+                colSpan={4}
                 message="Sin vencimientos en los próximos 150 días."
               />
             ) : (
@@ -124,9 +108,6 @@ export function TablaFlujoDeFondo({
                   </TableCell>
                   <TableCell className={cn(TD_NUM, CELL_MIN)}>
                     {fmtMontoAr(montoVencimientoPorDia[fila.isoYmd] ?? 0)}
-                  </TableCell>
-                  <TableCell className={cn(TD_NUM, CELL_MIN)}>
-                    {fmtMontoAr(fila.vtosAcumulados)}
                   </TableCell>
                   <TableCell className={cn(TD_NUM, CELL_MIN)}>
                     {fmtMontoAr(fila.cajaDisponible)}

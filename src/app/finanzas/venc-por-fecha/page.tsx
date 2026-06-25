@@ -21,6 +21,7 @@ import {
 import { listarCajasTesoreria } from "@/services/cajasTesoreria.service";
 import { sumarMontosChequesDiferidosPorFechaAcreditacion } from "@/services/finTesoreriaCheques.service";
 import type { FilaFlujoDeFondoVista } from "@/components/finanzas/TablaFlujoDeFondo";
+import { calcularFilasFlujoDeFondo } from "@/lib/flujoDeFondoFilas";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
@@ -137,26 +138,10 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
     liquidoChequesDiferidosHasta.set(isoYmd, acumChequesDif);
   }
 
-  let vtosAcum = saldoVencidoAntesDeHoy;
-  let saldoAnterior = 0;
-  const filasCompletas: FilaFlujoDeFondoVista[] = filasTotales.map((fila, i) => {
-    vtosAcum += fila.vencimientoDelDia;
-    const liquidoDia =
-      cajaDisponibleInicial + (liquidoChequesDiferidosHasta.get(fila.isoYmd) ?? 0);
-    /** Liquidez proyectada (tesorería + cheques que liquidan ese día) vs. saldo previo si era favorable. */
-    const cajaDisponible =
-      i === 0
-        ? liquidoDia
-        : Math.max(liquidoDia, Math.max(0, saldoAnterior));
-    const saldo = cajaDisponible - vtosAcum;
-    saldoAnterior = saldo;
-    return {
-      isoYmd: fila.isoYmd,
-      vencimientoDelDia: fila.vencimientoDelDia,
-      vtosAcumulados: vtosAcum,
-      cajaDisponible,
-      saldo,
-    };
+  const filasCompletas: FilaFlujoDeFondoVista[] = calcularFilasFlujoDeFondo(filasTotales, {
+    cajaDisponibleInicial,
+    saldoVencidoAntesDeHoy,
+    liquidoChequesAcumuladoHasta: liquidoChequesDiferidosHasta,
   });
 
   const total = filasCompletas.length;
@@ -175,8 +160,6 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
   return (
     <div className="area-page-shell">
       <FinanzasVencPorFechaPageClient
-        saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
-        cajaDisponibleInicial={cajaDisponibleInicial}
         detallesPorDia={detallesPorDia}
         proveedoresConVencimientos={proveedoresConVencimientos}
         filas={filas}

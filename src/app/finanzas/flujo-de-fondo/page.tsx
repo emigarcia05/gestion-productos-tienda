@@ -19,6 +19,9 @@ import {
   sumarPendienteGastosConFechaVencAnteriorA,
 } from "@/services/finBalGastoMensualBalance.service";
 import { listarCajasTesoreria } from "@/services/cajasTesoreria.service";
+import { sumarMontosChequesDiferidosPorFechaAcreditacion } from "@/services/finTesoreriaCheques.service";
+import type { FilaFlujoDeFondoVista } from "@/components/finanzas/TablaFlujoDeFondo";
+import { calcularFilasFlujoDeFondo } from "@/lib/flujoDeFondoFilas";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +46,7 @@ interface Props {
   }>;
 }
 
-export default async function VencPorFechaPage({ searchParams }: Props) {
+export default async function FlujoDeFondoPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.finanzas.acceso)) {
     redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
@@ -54,18 +57,25 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
   const hoyIso = dateToIsoYmdArgentina(new Date());
   const hastaIso = addDaysToIsoYmdArgentina(hoyIso, DIAS_VENTANA_VENC_POR_FECHA);
 
-  const [lineasCompra, lineasGasto, saldoComprasAntes, saldoGastosAntes, cajasTesoreria] =
-    await Promise.all([
-      listarVencimientosEnRango(hoyIso, hastaIso),
-      listarVencimientosGastoFlujoEnRango(hoyIso, hastaIso),
-      sumarSaldoVencimientosConFechaVencAnteriorA(hoyIso),
-      sumarPendienteGastosConFechaVencAnteriorA(hoyIso),
-      listarCajasTesoreria(),
-    ]);
+  const [
+    lineasCompra,
+    lineasGasto,
+    saldoComprasAntes,
+    saldoGastosAntes,
+    cajasTesoreria,
+    incrementosChequePorFecha,
+  ] = await Promise.all([
+    listarVencimientosEnRango(hoyIso, hastaIso),
+    listarVencimientosGastoFlujoEnRango(hoyIso, hastaIso),
+    sumarSaldoVencimientosConFechaVencAnteriorA(hoyIso),
+    sumarPendienteGastosConFechaVencAnteriorA(hoyIso),
+    listarCajasTesoreria(),
+    sumarMontosChequesDiferidosPorFechaAcreditacion(hoyIso),
+  ]);
   const saldoVencidoAntesDeHoy = saldoComprasAntes + saldoGastosAntes;
 
   const cajaDisponibleInicial = cajasTesoreria.reduce(
-    (acc, caja) => acc + Number(caja.monto || 0),
+    (acc, caja) => acc + Number(caja.montoDisponible || 0),
     0
   );
 
@@ -119,11 +129,25 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
       vencimientoDelDia: totalPorDia[iso] ?? 0,
     });
   }
-  const total = filasTotales.length;
+
+  const liquidoChequesDiferidosHasta = new Map<string, number>();
+  let acumChequesDif = 0;
+  for (const { isoYmd } of filasTotales) {
+    acumChequesDif += incrementosChequePorFecha.get(isoYmd) ?? 0;
+    liquidoChequesDiferidosHasta.set(isoYmd, acumChequesDif);
+  }
+
+  const filasCompletas: FilaFlujoDeFondoVista[] = calcularFilasFlujoDeFondo(filasTotales, {
+    cajaDisponibleInicial,
+    saldoVencidoAntesDeHoy,
+    liquidoChequesAcumuladoHasta: liquidoChequesDiferidosHasta,
+  });
+
+  const total = filasCompletas.length;
   const totalPaginas = totalPaginasFromTotal(total, PAGE_SIZE);
   const paginaActual = Math.min(paginaSolicitada, totalPaginas);
   const inicio = skipForPagina(paginaActual, PAGE_SIZE);
-  const filas = filasTotales.slice(inicio, inicio + PAGE_SIZE);
+  const filas = filasCompletas.slice(inicio, inicio + PAGE_SIZE);
 
   const nombresProveedores = new Set<string>();
   for (const l of lineasCompra) nombresProveedores.add(l.nombre.trim().toUpperCase());
@@ -135,8 +159,6 @@ export default async function VencPorFechaPage({ searchParams }: Props) {
   return (
     <div className="area-page-shell">
       <FinanzasVencPorFechaPageClient
-        saldoVencidoAntesDeHoy={saldoVencidoAntesDeHoy}
-        cajaDisponibleInicial={cajaDisponibleInicial}
         detallesPorDia={detallesPorDia}
         proveedoresConVencimientos={proveedoresConVencimientos}
         filas={filas}

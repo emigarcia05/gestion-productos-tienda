@@ -12,6 +12,7 @@ import FilterBar, {
 import {
   TablaFlujoDeFondo,
   TablaFlujoDeFondoDetalleDia,
+  type FilaFlujoDeFondoVista,
 } from "@/components/finanzas/TablaFlujoDeFondo";
 import AppModal from "@/components/shared/AppModal";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -30,65 +31,17 @@ import { PAGE_SIZE } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
 import type { FlujoFondoDetalleDiaFila } from "@/services/vencimientosPorFecha.service";
 
-/**
- * Filas ordenadas por fecha (calendario completo en servidor: hoy → hoy+150 inclusive):
- * - **VTOS ACUMULADOS**: saldo ya vencido antes de hoy (todas las fechas) + suma corrida del vencimiento de cada día en la tabla.
- * - **CAJA DISPONIBLE**: primera fila toma la suma inicial de cajas de tesorería; desde la segunda,
- *   toma el saldo de la fila anterior si es positivo (si no, 0).
- * - **SALDO**: siempre `CAJA DISPONIBLE - VTOS ACUMULADOS`.
- */
-function filasConVtosYSaldo(
-  filasOrdenadas: Array<{
-    isoYmd: string;
-    vencimientoDelDia: number;
-  }>,
-  cajaDisponibleInicial: number,
-  saldoVencidoAntesDeHoy: number
-): Array<{
-  isoYmd: string;
-  vencimientoDelDia: number;
-  vtosAcumulados: number;
-  cajaDisponible: number;
-  saldo: number;
-}> {
-  let vtosAcum = saldoVencidoAntesDeHoy;
-  let saldoAnterior = 0;
-  return filasOrdenadas.map((fila, index) => {
-    vtosAcum += fila.vencimientoDelDia;
-    const cajaDisponible = index === 0 ? cajaDisponibleInicial : Math.max(0, saldoAnterior);
-    const saldo = cajaDisponible - vtosAcum;
-    saldoAnterior = saldo;
-    return {
-      ...fila,
-      vtosAcumulados: vtosAcum,
-      cajaDisponible,
-      saldo,
-    };
-  });
-}
-
 export interface FinanzasVencPorFechaPageClientProps {
-  /**
-   * Suma de **pendiente** vencido antes de hoy: comprobantes (`sumarSaldoVencimientosConFechaVencAnteriorA`)
-   * + **monto devengado pendiente a hoy** de imputaciones de balance con venc &lt; hoy.
-   */
-  saldoVencidoAntesDeHoy: number;
-  /** Suma de montos de cajas tesorería para la primera fila de la grilla. */
-  cajaDisponibleInicial: number;
   detallesPorDia: Record<string, FlujoFondoDetalleDiaFila[]>;
   proveedoresConVencimientos: string[];
-  filas: Array<{
-    isoYmd: string;
-    vencimientoDelDia: number;
-  }>;
+  /** Filas del periodo ya calculadas en servidor (slice de la página actual). */
+  filas: FilaFlujoDeFondoVista[];
   paginaActual: number;
   totalPaginas: number;
   total: number;
 }
 
 export default function FinanzasVencPorFechaPageClient({
-  saldoVencidoAntesDeHoy,
-  cajaDisponibleInicial,
   detallesPorDia,
   proveedoresConVencimientos,
   filas,
@@ -111,11 +64,7 @@ export default function FinanzasVencPorFechaPageClient({
     return formatFechaLargaNotaPedidoArgentina(new Date(yy, mm - 1, dd));
   }, [detalleIsoYmd]);
 
-  const filasVista = useMemo(
-    () =>
-      filasConVtosYSaldo(filas, cajaDisponibleInicial, saldoVencidoAntesDeHoy),
-    [filas, cajaDisponibleInicial, saldoVencidoAntesDeHoy]
-  );
+  const filasVista = filas;
   const montoVencimientoPorDia = useMemo(() => {
     if (!filtroProveedor) {
       return Object.fromEntries(filas.map((fila) => [fila.isoYmd, fila.vencimientoDelDia]));
