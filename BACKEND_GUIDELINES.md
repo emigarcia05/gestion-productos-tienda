@@ -325,6 +325,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **CHECK** al menos una condición no nula; **UNIQUE** `(campo, COALESCE(id_proveedor,''), COALESCE(id_marca,''), COALESCE(id_rubro,''))`.
 - **Migración:** `20260619120000_prod_precios_provee_reglas_descuentos`. **No** se infieren reglas desde `dto_*` históricos; tabla de reglas arranca vacía.
 - **Post-deploy obligatorio:** `npm run db:recalc-descuentos-lista-precio` → con reglas vacías, todos los `dto_*` / `cx_transporte` → **0** (impacto masivo en `px_compra_final_sin_iva` hasta cargar reglas).
+- **Mantenimiento — purga lista sin vínculo tienda:** `npm run db:purge-lista-precio-sin-vinculo` (`scripts/purge-lista-precio-proveedor-sin-vinculo-tienda.ts`). Por defecto **simulación**; con `--execute` borra filas `prod_precios_provee` de un proveedor (`--proveedor "NOMBRE"`) donde **`cod_tienda` IS NULL** (sin vínculo manual a `prod_tienda`). Conserva filas con `cod_tienda` poblado. Cascadas: `prod_comp_dto_extra` / `prod_comp_margen_manual`; `prod_tienda.costo_compra_cod_ext` → SET NULL si apuntaba al `cod_ext` borrado.
 
 #### Algoritmo de resolución (`descuentosListaPrecioReglas.service.ts`)
 

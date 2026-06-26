@@ -26,6 +26,7 @@
     "db:export-excel": "tsx scripts/export-db-to-excel.ts",
     "db:seed-competencia": "tsx scripts/seed-prod-competencia.ts",
     "db:recalc-descuentos-lista-precio": "tsx scripts/recalc-descuentos-lista-precio.ts",
+    "db:purge-lista-precio-sin-vinculo": "tsx scripts/purge-lista-precio-proveedor-sin-vinculo-tienda.ts",
     "test:aplanar-pdf-matriz": "tsx scripts/test-aplanar-pdf-matriz.ts"
   },
   "dependencies": {
