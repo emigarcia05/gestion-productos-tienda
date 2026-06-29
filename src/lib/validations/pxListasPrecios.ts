@@ -15,7 +15,7 @@ const margenListaTiendaSchema = z
   .number()
   .finite()
   .min(0, "El margen no puede ser negativo.")
-  .max(100, "El margen no puede superar 100 %.");
+  .max(9999.9999, "Margen demasiado alto.");
 
 /** Guardar o quitar margen manual en Px Listas. `margenManual: null` elimina la edición. */
 export const guardarPxListaMargenEdicionSchema = z.object({
