@@ -542,7 +542,7 @@ model ListaPrecioProveedor {
   presentacion      PresentacionComparacion? @relation("PresentacionItems", fields: [idPresentacion], references: [id], onDelete: SetNull)
   presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
   dtoExtraComparacion ComparacionDtoExtraItem?
-  margenManualComparacion ComparacionMargenManualItem?
+  difPxRefManualComparacion ComparacionDifPxRefManualItem?
   /** Ítems tienda que usan esta fila como costo lista en Cx/Px Tienda. */
   costoListaEnTiendas ProdTienda[] @relation("CostoListaEnTienda")
 
@@ -563,17 +563,17 @@ model ComparacionDtoExtraItem {
   @@map("prod_comp_dto_extra")
 }
 
-/** Margen manual % por ítem en Comp. Categorias — Comparacion (entero, por `cod_ext`). */
-model ComparacionMargenManualItem {
+/** Dif. % vs px referencia competencia (entero con signo) por ítem en Comp. Categorias — Comparacion. */
+model ComparacionDifPxRefManualItem {
   id                         String @id @default(cuid())
   listaPrecioProveedorCodExt String @unique @map("cod_ext_prod_precios_provee")
-  margenManual               Int?   @map("margen_manual")
+  difPxRefManual             Int?   @map("dif_px_ref_manual")
   createdAt                  DateTime @default(now()) @map("created_at")
   updatedAt                  DateTime @updatedAt @map("updated_at")
 
   listaPrecioProveedor ListaPrecioProveedor @relation(fields: [listaPrecioProveedorCodExt], references: [codExt], onDelete: Cascade)
 
-  @@map("prod_comp_margen_manual")
+  @@map("prod_comp_dif_px_ref_manual")
 }
 
 model ComparacionPresentacionRefComp {

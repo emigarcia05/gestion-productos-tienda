@@ -145,8 +145,8 @@ export interface ProductoEnCategoria {
   dtoExtraComparacion: number | null;
   /** Campos de lista proveedor para recalcular costo en cliente al editar DTO. EXTRA. */
   datosCosto: DatosCostoComparacion;
-  /** Margen manual % (entero) persistido en Comparacion por categorías. */
-  margenManualComparacion: number | null;
+  /** Dif. % vs px referencia competencia (entero) persistido en Comparacion por categorías. */
+  difPxRefManualComparacion: number | null;
   costoCompraObjetivo: number | null;
   diferenciaVsObjetivo: number | null; // pxCompraFinalSinIva - objetivo (negativo = bajo objetivo)
 }
@@ -237,7 +237,7 @@ export async function getProductosPorPresentacion(
         include: {
           proveedor: { select: { prefijo: true } },
           dtoExtraComparacion: { select: { dtoExtra: true } },
-          margenManualComparacion: { select: { margenManual: true } },
+          difPxRefManualComparacion: { select: { difPxRefManual: true } },
         },
       },
     },
@@ -272,7 +272,8 @@ export async function getProductosPorPresentacion(
         proveedorPrefijo: lp.proveedor?.prefijo ?? null,
         dtoExtraComparacion,
         datosCosto,
-        margenManualComparacion: lp.margenManualComparacion?.margenManual ?? null,
+        difPxRefManualComparacion:
+          lp.difPxRefManualComparacion?.difPxRefManual ?? null,
         costoCompraObjetivo: objetivo,
         diferenciaVsObjetivo: dif,
       };
@@ -838,21 +839,21 @@ export async function actualizarDtoExtraComparacionItem(
   });
 }
 
-/** Persistir margen manual % (entero) por ítem en Comparacion. */
-export async function actualizarMargenManualComparacionItem(
+/** Persistir dif. % vs px referencia (entero con signo) por ítem en Comparacion. */
+export async function actualizarDifPxRefManualComparacionItem(
   listaPrecioProveedorCodExt: string,
-  margenManual: number | null
+  difPxRefManual: number | null
 ): Promise<void> {
-  if (margenManual === null) {
-    await prisma.comparacionMargenManualItem.deleteMany({
+  if (difPxRefManual === null) {
+    await prisma.comparacionDifPxRefManualItem.deleteMany({
       where: { listaPrecioProveedorCodExt },
     });
     return;
   }
 
-  await prisma.comparacionMargenManualItem.upsert({
+  await prisma.comparacionDifPxRefManualItem.upsert({
     where: { listaPrecioProveedorCodExt },
-    create: { listaPrecioProveedorCodExt, margenManual },
-    update: { margenManual },
+    create: { listaPrecioProveedorCodExt, difPxRefManual },
+    update: { difPxRefManual },
   });
 }

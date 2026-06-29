@@ -79,7 +79,7 @@ export const actualizarDtoExtraComparacionSchema = z.object({
   dtoExtra: z.number().int().min(0).max(99).nullable(),
 });
 
-export const actualizarMargenManualComparacionSchema = z.object({
+export const actualizarDifPxRefManualComparacionSchema = z.object({
   listaPrecioProveedorId: listaPreciosCodExtSchema,
-  margenManual: z.number().int().nullable(),
+  difPxRefManual: z.number().int().nullable(),
 });
