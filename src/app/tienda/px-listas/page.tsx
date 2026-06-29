@@ -13,6 +13,7 @@ interface Props {
     rubro?: string;
     marca?: string;
     subRubro?: string;
+    actualizar?: string;
     pagina?: string;
   }>;
 }
@@ -29,6 +30,7 @@ export default async function PxListasPreciosPage({ searchParams }: Props) {
     rubro = "",
     marca = "",
     subRubro = "",
+    actualizar = "",
     pagina = "1",
   } = sp;
 
@@ -45,6 +47,7 @@ export default async function PxListasPreciosPage({ searchParams }: Props) {
     rubro,
     marca,
     subRubro,
+    actualizar,
     pagina,
   });
 
@@ -64,6 +67,7 @@ export default async function PxListasPreciosPage({ searchParams }: Props) {
       rubro={rubro}
       marca={marca}
       subRubro={subRubro}
+      actualizar={actualizar}
       paginaNum={paginaNum}
     />
   );

@@ -6,9 +6,9 @@ import { revalidatePath } from "next/cache";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
-import { guardarPxListaPrecioEdicionSchema } from "@/lib/validations/pxListasPrecios";
+import { guardarPxListaMargenEdicionSchema } from "@/lib/validations/pxListasPrecios";
 import { getPxListasPreciosPageDataFromDb } from "@/services/pxListasPreciosPage.service";
-import { guardarPrecioListaEdicion } from "@/services/pxListasPreciosEdicion.service";
+import { guardarMargenListaEdicion } from "@/services/pxListasMargenEdicion.service";
 import {
   listarExportPxListasMargenPorLista,
   type ExportPxListaMargenGrupo,
@@ -25,12 +25,13 @@ function revalidatePxListasPaths() {
   }
 }
 
-/** Listado paginado **Px Listas** (precios por lista DUX + edición manual). */
+/** Listado paginado **Px Listas** (precios por lista DUX + margen manual). */
 export async function getPxListasPreciosPageData(params: {
   q?: string;
   rubro?: string;
   marca?: string;
   subRubro?: string;
+  actualizar?: string;
   pagina?: string;
 }) {
   const rol = await getRol();
@@ -41,26 +42,35 @@ export async function getPxListasPreciosPageData(params: {
   return getPxListasPreciosPageDataFromDb(params);
 }
 
-/** Persiste override de precio (o lo elimina con `precio: null`). */
-export async function guardarPxListaPrecioEdicionAction(
+/** Persiste override de margen % (o lo elimina con `margenManual: null`). */
+export async function guardarPxListaMargenEdicionAction(
   raw: unknown
-): Promise<ActionResult<{ precio: number | null; margenPct: number | null }>> {
+): Promise<
+  ActionResult<{
+    margenManual: number | null;
+    pxEfectivo: number | null;
+  }>
+> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
 
-  const parsed = guardarPxListaPrecioEdicionSchema.safeParse(raw);
+  const parsed = guardarPxListaMargenEdicionSchema.safeParse(raw);
   if (!parsed.success) {
     const msg = parsed.error.flatten().fieldErrors;
     const first =
-      Object.values(msg).flat()[0] ?? "Datos de precio inválidos.";
+      Object.values(msg).flat()[0] ?? "Datos de margen inválidos.";
     return { ok: false, error: first };
   }
 
   try {
-    const { codTienda, idLista, precio } = parsed.data;
-    const res = await guardarPrecioListaEdicion(codTienda, idLista, precio);
+    const { codTienda, idLista, margenManual } = parsed.data;
+    const res = await guardarMargenListaEdicion(
+      codTienda,
+      idLista,
+      margenManual
+    );
     if (!res.success) {
       return { ok: false, error: res.error };
     }
@@ -68,19 +78,19 @@ export async function guardarPxListaPrecioEdicionAction(
     return {
       ok: true,
       data: {
-        precio: res.data.precio,
-        margenPct: res.data.margenPct,
+        margenManual: res.data.margenManual,
+        pxEfectivo: res.data.pxEfectivo,
       },
     };
   } catch (e) {
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "No se pudo guardar el precio.",
+      error: e instanceof Error ? e.message : "No se pudo guardar el margen.",
     };
   }
 }
 
-/** Excel por `nombre_lista`: CODIGO + PORC UTILIDAD (solo diff margen vs DUX). */
+/** Excel por `nombre_lista`: CODIGO + PORC UTILIDAD (margen manual distinto a DUX). */
 export async function exportarPxListasMargenAction(): Promise<
   ActionResult<{ grupos: ExportPxListaMargenGrupo[] }>
 > {

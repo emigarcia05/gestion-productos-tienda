@@ -1357,6 +1357,11 @@
   cursor: pointer;
 }
 
+/* Px Listas: celdas pendientes de actualizar en DUX (margen manual ≠ margen DUX). */
+.tabla-px-listas-precios tbody td.celda-px-listas-actualizar {
+  background-color: color-mix(in srgb, var(--accent2) 22%, transparent);
+}
+
 /* Tabla Lista Precios proveedor: 7 columnas 8/51/8/8/2/8/9 % (colgroup en ListaPreciosTablaConFiltros). */
 .tabla-lista-precios-proveedor {
   table-layout: fixed;

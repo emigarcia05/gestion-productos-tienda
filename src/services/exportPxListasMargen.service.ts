@@ -1,5 +1,8 @@
-import { calcMargenSinIvaPct } from "@/lib/calculos";
-import { roundMargenPxListaPct } from "@/lib/pxListasPreciosFormat";
+import {
+  margenesPorcUtilidadDifieren,
+  roundMargenPxListaPct,
+} from "@/lib/pxListasPreciosFormat";
+import { margenDesdePrecioDux } from "@/lib/pxListasPreciosCelda";
 import { prisma } from "@/lib/prisma";
 
 export type FilaExportPxListaMargen = {
@@ -13,8 +16,7 @@ export type ExportPxListaMargenGrupo = {
   filas: FilaExportPxListaMargen[];
 };
 
-/** Precisión de comparación de PORC UTILIDAD (4 decimales, igual que la grilla). */
-const COMPARACION_MARGEN_FACTOR = 10_000;
+export { margenesPorcUtilidadDifieren };
 
 function toNum(n: unknown): number {
   if (n == null) return 0;
@@ -22,30 +24,9 @@ function toNum(n: unknown): number {
   return Number.isFinite(v) ? v : 0;
 }
 
-/** Difieren dos márgenes % redondeados a 4 decimales. */
-export function margenesPorcUtilidadDifieren(
-  margenA: number,
-  margenB: number
-): boolean {
-  return (
-    Math.round(margenA * COMPARACION_MARGEN_FACTOR) !==
-    Math.round(margenB * COMPARACION_MARGEN_FACTOR)
-  );
-}
-
-function margenDesdePrecio(
-  precio: number | null,
-  costoCompra: number
-): number | null {
-  if (precio == null || !(precio > 0) || !(costoCompra > 0)) return null;
-  const margen = calcMargenSinIvaPct(precio, costoCompra);
-  return margen == null ? null : roundMargenPxListaPct(margen);
-}
-
 /**
- * Por cada `nombre_lista`: solo ítems cuyo PORC UTILIDAD efectivo
- * (precio edición ?? precio DUX) **difiere** del calculado solo con precio DUX.
- * Si no hay precio DUX pero sí edición manual, se incluye.
+ * Por cada `nombre_lista`: solo ítems con margen manual guardado
+ * que **difiere** del margen calculado desde precio DUX.
  */
 export async function listarExportPxListasMargenPorLista(): Promise<
   ExportPxListaMargenGrupo[]
@@ -59,7 +40,7 @@ export async function listarExportPxListasMargenPorLista(): Promise<
 
   const idListas = listas.map((l) => l.idLista);
 
-  const [productos, duxRows, edicionRows] = await Promise.all([
+  const [productos, duxRows, margenRows] = await Promise.all([
     prisma.prodTienda.findMany({
       select: { codTienda: true, costoCompra: true },
       orderBy: { codTienda: "asc" },
@@ -68,9 +49,9 @@ export async function listarExportPxListasMargenPorLista(): Promise<
       where: { idLista: { in: idListas } },
       select: { codTienda: true, idLista: true, precio: true },
     }),
-    prisma.prodTiendaPrecioEdicion.findMany({
+    prisma.prodTiendaMargenEdicion.findMany({
       where: { idLista: { in: idListas } },
-      select: { codTienda: true, idLista: true, precio: true },
+      select: { codTienda: true, idLista: true, margenManual: true },
     }),
   ]);
 
@@ -79,9 +60,12 @@ export async function listarExportPxListasMargenPorLista(): Promise<
     duxMap.set(`${r.codTienda}:${r.idLista}`, toNum(r.precio));
   }
 
-  const edicionMap = new Map<string, number>();
-  for (const r of edicionRows) {
-    edicionMap.set(`${r.codTienda}:${r.idLista}`, toNum(r.precio));
+  const margenManualMap = new Map<string, number>();
+  for (const r of margenRows) {
+    margenManualMap.set(
+      `${r.codTienda}:${r.idLista}`,
+      roundMargenPxListaPct(toNum(r.margenManual))
+    );
   }
 
   const filasPorLista = new Map<number, FilaExportPxListaMargen[]>();
@@ -95,25 +79,25 @@ export async function listarExportPxListasMargenPorLista(): Promise<
 
     for (const lista of listas) {
       const key = `${prod.codTienda}:${lista.idLista}`;
-      const pxEdicion = edicionMap.get(key) ?? null;
+      const margenManual = margenManualMap.get(key) ?? null;
+      if (margenManual == null) continue;
+
       const pxDux = duxMap.get(key) ?? null;
-      const pxEfectivo = pxEdicion ?? pxDux;
-      if (pxEfectivo == null || !(pxEfectivo > 0)) continue;
-
-      const margenEfectivo = margenDesdePrecio(pxEfectivo, costoCompra);
-      if (margenEfectivo == null) continue;
-
-      const margenDux = margenDesdePrecio(pxDux, costoCompra);
+      const margenDux = margenDesdePrecioDux(pxDux, costoCompra);
 
       if (margenDux == null) {
-        if (pxEdicion == null) continue;
-      } else if (!margenesPorcUtilidadDifieren(margenEfectivo, margenDux)) {
+        filasPorLista.get(lista.idLista)!.push({
+          codigo: prod.codTienda,
+          porcUtilidad: margenManual,
+        });
         continue;
       }
 
+      if (!margenesPorcUtilidadDifieren(margenManual, margenDux)) continue;
+
       filasPorLista.get(lista.idLista)!.push({
         codigo: prod.codTienda,
-        porcUtilidad: margenEfectivo,
+        porcUtilidad: margenManual,
       });
     }
   }

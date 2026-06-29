@@ -7,18 +7,19 @@ export const getPxListasPreciosPageParamsSchema = z.object({
   rubro: z.string().max(200).optional(),
   marca: z.string().max(200).optional(),
   subRubro: z.string().max(200).optional(),
+  actualizar: z.string().max(8).optional(),
   pagina: z.string().max(20).optional(),
 });
 
-const precioListaTiendaSchema = z
+const margenListaTiendaSchema = z
   .number()
   .finite()
-  .positive("El precio debe ser mayor a cero.")
-  .max(999_999_999.9999, "Precio demasiado alto.");
+  .min(0, "El margen no puede ser negativo.")
+  .max(100, "El margen no puede superar 100 %.");
 
-/** Guardar o quitar override de precio en Px Listas. `precio: null` elimina la edición. */
-export const guardarPxListaPrecioEdicionSchema = z.object({
+/** Guardar o quitar margen manual en Px Listas. `margenManual: null` elimina la edición. */
+export const guardarPxListaMargenEdicionSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
   idLista: z.coerce.number().int().positive("Lista inválida."),
-  precio: z.union([precioListaTiendaSchema, z.null()]),
+  margenManual: z.union([margenListaTiendaSchema, z.null()]),
 });

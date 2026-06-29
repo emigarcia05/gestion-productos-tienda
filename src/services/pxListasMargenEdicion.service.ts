@@ -1,14 +1,19 @@
 import { Prisma } from "@prisma/client";
-import { calcMargenSinIvaPct } from "@/lib/calculos";
-import { roundPxListaEntero } from "@/lib/pxListasPreciosFormat";
+import { calcPxListaDesdeMargenSinIvaPct } from "@/lib/calculos";
+import { roundMargenPxListaPct } from "@/lib/pxListasPreciosFormat";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types/service.types";
 
-export async function guardarPrecioListaEdicion(
+export async function guardarMargenListaEdicion(
   codTienda: string,
   idLista: number,
-  precio: number | null
-): Promise<ServiceResult<{ precio: number | null; margenPct: number | null }>> {
+  margenManual: number | null
+): Promise<
+  ServiceResult<{
+    margenManual: number | null;
+    pxEfectivo: number | null;
+  }>
+> {
   const listaExiste = await prisma.prodTiendaListaPrecio.findUnique({
     where: { idLista },
     select: { idLista: true },
@@ -27,33 +32,43 @@ export async function guardarPrecioListaEdicion(
 
   const costoCompra = Number(producto.costoCompra);
 
-  if (precio === null) {
-    await prisma.prodTiendaPrecioEdicion.deleteMany({
+  if (margenManual === null) {
+    await prisma.prodTiendaMargenEdicion.deleteMany({
       where: { codTienda, idLista },
     });
+
     const dux = await prisma.prodTiendaPrecio.findUnique({
       where: { codTienda_idLista: { codTienda, idLista } },
       select: { precio: true },
     });
     const pxDux = dux ? Number(dux.precio) : null;
-    const margenPct =
-      pxDux != null && pxDux > 0 ? calcMargenSinIvaPct(pxDux, costoCompra) : null;
-    return { success: true, data: { precio: null, margenPct } };
+
+    return {
+      success: true,
+      data: { margenManual: null, pxEfectivo: pxDux },
+    };
   }
 
-  const redondeado = roundPxListaEntero(precio);
-  await prisma.prodTiendaPrecioEdicion.upsert({
+  const redondeado = roundMargenPxListaPct(margenManual);
+  await prisma.prodTiendaMargenEdicion.upsert({
     where: { codTienda_idLista: { codTienda, idLista } },
     create: {
       codTienda,
       idLista,
-      precio: new Prisma.Decimal(redondeado),
+      margenManual: new Prisma.Decimal(redondeado),
     },
     update: {
-      precio: new Prisma.Decimal(redondeado),
+      margenManual: new Prisma.Decimal(redondeado),
     },
   });
 
-  const margenPct = calcMargenSinIvaPct(redondeado, costoCompra);
-  return { success: true, data: { precio: redondeado, margenPct } };
+  const pxEfectivo =
+    costoCompra > 0
+      ? calcPxListaDesdeMargenSinIvaPct(redondeado, costoCompra)
+      : null;
+
+  return {
+    success: true,
+    data: { margenManual: redondeado, pxEfectivo },
+  };
 }

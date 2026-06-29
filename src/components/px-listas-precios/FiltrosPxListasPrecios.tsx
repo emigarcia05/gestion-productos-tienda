@@ -32,6 +32,7 @@ interface Props {
   marcaActual: string;
   rubroActual: string;
   subRubroActual: string;
+  actualizarActual: string;
 }
 
 export default function FiltrosPxListasPrecios({
@@ -43,6 +44,7 @@ export default function FiltrosPxListasPrecios({
   marcaActual,
   rubroActual,
   subRubroActual,
+  actualizarActual,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -69,6 +71,7 @@ export default function FiltrosPxListasPrecios({
     marca?: string;
     rubro?: string;
     subRubro?: string;
+    actualizar?: string;
   }) {
     const p = new URLSearchParams();
     const qVal = updates.q !== undefined ? updates.q : q;
@@ -76,10 +79,13 @@ export default function FiltrosPxListasPrecios({
     const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
     const subRubroVal =
       updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
+    const actualizarVal =
+      updates.actualizar !== undefined ? updates.actualizar : actualizarActual;
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
     if (subRubroVal) p.set("subRubro", subRubroVal);
+    if (actualizarVal) p.set("actualizar", actualizarVal);
     const query = p.toString();
     router.push(query ? `${pathname}?${query}` : pathname);
   }
@@ -94,6 +100,10 @@ export default function FiltrosPxListasPrecios({
 
   function handleSubRubro(value: string) {
     navigate({ subRubro: value });
+  }
+
+  function handleActualizar(value: string) {
+    navigate({ actualizar: value });
   }
 
   function limpiarFiltros() {
@@ -191,6 +201,33 @@ export default function FiltrosPxListasPrecios({
                     {s}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(actualizarActual)}
+            onLimpiar={() => handleActualizar("")}
+          >
+            <Select
+              value={actualizarActual || undefined}
+              onValueChange={(v) => handleActualizar(v)}
+            >
+              <SelectTrigger
+                id="filtro-px-listas-precios-actualizar"
+                className="input-filtro-unificado"
+              >
+                <SelectValue placeholder="ACTUALIZAR" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="si">SI</SelectItem>
+                <SelectItem value="no">NO</SelectItem>
               </SelectContent>
             </Select>
           </FiltroIndividualContainer>

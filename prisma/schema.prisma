@@ -671,6 +671,7 @@ model ProdTiendaListaPrecio {
 
   preciosPorProducto ProdTiendaPrecio[]
   preciosEdicion      ProdTiendaPrecioEdicion[]
+  margenesEdicion     ProdTiendaMargenEdicion[]
 
   @@map("prod_tienda_listas_precios")
 }
@@ -703,6 +704,21 @@ model ProdTiendaPrecioEdicion {
   @@id([codTienda, idLista])
   @@index([idLista], map: "prod_tienda_precios_edicion_id_lista_idx")
   @@map("prod_tienda_precios_edicion")
+}
+
+/** Margen % manual en módulo Px Listas (no lo pisa el sync DUX). Comparación vs margen derivado de `prod_tienda_precios`. */
+model ProdTiendaMargenEdicion {
+  codTienda    String   @map("cod_tienda")
+  idLista      Int      @map("id_lista")
+  margenManual Decimal  @map("margen_manual") @db.Decimal(8, 4)
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  prodTienda ProdTienda            @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+  lista      ProdTiendaListaPrecio @relation(fields: [idLista], references: [idLista], onDelete: Restrict)
+
+  @@id([codTienda, idLista])
+  @@index([idLista], map: "prod_tienda_margen_edicion_id_lista_idx")
+  @@map("prod_tienda_margen_edicion")
 }
 
 /** Catálogo de depósitos DUX (`stock[].id` en API). Se alimenta en sync desde `stock[]` de cada ítem. */
@@ -762,6 +778,7 @@ model ProdTienda {
   preciosCompetencia      ProdPrecioCompetencia[]
   preciosLista            ProdTiendaPrecio[]
   preciosListaEdicion     ProdTiendaPrecioEdicion[]
+  margenesListaEdicion    ProdTiendaMargenEdicion[]
   stocks                  ProdTiendaStock[]
 
   @@map("prod_tienda")

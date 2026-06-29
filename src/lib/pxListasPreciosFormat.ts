@@ -41,3 +41,17 @@ export function fmtMargenPxListaTabla(n: number | null | undefined): string {
   });
   return `${s}%`;
 }
+
+/** Precisión de comparación de margen % (4 decimales). */
+const COMPARACION_MARGEN_FACTOR = 10_000;
+
+/** Difieren dos márgenes % redondeados a 4 decimales. */
+export function margenesPorcUtilidadDifieren(
+  margenA: number,
+  margenB: number
+): boolean {
+  return (
+    Math.round(margenA * COMPARACION_MARGEN_FACTOR) !==
+    Math.round(margenB * COMPARACION_MARGEN_FACTOR)
+  );
+}

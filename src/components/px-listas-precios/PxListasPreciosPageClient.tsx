@@ -25,6 +25,7 @@ interface Props {
   rubro: string;
   marca: string;
   subRubro: string;
+  actualizar: string;
   paginaNum: number;
 }
 
@@ -41,6 +42,7 @@ export default function PxListasPreciosPageClient({
   rubro,
   marca,
   subRubro,
+  actualizar,
   paginaNum,
 }: Props) {
   const puedeEditar = puede(rol, PERMISOS.cxPxTienda.acceso);
@@ -59,6 +61,7 @@ export default function PxListasPreciosPageClient({
             marcaActual={marca}
             rubroActual={rubro}
             subRubroActual={subRubro}
+            actualizarActual={actualizar}
           />
         }
         actions={
@@ -81,7 +84,7 @@ export default function PxListasPreciosPageClient({
             <div className="flex shrink-0 justify-end pt-2">
               <PaginacionTabla
                 basePath={BASE_PATH}
-                params={{ q, rubro, marca, subRubro }}
+                params={{ q, rubro, marca, subRubro, actualizar }}
                 paginaActual={paginaNum}
                 totalPaginas={totalPaginas}
                 total={total}
