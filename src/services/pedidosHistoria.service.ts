@@ -99,10 +99,8 @@ export interface PedidoHistoriaItemDetalle {
 export interface PedidoHistoriaDetalle {
   id: string;
   /**
-   * En el servicio es `Date` (Prisma). Tras `getPedidoHistoriaDetalleAction`
-   * debe viajar como **ISO string** para evitar fallos de serialización del
-   * runtime de Server Actions (en producción el cliente podía ver solo el
-   * error genérico de "Server Components render").
+   * En el servicio es `Date` (Prisma). En wire (`GET /api/pedidos-historia/…/detalle`
+   * vía `serializarPedidoHistoriaDetalleParaCliente`) debe viajar como **ISO string**.
    */
   generadoAt: Date | string;
   /**

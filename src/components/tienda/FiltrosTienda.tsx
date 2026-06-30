@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -62,6 +62,7 @@ export default function FiltrosTienda({
   modoFiltroTercero = "subRubro",
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
   const usaCxCompra = modoFiltroTercero === "cxCompra";
 
   const {
@@ -121,7 +122,8 @@ export default function FiltrosTienda({
     }
     if (proveedorVal) p.set("proveedor", proveedorVal);
     if (vincVal) p.set("vinculado", vincVal);
-    window.location.href = `${pathname}?${p.toString()}`;
+    const query = p.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
   }
 
   function handleMarca(value: string) {
@@ -149,7 +151,7 @@ export default function FiltrosTienda({
 
   function limpiarFiltros() {
     setQ("");
-    window.location.href = pathname;
+    router.push(pathname);
   }
 
   return (

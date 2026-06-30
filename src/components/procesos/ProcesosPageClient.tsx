@@ -46,7 +46,7 @@ export default function ProcesosPageClient({ rol }: Props) {
   const sinProcesos = procesosDelModulo.length === 0;
 
   return (
-    <div className="area-page-shell flex h-screen min-h-0 flex-col overflow-hidden">
+    <div className="area-page-shell">
       <SectionHeader titulo="Ayuda Vendedor" subtitulo="Procesos" />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 pb-6 pt-2">
         <div className="grid min-h-0 flex-1 grid-cols-[25%_75%] gap-4">

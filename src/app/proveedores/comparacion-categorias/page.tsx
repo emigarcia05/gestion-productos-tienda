@@ -16,7 +16,7 @@ export default async function ComparacionCategoriasPage() {
   const arbol = await getArbolCategorias();
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="area-page-shell">
       <ComparacionCategoriasClient arbolInicial={arbol} rol={rol} />
     </div>
   );

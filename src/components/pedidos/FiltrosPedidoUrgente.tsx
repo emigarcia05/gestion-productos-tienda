@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -53,6 +53,7 @@ export default function FiltrosPedidoUrgente({
   totalProductos,
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
 
   function updateUrl(updates: {
     q?: string;
@@ -75,7 +76,8 @@ export default function FiltrosPedidoUrgente({
     if (next.sucursal) search.set("sucursal", next.sucursal);
     if (next.proveedor) search.set("proveedor", next.proveedor);
     if (next.pedido) search.set("pedido", next.pedido);
-    window.location.href = `${pathname}?${search.toString()}`;
+    const query = search.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
   }
 
   const {

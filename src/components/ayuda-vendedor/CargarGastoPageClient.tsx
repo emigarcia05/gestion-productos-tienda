@@ -18,7 +18,7 @@ export default function CargarGastoPageClient({ mes, anio, sucursalesCentroCosto
   const [modalOpen, setModalOpen] = useState(true);
 
   return (
-    <div className="area-page-shell flex h-screen min-h-0 flex-col overflow-hidden">
+    <div className="area-page-shell">
       <SectionHeader titulo="Ayuda Vendedor" subtitulo="Cargar Gasto" />
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 pb-6">
         {!modalOpen ? (

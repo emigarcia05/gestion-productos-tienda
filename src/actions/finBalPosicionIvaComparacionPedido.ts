@@ -7,7 +7,6 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { guardarIvaComparacionPedidoSchema } from "@/lib/validations/finBalPosicionIvaComparacionPedido";
 import {
-  getEstadoIvaComparacionPedido,
   guardarIvaComparacionPedido,
   type EstadoIvaComparacionPedido,
 } from "@/services/finBalPosicionIvaComparacionPedido.service";
@@ -23,23 +22,6 @@ async function gateFinanzasEditor(): Promise<{ ok: true } | { ok: false; error: 
     return { ok: false, error: "Solo el modo editor puede configurar la comparación de pedidos." };
   }
   return { ok: true };
-}
-
-export async function getEstadoIvaComparacionPedidoAction(): Promise<
-  ActionResult<EstadoIvaComparacionPedido>
-> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-
-  try {
-    const estado = await getEstadoIvaComparacionPedido();
-    return { ok: true, data: estado };
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "No se pudo cargar la configuración.";
-    return { ok: false, error: message };
-  }
 }
 
 export async function guardarIvaComparacionPedidoAction(

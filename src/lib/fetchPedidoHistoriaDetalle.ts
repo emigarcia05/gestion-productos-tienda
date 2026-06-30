@@ -8,7 +8,7 @@ type DetalleJsonBody = Partial<{
   supportId: string;
 }>;
 
-/** Carga el detalle vía REST JSON; mismo contrato que `getPedidoHistoriaDetalleAction` sin usar Flight/RSC Actions. */
+/** Carga el detalle vía `GET /api/pedidos-historia/[pedidoHistoriaId]/detalle` (sin Server Action). */
 export async function fetchPedidoHistoriaDetalle(
   pedidoHistoriaId: string
 ): Promise<ActionResult<PedidoHistoriaDetalle>> {

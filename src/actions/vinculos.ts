@@ -16,12 +16,12 @@ import {
 } from "@/services/costoListaTienda.service";
 import { getProductosVinculadosPorItemTienda } from "@/services/producto.service";
 import { listarProductosProveedoresParaVincular, type ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
-import { getProveedoresMercaderia as getProveedoresFromProveedores } from "@/actions/proveedores";
-import { listaPreciosCodExtSchema, listaPreciosCodTiendaSchema } from "@/lib/validations/common";
+import { getProveedoresMercaderia } from "@/services/proveedor.service";
+import { listaPreciosCodExtSchema, listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
 import { z } from "zod";
 
 const listarParaVincularFiltrosSchema = z.object({
-  proveedorId: z.string().max(128).optional(),
+  proveedorId: prismaCuidSchema.optional(),
   q: z.string().max(500).optional(),
 });
 
@@ -65,9 +65,11 @@ export async function getVinculos(
   }
 }
 
-/** Proveedores reales desde BD (para modal de vinculación y otros). */
+/** Proveedores de mercadería (para modal de vinculación y otros). */
 export async function getProveedores() {
-  return getProveedoresFromProveedores();
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.tienda.acceso)) return [];
+  return getProveedoresMercaderia();
 }
 
 /** Lista ítems de prod_precios_provee para modal "Vincular nuevo producto". Filtros: proveedor, descripción (q). */

@@ -49,7 +49,7 @@ export default async function ProveedoresPage({ searchParams }: Props) {
     ) : undefined;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="area-page-shell">
       <SectionHeader titulo={titulo} subtitulo="Lista Proveedores" actions={acciones} />
 
       {/* Filtros */}

@@ -1,10 +1,6 @@
 import { z } from "zod";
 import { competenciaConfigExtraccionSchema } from "@/lib/competenciaConfigExtraccion";
-import {
-  CONFIGURADO_FILTRO,
-  DIF_PROMEDIO_FILTRO,
-} from "@/lib/competenciaPreciosFiltros";
-import { listaPreciosCodTiendaSchema, paramsPaginaSchema, prismaCuidSchema } from "@/lib/validations/common";
+import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
 
 /** URL del sitio: opcional; si se informa, debe ser válida. */
 export const competenciaWebSchema = z
@@ -49,30 +45,6 @@ export const updateCompetenciaSchema = createCompetenciaSchema.extend({
 export const deleteCompetenciaSchema = z.object({
   id: prismaCuidSchema,
 });
-
-const difPromedioFiltroSchema = z
-  .enum(["", DIF_PROMEDIO_FILTRO.MAS_CARO, DIF_PROMEDIO_FILTRO.MAS_BARATO])
-  .optional()
-  .default("");
-
-const configuradoFiltroSchema = z
-  .enum(["", CONFIGURADO_FILTRO.SI, CONFIGURADO_FILTRO.NO])
-  .optional()
-  .default("");
-
-export const competenciaPreciosFiltrosSchema = paramsPaginaSchema.extend({
-  q: z.string().max(200).optional().default(""),
-  difPromedio: difPromedioFiltroSchema,
-  /** PROV. CARO: precio tienda menor que el del competidor (relevamiento OK). */
-  provCaroCompetenciaId: prismaCuidSchema.optional(),
-  /** PROV. BARATO: precio tienda mayor que el del competidor (relevamiento OK). */
-  provBaratoCompetenciaId: prismaCuidSchema.optional(),
-  /** Solo ítems con precio relevado para ese competidor (URL OK o px_vta_sugerido). */
-  competenciaId: prismaCuidSchema.optional(),
-  configurado: configuradoFiltroSchema,
-});
-
-export type CompetenciaPreciosFiltros = z.infer<typeof competenciaPreciosFiltrosSchema>;
 
 export const guardarUrlVinculoSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,

@@ -20,7 +20,7 @@ export default async function GestionProveedoresPage() {
     ) : undefined;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="area-page-shell">
       <SectionHeader
         titulo="Lista Proveedores"
         subtitulo="Lista Proveedores (Gestión De Empresas)"

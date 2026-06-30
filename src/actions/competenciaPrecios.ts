@@ -9,7 +9,6 @@ import type { ActionResult } from "@/lib/types";
 import {
   createCompetenciaSchema,
   deleteCompetenciaSchema,
-  competenciaPreciosFiltrosSchema,
   guardarUrlVinculoSchema,
   relevarUrlVinculoSchema,
   relevarUrlsProductoSchema,
@@ -25,10 +24,6 @@ import {
   relevarVinculosPorCodTienda,
   type RelevarVinculosPorCodTiendaResult,
 } from "@/services/syncCompetenciaPrecios.service";
-import {
-  getCompetenciaPreciosList,
-  type CompetenciaPreciosListResult,
-} from "@/services/competenciaPreciosList.service";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 
 function revalidateCompetenciaPreciosPaths() {
@@ -55,27 +50,6 @@ async function gateEditar(): Promise<{ ok: false; error: string } | null> {
     return { ok: false, error: "Sin permisos de editor." };
   }
   return null;
-}
-
-const EMPTY_LIST: CompetenciaPreciosListResult = {
-  filas: [],
-  total: 0,
-  totalPaginas: 1,
-  competencias: [],
-};
-
-export async function getCompetenciaPreciosListAction(
-  params: unknown
-): Promise<CompetenciaPreciosListResult> {
-  try {
-    const denied = await gateAcceso();
-    if (denied) return EMPTY_LIST;
-    const parsed = competenciaPreciosFiltrosSchema.safeParse(params);
-    if (!parsed.success) return EMPTY_LIST;
-    return await getCompetenciaPreciosList(parsed.data);
-  } catch {
-    return EMPTY_LIST;
-  }
 }
 
 export async function listCompetenciasAction(): Promise<CompetenciaParaCliente[]> {

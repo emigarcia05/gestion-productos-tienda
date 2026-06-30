@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
-import { guardarPxListaMargenEdicionSchema } from "@/lib/validations/pxListasPrecios";
+import { guardarPxListaMargenEdicionSchema, getPxListasPreciosPageParamsSchema } from "@/lib/validations/pxListasPrecios";
 import { getPxListasPreciosPageDataFromDb } from "@/services/pxListasPreciosPage.service";
 import { guardarPrecioListaEdicionDesdeMargen } from "@/services/pxListasPrecioEdicion.service";
 import {
@@ -28,20 +28,17 @@ function revalidatePxListasPaths() {
 }
 
 /** Listado paginado **Px Listas** (precios por lista DUX + margen manual). */
-export async function getPxListasPreciosPageData(params: {
-  q?: string;
-  rubro?: string;
-  marca?: string;
-  subRubro?: string;
-  actualizar?: string;
-  pagina?: string;
-}) {
+export async function getPxListasPreciosPageData(params: unknown) {
   const rol = await getRol();
+  const vacio = await getPxListasPreciosPageDataFromDb({});
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
-    const vacio = await getPxListasPreciosPageDataFromDb({});
     return { ...vacio, items: [], total: 0, totalPaginas: 1 };
   }
-  return getPxListasPreciosPageDataFromDb(params);
+  const parsed = getPxListasPreciosPageParamsSchema.safeParse(params);
+  if (!parsed.success) {
+    return { ...vacio, items: [], total: 0, totalPaginas: 1 };
+  }
+  return getPxListasPreciosPageDataFromDb(parsed.data);
 }
 
 /** Persiste PX staging en `prod_tienda_precios_edicion` desde margen % (o elimina con `margenManual: null`). */
@@ -94,7 +91,7 @@ export async function guardarPxListaMargenEdicionAction(
   }
 }
 
-/** Excel por `nombre_lista` (CODIGO + PORC UTILIDAD) y limpieza de staging exportado. */
+/** Excel por `nombre_lista` (CODIGO + IMPORTE) y limpieza de staging exportado. */
 export async function exportarPxListasMargenAction(): Promise<
   ActionResult<{ grupos: ExportPxListaMargenGrupo[] }>
 > {

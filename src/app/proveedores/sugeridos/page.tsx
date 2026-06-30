@@ -16,7 +16,7 @@ export default async function PxVtaSugeridosPage() {
   const marcas = marcasRows.map((m) => ({ id: m.id, nombre: m.nombre }));
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="area-page-shell">
       <SugeridosPageClient proveedores={proveedores} marcas={marcas} />
     </div>
   );

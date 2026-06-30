@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { guardListaPreciosImportarEsEditor } from "@/lib/apiRouteAuth";
-import { aplicarMapeoListaPrecios, type MapeoColumnasListaPrecios } from "@/lib/parsearImport";
+import { aplicarMapeoListaPrecios } from "@/lib/parsearImport";
+import { importarListaPreciosProveedorSchema } from "@/lib/validations/importar";
 import * as proveedorService from "@/services/proveedor.service";
 import * as listaPreciosService from "@/services/listaPrecios.service";
 import {
@@ -13,14 +14,6 @@ import {
 
 export const maxDuration = 300;
 
-interface ImportBody {
-  proveedorId: string;
-  filasCrudas: string[][];
-  mapeo: MapeoColumnasListaPrecios;
-  precioEnDolares: boolean;
-  habilitado?: boolean;
-}
-
 /**
  * POST: Ejecuta la importación de lista de precios en segundo plano.
  * El cliente puede cerrar el modal y ver el progreso en la sidebar (GET .../status).
@@ -29,20 +22,23 @@ export async function POST(request: Request) {
   const denied = await guardListaPreciosImportarEsEditor();
   if (denied) return denied;
 
-  let body: ImportBody;
+  let rawBody: unknown;
   try {
-    body = await request.json();
+    rawBody = await request.json();
   } catch {
     return NextResponse.json({ ok: false, error: "Body JSON inválido." }, { status: 400 });
   }
 
-  const { proveedorId, filasCrudas, mapeo, precioEnDolares, habilitado } = body;
-  if (!proveedorId || !Array.isArray(filasCrudas) || !filasCrudas.length) {
-    return NextResponse.json(
-      { ok: false, error: "Faltan proveedorId o filasCrudas." },
-      { status: 400 }
-    );
+  const parsed = importarListaPreciosProveedorSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const flat = parsed.error.flatten();
+    const msg =
+      [...Object.values(flat.fieldErrors).flat(), ...flat.formErrors][0] ??
+      "Datos de importación inválidos.";
+    return NextResponse.json({ ok: false, error: msg }, { status: 400 });
   }
+
+  const { proveedorId, filasCrudas, mapeo, precioEnDolares, habilitado } = parsed.data;
 
   const proveedores = await proveedorService.getProveedores();
   const proveedor = proveedores.find((p) => p.id === proveedorId);
@@ -50,7 +46,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Proveedor no encontrado." }, { status: 404 });
   }
 
-  const filas = aplicarMapeoListaPrecios(filasCrudas, mapeo ?? {});
+  const filas = aplicarMapeoListaPrecios(filasCrudas, mapeo);
   if (filas.length === 0) {
     return NextResponse.json({ ok: false, error: "No hay filas válidas para importar." }, { status: 400 });
   }
@@ -62,8 +58,8 @@ export async function POST(request: Request) {
       proveedorId,
       proveedor.prefijo,
       filas,
-      precioEnDolares ?? false,
-      habilitado ?? true,
+      precioEnDolares,
+      habilitado,
       {
         onProgress(processed, total) {
           void setImportProgressInDb(processed, total);

@@ -89,7 +89,7 @@ export default async function HistorialPedidosPage({ searchParams }: Props) {
 
   if (!res.success) {
     return (
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="area-page-shell">
         <HistorialPedidosPageClient
           items={[]}
           total={0}

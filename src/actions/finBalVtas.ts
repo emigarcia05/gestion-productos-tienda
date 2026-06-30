@@ -5,20 +5,15 @@ import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
-  crearFinBalVtasSchema,
   eliminarFinBalVtasSchema,
   guardarFinBalVtasCargaPeriodoSchema,
   listarFinBalVtasPorMesAnioSchema,
 } from "@/lib/validations/finBalVtas";
 import {
-  crearFinBalVtas,
   eliminarFinBalVtas,
   guardarFinBalVtasCargaPeriodo,
-  listarFinBalVtas,
   listarFinBalVtasPorMesAnio,
-  listarSucursalesGeneraBalanceParaVtas,
   type FinBalVtasItem,
-  type SucursalGeneraBalanceOption,
 } from "@/services/finBalVtas.service";
 
 function firstZodErrorMessage(error: {
@@ -28,45 +23,6 @@ function firstZodErrorMessage(error: {
   return (
     [...Object.values(flattened.fieldErrors).flat(), ...flattened.formErrors][0] ?? "Datos inválidos."
   );
-}
-
-export async function listarFinBalVtasAction(): Promise<ActionResult<FinBalVtasItem[]>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-  const data = await listarFinBalVtas();
-  return { ok: true, data };
-}
-
-export async function listarSucursalesGeneraBalanceParaVtasAction(): Promise<
-  ActionResult<SucursalGeneraBalanceOption[]>
-> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-  const data = await listarSucursalesGeneraBalanceParaVtas();
-  return { ok: true, data };
-}
-
-export async function crearFinBalVtasAction(raw: unknown): Promise<ActionResult<FinBalVtasItem>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede cargar ventas de balance." };
-  }
-  const parsed = crearFinBalVtasSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, error: firstZodErrorMessage(parsed.error) };
-  }
-  const res = await crearFinBalVtas(parsed.data);
-  if (!res.success) return { ok: false, error: res.error };
-  revalidatePath("/finanzas/balance/vtas");
-  revalidatePath("/finanzas/balance/mensual");
-  return { ok: true, data: res.data };
 }
 
 export async function listarFinBalVtasPorMesAnioAction(

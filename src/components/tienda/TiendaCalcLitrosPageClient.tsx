@@ -227,7 +227,7 @@ export default function TiendaCalcLitrosPageClient({
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gris">
+    <div className="area-page-shell bg-gris">
       <GestionTiposPinturaModal
         open={gestionarTiposOpen}
         onOpenChange={setGestionarTiposOpen}

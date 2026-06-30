@@ -7,8 +7,6 @@ interface Props {
   subtitulo?: string;
   /** Botones de acción a la derecha; tamaño uniforme obligatorio (h-10 px-4) */
   actions?: ReactNode;
-  /** @deprecated El espaciado es siempre el mismo (clase global .section-header) */
-  compact?: boolean;
 }
 
 /**

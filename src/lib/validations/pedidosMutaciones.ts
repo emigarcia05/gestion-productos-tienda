@@ -70,18 +70,6 @@ export const generarPdfEnviarPedidoSchema = z.object({
     .optional(),
 });
 
-export const syncPedidoUrgenteEnvioSchema = z.object({
-  sucursal: sucursalPedidoCodigoSchema,
-  items: z
-    .array(
-      z.object({
-        id: listaPreciosCodExtSchema,
-        cant: z.number().int().min(0),
-      })
-    )
-    .max(100_000),
-});
-
 export const upsertPedidoUrgenteItemSchema = z.object({
   sucursal: sucursalPedidoCodigoSchema,
   listaPrecioProveedorId: listaPreciosCodExtSchema,

@@ -1,6 +1,7 @@
 "use client";
 
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +24,8 @@ export default function HistorialPedidosError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+
   useEffect(() => {
     const tag = "[pedidos/historial][error-boundary]";
     if (process.env.NODE_ENV === "production") {
@@ -56,7 +59,7 @@ export default function HistorialPedidosError({
             type="button"
             variant="outline"
             onClick={() => {
-              window.location.href = GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios;
+              router.push(GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios);
             }}
           >
             Volver al inicio

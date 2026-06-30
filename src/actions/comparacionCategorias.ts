@@ -4,10 +4,7 @@ import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 
 import { revalidatePath } from "next/cache";
 import {
-  getArbolCategorias,
   getProductosPorPresentacion,
-  getPresentacionesConLabel,
-  getPresentacionesParaGestion,
   createCategoria,
   updateCategoria,
   deleteCategoria,
@@ -74,20 +71,6 @@ async function tienePermisoEditar(): Promise<boolean> {
   return puede(rol, PERMISOS.comparacionCategorias.editar);
 }
 
-/** Árbol de categorías (lectura para todos con acceso). */
-export async function getArbolCategoriasAction(): Promise<ActionResult<Awaited<ReturnType<typeof getArbolCategorias>>>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.comparacionCategorias.acceso)) {
-    return { ok: false, error: "Sin acceso." };
-  }
-  try {
-    const data = await getArbolCategorias();
-    return { ok: true, data };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Error al cargar el árbol de categorías." };
-  }
-}
-
 /** Productos de una presentación con comparación vs objetivo. */
 export async function getProductosPorPresentacionAction(
   presentacionId: string
@@ -120,31 +103,6 @@ export async function getProductosPorPresentacionAction(
     };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al cargar productos." };
-  }
-}
-
-/** Lista de presentaciones con label (para selects). */
-export async function getPresentacionesConLabelAction(): Promise<ActionResult<Awaited<ReturnType<typeof getPresentacionesConLabel>>>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.comparacionCategorias.acceso)) {
-    return { ok: false, error: "Sin acceso." };
-  }
-  try {
-    const data = await getPresentacionesConLabel();
-    return { ok: true, data };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Error al cargar presentaciones." };
-  }
-}
-
-/** Lista plana de presentaciones para modal Gestionar categorías (combinación + producto ref + costo objetivo). */
-export async function getPresentacionesParaGestionAction(): Promise<ActionResult<Awaited<ReturnType<typeof getPresentacionesParaGestion>>>> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
-  try {
-    const data = await getPresentacionesParaGestion();
-    return { ok: true, data };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Error al cargar presentaciones." };
   }
 }
 

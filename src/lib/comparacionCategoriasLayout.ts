@@ -6,8 +6,8 @@
 /** Ancho máximo de contenido en páginas del submódulo (`ClassicFilteredTableLayout` `contentWidth="wide150"`). */
 export const COMP_CATEGORIAS_CONTENT_WIDTH = "wide150" as const;
 
-/** Padding horizontal reducido para maximizar área de tablas Finder. */
-export const COMP_CATEGORIAS_PAGE_CONTENT_CLASS = "!px-3 sm:!px-4 md:!px-5";
+/** Padding horizontal reducido para maximizar área de tablas Finder (desktop). */
+export const COMP_CATEGORIAS_PAGE_CONTENT_CLASS = "!px-5";
 
 /** Stack vertical Comparacion: selector 40 % + tabla 60 % (`flex-[2]` / `flex-[3]`), `gap-3` entre paneles. */
 export const COMP_CATEGORIAS_COMPARISON_STACK_CLASS =
@@ -31,11 +31,6 @@ export const COMP_CATEGORIAS_SELECTOR_GRID_CLASS =
  * Base `ModalTablaConFiltros` `max-w-[84rem]` × 1,5 × 1,2.
  */
 export const MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS = "!max-w-[151.2rem]";
-
-/** @deprecated Alias — usar `MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS`. */
-export const MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS = MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS;
-
-export const MODAL_REFERENCIA_COMPETENCIA_MAX_WIDTH_CLASS = MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS;
 
 /** Stack de filtros compartido (select entidad + búsqueda texto). */
 export const MODAL_COMP_CATEGORIAS_FILTROS_STACK_CLASS = "flex flex-col gap-2";

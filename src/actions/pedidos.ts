@@ -9,7 +9,6 @@ import {
 import { sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido } from "@/services/finBalPosicionIvaSaldoAcumuladoPedido.service";
 import { getPosicionIvaComparacionRevisionToken } from "@/services/finBalPosicionIvaComparacionRevision.service";
 import {
-  syncPedidoUrgenteEnvio,
   getItemsTablaEnviarPedido,
   getProveedoresConPedidoActivo,
   getItemsYProveedorParaEnviar,
@@ -17,7 +16,6 @@ import {
   getReposicionItemsProveedorPrioritarioAlternativo,
   type ReposicionProveedorPrioritarioItem,
   type SucursalPedidoEnvio,
-  type ItemPedidoUrgentePayload,
   upsertPedidoMercaderiaUrgenteItem,
   upsertPedidoTintometricoItems,
   deletePedidoTintometricoItem,
@@ -48,7 +46,6 @@ import {
   getReposicionProveedorPrioritarioParaModalSchema,
   getSobreStockReposicionParaModalSchema,
   listarProveedoresConPedidoActivoSchema,
-  syncPedidoUrgenteEnvioSchema,
   upsertPedidoTintometricoItemsSchema,
   upsertPedidoUrgenteItemSchema,
 } from "@/lib/validations/pedidosMutaciones";
@@ -383,39 +380,6 @@ export async function getReposicionProveedorPrioritarioParaModalAction(
       items,
     },
   };
-}
-
-/**
- * Sincroniza el pedido urgente a la tabla pedidos_envio.
- * Recibe sucursal + ítems (id lista precio, cantidad); solo se guardan cant > 0.
- * Reemplaza todos los ítems URGENTE de esa sucursal por el conjunto enviado.
- */
-export async function syncPedidoUrgenteEnvioAction(
-  raw: unknown
-): Promise<ActionResult<{ creados: number }>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.pedidos.acceso)) {
-    return { ok: false, error: "Sin permisos para pedidos." };
-  }
-  const rawParsed = syncPedidoUrgenteEnvioSchema.safeParse(raw);
-  if (!rawParsed.success) {
-    return { ok: false, error: "Datos inválidos para sincronizar el pedido urgente." };
-  }
-  const sucursalValida = rawParsed.data.sucursal;
-  if (!(await sucursalPedidoHabilitada(sucursalValida))) {
-    return { ok: false, error: "La sucursal no está habilitada para pedidos." };
-  }
-  const payload: ItemPedidoUrgentePayload[] = rawParsed.data.items
-    .filter((i) => i.cant > 0)
-    .map((i) => ({ id: i.id.trim(), cant: i.cant }))
-    .filter((i) => i.id.length > 0);
-  try {
-    const { creados } = await syncPedidoUrgenteEnvio(sucursalValida, payload);
-    return { ok: true, data: { creados } };
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Error al guardar el pedido.";
-    return { ok: false, error: message };
-  }
 }
 
 export async function upsertPedidoUrgenteMercaderiaItemAction(raw: unknown): Promise<ActionResult<void>> {

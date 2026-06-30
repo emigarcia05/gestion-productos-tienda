@@ -19,13 +19,9 @@ import {
   editarFinTesoreriaEntidad,
   eliminarCajaTesoreria,
   eliminarFinTesoreriaEntidad,
-  listarCajasTesoreria,
   listarCajasTesoreriaPorTipoCaja,
-  listarCajasTesoreriaPorTipoValor,
   listarEntidadesFinTesoreria,
-  listarFinTesoreriaTipoCaja,
   type CajaTesoreriaItem,
-  type FinTesoreriaTipoCajaItem,
 } from "@/services/cajasTesoreria.service";
 import type { FinTesoreriaEntidadItem } from "@/lib/cajasTesoreriaEntidades";
 
@@ -44,21 +40,6 @@ function revalidateCajasTesoreriaPaths(): void {
   revalidatePath("/finanzas/tesoreria");
 }
 
-export async function listarCajasTesoreriaAction(): Promise<ActionResult<CajaTesoreriaItem[]>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-
-  try {
-    const items = await listarCajasTesoreria();
-    return { ok: true, data: items };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "No se pudo listar las cajas.";
-    return { ok: false, error: message };
-  }
-}
-
 /** Catálogo `fin_tesoreria_entidades` para alta/edición de cajas. */
 export async function listarEntidadesFinTesoreriaAction(): Promise<ActionResult<FinTesoreriaEntidadItem[]>> {
   const rol = await getRol();
@@ -71,22 +52,6 @@ export async function listarEntidadesFinTesoreriaAction(): Promise<ActionResult<
     return { ok: true, data: items };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "No se pudo listar las entidades.";
-    return { ok: false, error: message };
-  }
-}
-
-/** Catálogo `fin_tesoreria_tipo_caja` (tipos de caja y etiquetas de UI). */
-export async function listarFinTesoreriaTipoCajaAction(): Promise<ActionResult<FinTesoreriaTipoCajaItem[]>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-
-  try {
-    const items = await listarFinTesoreriaTipoCaja();
-    return { ok: true, data: items };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "No se pudo listar los tipos de caja.";
     return { ok: false, error: message };
   }
 }
@@ -150,22 +115,6 @@ export async function eliminarFinTesoreriaEntidadAction(raw: unknown): Promise<A
 
   revalidateCajasTesoreriaPaths();
   return { ok: true, data: undefined };
-}
-
-/** Cajas con `tipo_valor = DIGITAL` (incluye **BANCO**, **BILLETERA_DIGITAL**, **TARJETAS A COBRAR**, etc.). */
-export async function listarCajasTesoreriaTipoDigitalAction(): Promise<ActionResult<CajaTesoreriaItem[]>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-
-  try {
-    const items = await listarCajasTesoreriaPorTipoValor("DIGITAL");
-    return { ok: true, data: items };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "No se pudo listar las cajas.";
-    return { ok: false, error: message };
-  }
 }
 
 /** Cajas con `tipo_caja = BANCO` (único destino permitido al **Acreditar cheque** en cuenta propia). */

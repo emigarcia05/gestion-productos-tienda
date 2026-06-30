@@ -36,11 +36,6 @@ const TIPO_TINTOMETRICO = "TINTOMETRICO";
 
 export type SucursalPedidoEnvio = "guaymallen" | "maipu";
 
-export interface ItemPedidoUrgentePayload {
-  id: string;
-  cant: number;
-}
-
 export interface ItemPedidoTintometricoPayload {
   sucursalCodigo: SucursalPedidoEnvio;
   proveedorId: string;
@@ -232,68 +227,6 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
     const message = e instanceof Error ? e.message : "Error al guardar el ítem.";
     return { ok: false, error: message };
   }
-}
-
-/**
- * Reemplaza todos los ítems de tipo URGENTE para la sucursal dada por el conjunto
- * (id lista precio, cantidad). Persiste en `prod_ped_merc`.
- */
-export async function syncPedidoUrgenteEnvio(
-  sucursal: SucursalPedidoEnvio,
-  items: ItemPedidoUrgentePayload[]
-): Promise<{ creados: number; error?: string }> {
-  const withCant = items.filter((i) => i.cant > 0);
-  const ids = [...new Set(withCant.map((i) => i.id))];
-  const cantById = new Map(withCant.map((i) => [i.id, i.cant]));
-
-  let creados = 0;
-
-  const sucursalId = await getSucursalIdByCodigo(sucursal);
-  await prisma.$transaction(async (tx) => {
-    await tx.prodPedMerc2.deleteMany({
-      where: { sucursalId, tipoDePedido: TIPO_URGENTE },
-    });
-
-    if (ids.length === 0) {
-      return;
-    }
-
-    const filas = await tx.listaPrecioProveedor.findMany({
-      where: { codExt: { in: ids } },
-      include: {
-        proveedor: { select: { id: true } },
-        prodTienda: { select: { codTienda: true, descripcionTienda: true } },
-      },
-    });
-
-    const toCreate = filas
-      .map((f) => {
-        const cant = cantById.get(f.codExt) ?? 0;
-        if (cant <= 0) return null;
-        return {
-          codExt: f.codExt,
-          urgenteCantPedir: cant,
-        };
-      })
-      .filter(Boolean) as Array<{
-      codExt: string;
-      urgenteCantPedir: number;
-    }>;
-
-    creados = toCreate.length;
-    for (const row of toCreate) {
-      await tx.prodPedMerc2.create({
-        data: {
-          tipoDePedido: TIPO_URGENTE,
-          sucursalId,
-          urgenteCodExt: row.codExt,
-          urgenteCantPedir: row.urgenteCantPedir,
-        },
-      });
-    }
-  });
-
-  return { creados };
 }
 
 export async function upsertPedidoTintometricoItems(

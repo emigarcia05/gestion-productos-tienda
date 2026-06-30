@@ -67,7 +67,7 @@ export default function TiendaCalcTintometricoPageClient({
   }, [pxCompraNorm, proveedorId, proveedoresConCoefMayorAUno]);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gris">
+    <div className="area-page-shell bg-gris">
       <EditarCoeficientesModal
         open={editarCoefOpen}
         onOpenChange={setEditarCoefOpen}

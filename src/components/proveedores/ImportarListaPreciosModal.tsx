@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { type MapeoColumnasListaPrecios } from "@/actions/importar";
+import { type MapeoColumnasListaPrecios } from "@/lib/parsearImport";
 import { parsearCSVCrudo } from "@/lib/parsearImport";
 import { cn } from "@/lib/utils";
 import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";

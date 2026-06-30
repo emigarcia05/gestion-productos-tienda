@@ -18,7 +18,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
    - **No** uses utilidades de paleta genérica (`emerald-*`, `amber-*`, `blue-*`, etc.) para éxito, advertencia o resaltados: usá **`@/lib/ui-classes`** (`BADGE_SUCCESS_TINT_CLASS`, `TEXT_SUCCESS_CLASS`, `TEXT_WARNING_CLASS`, `ICON_WARNING_INTERACTIVE_CLASS`, **`CALLOUT_WARNING_CLASS`**, `IMPORT_STAT_BADGE_CLASSES`) o tokens **`primary`**, **`accent`**, **`accent2`** (amarillo de marca) en combinación con `cn()`.  
    - **Banners y avisos no destructivos:** usar **`CALLOUT_WARNING_CLASS`** en `<p>` / `<div>` de aviso (Balance mensual, configuraciones faltantes, etc.). Está prohibido el patrón `border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100` o cualquier combinación de `*-amber-*` (incluido `dark:`).  
    - **Nunca duplicar utilidades por eje** dentro de la misma `className` (`px-2 px-3`, `min-w-[40rem] min-w-[44rem]`, `text-sm text-base`, `gap-2 gap-4`, `flex-col` + `flex-row`, `grid-cols-1` + `grid-cols-2`, `text-center` + `text-left`, `w-full` + `w-auto` en el mismo nodo salvo override intencional vía `cn()`). Mantener **una sola** utilidad por eje. **Legado a corregir:** cadenas tipo `px-4 px-6 px-8` (simulación responsive) deben colapsarse a **`px-8`** (o el valor único que defina el layout; **`ClassicFilteredTableLayout`** usa `density`: `default` → `px-8`, `compact` → `px-6`).  
-   - **Cascarón de página de área:** páginas y `*PageClient` que ocupan toda la pantalla deben usar la clase global **`.area-page-shell`** en lugar de duplicar `flex h-screen min-h-0 flex-col overflow-hidden`.  
+   - **Cascarón de página de área:** páginas y `*PageClient` que ocupan toda la pantalla deben usar la clase global **`.area-page-shell`** (opcional **`bg-gris`** si el módulo lo requiere) en lugar de duplicar `flex h-screen … flex-col overflow-hidden` o `flex h-screen min-h-0 flex-col overflow-hidden`. **No** combinar `.area-page-shell` con esas utilidades: la clase global ya las incluye en `globals.css`.  
    - **Política desktop-only (obligatoria):** no usar variantes responsive/mobile en clases Tailwind (`sm:`, `md:`, `lg:`, `xl:`, `2xl:`, `max-*`, etc.). Definir solo clases base (desktop) y mantener una única versión visual.
    - **Excepción acordada**: la pantalla **Balance mensual** (`FinanzasBalanceMensualPageClient`) usa **hex fijos de informe** en el encabezado de la grilla (`#0072BB` + texto blanco) y en las filas de **resultado operativo / resultado ejercicio** (fondo `#a9d6f1`, texto `#063652`). No extrapolar este patrón a otras pantallas sin actualizar esta guía. Detalle en la subsección **Balance mensual** bajo `ClassicFilteredTableLayout`. **Ventas Mensuales** (`FinBalVtasPageClient`, `/finanzas/balance/vtas`): barra **`FilterBar`** + **`FilaFiltrosDesplegables`** (5 columnas: **MES**, **AÑO**, **SUCURSAL**, slot **`col-span-2`** con contador **REGISTRO(S)** + **`LimpiarFiltrosButton`**); cada desplegable en **`FiltroIndividualContainer`** (`input-filtro-unificado`, `select-content-filtro`, máscara **MAYÚSCULAS** en opción “todos” y meses); sin etiquetas fuera del trigger; la **carga** de datos va en **`CrearFinBalVtasModal`** (botón **Nueva Carga** en `actions`), no en la barra de filtros. En modo editor, **Eliminar** por fila: botón ícono **`Trash2`** con **`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`**, `aria-label` descriptivo.  
    - **Siempre** combina clases con `cn()` de `@/lib/utils.ts`. **No** uses template literals en `className` (ej. `` className={`${x} ...`} ``), incluyendo el `body` de `layout.tsx`.  
@@ -98,7 +98,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 | Ícono `TriangleAlert` con `text-amber-600 dark:text-amber-500` | **`TEXT_WARNING_CLASS`** (`@/lib/ui-classes`) |
 | `` className={`${a} ${b}`} `` | `className={cn(a, b)}` |
 | `shadow-[0_4px_12px_rgba(0,0,0,0.05)]` en `Card` de tabla | `className={cn("card-tabla-envoltorio", …)}` + variable **`--card-tabla-envoltorio-shadow`** |
-| `<div className="flex h-screen min-h-0 flex-col overflow-hidden">` (cascarón de página de área) | `<div className="area-page-shell">` |
+| `<div className="flex h-screen min-h-0 flex-col overflow-hidden">` o `h-screen flex flex-col overflow-hidden` (cascarón de página) | `<div className="area-page-shell">` o `area-page-shell bg-gris` |
 | `<col style={{ width: "20%" }}>` con valor estático | `<col className="w-[20%]">` (solo usar `style` para anchos **dinámicos**) |
 | `window.location.href = …` (navegación interna App Router) | `useRouter().push(url)` desde `next/navigation` |
 | Utilidades duplicadas en una misma `className` (`px-2 px-3`, `min-w-[a] min-w-[b]`) | Mantener **una sola** utilidad por eje; el último valor gana en CSS y la duplicación oculta intención |
@@ -128,7 +128,8 @@ Registro de simplificaciones y reglas para que no reaparezcan patrones inútiles
 - **`<colgroup>` / `<col>`**: anchos **porcentuales fijos** → `className="w-[20%]"` (o el porcentaje que corresponda); **conservar** `style={{ width: \`${pct}%\` }}` solo cuando el ancho es **dinámico** (barras, sync, pie sincronizado, etc.), como ya documenta la tabla de equivalencias en la “Guía para IA”.
 - **`global-error.tsx`**: al reemplazar el root layout, debe importar **`./globals.css`** y componer UI con **`cn()`** y tokens (`bg-background`, `bg-card`, `border-border`, `text-muted-foreground`, `bg-primary`, etc.); no usar objetos `style={{}}` con hex sueltos salvo excepción documentada en otro módulo.
 - **Props “túnel” sin uso:** no pasar props a subcomponentes internos si el hijo no las consume (p. ej. `competencias` en `FilaPxListas` cuando solo el modal padre las necesita).
-- **Exports `@deprecated` en `ui-classes`:** eliminar constantes obsoletas cuando no queden referencias en `src/` (no dejar alias muertos “por si acaso”).
+- **Exports `@deprecated` en `ui-classes` y layout:** eliminar constantes, alias y props obsoletas cuando no queden referencias en `src/` (no dejar alias muertos “por si acaso”). Ej.: `MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS`, prop `compact` en `SectionHeader`, `costosCompraDifierenParaInforme` en `aumentoCostoCompra.ts`.
+- **Hooks huérfanos de sync legacy:** no conservar `useListaPreciosTiendaModalSync`, `useSyncListaPreciosStatusPoll` ni `SyncModal` si el flujo activo es **`SyncStatusIndicator`** + **`DuxSyncStyleButton`** (eliminados 2026-06-30).
 - **Componentes huérfanos:** antes de crear un modal/página, verificar que un `*PageClient` o ruta App Router lo importe. Tras redirects (p. ej. `/precios-competencia` → Px Competencia), borrar la grilla standalone y filtros legacy del cluster, conservando modales compartidos (`AsociarUrlsCompetenciaModal`, `RelevamientoUltimoMensaje`, etc.).
 - **Sync en sidebar:** el flujo activo es **`SyncStatusIndicator`** + **`DuxSyncStyleButton`**; no reintroducir `SyncDuxHeaderButton` / `StockCard` / `StockPageSyncGate` (eliminados 2026-06-04).
 - **Paginación proveedores:** usar **`PaginacionTabla`** (URL) o **`PaginacionClient`** (estado cliente); no crear variantes locales (`PaginacionProductos` eliminado).
@@ -252,12 +253,14 @@ import { cn } from "@/lib/utils";
 "use client";
 import { usePathname } from "next/navigation";
 import FilterBar, { FilterRowSelection, FilterRowSearch, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
+import { usePathname, useRouter } from "next/navigation";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
 
 export default function MiFiltros({ qActual, totalItems }: { qActual: string; totalItems: number }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { q, setQ, ref: inputRef, handleQChange, isDebouncing, prepareNavigate } = useFiltrosConBusqueda({
     qActual,
     debounceMs: 400,
@@ -266,10 +269,10 @@ export default function MiFiltros({ qActual, totalItems }: { qActual: string; to
       prepareNavigate();
       const params = new URLSearchParams();
       if (value) params.set("q", value);
-      window.location.href = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+      const query = params.toString();
+      router.push(query ? `${pathname}?${query}` : pathname);
     },
   });
-  const hayFiltros = !!q;
   return (
     <FilterBar className="filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
@@ -279,7 +282,7 @@ export default function MiFiltros({ qActual, totalItems }: { qActual: string; to
         <FilterRowSearch>
           <FiltroBusquedaInput id="mi-busqueda" placeholder="Buscar..." value={q} onChange={handleQChange} isDebouncing={isDebouncing} inputRef={inputRef} />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={() => { setQ(""); window.location.href = pathname; }} />
+        <LimpiarFiltrosButton onClick={() => { setQ(""); router.push(pathname); }} />
       </div>
     </FilterBar>
   );
@@ -343,7 +346,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `--gris-inset` (`bg-gris-inset`) | Inset dentro de card blanca: subfilas de tabla (`.tabla-fila-seccion-subencabezado`, `.tabla-fila-detalle-competencia`); valor histórico `#e2e8f0`. |
 | `--border`, `--input` | Alias de **`--gris-inset`** (visibles sobre **`--gris-canvas`**). |
 | `--primary`, `--card`, `--muted-foreground`, `--border` | Tokens de tema; **no** usar `bg-white`, `text-slate-*`, `border-slate-*` en componentes. |
-| `.area-page-shell` | Cascarón de página de área (Finanzas, Estadísticas, etc.) — `flex` columna, `height: 100vh`, `min-height: 0`, `overflow: hidden`. **SSOT**: reemplaza la cadena duplicada `flex h-screen min-h-0 flex-col overflow-hidden` en `page.tsx` y `*PageClient.tsx`. Una sola fuente de verdad para que el scroll viva en `.contenedor-tabla-gestion`. |
+| `.area-page-shell` | Cascarón de página de área (Finanzas, Estadísticas, Proveedores, Tienda, etc.) — `flex` columna, `height: 100vh`, `min-height: 0`, `overflow: hidden`. Combinar con **`bg-gris`** solo cuando el módulo lo requiera (Cx Compra, Px Competencia, calc. vendedor). **SSOT**: reemplaza `flex h-screen min-h-0 flex-col overflow-hidden` y la variante corta `h-screen flex flex-col overflow-hidden`. **No** duplicar esas utilidades encima de la clase global. |
 | `CALLOUT_WARNING_CLASS` (`@/lib/ui-classes`) | Banner/aviso no destructivo (token `accent2`): `rounded-md border border-accent2/40 bg-accent2/10 px-3 py-2 text-xs text-foreground`. **Prohibido** crear avisos con `border-amber-*`, `bg-amber-*`, `text-amber-*` (paleta genérica). |
 
 ---
@@ -888,6 +891,15 @@ Antes de dar por terminada una tarea de frontend:
 
 ## 5. Hallazgos de auditoría y correcciones aplicadas
 
+### Auditoría 2026-06-30 (código muerto, layout y navegación)
+
+- **Cascarón `.area-page-shell` unificado** en todo `src/`: eliminadas duplicaciones `h-screen flex flex-col overflow-hidden` (con y sin `bg-gris`) en páginas de proveedores, pedidos/historial, Cx Compra, Px Competencia, calc. vendedor y ayuda (`CargarGastoPageClient`, `ProcesosPageClient`). Regla: no apilar utilidades flex/altura encima de `.area-page-shell`.
+- **Navegación App Router:** migrados los últimos `window.location.href` en filtros (`FiltrosTienda`, `FiltrosProductos`, `FiltrosPedidoUrgente`), `SelectorProveedor` y `pedidos/historial/error.tsx` a **`useRouter().push()`**.
+- **Componentes/hooks huérfanos eliminados:** `SyncModal.tsx`, `useListaPreciosTiendaModalSync.ts`, `useSyncListaPreciosStatusPoll.ts`, `listaPreciosTiendaSync.types.ts` (flujo activo: sidebar **`SyncStatusIndicator`**).
+- **Exports deprecados sin uso:** alias `MODAL_ASIGNAR_PRODUCTOS_MAX_WIDTH_CLASS` / `MODAL_REFERENCIA_COMPETENCIA_MAX_WIDTH_CLASS`; prop `compact` en `SectionHeader`; `costosCompraDifierenParaInforme` en `aumentoCostoCompra.ts`.
+- **Comp. Categorías — desktop-only:** `COMP_CATEGORIAS_PAGE_CONTENT_CLASS` colapsado de `!px-3 sm:!px-4 md:!px-5` a **`!px-5`** (política sin breakpoints responsive).
+- **ESLint `src --max-warnings 0`:** sin errores ni advertencias tras la pasada.
+
 ### Auditoría 2026-05-07 (Finanzas — nuevas pantallas)
 
 Aplicada en archivos recién agregados al árbol y pantallas adyacentes para mantener cero inconsistencias:
@@ -1182,7 +1194,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 - **Pantalla canónica:** `/gestion-productos/tienda/px-listas` (rewrite → `/tienda/px-listas`). Título y sidebar: **Px Listas**. Permiso: `PERMISOS.cxPxTienda.acceso` (solo editor).
 - **Layout:** `area-page-shell` + `ClassicFilteredTableLayout`. **FilterBar** `filtros-contenedor-tienda bg-card` (mismo patrón que **Px Competencia** / **Cx Compra**): fila 1 `FilaFiltrosDesplegables` — **MARCA**, **RUBRO**, **SUB-RUBRO**, **ACTUALIZAR** (SI/NO: ítems con PX en staging `prod_tienda_precios_edicion` pendiente de **Act. Px**) en `FiltroIndividualContainer` + `FILTER_SELECT_WRAPPER_CLASS`, `SelectTrigger` **`input-filtro-unificado`**, `SelectContent` `select-content-filtro`; sin ítems «TODAS/TODOS» (estado vacío = `value` `undefined` + placeholder en trigger); cascada marca → limpia rubro/sub-rubro, rubro → limpia sub-rubro. Fila 2: `FilterRowSearch` `flex-1` + `FiltroBusquedaInput` + `LimpiarFiltrosButton` + `FILTER_COUNT_CLASS` (`X PRODUCTO(S)`).
 - **Componentes:** `src/components/px-listas-precios/*` — `FiltrosPxListasPrecios`, `TablaPxListasPrecios`, `PxListasPreciosPageClient`, **`ActPxListasButton`** (header).
-- **Exportación DUX:** botón **Act. Px.** → un Excel **por** `nombre_lista`; columnas **CODIGO** + **PORC UTILIDAD** (derivado del PX en `prod_tienda_precios_edicion`); al exportar se **eliminan** las filas exportadas (cierra la act. pendiente); si no hay filas → **`ModalSinProductosExportar`**; archivo **`Act. {nombre_lista} dd-mm hh-mm.xls`**; `exportarPxListasMargenAction` + `router.refresh()` en cliente.
+- **Exportación DUX:** botón **Act. Px.** → un Excel **por** `nombre_lista`; columnas **CODIGO** + **IMPORTE** (PX entero desde `prod_tienda_precios_edicion`); al exportar se **eliminan** las filas exportadas (cierra la act. pendiente); si no hay filas → **`ModalSinProductosExportar`**; archivo **`Act. {nombre_lista} dd-mm hh-mm.xls`**; `exportarPxListasMargenAction` + `router.refresh()` en cliente.
 - **Tabla:** clase `tabla-px-listas-listado tabla-px-listas-precios` (scroll horizontal si hay muchas listas). **DESCRIPCIÓN** + por cada fila de `prod_tienda_listas_precios`: subcabecera con `nombre_lista` (MAYÚSCULAS), columnas **PX. CALC.** (entero, solo lectura) y **MARG. MAN.** (2 decimales + `%`; editable). Al blur se calcula PX y persiste en **`prod_tienda_precios_edicion`** (solo la celda/lista editada). Clase **`px-lista-input--edicion`** = negrita si hay staging (`pxEdicion`). **Resaltado** (`.celda-px-listas-actualizar`): filas/celdas con staging pendiente de **Act. Px**.
 - **Clases globales:** `.tabla-px-listas-precios` — `table-layout: auto`, `width: max-content`; inputs MARGEN en `globals.css` bajo `.tabla-px-listas-precios tbody td.celda-marcacion-col`; `.celda-px-listas-actualizar` para pendientes de actualizar en DUX.
 
@@ -1231,6 +1243,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-05-21): **Etiquetas de campo en modales** — regla global: color `foreground` (negro de UI), no `muted`, en `label` / `Label` / `ModalMicroLabel` / `MODAL_*_LABEL_CLASS`; `globals.css` (`--modal-field-label-color`) en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]`; migración de micro-etiquetas legacy en modales Finanzas a `ModalMicroLabel`.*
 
 *Última actualización (2026-06-16): **PDF matriz lista precios + REX** — **`ConvertirPdfListaPreciosModal`**: proveedor obligatorio; conversión guarda en **`prod_precios_rex`** (upsert por proveedor + **`descripcionExport`**); botones **Guardar Precios** y **Descargar Excel**; preview **DESCRIPCIÓN | PX. LISTA**.*
+
+*Última actualización (2026-06-30): **Auditoría frontend — código muerto y layout** — `.area-page-shell` unificado en proveedores/pedidos/tienda; últimos `window.location.href` → `router.push`; eliminados `SyncModal` y hooks de sync huérfanos; exports `@deprecated` sin referencias; `COMP_CATEGORIAS_PAGE_CONTENT_CLASS` sin breakpoints; ejemplo de filtros en §1 actualizado.*
 
 *Última actualización (2026-06-16): **Lista precios — Crear Producto** — botón **`CrearProductoListaPreciosModal`** (`btn-primario-gestion`, ícono **Plus**) en toolbar (permiso **`importarLista`** + editor); modal **`max-w-3xl`**; formulario en grilla **20% etiqueta / 80% control** (**PROVEEDOR**, **MARCA** opc., **CÓD. PROVEEDOR**, **DESCRIPCIÓN PROV.**, **PX. LISTA** con **`MontoArInput`**); persiste en **`prod_precios_provee`** vía **`crearProductoListaPrecioAction`** (upsert como import CSV).*
 

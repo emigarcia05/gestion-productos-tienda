@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -43,12 +43,14 @@ export default function FiltrosProductos({
   proveedorActual,
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
 
   function navigate(nuevoQ: string, nuevoProveedor: string) {
     const params = new URLSearchParams();
     if (nuevoQ) params.set("q", nuevoQ);
     if (nuevoProveedor) params.set("proveedor", nuevoProveedor);
-    window.location.href = `${pathname}?${params.toString()}`;
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
   }
 
   const {
@@ -76,7 +78,7 @@ export default function FiltrosProductos({
 
   function limpiarFiltros() {
     setQ("");
-    window.location.href = pathname;
+    router.push(pathname);
   }
 
   return (

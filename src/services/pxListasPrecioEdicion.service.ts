@@ -1,6 +1,5 @@
 import { Prisma } from "@prisma/client";
 import {
-  calcMargenSinIvaPct,
   calcPxListaDesdeMargenSinIvaPct,
   roundPrecioListaTienda,
 } from "@/lib/calculos";
@@ -112,14 +111,4 @@ export async function limpiarPreciosEdicionTrasActPx(
       })),
     },
   });
-}
-
-/** Margen % para export DUX desde PX guardado en staging. */
-export function margenExportDesdePrecioEdicion(
-  pxEdicion: number,
-  costoCompra: number
-): number | null {
-  if (!(costoCompra > 0) || !(pxEdicion > 0)) return null;
-  const margen = calcMargenSinIvaPct(pxEdicion, costoCompra);
-  return margen == null ? null : roundMargenPxListaPct(margen);
 }

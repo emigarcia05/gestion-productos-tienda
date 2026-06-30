@@ -68,7 +68,7 @@ export default function ActPxListasButton() {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          Exporta un Excel por lista DUX (CODIGO + PORC UTILIDAD) con precios
+          Exporta un Excel por lista DUX (CODIGO + IMPORTE) con precios
           pendientes y cierra la actualización en curso
         </TooltipContent>
       </Tooltip>

@@ -10,11 +10,3 @@ export function calcAumentoPctCostoCompra(
   if (!(costoViejo > 0) || !(costoNuevo > 0)) return null;
   return ((costoNuevo / costoViejo) - 1) * 100;
 }
-
-/** @deprecated Usar `costosCompraDifieren` de `@/services/exportCostoCxDiff.service` (tolerancia 0,01). */
-export function costosCompraDifierenParaInforme(
-  costoViejo: number,
-  costoNuevo: number
-): boolean {
-  return Math.abs(costoViejo - costoNuevo) >= 0.01;
-}

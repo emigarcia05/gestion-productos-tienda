@@ -106,7 +106,7 @@ export default function PxListasPageClient({
   );
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gris">
+    <div className="area-page-shell bg-gris">
       <ClassicFilteredTableLayout
         title="Px Competencia"
         filters={filters}
