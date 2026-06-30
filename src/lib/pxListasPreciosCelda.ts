@@ -2,7 +2,11 @@ import {
   calcMargenSinIvaPct,
   calcPxListaDesdeMargenSinIvaPct,
 } from "@/lib/calculos";
-import { roundMargenPxListaPct, margenesPorcUtilidadDifieren } from "@/lib/pxListasPreciosFormat";
+import {
+  margenesPorcUtilidadDifieren,
+  preciosPxListaSincronizados,
+  roundMargenPxListaPct,
+} from "@/lib/pxListasPreciosFormat";
 import type { PrecioListaPxListasCelda } from "@/lib/pxListasPrecios";
 
 export function margenDesdePrecioDux(
@@ -14,8 +18,16 @@ export function margenDesdePrecioDux(
   return margen == null ? null : roundMargenPxListaPct(margen);
 }
 
+/**
+ * Pendiente de subir a DUX si hay margen manual y el precio DUX (entero) no coincide
+ * con el PX calculado desde ese margen. La API no trae margen; comparar solo márgenes
+ * inversos genera falsos positivos por redondeo.
+ */
 export function celdaRequiereActualizar(celda: PrecioListaPxListasCelda): boolean {
   if (celda.margenManual == null) return false;
+  if (celda.pxDux == null) return true;
+  if (preciosPxListaSincronizados(celda.pxDux, celda.pxEfectivo)) return false;
+  if (celda.pxEfectivo != null) return true;
   if (celda.margenDux == null) return true;
   return margenesPorcUtilidadDifieren(celda.margenManual, celda.margenDux);
 }

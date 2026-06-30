@@ -2,6 +2,7 @@
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import MensajeProceso from "@/components/shared/MensajeProceso";
 import { cn } from "@/lib/utils";
 
 const duxSyncStyleButtonVariants = cva(
@@ -79,15 +80,6 @@ export interface DuxSyncStyleButtonProps
   progresoDoubleClickTitle?: string;
 }
 
-function formatProgresoDetalle(detalle: DuxSyncProgresoDetalle): string {
-  if (detalle == null) return "…";
-  if (typeof detalle === "string") return detalle;
-  if (detalle.total > 0) {
-    return `${detalle.procesados.toLocaleString("es-AR")} de ${detalle.total.toLocaleString("es-AR")}`;
-  }
-  return "…";
-}
-
 export default function DuxSyncStyleButton({
   lineIdle,
   lineHover,
@@ -103,31 +95,15 @@ export default function DuxSyncStyleButton({
   ...props
 }: DuxSyncStyleButtonProps) {
   if (progreso) {
-    const detailLine = formatProgresoDetalle(progreso.detalle);
     return (
-      <div
-        role="status"
-        aria-live="polite"
+      <MensajeProceso
+        variant="sidebar"
+        mensaje={progreso.mensaje}
+        detalle={progreso.detalle}
         onDoubleClick={onProgresoDoubleClick}
-        title={onProgresoDoubleClick ? progresoDoubleClickTitle : undefined}
-        className={cn(
-          duxSyncStyleButtonVariants({ surface, busy: true }),
-          "bg-accent2 text-sidebar-foreground",
-          onProgresoDoubleClick && "cursor-pointer",
-          className
-        )}
-      >
-        <span className="w-full max-w-full truncate text-sm font-semibold whitespace-nowrap">
-          {progreso.mensaje}
-        </span>
-        <span
-          className={cn(
-            "w-full max-w-full truncate text-xs font-semibold whitespace-nowrap text-sidebar-foreground/90"
-          )}
-        >
-          {detailLine}
-        </span>
-      </div>
+        doubleClickTitle={progresoDoubleClickTitle}
+        className={cn("w-full", className)}
+      />
     );
   }
 

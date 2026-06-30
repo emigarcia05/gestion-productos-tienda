@@ -1,8 +1,8 @@
+import { roundMargenPxListaPct } from "@/lib/pxListasPreciosFormat";
 import {
-  margenesPorcUtilidadDifieren,
-  roundMargenPxListaPct,
-} from "@/lib/pxListasPreciosFormat";
-import { margenDesdePrecioDux } from "@/lib/pxListasPreciosCelda";
+  armarCeldaPrecioPxListas,
+  celdaRequiereActualizar,
+} from "@/lib/pxListasPreciosCelda";
 import { prisma } from "@/lib/prisma";
 
 export type FilaExportPxListaMargen = {
@@ -16,8 +16,6 @@ export type ExportPxListaMargenGrupo = {
   filas: FilaExportPxListaMargen[];
 };
 
-export { margenesPorcUtilidadDifieren };
-
 function toNum(n: unknown): number {
   if (n == null) return 0;
   const v = Number(n);
@@ -25,8 +23,8 @@ function toNum(n: unknown): number {
 }
 
 /**
- * Por cada `nombre_lista`: solo ítems con margen manual guardado
- * que **difiere** del margen calculado desde precio DUX.
+ * Por cada `nombre_lista`: solo ítems con margen manual guardado cuyo precio DUX
+ * aún no coincide (entero) con el PX calculado desde ese margen.
  */
 export async function listarExportPxListasMargenPorLista(): Promise<
   ExportPxListaMargenGrupo[]
@@ -82,18 +80,14 @@ export async function listarExportPxListasMargenPorLista(): Promise<
       const margenManual = margenManualMap.get(key) ?? null;
       if (margenManual == null) continue;
 
-      const pxDux = duxMap.get(key) ?? null;
-      const margenDux = margenDesdePrecioDux(pxDux, costoCompra);
+      const celda = armarCeldaPrecioPxListas({
+        idLista: lista.idLista,
+        costoCompra,
+        pxDux: duxMap.get(key) ?? null,
+        margenManual,
+      });
 
-      if (margenDux == null) {
-        filasPorLista.get(lista.idLista)!.push({
-          codigo: prod.codTienda,
-          porcUtilidad: margenManual,
-        });
-        continue;
-      }
-
-      if (!margenesPorcUtilidadDifieren(margenManual, margenDux)) continue;
+      if (!celdaRequiereActualizar(celda)) continue;
 
       filasPorLista.get(lista.idLista)!.push({
         codigo: prod.codTienda,
