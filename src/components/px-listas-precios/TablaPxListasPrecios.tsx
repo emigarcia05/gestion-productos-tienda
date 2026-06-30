@@ -383,10 +383,10 @@ export default function TablaPxListasPrecios({
               key={`${lista.idLista}-px-h`}
               className="text-center border-l border-primary-foreground/25"
             >
-              PX.
+              PX. CALC.
             </TableHead>,
             <TableHead key={`${lista.idLista}-mg-h`} className="text-center">
-              MARGEN
+              MARG. MAN.
             </TableHead>,
           ])}
         </TableRow>

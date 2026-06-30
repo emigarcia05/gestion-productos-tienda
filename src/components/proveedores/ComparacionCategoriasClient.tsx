@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Trash2 } from "lucide-react";
 import {
   calcCostoComparacion,
-  calcDifPxRefManualDesdeMargen,
   calcMargenManualDesdeDifPctReferencia,
   calcMargenSegunPxReferencia,
   calcPxManualDesdeDifPctReferencia,
@@ -439,16 +438,11 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
   const columnasTabla = puedeEditar ? 11 : 10;
 
   const resolveDifPxRefManualVivo = useCallback(
-    (
-      codExt: string,
-      margenGuardado: number | null,
-      costo: number | null,
-      pxReferencia: number | null
-    ): number | null => {
+    (codExt: string, difGuardado: number | null): number | null => {
       if (Object.prototype.hasOwnProperty.call(difPxRefManualDraft, codExt)) {
         return difPxRefManualDraft[codExt];
       }
-      return calcDifPxRefManualDesdeMargen(margenGuardado, costo, pxReferencia) ?? 0;
+      return difGuardado ?? 0;
     },
     [difPxRefManualDraft]
   );
@@ -466,10 +460,12 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     });
   }, []);
 
-  const handleMargenManualSaved = useCallback(
-    (codExt: string, margenManual: number | null) => {
+  const handleDifPxRefManualSaved = useCallback(
+    (codExt: string, difPxRefManual: number | null) => {
       setProductos((prev) =>
-        prev.map((p) => (p.codExt === codExt ? { ...p, margenManualComparacion: margenManual } : p))
+        prev.map((p) =>
+          p.codExt === codExt ? { ...p, difPxRefManualComparacion: difPxRefManual } : p
+        )
       );
       handleDifPxRefManualDraftEnd(codExt);
     },
@@ -631,16 +627,16 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                         <TableHead className="text-right">COSTO</TableHead>
                         <TableHead className="text-center">VAR</TableHead>
                         <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                          MARGEN (SEGÚN PX REFERENCIA)
+                          MARG. SEG. REF.
                         </TableHead>
                         <TableHead className="text-center tabla-bloque-secundario-head">
-                          PX MANUAL
+                          PX. CALC.
                         </TableHead>
                         <TableHead className="text-center tabla-bloque-secundario-head">
-                          DIF PX REF MANUAL
+                          DIF % REF. MAN.
                         </TableHead>
                         <TableHead className="text-center tabla-bloque-secundario-head">
-                          MARGEN MANUAL
+                          MARG. CALC.
                         </TableHead>
                         {puedeEditar && (
                           <TableHead className="text-center p-0 align-middle">
@@ -688,12 +684,10 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                             pxReferenciaMargen,
                             costoVivo
                           );
-                          const margenGuardado = p.margenManualComparacion;
+                          const difGuardado = p.difPxRefManualComparacion;
                           const difPxRefManual = resolveDifPxRefManualVivo(
                             p.codExt,
-                            margenGuardado,
-                            costoVivo,
-                            pxReferenciaMargen
+                            difGuardado
                           );
                           const pxManual = calcPxManualDesdeDifPctReferencia(
                             difPxRefManual,
@@ -768,15 +762,15 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
                                 <CeldaDifPxRefManualComparacion
                                   codExt={p.codExt}
                                   difPxRefManual={difPxRefManual}
-                                  margenManualGuardado={margenGuardado}
-                                  costoCompra={costoVivo}
-                                  pxVtaReferencia={pxReferenciaMargen}
+                                  difPxRefManualGuardado={difGuardado}
                                   puedeEditar={puedeEditar}
                                   onDraftChange={(valor) =>
                                     handleDifPxRefManualDraft(p.codExt, valor)
                                   }
                                   onDraftEnd={() => handleDifPxRefManualDraftEnd(p.codExt)}
-                                  onSaved={(valor) => handleMargenManualSaved(p.codExt, valor)}
+                                  onSaved={(valor) =>
+                                    handleDifPxRefManualSaved(p.codExt, valor)
+                                  }
                                 />
                               </TableCell>
                               <TableCell className="celda-datos text-center tabular-nums tabla-bloque-secundario-cell">

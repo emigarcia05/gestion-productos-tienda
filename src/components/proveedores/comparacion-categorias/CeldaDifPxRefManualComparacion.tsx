@@ -4,35 +4,36 @@ import { useEffect, useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 import CeldaDifPct from "@/components/shared/CeldaDifPct";
 import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
-import { calcMargenManualDesdeDifPctReferencia } from "@/lib/calculos";
-import {
-  formatDifPxRefManualMask,
-  roundMargenComparacionPct,
-} from "@/lib/comparacionCategoriasFormat";
-import { actualizarMargenManualComparacionAction } from "@/actions/comparacionCategorias";
+import { formatDifPxRefManualMask } from "@/lib/comparacionCategoriasFormat";
+import { actualizarDifPxRefManualComparacionAction } from "@/actions/comparacionCategorias";
+import { cn } from "@/lib/utils";
 
 interface Props {
   codExt: string;
   difPxRefManual: number | null;
-  margenManualGuardado: number | null;
-  costoCompra: number | null;
-  pxVtaReferencia: number | null;
+  difPxRefManualGuardado: number | null;
   puedeEditar: boolean;
   onDraftChange: (difPxRefManual: number | null) => void;
   onDraftEnd: () => void;
-  onSaved: (margenManual: number | null) => void;
+  onSaved: (difPxRefManual: number | null) => void;
 }
 
 function valorEfectivoDifPxRef(difPxRefManual: number | null): number {
   return difPxRefManual ?? 0;
 }
 
+function difSinCambio(
+  guardado: number | null,
+  parsed: number
+): boolean {
+  if (guardado === parsed) return true;
+  return guardado === null && parsed === 0;
+}
+
 export default function CeldaDifPxRefManualComparacion({
   codExt,
   difPxRefManual,
-  margenManualGuardado,
-  costoCompra,
-  pxVtaReferencia,
+  difPxRefManualGuardado,
   puedeEditar,
   onDraftChange,
   onDraftEnd,
@@ -41,6 +42,7 @@ export default function CeldaDifPxRefManualComparacion({
   const [localValue, setLocalValue] = useState(() => valorEfectivoDifPxRef(difPxRefManual));
   const [editando, setEditando] = useState(false);
   const [pending, setPending] = useState(false);
+  const tieneGuardado = difPxRefManualGuardado != null;
 
   useEffect(() => {
     if (!editando) {
@@ -57,31 +59,22 @@ export default function CeldaDifPxRefManualComparacion({
       return;
     }
 
-    const margenCalculado = calcMargenManualDesdeDifPctReferencia(
-      parsed,
-      pxVtaReferencia,
-      costoCompra
-    );
-    const margenPersistir =
-      margenCalculado != null ? roundMargenComparacionPct(margenCalculado) : null;
-    const margenGuardadoRedondeado =
-      margenManualGuardado != null ? roundMargenComparacionPct(margenManualGuardado) : null;
-
-    if (margenPersistir === margenGuardadoRedondeado) {
+    if (difSinCambio(difPxRefManualGuardado, parsed)) {
       onDraftEnd();
+      setEditando(false);
       return;
     }
 
     setPending(true);
     try {
-      const res = await actualizarMargenManualComparacionAction(codExt, margenPersistir);
+      const res = await actualizarDifPxRefManualComparacionAction(codExt, parsed);
       if (!res.ok) {
-        toast.error(res.error ?? "Error al guardar DIF PX REF MANUAL.");
+        toast.error(res.error ?? "Error al guardar DIF % REF. MAN.");
         setLocalValue(valorEfectivoDifPxRef(difPxRefManual));
         onDraftEnd();
         return;
       }
-      onSaved(res.data?.margenManual ?? null);
+      onSaved(res.data?.difPxRefManual ?? null);
       onDraftEnd();
     } finally {
       setPending(false);
@@ -113,8 +106,11 @@ export default function CeldaDifPxRefManualComparacion({
           e.currentTarget.blur();
         }
       }}
-      className="h-7 min-w-0 w-full max-w-[5.5rem] mx-auto text-center"
-      aria-label="DIF PX REF MANUAL"
+      className={cn(
+        "h-7 min-w-0 w-full max-w-[5.5rem] mx-auto text-center",
+        tieneGuardado && "font-semibold"
+      )}
+      aria-label="DIF % REF. MAN."
       title={formatDifPxRefManualMask(localValue)}
     />
   );

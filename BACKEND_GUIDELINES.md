@@ -303,12 +303,10 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **`dto_extra_comparacion`** se persiste en **`prod_comp_dto_extra`** (`ComparacionDtoExtraItem.dto_extra`, entero 0–99 o `null`), **no** en `prod_precios_provee`. Action: **`actualizarDtoExtraComparacionAction`**; servicio: **`getProductosPorPresentacion`** devuelve `dtoExtraComparacion` + `datosCosto` para recálculo en cliente.
 - Resto del sistema (lista precios, pedidos, Cx Compra, exportaciones) sigue usando **`px_compra_final_sin_iva`** sin dto extra.
 
-### 1.8c Margen manual en Comp. Categorias — Comparacion (`margen_manual`)
+### 1.8c Dif. % manual en Comp. Categorias — Comparacion (`dif_px_ref_manual`)
 
-- Tabla **`prod_comp_margen_manual`** (`ComparacionMargenManualItem.margenManual`, entero % o `null` por `cod_ext`).
-- UI: input **DIF PX REF MANUAL** (% entero vs px referencia activa); al blur se persiste **`margen_manual`** (`actualizarMargenManualComparacionAction`), no el px.
-- Cálculos (`@/lib/calculos.ts`): `calcPxManualDesdeDifPctReferencia` → px entero; `calcMargenManualDesdeDifPctReferencia` → margen %; al cargar, `calcDifPxRefManualDesdeMargen` reconstruye la dif. desde margen + costo + px ref.
-- Migración **`20260613150000_comp_margen_manual`** renombra `prod_comp_px_manual` → `prod_comp_margen_manual` y anula valores legacy (eran precios, no márgenes).
+- Tabla **`prod_comp_dif_px_ref_manual`** (`ComparacionDifPxRefManualItem.difPxRefManual`, entero con signo % o `null` por `cod_ext`). Migración **`20260624170000`** (renombra `prod_comp_margen_manual` / anula legacy `margen_manual`).
+- UI: input **DIF % REF. MAN.** (% entero vs px **REFERENCIA COMPETENCIA** activa); al blur se persiste **`dif_px_ref_manual`** (`actualizarDifPxRefManualComparacionAction`). **PX. CALC.** y **MARG. CALC.** derivados en cliente (`calcPxManualDesdeDifPctReferencia`, `calcMargenManualDesdeDifPctReferencia`).
 
 ### 1.8d Reglas descuentos lista precios (`prod_precios_provee_reglas`)
 
