@@ -8,6 +8,7 @@ export interface SyncComprasProveedorDuxPollState {
   running: boolean;
   processed: number;
   total: number;
+  remainingMinutes: number;
   lastCompletedAt: string | null;
 }
 
@@ -21,13 +22,20 @@ export function useSyncComprasProveedorDuxStatusPoll(
     running: false,
     processed: 0,
     total: 0,
+    remainingMinutes: 0,
     lastCompletedAt: null,
   });
 
   useEffect(() => {
     if (!pollEnabled) {
       queueMicrotask(() => {
-        setState({ running: false, processed: 0, total: 0, lastCompletedAt: null });
+        setState({
+          running: false,
+          processed: 0,
+          total: 0,
+          remainingMinutes: 0,
+          lastCompletedAt: null,
+        });
       });
       return;
     }
@@ -43,6 +51,7 @@ export function useSyncComprasProveedorDuxStatusPoll(
               running?: boolean;
               processed?: number;
               total?: number;
+              remainingMinutes?: number;
               lastCompletedAt?: string | null;
             } | null
           ) => {
@@ -51,6 +60,7 @@ export function useSyncComprasProveedorDuxStatusPoll(
               running: !!data.running,
               processed: data.processed ?? 0,
               total: data.total ?? 0,
+              remainingMinutes: data.remainingMinutes ?? 0,
               lastCompletedAt: data.lastCompletedAt ?? null,
             });
           }

@@ -11,41 +11,41 @@ export function roundPxListaEntero(value: number): number {
   return Math.round(value);
 }
 
-/** Margen % en grilla Px Listas: 4 decimales, mínimo 0 (sin tope superior en UI; BD `DECIMAL(8,4)`). */
+/** Margen % en grilla Px Listas: 2 decimales, mínimo 0 (sin tope superior en UI; BD `DECIMAL(8,4)`). */
 export function roundMargenPxListaPct(value: number): number {
   const floored = Math.max(0, value);
-  return Math.round(floored * 10000) / 10000;
+  return Math.round(floored * 100) / 100;
 }
 
-/** Valor para `<input>` de margen (4 decimales, sin `%`). */
+/** Valor para `<input>` de margen (2 decimales, sin `%`). */
 export function formatMargenPxListaInput(n: number): string {
-  return roundMargenPxListaPct(n).toFixed(4);
+  return roundMargenPxListaPct(n).toFixed(2);
 }
 
-/** Parsea margen editado en Px Listas (≥ 0, máx. 4 decimales). */
+/** Parsea margen editado en Px Listas (≥ 0, máx. 2 decimales). */
 export function parseMargenPxListaInput(raw: string): number | undefined {
   const trimmed = raw.trim().replace(",", ".");
   if (trimmed === "") return undefined;
-  if (!/^\d+(\.\d{0,4})?$/.test(trimmed)) return undefined;
+  if (!/^\d+(\.\d{0,2})?$/.test(trimmed)) return undefined;
   const n = Number(trimmed);
   if (!Number.isFinite(n) || n < 0) return undefined;
   return roundMargenPxListaPct(n);
 }
 
-/** Margen en modo lectura (4 decimales + `%`, es-AR). */
+/** Margen en modo lectura (2 decimales + `%`, es-AR). */
 export function fmtMargenPxListaTabla(n: number | null | undefined): string {
   if (n == null || Number.isNaN(n)) return "";
   const s = roundMargenPxListaPct(n).toLocaleString("es-AR", {
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 4,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
   return `${s}%`;
 }
 
-/** Precisión de comparación de margen % (4 decimales). */
-const COMPARACION_MARGEN_FACTOR = 10_000;
+/** Precisión de comparación de margen % (2 decimales). */
+const COMPARACION_MARGEN_FACTOR = 100;
 
-/** Difieren dos márgenes % redondeados a 4 decimales. */
+/** Difieren dos márgenes % redondeados a 2 decimales. */
 export function margenesPorcUtilidadDifieren(
   margenA: number,
   margenB: number

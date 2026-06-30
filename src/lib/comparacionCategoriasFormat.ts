@@ -59,14 +59,18 @@ export function formatDtoExtraComparacionMask(n: number | null | undefined): str
   return `${v.toLocaleString("es-AR")}%`;
 }
 
-/** Margen % en Comp. Categorias: entero redondeado, sin tope 100 (puede superar 100 %). */
+/** Margen % en Comp. Categorias: 2 decimales, sin tope 100 (puede superar 100 %). */
 export function roundMargenComparacionPct(value: number): number {
   if (!Number.isFinite(value)) return 0;
-  return Math.round(value);
+  return Math.round(value * 100) / 100;
 }
 
-/** Margen % en grilla Comparacion (entero + `%`, es-AR). */
+/** Margen % en grilla Comparacion (2 decimales + `%`, es-AR). */
 export function fmtMargenComparacionPct(n: number | null | undefined): string {
   if (n == null || Number.isNaN(n)) return "";
-  return `${roundMargenComparacionPct(n).toLocaleString("es-AR")}%`;
+  const s = roundMargenComparacionPct(n).toLocaleString("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${s}%`;
 }

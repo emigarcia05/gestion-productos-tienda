@@ -160,7 +160,7 @@ function CeldaMargenLista({
 
     if (
       celda.margenManual != null &&
-      Math.abs(margen - celda.margenManual) < 0.00005
+      Math.abs(margen - celda.margenManual) < 0.005
     ) {
       onDraft(idLista, celda.margenManual);
       setEditando(false);

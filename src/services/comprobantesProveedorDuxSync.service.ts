@@ -100,6 +100,22 @@ function duxComprasMinIntervalMs(): number {
   return Number.isFinite(n) && n >= 0 ? n : 5000;
 }
 
+/** Segundos aproximados por sucursal pendiente (pausa DUX + consulta + persistencia). */
+export function syncComprasSecondsPerSucursalEstimate(): number {
+  return duxComprasMinIntervalMs() / 1000 + 8;
+}
+
+/** ETA en segundos según sucursales restantes (`processed` / `total` en BD). */
+export function estimateSyncComprasRemainingSeconds(
+  processed: number,
+  total: number,
+  running: boolean
+): number {
+  if (!running) return 0;
+  const remaining = Math.max(0, total - processed);
+  return remaining * syncComprasSecondsPerSucursalEstimate();
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

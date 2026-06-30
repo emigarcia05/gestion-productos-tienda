@@ -3,6 +3,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { formatLastCompletedAtElapsed } from "@/lib/formatElapsedSince";
+import {
+  formatSyncEtaMinutes,
+  formatSyncProgresoConEta,
+} from "@/lib/formatSyncEta";
 import { sincronizarComprobantesProveedorDesdeDuxAction } from "@/actions/comprobantesProveedor";
 import DuxSyncStyleButton from "@/components/shared/DuxSyncStyleButton";
 import SincronizarDuxOpcionesModal, {
@@ -30,6 +34,7 @@ export default function SyncStatusIndicator({ rol }: Props) {
   const [running, setRunning] = useState(false);
   const [processed, setProcessed] = useState(0);
   const [total, setTotal] = useState(0);
+  const [remainingMinutes, setRemainingMinutes] = useState(0);
   const [lastCompletedAt, setLastCompletedAt] = useState<string | null>(null);
   const [requestingStart, setRequestingStart] = useState(false);
   const [comprasSyncingLocal, setComprasSyncingLocal] = useState(false);
@@ -103,6 +108,7 @@ export default function SyncStatusIndicator({ rol }: Props) {
           setRunning(nowRunning);
           setProcessed(data.processed ?? 0);
           setTotal(data.total ?? 0);
+          setRemainingMinutes(data.remainingMinutes ?? 0);
           setLastCompletedAt(completedAt);
         })
         .catch(() => {});
@@ -180,6 +186,40 @@ export default function SyncStatusIndicator({ rol }: Props) {
   );
   const ultimaActLabel = formatLastCompletedAtElapsed(ultimaActIso) ?? "—";
 
+  const progreso = useMemo(() => {
+    if (!syncEnCurso) return undefined;
+
+    if (running || requestingStart) {
+      const detalle =
+        total > 0 || processed > 0
+          ? formatSyncProgresoConEta(processed, total, remainingMinutes)
+          : remainingMinutes > 0
+            ? `${formatSyncEtaMinutes(remainingMinutes)} restantes`
+            : "Iniciando…";
+      return { mensaje: "SINCRONIZANDO…", detalle };
+    }
+
+    if (comprasRunning) {
+      const { processed: procC, total: totC, remainingMinutes: etaC } = comprasEstado;
+      const detalle =
+        totC > 0
+          ? formatSyncProgresoConEta(procC, totC, etaC)
+          : "Compras…";
+      return { mensaje: "SINCRONIZANDO…", detalle };
+    }
+
+    return { mensaje: "SINCRONIZANDO…", detalle: "Iniciando…" };
+  }, [
+    syncEnCurso,
+    running,
+    requestingStart,
+    processed,
+    total,
+    remainingMinutes,
+    comprasRunning,
+    comprasEstado,
+  ]);
+
   return (
     <>
       <DuxSyncStyleButton
@@ -191,15 +231,7 @@ export default function SyncStatusIndicator({ rol }: Props) {
         disabled={syncEnCurso}
         busy={syncEnCurso}
         surface="sidebar"
-        title={
-          syncEnCurso
-            ? running
-              ? `Sincronizando productos${total > 0 ? ` (${processed.toLocaleString("es-AR")} de ${total.toLocaleString("es-AR")})` : ""}`
-              : comprasRunning
-                ? "Sincronizando compras"
-                : "Sincronización en curso"
-            : undefined
-        }
+        progreso={progreso}
       />
       {esEditor ? (
         <SincronizarDuxOpcionesModal
