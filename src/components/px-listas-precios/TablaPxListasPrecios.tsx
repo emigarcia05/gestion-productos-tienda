@@ -85,7 +85,7 @@ function CeldaMargenLista({
   const margenDisplay =
     celda.margenPct != null ? formatMargenPxListaInput(celda.margenPct) : "";
   const margenEditable = costoCompra > 0;
-  const tieneManual = celda.margenManual != null;
+  const tieneEdicion = celda.pxEdicion != null;
 
   const margenVista =
     celda.margenPct != null ? fmtMargenPxListaTabla(celda.margenPct) : "";
@@ -122,7 +122,7 @@ function CeldaMargenLista({
 
     const trimmed = draft.trim().replace("%", "");
     if (trimmed === "") {
-      if (!tieneManual) {
+      if (!tieneEdicion) {
         setEditando(false);
         onDraft(idLista, celda.margenManual);
         return;
@@ -139,7 +139,7 @@ function CeldaMargenLista({
             idLista,
             costoCompra,
             pxDux: celda.pxDux,
-            margenManual: null,
+            pxEdicion: null,
           }));
         } else {
           toast.error(res.error);
@@ -180,7 +180,7 @@ function CeldaMargenLista({
             idLista,
             costoCompra,
             pxDux: celda.pxDux,
-            margenManual: res.data.margenManual,
+            pxEdicion: res.data.pxEdicion,
           })
         );
       } else {
@@ -225,7 +225,7 @@ function CeldaMargenLista({
       }}
       className={cn(
         "w-full min-w-0 text-center tabular-nums",
-        tieneManual && "px-lista-input--edicion"
+        tieneEdicion && "px-lista-input--edicion"
       )}
       aria-label="Margen"
       title="Clic Para Editar Margen"

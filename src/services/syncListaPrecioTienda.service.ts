@@ -18,6 +18,7 @@ import {
   type SyncDuxWorkerMeta,
   type SyncDuxWorkerState,
 } from "@/lib/syncDuxStatusDb";
+import { limpiarHuerfanosProdTienda } from "@/services/limpiarHuerfanosProdTienda.service";
 
 /** Se lanza cuando el usuario cancela la sync vía API (flag `running` en BD). */
 export class SyncListaPrecioTiendaCancelledError extends Error {
@@ -419,6 +420,20 @@ async function finalizeSyncWorker(
     errores.push(`Limpieza cod_tienda ausentes: ${msg}`);
     console.error("Error en limpieza de cod_tienda ausentes:", msg);
     }
+  }
+
+  try {
+    const huerfanos = await limpiarHuerfanosProdTienda({ execute: true });
+    const totalHuerfanos = huerfanos.reduce((s, r) => s + r.aplicados, 0);
+    if (totalHuerfanos > 0) {
+      console.log(
+        `Limpieza huérfanos prod_tienda: ${totalHuerfanos} fila(s) en ${huerfanos.filter((r) => r.aplicados > 0).length} tabla(s)`
+      );
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    errores.push(`Limpieza huérfanos prod_tienda: ${msg}`);
+    console.error("Error en limpieza huérfanos prod_tienda:", msg);
   }
 
   const listasVistas = worker.meta.listasVistas;

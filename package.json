@@ -27,6 +27,7 @@
     "db:seed-competencia": "tsx scripts/seed-prod-competencia.ts",
     "db:recalc-descuentos-lista-precio": "tsx scripts/recalc-descuentos-lista-precio.ts",
     "db:purge-lista-precio-sin-vinculo": "tsx scripts/purge-lista-precio-proveedor-sin-vinculo-tienda.ts",
+    "db:purge-huerfanos-prod-tienda": "tsx scripts/purge-huerfanos-prod-tienda.ts",
     "test:aplanar-pdf-matriz": "tsx scripts/test-aplanar-pdf-matriz.ts"
   },
   "dependencies": {

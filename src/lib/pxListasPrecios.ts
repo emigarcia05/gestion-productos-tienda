@@ -9,7 +9,9 @@ export type PrecioListaPxListasCelda = {
   idLista: number;
   /** Espejo DUX (`prod_tienda_precios`). */
   pxDux: number | null;
-  /** Margen % manual (`prod_tienda_margen_edicion`); `null` = sin edición. */
+  /** PX pendiente de Act. Px (`prod_tienda_precios_edicion`); `null` = sin edición staging. */
+  pxEdicion: number | null;
+  /** Margen % derivado de `pxEdicion` cuando hay staging; si no, `null`. */
   margenManual: number | null;
   /** Margen % derivado del precio DUX. */
   margenDux: number | null;
@@ -17,7 +19,7 @@ export type PrecioListaPxListasCelda = {
   pxEfectivo: number | null;
   /** Margen % mostrado: manual si existe; si no, margen DUX. */
   margenPct: number | null;
-  /** `true` si hay margen manual distinto al margen DUX (pendiente actualizar en DUX). */
+  /** `true` si hay PX en staging (`prod_tienda_precios_edicion`) pendiente de Act. Px. */
   requiereActualizar: boolean;
 };
 

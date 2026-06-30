@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { descargarExcelsPxListasMargen } from "@/lib/exportPxListasMargenExcelCl
 import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";
 
 export default function ActPxListasButton() {
+  const router = useRouter();
   const [exportando, setExportando] = useState(false);
   const [modalSinProductos, setModalSinProductos] = useState(false);
 
@@ -32,9 +34,10 @@ export default function ActPxListasButton() {
       const totalFilas = gruposConFilas.reduce((acc, g) => acc + g.filas.length, 0);
       toast.success(
         nArchivos === 1
-          ? `Excel exportado: 1 lista (${totalFilas.toLocaleString("es-AR")} ítems con diferencia de margen).`
-          : `Excel exportado: ${nArchivos} listas (${totalFilas.toLocaleString("es-AR")} ítems con diferencia de margen en total).`
+          ? `Excel exportado: 1 lista (${totalFilas.toLocaleString("es-AR")} ítems). Actualización pendiente cerrada.`
+          : `Excel exportado: ${nArchivos} listas (${totalFilas.toLocaleString("es-AR")} ítems en total). Actualización pendiente cerrada.`
       );
+      router.refresh();
     } catch (e) {
       toast.error(
         e instanceof Error ? e.message : "Error inesperado al exportar listas."
@@ -65,8 +68,8 @@ export default function ActPxListasButton() {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          Exporta un Excel por lista DUX (CODIGO + PORC UTILIDAD) solo con
-          diferencias de margen respecto al precio DUX
+          Exporta un Excel por lista DUX (CODIGO + PORC UTILIDAD) con precios
+          pendientes y cierra la actualización en curso
         </TooltipContent>
       </Tooltip>
     </>

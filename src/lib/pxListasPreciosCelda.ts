@@ -1,10 +1,7 @@
 import {
   calcMargenSinIvaPct,
-  calcPxListaDesdeMargenSinIvaPct,
 } from "@/lib/calculos";
 import {
-  margenesPorcUtilidadDifieren,
-  preciosPxListaSincronizados,
   roundMargenPxListaPct,
 } from "@/lib/pxListasPreciosFormat";
 import type { PrecioListaPxListasCelda } from "@/lib/pxListasPrecios";
@@ -18,43 +15,40 @@ export function margenDesdePrecioDux(
   return margen == null ? null : roundMargenPxListaPct(margen);
 }
 
-/**
- * Pendiente de subir a DUX si hay margen manual y el precio DUX (entero) no coincide
- * con el PX calculado desde ese margen. La API no trae margen; comparar solo márgenes
- * inversos genera falsos positivos por redondeo.
- */
+/** Pendiente de Act. Px mientras exista fila en `prod_tienda_precios_edicion`. */
 export function celdaRequiereActualizar(celda: PrecioListaPxListasCelda): boolean {
-  if (celda.margenManual == null) return false;
-  if (celda.pxDux == null) return true;
-  if (preciosPxListaSincronizados(celda.pxDux, celda.pxEfectivo)) return false;
-  if (celda.pxEfectivo != null) return true;
-  if (celda.margenDux == null) return true;
-  return margenesPorcUtilidadDifieren(celda.margenManual, celda.margenDux);
+  return celda.pxEdicion != null;
 }
 
 export function armarCeldaPrecioPxListas(params: {
   idLista: number;
   costoCompra: number;
   pxDux: number | null;
-  margenManual: number | null;
+  pxEdicion: number | null;
 }): PrecioListaPxListasCelda {
-  const { idLista, costoCompra, pxDux, margenManual } = params;
+  const { idLista, costoCompra, pxDux, pxEdicion } = params;
   const margenDux = margenDesdePrecioDux(pxDux, costoCompra);
+  const tieneEdicion = pxEdicion != null && pxEdicion > 0;
 
-  let margenPct: number | null;
   let pxEfectivo: number | null;
+  let margenManual: number | null;
+  let margenPct: number | null;
 
-  if (margenManual != null) {
-    margenPct = roundMargenPxListaPct(margenManual);
-    pxEfectivo = calcPxListaDesdeMargenSinIvaPct(margenPct, costoCompra);
+  if (tieneEdicion) {
+    pxEfectivo = pxEdicion;
+    margenManual = margenDesdePrecioDux(pxEdicion, costoCompra);
+    margenPct =
+      margenManual != null ? roundMargenPxListaPct(margenManual) : null;
   } else {
-    margenPct = margenDux;
     pxEfectivo = pxDux;
+    margenManual = null;
+    margenPct = margenDux;
   }
 
   const celda: PrecioListaPxListasCelda = {
     idLista,
     pxDux,
+    pxEdicion: tieneEdicion ? pxEdicion : null,
     margenManual,
     margenDux,
     pxEfectivo,
@@ -78,9 +72,6 @@ export function filtrarItemPorActualizar(
   item: { preciosPorLista: PrecioListaPxListasCelda[] },
   filtro: "si" | "no"
 ): boolean {
-  const tieneManual = item.preciosPorLista.some((c) => c.margenManual != null);
-  if (!tieneManual) return false;
-
-  const algunaRequiere = itemRequiereActualizar(item.preciosPorLista);
-  return filtro === "si" ? algunaRequiere : !algunaRequiere;
+  const tienePendiente = item.preciosPorLista.some((c) => c.pxEdicion != null);
+  return filtro === "si" ? tienePendiente : !tienePendiente;
 }

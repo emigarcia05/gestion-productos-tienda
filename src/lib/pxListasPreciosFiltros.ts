@@ -1,4 +1,4 @@
-/** Query `actualizar`: margen manual guardado vs margen derivado de precio DUX. */
+/** Query `actualizar`: ítems con PX pendiente en `prod_tienda_precios_edicion` (hasta Act. Px). */
 export const FILTRO_ACTUALIZAR_SI = "si" as const;
 export const FILTRO_ACTUALIZAR_NO = "no" as const;
 

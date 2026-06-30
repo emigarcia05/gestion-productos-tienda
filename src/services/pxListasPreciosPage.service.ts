@@ -53,42 +53,39 @@ async function listarColumnasListas(): Promise<ListaPrecioPxListasColumna[]> {
   }));
 }
 
-async function cargarMapsPreciosYMargenes(
+async function cargarMapsPreciosYEdicion(
   codTiendas: string[],
   idListas: number[]
 ): Promise<{
   duxMap: Map<string, number>;
-  margenManualMap: Map<string, number>;
+  pxEdicionMap: Map<string, number>;
 }> {
   const duxMap = new Map<string, number>();
-  const margenManualMap = new Map<string, number>();
+  const pxEdicionMap = new Map<string, number>();
 
   if (codTiendas.length === 0 || idListas.length === 0) {
-    return { duxMap, margenManualMap };
+    return { duxMap, pxEdicionMap };
   }
 
-  const [duxRows, margenRows] = await Promise.all([
+  const [duxRows, edicionRows] = await Promise.all([
     prisma.prodTiendaPrecio.findMany({
       where: { codTienda: { in: codTiendas }, idLista: { in: idListas } },
       select: { codTienda: true, idLista: true, precio: true },
     }),
-    prisma.prodTiendaMargenEdicion.findMany({
+    prisma.prodTiendaPrecioEdicion.findMany({
       where: { codTienda: { in: codTiendas }, idLista: { in: idListas } },
-      select: { codTienda: true, idLista: true, margenManual: true },
+      select: { codTienda: true, idLista: true, precio: true },
     }),
   ]);
 
   for (const r of duxRows) {
     duxMap.set(`${r.codTienda}:${r.idLista}`, Number(r.precio));
   }
-  for (const r of margenRows) {
-    margenManualMap.set(
-      `${r.codTienda}:${r.idLista}`,
-      Number(r.margenManual)
-    );
+  for (const r of edicionRows) {
+    pxEdicionMap.set(`${r.codTienda}:${r.idLista}`, Number(r.precio));
   }
 
-  return { duxMap, margenManualMap };
+  return { duxMap, pxEdicionMap };
 }
 
 function buildItemDesdeFila(
@@ -99,7 +96,7 @@ function buildItemDesdeFila(
   },
   listas: ListaPrecioPxListasColumna[],
   duxMap: Map<string, number>,
-  margenManualMap: Map<string, number>
+  pxEdicionMap: Map<string, number>
 ): ItemPxListasPreciosTabla {
   const costoCompra = Number(row.costoCompra);
   return {
@@ -112,7 +109,7 @@ function buildItemDesdeFila(
         idLista: lista.idLista,
         costoCompra,
         pxDux: duxMap.get(key) ?? null,
-        margenManual: margenManualMap.get(key) ?? null,
+        pxEdicion: pxEdicionMap.get(key) ?? null,
       });
     }),
   };
@@ -178,14 +175,14 @@ async function listarItemsConFiltroActualizar(
   });
 
   const codTiendas = rows.map((r) => r.codTienda);
-  const { duxMap, margenManualMap } = await cargarMapsPreciosYMargenes(
+  const { duxMap, pxEdicionMap } = await cargarMapsPreciosYEdicion(
     codTiendas,
     opts.idListas
   );
 
   const items = rows
     .map((row) =>
-      buildItemDesdeFila(row, opts.listas, duxMap, margenManualMap)
+      buildItemDesdeFila(row, opts.listas, duxMap, pxEdicionMap)
     )
     .filter((item) => filtrarItemPorActualizar(item, opts.actualizar));
 
@@ -297,13 +294,13 @@ export async function getPxListasPreciosPageDataFromDb(params: {
   ]);
 
   const codTiendas = rows.map((r) => r.codTienda);
-  const { duxMap, margenManualMap } = await cargarMapsPreciosYMargenes(
+  const { duxMap, pxEdicionMap } = await cargarMapsPreciosYEdicion(
     codTiendas,
     idListas
   );
 
   const items: ItemPxListasPreciosTabla[] = rows.map((row) =>
-    buildItemDesdeFila(row, listas, duxMap, margenManualMap)
+    buildItemDesdeFila(row, listas, duxMap, pxEdicionMap)
   );
 
   const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);

@@ -1,8 +1,7 @@
-import { roundMargenPxListaPct } from "@/lib/pxListasPreciosFormat";
 import {
-  armarCeldaPrecioPxListas,
-  celdaRequiereActualizar,
-} from "@/lib/pxListasPreciosCelda";
+  margenExportDesdePrecioEdicion,
+  type ClavePrecioListaEdicion,
+} from "@/services/pxListasPrecioEdicion.service";
 import { prisma } from "@/lib/prisma";
 
 export type FilaExportPxListaMargen = {
@@ -22,9 +21,21 @@ function toNum(n: unknown): number {
   return Number.isFinite(v) ? v : 0;
 }
 
+/** Claves exportadas (para limpiar staging tras Act. Px). */
+export function clavesDesdeGruposExportPxListas(
+  grupos: ExportPxListaMargenGrupo[]
+): ClavePrecioListaEdicion[] {
+  const claves: ClavePrecioListaEdicion[] = [];
+  for (const grupo of grupos) {
+    for (const fila of grupo.filas) {
+      claves.push({ codTienda: fila.codigo, idLista: grupo.idLista });
+    }
+  }
+  return claves;
+}
+
 /**
- * Por cada `nombre_lista`: solo ítems con margen manual guardado cuyo precio DUX
- * aún no coincide (entero) con el PX calculado desde ese margen.
+ * Por cada `nombre_lista`: ítems con PX en `prod_tienda_precios_edicion` (pendientes de Act. Px).
  */
 export async function listarExportPxListasMargenPorLista(): Promise<
   ExportPxListaMargenGrupo[]
@@ -38,32 +49,20 @@ export async function listarExportPxListasMargenPorLista(): Promise<
 
   const idListas = listas.map((l) => l.idLista);
 
-  const [productos, duxRows, margenRows] = await Promise.all([
-    prisma.prodTienda.findMany({
-      select: { codTienda: true, costoCompra: true },
-      orderBy: { codTienda: "asc" },
-    }),
-    prisma.prodTiendaPrecio.findMany({
+  const [edicionRows, productos] = await Promise.all([
+    prisma.prodTiendaPrecioEdicion.findMany({
       where: { idLista: { in: idListas } },
       select: { codTienda: true, idLista: true, precio: true },
+      orderBy: [{ codTienda: "asc" }],
     }),
-    prisma.prodTiendaMargenEdicion.findMany({
-      where: { idLista: { in: idListas } },
-      select: { codTienda: true, idLista: true, margenManual: true },
+    prisma.prodTienda.findMany({
+      select: { codTienda: true, costoCompra: true },
     }),
   ]);
 
-  const duxMap = new Map<string, number>();
-  for (const r of duxRows) {
-    duxMap.set(`${r.codTienda}:${r.idLista}`, toNum(r.precio));
-  }
-
-  const margenManualMap = new Map<string, number>();
-  for (const r of margenRows) {
-    margenManualMap.set(
-      `${r.codTienda}:${r.idLista}`,
-      roundMargenPxListaPct(toNum(r.margenManual))
-    );
+  const costoMap = new Map<string, number>();
+  for (const p of productos) {
+    costoMap.set(p.codTienda, toNum(p.costoCompra));
   }
 
   const filasPorLista = new Map<number, FilaExportPxListaMargen[]>();
@@ -71,29 +70,20 @@ export async function listarExportPxListasMargenPorLista(): Promise<
     filasPorLista.set(lista.idLista, []);
   }
 
-  for (const prod of productos) {
-    const costoCompra = toNum(prod.costoCompra);
+  for (const row of edicionRows) {
+    const costoCompra = costoMap.get(row.codTienda) ?? 0;
     if (!(costoCompra > 0)) continue;
 
-    for (const lista of listas) {
-      const key = `${prod.codTienda}:${lista.idLista}`;
-      const margenManual = margenManualMap.get(key) ?? null;
-      if (margenManual == null) continue;
+    const pxEdicion = toNum(row.precio);
+    if (!(pxEdicion > 0)) continue;
 
-      const celda = armarCeldaPrecioPxListas({
-        idLista: lista.idLista,
-        costoCompra,
-        pxDux: duxMap.get(key) ?? null,
-        margenManual,
-      });
+    const margen = margenExportDesdePrecioEdicion(pxEdicion, costoCompra);
+    if (margen == null) continue;
 
-      if (!celdaRequiereActualizar(celda)) continue;
-
-      filasPorLista.get(lista.idLista)!.push({
-        codigo: prod.codTienda,
-        porcUtilidad: margenManual,
-      });
-    }
+    filasPorLista.get(row.idLista)?.push({
+      codigo: row.codTienda,
+      porcUtilidad: margen,
+    });
   }
 
   return listas.map((lista) => ({

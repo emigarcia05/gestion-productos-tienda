@@ -8,11 +8,13 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { guardarPxListaMargenEdicionSchema } from "@/lib/validations/pxListasPrecios";
 import { getPxListasPreciosPageDataFromDb } from "@/services/pxListasPreciosPage.service";
-import { guardarMargenListaEdicion } from "@/services/pxListasMargenEdicion.service";
+import { guardarPrecioListaEdicionDesdeMargen } from "@/services/pxListasPrecioEdicion.service";
 import {
+  clavesDesdeGruposExportPxListas,
   listarExportPxListasMargenPorLista,
   type ExportPxListaMargenGrupo,
 } from "@/services/exportPxListasMargen.service";
+import { limpiarPreciosEdicionTrasActPx } from "@/services/pxListasPrecioEdicion.service";
 
 const PX_LISTAS_PATHS = [
   GP_ROUTES.analisisPrecios.cxYPxTienda.pxListas,
@@ -42,12 +44,13 @@ export async function getPxListasPreciosPageData(params: {
   return getPxListasPreciosPageDataFromDb(params);
 }
 
-/** Persiste override de margen % (o lo elimina con `margenManual: null`). */
+/** Persiste PX staging en `prod_tienda_precios_edicion` desde margen % (o elimina con `margenManual: null`). */
 export async function guardarPxListaMargenEdicionAction(
   raw: unknown
 ): Promise<
   ActionResult<{
     margenManual: number | null;
+    pxEdicion: number | null;
     pxEfectivo: number | null;
   }>
 > {
@@ -66,7 +69,7 @@ export async function guardarPxListaMargenEdicionAction(
 
   try {
     const { codTienda, idLista, margenManual } = parsed.data;
-    const res = await guardarMargenListaEdicion(
+    const res = await guardarPrecioListaEdicionDesdeMargen(
       codTienda,
       idLista,
       margenManual
@@ -79,6 +82,7 @@ export async function guardarPxListaMargenEdicionAction(
       ok: true,
       data: {
         margenManual: res.data.margenManual,
+        pxEdicion: res.data.pxEdicion,
         pxEfectivo: res.data.pxEfectivo,
       },
     };
@@ -90,7 +94,7 @@ export async function guardarPxListaMargenEdicionAction(
   }
 }
 
-/** Excel por `nombre_lista`: CODIGO + PORC UTILIDAD (margen manual distinto a DUX). */
+/** Excel por `nombre_lista` (CODIGO + PORC UTILIDAD) y limpieza de staging exportado. */
 export async function exportarPxListasMargenAction(): Promise<
   ActionResult<{ grupos: ExportPxListaMargenGrupo[] }>
 > {
@@ -100,6 +104,11 @@ export async function exportarPxListasMargenAction(): Promise<
   }
   try {
     const grupos = await listarExportPxListasMargenPorLista();
+    const claves = clavesDesdeGruposExportPxListas(grupos);
+    if (claves.length > 0) {
+      await limpiarPreciosEdicionTrasActPx(claves);
+      revalidatePxListasPaths();
+    }
     return { ok: true, data: { grupos } };
   } catch (e) {
     return {
