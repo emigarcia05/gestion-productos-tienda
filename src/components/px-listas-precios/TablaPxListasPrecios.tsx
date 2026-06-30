@@ -23,6 +23,7 @@ import {
   fmtMargenPxListaTabla,
   fmtPxListaTabla,
   formatMargenPxListaInput,
+  margenesPorcUtilidadDifieren,
   parseMargenPxListaInput,
 } from "@/lib/pxListasPreciosFormat";
 import type {
@@ -82,6 +83,8 @@ function CeldaMargenLista({
   const [draft, setDraft] = useState("");
   const [saving, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+  /** Margen % visible al entrar en edición; evita guardar si el usuario solo enfocó y salió. */
+  const margenAlIniciarRef = useRef<number | null>(null);
   const margenDisplay =
     celda.margenPct != null ? formatMargenPxListaInput(celda.margenPct) : "";
   const margenEditable = costoCompra > 0;
@@ -91,6 +94,7 @@ function CeldaMargenLista({
     celda.margenPct != null ? fmtMargenPxListaTabla(celda.margenPct) : "";
 
   function iniciarEdicion() {
+    margenAlIniciarRef.current = celda.margenPct;
     setDraft(margenDisplay);
     setEditando(true);
     requestAnimationFrame(() => {
@@ -117,6 +121,7 @@ function CeldaMargenLista({
     if (!margenEditable) {
       setEditando(false);
       onDraft(idLista, celda.margenManual);
+      margenAlIniciarRef.current = null;
       return;
     }
 
@@ -125,6 +130,7 @@ function CeldaMargenLista({
       if (!tieneEdicion) {
         setEditando(false);
         onDraft(idLista, celda.margenManual);
+        margenAlIniciarRef.current = null;
         return;
       }
 
@@ -145,6 +151,7 @@ function CeldaMargenLista({
           toast.error(res.error);
         }
         setEditando(false);
+        margenAlIniciarRef.current = null;
       });
       return;
     }
@@ -155,15 +162,18 @@ function CeldaMargenLista({
       setDraft(margenDisplay);
       onDraft(idLista, celda.margenManual);
       setEditando(false);
+      margenAlIniciarRef.current = null;
       return;
     }
 
+    const margenInicial = margenAlIniciarRef.current;
     if (
-      celda.margenManual != null &&
-      Math.abs(margen - celda.margenManual) < 0.005
+      margenInicial != null &&
+      !margenesPorcUtilidadDifieren(margen, margenInicial)
     ) {
       onDraft(idLista, celda.margenManual);
       setEditando(false);
+      margenAlIniciarRef.current = null;
       return;
     }
 
@@ -189,6 +199,7 @@ function CeldaMargenLista({
         setDraft(margenDisplay);
       }
       setEditando(false);
+      margenAlIniciarRef.current = null;
     });
   }
 
@@ -220,6 +231,7 @@ function CeldaMargenLista({
           setDraft(margenDisplay);
           onDraft(idLista, celda.margenManual);
           setEditando(false);
+          margenAlIniciarRef.current = null;
           inputRef.current?.blur();
         }
       }}
