@@ -183,35 +183,6 @@ async function reservarSiguienteComprobanteRecepcion(
   }
 }
 
-function pad2(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-/** Partes del calendario desde `YYYY-MM-DD` (sin conversión TZ; es la fecha de negocio). */
-function parseIsoYmdParts(iso: string): { y: number; m: number; d: number } {
-  const [ys, ms, ds] = iso.split("-");
-  return { y: Number(ys), m: Number(ms), d: Number(ds) };
-}
-
-function formatIsoYmd(y: number, m: number, d: number): string {
-  return `${y}-${pad2(m)}-${pad2(d)}`;
-}
-
-function sumarDiasYmd(
-  y: number,
-  m: number,
-  d: number,
-  dias: number
-): { y: number; m: number; d: number } {
-  const baseUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
-  baseUtc.setUTCDate(baseUtc.getUTCDate() + dias);
-  return {
-    y: baseUtc.getUTCFullYear(),
-    m: baseUtc.getUTCMonth() + 1,
-    d: baseUtc.getUTCDate(),
-  };
-}
-
 function toPrecioUnits(value: number): number {
   return Math.round(value * PRECIO_UNITARIO_RECEPCION_FACTOR);
 }
@@ -372,10 +343,8 @@ export async function prepararRecepcionCompraDatos(
       };
     }
 
-    const { y, m, d } = parseIsoYmdParts(fechaFacturaIso);
-    const { y: yMasUno, m: mMasUno, d: dMasUno } = sumarDiasYmd(y, m, d, 1);
-    const fechaIso = formatIsoYmd(yMasUno, mMasUno, dMasUno);
-    const fechaImputacionContableIso = formatIsoYmd(y, m, d);
+    const fechaIso = fechaParsed.data;
+    const fechaImputacionContableIso = fechaParsed.data;
 
     const totalPersistido = pedido.total == null ? null : Number(pedido.total);
     const totalParaPrecio =

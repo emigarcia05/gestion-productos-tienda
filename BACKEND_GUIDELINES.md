@@ -1244,7 +1244,7 @@ Función:
   - `TIPO COMPROBANTE` → `tipo_comprobante` (`FACTURA` \| `Comprobante_Compra`, misma regla `resolverTipoComprobantePorIva`).
   - `COMPROBANTE` → `nro_comprobante` (misma reserva en `prod_ped_ult_comp`; **sin rollback** si el POST falla).
   - `ID PROVEEDOR` → `id_proveedor`; `global_sucursales.id_dux` → `id_sucursal`; depósito por `getIdDepositoPorSucursalCodigo` → `id_deposito`.
-  - `FECHA` (+1 día) → `fecha` ISO `YYYY-MM-DD`; `FECHA IMPUTACION CONTABLE` → `fecha_imputacion_contable`.
+  - `FECHA FACTURA` (modal) → `fecha` y `fecha_imputacion_contable` (misma fecha `YYYY-MM-DD`, sin offset).
   - Ítems: `cod_tienda` → `productos[].cod_item`, `cant_recibida` → `ctd`, precio distribuido → `precio_unitario` (**neto**, total usuario ÷ **1,21**, **4 decimales**). **No** se envía `percepciones[]` en v1 (DUX suma IVA desde el maestro del ítem).
 - **Opcionales omitidos en v1:** `condicion_pago`, `fecha_vencimiento` (no requeridos en OpenAPI). **`id_personal`**: requerido en negocio; se envía desde `global_personal.id_personal` tras selector en UI (§1.11e).
 - **UI:** botón **Registrar En Dux** en `PedidoHistoriaDetalleModal` — único flujo de registro: POST DUX + `marcarPedidoHistoriaRegistrado` (estado **RECEPCIONADO**). Sin exportación Excel.
@@ -1265,7 +1265,7 @@ Objetivo: preparar `RecepcionCompraDatosPreparados` para el POST DUX v2/compras 
   - `decisionFiscal`: requerido cuando `proveedor.iva = PREGUNTA` (§1.11d.1)
 - Proceso:
   - Lee proveedor, sucursal, ítems con `cant_recibida > 0`
-  - `fecha` POST = fecha ingresada + 1 día; `fecha_imputacion_contable` = fecha ingresada
+  - `fecha` POST y `fecha_imputacion_contable` = fecha ingresada en **FECHA FACTURA** (sin +1 día; corregido 2026-06-30 — el offset legacy del Excel ya no aplica al POST v2).
   - Reserva **nro comprobante** en `prod_ped_ult_comp` (§2.8) según `tipo_comprobante`
   - Reparte precios netos (total ÷ 1,21) con **4 decimales** y tolerancia **0,10**
 - Salida: `RecepcionCompraDatosPreparados` → mapeo en `mapRecepcionCompraDatosToV2PostBody` (§2.9a)
