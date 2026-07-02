@@ -1,6 +1,11 @@
--- Unifica prod_comp_dto_extra + prod_comp_dif_px_ref_manual en prod_comp_item.
+-- Unifica prod_comp_dto_extra + prod_comp_dif_px_ref_manual en prod_comp_cat (ajustes por ítem).
+-- El catálogo maestro CategoriaComparacion pasa de prod_comp_cat → prod_comp_categorias.
 
-CREATE TABLE "prod_comp_item" (
+ALTER TABLE "prod_comp_cat" RENAME TO "prod_comp_categorias";
+
+ALTER INDEX IF EXISTS "prod_comp_cat_pkey" RENAME TO "prod_comp_categorias_pkey";
+
+CREATE TABLE "prod_comp_cat" (
   "id" TEXT NOT NULL,
   "cod_ext_prod_precios_provee" TEXT NOT NULL,
   "dto_extra" INTEGER,
@@ -8,15 +13,15 @@ CREATE TABLE "prod_comp_item" (
   "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP(3) NOT NULL,
 
-  CONSTRAINT "prod_comp_item_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "prod_comp_item_cod_ext_prod_precios_provee_key" UNIQUE ("cod_ext_prod_precios_provee"),
-  CONSTRAINT "prod_comp_item_cod_ext_prod_precios_provee_fkey"
+  CONSTRAINT "prod_comp_cat_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "prod_comp_cat_cod_ext_prod_precios_provee_key" UNIQUE ("cod_ext_prod_precios_provee"),
+  CONSTRAINT "prod_comp_cat_cod_ext_prod_precios_provee_fkey"
     FOREIGN KEY ("cod_ext_prod_precios_provee")
     REFERENCES "prod_precios_provee"("cod_ext")
     ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-INSERT INTO "prod_comp_item" (
+INSERT INTO "prod_comp_cat" (
   "id",
   "cod_ext_prod_precios_provee",
   "dto_extra",

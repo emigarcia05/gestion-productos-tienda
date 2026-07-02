@@ -561,7 +561,7 @@ model ComparacionItem {
 
   listaPrecioProveedor ListaPrecioProveedor @relation(fields: [listaPrecioProveedorCodExt], references: [codExt], onDelete: Cascade)
 
-  @@map("prod_comp_item")
+  @@map("prod_comp_cat")
 }
 
 model ComparacionPresentacionRefComp {
@@ -590,7 +590,7 @@ model CategoriaComparacion {
 
   subcategorias  SubcategoriaComparacion[]
 
-  @@map("prod_comp_cat")
+  @@map("prod_comp_categorias")
 }
 
 model SubcategoriaComparacion {

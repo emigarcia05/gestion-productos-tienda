@@ -738,7 +738,7 @@ type ComparacionItemPatch = {
   difPxRefManual?: number | null;
 };
 
-/** Upsert parcial de ajustes Comp. Categorías por ítem (`prod_comp_item`). Borra la fila si ambos campos quedan null. */
+/** Upsert parcial de ajustes Comp. Categorías por ítem (`prod_comp_cat`). Borra la fila si ambos campos quedan null. */
 async function upsertComparacionItemParcial(
   listaPrecioProveedorCodExt: string,
   patch: ComparacionItemPatch
