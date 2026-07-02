@@ -541,8 +541,7 @@ model ListaPrecioProveedor {
   prodTienda ProdTienda? @relation(fields: [codTiendaVinculo], references: [codTienda], onDelete: SetNull)
   presentacion      PresentacionComparacion? @relation("PresentacionItems", fields: [idPresentacion], references: [id], onDelete: SetNull)
   presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
-  dtoExtraComparacion ComparacionDtoExtraItem?
-  difPxRefManualComparacion ComparacionDifPxRefManualItem?
+  comparacionItem ComparacionItem?
   /** Ítems tienda que usan esta fila como costo lista en Cx/Px Tienda. */
   costoListaEnTiendas ProdTienda[] @relation("CostoListaEnTienda")
 
@@ -551,29 +550,18 @@ model ListaPrecioProveedor {
   @@map("prod_precios_provee")
 }
 
-model ComparacionDtoExtraItem {
-  id                       String @id @default(cuid())
-  listaPrecioProveedorCodExt String @unique @map("cod_ext_prod_precios_provee")
-  dtoExtra               Int? @map("dto_extra") // 0-99, null si está vacío
-  createdAt              DateTime @default(now()) @map("created_at")
-  updatedAt              DateTime @updatedAt @map("updated_at")
-
-  listaPrecioProveedor ListaPrecioProveedor @relation(fields: [listaPrecioProveedorCodExt], references: [codExt], onDelete: Cascade)
-
-  @@map("prod_comp_dto_extra")
-}
-
-/** Dif. % vs px referencia competencia (entero con signo) por ítem en Comp. Categorias — Comparacion. */
-model ComparacionDifPxRefManualItem {
+/** Ajustes manuales por ítem en Comp. Categorías — Comparación (DTO. EXTRA, DIF % REF. MAN.). */
+model ComparacionItem {
   id                         String @id @default(cuid())
   listaPrecioProveedorCodExt String @unique @map("cod_ext_prod_precios_provee")
-  difPxRefManual             Int?   @map("dif_px_ref_manual")
+  dtoExtra                   Int?   @map("dto_extra") // 0-99, null si está vacío
+  difPxRefManual             Int?   @map("dif_px_ref_manual") // entero con signo % vs px referencia
   createdAt                  DateTime @default(now()) @map("created_at")
   updatedAt                  DateTime @updatedAt @map("updated_at")
 
   listaPrecioProveedor ListaPrecioProveedor @relation(fields: [listaPrecioProveedorCodExt], references: [codExt], onDelete: Cascade)
 
-  @@map("prod_comp_dif_px_ref_manual")
+  @@map("prod_comp_item")
 }
 
 model ComparacionPresentacionRefComp {

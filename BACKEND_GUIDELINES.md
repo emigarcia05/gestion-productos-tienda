@@ -283,7 +283,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas | `ComprobanteProveedor` | `fin_compras_comprobante` |
 | Finanzas | `FinTesoreriaEntidad`, `FinTesoreriaTipoCaja`, `CajaTesoreria`, `FinTesoreriaCheque` | `fin_tesoreria_entidades`, `fin_tesoreria_tipo_caja`, `fin_tesoreria`, `fin_tesoreria_cheques` |
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual`, `FinBalPosicionIvaComparacionPedido` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual`, `fin_bal_posicion_iva_comparacion_pedido` |
-| Productos / precios | `ListaPrecioProveedor`, `ComparacionDtoExtraItem`, `ComparacionMargenManualItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdTiendaMargenEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_dto_extra`, `prod_comp_margen_manual`, `prod_comp_cat`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_tienda_margen_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
+| Productos / precios | `ListaPrecioProveedor`, `ComparacionItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdTiendaMargenEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_item`, `prod_comp_cat`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_tienda_margen_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
 | Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
 | Pedidos / sync | `ProdPedMerc2`, `PedidoHistoria`, `PedidoHistoriaItem`, `ProdPedUltComp`, `ImportProgress`, `SyncDuxStatus` | `prod_ped_merc`, `prod_ped_historial`, `prod_ped_historial_merc`, `prod_ped_ult_comp`, `import_progress`, `sync_dux_status` |
 
@@ -344,13 +344,12 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   `base = px_lista_proveedor × (cotizacion_dolar si px_dolares, sino 1)`  
   `dtoTotal = dto_proveedor + dto_marca + dto_rubro + dto_cantidad + dto_financiero + dto_extra_comparacion` (cap 0–100)  
   `costo = base × (1 − dtoTotal/100) × (1 + cx_transporte/100)` (redondeo 4 dec.)
-- **`dto_extra_comparacion`** se persiste en **`prod_comp_dto_extra`** (`ComparacionDtoExtraItem.dto_extra`, entero 0–99 o `null`), **no** en `prod_precios_provee`. Action: **`actualizarDtoExtraComparacionAction`**; servicio: **`getProductosPorPresentacion`** devuelve `dtoExtraComparacion` + `datosCosto` para recálculo en cliente.
+- **`dto_extra_comparacion`** y **`dif_px_ref_manual`** se persisten en **`prod_comp_item`** (`ComparacionItem`: `dto_extra` 0–99 o `null`, `dif_px_ref_manual` entero con signo o `null`), **no** en `prod_precios_provee`. Una fila por `cod_ext`; se borra si ambos campos quedan `null`. Actions: **`actualizarDtoExtraComparacionAction`**, **`actualizarDifPxRefManualComparacionAction`**; servicio: **`getProductosPorPresentacion`** devuelve `dtoExtraComparacion`, `difPxRefManualComparacion` y `datosCosto` para recálculo en cliente. Migración unificación: **`20260702120000_prod_comp_item_unify_ajustes`** (reemplaza `prod_comp_dto_extra` + `prod_comp_dif_px_ref_manual`).
 - Resto del sistema (lista precios, pedidos, Cx Compra, exportaciones) sigue usando **`px_compra_final_sin_iva`** sin dto extra.
 
 ### 1.8c Dif. % manual en Comp. Categorias — Comparacion (`dif_px_ref_manual`)
 
-- Tabla **`prod_comp_dif_px_ref_manual`** (`ComparacionDifPxRefManualItem.difPxRefManual`, entero con signo % o `null` por `cod_ext`). Migración **`20260624170000`** (renombra `prod_comp_margen_manual` / anula legacy `margen_manual`).
-- UI: input **DIF % REF. MAN.** (% entero vs px **REFERENCIA COMPETENCIA** activa); al blur se persiste **`dif_px_ref_manual`** (`actualizarDifPxRefManualComparacionAction`). **PX. CALC.** y **MARG. CALC.** derivados en cliente (`calcPxManualDesdeDifPctReferencia`, `calcMargenManualDesdeDifPctReferencia`).
+- Persistido en **`prod_comp_item.dif_px_ref_manual`** (ver §1.8b). UI: input **DIF % REF. MAN.** (% entero vs px **REFERENCIA COMPETENCIA** activa); al blur se persiste vía **`actualizarDifPxRefManualComparacionAction`**. **PX. CALC.** y **MARG. CALC.** derivados en cliente (`calcPxManualDesdeDifPctReferencia`, `calcMargenManualDesdeDifPctReferencia`).
 
 ### 1.8d Reglas descuentos lista precios (`prod_precios_provee_reglas`)
 
@@ -367,7 +366,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **CHECK** al menos una condición no nula; **UNIQUE** `(campo, COALESCE(id_proveedor,''), COALESCE(id_marca,''), COALESCE(id_rubro,''))`.
 - **Migración:** `20260619120000_prod_precios_provee_reglas_descuentos`. **No** se infieren reglas desde `dto_*` históricos; tabla de reglas arranca vacía.
 - **Post-deploy obligatorio:** `npm run db:recalc-descuentos-lista-precio` → con reglas vacías, todos los `dto_*` / `cx_transporte` → **0** (impacto masivo en `px_compra_final_sin_iva` hasta cargar reglas).
-- **Mantenimiento — purga lista sin vínculo tienda:** `npm run db:purge-lista-precio-sin-vinculo` (`scripts/purge-lista-precio-proveedor-sin-vinculo-tienda.ts`). Por defecto **simulación**; con `--execute` borra filas `prod_precios_provee` de un proveedor (`--proveedor "NOMBRE"`) donde **`cod_tienda` IS NULL** (sin vínculo manual a `prod_tienda`). Conserva filas con `cod_tienda` poblado. Cascadas: `prod_comp_dto_extra` / `prod_comp_margen_manual`; `prod_tienda.costo_compra_cod_ext` → SET NULL si apuntaba al `cod_ext` borrado.
+- **Mantenimiento — purga lista sin vínculo tienda:** `npm run db:purge-lista-precio-sin-vinculo` (`scripts/purge-lista-precio-proveedor-sin-vinculo-tienda.ts`). Por defecto **simulación**; con `--execute` borra filas `prod_precios_provee` de un proveedor (`--proveedor "NOMBRE"`) donde **`cod_tienda` IS NULL** (sin vínculo manual a `prod_tienda`). Conserva filas con `cod_tienda` poblado. Cascadas: `prod_comp_item`; `prod_tienda.costo_compra_cod_ext` → SET NULL si apuntaba al `cod_ext` borrado.
 
 #### Algoritmo de resolución (`descuentosListaPrecioReglas.service.ts`)
 
@@ -437,7 +436,7 @@ interface ReglaDescuentoListaPrecio {
 
 Ítem P1 + marca texto = `M1.nombre` → `dto_marca` materializado = **18** (regla P1+M1 gana sobre solo M1).
 
-**Lecturas lista precios:** `FilaListaPrecioParaCliente` sigue exponiendo `dtoProveedor`, `dtoMarca`, `dtoRubro`, `dtoCantidad`, `dtoFinanciero`, `cxTransporte`, `pxCompraFinalSinIva` como **solo lectura** (caché del motor). **`prod_comp_dto_extra`** no se modifica (override solo Comp. Categorías).
+**Lecturas lista precios:** `FilaListaPrecioParaCliente` sigue exponiendo `dtoProveedor`, `dtoMarca`, `dtoRubro`, `dtoCantidad`, `dtoFinanciero`, `cxTransporte`, `pxCompraFinalSinIva` como **solo lectura** (caché del motor). **`prod_comp_item`** no se modifica desde lista precios (override solo Comp. Categorías).
 
 ### 1.8e Cotización USD única (`global_cotizacion_usd`)
 
@@ -1771,3 +1770,5 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-06-16): **Edición masiva lista precios** — `actualizarListaPreciosMasivoAction` acepta `{ filtros, data }` y resuelve todos los `cod_ext` coincidentes (sin paginación), igual que exportación; la UI muestra el **total** del filtro, no solo la página visible.*
 
 *Última actualización (2026-06-16): **`buscarProductosTiendaParaComparacion`** — búsqueda multi-término por contiene en **descripción / código / marca / rubro** (`contains` en BD + `matchByMultiTerm`); ej. `Recu 20` → *Membrana Recuplast Fibrado 20 kg*.*
+
+*Última actualización (2026-07-02): **Comp. Categorias — `prod_comp_item`** — unifica `prod_comp_dto_extra` + `prod_comp_dif_px_ref_manual` en una fila por `cod_ext` (`dto_extra`, `dif_px_ref_manual`); helper `upsertComparacionItemParcial` en `categoriasComparacion.service.ts`; migración **`20260702120000_prod_comp_item_unify_ajustes`**. **`prod_comp_cat`** sigue reservada al catálogo de categorías (`CategoriaComparacion`).*

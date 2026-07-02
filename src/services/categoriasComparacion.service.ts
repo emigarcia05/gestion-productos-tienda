@@ -236,8 +236,9 @@ export async function getProductosPorPresentacion(
       listaPrecios: {
         include: {
           proveedor: { select: { prefijo: true } },
-          dtoExtraComparacion: { select: { dtoExtra: true } },
-          difPxRefManualComparacion: { select: { difPxRefManual: true } },
+          comparacionItem: {
+            select: { dtoExtra: true, difPxRefManual: true },
+          },
         },
       },
     },
@@ -258,7 +259,7 @@ export async function getProductosPorPresentacion(
 
   const productos: ProductoEnCategoria[] = presentacion.listaPrecios
     .map((lp) => {
-      const dtoExtraComparacion = lp.dtoExtraComparacion?.dtoExtra ?? null;
+      const dtoExtraComparacion = lp.comparacionItem?.dtoExtra ?? null;
       const datosCosto = mapDatosCostoComparacion(lp);
       const pxFinal = calcCostoComparacion(datosCosto, dtoExtraComparacion);
       const dif =
@@ -272,8 +273,7 @@ export async function getProductosPorPresentacion(
         proveedorPrefijo: lp.proveedor?.prefijo ?? null,
         dtoExtraComparacion,
         datosCosto,
-        difPxRefManualComparacion:
-          lp.difPxRefManualComparacion?.difPxRefManual ?? null,
+        difPxRefManualComparacion: lp.comparacionItem?.difPxRefManual ?? null,
         costoCompraObjetivo: objetivo,
         diferenciaVsObjetivo: dif,
       };
@@ -733,23 +733,50 @@ export async function quitarAsignacionPresentacion(codigosExtProductos: string[]
   return { count: result.count };
 }
 
+type ComparacionItemPatch = {
+  dtoExtra?: number | null;
+  difPxRefManual?: number | null;
+};
+
+/** Upsert parcial de ajustes Comp. Categorías por ítem (`prod_comp_item`). Borra la fila si ambos campos quedan null. */
+async function upsertComparacionItemParcial(
+  listaPrecioProveedorCodExt: string,
+  patch: ComparacionItemPatch
+): Promise<void> {
+  const existing = await prisma.comparacionItem.findUnique({
+    where: { listaPrecioProveedorCodExt },
+    select: { dtoExtra: true, difPxRefManual: true },
+  });
+
+  const dtoExtra =
+    patch.dtoExtra !== undefined ? patch.dtoExtra : (existing?.dtoExtra ?? null);
+  const difPxRefManual =
+    patch.difPxRefManual !== undefined
+      ? patch.difPxRefManual
+      : (existing?.difPxRefManual ?? null);
+
+  if (dtoExtra === null && difPxRefManual === null) {
+    if (existing) {
+      await prisma.comparacionItem.delete({
+        where: { listaPrecioProveedorCodExt },
+      });
+    }
+    return;
+  }
+
+  await prisma.comparacionItem.upsert({
+    where: { listaPrecioProveedorCodExt },
+    create: { listaPrecioProveedorCodExt, dtoExtra, difPxRefManual },
+    update: { dtoExtra, difPxRefManual },
+  });
+}
+
 /** Persistir DTO. EXTRA para "Comp. Por Cat." por ítem (ListaPrecioProveedor). */
 export async function actualizarDtoExtraComparacionItem(
   listaPrecioProveedorCodExt: string,
   dtoExtra: number | null
 ): Promise<void> {
-  if (dtoExtra === null) {
-    await prisma.comparacionDtoExtraItem.deleteMany({
-      where: { listaPrecioProveedorCodExt },
-    });
-    return;
-  }
-
-  await prisma.comparacionDtoExtraItem.upsert({
-    where: { listaPrecioProveedorCodExt },
-    create: { listaPrecioProveedorCodExt, dtoExtra },
-    update: { dtoExtra },
-  });
+  await upsertComparacionItemParcial(listaPrecioProveedorCodExt, { dtoExtra });
 }
 
 /** Persistir dif. % vs px referencia (entero con signo) por ítem en Comparacion. */
@@ -757,16 +784,5 @@ export async function actualizarDifPxRefManualComparacionItem(
   listaPrecioProveedorCodExt: string,
   difPxRefManual: number | null
 ): Promise<void> {
-  if (difPxRefManual === null) {
-    await prisma.comparacionDifPxRefManualItem.deleteMany({
-      where: { listaPrecioProveedorCodExt },
-    });
-    return;
-  }
-
-  await prisma.comparacionDifPxRefManualItem.upsert({
-    where: { listaPrecioProveedorCodExt },
-    create: { listaPrecioProveedorCodExt, difPxRefManual },
-    update: { difPxRefManual },
-  });
+  await upsertComparacionItemParcial(listaPrecioProveedorCodExt, { difPxRefManual });
 }
