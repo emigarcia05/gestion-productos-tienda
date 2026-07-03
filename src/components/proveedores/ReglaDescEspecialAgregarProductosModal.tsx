@@ -13,12 +13,17 @@ export interface FiltrosReglaDescEspecialProductos {
   rubroNombre?: string;
 }
 
+export interface ProductoVinculadoReglaDescEspecial {
+  codExt: string;
+  descripcion: string;
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   codigosSeleccionados: string[];
   filtros: FiltrosReglaDescEspecialProductos;
-  onConfirm: (codigosExt: string[]) => void;
+  onConfirm: (productos: ProductoVinculadoReglaDescEspecial[]) => void;
 }
 
 type Row = Pick<FilaListaPrecioParaCliente, "codExt" | "descripcion" | "proveedor">;
@@ -116,7 +121,13 @@ export default function ReglaDescEspecialAgregarProductosModal({
       tableColumnWidthsPct={[5, 18, 12, 65]}
       emptyMessage="No hay productos que coincidan con los filtros de la regla."
       confirmLabel={(count) => `Agregar ${count} Producto${count !== 1 ? "s" : ""}`}
-      onConfirm={(ids) => onConfirm(ids)}
+      onConfirm={(ids) => {
+        const nuevos = ids.map((id) => {
+          const row = rows.find((r) => r.codExt === id);
+          return { codExt: id, descripcion: row?.descripcion ?? id };
+        });
+        onConfirm(nuevos);
+      }}
       filterContent={
         <FiltroIndividualContainer
           className="min-w-[20rem] w-full"

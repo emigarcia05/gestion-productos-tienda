@@ -17,10 +17,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  EmptyTableRow,
+} from "@/components/ui/table";
+import {
   crearReglaDescEspecialAction,
   actualizarReglaDescEspecialAction,
   type ReglaDescEspecialDetalle,
 } from "@/actions/descEspecialReglas";
+import { getListaPreciosConOpcionesAction } from "@/actions/listaPrecios";
 import {
   listarCatalogosReglasDescuentosAction,
   type CatalogosReglasDescuentosListaPrecio,
@@ -31,7 +41,13 @@ import {
 } from "@/lib/porcentajeCentMask";
 import ReglaDescEspecialAgregarProductosModal, {
   type FiltrosReglaDescEspecialProductos,
+  type ProductoVinculadoReglaDescEspecial,
 } from "@/components/proveedores/ReglaDescEspecialAgregarProductosModal";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
 type Modo = "crear" | "editar";
@@ -47,6 +63,7 @@ interface Props {
 const FORM_GRID_CLASS = "grid grid-cols-[1.35fr_minmax(0,1fr)] gap-x-4 gap-y-2 items-center";
 const LABEL_CLASS = "text-right font-medium text-sm";
 const SELECT_CLASS = "input-filtro-unificado w-full min-w-0";
+const PRODUCTOS_TABLA_MAX_H = "max-h-[min(32vh,18rem)]";
 
 function ModalFormRow({
   id,
@@ -67,6 +84,45 @@ function ModalFormRow({
   );
 }
 
+async function resolverDescripcionesProductos(
+  codigosExt: string[],
+  filtros: FiltrosReglaDescEspecialProductos
+): Promise<ProductoVinculadoReglaDescEspecial[]> {
+  if (codigosExt.length === 0) return [];
+
+  const descripcionPorCod = new Map<string, string>();
+
+  const resLista = await getListaPreciosConOpcionesAction({
+    proveedorId: filtros.proveedorId,
+    marcaNombre: filtros.marcaNombre,
+    rubroNombre: filtros.rubroNombre,
+    pagina: 1,
+  });
+
+  if (resLista.filas) {
+    for (const fila of resLista.filas) {
+      if (codigosExt.includes(fila.codExt)) {
+        descripcionPorCod.set(fila.codExt, fila.descripcion);
+      }
+    }
+  }
+
+  const faltantes = codigosExt.filter((c) => !descripcionPorCod.has(c));
+  for (const codExt of faltantes) {
+    const res = await getListaPreciosConOpcionesAction({
+      busqueda: codExt,
+      pagina: 1,
+    });
+    const fila = res.filas?.find((f) => f.codExt === codExt);
+    if (fila) descripcionPorCod.set(codExt, fila.descripcion);
+  }
+
+  return codigosExt.map((codExt) => ({
+    codExt,
+    descripcion: descripcionPorCod.get(codExt) ?? codExt,
+  }));
+}
+
 export default function CrearEditarReglaDescEspecialModal({
   open,
   onOpenChange,
@@ -81,35 +137,15 @@ export default function CrearEditarReglaDescEspecialModal({
   const [idProveedor, setIdProveedor] = useState("");
   const [idMarca, setIdMarca] = useState("");
   const [idRubro, setIdRubro] = useState("");
-  const [codigosExt, setCodigosExt] = useState<string[]>([]);
+  const [productosVinculados, setProductosVinculados] = useState<ProductoVinculadoReglaDescEspecial[]>(
+    []
+  );
   const [agregarOpen, setAgregarOpen] = useState(false);
 
   const cargarCatalogos = useCallback(async () => {
     const res = await listarCatalogosReglasDescuentosAction();
     if (res.ok) setCatalogos(res.data);
   }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    void cargarCatalogos();
-    if (modo === "editar" && regla) {
-      setNombre(regla.nombre);
-      setValorNorm(porcentajeCentFromNumber(regla.valor));
-      setIdProveedor(regla.idProveedor ?? "");
-      setIdMarca(regla.idMarca ?? "");
-      setIdRubro(regla.idRubro ?? "");
-      setCodigosExt(regla.codigosExt);
-      return;
-    }
-    setNombre("");
-    setValorNorm("");
-    setIdProveedor("");
-    setIdMarca("");
-    setIdRubro("");
-    setCodigosExt([]);
-  }, [open, modo, regla, cargarCatalogos]);
-
-  const titulo = modo === "crear" ? "Nueva Regla Desc. Específico" : "Editar Regla Desc. Específico";
 
   const filtrosProductos = useMemo((): FiltrosReglaDescEspecialProductos => {
     if (!catalogos) return {};
@@ -124,13 +160,51 @@ export default function CrearEditarReglaDescEspecialModal({
     };
   }, [catalogos, idProveedor, idMarca, idRubro]);
 
+  useEffect(() => {
+    if (!open) return;
+    void cargarCatalogos();
+    if (modo === "editar" && regla) {
+      setNombre(regla.nombre);
+      setValorNorm(porcentajeCentFromNumber(regla.valor));
+      setIdProveedor(regla.idProveedor ?? "");
+      setIdMarca(regla.idMarca ?? "");
+      setIdRubro(regla.idRubro ?? "");
+      setProductosVinculados([]);
+      void (async () => {
+        const filtros: FiltrosReglaDescEspecialProductos = {
+          proveedorId: regla.idProveedor ?? undefined,
+          marcaNombre: regla.marcaNombre ?? undefined,
+          rubroNombre: regla.rubroNombre ?? undefined,
+        };
+        const productos = await resolverDescripcionesProductos(regla.codigosExt, filtros);
+        setProductosVinculados(productos);
+      })();
+      return;
+    }
+    setNombre("");
+    setValorNorm("");
+    setIdProveedor("");
+    setIdMarca("");
+    setIdRubro("");
+    setProductosVinculados([]);
+  }, [open, modo, regla, cargarCatalogos]);
+
+  const titulo = modo === "crear" ? "Nueva Regla Desc. Específico" : "Editar Regla Desc. Específico";
+
   const tieneAlgunFiltro = Boolean(idProveedor || idMarca || idRubro);
 
-  const resumenProductos = useMemo(() => {
-    if (codigosExt.length === 0) return "Sin productos vinculados.";
-    if (codigosExt.length <= 3) return codigosExt.join(", ");
-    return `${codigosExt.slice(0, 3).join(", ")} y ${codigosExt.length - 3} más`;
-  }, [codigosExt]);
+  const codigosExt = useMemo(
+    () => productosVinculados.map((p) => p.codExt),
+    [productosVinculados]
+  );
+
+  const productosOrdenados = useMemo(
+    () =>
+      [...productosVinculados].sort((a, b) =>
+        a.descripcion.localeCompare(b.descripcion, "es", { sensitivity: "base" })
+      ),
+    [productosVinculados]
+  );
 
   function aplicarCambioFiltro(
     setter: (v: string) => void,
@@ -138,8 +212,8 @@ export default function CrearEditarReglaDescEspecialModal({
     etiqueta: string
   ) {
     setter(valor);
-    if (codigosExt.length > 0) {
-      setCodigosExt([]);
+    if (productosVinculados.length > 0) {
+      setProductosVinculados([]);
       toast.message(`Se limpiaron los productos al cambiar ${etiqueta}.`);
     }
   }
@@ -207,8 +281,8 @@ export default function CrearEditarReglaDescEspecialModal({
     }
   }
 
-  function quitarCodigo(codExt: string) {
-    setCodigosExt((prev) => prev.filter((c) => c !== codExt));
+  function quitarProducto(codExt: string) {
+    setProductosVinculados((prev) => prev.filter((p) => p.codExt !== codExt));
   }
 
   return (
@@ -217,6 +291,8 @@ export default function CrearEditarReglaDescEspecialModal({
         <AppModal
           title={titulo}
           size="lg"
+          scrollBody={false}
+          bodyClassName="flex flex-col min-h-0 overflow-hidden"
           actions={
             <>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
@@ -228,13 +304,8 @@ export default function CrearEditarReglaDescEspecialModal({
             </>
           }
         >
-          <div className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">
-              Definí proveedor, marca y/o rubro para categorizar la regla. Los productos vinculados reciben el valor en{" "}
-              <strong className="text-foreground">desc. específico</strong> y se suma al cálculo de px. final sin IVA.
-            </p>
-
-            <div className={cn(FORM_GRID_CLASS, "py-1")}>
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            <div className={cn(FORM_GRID_CLASS, "shrink-0 py-1")}>
               <ModalFormRow id="nombre-regla-esp" label="NOMBRE">
                 <Input
                   id="nombre-regla-esp"
@@ -323,41 +394,71 @@ export default function CrearEditarReglaDescEspecialModal({
               </ModalFormRow>
             </div>
 
-            <div className="rounded-md border border-border bg-muted/30 px-3 py-3">
-              <div className="flex items-center justify-between gap-2">
+            <div className="flex min-h-0 flex-1 flex-col gap-2 rounded-md border border-border bg-muted/30 px-3 py-3">
+              <div className="flex shrink-0 items-center justify-between gap-2">
                 <p className="text-sm font-medium text-foreground">
-                  Productos asociados ({codigosExt.length})
+                  Productos asociados ({productosVinculados.length})
                 </p>
                 <Button type="button" size="sm" variant="default" onClick={abrirAgregarProductos}>
                   <Plus className="h-4 w-4" />
                   Agregar Productos
                 </Button>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground truncate" title={codigosExt.join(", ")}>
-                {resumenProductos}
-              </p>
-              {codigosExt.length > 0 && (
-                <ul className="mt-3 max-h-40 overflow-y-auto flex flex-col gap-1">
-                  {codigosExt.map((codExt) => (
-                    <li
-                      key={codExt}
-                      className="flex items-center justify-between gap-2 rounded border border-border bg-card px-2 py-1 text-sm"
-                    >
-                      <span className="tabular-nums truncate">{codExt}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0"
-                        aria-label={`Quitar ${codExt}`}
-                        onClick={() => quitarCodigo(codExt)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+
+              <div
+                className={cn(
+                  "contenedor-tabla-gestion min-h-0 flex-1 overflow-hidden",
+                  PRODUCTOS_TABLA_MAX_H
+                )}
+                style={{ height: "auto" }}
+              >
+                <Table variant="compact" className="tabla-vinculos-modal w-full min-w-0">
+                  <colgroup>
+                    <col style={{ width: "88%" }} />
+                    <col style={{ width: "12%" }} />
+                  </colgroup>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead>DESCRIPCIÓN</TableHead>
+                      <TableHead className="text-center">ACC.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {productosOrdenados.length === 0 ? (
+                      <EmptyTableRow colSpan={2} message="Sin productos vinculados." />
+                    ) : (
+                      productosOrdenados.map((producto) => (
+                        <TableRow key={producto.codExt}>
+                          <TableCell className="celda-datos min-w-0">
+                            <span className="block truncate" title={producto.descripcion}>
+                              {producto.descripcion}
+                            </span>
+                          </TableCell>
+                          <TableCell className="celda-datos celda-datos--accion-relleno-fila p-0">
+                            <div
+                              className={cn(
+                                TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+                                "justify-center"
+                              )}
+                            >
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                aria-label={`Quitar ${producto.descripcion}`}
+                                onClick={() => quitarProducto(producto.codExt)}
+                              >
+                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
         </AppModal>
@@ -369,7 +470,14 @@ export default function CrearEditarReglaDescEspecialModal({
         codigosSeleccionados={codigosExt}
         filtros={filtrosProductos}
         onConfirm={(nuevos) => {
-          setCodigosExt((prev) => [...new Set([...prev, ...nuevos])]);
+          setProductosVinculados((prev) => {
+            const existentes = new Set(prev.map((p) => p.codExt));
+            const merged = [...prev];
+            for (const p of nuevos) {
+              if (!existentes.has(p.codExt)) merged.push(p);
+            }
+            return merged;
+          });
           setAgregarOpen(false);
         }}
       />
