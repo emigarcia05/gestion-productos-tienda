@@ -309,7 +309,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `--modal-field-label-color` | **`:root`**: color de etiquetas de campo en modales (`var(--foreground)`). Aplicado con `!important` en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]` a `label`, `[data-slot="label"]`, `.modal-field-label`, `.modal-micro-label`, `dt`. |
 | `MODAL_FIELD_LABEL_CLASS`, `MODAL_MICRO_LABEL_CLASS` (`@/lib/ui-classes`) | Clases Tailwind para etiquetas en modales (foreground). **`ModalMicroLabel`** usa la micro constante vía CVA. |
 | `.input-filtro-unificado` | Input y SelectTrigger de filtros (borde primary, altura 2.5rem). |
-| `.fila-filtros-5`, `.fila-filtros-desplegables` | Grid 5 columnas para Selects de filtros. |
+| `.fila-filtros-4`, `.fila-filtros-5`, `.fila-filtros-desplegables` | Grid 4 o 5 columnas para Selects de filtros (`FilaFiltrosDesplegables` prop `columnas`). |
 | `.tabla-gestion-compacta.tabla-vinculos-modal` | Variante de ancho para **modal Vínculos** (Tienda): `width: 100%`, `table-layout: fixed`; los encabezados usan la misma regla global de `tabla-gestion-compacta`. |
 | `.tabla-gestion-compacta.tabla-recepcion-pedido` | **Recepcion Pedido** (`PedidoHistoriaDetalleModal`): **`recepcion-fila-pendiente`** cebra estándar; **`recepcion-fila-verificada`** fondo **gris intermedio** neutro (`color-mix(in oklab, var(--muted) 72%, var(--card) 28%)`, hover **84%/16%**), entre blanco/card y cebra celeste; misma altura de fila que el resto de tablas. |
 | `.tabla-gestion-compacta.tabla-deuda-proveedores` | Solo **Finanzas / Venc. Provee. Merc.** (`/finanzas/deuda-proveedores`): misma altura de fila global (**2rem**); `.celda-proveedor-deuda` con **ellipsis** (`nowrap`, `overflow: hidden`); primera columna **PROVEEDOR** (tbody y tfoot) **centrada** en horizontal y vertical. |
@@ -1332,11 +1332,19 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-03): **Desc. específico — filtros de categoría** — `CrearEditarReglaDescEspecialModal`: selects **PROVEEDOR** / **MARCA** / **RUBRO** (catálogo `listarCatalogosReglasDescuentosAction`; al menos uno obligatorio). Al cambiar un filtro se limpian productos vinculados. `ReglaDescEspecialAgregarProductosModal`: solo búsqueda por descripción; lista precios filtrada por los tres ejes de la regla. Grilla `ReglasDescEspecificasListaPreciosPanel`: columnas PROV. / MARCA / RUBRO. Ver BACKEND_GUIDELINES §1.8d-b.*
 
+*Última actualización (2026-07-03): **Desc. específico — formulario dos columnas** — `CrearEditarReglaDescEspecialModal`: formulario en `grid sm:grid-cols-2` — columna izquierda **NOMBRE** / **VALOR**; derecha **PROVEEDOR** / **MARCA** / **RUBRO** (cada columna mantiene grid label|control).*
+
+*Última actualización (2026-07-03): **Desc. específico — layout modal alta** — `CrearEditarReglaDescEspecialModal`: `AppModal` `size="xl"` + `min-h-[min(85vh,38rem)]`; bloque productos `min-h-[50%] flex-1` (tabla ≥ mitad del cuerpo); formulario compacto arriba (`shrink-0`).*
+
 *Última actualización (2026-07-03): **Desc. específico — scroll productos vinculados** — `CrearEditarReglaDescEspecialModal`: bloque productos con `overflow-hidden`; `.contenedor-tabla-gestion` `flex-1 min-h-0 overflow-y-auto` + `style={{ height: "auto" }}` (scrollbar visible; encabezado sticky).*
 
 *Última actualización (2026-07-03): **Desc. específico — descripción en grilla productos** — `CrearEditarReglaDescEspecialModal`: columna **DESCRIPCIÓN** con texto efectivo de lista precios (tienda → proveedor), no `cod_ext`. Resolución vía `resolverDescripcionesProductosDescEspecial` (`getDescripcionesListaPrecioPorCodExtAction`).*
 
 *Última actualización (2026-07-03): **Reglas Descuentos — tamaño fijo** — `AppModal` con `scrollBody={false}` y `min-h-[min(62vh,34.5rem)]`; área de tabla compartida `REGLAS_DESCUENTOS_TABLA_AREA_CLASS` (`h` + `min-h` `min(46.4vh,25.6rem)`) en GENERAL y POR PRODUCTO; vacío = mensaje `EmptyTableRow` dentro del mismo alto.*
+
+*Última actualización (2026-07-03): **Reglas Descuentos — filtros 4 columnas** — `ReglasDescuentosListaPrecioModal`: `FilaFiltrosDesplegables columnas={4}` (TIPO DESC., PROVEEDOR, MARCA, RUBRO reparten 25% c/u).*
+
+*Última actualización (2026-07-03): **Reglas Descuentos — columna ACCIONES unificada** — GENERAL y POR PRODUCTO comparten `REGLAS_DESCUENTOS_ACCIONES_COL_PCT` (**18%**), `tabla-bloque-secundario-head-divider` / `tabla-bloque-secundario-cell-divider` en cabecera y celdas de acciones; anchos en `descuentosListaPrecioReglasUi.ts` (`REGLAS_DESCUENTOS_GENERAL_COL_WIDTHS_PCT`, `REGLAS_DESC_ESPEC_COL_WIDTHS_PCT`).*
 
 *Última actualización (2026-07-03): **Reglas Descuentos — layout unificado** — `ReglasDescuentosListaPrecioModal`: fila superior `flex items-center` con pestañas **GENERAL** / **POR PRODUCTO** a la izquierda y botón **NUEVA REGLA** (`ml-auto`, `size="sm"`) a la derecha; abre el modal de alta según pestaña activa. **FilterBar** (TIPO DESC., PROVEEDOR, MARCA, RUBRO) siempre visible en ambas pestañas; en **POR PRODUCTO** el panel filtra por proveedor/marca/rubro (TIPO DESC. solo aplica a GENERAL). Footer solo **Cerrar**. `ReglasDescEspecificasListaPreciosPanel` sin botón propio de alta; recibe filtros y `solicitudCrear` desde el modal padre.*
 

@@ -44,6 +44,9 @@ import {
   labelCampoReglaDescuento,
   ordenarReglasDescuentoListaPrecio,
   tipoCampoReglaDescuento,
+  REGLAS_DESCUENTOS_ACCIONES_CELL_DIVIDER_CLASS,
+  REGLAS_DESCUENTOS_ACCIONES_HEAD_DIVIDER_CLASS,
+  REGLAS_DESCUENTOS_GENERAL_COL_WIDTHS_PCT,
 } from "@/lib/descuentosListaPrecioReglasUi";
 import type { CampoReglaDescuentoListaPrecioInput } from "@/lib/validations/descuentosListaPrecioReglas";
 import { fmtPorcentajeTabla } from "@/lib/format";
@@ -61,7 +64,7 @@ const CATALOGOS_VACIOS: CatalogosReglasDescuentosListaPrecio = {
 };
 
 /** Anchos de columna (suma 100 %): PROV · MARCA · RUBRO · CAMPO · DESC · ACC. */
-const COL_WIDTHS_PCT = [10, 22, 22, 18, 10, 18] as const;
+const COL_WIDTHS_PCT = REGLAS_DESCUENTOS_GENERAL_COL_WIDTHS_PCT;
 const COL_COUNT = COL_WIDTHS_PCT.length;
 
 const TH_DIVIDER_CLASS = "tabla-bloque-secundario-head-divider";
@@ -245,7 +248,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
 
             <FilterBar className="filtros-contenedor-tienda shrink-0 bg-card">
               <FilterRowSelection>
-                <FilaFiltrosDesplegables>
+                <FilaFiltrosDesplegables columnas={4}>
                   <FiltroIndividualContainer
                     className={FILTER_SELECT_WRAPPER_CLASS}
                     activo={Boolean(filtroCampo)}
@@ -378,7 +381,9 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                     <TableHead>RUBRO</TableHead>
                     <TableHead className={TH_DIVIDER_CLASS}>CAMPO</TableHead>
                     <TableHead className="text-right">DESC</TableHead>
-                    <TableHead className={cn("text-center", TH_DIVIDER_CLASS)}>ACCIONES</TableHead>
+                    <TableHead className={cn("text-center", REGLAS_DESCUENTOS_ACCIONES_HEAD_DIVIDER_CLASS)}>
+                      ACCIONES
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -432,7 +437,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                         <TableCell
                           className={cn(
                             "celda-datos celda-datos--accion-relleno-fila p-0",
-                            TD_DIVIDER_CLASS
+                            REGLAS_DESCUENTOS_ACCIONES_CELL_DIVIDER_CLASS
                           )}
                         >
                           <div

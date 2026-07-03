@@ -180,3 +180,33 @@ export function lineasCondicionReglaDescuento(regla: {
   }
   return lineas;
 }
+
+/** Ancho % columna ACCIONES compartida entre pestañas GENERAL y POR PRODUCTO (modal Reglas Descuentos). */
+export const REGLAS_DESCUENTOS_ACCIONES_COL_PCT = 18;
+
+export const REGLAS_DESCUENTOS_ACCIONES_HEAD_DIVIDER_CLASS =
+  "tabla-bloque-secundario-head-divider";
+
+export const REGLAS_DESCUENTOS_ACCIONES_CELL_DIVIDER_CLASS =
+  "tabla-bloque-secundario-cell-divider";
+
+/** Anchos % pestaña GENERAL (suma 100); última columna = ACCIONES. */
+export const REGLAS_DESCUENTOS_GENERAL_COL_WIDTHS_PCT = [
+  10,
+  22,
+  22,
+  18,
+  10,
+  REGLAS_DESCUENTOS_ACCIONES_COL_PCT,
+] as const;
+
+/** Anchos % pestaña POR PRODUCTO (suma 100); última columna = ACCIONES. */
+export const REGLAS_DESC_ESPEC_COL_WIDTHS_PCT = [
+  25,
+  9,
+  12,
+  12,
+  12,
+  12,
+  REGLAS_DESCUENTOS_ACCIONES_COL_PCT,
+] as const;

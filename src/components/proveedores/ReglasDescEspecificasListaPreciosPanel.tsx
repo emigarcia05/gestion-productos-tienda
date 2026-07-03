@@ -22,7 +22,12 @@ import {
 import CrearEditarReglaDescEspecialModal from "@/components/proveedores/CrearEditarReglaDescEspecialModal";
 import EliminarReglaDescEspecialModal from "@/components/proveedores/EliminarReglaDescEspecialModal";
 import { fmtPorcentajeTabla } from "@/lib/format";
-import { celdaCondicionReglaDescuento } from "@/lib/descuentosListaPrecioReglasUi";
+import {
+  celdaCondicionReglaDescuento,
+  REGLAS_DESC_ESPEC_COL_WIDTHS_PCT,
+  REGLAS_DESCUENTOS_ACCIONES_CELL_DIVIDER_CLASS,
+  REGLAS_DESCUENTOS_ACCIONES_HEAD_DIVIDER_CLASS,
+} from "@/lib/descuentosListaPrecioReglasUi";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -30,7 +35,7 @@ import {
 } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
-const COL_WIDTHS_PCT = [22, 8, 10, 10, 10, 10, 30] as const;
+const COL_WIDTHS_PCT = REGLAS_DESC_ESPEC_COL_WIDTHS_PCT;
 const COL_COUNT = COL_WIDTHS_PCT.length;
 
 interface Props {
@@ -153,7 +158,9 @@ export default function ReglasDescEspecificasListaPreciosPanel({
                 <TableHead>RUBRO</TableHead>
                 <TableHead className="text-right">VALOR</TableHead>
                 <TableHead className="text-center">PRODUCTOS</TableHead>
-                <TableHead className="text-center">ACCIONES</TableHead>
+                <TableHead className={cn("text-center", REGLAS_DESCUENTOS_ACCIONES_HEAD_DIVIDER_CLASS)}>
+                  ACCIONES
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -206,7 +213,12 @@ export default function ReglasDescEspecificasListaPreciosPanel({
                     <TableCell className="celda-datos text-center tabular-nums">
                       {regla.cantidadProductos}
                     </TableCell>
-                    <TableCell className="celda-datos celda-datos--accion-relleno-fila p-0">
+                    <TableCell
+                      className={cn(
+                        "celda-datos celda-datos--accion-relleno-fila p-0",
+                        REGLAS_DESCUENTOS_ACCIONES_CELL_DIVIDER_CLASS
+                      )}
+                    >
                       <div className={cn(TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS, "justify-center gap-0.5")}>
                         <Button
                           type="button"

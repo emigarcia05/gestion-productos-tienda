@@ -39,13 +39,25 @@ export function FilterRowSelection({ children, className }: { children: React.Re
 }
 
 /**
- * Fila de exactamente 5 columnas para filtros desplegables (regla unificada en toda la app).
- * Cada módulo pone de 1 a 5 Selects; los slots no usados quedan vacíos.
+ * Fila de filtros desplegables en grid uniforme (4 o 5 columnas).
+ * Cada módulo pone de 1 a N Selects; usar `columnas={4}` cuando hay exactamente 4 filtros.
  * Documentación: docs/COMPONENTES_ESTILOS.md
  */
-export function FilaFiltrosDesplegables({ children }: { children: React.ReactNode }) {
+export function FilaFiltrosDesplegables({
+  children,
+  columnas = 5,
+}: {
+  children: React.ReactNode;
+  /** Cantidad de columnas del grid (por defecto 5). */
+  columnas?: 4 | 5;
+}) {
   return (
-    <div className="fila-filtros-5 grid grid-cols-5 gap-3 w-full">
+    <div
+      className={cn(
+        "fila-filtros-desplegables grid gap-3 w-full",
+        columnas === 4 ? "fila-filtros-4 grid-cols-4" : "fila-filtros-5 grid-cols-5"
+      )}
+    >
       {children}
     </div>
   );

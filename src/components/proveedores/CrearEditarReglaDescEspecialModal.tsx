@@ -60,9 +60,17 @@ interface Props {
   onSuccess?: () => void;
 }
 
-const FORM_GRID_CLASS = "grid grid-cols-[1.35fr_minmax(0,1fr)] gap-x-4 gap-y-2 items-center";
+const FORM_GRID_CLASS = "grid grid-cols-[1.35fr_minmax(0,1fr)] gap-x-3 gap-y-2 items-center min-w-0";
+const FORM_COLUMNS_CLASS = "grid shrink-0 grid-cols-1 gap-x-6 sm:grid-cols-2";
 const LABEL_CLASS = "text-right font-medium text-sm";
 const SELECT_CLASS = "input-filtro-unificado w-full min-w-0";
+
+/** Modal alto: la sección productos reserva ≥50% del cuerpo útil. */
+const REGLA_DESC_ESPECIAL_MODAL_CLASS = "sm:max-w-[42rem] min-h-[min(85vh,38rem)]";
+const REGLA_DESC_ESPECIAL_BODY_CLASS =
+  "flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5";
+const REGLA_DESC_ESPECIAL_PRODUCTOS_CLASS =
+  "flex min-h-[50%] flex-1 flex-col gap-2 overflow-hidden rounded-md border border-border bg-muted/30 px-3 py-2";
 
 function ModalFormRow({
   id,
@@ -245,10 +253,14 @@ export default function CrearEditarReglaDescEspecialModal({
       <Dialog open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
         <AppModal
           title={titulo}
-          size="lg"
+          size="xl"
+          className={REGLA_DESC_ESPECIAL_MODAL_CLASS}
+          padding="sm"
           scrollBody={false}
-          bodyShellClassName="flex min-h-0 flex-1 items-stretch p-4"
-          bodyClassName="flex min-h-0 flex-1 flex-col overflow-hidden p-6"
+          bodyShellClassName="flex min-h-0 flex-1 items-stretch p-3 sm:p-4"
+          bodyClassName={REGLA_DESC_ESPECIAL_BODY_CLASS}
+          headerClassName="pt-4 pb-3"
+          footerClassName="py-3"
           actions={
             <>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
@@ -260,97 +272,104 @@ export default function CrearEditarReglaDescEspecialModal({
             </>
           }
         >
-          <div className="flex min-h-0 flex-1 flex-col gap-4">
-            <div className={cn(FORM_GRID_CLASS, "shrink-0 py-1")}>
-              <ModalFormRow id="nombre-regla-esp" label="NOMBRE">
-                <Input
-                  id="nombre-regla-esp"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value.toUpperCase())}
-                  className="border-primary w-full min-w-0 uppercase"
-                  placeholder="EJ. DESCUENTO POR FULLPALLET PACLIN"
-                />
-              </ModalFormRow>
+          <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
+            <div className={FORM_COLUMNS_CLASS}>
+              <div className={FORM_GRID_CLASS}>
+                <ModalFormRow id="nombre-regla-esp" label="NOMBRE">
+                  <Input
+                    id="nombre-regla-esp"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value.toUpperCase())}
+                    className="border-primary w-full min-w-0 uppercase"
+                    placeholder="EJ. DESCUENTO POR FULLPALLET PACLIN"
+                  />
+                </ModalFormRow>
 
-              <ModalFormRow id="valor-regla-esp" label="VALOR">
-                <PorcentajeCentInput
-                  id="valor-regla-esp"
-                  valueNormalized={valorNorm}
-                  onValueNormalizedChange={setValorNorm}
-                  placeholder="0,00%"
-                  className="border-primary w-full min-w-0"
-                />
-              </ModalFormRow>
+                <ModalFormRow id="valor-regla-esp" label="VALOR">
+                  <PorcentajeCentInput
+                    id="valor-regla-esp"
+                    valueNormalized={valorNorm}
+                    onValueNormalizedChange={setValorNorm}
+                    placeholder="0,00%"
+                    className="border-primary w-full min-w-0"
+                  />
+                </ModalFormRow>
+              </div>
 
-              <ModalFormRow id="proveedor-regla-esp" label="PROVEEDOR">
-                <Select
-                  value={idProveedor || "none"}
-                  onValueChange={(v) =>
-                    aplicarCambioFiltro(setIdProveedor, v === "none" ? "" : v, "proveedor")
-                  }
-                  disabled={!catalogos}
-                >
-                  <SelectTrigger id="proveedor-regla-esp" className={SELECT_CLASS}>
-                    <SelectValue placeholder="TODOS" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">TODOS</SelectItem>
-                    {(catalogos?.proveedores ?? []).map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.prefijo ? `[${p.prefijo}] ` : ""}
-                        {p.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </ModalFormRow>
+              <div className={FORM_GRID_CLASS}>
+                <ModalFormRow id="proveedor-regla-esp" label="PROVEEDOR">
+                  <Select
+                    value={idProveedor || "none"}
+                    onValueChange={(v) =>
+                      aplicarCambioFiltro(setIdProveedor, v === "none" ? "" : v, "proveedor")
+                    }
+                    disabled={!catalogos}
+                  >
+                    <SelectTrigger id="proveedor-regla-esp" className={SELECT_CLASS}>
+                      <SelectValue placeholder="TODOS" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">TODOS</SelectItem>
+                      {(catalogos?.proveedores ?? []).map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.prefijo ? `[${p.prefijo}] ` : ""}
+                          {p.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ModalFormRow>
 
-              <ModalFormRow id="marca-regla-esp" label="MARCA">
-                <Select
-                  value={idMarca || "none"}
-                  onValueChange={(v) =>
-                    aplicarCambioFiltro(setIdMarca, v === "none" ? "" : v, "marca")
-                  }
-                  disabled={!catalogos}
-                >
-                  <SelectTrigger id="marca-regla-esp" className={SELECT_CLASS}>
-                    <SelectValue placeholder="TODAS" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">TODAS</SelectItem>
-                    {(catalogos?.marcas ?? []).map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </ModalFormRow>
+                <ModalFormRow id="marca-regla-esp" label="MARCA">
+                  <Select
+                    value={idMarca || "none"}
+                    onValueChange={(v) =>
+                      aplicarCambioFiltro(setIdMarca, v === "none" ? "" : v, "marca")
+                    }
+                    disabled={!catalogos}
+                  >
+                    <SelectTrigger id="marca-regla-esp" className={SELECT_CLASS}>
+                      <SelectValue placeholder="TODAS" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">TODAS</SelectItem>
+                      {(catalogos?.marcas ?? []).map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ModalFormRow>
 
-              <ModalFormRow id="rubro-regla-esp" label="RUBRO">
-                <Select
-                  value={idRubro || "none"}
-                  onValueChange={(v) =>
-                    aplicarCambioFiltro(setIdRubro, v === "none" ? "" : v, "rubro")
-                  }
-                  disabled={!catalogos}
-                >
-                  <SelectTrigger id="rubro-regla-esp" className={SELECT_CLASS}>
-                    <SelectValue placeholder="TODOS" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">TODOS</SelectItem>
-                    {(catalogos?.rubros ?? []).map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </ModalFormRow>
+                <ModalFormRow id="rubro-regla-esp" label="RUBRO">
+                  <Select
+                    value={idRubro || "none"}
+                    onValueChange={(v) =>
+                      aplicarCambioFiltro(setIdRubro, v === "none" ? "" : v, "rubro")
+                    }
+                    disabled={!catalogos}
+                  >
+                    <SelectTrigger id="rubro-regla-esp" className={SELECT_CLASS}>
+                      <SelectValue placeholder="TODOS" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">TODOS</SelectItem>
+                      {(catalogos?.rubros ?? []).map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ModalFormRow>
+              </div>
             </div>
 
-            <div className="flex min-h-[min(52vh,28rem)] flex-1 flex-col gap-2 overflow-hidden rounded-md border border-border bg-muted/30 px-3 py-3">
+            <section
+              aria-label="Productos vinculados a la regla"
+              className={REGLA_DESC_ESPECIAL_PRODUCTOS_CLASS}
+            >
               <div className="flex shrink-0 items-center justify-between gap-2">
                 <p className="text-sm font-medium text-foreground">
                   Productos asociados ({productosVinculados.length})
@@ -412,7 +431,7 @@ export default function CrearEditarReglaDescEspecialModal({
                   </TableBody>
                 </Table>
               </div>
-            </div>
+            </section>
           </div>
         </AppModal>
       </Dialog>
