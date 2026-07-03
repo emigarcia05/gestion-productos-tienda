@@ -350,7 +350,7 @@ export default function CrearEditarReglaDescEspecialModal({
               </ModalFormRow>
             </div>
 
-            <div className="flex min-h-[min(52vh,28rem)] flex-1 flex-col gap-2 rounded-md border border-border bg-muted/30 px-3 py-3">
+            <div className="flex min-h-[min(52vh,28rem)] flex-1 flex-col gap-2 overflow-hidden rounded-md border border-border bg-muted/30 px-3 py-3">
               <div className="flex shrink-0 items-center justify-between gap-2">
                 <p className="text-sm font-medium text-foreground">
                   Productos asociados ({productosVinculados.length})
@@ -361,7 +361,10 @@ export default function CrearEditarReglaDescEspecialModal({
                 </Button>
               </div>
 
-              <div className="contenedor-tabla-gestion no-scroll-x min-h-0 flex-1">
+              <div
+                className="contenedor-tabla-gestion no-scroll-x min-h-0 flex-1 overflow-y-auto"
+                style={{ height: "auto" }}
+              >
                 <Table variant="compact" scrollX={false} className="tabla-vinculos-modal w-full min-w-0">
                   <colgroup>
                     <col style={{ width: "88%" }} />

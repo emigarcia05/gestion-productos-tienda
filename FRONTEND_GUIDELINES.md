@@ -1332,6 +1332,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-03): **Desc. específico — filtros de categoría** — `CrearEditarReglaDescEspecialModal`: selects **PROVEEDOR** / **MARCA** / **RUBRO** (catálogo `listarCatalogosReglasDescuentosAction`; al menos uno obligatorio). Al cambiar un filtro se limpian productos vinculados. `ReglaDescEspecialAgregarProductosModal`: solo búsqueda por descripción; lista precios filtrada por los tres ejes de la regla. Grilla `ReglasDescEspecificasListaPreciosPanel`: columnas PROV. / MARCA / RUBRO. Ver BACKEND_GUIDELINES §1.8d-b.*
 
+*Última actualización (2026-07-03): **Desc. específico — scroll productos vinculados** — `CrearEditarReglaDescEspecialModal`: bloque productos con `overflow-hidden`; `.contenedor-tabla-gestion` `flex-1 min-h-0 overflow-y-auto` + `style={{ height: "auto" }}` (scrollbar visible; encabezado sticky).*
+
 *Última actualización (2026-07-03): **Desc. específico — descripción en grilla productos** — `CrearEditarReglaDescEspecialModal`: columna **DESCRIPCIÓN** con texto efectivo de lista precios (tienda → proveedor), no `cod_ext`. Resolución vía `resolverDescripcionesProductosDescEspecial` (`getDescripcionesListaPrecioPorCodExtAction`).*
 
 *Última actualización (2026-07-03): **Reglas Descuentos — tamaño fijo** — `AppModal` con `scrollBody={false}` y `min-h-[min(62vh,34.5rem)]`; área de tabla compartida `REGLAS_DESCUENTOS_TABLA_AREA_CLASS` (`h` + `min-h` `min(46.4vh,25.6rem)`) en GENERAL y POR PRODUCTO; vacío = mensaje `EmptyTableRow` dentro del mismo alto.*
