@@ -30,7 +30,6 @@ import {
   actualizarReglaDescEspecialAction,
   type ReglaDescEspecialDetalle,
 } from "@/actions/descEspecialReglas";
-import { getListaPreciosConOpcionesAction } from "@/actions/listaPrecios";
 import {
   listarCatalogosReglasDescuentosAction,
   type CatalogosReglasDescuentosListaPrecio,
@@ -39,10 +38,11 @@ import {
   parsePorcentajeCentNormalized,
   porcentajeCentFromNumber,
 } from "@/lib/porcentajeCentMask";
+import { resolverDescripcionesProductosDescEspecial } from "@/lib/descEspecialProductosUi";
 import ReglaDescEspecialAgregarProductosModal, {
   type FiltrosReglaDescEspecialProductos,
-  type ProductoVinculadoReglaDescEspecial,
 } from "@/components/proveedores/ReglaDescEspecialAgregarProductosModal";
+import type { ProductoVinculadoReglaDescEspecial } from "@/lib/descEspecialProductosUi";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -81,45 +81,6 @@ function ModalFormRow({
       <div className="min-w-0">{children}</div>
     </>
   );
-}
-
-async function resolverDescripcionesProductos(
-  codigosExt: string[],
-  filtros: FiltrosReglaDescEspecialProductos
-): Promise<ProductoVinculadoReglaDescEspecial[]> {
-  if (codigosExt.length === 0) return [];
-
-  const descripcionPorCod = new Map<string, string>();
-
-  const resLista = await getListaPreciosConOpcionesAction({
-    proveedorId: filtros.proveedorId,
-    marcaNombre: filtros.marcaNombre,
-    rubroNombre: filtros.rubroNombre,
-    pagina: 1,
-  });
-
-  if (resLista.filas) {
-    for (const fila of resLista.filas) {
-      if (codigosExt.includes(fila.codExt)) {
-        descripcionPorCod.set(fila.codExt, fila.descripcion);
-      }
-    }
-  }
-
-  const faltantes = codigosExt.filter((c) => !descripcionPorCod.has(c));
-  for (const codExt of faltantes) {
-    const res = await getListaPreciosConOpcionesAction({
-      busqueda: codExt,
-      pagina: 1,
-    });
-    const fila = res.filas?.find((f) => f.codExt === codExt);
-    if (fila) descripcionPorCod.set(codExt, fila.descripcion);
-  }
-
-  return codigosExt.map((codExt) => ({
-    codExt,
-    descripcion: descripcionPorCod.get(codExt) ?? codExt,
-  }));
 }
 
 export default function CrearEditarReglaDescEspecialModal({
@@ -170,12 +131,7 @@ export default function CrearEditarReglaDescEspecialModal({
       setIdRubro(regla.idRubro ?? "");
       setProductosVinculados([]);
       void (async () => {
-        const filtros: FiltrosReglaDescEspecialProductos = {
-          proveedorId: regla.idProveedor ?? undefined,
-          marcaNombre: regla.marcaNombre ?? undefined,
-          rubroNombre: regla.rubroNombre ?? undefined,
-        };
-        const productos = await resolverDescripcionesProductos(regla.codigosExt, filtros);
+        const productos = await resolverDescripcionesProductosDescEspecial(regla.codigosExt);
         setProductosVinculados(productos);
       })();
       return;

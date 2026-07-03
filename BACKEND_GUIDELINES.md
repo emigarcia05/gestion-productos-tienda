@@ -453,6 +453,7 @@ interface ReglaDescuentoListaPrecio {
 - **Actions:** `@/actions/descEspecialReglas.ts` — gate `PERMISOS.listaPrecios.acciones.gestionarReglasDescuentos` + `esEditor()`.
 - **Validación:** `@/lib/validations/descEspecialReglas.ts` — al guardar, productos vinculados deben coincidir con los filtros de la regla (`validarProductosCoincidenFiltros` en servicio).
 - **Lecturas descuentos activos:** `enriquecerFilasConDescuentosActivos` agrega ítem `campo: "desc_especial"` con `reglaEspecifica: { id, nombre }` (no usa motor dimensional).
+- **Descripciones en UI reglas:** `getDescripcionesListaPrecioPorCodExt` (`listaPrecios.service.ts`) + `getDescripcionesListaPrecioPorCodExtAction` — lookup directo por `cod_ext` (sin paginación ni filtro `matchByMultiTerm`) para la grilla de productos vinculados en modales desc. específico.
 - **Comp. Categorías — COSTO:** `mapDatosCostoComparacion` en `categoriasComparacion.service.ts` incluye `descEspecial`; `calcCostoComparacion` lo suma al total de descuentos junto con `dto_extra_comparacion`.
 
 ### 1.8e Cotización USD única (`global_cotizacion_usd`)

@@ -5,7 +5,11 @@ import ModalTablaConFiltros, { type ColumnaModalTabla } from "@/components/share
 import { FiltroIndividualContainer } from "@/components/FilterBar";
 import { Input } from "@/components/ui/input";
 import { getListaPreciosConOpcionesAction } from "@/actions/listaPrecios";
+import { resolverDescripcionesProductosDescEspecial } from "@/lib/descEspecialProductosUi";
+import type { ProductoVinculadoReglaDescEspecial } from "@/lib/descEspecialProductosUi";
 import type { FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
+
+export type { ProductoVinculadoReglaDescEspecial } from "@/lib/descEspecialProductosUi";
 
 export interface FiltrosReglaDescEspecialProductos {
   proveedorId?: string;
@@ -13,17 +17,12 @@ export interface FiltrosReglaDescEspecialProductos {
   rubroNombre?: string;
 }
 
-export interface ProductoVinculadoReglaDescEspecial {
-  codExt: string;
-  descripcion: string;
-}
-
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   codigosSeleccionados: string[];
   filtros: FiltrosReglaDescEspecialProductos;
-  onConfirm: (productos: ProductoVinculadoReglaDescEspecial[]) => void;
+  onConfirm: (productos: ProductoVinculadoReglaDescEspecial[]) => void | Promise<void>;
 }
 
 type Row = Pick<FilaListaPrecioParaCliente, "codExt" | "descripcion" | "proveedor">;
@@ -60,6 +59,7 @@ export default function ReglaDescEspecialAgregarProductosModal({
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rowsCacheRef = useRef(new Map<string, Row>());
 
   const filtrosKey = `${filtros.proveedorId ?? ""}|${filtros.marcaNombre ?? ""}|${filtros.rubroNombre ?? ""}`;
 
@@ -68,6 +68,7 @@ export default function ReglaDescEspecialAgregarProductosModal({
     queueMicrotask(() => {
       setQ("");
       setRows([]);
+      rowsCacheRef.current.clear();
     });
   }, [open, filtrosKey]);
 
@@ -91,15 +92,17 @@ export default function ReglaDescEspecialAgregarProductosModal({
         return;
       }
       const yaSeleccionados = new Set(codigosSeleccionados);
-      setRows(
-        res.filas
-          .filter((f) => !yaSeleccionados.has(f.codExt))
-          .map((f) => ({
-            codExt: f.codExt,
-            descripcion: f.descripcion,
-            proveedor: f.proveedor,
-          }))
-      );
+      const filas = res.filas
+        .filter((f) => !yaSeleccionados.has(f.codExt))
+        .map((f) => ({
+          codExt: f.codExt,
+          descripcion: f.descripcion,
+          proveedor: f.proveedor,
+        }));
+      for (const fila of filas) {
+        rowsCacheRef.current.set(fila.codExt, fila);
+      }
+      setRows(filas);
     }, 300);
 
     return () => {
@@ -121,12 +124,9 @@ export default function ReglaDescEspecialAgregarProductosModal({
       tableColumnWidthsPct={[5, 18, 12, 65]}
       emptyMessage="No hay productos que coincidan con los filtros de la regla."
       confirmLabel={(count) => `Agregar ${count} Producto${count !== 1 ? "s" : ""}`}
-      onConfirm={(ids) => {
-        const nuevos = ids.map((id) => {
-          const row = rows.find((r) => r.codExt === id);
-          return { codExt: id, descripcion: row?.descripcion ?? id };
-        });
-        onConfirm(nuevos);
+      onConfirm={async (ids) => {
+        const productos = await resolverDescripcionesProductosDescEspecial(ids);
+        await onConfirm(productos);
       }}
       filterContent={
         <FiltroIndividualContainer

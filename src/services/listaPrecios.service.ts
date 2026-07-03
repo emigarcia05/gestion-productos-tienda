@@ -284,6 +284,30 @@ export async function listarListaPreciosFiltradaParaExport(
   return filas;
 }
 
+/** Descripciones efectivas por `cod_ext` (consulta directa, sin paginación ni filtro por texto). */
+export async function getDescripcionesListaPrecioPorCodExt(
+  codigosExt: string[]
+): Promise<{ codExt: string; descripcion: string }[]> {
+  const unicos = [...new Set(codigosExt.map((c) => c.trim()).filter(Boolean))];
+  if (unicos.length === 0) return [];
+
+  const filasRaw = await prisma.listaPrecioProveedor.findMany({
+    where: { codExt: { in: unicos } },
+    include: listaPrecioParaClienteInclude,
+  });
+
+  const descripcionPorCod = new Map<string, string>();
+  for (const fila of filasRaw) {
+    const mapped = mapListaPrecioProveedorParaCliente(fila);
+    descripcionPorCod.set(mapped.codExt, mapped.descripcion);
+  }
+
+  return unicos.map((codExt) => ({
+    codExt,
+    descripcion: descripcionPorCod.get(codExt) ?? codExt,
+  }));
+}
+
 /** Proveedores con al menos un ítem que cumple (marca, rubro, busqueda, habilitado, vinculado). Para filtros dinámicos (ver FILTROS_DINAMICOS.md). */
 export async function getProveedoresDisponiblesListaPrecios(
   marcaNombre: string | undefined,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ interface Props {
   filtroRubroId: string;
   /** Incremento desde el padre para abrir el modal de alta. */
   solicitudCrear?: number;
+  tablaClassName: string;
 }
 
 export default function ReglasDescEspecificasListaPreciosPanel({
@@ -48,6 +49,7 @@ export default function ReglasDescEspecificasListaPreciosPanel({
   filtroMarcaId,
   filtroRubroId,
   solicitudCrear = 0,
+  tablaClassName,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [reglas, setReglas] = useState<ReglaDescEspecialListaPrecio[]>([]);
@@ -80,12 +82,15 @@ export default function ReglasDescEspecificasListaPreciosPanel({
     setCrearEditarOpen(true);
   }, []);
 
+  const solicitudCrearPrev = useRef(solicitudCrear);
+
   useEffect(() => {
     void cargarDatos();
   }, [cargarDatos]);
 
   useEffect(() => {
-    if (solicitudCrear <= 0) return;
+    if (solicitudCrear === solicitudCrearPrev.current) return;
+    solicitudCrearPrev.current = solicitudCrear;
     abrirCrear();
   }, [solicitudCrear, abrirCrear]);
 
@@ -133,7 +138,7 @@ export default function ReglasDescEspecificasListaPreciosPanel({
 
   return (
     <>
-      <div className="contenedor-tabla-gestion min-h-0 max-h-[min(46.4vh,25.6rem)] flex-1">
+      <div className={tablaClassName}>
           <Table variant="compact" className="tabla-vinculos-modal w-full min-w-0">
             <colgroup>
               {COL_WIDTHS_PCT.map((pct, i) => (

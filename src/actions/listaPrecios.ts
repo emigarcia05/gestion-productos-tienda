@@ -10,6 +10,7 @@ import {
   getProveedoresDisponiblesListaPrecios,
   getMarcasDisponiblesListaPrecios,
   getRubrosDisponiblesListaPrecios,
+  getDescripcionesListaPrecioPorCodExt,
   listarListaPreciosFiltradaParaExport,
   type FilaListaPrecioParaCliente,
 } from "@/services/listaPrecios.service";
@@ -101,6 +102,29 @@ export async function getListaPreciosConOpcionesAction(
   } catch (e) {
     console.error("[getListaPreciosConOpcionesAction]", e);
     return listaPreciosConOpcionesVacio;
+  }
+}
+
+/** Descripciones de ítems por `cod_ext` (p. ej. reglas desc. específico). */
+export async function getDescripcionesListaPrecioPorCodExtAction(
+  raw: unknown
+): Promise<ActionResult<{ productos: { codExt: string; descripcion: string }[] }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.proveedores.listaPrecios)) {
+    return { ok: false, error: "Sin permisos para consultar la lista de precios." };
+  }
+
+  const parsed = listaPreciosCodExtListSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Códigos de producto inválidos." };
+  }
+
+  try {
+    const productos = await getDescripcionesListaPrecioPorCodExt(parsed.data);
+    return { ok: true, data: { productos } };
+  } catch (e) {
+    console.error("[getDescripcionesListaPrecioPorCodExtAction]", e);
+    return { ok: false, error: "No se pudieron obtener las descripciones." };
   }
 }
 

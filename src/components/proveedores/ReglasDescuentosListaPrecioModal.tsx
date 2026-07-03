@@ -67,6 +67,10 @@ const COL_COUNT = COL_WIDTHS_PCT.length;
 const TH_DIVIDER_CLASS = "tabla-bloque-secundario-head-divider";
 const TD_DIVIDER_CLASS = "tabla-bloque-secundario-cell-divider";
 
+/** Alto fijo del área de tabla: mismo tamaño en GENERAL y POR PRODUCTO (vacía o con datos). */
+export const REGLAS_DESCUENTOS_TABLA_AREA_CLASS =
+  "contenedor-tabla-gestion h-[min(46.4vh,25.6rem)] min-h-[min(46.4vh,25.6rem)] shrink-0";
+
 interface Props {
   onSuccess?: () => void;
 }
@@ -131,6 +135,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
     if (!open) return;
     limpiarFiltros();
     setVista("dimension");
+    setSolicitudCrearEspec(0);
     void cargarDatos();
   }, [open, cargarDatos, limpiarFiltros]);
 
@@ -194,11 +199,11 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
         <AppModal
           title="Reglas Descuentos"
           size="xl"
-          className="sm:max-w-[57.6rem]"
+          className="sm:max-w-[57.6rem] min-h-[min(62vh,34.5rem)]"
           padding="sm"
           bodyShellClassName="p-2 sm:p-3"
-          bodyClassName="flex min-h-0 flex-col"
-          scrollBody
+          bodyClassName="flex flex-col"
+          scrollBody={false}
           hideBodyScrollbars
           actions={
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
@@ -206,7 +211,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
             </Button>
           }
         >
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
+          <div className="flex flex-col gap-3">
             <div className="flex shrink-0 items-center gap-2">
               <div className="flex gap-2">
                 <Button
@@ -356,9 +361,10 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                 filtroMarcaId={filtroMarcaId}
                 filtroRubroId={filtroRubroId}
                 solicitudCrear={solicitudCrearEspec}
+                tablaClassName={REGLAS_DESCUENTOS_TABLA_AREA_CLASS}
               />
             ) : (
-            <div className="contenedor-tabla-gestion min-h-0 max-h-[min(46.4vh,25.6rem)] flex-1">
+            <div className={REGLAS_DESCUENTOS_TABLA_AREA_CLASS}>
               <Table variant="compact" className="tabla-vinculos-modal w-full min-w-0">
                 <colgroup>
                   {COL_WIDTHS_PCT.map((pct, i) => (
