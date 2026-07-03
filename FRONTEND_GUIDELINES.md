@@ -1332,7 +1332,9 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-03): **Desc. específico — filtros de categoría** — `CrearEditarReglaDescEspecialModal`: selects **PROVEEDOR** / **MARCA** / **RUBRO** (catálogo `listarCatalogosReglasDescuentosAction`; al menos uno obligatorio). Al cambiar un filtro se limpian productos vinculados. `ReglaDescEspecialAgregarProductosModal`: solo búsqueda por descripción; lista precios filtrada por los tres ejes de la regla. Grilla `ReglasDescEspecificasListaPreciosPanel`: columnas PROV. / MARCA / RUBRO. Ver BACKEND_GUIDELINES §1.8d-b.*
 
-*Última actualización (2026-07-03): **Desc. específico — formulario dos columnas** — `CrearEditarReglaDescEspecialModal`: formulario en `grid sm:grid-cols-2` — columna izquierda **NOMBRE** / **VALOR**; derecha **PROVEEDOR** / **MARCA** / **RUBRO** (cada columna mantiene grid label|control).*
+*Última actualización (2026-07-03): **Desc. específico — formulario 4 columnas** — `CrearEditarReglaDescEspecialModal`: grid `grid-cols-4` — fila 1 **DESCRIPCIÓN** (col-span-2) + input (col-span-2); fila 2 **PROVEEDOR** | input | **RUBRO** | input; fila 3 **MARCA** | input | **VALOR** | input.*
+
+*Última actualización (2026-07-03): **Desc. específico — formulario dos columnas** — (reemplazado por grid 4 columnas arriba).*
 
 *Última actualización (2026-07-03): **Desc. específico — layout modal alta** — `CrearEditarReglaDescEspecialModal`: `AppModal` `size="xl"` + `min-h-[min(85vh,38rem)]`; bloque productos `min-h-[50%] flex-1` (tabla ≥ mitad del cuerpo); formulario compacto arriba (`shrink-0`).*
 

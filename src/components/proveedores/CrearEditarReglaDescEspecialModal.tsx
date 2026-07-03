@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
@@ -60,10 +60,11 @@ interface Props {
   onSuccess?: () => void;
 }
 
-const FORM_GRID_CLASS = "grid grid-cols-[1.35fr_minmax(0,1fr)] gap-x-3 gap-y-2 items-center min-w-0";
-const FORM_COLUMNS_CLASS = "grid shrink-0 grid-cols-1 gap-x-6 sm:grid-cols-2";
+const FORM_GRID_4_COL_CLASS =
+  "grid shrink-0 grid-cols-4 gap-x-3 gap-y-2 items-center min-w-0";
 const LABEL_CLASS = "text-right font-medium text-sm";
 const SELECT_CLASS = "input-filtro-unificado w-full min-w-0";
+const FORM_CONTROL_CLASS = "min-w-0";
 
 /** Modal alto: la sección productos reserva ≥50% del cuerpo útil. */
 const REGLA_DESC_ESPECIAL_MODAL_CLASS = "sm:max-w-[42rem] min-h-[min(85vh,38rem)]";
@@ -71,25 +72,6 @@ const REGLA_DESC_ESPECIAL_BODY_CLASS =
   "flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5";
 const REGLA_DESC_ESPECIAL_PRODUCTOS_CLASS =
   "flex min-h-[50%] flex-1 flex-col gap-2 overflow-hidden rounded-md border border-border bg-muted/30 px-3 py-2";
-
-function ModalFormRow({
-  id,
-  label,
-  children,
-}: {
-  id: string;
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <>
-      <Label htmlFor={id} className={LABEL_CLASS}>
-        {label}
-      </Label>
-      <div className="min-w-0">{children}</div>
-    </>
-  );
-}
 
 export default function CrearEditarReglaDescEspecialModal({
   open,
@@ -273,96 +255,107 @@ export default function CrearEditarReglaDescEspecialModal({
           }
         >
           <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
-            <div className={FORM_COLUMNS_CLASS}>
-              <div className={FORM_GRID_CLASS}>
-                <ModalFormRow id="nombre-regla-esp" label="NOMBRE">
-                  <Input
-                    id="nombre-regla-esp"
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value.toUpperCase())}
-                    className="border-primary w-full min-w-0 uppercase"
-                    placeholder="EJ. DESCUENTO POR FULLPALLET PACLIN"
-                  />
-                </ModalFormRow>
-
-                <ModalFormRow id="valor-regla-esp" label="VALOR">
-                  <PorcentajeCentInput
-                    id="valor-regla-esp"
-                    valueNormalized={valorNorm}
-                    onValueNormalizedChange={setValorNorm}
-                    placeholder="0,00%"
-                    className="border-primary w-full min-w-0"
-                  />
-                </ModalFormRow>
+            <div className={FORM_GRID_4_COL_CLASS}>
+              <Label htmlFor="nombre-regla-esp" className={cn(LABEL_CLASS, "col-span-2")}>
+                DESCRIPCIÓN
+              </Label>
+              <div className={cn(FORM_CONTROL_CLASS, "col-span-2")}>
+                <Input
+                  id="nombre-regla-esp"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value.toUpperCase())}
+                  className="border-primary w-full min-w-0 uppercase"
+                  placeholder="EJ. DESCUENTO POR FULLPALLET PACLIN"
+                />
               </div>
 
-              <div className={FORM_GRID_CLASS}>
-                <ModalFormRow id="proveedor-regla-esp" label="PROVEEDOR">
-                  <Select
-                    value={idProveedor || "none"}
-                    onValueChange={(v) =>
-                      aplicarCambioFiltro(setIdProveedor, v === "none" ? "" : v, "proveedor")
-                    }
-                    disabled={!catalogos}
-                  >
-                    <SelectTrigger id="proveedor-regla-esp" className={SELECT_CLASS}>
-                      <SelectValue placeholder="TODOS" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">TODOS</SelectItem>
-                      {(catalogos?.proveedores ?? []).map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.prefijo ? `[${p.prefijo}] ` : ""}
-                          {p.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </ModalFormRow>
+              <Label htmlFor="proveedor-regla-esp" className={LABEL_CLASS}>
+                PROVEEDOR
+              </Label>
+              <div className={FORM_CONTROL_CLASS}>
+                <Select
+                  value={idProveedor || "none"}
+                  onValueChange={(v) =>
+                    aplicarCambioFiltro(setIdProveedor, v === "none" ? "" : v, "proveedor")
+                  }
+                  disabled={!catalogos}
+                >
+                  <SelectTrigger id="proveedor-regla-esp" className={SELECT_CLASS}>
+                    <SelectValue placeholder="TODOS" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">TODOS</SelectItem>
+                    {(catalogos?.proveedores ?? []).map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.prefijo ? `[${p.prefijo}] ` : ""}
+                        {p.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <ModalFormRow id="marca-regla-esp" label="MARCA">
-                  <Select
-                    value={idMarca || "none"}
-                    onValueChange={(v) =>
-                      aplicarCambioFiltro(setIdMarca, v === "none" ? "" : v, "marca")
-                    }
-                    disabled={!catalogos}
-                  >
-                    <SelectTrigger id="marca-regla-esp" className={SELECT_CLASS}>
-                      <SelectValue placeholder="TODAS" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">TODAS</SelectItem>
-                      {(catalogos?.marcas ?? []).map((m) => (
-                        <SelectItem key={m.id} value={m.id}>
-                          {m.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </ModalFormRow>
+              <Label htmlFor="rubro-regla-esp" className={LABEL_CLASS}>
+                RUBRO
+              </Label>
+              <div className={FORM_CONTROL_CLASS}>
+                <Select
+                  value={idRubro || "none"}
+                  onValueChange={(v) =>
+                    aplicarCambioFiltro(setIdRubro, v === "none" ? "" : v, "rubro")
+                  }
+                  disabled={!catalogos}
+                >
+                  <SelectTrigger id="rubro-regla-esp" className={SELECT_CLASS}>
+                    <SelectValue placeholder="TODOS" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">TODOS</SelectItem>
+                    {(catalogos?.rubros ?? []).map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <ModalFormRow id="rubro-regla-esp" label="RUBRO">
-                  <Select
-                    value={idRubro || "none"}
-                    onValueChange={(v) =>
-                      aplicarCambioFiltro(setIdRubro, v === "none" ? "" : v, "rubro")
-                    }
-                    disabled={!catalogos}
-                  >
-                    <SelectTrigger id="rubro-regla-esp" className={SELECT_CLASS}>
-                      <SelectValue placeholder="TODOS" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">TODOS</SelectItem>
-                      {(catalogos?.rubros ?? []).map((r) => (
-                        <SelectItem key={r.id} value={r.id}>
-                          {r.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </ModalFormRow>
+              <Label htmlFor="marca-regla-esp" className={LABEL_CLASS}>
+                MARCA
+              </Label>
+              <div className={FORM_CONTROL_CLASS}>
+                <Select
+                  value={idMarca || "none"}
+                  onValueChange={(v) =>
+                    aplicarCambioFiltro(setIdMarca, v === "none" ? "" : v, "marca")
+                  }
+                  disabled={!catalogos}
+                >
+                  <SelectTrigger id="marca-regla-esp" className={SELECT_CLASS}>
+                    <SelectValue placeholder="TODAS" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">TODAS</SelectItem>
+                    {(catalogos?.marcas ?? []).map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Label htmlFor="valor-regla-esp" className={LABEL_CLASS}>
+                VALOR
+              </Label>
+              <div className={FORM_CONTROL_CLASS}>
+                <PorcentajeCentInput
+                  id="valor-regla-esp"
+                  valueNormalized={valorNorm}
+                  onValueNormalizedChange={setValorNorm}
+                  placeholder="0,00%"
+                  className="border-primary w-full min-w-0"
+                />
               </div>
             </div>
 
