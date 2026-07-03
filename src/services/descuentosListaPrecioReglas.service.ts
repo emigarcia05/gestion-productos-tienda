@@ -8,19 +8,19 @@ import type {
   CampoReglaDescuentoListaPrecioInput,
   CrearReglaDescuentoListaPrecioInput,
 } from "@/lib/validations/descuentosListaPrecioReglas";
+import {
+  type CampoDescuentoActivoListaPrecio,
+  type DescuentosMaterializadosItem,
+} from "@/lib/descuentosListaPrecioReglasConstants";
 import type { ServiceResult } from "@/types/service.types";
 
 /** Re-export para handoff UI (BACKEND_GUIDELINES § Reglas descuentos lista precios). */
 export type { CampoReglaDescuentoListaPrecioInput as CampoReglaDescuentoListaPrecio };
-
-export interface DescuentosMaterializadosItem {
-  dtoProveedor: number;
-  dtoMarca: number;
-  dtoRubro: number;
-  dtoCantidad: number;
-  dtoFinanciero: number;
-  cxTransporte: number;
-}
+export {
+  CAMPO_DESC_ESPECIAL,
+  type CampoDescuentoActivoListaPrecio,
+  type DescuentosMaterializadosItem,
+} from "@/lib/descuentosListaPrecioReglasConstants";
 
 export interface ItemParaResolverDescuentos {
   idProveedor: string;
@@ -192,13 +192,6 @@ export interface ReglaDescuentoAplicadaResumen {
   rubroNombre: string | null;
   especificidad: number;
 }
-
-/** Campo virtual de descuento activo (no está en enum Prisma de reglas dimensionales). */
-export const CAMPO_DESC_ESPECIAL = "desc_especial" as const;
-
-export type CampoDescuentoActivoListaPrecio =
-  | CampoReglaDescuentoListaPrecioInput
-  | typeof CAMPO_DESC_ESPECIAL;
 
 export interface ReglaDescuentoEspecificaResumen {
   id: string;

@@ -1,15 +1,15 @@
 import type { CampoReglaDescuentoListaPrecioInput } from "@/lib/validations/descuentosListaPrecioReglas";
-import { CAMPO_DESC_ESPECIAL } from "@/services/descuentosListaPrecioReglas.service";
+import {
+  CAMPO_DESC_ESPECIAL,
+  type DescuentosMaterializadosItem,
+} from "@/lib/descuentosListaPrecioReglasConstants";
 
 export const CAMPOS_REGLA_DESCUENTO_OPCIONES: {
   value: CampoReglaDescuentoListaPrecioInput;
   label: string;
   etiquetaCorta: string;
   tipo: "descuento" | "costo";
-  propiedadFila: keyof Pick<
-    import("@/services/descuentosListaPrecioReglas.service").DescuentosMaterializadosItem,
-    "dtoProveedor" | "dtoMarca" | "dtoRubro" | "dtoCantidad" | "dtoFinanciero" | "cxTransporte"
-  >;
+  propiedadFila: keyof DescuentosMaterializadosItem;
 }[] = [
   {
     value: "dto_proveedor",

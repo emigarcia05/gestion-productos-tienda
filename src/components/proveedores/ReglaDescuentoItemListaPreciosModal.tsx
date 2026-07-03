@@ -5,8 +5,8 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { fmtPorcentajeTabla } from "@/lib/format";
 import { labelCampoReglaDescuento } from "@/lib/descuentosListaPrecioReglasUi";
+import { CAMPO_DESC_ESPECIAL } from "@/lib/descuentosListaPrecioReglasConstants";
 import type { DescuentoActivoListaPrecio } from "@/services/listaPrecios.service";
-import { CAMPO_DESC_ESPECIAL } from "@/services/descuentosListaPrecioReglas.service";
 
 interface Props {
   open: boolean;
