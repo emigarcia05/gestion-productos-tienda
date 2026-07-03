@@ -344,7 +344,20 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   `base = px_lista_proveedor × (cotizacion_dolar si px_dolares, sino 1)`  
   `dtoTotal = dto_proveedor + dto_marca + dto_rubro + dto_cantidad + dto_financiero + dto_extra_comparacion` (cap 0–100)  
   `costo = base × (1 − dtoTotal/100) × (1 + cx_transporte/100)` (redondeo 4 dec.)
-- **`dto_extra_comparacion`** y **`dif_px_ref_manual`** se persisten en **`prod_comp_cat`** (`ComparacionItem`: `dto_extra` 0–99 o `null`, `dif_px_ref_manual` entero con signo o `null`), **no** en `prod_precios_provee`. Una fila por `cod_ext`; se borra si ambos campos quedan `null`. Actions: **`actualizarDtoExtraComparacionAction`**, **`actualizarDifPxRefManualComparacionAction`**; servicio: **`getProductosPorPresentacion`** devuelve `dtoExtraComparacion`, `difPxRefManualComparacion` y `datosCosto` para recálculo en cliente. Migración unificación: **`20260702120000_prod_comp_item_unify_ajustes`** (reemplaza `prod_comp_dto_extra` + `prod_comp_dif_px_ref_manual`; renombra catálogo maestro **`prod_comp_cat` → `prod_comp_categorias`**).
+- **`dto_extra_comparacion`** y **`dif_px_ref_manual`** se persisten en **`prod_comp_cat`** (`ComparacionItem`: `dto_extra` 0–99 o `null`, `dif_px_ref_manual` entero con signo o `null`), **no** en `prod_precios_provee`. Una fila por `cod_ext`; se borra si ambos campos quedan `null`. Actions: **`actualizarDtoExtraComparacionAction`**, **`actualizarDifPxRefManualComparacionAction`**; servicio: **`getProductosPorPresentacion`** devuelve `dtoExtraComparacion`, `difPxRefManualComparacion` y `datosCosto` para recálculo en cliente. Migración unificación: **`20260702120000_prod_comp_item_unify_ajustes`** (reemplaza `prod_comp_dto_extra` + `prod_comp_dif_px_ref_manual`; renombra catálogo maestro **`prod_comp_cat` → `prod_comp_categorias`**). Respaldo idempotente si la tabla falta en prod: **`20260703140000_ensure_prod_comp_categorias`**.
+
+**Troubleshooting P2021 (`prod_comp_categorias` no existe):** el código Prisma espera **`prod_comp_categorias`** pero Neon prod no aplicó la unificación. Verificar en Vercel que **`DIRECT_URL`** (conexión directa Neon, no pooler) esté definida — `prisma migrate deploy` en build la usa vía `prisma.config.ts`. Diagnóstico SQL:
+
+```sql
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN ('prod_comp_categorias', 'prod_comp_cat', 'comparacion_categorias', 'categorias_comparacion');
+SELECT migration_name, finished_at FROM "_prisma_migrations"
+WHERE migration_name LIKE '20260702%' OR migration_name LIKE '20260703%'
+ORDER BY finished_at DESC;
+```
+
+Si **`20260702120000`** está pendiente: redeploy (build ejecuta `migrate deploy`). Si figura **applied** pero falta la tabla (p. ej. `migrate resolve --applied` sin SQL): aplicar manualmente el contenido de **`20260703140000_ensure_prod_comp_categorias`** en Neon y redeploy, o `npx prisma migrate deploy` contra prod con `DIRECT_URL`. Si Prisma reporta *migration was modified after it was applied* en dev local tras el endurecimiento idempotente de **`20260702120000`**: actualizar checksum en `_prisma_migrations` o `migrate resolve --applied` solo si el esquema local ya coincide.
 - Resto del sistema (lista precios, pedidos, Cx Compra, exportaciones) sigue usando **`px_compra_final_sin_iva`** sin dto extra.
 
 ### 1.8c Dif. % manual en Comp. Categorias — Comparacion (`dif_px_ref_manual`)
@@ -1790,3 +1803,5 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-06-16): **`buscarProductosTiendaParaComparacion`** — búsqueda multi-término por contiene en **descripción / código / marca / rubro** (`contains` en BD + `matchByMultiTerm`); ej. `Recu 20` → *Membrana Recuplast Fibrado 20 kg*.*
 
 *Última actualización (2026-07-02): **Comp. Categorias — `prod_comp_cat`** — unifica `prod_comp_dto_extra` + `prod_comp_dif_px_ref_manual` en una fila por `cod_ext` (`dto_extra`, `dif_px_ref_manual`); catálogo maestro **`CategoriaComparacion` → `prod_comp_categorias`**; helper `upsertComparacionItemParcial` en `categoriasComparacion.service.ts`; migración **`20260702120000_prod_comp_item_unify_ajustes`**.*
+
+*Última actualización (2026-07-03): **Fix prod Neon — `prod_comp_categorias`** — migración **`20260702120000`** endurecida (idempotente: renombra catálogo desde `prod_comp_cat` / `comparacion_categorias` / `categorias_comparacion` o crea vacía; `CREATE TABLE IF NOT EXISTS` + backfill condicional); respaldo **`20260703140000_ensure_prod_comp_categorias`**; troubleshooting P2021 en §1.8b.*
