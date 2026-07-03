@@ -32,7 +32,6 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   presentacionId: string;
-  labelCompleto: string;
   onSuccess: () => void;
 }
 
@@ -42,7 +41,6 @@ export default function ElegirReferenciaCompetenciaModal({
   open,
   onOpenChange,
   presentacionId,
-  labelCompleto,
   onSuccess,
 }: Props) {
   const [competidores, setCompetidores] = useState<CompetidorOption[]>([]);
@@ -183,7 +181,6 @@ export default function ElegirReferenciaCompetenciaModal({
       onClose={() => onOpenChange(false)}
       selectionMode="multi"
       title="Agregar Referencia De Competencia"
-      subtitle={`${labelCompleto.toUpperCase()} · FILTRÁ POR COMPETIDOR Y DESCRIPCIÓN. PRESIONÁ AGREGAR REFERENCIA.`}
       filterContent={filterContent}
       columns={columns}
       rows={rowsVisibles}

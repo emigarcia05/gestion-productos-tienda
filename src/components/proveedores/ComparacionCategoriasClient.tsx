@@ -191,7 +191,6 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     ReferenciaCompetenciaPresentacion[]
   >([]);
   const [referenciaActivaId, setReferenciaActivaId] = useState<string | null>(null);
-  const [labelCompleto, setLabelCompleto] = useState("");
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [modalAsignar, setModalAsignar] = useState(false);
   const [modalReferencia, setModalReferencia] = useState(false);
@@ -230,7 +229,6 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     setProductos([]);
     setReferenciasCompetencia([]);
     setReferenciaActivaId(null);
-    setLabelCompleto("");
     setBaseItemId(null);
     setDifPxRefManualDraft({});
     setDtoExtraDraft({});
@@ -280,7 +278,6 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
           if (prev && refs.some((r) => r.id === prev)) return prev;
           return refs[0]?.id ?? null;
         });
-        setLabelCompleto(res.data.labelCompleto);
         setBaseItemId(null);
         setDifPxRefManualDraft({});
         setDtoExtraDraft({});
@@ -288,7 +285,6 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
         setProductos([]);
         setReferenciasCompetencia([]);
         setReferenciaActivaId(null);
-        setLabelCompleto("");
         setBaseItemId(null);
         setDifPxRefManualDraft({});
         setDtoExtraDraft({});
@@ -829,7 +825,6 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
             open={modalReferencia}
             onOpenChange={setModalReferencia}
             presentacionId={selectedPresentacionId}
-            labelCompleto={labelCompleto}
             onSuccess={onReferenciaSuccess}
           />
         </>
