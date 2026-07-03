@@ -4,12 +4,19 @@ import type {
   ActualizarReglaDescEspecialInput,
   CrearReglaDescEspecialInput,
 } from "@/lib/validations/descEspecialReglas";
+import { normalizarTextoCondicionRegla } from "@/services/descuentosListaPrecioReglas.service";
 import type { ServiceResult } from "@/types/service.types";
 
 export interface ReglaDescEspecialListaPrecio {
   id: string;
   nombre: string;
   valor: number;
+  idProveedor: string | null;
+  idMarca: string | null;
+  idRubro: string | null;
+  proveedorPrefijo: string | null;
+  marcaNombre: string | null;
+  rubroNombre: string | null;
   cantidadProductos: number;
   createdAt: string;
   updatedAt: string;
@@ -26,6 +33,80 @@ export interface ReglaDescEspecialResumenProducto {
 }
 
 const CHUNK_MATERIALIZACION = 500;
+
+const includeFiltrosRegla = {
+  proveedor: { select: { prefijo: true } },
+  marca: { select: { nombre: true } },
+  rubro: { select: { nombre: true } },
+} as const;
+
+interface FiltrosReglaDescEspecial {
+  idProveedor: string | null;
+  idMarca: string | null;
+  idRubro: string | null;
+}
+
+async function validarProductosCoincidenFiltros(
+  codigosExt: string[],
+  filtros: FiltrosReglaDescEspecial
+): Promise<ServiceResult<undefined>> {
+  if (codigosExt.length === 0) return { success: true, data: undefined };
+
+  const [productos, marcaRow, rubroRow] = await Promise.all([
+    prisma.listaPrecioProveedor.findMany({
+      where: { codExt: { in: codigosExt } },
+      select: { codExt: true, idProveedor: true, marca: true, rubro: true },
+    }),
+    filtros.idMarca
+      ? prisma.marca.findUnique({
+          where: { id: filtros.idMarca },
+          select: { nombre: true },
+        })
+      : Promise.resolve(null),
+    filtros.idRubro
+      ? prisma.prodRubroLista.findUnique({
+          where: { id: filtros.idRubro },
+          select: { nombre: true },
+        })
+      : Promise.resolve(null),
+  ]);
+
+  const nombreMarcaFiltro = marcaRow?.nombre ?? null;
+  const nombreRubroFiltro = rubroRow?.nombre ?? null;
+
+  for (const codExt of codigosExt) {
+    const producto = productos.find((p) => p.codExt === codExt);
+    if (!producto) {
+      return { success: false, error: `Producto no encontrado: ${codExt}.` };
+    }
+    if (filtros.idProveedor && producto.idProveedor !== filtros.idProveedor) {
+      return {
+        success: false,
+        error: `El producto ${codExt} no pertenece al proveedor seleccionado.`,
+      };
+    }
+    if (nombreMarcaFiltro) {
+      const marcaItem = normalizarTextoCondicionRegla(producto.marca);
+      if (marcaItem !== normalizarTextoCondicionRegla(nombreMarcaFiltro)) {
+        return {
+          success: false,
+          error: `El producto ${codExt} no coincide con la marca del filtro.`,
+        };
+      }
+    }
+    if (nombreRubroFiltro) {
+      const rubroItem = normalizarTextoCondicionRegla(producto.rubro);
+      if (rubroItem !== normalizarTextoCondicionRegla(nombreRubroFiltro)) {
+        return {
+          success: false,
+          error: `El producto ${codExt} no coincide con el rubro del filtro.`,
+        };
+      }
+    }
+  }
+
+  return { success: true, data: undefined };
+}
 
 async function validarCodigosNoAsignadosAOtraRegla(
   codigosExt: string[],
@@ -100,14 +181,26 @@ function mapReglaLista(row: {
   id: string;
   nombre: string;
   valor: { toString(): string } | number;
+  idProveedor: string | null;
+  idMarca: string | null;
+  idRubro: string | null;
   createdAt: Date;
   updatedAt: Date;
   _count: { productos: number };
+  proveedor?: { prefijo: string | null } | null;
+  marca?: { nombre: string } | null;
+  rubro?: { nombre: string } | null;
 }): ReglaDescEspecialListaPrecio {
   return {
     id: row.id,
     nombre: row.nombre,
     valor: Number(row.valor),
+    idProveedor: row.idProveedor,
+    idMarca: row.idMarca,
+    idRubro: row.idRubro,
+    proveedorPrefijo: row.proveedor?.prefijo ?? null,
+    marcaNombre: row.marca?.nombre ?? null,
+    rubroNombre: row.rubro?.nombre ?? null,
     cantidadProductos: row._count.productos,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -116,7 +209,10 @@ function mapReglaLista(row: {
 
 export async function listarReglasDescEspecial(): Promise<ReglaDescEspecialListaPrecio[]> {
   const rows = await prisma.prodPrecioDescEspecialRegla.findMany({
-    include: { _count: { select: { productos: true } } },
+    include: {
+      _count: { select: { productos: true } },
+      ...includeFiltrosRegla,
+    },
     orderBy: [{ nombre: "asc" }, { createdAt: "asc" }],
   });
   return rows.map(mapReglaLista);
@@ -129,6 +225,7 @@ export async function obtenerReglaDescEspecialDetalle(
     where: { id },
     include: {
       _count: { select: { productos: true } },
+      ...includeFiltrosRegla,
       productos: {
         select: { listaPrecioProveedorCodExt: true },
         orderBy: { listaPrecioProveedorCodExt: "asc" },
@@ -161,6 +258,14 @@ export async function crearReglaDescEspecial(
   input: CrearReglaDescEspecialInput
 ): Promise<ServiceResult<ReglaDescEspecialDetalle>> {
   const codigosUnicos = [...new Set(input.codigosExt)];
+  const filtros: FiltrosReglaDescEspecial = {
+    idProveedor: input.idProveedor ?? null,
+    idMarca: input.idMarca ?? null,
+    idRubro: input.idRubro ?? null,
+  };
+  const validacionFiltros = await validarProductosCoincidenFiltros(codigosUnicos, filtros);
+  if (!validacionFiltros.success) return validacionFiltros;
+
   const validacion = await validarCodigosNoAsignadosAOtraRegla(codigosUnicos);
   if (!validacion.success) return validacion;
 
@@ -172,6 +277,9 @@ export async function crearReglaDescEspecial(
         data: {
           nombre: input.nombre.trim(),
           valor,
+          idProveedor: filtros.idProveedor,
+          idMarca: filtros.idMarca,
+          idRubro: filtros.idRubro,
           productos: {
             create: codigosUnicos.map((codExt) => ({
               listaPrecioProveedorCodExt: codExt,
@@ -180,6 +288,7 @@ export async function crearReglaDescEspecial(
         },
         include: {
           _count: { select: { productos: true } },
+          ...includeFiltrosRegla,
           productos: { select: { listaPrecioProveedorCodExt: true } },
         },
       });
@@ -213,6 +322,14 @@ export async function actualizarReglaDescEspecial(
   }
 
   const codigosNuevos = [...new Set(input.codigosExt)];
+  const filtros: FiltrosReglaDescEspecial = {
+    idProveedor: input.idProveedor ?? null,
+    idMarca: input.idMarca ?? null,
+    idRubro: input.idRubro ?? null,
+  };
+  const validacionFiltros = await validarProductosCoincidenFiltros(codigosNuevos, filtros);
+  if (!validacionFiltros.success) return validacionFiltros;
+
   const validacion = await validarCodigosNoAsignadosAOtraRegla(codigosNuevos, input.id);
   if (!validacion.success) return validacion;
 
@@ -232,6 +349,9 @@ export async function actualizarReglaDescEspecial(
         data: {
           nombre: input.nombre.trim(),
           valor,
+          idProveedor: filtros.idProveedor,
+          idMarca: filtros.idMarca,
+          idRubro: filtros.idRubro,
           productos: {
             create: codigosNuevos.map((codExt) => ({
               listaPrecioProveedorCodExt: codExt,
@@ -240,6 +360,7 @@ export async function actualizarReglaDescEspecial(
         },
         include: {
           _count: { select: { productos: true } },
+          ...includeFiltrosRegla,
           productos: {
             select: { listaPrecioProveedorCodExt: true },
             orderBy: { listaPrecioProveedorCodExt: "asc" },

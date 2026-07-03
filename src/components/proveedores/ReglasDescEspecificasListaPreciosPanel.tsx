@@ -22,6 +22,7 @@ import {
 import CrearEditarReglaDescEspecialModal from "@/components/proveedores/CrearEditarReglaDescEspecialModal";
 import EliminarReglaDescEspecialModal from "@/components/proveedores/EliminarReglaDescEspecialModal";
 import { fmtPorcentajeTabla } from "@/lib/format";
+import { celdaCondicionReglaDescuento } from "@/lib/descuentosListaPrecioReglasUi";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -29,7 +30,7 @@ import {
 } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
-const COL_WIDTHS_PCT = [45, 15, 20, 20] as const;
+const COL_WIDTHS_PCT = [22, 8, 10, 10, 10, 10, 30] as const;
 const COL_COUNT = COL_WIDTHS_PCT.length;
 
 interface Props {
@@ -122,6 +123,9 @@ export default function ReglasDescEspecificasListaPreciosPanel({ onSuccess }: Pr
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead>NOMBRE</TableHead>
+                <TableHead>PROV.</TableHead>
+                <TableHead>MARCA</TableHead>
+                <TableHead>RUBRO</TableHead>
                 <TableHead className="text-right">VALOR</TableHead>
                 <TableHead className="text-center">PRODUCTOS</TableHead>
                 <TableHead className="text-center">ACCIONES</TableHead>
@@ -143,6 +147,27 @@ export default function ReglasDescEspecificasListaPreciosPanel({ onSuccess }: Pr
                 reglasOrdenadas.map((regla) => (
                   <TableRow key={regla.id}>
                     <TableCell className="celda-datos whitespace-normal break-words">{regla.nombre}</TableCell>
+                    <TableCell className="celda-datos tabular-nums">
+                      {celdaCondicionReglaDescuento(
+                        {
+                          idProveedor: regla.idProveedor,
+                          proveedorPrefijo: regla.proveedorPrefijo,
+                        },
+                        "proveedor"
+                      ) || "—"}
+                    </TableCell>
+                    <TableCell className="celda-datos">
+                      {celdaCondicionReglaDescuento(
+                        { idMarca: regla.idMarca, marcaNombre: regla.marcaNombre },
+                        "marca"
+                      ) || "—"}
+                    </TableCell>
+                    <TableCell className="celda-datos">
+                      {celdaCondicionReglaDescuento(
+                        { idRubro: regla.idRubro, rubroNombre: regla.rubroNombre },
+                        "rubro"
+                      ) || "—"}
+                    </TableCell>
                     <TableCell className="celda-datos text-right tabular-nums">
                       {fmtPorcentajeTabla(regla.valor)}
                     </TableCell>

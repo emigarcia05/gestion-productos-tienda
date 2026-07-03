@@ -87,6 +87,7 @@ model Proveedor {
   competenciasPrecios ProdCompetencia[]
   preciosRex          ProdPrecioRex[]
   reglasDescuentosListaPrecio ProdPrecioProveeRegla[]
+  reglasDescEspecialListaPrecio ProdPrecioDescEspecialRegla[]
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
   @@map("global_proveedores")
@@ -119,6 +120,7 @@ model ProdRubroLista {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   reglasDescuentos ProdPrecioProveeRegla[]
+  reglasDescEspecial ProdPrecioDescEspecialRegla[]
 
   @@map("prod_rubros_lista")
 }
@@ -147,14 +149,23 @@ model ProdPrecioProveeRegla {
 
 /** Regla de descuento específico por lista de productos (`desc_especial` materializado). */
 model ProdPrecioDescEspecialRegla {
-  id        String   @id @default(cuid())
-  nombre    String
-  valor     Decimal  @db.Decimal(5, 2)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(cuid())
+  nombre      String
+  valor       Decimal  @db.Decimal(5, 2)
+  idProveedor String?  @map("id_proveedor")
+  idMarca     String?  @map("id_marca")
+  idRubro     String?  @map("id_rubro")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
+  proveedor Proveedor?      @relation(fields: [idProveedor], references: [id], onDelete: SetNull)
+  marca     Marca?          @relation(fields: [idMarca], references: [id], onDelete: SetNull)
+  rubro     ProdRubroLista? @relation(fields: [idRubro], references: [id], onDelete: SetNull)
   productos ProdPrecioDescEspecialReglaProducto[]
 
+  @@index([idProveedor], map: "pp_desc_esp_regla_id_proveedor_idx")
+  @@index([idMarca], map: "pp_desc_esp_regla_id_marca_idx")
+  @@index([idRubro], map: "pp_desc_esp_regla_id_rubro_idx")
   @@map("prod_precios_desc_especial_regla")
 }
 
@@ -662,6 +673,7 @@ model Marca {
 
   prodTiendas ProdTienda[]
   reglasDescuentosListaPrecio ProdPrecioProveeRegla[]
+  reglasDescEspecialListaPrecio ProdPrecioDescEspecialRegla[]
 
   @@map("prod_marcas")
 }

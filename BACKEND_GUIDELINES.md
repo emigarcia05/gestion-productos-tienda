@@ -444,14 +444,14 @@ interface ReglaDescuentoListaPrecio {
 
 | Modelo Prisma | Tabla SQL | Rol |
 |---------------|-----------|-----|
-| `ProdPrecioDescEspecialRegla` | `prod_precios_desc_especial_regla` | Regla con `nombre` + `valor` NUMERIC(5,2). |
+| `ProdPrecioDescEspecialRegla` | `prod_precios_desc_especial_regla` | Regla con `nombre` + `valor` NUMERIC(5,2) + filtros opcionales `id_proveedor` / `id_marca` / `id_rubro` (categorización; al menos uno obligatorio al guardar). Migración `20260703120000_desc_especial_regla_filtros`. |
 | `ProdPrecioDescEspecialReglaProducto` | `prod_precios_desc_especial_regla_producto` | Vínculo `regla_id` + `cod_ext` → FK `prod_precios_provee.cod_ext` (**UNIQUE** `cod_ext`). |
 
 - **Migración:** `20260703100000_prod_precios_desc_especial`.
 - **Post-deploy opcional:** `npm run db:recalc-desc-especial` → pone `desc_especial = 0` en todas las filas y re-materializa desde reglas.
 - **Servicio:** `@/services/descEspecialReglas.service.ts` — CRUD reglas, `materializarDescEspecialEnCodigos`, `recalcularTodasLasFilasDescEspecial`. Al crear/actualizar/eliminar regla o cambiar productos vinculados, actualiza `desc_especial` en las filas afectadas.
 - **Actions:** `@/actions/descEspecialReglas.ts` — gate `PERMISOS.listaPrecios.acciones.gestionarReglasDescuentos` + `esEditor()`.
-- **Validación:** `@/lib/validations/descEspecialReglas.ts`.
+- **Validación:** `@/lib/validations/descEspecialReglas.ts` — al guardar, productos vinculados deben coincidir con los filtros de la regla (`validarProductosCoincidenFiltros` en servicio).
 - **Lecturas descuentos activos:** `enriquecerFilasConDescuentosActivos` agrega ítem `campo: "desc_especial"` con `reglaEspecifica: { id, nombre }` (no usa motor dimensional).
 - **Comp. Categorías — COSTO:** `mapDatosCostoComparacion` en `categoriasComparacion.service.ts` incluye `descEspecial`; `calcCostoComparacion` lo suma al total de descuentos junto con `dto_extra_comparacion`.
 
