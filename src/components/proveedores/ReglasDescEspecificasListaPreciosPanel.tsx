@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,9 +35,20 @@ const COL_COUNT = COL_WIDTHS_PCT.length;
 
 interface Props {
   onSuccess?: () => void;
+  filtroProveedorId: string;
+  filtroMarcaId: string;
+  filtroRubroId: string;
+  /** Incremento desde el padre para abrir el modal de alta. */
+  solicitudCrear?: number;
 }
 
-export default function ReglasDescEspecificasListaPreciosPanel({ onSuccess }: Props) {
+export default function ReglasDescEspecificasListaPreciosPanel({
+  onSuccess,
+  filtroProveedorId,
+  filtroMarcaId,
+  filtroRubroId,
+  solicitudCrear = 0,
+}: Props) {
   const [loading, setLoading] = useState(false);
   const [reglas, setReglas] = useState<ReglaDescEspecialListaPrecio[]>([]);
 
@@ -63,24 +74,41 @@ export default function ReglasDescEspecificasListaPreciosPanel({ onSuccess }: Pr
     }
   }, []);
 
+  const abrirCrear = useCallback(() => {
+    setModoModal("crear");
+    setReglaEdit(null);
+    setCrearEditarOpen(true);
+  }, []);
+
   useEffect(() => {
     void cargarDatos();
   }, [cargarDatos]);
 
+  useEffect(() => {
+    if (solicitudCrear <= 0) return;
+    abrirCrear();
+  }, [solicitudCrear, abrirCrear]);
+
+  const reglasFiltradas = useMemo(() => {
+    return reglas.filter((regla) => {
+      if (filtroProveedorId && regla.idProveedor !== filtroProveedorId) return false;
+      if (filtroMarcaId && regla.idMarca !== filtroMarcaId) return false;
+      if (filtroRubroId && regla.idRubro !== filtroRubroId) return false;
+      return true;
+    });
+  }, [reglas, filtroProveedorId, filtroMarcaId, filtroRubroId]);
+
   const reglasOrdenadas = useMemo(
-    () => [...reglas].sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })),
-    [reglas]
+    () =>
+      [...reglasFiltradas].sort((a, b) =>
+        a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
+      ),
+    [reglasFiltradas]
   );
 
   function handleSuccess() {
     void cargarDatos();
     onSuccess?.();
-  }
-
-  function abrirCrear() {
-    setModoModal("crear");
-    setReglaEdit(null);
-    setCrearEditarOpen(true);
   }
 
   async function abrirEditar(regla: ReglaDescEspecialListaPrecio) {
@@ -105,15 +133,7 @@ export default function ReglasDescEspecificasListaPreciosPanel({ onSuccess }: Pr
 
   return (
     <>
-      <div className="flex flex-col gap-3 min-h-0 flex-1">
-        <div className="flex justify-end">
-          <Button type="button" variant="default" size="sm" className="gap-2" onClick={abrirCrear}>
-            <Plus className="h-4 w-4" />
-            Nueva Regla Desc. Específico
-          </Button>
-        </div>
-
-        <div className="contenedor-tabla-gestion min-h-0 max-h-[min(46.4vh,25.6rem)] flex-1">
+      <div className="contenedor-tabla-gestion min-h-0 max-h-[min(46.4vh,25.6rem)] flex-1">
           <Table variant="compact" className="tabla-vinculos-modal w-full min-w-0">
             <colgroup>
               {COL_WIDTHS_PCT.map((pct, i) => (
@@ -142,7 +162,14 @@ export default function ReglasDescEspecificasListaPreciosPanel({ onSuccess }: Pr
                   </TableCell>
                 </TableRow>
               ) : reglasOrdenadas.length === 0 ? (
-                <EmptyTableRow colSpan={COL_COUNT} message="No hay reglas de desc. específico." />
+                <EmptyTableRow
+                  colSpan={COL_COUNT}
+                  message={
+                    reglas.length === 0
+                      ? "No hay reglas de desc. específico."
+                      : "Ninguna regla coincide con los filtros."
+                  }
+                />
               ) : (
                 reglasOrdenadas.map((regla) => (
                   <TableRow key={regla.id}>
@@ -203,7 +230,6 @@ export default function ReglasDescEspecificasListaPreciosPanel({ onSuccess }: Pr
               )}
             </TableBody>
           </Table>
-        </div>
       </div>
 
       <CrearEditarReglaDescEspecialModal

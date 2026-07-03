@@ -168,13 +168,8 @@ export default function CrearEditarReglaDescuentoListaPrecioModal({
           </>
         }
       >
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            Las condiciones se combinan con <strong className="text-foreground">AND</strong>. Un campo vacío
-            actúa como comodín. Gana la regla de mayor especificidad al resolver cada ítem.
-          </p>
-
-          <div className={cn(FORM_GRID_CLASS, "py-1")}>
+          <div className="flex flex-col gap-4">
+            <div className={cn(FORM_GRID_CLASS, "py-1")}>
             <ModalFormRow id="campo-regla" label="CAMPO">
               <Select
                 value={campo}

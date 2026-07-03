@@ -35,7 +35,12 @@ const reglaDescEspecialFiltrosSchema = z.object({
 
 export const crearReglaDescEspecialSchema = z
   .object({
-    nombre: z.string().trim().min(1, "El nombre es obligatorio.").max(200),
+    nombre: z
+      .string()
+      .trim()
+      .min(1, "El nombre es obligatorio.")
+      .max(200)
+      .transform((value) => value.toUpperCase()),
     valor: porcentajeListaPreciosSchema,
     codigosExt: listaPreciosCodExtListSchema.min(
       1,
@@ -50,7 +55,12 @@ export type CrearReglaDescEspecialInput = z.infer<typeof crearReglaDescEspecialS
 export const actualizarReglaDescEspecialSchema = z
   .object({
     id: prismaIdSchema,
-    nombre: z.string().trim().min(1, "El nombre es obligatorio.").max(200),
+    nombre: z
+      .string()
+      .trim()
+      .min(1, "El nombre es obligatorio.")
+      .max(200)
+      .transform((value) => value.toUpperCase()),
     valor: porcentajeListaPreciosSchema,
     codigosExt: listaPreciosCodExtListSchema.min(
       1,

@@ -87,6 +87,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
 
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [reglaEliminar, setReglaEliminar] = useState<ReglaDescuentoListaPrecio | null>(null);
+  const [solicitudCrearEspec, setSolicitudCrearEspec] = useState(0);
 
   const [filtroCampo, setFiltroCampo] = useState<CampoReglaDescuentoListaPrecioInput | "">("");
   const [filtroProveedorId, setFiltroProveedorId] = useState("");
@@ -156,6 +157,14 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
     setCrearEditarOpen(true);
   }
 
+  function abrirNuevaRegla() {
+    if (vista === "dimension") {
+      abrirCrear();
+    } else {
+      setSolicitudCrearEspec((n) => n + 1);
+    }
+  }
+
   function abrirEditar(regla: ReglaDescuentoListaPrecio) {
     setModoModal("editar");
     setReglaEdit(regla);
@@ -192,43 +201,43 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
           scrollBody
           hideBodyScrollbars
           actions={
-            <>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cerrar
-              </Button>
-              {vista === "dimension" ? (
-                <Button type="button" variant="default" className="gap-2" onClick={abrirCrear}>
-                  <Plus className="h-4 w-4 shrink-0" aria-hidden />
-                  Nueva Regla
-                </Button>
-              ) : null}
-            </>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cerrar
+            </Button>
           }
         >
           <div className="flex min-h-0 flex-1 flex-col gap-3">
-            <div className="flex shrink-0 gap-2">
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={vista === "dimension" ? "default" : "outline"}
+                  onClick={() => setVista("dimension")}
+                >
+                  GENERAL
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={vista === "especifica" ? "default" : "outline"}
+                  onClick={() => setVista("especifica")}
+                >
+                  POR PRODUCTO
+                </Button>
+              </div>
               <Button
                 type="button"
                 size="sm"
-                variant={vista === "dimension" ? "default" : "outline"}
-                onClick={() => setVista("dimension")}
+                variant="default"
+                className="ml-auto gap-2"
+                onClick={abrirNuevaRegla}
               >
-                Por Dimensión
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={vista === "especifica" ? "default" : "outline"}
-                onClick={() => setVista("especifica")}
-              >
-                Desc. Específico
+                <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                NUEVA REGLA
               </Button>
             </div>
 
-            {vista === "especifica" ? (
-              <ReglasDescEspecificasListaPreciosPanel onSuccess={handleSuccess} />
-            ) : (
-              <>
             <FilterBar className="filtros-contenedor-tienda shrink-0 bg-card">
               <FilterRowSelection>
                 <FilaFiltrosDesplegables>
@@ -340,6 +349,15 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
               </FilterRowSelection>
             </FilterBar>
 
+            {vista === "especifica" ? (
+              <ReglasDescEspecificasListaPreciosPanel
+                onSuccess={handleSuccess}
+                filtroProveedorId={filtroProveedorId}
+                filtroMarcaId={filtroMarcaId}
+                filtroRubroId={filtroRubroId}
+                solicitudCrear={solicitudCrearEspec}
+              />
+            ) : (
             <div className="contenedor-tabla-gestion min-h-0 max-h-[min(46.4vh,25.6rem)] flex-1">
               <Table variant="compact" className="tabla-vinculos-modal w-full min-w-0">
                 <colgroup>
@@ -445,7 +463,6 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                 </TableBody>
               </Table>
             </div>
-              </>
             )}
           </div>
         </AppModal>
