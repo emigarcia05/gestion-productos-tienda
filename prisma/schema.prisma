@@ -145,6 +145,32 @@ model ProdPrecioProveeRegla {
   @@map("prod_precios_provee_reglas")
 }
 
+/** Regla de descuento específico por lista de productos (`desc_especial` materializado). */
+model ProdPrecioDescEspecialRegla {
+  id        String   @id @default(cuid())
+  nombre    String
+  valor     Decimal  @db.Decimal(5, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  productos ProdPrecioDescEspecialReglaProducto[]
+
+  @@map("prod_precios_desc_especial_regla")
+}
+
+model ProdPrecioDescEspecialReglaProducto {
+  id                         String   @id @default(cuid())
+  reglaId                    String   @map("regla_id")
+  listaPrecioProveedorCodExt String   @unique(map: "pp_desc_esp_regla_prod_cod_ext_key") @map("cod_ext_prod_precios_provee")
+  createdAt                  DateTime @default(now()) @map("created_at")
+
+  regla                ProdPrecioDescEspecialRegla @relation(fields: [reglaId], references: [id], onDelete: Cascade)
+  listaPrecioProveedor ListaPrecioProveedor        @relation(fields: [listaPrecioProveedorCodExt], references: [codExt], onDelete: Cascade)
+
+  @@index([reglaId], map: "prod_precios_desc_especial_regla_producto_regla_id_idx")
+  @@map("prod_precios_desc_especial_regla_producto")
+}
+
 // Comprobantes de compra sincronizados desde API DUX `/compras`.
 // `id_proveedor` almacena el mismo valor que `global_proveedores.id_proveedor_dux` (FK).
 model ComprobanteProveedor {
@@ -527,7 +553,9 @@ model ListaPrecioProveedor {
   dtoCantidad       Decimal  @map("dto_cantidad") @default(0) @db.Decimal(5, 2)
   dtoFinanciero     Decimal  @map("dto_financiero") @default(0) @db.Decimal(5, 2)
   cxTransporte      Decimal  @map("cx_transporte") @default(0) @db.Decimal(5, 2)
-  pxCompraFinalSinIva Decimal? @map("px_compra_final_sin_iva") @db.Decimal(14, 4) // generada: precio compra sin IVA; base * (1 - dtoTotal/100) * (1 + cx_transporte/100), dtoTotal capado 0-100
+  /** Desc. específico por regla de productos vinculados (`prod_precios_desc_especial_regla`). */
+  descEspecial      Decimal  @map("desc_especial") @default(0) @db.Decimal(5, 2)
+  pxCompraFinalSinIva Decimal? @map("px_compra_final_sin_iva") @db.Decimal(14, 4) // generada: base * (1 - dtoTotal/100) * (1 + cx_transporte/100); dtoTotal incluye desc_especial
   codTiendaVinculo String? @map("cod_tienda") // FK al ítem tienda (`prod_tienda.cod_tienda`; 1 tienda → N proveedores)
   idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
   /** FK opcional → catálogo REX (`prod_precios_rex`). Varios `cod_ext` pueden compartir el mismo REX. */
@@ -542,6 +570,7 @@ model ListaPrecioProveedor {
   presentacion      PresentacionComparacion? @relation("PresentacionItems", fields: [idPresentacion], references: [id], onDelete: SetNull)
   presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
   comparacionItem ComparacionItem?
+  reglaDescEspecial ProdPrecioDescEspecialReglaProducto?
   /** Ítems tienda que usan esta fila como costo lista en Cx/Px Tienda. */
   costoListaEnTiendas ProdTienda[] @relation("CostoListaEnTienda")
 

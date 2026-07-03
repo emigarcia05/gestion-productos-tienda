@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import AppModal from "@/components/shared/AppModal";
 import CrearEditarReglaDescuentoListaPrecioModal from "@/components/proveedores/CrearEditarReglaDescuentoListaPrecioModal";
 import EliminarReglaDescuentoListaPrecioModal from "@/components/proveedores/EliminarReglaDescuentoListaPrecioModal";
+import ReglasDescEspecificasListaPreciosPanel from "@/components/proveedores/ReglasDescEspecificasListaPreciosPanel";
 import FilterBar, {
   FiltroIndividualContainer,
   FilterRowSelection,
@@ -70,9 +71,12 @@ interface Props {
   onSuccess?: () => void;
 }
 
+type VistaReglas = "dimension" | "especifica";
+
 export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [vista, setVista] = useState<VistaReglas>("dimension");
   const [loading, setLoading] = useState(false);
   const [reglas, setReglas] = useState<ReglaDescuentoListaPrecio[]>([]);
   const [catalogos, setCatalogos] = useState<CatalogosReglasDescuentosListaPrecio>(CATALOGOS_VACIOS);
@@ -125,6 +129,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
   useEffect(() => {
     if (!open) return;
     limpiarFiltros();
+    setVista("dimension");
     void cargarDatos();
   }, [open, cargarDatos, limpiarFiltros]);
 
@@ -191,14 +196,39 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cerrar
               </Button>
-              <Button type="button" variant="default" className="gap-2" onClick={abrirCrear}>
-                <Plus className="h-4 w-4 shrink-0" aria-hidden />
-                Nueva Regla
-              </Button>
+              {vista === "dimension" ? (
+                <Button type="button" variant="default" className="gap-2" onClick={abrirCrear}>
+                  <Plus className="h-4 w-4 shrink-0" aria-hidden />
+                  Nueva Regla
+                </Button>
+              ) : null}
             </>
           }
         >
           <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <div className="flex shrink-0 gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={vista === "dimension" ? "default" : "outline"}
+                onClick={() => setVista("dimension")}
+              >
+                Por Dimensión
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={vista === "especifica" ? "default" : "outline"}
+                onClick={() => setVista("especifica")}
+              >
+                Desc. Específico
+              </Button>
+            </div>
+
+            {vista === "especifica" ? (
+              <ReglasDescEspecificasListaPreciosPanel onSuccess={handleSuccess} />
+            ) : (
+              <>
             <FilterBar className="filtros-contenedor-tienda shrink-0 bg-card">
               <FilterRowSelection>
                 <FilaFiltrosDesplegables>
@@ -415,6 +445,8 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                 </TableBody>
               </Table>
             </div>
+              </>
+            )}
           </div>
         </AppModal>
       </Dialog>

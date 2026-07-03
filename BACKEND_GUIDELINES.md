@@ -353,7 +353,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 ### 1.8d Reglas descuentos lista precios (`prod_precios_provee_reglas`)
 
-**Decisión de negocio:** los seis valores `dto_proveedor`, `dto_marca`, `dto_rubro`, `dto_cantidad`, `dto_financiero`, `cx_transporte` en **`prod_precios_provee`** son **caché materializada** escrita **solo** por el motor de reglas. No hay override manual por ítem. La columna GENERATED **`px_compra_final_sin_iva`** no se rediseña; sigue la fórmula de §1.8 / migración `20260527150000_*`.
+**Decisión de negocio:** los seis valores `dto_proveedor`, `dto_marca`, `dto_rubro`, `dto_cantidad`, `dto_financiero`, `cx_transporte` en **`prod_precios_provee`** son **caché materializada** escrita **solo** por el motor de reglas dimensionales. **`desc_especial`** es caché materializada escrita **solo** por reglas de desc. específico por producto (§1.8d-b). No hay override manual por ítem. La columna GENERATED **`px_compra_final_sin_iva`** incluye `desc_especial` en el `dtoTotal` (migración `20260703100000_prod_precios_desc_especial`).
 
 #### Modelo de datos
 
@@ -436,7 +436,24 @@ interface ReglaDescuentoListaPrecio {
 
 Ítem P1 + marca texto = `M1.nombre` → `dto_marca` materializado = **18** (regla P1+M1 gana sobre solo M1).
 
-**Lecturas lista precios:** `FilaListaPrecioParaCliente` sigue exponiendo `dtoProveedor`, `dtoMarca`, `dtoRubro`, `dtoCantidad`, `dtoFinanciero`, `cxTransporte`, `pxCompraFinalSinIva` como **solo lectura** (caché del motor). **`prod_comp_cat`** no se modifica desde lista precios (override solo Comp. Categorías).
+**Lecturas lista precios:** `FilaListaPrecioParaCliente` sigue exponiendo `dtoProveedor`, `dtoMarca`, `dtoRubro`, `dtoCantidad`, `dtoFinanciero`, `cxTransporte`, `descEspecial`, `pxCompraFinalSinIva` como **solo lectura** (caché del motor). **`prod_comp_cat`** no se modifica desde lista precios (override solo Comp. Categorías). **`calcCostoComparacion`** (`calculos.ts`) incluye `descEspecial` en el `dtoTotal` además de `dto_extra_comparacion`.
+
+#### 1.8d-b Desc. específico por producto (`desc_especial`)
+
+**Regla de negocio:** descuento adicional por **producto** (`cod_ext`), independiente de las reglas dimensionales. Un producto puede pertenecer a **como máximo una** regla (`UNIQUE` en tabla puente). El valor de la regla se materializa en `prod_precios_provee.desc_especial` y **suma** al `dtoTotal` de `px_compra_final_sin_iva` (misma fórmula que §1.8).
+
+| Modelo Prisma | Tabla SQL | Rol |
+|---------------|-----------|-----|
+| `ProdPrecioDescEspecialRegla` | `prod_precios_desc_especial_regla` | Regla con `nombre` + `valor` NUMERIC(5,2). |
+| `ProdPrecioDescEspecialReglaProducto` | `prod_precios_desc_especial_regla_producto` | Vínculo `regla_id` + `cod_ext` → FK `prod_precios_provee.cod_ext` (**UNIQUE** `cod_ext`). |
+
+- **Migración:** `20260703100000_prod_precios_desc_especial`.
+- **Post-deploy opcional:** `npm run db:recalc-desc-especial` → pone `desc_especial = 0` en todas las filas y re-materializa desde reglas.
+- **Servicio:** `@/services/descEspecialReglas.service.ts` — CRUD reglas, `materializarDescEspecialEnCodigos`, `recalcularTodasLasFilasDescEspecial`. Al crear/actualizar/eliminar regla o cambiar productos vinculados, actualiza `desc_especial` en las filas afectadas.
+- **Actions:** `@/actions/descEspecialReglas.ts` — gate `PERMISOS.listaPrecios.acciones.gestionarReglasDescuentos` + `esEditor()`.
+- **Validación:** `@/lib/validations/descEspecialReglas.ts`.
+- **Lecturas descuentos activos:** `enriquecerFilasConDescuentosActivos` agrega ítem `campo: "desc_especial"` con `reglaEspecifica: { id, nombre }` (no usa motor dimensional).
+- **Comp. Categorías — COSTO:** `mapDatosCostoComparacion` en `categoriasComparacion.service.ts` incluye `descEspecial`; `calcCostoComparacion` lo suma al total de descuentos junto con `dto_extra_comparacion`.
 
 ### 1.8e Cotización USD única (`global_cotizacion_usd`)
 

@@ -1,4 +1,5 @@
 import type { CampoReglaDescuentoListaPrecioInput } from "@/lib/validations/descuentosListaPrecioReglas";
+import { CAMPO_DESC_ESPECIAL } from "@/services/descuentosListaPrecioReglas.service";
 
 export const CAMPOS_REGLA_DESCUENTO_OPCIONES: {
   value: CampoReglaDescuentoListaPrecioInput;
@@ -55,8 +56,9 @@ export const CAMPOS_REGLA_DESCUENTO_OPCIONES: {
 ];
 
 export function labelCampoReglaDescuento(
-  campo: CampoReglaDescuentoListaPrecioInput
+  campo: CampoReglaDescuentoListaPrecioInput | typeof CAMPO_DESC_ESPECIAL
 ): string {
+  if (campo === CAMPO_DESC_ESPECIAL) return "DESC. ESPECÍFICO";
   return CAMPOS_REGLA_DESCUENTO_OPCIONES.find((o) => o.value === campo)?.label ?? campo;
 }
 

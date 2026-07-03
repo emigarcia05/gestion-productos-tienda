@@ -19,8 +19,8 @@ export function listaPrecioBasePesos(
  * Todos los dto y cx_transporte son porcentajes.
  * Fórmula con descuento acumulado:
  *   precioLista × (1 - dtoTotal/100) × (1 + cxTransporte/100)
- * donde dtoTotal = dtoProveedor + dtoMarca + dtoRubro + dtoCantidad + dtoFinanciero (+ dtoExtraComparacion si aplica; capado 0-100).
- * Parámetros opcionales (dtoProveedor, dtoMarca, dtoFinanciero, dtoExtraComparacion) default 0 para compatibilidad.
+ * donde dtoTotal = dtoProveedor + dtoMarca + dtoRubro + dtoCantidad + dtoFinanciero + descEspecial (+ dtoExtraComparacion si aplica; capado 0-100).
+ * Parámetros opcionales default 0 para compatibilidad.
  */
 export function calcPxCompraFinal(
   precioLista: number,
@@ -30,7 +30,8 @@ export function calcPxCompraFinal(
   dtoProveedor: number = 0,
   dtoMarca: number = 0,
   dtoFinanciero: number = 0,
-  dtoExtraComparacion: number = 0
+  dtoExtraComparacion: number = 0,
+  descEspecial: number = 0
 ): number {
   const dtoTotal = clampPercent(
     dtoProveedor +
@@ -38,7 +39,8 @@ export function calcPxCompraFinal(
       dtoRubro +
       dtoCantidad +
       dtoFinanciero +
-      dtoExtraComparacion
+      dtoExtraComparacion +
+      descEspecial
   );
 
   return (
@@ -59,6 +61,7 @@ export type DatosCostoComparacion = {
   dtoCantidad: number;
   dtoFinanciero: number;
   cxTransporte: number;
+  descEspecial: number;
 };
 
 /**
@@ -84,7 +87,8 @@ export function calcCostoComparacion(
     datos.dtoProveedor,
     datos.dtoMarca,
     datos.dtoFinanciero,
-    dtoExtra
+    dtoExtra,
+    datos.descEspecial
   );
   if (!Number.isFinite(px) || px <= 0) return null;
   return roundPrecioListaTienda(px);

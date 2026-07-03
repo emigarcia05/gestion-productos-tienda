@@ -1330,6 +1330,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-02): **Comp. Categorias — persistencia unificada** — `DTO. EXTRA` y `DIF % REF. MAN.` en tabla **`prod_comp_cat`** (`ComparacionItem`); catálogo maestro en **`prod_comp_categorias`**; migración **`20260702120000_prod_comp_item_unify_ajustes`**. UI sin cambios de contrato (`dtoExtraComparacion`, `difPxRefManualComparacion`).*
 
+*Última actualización (2026-07-03): **Desc. específico — Reglas Descuentos** — `ReglasDescuentosListaPrecioModal` con pestañas **Por Dimensión** (reglas `prod_precios_provee_reglas`, sin cambios) y **Desc. Específico** (`ReglasDescEspecificasListaPreciosPanel`: CRUD `CrearEditarReglaDescEspecialModal` / `EliminarReglaDescEspecialModal`; agregar productos vía `ReglaDescEspecialAgregarProductosModal` + `ModalTablaConFiltros` `selectionMode="multi"`). Botón **Nueva Regla** del footer solo en pestaña dimensional; en específico el panel tiene **Nueva Regla Desc. Específico**. **`DescuentosAplicadosListaPreciosModal`**: si `descEspecial > 0`, ítem **Espec.** con **Info** → `ReglaDescuentoItemListaPreciosModal` muestra nombre de regla (`reglaEspecifica`). Sin edición de descuentos en **Editar producto**. Ver BACKEND_GUIDELINES §1.8d-b.*
+
 ---
 
 **Para IA:** El archivo `.cursorrules` en la raíz indica que este documento (FRONTEND_GUIDELINES.md) es la **referencia obligatoria** al crear o modificar código frontend. Usar la sección "Guía para IA" y el checklist de la sección 4 en cada tarea.

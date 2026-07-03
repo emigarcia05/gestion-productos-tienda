@@ -161,6 +161,7 @@ function mapDatosCostoComparacion(lp: {
   dtoCantidad: unknown;
   dtoFinanciero: unknown;
   cxTransporte: unknown;
+  descEspecial: unknown;
 }): DatosCostoComparacion {
   return {
     pxListaProveedor: Number(lp.pxListaProveedor),
@@ -172,6 +173,7 @@ function mapDatosCostoComparacion(lp: {
     dtoCantidad: Number(lp.dtoCantidad),
     dtoFinanciero: Number(lp.dtoFinanciero),
     cxTransporte: Number(lp.cxTransporte),
+    descEspecial: Number(lp.descEspecial),
   };
 }
 

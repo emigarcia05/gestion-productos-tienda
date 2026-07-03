@@ -193,13 +193,27 @@ export interface ReglaDescuentoAplicadaResumen {
   especificidad: number;
 }
 
+/** Campo virtual de descuento activo (no está en enum Prisma de reglas dimensionales). */
+export const CAMPO_DESC_ESPECIAL = "desc_especial" as const;
+
+export type CampoDescuentoActivoListaPrecio =
+  | CampoReglaDescuentoListaPrecioInput
+  | typeof CAMPO_DESC_ESPECIAL;
+
+export interface ReglaDescuentoEspecificaResumen {
+  id: string;
+  nombre: string;
+  valor: number;
+}
+
 export interface DescuentoActivoListaPrecio {
-  campo: CampoReglaDescuentoListaPrecioInput;
+  campo: CampoDescuentoActivoListaPrecio;
   etiquetaCorta: string;
   label: string;
   tipo: "descuento" | "costo";
   valor: number;
   regla: ReglaDescuentoAplicadaResumen | null;
+  reglaEspecifica: ReglaDescuentoEspecificaResumen | null;
 }
 
 const METADATA_CAMPOS_DESCUENTO_UI = [
@@ -303,6 +317,7 @@ export function resolverDescuentosActivosParaItem(
       regla: reglaGanadora
         ? mapReglaInternaAResumen(reglaGanadora, catalogos, proveedoresPorId)
         : null,
+      reglaEspecifica: null,
     });
   }
 
@@ -312,6 +327,7 @@ export function resolverDescuentosActivosParaItem(
 /** Resuelve descuentos activos (> 0) y la regla ganadora por campo para filas de lista precios. */
 export async function enriquecerFilasConDescuentosActivos<
   TFila extends {
+    codExt: string;
     marca: string | null;
     rubro: string | null;
     proveedor: { id: string } | null;
@@ -321,14 +337,18 @@ export async function enriquecerFilasConDescuentosActivos<
     dtoCantidad: number;
     dtoFinanciero: number;
     cxTransporte: number;
+    descEspecial: number;
   },
 >(filas: TFila[]): Promise<(TFila & { descuentosActivos: DescuentoActivoListaPrecio[] })[]> {
   if (filas.length === 0) return [];
 
-  const [reglasPorCampo, catalogos, proveedores] = await Promise.all([
+  const [reglasPorCampo, catalogos, proveedores, reglasEspecPorCodExt] = await Promise.all([
     cargarReglasAgrupadasPorCampo(),
     cargarCatalogosResolver(),
     prisma.proveedor.findMany({ select: { id: true, nombre: true } }),
+    cargarReglasEspecialesPorCodExt(
+      filas.filter((f) => f.descEspecial > 0).map((f) => f.codExt)
+    ),
   ]);
 
   const proveedoresPorId = new Map(proveedores.map((p) => [p.id, p.nombre]));
@@ -360,8 +380,42 @@ export async function enriquecerFilasConDescuentosActivos<
       proveedoresPorId
     );
 
+    if (fila.descEspecial > 0) {
+      const reglaEsp = reglasEspecPorCodExt.get(fila.codExt) ?? null;
+      descuentosActivos.push({
+        campo: "desc_especial",
+        etiquetaCorta: "Espec.",
+        label: "DESC. ESPECÍFICO",
+        tipo: "descuento",
+        valor: fila.descEspecial,
+        regla: null,
+        reglaEspecifica: reglaEsp,
+      });
+    }
+
     return { ...fila, descuentosActivos };
   });
+}
+
+async function cargarReglasEspecialesPorCodExt(
+  codigosExt: string[]
+): Promise<Map<string, { id: string; nombre: string; valor: number }>> {
+  const map = new Map<string, { id: string; nombre: string; valor: number }>();
+  if (codigosExt.length === 0) return map;
+
+  const links = await prisma.prodPrecioDescEspecialReglaProducto.findMany({
+    where: { listaPrecioProveedorCodExt: { in: codigosExt } },
+    include: { regla: { select: { id: true, nombre: true, valor: true } } },
+  });
+
+  for (const link of links) {
+    map.set(link.listaPrecioProveedorCodExt, {
+      id: link.regla.id,
+      nombre: link.regla.nombre,
+      valor: Number(link.regla.valor),
+    });
+  }
+  return map;
 }
 
 export function resolverDescuentosParaItem(

@@ -66,6 +66,7 @@ export interface FilaListaPrecioParaCliente {
   dtoCantidad: number;
   dtoFinanciero: number;
   cxTransporte: number;
+  descEspecial: number;
   pxCompraFinalSinIva: number | null;
   proveedor: { id: string; prefijo: string; nombre: string; codigoUnico: string } | null;
   idPrecioRex: string | null;
@@ -104,6 +105,7 @@ function mapListaPrecioProveedorParaCliente(f: ListaPrecioProveedorParaCliente):
     dtoCantidad: Number(f.dtoCantidad),
     dtoFinanciero: Number(f.dtoFinanciero),
     cxTransporte: Number(f.cxTransporte),
+    descEspecial: Number(f.descEspecial),
     pxCompraFinalSinIva: f.pxCompraFinalSinIva != null ? Number(f.pxCompraFinalSinIva) : null,
     proveedor: f.proveedor
       ? {
