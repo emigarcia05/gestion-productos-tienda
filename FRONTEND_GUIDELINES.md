@@ -1332,7 +1332,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-03): **Desc. específico — filtros de categoría** — `CrearEditarReglaDescEspecialModal`: selects **PROVEEDOR** / **MARCA** / **RUBRO** (catálogo `listarCatalogosReglasDescuentosAction`; al menos uno obligatorio). Al cambiar un filtro se limpian productos vinculados. `ReglaDescEspecialAgregarProductosModal`: solo búsqueda por descripción; lista precios filtrada por los tres ejes de la regla. Grilla `ReglasDescEspecificasListaPreciosPanel`: columnas PROV. / MARCA / RUBRO. Ver BACKEND_GUIDELINES §1.8d-b.*
 
-*Última actualización (2026-07-03): **Desc. específico — formulario 4 columnas** — `CrearEditarReglaDescEspecialModal`: grid `grid-cols-4` — fila 1 **DESCRIPCIÓN** (col-span-2) + input (col-span-2); fila 2 **PROVEEDOR** | input | **RUBRO** | input; fila 3 **MARCA** | input | **VALOR** | input.*
+*Última actualización (2026-07-03): **Desc. específico — formulario 4 columnas** — `CrearEditarReglaDescEspecialModal`: grid `grid-cols-4` — fila 1 **DESCRIPCIÓN** (col 1) + input (`col-span-3`, cols 2–4); fila 2 **PROVEEDOR** | input | **RUBRO** | input; fila 3 **MARCA** | input | **VALOR** | input.*
 
 *Última actualización (2026-07-03): **Desc. específico — formulario dos columnas** — (reemplazado por grid 4 columnas arriba).*
 

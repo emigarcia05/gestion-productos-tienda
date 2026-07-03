@@ -256,10 +256,10 @@ export default function CrearEditarReglaDescEspecialModal({
         >
           <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
             <div className={FORM_GRID_4_COL_CLASS}>
-              <Label htmlFor="nombre-regla-esp" className={cn(LABEL_CLASS, "col-span-2")}>
+              <Label htmlFor="nombre-regla-esp" className={LABEL_CLASS}>
                 DESCRIPCIÓN
               </Label>
-              <div className={cn(FORM_CONTROL_CLASS, "col-span-2")}>
+              <div className={cn(FORM_CONTROL_CLASS, "col-span-3")}>
                 <Input
                   id="nombre-regla-esp"
                   value={nombre}
