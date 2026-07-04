@@ -135,6 +135,78 @@ export async function buildMapPxSugeridoCompetenciaPorCodTienda(
   return map;
 }
 
+export type CompetenciaPxSugeridoPorCodTienda = {
+  codTienda: string;
+  competenciaId: string;
+  competenciaNombre: string;
+  idProveedor: string;
+  px: number;
+};
+
+/**
+ * Todas las competencias con `px_vta_sugerido` por `cod_tienda` (misma lógica que `/cx-px-tienda`).
+ * No exige fila en `prod_precios_competencia`; mapea `lista.id_proveedor` → `prod_competencia`.
+ */
+export async function listarCompetenciasConPxSugeridoPorCodTiendas(
+  codTiendas: string[],
+  competenciaId?: string
+): Promise<CompetenciaPxSugeridoPorCodTienda[]> {
+  if (codTiendas.length === 0) return [];
+
+  const rows = await prisma.listaPrecioProveedor.findMany({
+    where: {
+      codTiendaVinculo: { in: codTiendas },
+      habilitado: true,
+      pxVtaSugerido: { not: null, gt: 0 },
+    },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      codTiendaVinculo: true,
+      idProveedor: true,
+      pxVtaSugerido: true,
+    },
+  });
+
+  const idProveedores = [...new Set(rows.map((r) => r.idProveedor))];
+  const competenciasPorProveedor = new Map<string, { id: string; nombre: string }>();
+  if (idProveedores.length > 0) {
+    const competencias = await prisma.prodCompetencia.findMany({
+      where: {
+        idProveedor: { in: idProveedores },
+        ...(competenciaId ? { id: competenciaId } : {}),
+      },
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true, idProveedor: true },
+    });
+    for (const c of competencias) {
+      if (!c.idProveedor || competenciasPorProveedor.has(c.idProveedor)) continue;
+      competenciasPorProveedor.set(c.idProveedor, { id: c.id, nombre: c.nombre });
+    }
+  }
+
+  const seen = new Set<string>();
+  const result: CompetenciaPxSugeridoPorCodTienda[] = [];
+  for (const row of rows) {
+    const codTienda = row.codTiendaVinculo;
+    if (!codTienda) continue;
+    const comp = competenciasPorProveedor.get(row.idProveedor);
+    if (!comp) continue;
+    const key = `${codTienda}:${comp.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const px = Number(row.pxVtaSugerido);
+    if (!Number.isFinite(px) || px <= 0) continue;
+    result.push({
+      codTienda,
+      competenciaId: comp.id,
+      competenciaNombre: comp.nombre,
+      idProveedor: row.idProveedor,
+      px: Math.round(px),
+    });
+  }
+  return result;
+}
+
 /** @deprecated Usar `buildMapPxSugeridoCompetenciaPorCodTienda`. */
 export async function buildMapPxVtaSugeridoPorCodTienda(
   codTiendas: string[]
