@@ -420,20 +420,17 @@ async function armarOpcionesReferenciaPorCodTiendas(
   return [...opcionesMap.values()];
 }
 
-function ordenarYLimitarOpcionesReferencia(
-  opciones: OpcionBaseReferenciaCompetencia[],
-  take: number
+function ordenarOpcionesReferenciaBase(
+  opciones: OpcionBaseReferenciaCompetencia[]
 ): OpcionBaseReferenciaCompetencia[] {
-  return opciones
-    .sort((a, b) => {
-      const cmpDesc = (a.descripcionTienda ?? a.codTienda).localeCompare(
-        b.descripcionTienda ?? b.codTienda,
-        "es"
-      );
-      if (cmpDesc !== 0) return cmpDesc;
-      return a.competenciaNombre.localeCompare(b.competenciaNombre, "es");
-    })
-    .slice(0, take);
+  return [...opciones].sort((a, b) => {
+    const cmpDesc = (a.descripcionTienda ?? a.codTienda).localeCompare(
+      b.descripcionTienda ?? b.codTienda,
+      "es"
+    );
+    if (cmpDesc !== 0) return cmpDesc;
+    return a.competenciaNombre.localeCompare(b.competenciaNombre, "es");
+  });
 }
 
 async function resolverOpcionesReferenciaConPrecio(
@@ -444,7 +441,7 @@ async function resolverOpcionesReferenciaConPrecio(
   const codTiendas = [...new Set(opciones.map((o) => o.codTienda))];
   const competenciaIds = [...new Set(opciones.map((o) => o.competenciaId))];
 
-  const [competencias, idProveedoresLista, sugeridosDirectos] = await Promise.all([
+  const [competencias, listaConSugerido, sugeridosDirectos] = await Promise.all([
     prisma.prodCompetencia.findMany({
       where: { id: { in: competenciaIds } },
       select: { id: true, idProveedor: true },
@@ -456,10 +453,11 @@ async function resolverOpcionesReferenciaConPrecio(
         pxVtaSugerido: { not: null, gt: 0 },
       },
       select: { idProveedor: true },
-      distinct: ["idProveedor"],
     }),
     listarCompetenciasConPxSugeridoPorCodTiendas(codTiendas),
   ]);
+
+  const idProveedoresLista = [...new Set(listaConSugerido.map((row) => row.idProveedor))];
 
   const proveedorPorCompetencia = new Map(
     competencias.filter((c) => c.idProveedor).map((c) => [c.id, c.idProveedor as string])
@@ -481,7 +479,8 @@ async function resolverOpcionesReferenciaConPrecio(
       ...competencias
         .map((c) => c.idProveedor)
         .filter((id): id is string => Boolean(id)),
-      ...idProveedoresLista.map((row) => row.idProveedor),
+      ...idProveedoresLista,
+      ...sugeridosDirectos.map((row) => row.idProveedor),
     ]),
   ];
 
@@ -533,79 +532,58 @@ async function buscarOpcionesReferenciaCompetenciaBrowse(
   take: number,
   competenciaId?: string
 ): Promise<OpcionBaseReferenciaCompetencia[]> {
+  const fetchCap = Math.min(Math.max(take * 5, 200), 500);
   const filtroCompetenciaVinculo = competenciaId ? { competenciaId } : {};
-  const filtroCompetenciaSugerido = competenciaId
-    ? { proveedor: { competenciasPrecios: { some: { id: competenciaId } } } }
-    : { proveedor: { competenciasPrecios: { some: {} } } };
 
-  const [preciosRows, sugeridoRows] = await Promise.all([
-    prisma.prodPrecioCompetencia.findMany({
-      where: {
-        prodTienda: { compararCompetencia: true },
-        ...filtroCompetenciaVinculo,
-      },
-      take: take * 2,
-      orderBy: [{ prodTienda: { descripcionTienda: "asc" } }, { competencia: { nombre: "asc" } }],
-      select: {
-        codTienda: true,
-        competenciaId: true,
-        competencia: { select: { nombre: true } },
-        prodTienda: { select: { descripcionTienda: true } },
-      },
-    }),
-    prisma.listaPrecioProveedor.findMany({
+  const preciosRows = await prisma.prodPrecioCompetencia.findMany({
+    where: {
+      prodTienda: { compararCompetencia: true },
+      ...filtroCompetenciaVinculo,
+    },
+    take: fetchCap,
+    orderBy: [{ prodTienda: { descripcionTienda: "asc" } }, { competencia: { nombre: "asc" } }],
+    select: { codTienda: true },
+  });
+
+  const codTiendasFromVinculos = [...new Set(preciosRows.map((row) => row.codTienda))];
+
+  const sugeridoRows = await listarCompetenciasConPxSugeridoPorCodTiendas(
+    codTiendasFromVinculos.length > 0 ? codTiendasFromVinculos : [],
+    competenciaId
+  );
+
+  let codTiendas = [
+    ...new Set([
+      ...codTiendasFromVinculos,
+      ...sugeridoRows.map((row) => row.codTienda),
+    ]),
+  ].slice(0, Math.max(take, 40));
+
+  if (codTiendas.length === 0) {
+    const sugeridoSeed = await prisma.listaPrecioProveedor.findMany({
       where: {
         habilitado: true,
         pxVtaSugerido: { not: null, gt: 0 },
         codTiendaVinculo: { not: null },
         prodTienda: { compararCompetencia: true },
-        ...filtroCompetenciaSugerido,
+        ...(competenciaId
+          ? { proveedor: { competenciasPrecios: { some: { id: competenciaId } } } }
+          : { proveedor: { competenciasPrecios: { some: {} } } }),
       },
-      take: take * 2,
-      orderBy: { prodTienda: { descripcionTienda: "asc" } },
-      select: {
-        codTiendaVinculo: true,
-        prodTienda: { select: { descripcionTienda: true } },
-        proveedor: {
-          select: {
-            competenciasPrecios: {
-              where: competenciaId ? { id: competenciaId } : undefined,
-              select: { id: true, nombre: true },
-              orderBy: { nombre: "asc" },
-              take: 1,
-            },
-          },
-        },
-      },
-    }),
-  ]);
-
-  const opcionesMap = new Map<string, OpcionBaseReferenciaCompetencia>();
-
-  for (const row of preciosRows) {
-    opcionesMap.set(claveOpcionReferenciaCompetencia(row.codTienda, row.competenciaId), {
-      codTienda: row.codTienda,
-      competenciaId: row.competenciaId,
-      competenciaNombre: row.competencia.nombre,
-      descripcionTienda: row.prodTienda.descripcionTienda,
+      take: fetchCap,
+      orderBy: { updatedAt: "desc" },
+      select: { codTiendaVinculo: true },
     });
+    codTiendas = [
+      ...new Set(
+        sugeridoSeed
+          .map((row) => row.codTiendaVinculo)
+          .filter((cod): cod is string => Boolean(cod))
+      ),
+    ].slice(0, Math.max(take, 40));
   }
 
-  for (const row of sugeridoRows) {
-    const codTienda = row.codTiendaVinculo;
-    const competencia = row.proveedor.competenciasPrecios[0];
-    if (!codTienda || !competencia) continue;
-    const key = claveOpcionReferenciaCompetencia(codTienda, competencia.id);
-    if (opcionesMap.has(key)) continue;
-    opcionesMap.set(key, {
-      codTienda,
-      competenciaId: competencia.id,
-      competenciaNombre: competencia.nombre,
-      descripcionTienda: row.prodTienda?.descripcionTienda ?? null,
-    });
-  }
-
-  return [...opcionesMap.values()];
+  return armarOpcionesReferenciaPorCodTiendas(codTiendas, competenciaId);
 }
 
 /** Opciones para elegir referente: catálogo Px Competencia (scrape + Px. Vta. Sugerido, igual `/cx-px-tienda`). */
@@ -644,11 +622,12 @@ export async function buscarOpcionesReferenciaCompetencia(params: {
     );
   } else {
     opciones = await buscarOpcionesReferenciaCompetenciaBrowse(take, competenciaId);
-    opciones = ordenarYLimitarOpcionesReferencia(opciones, take);
   }
 
-  opciones = opciones.filter(
-    (o) => !excluirKeys.has(claveOpcionReferenciaCompetencia(o.codTienda, o.competenciaId))
+  opciones = ordenarOpcionesReferenciaBase(
+    opciones.filter(
+      (o) => !excluirKeys.has(claveOpcionReferenciaCompetencia(o.codTienda, o.competenciaId))
+    )
   );
 
   const resueltas = await resolverOpcionesReferenciaConPrecio(opciones);

@@ -51,7 +51,7 @@ export default function ElegirReferenciaCompetenciaModal({
   const [confirmPending, setConfirmPending] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const rowsVisibles = rows.filter((r) => r.pxMostrar != null);
+  const rowsVisibles = rows;
 
   useEffect(() => {
     if (!open) return;
@@ -77,7 +77,10 @@ export default function ElegirReferenciaCompetenciaModal({
       });
       setLoading(false);
       if (result.ok && result.data) setRows(result.data);
-      else setRows([]);
+      else {
+        setRows([]);
+        if (!result.ok && result.error) toast.error(result.error);
+      }
     };
     debounceRef.current = setTimeout(run, 300);
     return () => {
