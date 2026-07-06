@@ -32,7 +32,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { importarEstPorProdAction } from "@/actions/estPorProd";
+import {
+  importarEstPorProdAction,
+  verificarEstPorProdPeriodoAction,
+} from "@/actions/estPorProd";
 import {
   type CampoDestinoEstPorProd,
   type MapeoColumnasEstPorProd,
@@ -42,6 +45,7 @@ import {
   separarEncabezadosYFilasEstPorProd,
 } from "@/lib/parseEstPorProdExcelClient";
 import { cn } from "@/lib/utils";
+import { etiquetaPeriodoEstPorProd } from "@/lib/estPorProdPeriodo";
 import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
 import type { SucursalConDepositoOption } from "@/lib/estPorProdTypes";
 
@@ -99,6 +103,7 @@ export default function ImportarEstPorProdModal({
   const [mapeo, setMapeo] = useState<MapeoColumnasEstPorProd>({});
   const [leyendoArchivo, setLeyendoArchivo] = useState(false);
   const [importando, setImportando] = useState(false);
+  const [confirmReemplazoOpen, setConfirmReemplazoOpen] = useState(false);
 
   function resetArchivo() {
     setArchivoNombre(null);
@@ -115,6 +120,7 @@ export default function ImportarEstPorProdModal({
     setSucursalId(sucursales[0]?.id ?? "");
     setTieneEncabezados(true);
     setIsDragging(false);
+    setConfirmReemplazoOpen(false);
     resetArchivo();
   }, [open, defaultMes, defaultAnio, sucursales]);
 
@@ -186,6 +192,60 @@ export default function ImportarEstPorProdModal({
     mes >= 1 &&
     mes <= 12;
 
+  const nombreSucursalSeleccionada =
+    sucursales.find((s) => s.id === sucursalId)?.nombre ?? "Sucursal";
+  const etiquetaPeriodoSeleccionado = etiquetaPeriodoEstPorProd(
+    nombreSucursalSeleccionada,
+    mes,
+    anio
+  );
+
+  async function ejecutarImportar(reemplazarPeriodo: boolean) {
+    setImportando(true);
+    try {
+      const r = await importarEstPorProdAction({
+        mes,
+        anio,
+        sucursalId,
+        lineas: lineasParseadas,
+        reemplazarPeriodo,
+      });
+      if (!r.ok) {
+        toast.error(r.error ?? "No se pudo importar.");
+        return;
+      }
+      const { importados, omitidosCodTiendaInexistente, codigosOmitidos, reemplazados } = r.data;
+      let msg =
+        importados === 1
+          ? "1 producto importado."
+          : `${importados.toLocaleString("es-AR")} productos importados.`;
+      if (reemplazados > 0) {
+        msg += ` Se reemplazaron ${reemplazados.toLocaleString("es-AR")} registro(s) anteriores.`;
+      }
+      if (filasOmitidas > 0) {
+        msg += ` ${filasOmitidas.toLocaleString("es-AR")} fila(s) omitida(s) por datos inválidos en la planilla.`;
+      }
+      if (omitidosCodTiendaInexistente > 0) {
+        const muestra = codigosOmitidos.slice(0, 5).join(", ");
+        msg += ` ${omitidosCodTiendaInexistente.toLocaleString("es-AR")} fila(s) omitida(s) (cód. tienda inexistente${muestra ? `: ${muestra}` : ""}).`;
+      }
+      if (importados === 0) {
+        toast.error(
+          omitidosCodTiendaInexistente > 0
+            ? "Ningún código de la planilla coincide con productos en el catálogo tienda."
+            : "No se importó ningún registro."
+        );
+        return;
+      }
+      toast.success(msg);
+      setConfirmReemplazoOpen(false);
+      onOpenChange(false);
+      router.refresh();
+    } finally {
+      setImportando(false);
+    }
+  }
+
   async function handleImportar() {
     if (!puedeImportar) return;
     if (!camposRequeridosMapeados) {
@@ -194,47 +254,42 @@ export default function ImportarEstPorProdModal({
     }
     setImportando(true);
     try {
-      const r = await importarEstPorProdAction({
-        mes,
-        anio,
-        sucursalId,
-        lineas: lineasParseadas,
-      });
-      if (!r.ok) {
-        toast.error(r.error ?? "No se pudo importar.");
+      const verificacion = await verificarEstPorProdPeriodoAction({ mes, anio, sucursalId });
+      if (!verificacion.ok) {
+        toast.error(verificacion.error ?? "No se pudo verificar el periodo.");
         return;
       }
-      const { importados, omitidosCodTiendaInexistente, codigosOmitidos } = r.data;
-      let msg =
-        importados === 1
-          ? "1 producto importado."
-          : `${importados.toLocaleString("es-AR")} productos importados.`;
-      if (filasOmitidas > 0) {
-        msg += ` ${filasOmitidas.toLocaleString("es-AR")} fila(s) omitida(s) por datos inválidos en la planilla.`;
+      if (verificacion.data.existe) {
+        setConfirmReemplazoOpen(true);
+        return;
       }
-      if (omitidosCodTiendaInexistente > 0) {
-        const muestra = codigosOmitidos.slice(0, 5).join(", ");
-        msg += ` ${omitidosCodTiendaInexistente.toLocaleString("es-AR")} fila(s) omitida(s) (cód. tienda inexistente${muestra ? `: ${muestra}` : ""}).`;
-      }
-      toast.success(msg);
-      onOpenChange(false);
-      router.refresh();
+      await ejecutarImportar(false);
     } finally {
       setImportando(false);
     }
+  }
+
+  function handleReemplazoNo() {
+    setConfirmReemplazoOpen(false);
+    onOpenChange(false);
+  }
+
+  function handleReemplazoSi() {
+    void ejecutarImportar(true);
   }
 
   const busy = importando || leyendoArchivo;
   const filaEjemplo = filasCrudas[0] ?? [];
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (busy && !next) return;
-        onOpenChange(next);
-      }}
-    >
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if ((busy || confirmReemplazoOpen) && !next) return;
+          onOpenChange(next);
+        }}
+      >
       <AppModal
         title="Importar Estadísticas Por Producto"
         size="xl"
@@ -492,6 +547,43 @@ export default function ImportarEstPorProdModal({
           ) : null}
         </div>
       </AppModal>
-    </Dialog>
+      </Dialog>
+
+      <Dialog
+        open={confirmReemplazoOpen}
+        onOpenChange={(next) => {
+          if (importando && !next) return;
+          if (!next) setConfirmReemplazoOpen(false);
+        }}
+      >
+        <AppModal
+          title="Datos Existentes"
+          size="sm"
+          actions={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={importando}
+                onClick={handleReemplazoNo}
+              >
+                No
+              </Button>
+              <Button type="button" disabled={importando} onClick={handleReemplazoSi}>
+                {importando ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sí"}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-3 text-sm">
+            <p className="text-foreground">Ya existe datos para</p>
+            <p className="font-semibold text-foreground">{etiquetaPeriodoSeleccionado}</p>
+            <p className="text-foreground">
+              ¿Desea eliminar los datos anteriores y escribir estos nuevos datos?
+            </p>
+          </div>
+        </AppModal>
+      </Dialog>
+    </>
   );
 }

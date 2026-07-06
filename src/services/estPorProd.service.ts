@@ -92,6 +92,34 @@ export interface ImportarEstPorProdResultado {
   importados: number;
   omitidosCodTiendaInexistente: number;
   codigosOmitidos: string[];
+  reemplazados: number;
+}
+
+export interface EstPorProdPeriodoExistente {
+  existe: boolean;
+  cantidad: number;
+}
+
+export async function verificarEstPorProdPeriodo(
+  sucursalId: string,
+  mes: number,
+  anio: number
+): Promise<EstPorProdPeriodoExistente> {
+  const cantidad = await prisma.estPorProd.count({
+    where: { sucursalId, mes, anio },
+  });
+  return { existe: cantidad > 0, cantidad };
+}
+
+async function eliminarEstPorProdPorPeriodo(
+  sucursalId: string,
+  mes: number,
+  anio: number
+): Promise<number> {
+  const res = await prisma.estPorProd.deleteMany({
+    where: { sucursalId, mes, anio },
+  });
+  return res.count;
 }
 
 /** Upsert masivo por periodo + sucursal (una fila por `cod_tienda`). */
@@ -102,6 +130,18 @@ export async function importarEstPorProd(
     return {
       success: false,
       error: "La sucursal no existe o no tiene depósito configurado.",
+    };
+  }
+
+  const periodoExistente = await verificarEstPorProdPeriodo(
+    input.sucursalId,
+    input.mes,
+    input.anio
+  );
+  if (periodoExistente.existe && !input.reemplazarPeriodo) {
+    return {
+      success: false,
+      error: "Ya existen datos para este periodo y sucursal. Confirmá el reemplazo.",
     };
   }
 
@@ -131,6 +171,15 @@ export async function importarEstPorProd(
   }
 
   try {
+    let reemplazados = 0;
+    if (input.reemplazarPeriodo && periodoExistente.existe) {
+      reemplazados = await eliminarEstPorProdPorPeriodo(
+        input.sucursalId,
+        input.mes,
+        input.anio
+      );
+    }
+
     const entries = [...porCodigo.entries()];
     for (let i = 0; i < entries.length; i += IMPORT_UPSERT_CHUNK) {
       const slice = entries.slice(i, i + IMPORT_UPSERT_CHUNK);
@@ -164,6 +213,7 @@ export async function importarEstPorProd(
         importados: porCodigo.size,
         omitidosCodTiendaInexistente: omitidos.length,
         codigosOmitidos,
+        reemplazados,
       },
     };
   } catch (e: unknown) {

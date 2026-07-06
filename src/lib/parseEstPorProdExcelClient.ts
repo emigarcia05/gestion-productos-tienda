@@ -10,18 +10,68 @@ export type MapeoColumnasEstPorProd = Record<number, CampoDestinoEstPorProd>;
 /** Filas iniciales del export DUX que no se importan (metadatos). La 3.ª fila es el encabezado. */
 export const FILAS_OMITIR_INICIO_EST_POR_PROD = 2;
 
+const MAX_SAFE_COD_TIENDA_INT = Number.MAX_SAFE_INTEGER;
+
+function cellDisplayValue(cell: { w?: string; v?: unknown } | undefined): unknown {
+  if (!cell) return "";
+  const formatted = cell.w?.trim();
+  if (formatted) return formatted;
+  return cell.v ?? "";
+}
+
+/** Lee la hoja usando texto formateado de Excel (evita perder dígitos en códigos largos). */
+export function filasDesdeHojaEstPorProd(
+  hoja: Record<string, unknown>,
+  utils: { decode_range: (ref: string) => { s: { r: number; c: number }; e: { r: number; c: number } }; encode_cell: (cell: { r: number; c: number }) => string }
+): unknown[][] {
+  const ref = hoja["!ref"];
+  if (typeof ref !== "string" || !ref) return [];
+
+  const range = utils.decode_range(ref);
+  const rows: unknown[][] = [];
+
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    const row: unknown[] = [];
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const addr = utils.encode_cell({ r, c });
+      const cell = hoja[addr] as { w?: string; v?: unknown } | undefined;
+      row.push(cellDisplayValue(cell));
+    }
+    rows.push(row);
+  }
+
+  return rows;
+}
+
 function normalizarCodTienda(value: unknown): string | null {
   if (value == null || value === "") return null;
+
+  if (typeof value === "string") {
+    const s = value.trim().replace(/\s/g, "");
+    if (!s) return null;
+    if (/^\d+$/.test(s)) return s;
+    const n = Number(s.replace(",", "."));
+    if (Number.isFinite(n) && /^\d+([.,]\d+)?$/.test(s)) {
+      if (Math.abs(n) <= MAX_SAFE_COD_TIENDA_INT && Number.isInteger(n)) {
+        return String(Math.trunc(n));
+      }
+    }
+    return s;
+  }
+
   if (typeof value === "number" && Number.isFinite(value)) {
-    return String(Math.trunc(value));
+    if (Number.isInteger(value) && Math.abs(value) <= MAX_SAFE_COD_TIENDA_INT) {
+      return String(value);
+    }
+    const asString = String(value);
+    if (/^\d+$/.test(asString.replace(/\.\d+$/, ""))) {
+      return asString.split(".")[0] ?? asString;
+    }
+    return asString;
   }
+
   const s = String(value).trim();
-  if (!s) return null;
-  const n = Number(s.replace(",", "."));
-  if (Number.isFinite(n) && /^\d+([.,]\d+)?$/.test(s.replace(/\s/g, ""))) {
-    return String(Math.trunc(n));
-  }
-  return s;
+  return s || null;
 }
 
 function parseVtasEnUn(value: unknown): number | null {
@@ -113,10 +163,10 @@ export function lineasDesdeMapeoEstPorProd(
 export async function leerFilasCrudasEstPorProdArchivo(file: File): Promise<unknown[][]> {
   const XLSX = await import("xlsx");
   const buffer = await file.arrayBuffer();
-  const libro = XLSX.read(buffer, { type: "array" });
+  const libro = XLSX.read(buffer, { type: "array", cellText: true, cellDates: false });
   const hoja = libro.Sheets[libro.SheetNames[0]];
   if (!hoja) {
     throw new Error("El archivo no contiene hojas.");
   }
-  return XLSX.utils.sheet_to_json<unknown[]>(hoja, { header: 1, defval: "" });
+  return filasDesdeHojaEstPorProd(hoja as Record<string, unknown>, XLSX.utils);
 }

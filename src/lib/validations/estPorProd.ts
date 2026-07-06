@@ -15,12 +15,19 @@ const estPorProdLineaImportSchema = z.object({
 
 export const importarEstPorProdSchema = mesAnioQuerySchema.extend({
   sucursalId: globalSucursalIdSchema,
+  /** Si true, borra todos los registros del periodo+sucursal antes de importar. */
+  reemplazarPeriodo: z.boolean().optional().default(false),
   lineas: z
     .array(estPorProdLineaImportSchema)
     .min(1, "La planilla no contiene filas válidas.")
     .max(MAX_LINEAS_IMPORT, `Máximo ${MAX_LINEAS_IMPORT.toLocaleString("es-AR")} filas por importación.`),
 });
 export type ImportarEstPorProdInput = z.infer<typeof importarEstPorProdSchema>;
+
+export const verificarEstPorProdPeriodoSchema = mesAnioQuerySchema.extend({
+  sucursalId: globalSucursalIdSchema,
+});
+export type VerificarEstPorProdPeriodoInput = z.infer<typeof verificarEstPorProdPeriodoSchema>;
 
 export const eliminarEstPorProdSchema = z.object({
   id: prismaCuidSchema,

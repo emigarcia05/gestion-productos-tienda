@@ -933,7 +933,7 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Regla de sucursal**: solo sucursales con **`deposito` no nulo** (y no vacío tras `trim`) — `listarSucursalesConDepositoParaEstPorProd()`; distinto de `fin_bal_vtas` (`genera_balance`).
 - **Servicio** (`src/services/estPorProd.service.ts`): `listarEstPorProd`, `importarEstPorProd` (upsert masivo en transacción; omite filas cuyo `cod_tienda` no existe en `prod_tienda`), `eliminarEstPorProd`.
 - **Validación** (`@/lib/validations/estPorProd.ts`): `importarEstPorProdSchema` (`mes`/`anio` vía `mesAnioQuerySchema`, `sucursalId` con `globalSucursalIdSchema`, hasta 20 000 líneas); `eliminarEstPorProdSchema`.
-- **Actions** (`src/actions/estPorProd.ts`): `importarEstPorProdAction`, `eliminarEstPorProdAction`; **`revalidatePath("/estadisticas-productos")`** tras mutar.
+- **Actions** (`src/actions/estPorProd.ts`): `importarEstPorProdAction`, `eliminarEstPorProdAction`, **`verificarEstPorProdPeriodoAction`**; **`reemplazarPeriodo`** en importación borra todos los registros del **mes/año/sucursal** antes del upsert (confirmación en UI). Tras mutar, **`revalidatePath("/estadisticas-productos")`**.
 - **Import UI**: planilla parseada en cliente (`@/lib/parseEstPorProdExcelClient.ts` + `xlsx`). Por defecto omite las **2 primeras filas** del Excel (`FILAS_OMITIR_INICIO_EST_POR_PROD`); la **3.ª** es encabezado; mapeo inicial col. **0** → `codTienda`, col. **1** → `vtasEnUn` (editable en modal). Modal **`ImportarEstPorProdModal`**.
 
 ### 2.5c Cajas de tesorería (`fin_tesoreria`, Prisma: `CajaTesoreria`)

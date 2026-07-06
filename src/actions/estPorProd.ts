@@ -7,11 +7,14 @@ import type { ActionResult } from "@/lib/types";
 import {
   eliminarEstPorProdSchema,
   importarEstPorProdSchema,
+  verificarEstPorProdPeriodoSchema,
 } from "@/lib/validations/estPorProd";
 import type { EstPorProdItem } from "@/lib/estPorProdTypes";
 import {
   eliminarEstPorProd,
   importarEstPorProd,
+  verificarEstPorProdPeriodo,
+  type EstPorProdPeriodoExistente,
   type ImportarEstPorProdResultado,
 } from "@/services/estPorProd.service";
 
@@ -22,6 +25,32 @@ function firstZodErrorMessage(error: {
   return (
     [...Object.values(flattened.fieldErrors).flat(), ...flattened.formErrors][0] ?? "Datos inválidos."
   );
+}
+
+export async function verificarEstPorProdPeriodoAction(
+  raw: unknown
+): Promise<ActionResult<EstPorProdPeriodoExistente>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) {
+    return { ok: false, error: "Sin permisos para estadísticas de productos." };
+  }
+
+  const parsed = verificarEstPorProdPeriodoSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  try {
+    const data = await verificarEstPorProdPeriodo(
+      parsed.data.sucursalId,
+      parsed.data.mes,
+      parsed.data.anio
+    );
+    return { ok: true, data };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "No se pudo verificar el periodo.";
+    return { ok: false, error: msg };
+  }
 }
 
 export async function importarEstPorProdAction(
