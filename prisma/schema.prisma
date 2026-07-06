@@ -235,6 +235,7 @@ model Sucursal {
   finBalGastoFinal    FinBalGastoFinal[]
   finBalGastoMensualImputaciones FinBalGastoMensual[] @relation("FinBalGastoMensualImputacionSucursal")
   finBalVtas          FinBalVtas[]
+  estPorProd          EstPorProd[]
 
   @@map("global_sucursales")
 }
@@ -493,6 +494,34 @@ model FinBalVtas {
   @@index([sucursalId])
   @@index([anio, mes])
   @@map("fin_bal_vtas")
+}
+
+/**
+ * Estadísticas de ventas en unidades por producto y sucursal (`est_por_prod`).
+ * La sucursal debe existir en `global_sucursales` con `deposito` no nulo (validado en servicio).
+ * `cod_tienda` referencia `prod_tienda.cod_tienda` (código numérico DUX importado como texto).
+ */
+model EstPorProd {
+  id         String   @id @default(cuid())
+  sucursalId String   @map("sucursal_id")
+  /** Mes calendario 1–12. */
+  mes        Int
+  /** Año calendario (columna física `anio`). */
+  anio       Int      @map("anio")
+  codTienda  String   @map("cod_tienda")
+  /** Ventas en unidades importadas desde planilla. */
+  vtasEnUn   Decimal  @map("vtas_en_un") @db.Decimal(14, 4)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  sucursal Sucursal   @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
+  producto ProdTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Restrict)
+
+  @@unique([sucursalId, mes, anio, codTienda], map: "est_por_prod_sucursal_periodo_cod_ux")
+  @@index([sucursalId])
+  @@index([anio, mes])
+  @@index([codTienda])
+  @@map("est_por_prod")
 }
 
 /**
@@ -790,6 +819,7 @@ model ProdTienda {
   preciosLista            ProdTiendaPrecio[]
   preciosListaEdicion     ProdTiendaPrecioEdicion[]
   stocks                  ProdTiendaStock[]
+  estPorProd              EstPorProd[]
 
   @@map("prod_tienda")
 }

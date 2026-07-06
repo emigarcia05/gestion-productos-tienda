@@ -120,6 +120,11 @@ export const PERMISOS = {
     acceso: { simple: true, editor: true },
   },
 
+  // ─── Área /estadisticas-productos ─────────────────────────────────────────
+  estadisticasProductos: {
+    acceso: { simple: true, editor: true },
+  },
+
 } as const;
 
 /**
