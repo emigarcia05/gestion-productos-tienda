@@ -17,7 +17,10 @@ import {
   buscarReferenciaCompetenciaAction,
   listCompetidoresParaReferenciaAction,
 } from "@/actions/comparacionCategorias";
-import type { OpcionReferenciaCompetencia } from "@/services/categoriasComparacion.service";
+import type {
+  OpcionReferenciaCompetencia,
+  ReferenciaCompetenciaPresentacion,
+} from "@/services/categoriasComparacion.service";
 import { fmtPrecio } from "@/lib/format";
 import {
   MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS,
