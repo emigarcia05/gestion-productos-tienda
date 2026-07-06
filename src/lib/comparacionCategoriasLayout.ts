@@ -28,12 +28,9 @@ export const COMP_CATEGORIAS_SELECTOR_GRID_CLASS =
 /**
  * Ancho compartido modales Comp. Categorías con tabla de búsqueda
  * (Asignar Productos + Agregar Referencia De Competencia).
- * Base `ModalTablaConFiltros` `max-w-[84rem]` × 1,5 × 1,2.
+ * Base histórica `max-w-[84rem]` × 1,5 × 1,2 = 151.2rem; tamaño actual −50 % → 75.6rem.
  */
-export const MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS = "!max-w-[151.2rem]";
-
-/** Agregar Referencia De Competencia: 60 % del ancho compartido (−40 %). */
-export const MODAL_COMP_CATEGORIAS_REFERENCIA_MAX_WIDTH_CLASS = "!max-w-[90.72rem]";
+export const MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS = "!max-w-[75.6rem]";
 
 /** Stack de filtros compartido (select entidad + búsqueda texto). */
 export const MODAL_COMP_CATEGORIAS_FILTROS_STACK_CLASS = "flex flex-col gap-2";

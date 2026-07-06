@@ -23,7 +23,7 @@ import type {
 } from "@/services/categoriasComparacion.service";
 import { fmtPrecio } from "@/lib/format";
 import {
-  MODAL_COMP_CATEGORIAS_REFERENCIA_MAX_WIDTH_CLASS,
+  MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS,
   MODAL_COMP_CATEGORIAS_CELDA_DESCRIPCION_CLASS,
   MODAL_COMP_CATEGORIAS_CELDA_ENTIDAD_CLASS,
   MODAL_COMP_CATEGORIAS_CELDA_PRECIO_CLASS,
@@ -199,7 +199,7 @@ export default function ElegirReferenciaCompetenciaModal({
       loading={loading}
       emptyMessage="NO HAY REFERENCIAS O NO COINCIDEN LOS FILTROS."
       count={rowsVisibles.length}
-      contentClassName={MODAL_COMP_CATEGORIAS_REFERENCIA_MAX_WIDTH_CLASS}
+      contentClassName={MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS}
       tableColumnWidthsPct={MODAL_COMP_CATEGORIAS_TABLA_COLUMN_WIDTHS_PCT}
     />
   );
