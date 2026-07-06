@@ -42,7 +42,7 @@ import {
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { eliminarEstPorProdAction } from "@/actions/estPorProd";
-import type { EstPorProdItem, SucursalConDepositoOption } from "@/services/estPorProd.service";
+import type { EstPorProdItem, SucursalConDepositoOption } from "@/lib/estPorProdTypes";
 
 const MESES: { valor: number; etiqueta: string }[] = [
   { valor: 1, etiqueta: "ENERO" },

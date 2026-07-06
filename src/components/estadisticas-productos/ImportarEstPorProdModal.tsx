@@ -43,7 +43,7 @@ import {
 } from "@/lib/parseEstPorProdExcelClient";
 import { cn } from "@/lib/utils";
 import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
-import type { SucursalConDepositoOption } from "@/services/estPorProd.service";
+import type { SucursalConDepositoOption } from "@/lib/estPorProdTypes";
 
 const MESES: { valor: number; etiqueta: string }[] = [
   { valor: 1, etiqueta: "ENERO" },

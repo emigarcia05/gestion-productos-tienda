@@ -1,25 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import type { EstPorProdItem, SucursalConDepositoOption } from "@/lib/estPorProdTypes";
 import type { ImportarEstPorProdInput } from "@/lib/validations/estPorProd";
 import type { ServiceResult } from "@/types";
 
-export interface SucursalConDepositoOption {
-  id: string;
-  nombre: string;
-}
+export type { EstPorProdItem, SucursalConDepositoOption } from "@/lib/estPorProdTypes";
 
-export interface EstPorProdItem {
-  id: string;
-  sucursalId: string;
-  mes: number;
-  anio: number;
-  codTienda: string;
-  vtasEnUn: number;
-  createdAt: Date;
-  updatedAt: Date;
-  sucursal: { id: string; nombre: string };
-  producto: { codTienda: string; descripcionTienda: string | null };
-}
+const IMPORT_UPSERT_CHUNK = 100;
 
 function decimalToNumber(value: Prisma.Decimal): number {
   return Number(value.toString());
@@ -44,8 +31,8 @@ function mapEstPorProdRow(row: {
     anio: row.anio,
     codTienda: row.codTienda,
     vtasEnUn: decimalToNumber(row.vtasEnUn),
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
     sucursal: {
       id: row.sucursal.id,
       nombre: row.sucursal.nombre.toLocaleUpperCase("es"),
@@ -64,23 +51,33 @@ const estPorProdInclude = {
 
 /** Sucursales elegibles: `deposito` no nulo (regla de negocio del módulo). */
 export async function listarSucursalesConDepositoParaEstPorProd(): Promise<SucursalConDepositoOption[]> {
-  const rows = await prisma.sucursal.findMany({
-    where: { deposito: { not: null } },
-    select: { id: true, nombre: true },
-    orderBy: [{ nombre: "asc" }],
-  });
-  return rows.map((r) => ({
-    id: r.id,
-    nombre: r.nombre.toLocaleUpperCase("es"),
-  }));
+  try {
+    const rows = await prisma.sucursal.findMany({
+      where: { deposito: { not: null } },
+      select: { id: true, nombre: true },
+      orderBy: [{ nombre: "asc" }],
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      nombre: r.nombre.toLocaleUpperCase("es"),
+    }));
+  } catch (e: unknown) {
+    console.error("[estPorProd.service] listarSucursalesConDepositoParaEstPorProd:", e);
+    return [];
+  }
 }
 
 export async function listarEstPorProd(): Promise<EstPorProdItem[]> {
-  const rows = await prisma.estPorProd.findMany({
-    orderBy: [{ anio: "desc" }, { mes: "desc" }, { sucursal: { nombre: "asc" } }, { codTienda: "asc" }],
-    include: estPorProdInclude,
-  });
-  return rows.map(mapEstPorProdRow);
+  try {
+    const rows = await prisma.estPorProd.findMany({
+      orderBy: [{ anio: "desc" }, { mes: "desc" }, { sucursal: { nombre: "asc" } }, { codTienda: "asc" }],
+      include: estPorProdInclude,
+    });
+    return rows.map(mapEstPorProdRow);
+  } catch (e: unknown) {
+    console.error("[estPorProd.service] listarEstPorProd:", e);
+    return [];
+  }
 }
 
 async function sucursalTieneDeposito(sucursalId: string): Promise<boolean> {
@@ -134,28 +131,32 @@ export async function importarEstPorProd(
   }
 
   try {
-    await prisma.$transaction(
-      [...porCodigo.entries()].map(([codTienda, vtasEnUn]) =>
-        prisma.estPorProd.upsert({
-          where: {
-            sucursalId_mes_anio_codTienda: {
+    const entries = [...porCodigo.entries()];
+    for (let i = 0; i < entries.length; i += IMPORT_UPSERT_CHUNK) {
+      const slice = entries.slice(i, i + IMPORT_UPSERT_CHUNK);
+      await prisma.$transaction(
+        slice.map(([codTienda, vtasEnUn]) =>
+          prisma.estPorProd.upsert({
+            where: {
+              sucursalId_mes_anio_codTienda: {
+                sucursalId: input.sucursalId,
+                mes: input.mes,
+                anio: input.anio,
+                codTienda,
+              },
+            },
+            create: {
               sucursalId: input.sucursalId,
               mes: input.mes,
               anio: input.anio,
               codTienda,
+              vtasEnUn,
             },
-          },
-          create: {
-            sucursalId: input.sucursalId,
-            mes: input.mes,
-            anio: input.anio,
-            codTienda,
-            vtasEnUn,
-          },
-          update: { vtasEnUn },
-        })
-      )
-    );
+            update: { vtasEnUn },
+          })
+        )
+      );
+    }
 
     return {
       success: true,

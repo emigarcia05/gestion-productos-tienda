@@ -8,10 +8,10 @@ import {
   eliminarEstPorProdSchema,
   importarEstPorProdSchema,
 } from "@/lib/validations/estPorProd";
+import type { EstPorProdItem } from "@/lib/estPorProdTypes";
 import {
   eliminarEstPorProd,
   importarEstPorProd,
-  type EstPorProdItem,
   type ImportarEstPorProdResultado,
 } from "@/services/estPorProd.service";
 
