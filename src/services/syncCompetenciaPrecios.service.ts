@@ -5,6 +5,7 @@ import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import {
   aplicarPrioridadPrecioMostrar,
   countVinculosRelevablesCompetencia,
+  obtenerPxVtaSugeridoParaCompetencia,
   obtenerPxVtaSugeridoPorCompetenciaId,
   whereVinculosRelevablesCompetencia,
 } from "@/services/competenciaPxSugerido.service";

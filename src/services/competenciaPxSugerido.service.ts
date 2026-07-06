@@ -7,6 +7,22 @@ import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVincul
  * Precio de venta sugerido en lista proveedor para un ítem tienda vinculado al competidor configurado.
  * Devuelve entero en pesos (misma convención que el scraping).
  */
+/**
+ * Px. Vta. Sugerido para un par producto×competidor: resuelve `id_proveedor` del competidor
+ * y delega en `obtenerPxVtaSugeridoParaCompetencia`.
+ */
+export async function obtenerPxVtaSugeridoPorCompetenciaId(
+  codTienda: string,
+  competenciaId: string
+): Promise<number | null> {
+  const competencia = await prisma.prodCompetencia.findUnique({
+    where: { id: competenciaId },
+    select: { idProveedor: true },
+  });
+  if (!competencia?.idProveedor) return null;
+  return obtenerPxVtaSugeridoParaCompetencia(codTienda, competencia.idProveedor);
+}
+
 export async function obtenerPxVtaSugeridoParaCompetencia(
   codTienda: string,
   idProveedor: string

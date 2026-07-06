@@ -28,14 +28,7 @@ export const TABLAS_HUERFANOS_PROD_TIENDA: TablaHuerfanoProdTiendaConfig[] = [
     tabla: "prod_tienda_precios_edicion",
     columna: "cod_tienda",
     accion: "delete",
-    descripcion: "Precio manual legacy Px Listas",
-    incluirPorDefecto: true,
-  },
-  {
-    tabla: "prod_tienda_margen_edicion",
-    columna: "cod_tienda",
-    accion: "delete",
-    descripcion: "Margen manual Px Listas",
+    descripcion: "Precio staging Px Listas (MARG. MAN. → precio)",
     incluirPorDefecto: true,
   },
   {

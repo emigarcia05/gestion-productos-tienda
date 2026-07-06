@@ -241,7 +241,6 @@ export async function updatePresentacionAction(
     nombre?: string;
     subcategoriaId?: string;
     costoCompraObjetivo?: number | null;
-    productoReferenciaCodExt?: string | null;
   }
 ): Promise<ActionResult> {
   if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };

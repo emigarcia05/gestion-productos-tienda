@@ -577,7 +577,6 @@ model ListaPrecioProveedor {
   proveedor         Proveedor        @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
   precioRex         ProdPrecioRex?   @relation(fields: [idPrecioRex], references: [id], onDelete: SetNull)
   prodTienda ProdTienda? @relation(fields: [codTiendaVinculo], references: [codTienda], onDelete: SetNull)
-  presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
   itemsComparacion ComparacionItem[]
   reglaDescEspecial ProdPrecioDescEspecialReglaProducto?
   /** Ítems tienda que usan esta fila como costo lista en Cx/Px Tienda. */
@@ -653,14 +652,11 @@ model PresentacionComparacion {
   subcategoriaId        String    @map("subcategoria_id")
   nombre               String
   costoCompraObjetivo   Decimal?   @map("costo_compra_objetivo") @db.Decimal(14, 4)
-  /** @deprecated Legacy: referente en prod_precios_provee. Usar referenciasCompetencia. */
-  productoReferenciaCodExt String? @unique @map("prod_ref_cod_ext")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   subcategoria  SubcategoriaComparacion @relation(fields: [subcategoriaId], references: [id], onDelete: Cascade)
   itemsComparados ComparacionItem[]
-  productoReferencia ListaPrecioProveedor? @relation("PresentacionProductoReferencia", fields: [productoReferenciaCodExt], references: [codExt], onDelete: SetNull)
   referenciasCompetencia ComparacionPresentacionRefComp[]
 
   @@map("prod_comp_presentaciones")
@@ -702,7 +698,6 @@ model ProdTiendaListaPrecio {
 
   preciosPorProducto ProdTiendaPrecio[]
   preciosEdicion      ProdTiendaPrecioEdicion[]
-  margenesEdicion     ProdTiendaMargenEdicion[]
 
   @@map("prod_tienda_listas_precios")
 }
@@ -735,21 +730,6 @@ model ProdTiendaPrecioEdicion {
   @@id([codTienda, idLista])
   @@index([idLista], map: "prod_tienda_precios_edicion_id_lista_idx")
   @@map("prod_tienda_precios_edicion")
-}
-
-/** Margen % manual en módulo Px Listas (no lo pisa el sync DUX). Comparación vs margen derivado de `prod_tienda_precios`. */
-model ProdTiendaMargenEdicion {
-  codTienda    String   @map("cod_tienda")
-  idLista      Int      @map("id_lista")
-  margenManual Decimal  @map("margen_manual") @db.Decimal(8, 4)
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  prodTienda ProdTienda            @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
-  lista      ProdTiendaListaPrecio @relation(fields: [idLista], references: [idLista], onDelete: Restrict)
-
-  @@id([codTienda, idLista])
-  @@index([idLista], map: "prod_tienda_margen_edicion_id_lista_idx")
-  @@map("prod_tienda_margen_edicion")
 }
 
 /** Catálogo de depósitos DUX (`stock[].id` en API). Se alimenta en sync desde `stock[]` de cada ítem. */
@@ -809,7 +789,6 @@ model ProdTienda {
   preciosCompetencia      ProdPrecioCompetencia[]
   preciosLista            ProdTiendaPrecio[]
   preciosListaEdicion     ProdTiendaPrecioEdicion[]
-  margenesListaEdicion    ProdTiendaMargenEdicion[]
   stocks                  ProdTiendaStock[]
 
   @@map("prod_tienda")

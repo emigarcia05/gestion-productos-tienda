@@ -1,7 +1,8 @@
 /**
  * Servicio Comparación por categorías.
  * Jerarquía: Categoria → Subcategoria → Presentacion.
- * Referente: `prod_precios_competencia` (scrape o Px. Vta. Sugerido; precio vía `resolverPreciosCompetenciaMostrar`, igual `/cx-px-tienda`).
+ * Referente competencia: `prod_comp_item_referencia` (precio vía `resolverPreciosCompetenciaMostrar`).
+ * Costo objetivo (SSOT): (1) `pxMostrar` de la primera referencia competencia; (2) `costo_compra_objetivo` numérico.
  */
 
 import { calcCostoComparacion, type DatosCostoComparacion } from "@/lib/calculos";
@@ -98,7 +99,6 @@ async function buildReferenciasCompetenciaPresentacion(presentacion: {
 
 const getObjetivoFromPresentacion = async (p: {
   costoCompraObjetivo: unknown;
-  productoReferencia?: { pxCompraFinalSinIva: unknown } | null;
   referenciasCompetencia: Array<{
     id: string;
     refCodTienda: string;
@@ -111,12 +111,7 @@ const getObjetivoFromPresentacion = async (p: {
 }): Promise<number | null> => {
   const refs = await buildReferenciasCompetenciaPresentacion(p);
   if (refs[0]?.pxMostrar != null) return refs[0].pxMostrar;
-  if (p.productoReferencia?.pxCompraFinalSinIva != null) {
-    return Number(p.productoReferencia.pxCompraFinalSinIva);
-  }
-  if (p.costoCompraObjetivo != null) {
-    return Number(p.costoCompraObjetivo);
-  }
+  if (p.costoCompraObjetivo != null) return Number(p.costoCompraObjetivo);
   return null;
 };
 
@@ -191,7 +186,6 @@ export async function getArbolCategorias(): Promise<CategoriaComparacionTree[]> 
           presentaciones: {
             orderBy: { nombre: "asc" },
             include: {
-              productoReferencia: { select: { pxCompraFinalSinIva: true } },
               referenciasCompetencia: REFERENCIAS_COMPETENCIA_INCLUDE,
             },
           },
@@ -237,7 +231,6 @@ export async function getProductosPorPresentacion(
     include: {
       subcategoria: { include: { categoria: true } },
       referenciasCompetencia: REFERENCIAS_COMPETENCIA_INCLUDE,
-      productoReferencia: { select: { pxCompraFinalSinIva: true } },
       itemsComparados: {
         include: {
           listaPrecioProveedor: {
@@ -719,10 +712,7 @@ export async function asignarReferenciaCompetenciaPresentacion(
   if (refsPrevias === 0) {
     await prisma.presentacionComparacion.update({
       where: { id: presentacionId },
-      data: {
-        productoReferenciaCodExt: null,
-        costoCompraObjetivo: null,
-      },
+      data: { costoCompraObjetivo: null },
     });
   }
 
@@ -808,8 +798,6 @@ export type UpdatePresentacionData = {
   nombre?: string;
   subcategoriaId?: string;
   costoCompraObjetivo?: number | null;
-  /** @deprecated Legacy prod_precios_provee */
-  productoReferenciaCodExt?: string | null;
 };
 
 export async function updatePresentacion(id: string, data: UpdatePresentacionData) {
@@ -819,8 +807,6 @@ export async function updatePresentacion(id: string, data: UpdatePresentacionDat
   }
   if (data.subcategoriaId !== undefined) payload.subcategoriaId = data.subcategoriaId;
   if (data.costoCompraObjetivo !== undefined) payload.costoCompraObjetivo = data.costoCompraObjetivo;
-  if (data.productoReferenciaCodExt !== undefined)
-    payload.productoReferenciaCodExt = data.productoReferenciaCodExt;
 
   return prisma.presentacionComparacion.update({ where: { id }, data: payload });
 }

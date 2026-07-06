@@ -43,7 +43,6 @@ export const updatePresentacionSchema = z.object({
     nombre: z.string().min(1).optional(),
     subcategoriaId: comparacionIdSchema.optional(),
     costoCompraObjetivo: z.number().positive().nullable().optional(),
-    productoReferenciaCodExt: listaPreciosCodExtSchema.nullable().optional(),
   }),
 });
 

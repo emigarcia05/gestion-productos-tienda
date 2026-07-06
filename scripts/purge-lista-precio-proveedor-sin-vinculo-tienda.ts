@@ -77,15 +77,12 @@ async function main(): Promise<void> {
       return;
     }
 
-    const [comoCostoCx, enPedidoUrgente, enPresentacionRef] = await Promise.all([
+    const [comoCostoCx, enPedidoUrgente] = await Promise.all([
       prisma.prodTienda.count({
         where: { costoCompraCodExt: { in: codExts } },
       }),
       prisma.prodPedMerc2.count({
         where: { urgenteCodExt: { in: codExts } },
-      }),
-      prisma.presentacionComparacion.count({
-        where: { productoReferenciaCodExt: { in: codExts } },
       }),
     ]);
 
@@ -97,11 +94,6 @@ async function main(): Promise<void> {
     if (enPedidoUrgente > 0) {
       console.log(
         `⚠ ${enPedidoUrgente} fila(s) prod_ped_merc referencian urgente_cod_ext (sin FK; quedarán huérfanas).`
-      );
-    }
-    if (enPresentacionRef > 0) {
-      console.log(
-        `ℹ ${enPresentacionRef} presentación(es) con producto_referencia_cod_ext (FK → SET NULL al borrar).`
       );
     }
 
