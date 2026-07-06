@@ -288,7 +288,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
         setBaseItemId(null);
         setDifPxRefManualDraft({});
         setDtoExtraDraft({});
-        if (res.error) toast.error(res.error);
+        if (!res.ok) toast.error(res.error);
       }
     } finally {
       setLoadingProductos(false);
