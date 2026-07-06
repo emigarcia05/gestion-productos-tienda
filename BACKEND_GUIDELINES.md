@@ -1804,6 +1804,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-02): **Comp. Categorias — `prod_comp_cat`** — unifica `prod_comp_dto_extra` + `prod_comp_dif_px_ref_manual` en una fila por `cod_ext` (`dto_extra`, `dif_px_ref_manual`); catálogo maestro **`CategoriaComparacion` → `prod_comp_categorias`**; helper `upsertComparacionItemParcial` en `categoriasComparacion.service.ts`; migración **`20260702120000_prod_comp_item_unify_ajustes`**.*
 
+*Última actualización (2026-07-06): **Comp. Categorias — P2022 columna `(not available)`** — suele indicar que prod no tiene `prod_comp_item_comparados.presentacion_id` (código nuevo sin **`20260706140000`** / **`20260706150000`**). Verificar `prisma migrate deploy` en build Vercel (`DIRECT_URL`) y SQL: `SELECT column_name FROM information_schema.columns WHERE table_name = 'prod_comp_item_comparados';` debe listar **`presentacion_id`**. Respaldo idempotente: **`20260706150000_ensure_comp_item_comparados_membership`**.*
+
 *Última actualización (2026-07-06): **Comp. Categorias — membresía en `prod_comp_item_comparados`** — productos comparados por presentación (`presentacion_id` + `cod_ext`); se elimina `prod_precios_provee.id_presentacion`; migración **`20260706140000_comp_item_comparados_membership`**; asignar/quitar vía create/delete en `ComparacionItem`.*
 
 *Última actualización (2026-07-06): **Comp. Categorias — referencia en UI** — `asignarReferenciaCompetenciaPresentacion` persiste en **`prod_comp_item_referencia`** y devuelve `ReferenciaCompetenciaPresentacion`; `asignarReferenciaCompetenciaAction` la retorna al modal; `ComparacionCategoriasClient` actualiza la columna **REFERENCIA COMPETENCIA** al instante y recarga con `loadProductos`.*
