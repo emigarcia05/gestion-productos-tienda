@@ -3,8 +3,9 @@ import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import type { ItemPxListasParaTabla, OpcionCompetenciaPxLista } from "@/lib/pxListas";
 import {
   aplicarPrioridadPrecioMostrar,
-  buildMapPxSugeridoCompetenciaPorCodTienda,
   buildMapPxVtaSugerido,
+  listarCompetenciasConPxSugeridoPorCodTiendas,
+  type CompetenciaPxSugeridoPorCodTienda,
 } from "@/services/competenciaPxSugerido.service";
 import {
   calcularResumenPreciosPxListas,
@@ -86,6 +87,33 @@ function enriquecerOpcionesConSugerido(
   ];
 }
 
+function enriquecerOpcionesConTodosSugeridos(
+  opciones: OpcionCompetenciaPxLista[],
+  sugeridos: CompetenciaPxSugeridoPorCodTienda[]
+): OpcionCompetenciaPxLista[] {
+  return sugeridos.reduce(
+    (acc, s) =>
+      enriquecerOpcionesConSugerido(acc, {
+        competenciaId: s.competenciaId,
+        competenciaNombre: s.competenciaNombre,
+        px: s.px,
+      }),
+    opciones
+  );
+}
+
+function agruparSugeridosPorCodTienda(
+  sugeridos: CompetenciaPxSugeridoPorCodTienda[]
+): Map<string, CompetenciaPxSugeridoPorCodTienda[]> {
+  const map = new Map<string, CompetenciaPxSugeridoPorCodTienda[]>();
+  for (const s of sugeridos) {
+    const list = map.get(s.codTienda) ?? [];
+    list.push(s);
+    map.set(s.codTienda, list);
+  }
+  return map;
+}
+
 export async function buildPxListasItemsDesdeFilas(
   filas: Array<{
     codTienda: string;
@@ -104,7 +132,7 @@ export async function buildPxListasItemsDesdeFilas(
 
   const codTiendas = filas.map((f) => f.codTienda);
 
-  const [preciosRows, sugeridoPorCodTienda, competenciasRows] = await Promise.all([
+  const [preciosRows, sugeridosPorCodTiendaList, competenciasRows] = await Promise.all([
     prisma.prodPrecioCompetencia.findMany({
       where: { codTienda: { in: codTiendas } },
       select: {
@@ -120,7 +148,7 @@ export async function buildPxListasItemsDesdeFilas(
       },
       orderBy: { competencia: { nombre: "asc" } },
     }),
-    buildMapPxSugeridoCompetenciaPorCodTienda(codTiendas),
+    listarCompetenciasConPxSugeridoPorCodTiendas(codTiendas),
     prisma.prodCompetencia.findMany({
       orderBy: { nombre: "asc" },
       select: competenciaSelect,
@@ -128,13 +156,18 @@ export async function buildPxListasItemsDesdeFilas(
   ]);
 
   const competencias = competenciasRows.map(mapCompetenciaRow);
+  const sugeridosPorCodTienda = agruparSugeridosPorCodTienda(sugeridosPorCodTiendaList);
 
   const idProveedores = [
-    ...new Set(
-      preciosRows
+    ...new Set([
+      ...competencias
+        .map((c) => c.idProveedor)
+        .filter((id): id is string => Boolean(id)),
+      ...sugeridosPorCodTiendaList.map((s) => s.idProveedor),
+      ...preciosRows
         .map((r) => r.competencia.idProveedor)
-        .filter((id): id is string => Boolean(id))
-    ),
+        .filter((id): id is string => Boolean(id)),
+    ]),
   ];
   const pxSugeridoCompetidorMap = await buildMapPxVtaSugerido(codTiendas, idProveedores);
 
@@ -187,11 +220,11 @@ export async function buildPxListasItemsDesdeFilas(
   }
 
   const items = filas.map((f) => {
-    const sugerido = sugeridoPorCodTienda.get(f.codTienda) ?? null;
+    const sugeridos = sugeridosPorCodTienda.get(f.codTienda) ?? [];
     const opciones = opcionesConPrecioRegistrado(
-      enriquecerOpcionesConSugerido(
+      enriquecerOpcionesConTodosSugeridos(
         opcionesPorCod.get(f.codTienda) ?? [],
-        sugerido
+        sugeridos
       )
     ).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     const vinculos = vinculosMap.get(f.codTienda) ?? {};
