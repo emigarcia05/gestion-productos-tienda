@@ -568,7 +568,6 @@ model ListaPrecioProveedor {
   descEspecial      Decimal  @map("desc_especial") @default(0) @db.Decimal(5, 2)
   pxCompraFinalSinIva Decimal? @map("px_compra_final_sin_iva") @db.Decimal(14, 4) // generada: base * (1 - dtoTotal/100) * (1 + cx_transporte/100); dtoTotal incluye desc_especial
   codTiendaVinculo String? @map("cod_tienda") // FK al ítem tienda (`prod_tienda.cod_tienda`; 1 tienda → N proveedores)
-  idPresentacion     String? @map("id_presentacion") // FK: categoría de comparación final (Categoria → Subcategoria → Presentacion)
   /** FK opcional → catálogo REX (`prod_precios_rex`). Varios `cod_ext` pueden compartir el mismo REX. */
   idPrecioRex         String?  @map("id_precio_rex")
   habilitado         Boolean  @map("habilitado") @default(true) // mapea opción SÍ/NO del modal importar
@@ -578,9 +577,8 @@ model ListaPrecioProveedor {
   proveedor         Proveedor        @relation(fields: [idProveedor], references: [id], onDelete: Cascade)
   precioRex         ProdPrecioRex?   @relation(fields: [idPrecioRex], references: [id], onDelete: SetNull)
   prodTienda ProdTienda? @relation(fields: [codTiendaVinculo], references: [codTienda], onDelete: SetNull)
-  presentacion      PresentacionComparacion? @relation("PresentacionItems", fields: [idPresentacion], references: [id], onDelete: SetNull)
   presentacionesReferencia PresentacionComparacion[] @relation("PresentacionProductoReferencia")
-  comparacionItem ComparacionItem?
+  itemsComparacion ComparacionItem[]
   reglaDescEspecial ProdPrecioDescEspecialReglaProducto?
   /** Ítems tienda que usan esta fila como costo lista en Cx/Px Tienda. */
   costoListaEnTiendas ProdTienda[] @relation("CostoListaEnTienda")
@@ -590,17 +588,21 @@ model ListaPrecioProveedor {
   @@map("prod_precios_provee")
 }
 
-/** Ajustes manuales por ítem en Comp. Categorías — Comparación (DTO. EXTRA, DIF % REF. MAN.). */
+/** Ítem de lista proveedor asignado a una presentación en Comp. Categorías (+ DTO. EXTRA, DIF % REF. MAN.). */
 model ComparacionItem {
   id                         String @id @default(cuid())
-  listaPrecioProveedorCodExt String @unique @map("cod_ext_prod_precios_provee")
+  presentacionId             String @map("presentacion_id")
+  listaPrecioProveedorCodExt String @map("cod_ext_prod_precios_provee")
   dtoExtra                   Int?   @map("dto_extra") // 0-99, null si está vacío
   difPxRefManual             Int?   @map("dif_px_ref_manual") // entero con signo % vs px referencia
   createdAt                  DateTime @default(now()) @map("created_at")
   updatedAt                  DateTime @updatedAt @map("updated_at")
 
-  listaPrecioProveedor ListaPrecioProveedor @relation(fields: [listaPrecioProveedorCodExt], references: [codExt], onDelete: Cascade)
+  presentacion         PresentacionComparacion @relation(fields: [presentacionId], references: [id], onDelete: Cascade)
+  listaPrecioProveedor ListaPrecioProveedor    @relation(fields: [listaPrecioProveedorCodExt], references: [codExt], onDelete: Cascade)
 
+  @@unique([presentacionId, listaPrecioProveedorCodExt], map: "prod_comp_item_comparados_present_cod_ext_ux")
+  @@index([presentacionId], map: "prod_comp_item_comparados_presentacion_id_idx")
   @@map("prod_comp_item_comparados")
 }
 
@@ -657,7 +659,7 @@ model PresentacionComparacion {
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   subcategoria  SubcategoriaComparacion @relation(fields: [subcategoriaId], references: [id], onDelete: Cascade)
-  listaPrecios  ListaPrecioProveedor[] @relation("PresentacionItems")
+  itemsComparados ComparacionItem[]
   productoReferencia ListaPrecioProveedor? @relation("PresentacionProductoReferencia", fields: [productoReferenciaCodExt], references: [codExt], onDelete: SetNull)
   referenciasCompetencia ComparacionPresentacionRefComp[]
 
