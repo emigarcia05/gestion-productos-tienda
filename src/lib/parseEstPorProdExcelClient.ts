@@ -3,19 +3,12 @@ export interface EstPorProdLineaParseada {
   vtasEnUn: number;
 }
 
-export interface ParseEstPorProdExcelResult {
-  lineas: EstPorProdLineaParseada[];
-  errores: string[];
-}
+export type CampoDestinoEstPorProd = "codTienda" | "vtasEnUn" | "ignorar";
 
-function normalizarEncabezado(value: unknown): string {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .replace(/[.\s_-]+/g, "");
-}
+export type MapeoColumnasEstPorProd = Record<number, CampoDestinoEstPorProd>;
+
+/** Filas iniciales del export DUX que no se importan (metadatos). La 3.ª fila es el encabezado. */
+export const FILAS_OMITIR_INICIO_EST_POR_PROD = 2;
 
 function normalizarCodTienda(value: unknown): string | null {
   if (value == null || value === "") return null;
@@ -34,99 +27,96 @@ function normalizarCodTienda(value: unknown): string | null {
 function parseVtasEnUn(value: unknown): number | null {
   if (value == null || value === "") return null;
   if (typeof value === "number" && Number.isFinite(value)) return value;
-  const s = String(value).trim().replace(/\./g, "").replace(",", ".");
-  const n = Number(s);
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const sinEspacios = raw.replace(/\s/g, "");
+  const conDecimal =
+    sinEspacios.includes(",") && sinEspacios.includes(".")
+      ? sinEspacios.replace(/\./g, "").replace(",", ".")
+      : sinEspacios.replace(",", ".");
+  const n = Number(conDecimal);
   return Number.isFinite(n) ? n : null;
 }
 
-const ALIAS_COD_TIENDA = new Set([
-  "codtienda",
-  "codigotienda",
-  "codigo",
-  "cod",
-  "coditem",
-  "item",
-]);
+export function separarEncabezadosYFilasEstPorProd(
+  todasLasFilas: unknown[][],
+  tieneEncabezados: boolean,
+  filasOmitirInicio: number = FILAS_OMITIR_INICIO_EST_POR_PROD
+): { encabezados: string[]; filasCrudas: unknown[][] } {
+  const omitir = Math.max(0, Math.min(filasOmitirInicio, todasLasFilas.length));
+  const desde = todasLasFilas.slice(omitir);
 
-const ALIAS_VTAS = new Set([
-  "vtasenun",
-  "ventasenunidades",
-  "ventasunidades",
-  "unidades",
-  "cantidad",
-  "vtas",
-  "ventas",
-]);
-
-function indiceColumna(encabezados: string[], aliases: Set<string>): number {
-  return encabezados.findIndex((h) => aliases.has(h));
+  if (desde.length === 0) {
+    return { encabezados: [], filasCrudas: [] };
+  }
+  if (tieneEncabezados) {
+    const primera = desde[0] ?? [];
+    const encabezados = primera.map((c, i) => {
+      const s = String(c ?? "").trim();
+      return s || `Columna ${i + 1}`;
+    });
+    return { encabezados, filasCrudas: desde.slice(1) };
+  }
+  const ancho = Math.max(...desde.map((r) => r.length), 0);
+  const encabezados = Array.from({ length: ancho }, (_, i) => `Columna ${i + 1}`);
+  return { encabezados, filasCrudas: desde };
 }
 
-/**
- * Parsea la primera hoja de un libro Excel/CSV ya leído con `xlsx`.
- * Espera columnas de código tienda y ventas en unidades (cabecera flexible).
- */
-export function parseEstPorProdSheetRows(rows: unknown[][]): ParseEstPorProdExcelResult {
-  const errores: string[] = [];
-  if (rows.length < 2) {
-    return { lineas: [], errores: ["La planilla está vacía o no tiene filas de datos."] };
+/** Mapeo por defecto del export Excel: col. 1 → COD. TIENDA, col. 2 → VTAS. EN UN. (editable en UI). */
+export function mapeoPorDefectoEstPorProd(encabezados: string[]): MapeoColumnasEstPorProd {
+  const mapeo: MapeoColumnasEstPorProd = {};
+  encabezados.forEach((_, i) => {
+    if (i === 0) mapeo[i] = "codTienda";
+    else if (i === 1) mapeo[i] = "vtasEnUn";
+    else mapeo[i] = "ignorar";
+  });
+  return mapeo;
+}
+
+function indiceMapeado(mapeo: MapeoColumnasEstPorProd, campo: CampoDestinoEstPorProd): number {
+  for (const [idx, dest] of Object.entries(mapeo)) {
+    if (dest === campo) return Number(idx);
   }
+  return -1;
+}
 
-  const encabezados = (rows[0] ?? []).map(normalizarEncabezado);
-  let idxCod = indiceColumna(encabezados, ALIAS_COD_TIENDA);
-  let idxVtas = indiceColumna(encabezados, ALIAS_VTAS);
-
-  if (idxCod < 0 && encabezados.length >= 1) idxCod = 0;
-  if (idxVtas < 0 && encabezados.length >= 2) idxVtas = 1;
-
+export function lineasDesdeMapeoEstPorProd(
+  filasCrudas: unknown[][],
+  mapeo: MapeoColumnasEstPorProd
+): { lineas: EstPorProdLineaParseada[]; filasOmitidas: number } {
+  const idxCod = indiceMapeado(mapeo, "codTienda");
+  const idxVtas = indiceMapeado(mapeo, "vtasEnUn");
   if (idxCod < 0 || idxVtas < 0) {
-    return {
-      lineas: [],
-      errores: [
-        "No se encontraron columnas de código tienda y ventas en unidades. Usá cabeceras como COD_TIENDA y VTAS_EN_UN.",
-      ],
-    };
+    return { lineas: [], filasOmitidas: 0 };
   }
 
   const lineas: EstPorProdLineaParseada[] = [];
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
+  let filasOmitidas = 0;
+
+  for (const row of filasCrudas) {
     if (!row || row.every((c) => c == null || String(c).trim() === "")) continue;
 
     const codTienda = normalizarCodTienda(row[idxCod]);
     const vtasEnUn = parseVtasEnUn(row[idxVtas]);
 
-    if (!codTienda) {
-      errores.push(`Fila ${i + 1}: código tienda vacío o inválido.`);
-      continue;
-    }
-    if (vtasEnUn == null) {
-      errores.push(`Fila ${i + 1}: ventas en unidades inválidas.`);
-      continue;
-    }
-    if (vtasEnUn < 0) {
-      errores.push(`Fila ${i + 1}: ventas en unidades no pueden ser negativas.`);
+    if (!codTienda || vtasEnUn == null || vtasEnUn < 0) {
+      filasOmitidas += 1;
       continue;
     }
 
     lineas.push({ codTienda, vtasEnUn });
   }
 
-  if (lineas.length === 0 && errores.length === 0) {
-    errores.push("No se encontraron filas válidas en la planilla.");
-  }
-
-  return { lineas, errores };
+  return { lineas, filasOmitidas };
 }
 
-export async function leerEstPorProdDesdeArchivo(file: File): Promise<ParseEstPorProdExcelResult> {
+export async function leerFilasCrudasEstPorProdArchivo(file: File): Promise<unknown[][]> {
   const XLSX = await import("xlsx");
   const buffer = await file.arrayBuffer();
   const libro = XLSX.read(buffer, { type: "array" });
   const hoja = libro.Sheets[libro.SheetNames[0]];
   if (!hoja) {
-    return { lineas: [], errores: ["El archivo no contiene hojas."] };
+    throw new Error("El archivo no contiene hojas.");
   }
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(hoja, { header: 1, defval: "" });
-  return parseEstPorProdSheetRows(rows);
+  return XLSX.utils.sheet_to_json<unknown[]>(hoja, { header: 1, defval: "" });
 }
