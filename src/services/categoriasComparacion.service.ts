@@ -39,16 +39,18 @@ export interface OpcionReferenciaCompetencia {
   etiqueta: string;
 }
 
-const REFERENCIAS_COMPETENCIA_INCLUDE = {
-  orderBy: [{ orden: "asc" as const }, { createdAt: "asc" as const }],
-  include: {
-    referenciaCompetencia: {
-      include: {
-        competencia: { select: { nombre: true, proveedor: { select: { prefijo: true } } } },
-        prodTienda: { select: { descripcionTienda: true } },
-      },
+const REF_COMP_ROW_INCLUDE = {
+  referenciaCompetencia: {
+    include: {
+      competencia: { select: { nombre: true, proveedor: { select: { prefijo: true } } } },
+      prodTienda: { select: { descripcionTienda: true } },
     },
   },
+} as const;
+
+const REFERENCIAS_COMPETENCIA_INCLUDE = {
+  orderBy: [{ orden: "asc" as const }, { createdAt: "asc" as const }],
+  include: REF_COMP_ROW_INCLUDE,
 };
 
 async function buildReferenciaCompetenciaFromRow(row: {
@@ -659,11 +661,12 @@ export async function listarCompetidoresParaReferencia(): Promise<CompetidorPara
   }));
 }
 
+/** Asigna referencia Px Competencia a una presentación (`prod_comp_item_referencia`). */
 export async function asignarReferenciaCompetenciaPresentacion(
   presentacionId: string,
   codTienda: string,
   competenciaId: string
-): Promise<void> {
+): Promise<ReferenciaCompetenciaPresentacion> {
   const prodTienda = await prisma.prodTienda.findUnique({
     where: { codTienda },
     select: { compararCompetencia: true },
@@ -702,7 +705,7 @@ export async function asignarReferenciaCompetenciaPresentacion(
     _max: { orden: true },
   });
 
-  await prisma.comparacionPresentacionRefComp.create({
+  const created = await prisma.comparacionPresentacionRefComp.create({
     data: {
       presentacionId,
       refCodTienda: codTienda,
@@ -720,6 +723,18 @@ export async function asignarReferenciaCompetenciaPresentacion(
       },
     });
   }
+
+  const row = await prisma.comparacionPresentacionRefComp.findUniqueOrThrow({
+    where: { id: created.id },
+    include: REF_COMP_ROW_INCLUDE,
+  });
+
+  return buildReferenciaCompetenciaFromRow({
+    id: row.id,
+    refCodTienda: row.refCodTienda,
+    refCompetenciaId: row.refCompetenciaId,
+    referenciaCompetencia: row.referenciaCompetencia,
+  });
 }
 
 export async function quitarReferenciaCompetenciaItem(refCompId: string): Promise<void> {
@@ -840,7 +855,7 @@ type ComparacionItemPatch = {
   difPxRefManual?: number | null;
 };
 
-/** Upsert parcial de ajustes Comp. Categorías por ítem (`prod_comp_cat`). Borra la fila si ambos campos quedan null. */
+/** Upsert parcial de ajustes Comp. Categorías por ítem (`prod_comp_item_comparados`). Borra la fila si ambos campos quedan null. */
 async function upsertComparacionItemParcial(
   listaPrecioProveedorCodExt: string,
   patch: ComparacionItemPatch

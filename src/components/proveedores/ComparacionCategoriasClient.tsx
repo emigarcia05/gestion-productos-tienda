@@ -288,6 +288,7 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
         setBaseItemId(null);
         setDifPxRefManualDraft({});
         setDtoExtraDraft({});
+        if (res.error) toast.error(res.error);
       }
     } finally {
       setLoadingProductos(false);
@@ -374,10 +375,20 @@ export default function ComparacionCategoriasClient({ arbolInicial, rol }: Props
     if (selectedPresentacionId) void loadProductos(selectedPresentacionId);
   }, [selectedPresentacionId, loadProductos]);
 
-  const onReferenciaSuccess = useCallback(() => {
-    setModalReferencia(false);
-    if (selectedPresentacionId) void loadProductos(selectedPresentacionId);
-  }, [selectedPresentacionId, loadProductos]);
+  const onReferenciaSuccess = useCallback(
+    (nuevaReferencia: ReferenciaCompetenciaPresentacion) => {
+      setModalReferencia(false);
+      setReferenciasCompetencia((prev) => {
+        if (prev.some((r) => r.id === nuevaReferencia.id)) return prev;
+        const clave = `${nuevaReferencia.codTienda}:${nuevaReferencia.competenciaId}`;
+        if (prev.some((r) => `${r.codTienda}:${r.competenciaId}` === clave)) return prev;
+        return [...prev, nuevaReferencia];
+      });
+      setReferenciaActivaId(nuevaReferencia.id);
+      if (selectedPresentacionId) void loadProductos(selectedPresentacionId);
+    },
+    [selectedPresentacionId, loadProductos]
+  );
 
   const handleQuitarReferencia = useCallback(
     async (refCompId: string) => {

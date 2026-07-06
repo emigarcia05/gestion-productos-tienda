@@ -22,6 +22,7 @@ import {
   listarCompetidoresParaReferencia,
   asignarReferenciaCompetenciaPresentacion,
   quitarReferenciaCompetenciaItem,
+  type ReferenciaCompetenciaPresentacion,
 } from "@/services/categoriasComparacion.service";
 import { listarProductosProveedoresParaVincular } from "@/services/listaPrecios.service";
 import { getRol } from "@/lib/sesion";
@@ -396,7 +397,7 @@ export async function asignarReferenciaCompetenciaAction(
   presentacionId: string,
   codTienda: string,
   competenciaId: string
-): Promise<ActionResult> {
+): Promise<ActionResult<ReferenciaCompetenciaPresentacion>> {
   if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
   const parsed = asignarReferenciaCompetenciaSchema.safeParse({
     presentacionId,
@@ -405,13 +406,13 @@ export async function asignarReferenciaCompetenciaAction(
   });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
-    await asignarReferenciaCompetenciaPresentacion(
+    const referencia = await asignarReferenciaCompetenciaPresentacion(
       parsed.data.presentacionId,
       parsed.data.codTienda,
       parsed.data.competenciaId
     );
     revalidateComparacionCategorias();
-    return { ok: true, data: undefined };
+    return { ok: true, data: referencia };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error al asignar referencia." };
   }

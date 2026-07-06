@@ -32,7 +32,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   presentacionId: string;
-  onSuccess: () => void;
+  onSuccess: (referencia: ReferenciaCompetenciaPresentacion) => void;
 }
 
 type CompetidorOption = { id: string; nombre: string; prefijoProveedor: string | null };
@@ -108,8 +108,12 @@ export default function ElegirReferenciaCompetenciaModal({
         toast.error(res.error ?? "Error al asignar referencia.");
         throw new Error(res.error);
       }
+      if (!res.data) {
+        toast.error("No se recibió la referencia guardada.");
+        throw new Error("Sin datos de referencia");
+      }
       toast.success("Referencia de competencia agregada.");
-      onSuccess();
+      onSuccess(res.data);
     } finally {
       setConfirmPending(false);
     }

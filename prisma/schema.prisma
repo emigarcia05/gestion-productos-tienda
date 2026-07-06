@@ -601,7 +601,7 @@ model ComparacionItem {
 
   listaPrecioProveedor ListaPrecioProveedor @relation(fields: [listaPrecioProveedorCodExt], references: [codExt], onDelete: Cascade)
 
-  @@map("prod_comp_cat")
+  @@map("prod_comp_item_comparados")
 }
 
 model ComparacionPresentacionRefComp {
@@ -616,9 +616,9 @@ model ComparacionPresentacionRefComp {
   presentacion          PresentacionComparacion @relation(fields: [presentacionId], references: [id], onDelete: Cascade)
   referenciaCompetencia ProdPrecioCompetencia   @relation(fields: [refCodTienda, refCompetenciaId], references: [codTienda, competenciaId], onDelete: Cascade)
 
-  @@unique([presentacionId, refCodTienda, refCompetenciaId], map: "prod_comp_present_refs_comp_present_ref_ux")
-  @@index([presentacionId], map: "prod_comp_present_refs_comp_presentacion_id_idx")
-  @@map("prod_comp_present_refs_comp")
+  @@unique([presentacionId, refCodTienda, refCompetenciaId], map: "prod_comp_item_referencia_present_ref_ux")
+  @@index([presentacionId], map: "prod_comp_item_referencia_presentacion_id_idx")
+  @@map("prod_comp_item_referencia")
 }
 
 // ─── Comparación por categorías (Categoria → Subcategoria → Presentacion) ───

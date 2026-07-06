@@ -283,7 +283,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas | `ComprobanteProveedor` | `fin_compras_comprobante` |
 | Finanzas | `FinTesoreriaEntidad`, `FinTesoreriaTipoCaja`, `CajaTesoreria`, `FinTesoreriaCheque` | `fin_tesoreria_entidades`, `fin_tesoreria_tipo_caja`, `fin_tesoreria`, `fin_tesoreria_cheques` |
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual`, `FinBalPosicionIvaComparacionPedido` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual`, `fin_bal_posicion_iva_comparacion_pedido` |
-| Productos / precios | `ListaPrecioProveedor`, `ComparacionItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdTiendaMargenEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_cat`, `prod_comp_categorias`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_tienda_margen_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
+| Productos / precios | `ListaPrecioProveedor`, `ComparacionItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdTiendaMargenEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_item_comparados`, `prod_comp_item_referencia`, `prod_comp_categorias`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_tienda_margen_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
 | Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
 | Pedidos / sync | `ProdPedMerc2`, `PedidoHistoria`, `PedidoHistoriaItem`, `ProdPedUltComp`, `ImportProgress`, `SyncDuxStatus` | `prod_ped_merc`, `prod_ped_historial`, `prod_ped_historial_merc`, `prod_ped_ult_comp`, `import_progress`, `sync_dux_status` |
 
@@ -344,14 +344,14 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   `base = px_lista_proveedor × (cotizacion_dolar si px_dolares, sino 1)`  
   `dtoTotal = dto_proveedor + dto_marca + dto_rubro + dto_cantidad + dto_financiero + dto_extra_comparacion` (cap 0–100)  
   `costo = base × (1 − dtoTotal/100) × (1 + cx_transporte/100)` (redondeo 4 dec.)
-- **`dto_extra_comparacion`** y **`dif_px_ref_manual`** se persisten en **`prod_comp_cat`** (`ComparacionItem`: `dto_extra` 0–99 o `null`, `dif_px_ref_manual` entero con signo o `null`), **no** en `prod_precios_provee`. Una fila por `cod_ext`; se borra si ambos campos quedan `null`. Actions: **`actualizarDtoExtraComparacionAction`**, **`actualizarDifPxRefManualComparacionAction`**; servicio: **`getProductosPorPresentacion`** devuelve `dtoExtraComparacion`, `difPxRefManualComparacion` y `datosCosto` para recálculo en cliente. Migración unificación: **`20260702120000_prod_comp_item_unify_ajustes`** (reemplaza `prod_comp_dto_extra` + `prod_comp_dif_px_ref_manual`; renombra catálogo maestro **`prod_comp_cat` → `prod_comp_categorias`**). Respaldo idempotente si la tabla falta en prod: **`20260703140000_ensure_prod_comp_categorias`**.
+- **`dto_extra_comparacion`** y **`dif_px_ref_manual`** se persisten en **`prod_comp_item_comparados`** (`ComparacionItem`: `dto_extra` 0–99 o `null`, `dif_px_ref_manual` entero con signo o `null`), **no** en `prod_precios_provee`. Una fila por `cod_ext`; se borra si ambos campos quedan `null`. Actions: **`actualizarDtoExtraComparacionAction`**, **`actualizarDifPxRefManualComparacionAction`**; servicio: **`getProductosPorPresentacion`** devuelve `dtoExtraComparacion`, `difPxRefManualComparacion` y `datosCosto` para recálculo en cliente. Migración unificación: **`20260702120000_prod_comp_item_unify_ajustes`** (reemplaza `prod_comp_dto_extra` + `prod_comp_dif_px_ref_manual`; renombra catálogo maestro **`prod_comp_cat` → `prod_comp_categorias`**). Renombre tablas ítem: **`20260706120000_rename_prod_comp_item_tables`** (`prod_comp_cat` / `prod_comp_item` → **`prod_comp_item_comparados`**; **`prod_comp_present_refs_comp` → `prod_comp_item_referencia`**). Respaldo idempotente si el catálogo falta en prod: **`20260703140000_ensure_prod_comp_categorias`**.
 
 **Troubleshooting P2021 (`prod_comp_categorias` no existe):** el código Prisma espera **`prod_comp_categorias`** pero Neon prod no aplicó la unificación. Verificar en Vercel que **`DIRECT_URL`** (conexión directa Neon, no pooler) esté definida — `prisma migrate deploy` en build la usa vía `prisma.config.ts`. Diagnóstico SQL:
 
 ```sql
 SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'public'
-  AND table_name IN ('prod_comp_categorias', 'prod_comp_cat', 'comparacion_categorias', 'categorias_comparacion');
+  AND table_name IN ('prod_comp_categorias', 'prod_comp_item_comparados', 'prod_comp_item_referencia', 'prod_comp_cat', 'comparacion_categorias', 'categorias_comparacion');
 SELECT migration_name, finished_at FROM "_prisma_migrations"
 WHERE migration_name LIKE '20260702%' OR migration_name LIKE '20260703%'
 ORDER BY finished_at DESC;
@@ -362,7 +362,7 @@ Si **`20260702120000`** está pendiente: redeploy (build ejecuta `migrate deploy
 
 ### 1.8c Dif. % manual en Comp. Categorias — Comparacion (`dif_px_ref_manual`)
 
-- Persistido en **`prod_comp_cat.dif_px_ref_manual`** (ver §1.8b). UI: input **DIF % REF. MAN.** (% entero vs px **REFERENCIA COMPETENCIA** activa); al blur se persiste vía **`actualizarDifPxRefManualComparacionAction`**. **PX. CALC.** y **MARG. CALC.** derivados en cliente (`calcPxManualDesdeDifPctReferencia`, `calcMargenManualDesdeDifPctReferencia`).
+- Persistido en **`prod_comp_item_comparados.dif_px_ref_manual`** (ver §1.8b). UI: input **DIF % REF. MAN.** (% entero vs px **REFERENCIA COMPETENCIA** activa); al blur se persiste vía **`actualizarDifPxRefManualComparacionAction`**. **PX. CALC.** y **MARG. CALC.** derivados en cliente (`calcPxManualDesdeDifPctReferencia`, `calcMargenManualDesdeDifPctReferencia`).
 
 ### 1.8d Reglas descuentos lista precios (`prod_precios_provee_reglas`)
 
@@ -379,7 +379,7 @@ Si **`20260702120000`** está pendiente: redeploy (build ejecuta `migrate deploy
 - **CHECK** al menos una condición no nula; **UNIQUE** `(campo, COALESCE(id_proveedor,''), COALESCE(id_marca,''), COALESCE(id_rubro,''))`.
 - **Migración:** `20260619120000_prod_precios_provee_reglas_descuentos`. **No** se infieren reglas desde `dto_*` históricos; tabla de reglas arranca vacía.
 - **Post-deploy obligatorio:** `npm run db:recalc-descuentos-lista-precio` → con reglas vacías, todos los `dto_*` / `cx_transporte` → **0** (impacto masivo en `px_compra_final_sin_iva` hasta cargar reglas).
-- **Mantenimiento — purga lista sin vínculo tienda:** `npm run db:purge-lista-precio-sin-vinculo` (`scripts/purge-lista-precio-proveedor-sin-vinculo-tienda.ts`). Por defecto **simulación**; con `--execute` borra filas `prod_precios_provee` de un proveedor (`--proveedor "NOMBRE"`) donde **`cod_tienda` IS NULL** (sin vínculo manual a `prod_tienda`). Conserva filas con `cod_tienda` poblado. Cascadas: `prod_comp_cat`; `prod_tienda.costo_compra_cod_ext` → SET NULL si apuntaba al `cod_ext` borrado.
+- **Mantenimiento — purga lista sin vínculo tienda:** `npm run db:purge-lista-precio-sin-vinculo` (`scripts/purge-lista-precio-proveedor-sin-vinculo-tienda.ts`). Por defecto **simulación**; con `--execute` borra filas `prod_precios_provee` de un proveedor (`--proveedor "NOMBRE"`) donde **`cod_tienda` IS NULL** (sin vínculo manual a `prod_tienda`). Conserva filas con `cod_tienda` poblado. Cascadas: `prod_comp_item_comparados`; `prod_tienda.costo_compra_cod_ext` → SET NULL si apuntaba al `cod_ext` borrado.
 
 #### Algoritmo de resolución (`descuentosListaPrecioReglas.service.ts`)
 
@@ -449,7 +449,7 @@ interface ReglaDescuentoListaPrecio {
 
 Ítem P1 + marca texto = `M1.nombre` → `dto_marca` materializado = **18** (regla P1+M1 gana sobre solo M1).
 
-**Lecturas lista precios:** `FilaListaPrecioParaCliente` sigue exponiendo `dtoProveedor`, `dtoMarca`, `dtoRubro`, `dtoCantidad`, `dtoFinanciero`, `cxTransporte`, `descEspecial`, `pxCompraFinalSinIva` como **solo lectura** (caché del motor). **`prod_comp_cat`** no se modifica desde lista precios (override solo Comp. Categorías). **`calcCostoComparacion`** (`calculos.ts`) incluye `descEspecial` en el `dtoTotal` además de `dto_extra_comparacion`.
+**Lecturas lista precios:** `FilaListaPrecioParaCliente` sigue exponiendo `dtoProveedor`, `dtoMarca`, `dtoRubro`, `dtoCantidad`, `dtoFinanciero`, `cxTransporte`, `descEspecial`, `pxCompraFinalSinIva` como **solo lectura** (caché del motor). **`prod_comp_item_comparados`** no se modifica desde lista precios (override solo Comp. Categorías). **`calcCostoComparacion`** (`calculos.ts`) incluye `descEspecial` en el `dtoTotal` además de `dto_extra_comparacion`.
 
 #### 1.8d-b Desc. específico por producto (`desc_especial`)
 
@@ -1804,6 +1804,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-02): **Comp. Categorias — `prod_comp_cat`** — unifica `prod_comp_dto_extra` + `prod_comp_dif_px_ref_manual` en una fila por `cod_ext` (`dto_extra`, `dif_px_ref_manual`); catálogo maestro **`CategoriaComparacion` → `prod_comp_categorias`**; helper `upsertComparacionItemParcial` en `categoriasComparacion.service.ts`; migración **`20260702120000_prod_comp_item_unify_ajustes`**.*
 
-*Última actualización (2026-07-03): **Fix prod Neon — `prod_comp_categorias`** — migración **`20260702120000`** endurecida (idempotente: renombra catálogo desde `prod_comp_cat` / `comparacion_categorias` / `categorias_comparacion` o crea vacía; `CREATE TABLE IF NOT EXISTS` + backfill condicional); respaldo **`20260703140000_ensure_prod_comp_categorias`**; troubleshooting P2021 en §1.8b.*
+*Última actualización (2026-07-06): **Comp. Categorias — referencia en UI** — `asignarReferenciaCompetenciaPresentacion` persiste en **`prod_comp_item_referencia`** y devuelve `ReferenciaCompetenciaPresentacion`; `asignarReferenciaCompetenciaAction` la retorna al modal; `ComparacionCategoriasClient` actualiza la columna **REFERENCIA COMPETENCIA** al instante y recarga con `loadProductos`.*
+
+*Última actualización (2026-07-06): **Comp. Categorias — renombre tablas ítem** — `prod_comp_cat` / `prod_comp_item` → **`prod_comp_item_comparados`** (`ComparacionItem`: DTO. EXTRA + DIF % REF. MAN.); **`prod_comp_present_refs_comp` → `prod_comp_item_referencia`** (`ComparacionPresentacionRefComp`: referencias Px Competencia por presentación); migración **`20260706120000_rename_prod_comp_item_tables`**.*
 
 *Última actualización (2026-07-03): **Comp. Categorias — búsqueda referencia competencia (todos los competidores)** — con `q` no vacío, `buscarOpcionesReferenciaCompetencia` resuelve `cod_tienda` en `prod_tienda` y expande **todos** los competidores del ítem; **`listarCompetenciasConPxSugeridoPorCodTiendas`** (misma lógica que `/cx-px-tienda`, sin exigir fila previa en `prod_precios_competencia` ni join `prod_tienda.comparar_competencia` en lista); resuelve `pxMostrar` con fallback directo desde lista + `buildMapPxVtaSugerido`; devuelve solo filas asignables (`pxMostrar > 0`) tras resolver precios.*

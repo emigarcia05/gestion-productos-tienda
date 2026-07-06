@@ -21,7 +21,7 @@ async function main() {
 
   // Idempotente: en una DB ya migrada via `prisma migrate deploy` no hace nada útil.
   const sql = `
-CREATE TABLE IF NOT EXISTS "prod_comp_cat" (
+CREATE TABLE IF NOT EXISTS "prod_comp_item_comparados" (
   "id" TEXT NOT NULL,
   "cod_ext_prod_precios_provee" TEXT NOT NULL,
   "dto_extra" INTEGER,
@@ -29,9 +29,9 @@ CREATE TABLE IF NOT EXISTS "prod_comp_cat" (
   "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP(3) NOT NULL,
 
-  CONSTRAINT "prod_comp_cat_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "prod_comp_cat_cod_ext_prod_precios_provee_key" UNIQUE ("cod_ext_prod_precios_provee"),
-  CONSTRAINT "prod_comp_cat_cod_ext_prod_precios_provee_fkey"
+  CONSTRAINT "prod_comp_item_comparados_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "prod_comp_item_comparados_cod_ext_prod_precios_provee_key" UNIQUE ("cod_ext_prod_precios_provee"),
+  CONSTRAINT "prod_comp_item_comparados_cod_ext_prod_precios_provee_fkey"
     FOREIGN KEY ("cod_ext_prod_precios_provee") REFERENCES "prod_precios_provee"("cod_ext")
     ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS "prod_comp_cat" (
   try {
     await client.query(sql);
     // eslint-disable-next-line no-console
-    console.log("OK: tabla prod_comp_cat asegurada");
+    console.log("OK: tabla prod_comp_item_comparados asegurada");
   } finally {
     await client.end();
   }

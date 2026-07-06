@@ -66,7 +66,7 @@ export type DatosCostoComparacion = {
 
 /**
  * Costo sin IVA en **Comparacion por categorías**: misma fórmula que `px_compra_final_sin_iva`
- * más `dto_extra_comparacion` (persistido en `prod_comp_cat`, no en `prod_precios_provee`).
+ * más `dto_extra_comparacion` (persistido en `prod_comp_item_comparados`, no en `prod_precios_provee`).
  */
 export function calcCostoComparacion(
   datos: DatosCostoComparacion,
