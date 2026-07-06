@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
-import { obtenerPxVtaSugeridoParaCompetencia } from "@/services/competenciaPxSugerido.service";
+import { obtenerPxVtaSugeridoPorCompetenciaId } from "@/services/competenciaPxSugerido.service";
 
 /** Fila mínima en `prod_precios_competencia` para FK de referente (p. ej. solo Px. Vta. Sugerido). */
 export async function ensureVinculoCompetenciaParaReferencia(
@@ -47,20 +47,14 @@ export async function guardarUrlVinculoCompetencia(data: {
   const url = data.urlProducto?.trim() || null;
   const tipoPagina = data.tipoPagina?.trim() || null;
 
-  const competencia = await prisma.prodCompetencia.findUnique({
-    where: { id: data.competenciaId },
-    select: { idProveedor: true },
-  });
-  if (competencia?.idProveedor) {
-    const pxSugerido = await obtenerPxVtaSugeridoParaCompetencia(
-      data.codTienda,
-      competencia.idProveedor
+  const pxSugerido = await obtenerPxVtaSugeridoPorCompetenciaId(
+    data.codTienda,
+    data.competenciaId
+  );
+  if (pxSugerido != null) {
+    throw new Error(
+      "Este producto usa Px. Vta. Sugerido del proveedor asociado al competidor; no se puede cargar ni modificar la URL."
     );
-    if (pxSugerido != null) {
-      throw new Error(
-        "Este producto usa Px. Vta. Sugerido del proveedor asociado al competidor; no se puede cargar ni modificar la URL."
-      );
-    }
   }
 
   if (!url) {

@@ -32,6 +32,9 @@ export const COMP_CATEGORIAS_SELECTOR_GRID_CLASS =
  */
 export const MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS = "!max-w-[151.2rem]";
 
+/** Agregar Referencia De Competencia: 60 % del ancho compartido (−40 %). */
+export const MODAL_COMP_CATEGORIAS_REFERENCIA_MAX_WIDTH_CLASS = "!max-w-[90.72rem]";
+
 /** Stack de filtros compartido (select entidad + búsqueda texto). */
 export const MODAL_COMP_CATEGORIAS_FILTROS_STACK_CLASS = "flex flex-col gap-2";
 

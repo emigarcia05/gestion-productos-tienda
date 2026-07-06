@@ -5,7 +5,7 @@ import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
 import {
   aplicarPrioridadPrecioMostrar,
   countVinculosRelevablesCompetencia,
-  obtenerPxVtaSugeridoParaCompetencia,
+  obtenerPxVtaSugeridoPorCompetenciaId,
   whereVinculosRelevablesCompetencia,
 } from "@/services/competenciaPxSugerido.service";
 import { extraerPrecioDesdeUrlProducto } from "@/services/competenciaPrecioScraping.service";
@@ -280,37 +280,30 @@ export async function relevarVinculoCompetenciaUnico(params: {
     throw new Error("Competidor no encontrado.");
   }
 
-  const idProveedor = competencia.idProveedor;
+  const pxSugerido = await obtenerPxVtaSugeridoPorCompetenciaId(codTienda, competenciaId);
   const now = new Date();
-
-  if (idProveedor) {
-    const pxSugerido = await obtenerPxVtaSugeridoParaCompetencia(
-      codTienda,
-      idProveedor
-    );
-    if (pxSugerido != null) {
-      await prisma.prodCompetencia.update({
-        where: { id: competenciaId },
-        data: { ultimaComparacionAt: now },
-      });
-      const row = await prisma.prodPrecioCompetencia.findUnique({
-        where: {
-          codTienda_competenciaId: { codTienda, competenciaId },
-        },
-        select: vinculoRelevadoSelect,
-      });
-      const base = row
-        ? mapVinculoRelevado(row)
-        : mapVinculoRelevado({
-            urlProducto: null,
-            tipoPagina: null,
-            pxCompetencia: null,
-            estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
-            errorMensaje: null,
-            relevadoAt: null,
-          });
-      return aplicarPrioridadPrecioMostrar(base, pxSugerido);
-    }
+  if (pxSugerido != null) {
+    await prisma.prodCompetencia.update({
+      where: { id: competenciaId },
+      data: { ultimaComparacionAt: now },
+    });
+    const row = await prisma.prodPrecioCompetencia.findUnique({
+      where: {
+        codTienda_competenciaId: { codTienda, competenciaId },
+      },
+      select: vinculoRelevadoSelect,
+    });
+    const base = row
+      ? mapVinculoRelevado(row)
+      : mapVinculoRelevado({
+          urlProducto: null,
+          tipoPagina: null,
+          pxCompetencia: null,
+          estado: ESTADO_RELEVAMIENTO_COMPETENCIA.SIN_URL,
+          errorMensaje: null,
+          relevadoAt: null,
+        });
+    return aplicarPrioridadPrecioMostrar(base, pxSugerido);
   }
 
   const vinculo = await prisma.prodPrecioCompetencia.findUnique({

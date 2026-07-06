@@ -583,7 +583,8 @@ export default function ModalTablaConFiltros<T>({
                               onClick={isSingleConfirm ? () => selectSingle(id) : undefined}
                               className={cn(
                                 modalTablaRowVariants({
-                                  interaction: isMulti || isMultiQuantity ? "none" : "single",
+                                  interaction:
+                                    isMulti || isMultiQuantity ? "none" : "single",
                                   selected:
                                     isMulti || isSingleConfirm
                                       ? isSelected
@@ -593,7 +594,11 @@ export default function ModalTablaConFiltros<T>({
                                 })
                               )}
                               title={
-                                onRowDoubleClick ? "Doble Clic Para Seleccionar" : undefined
+                                isSingleConfirm
+                                  ? "Clic en la fila para seleccionar"
+                                  : onRowDoubleClick
+                                    ? "Doble Clic Para Seleccionar"
+                                    : undefined
                               }
                             >
                               {showSelectColumn ? (
@@ -622,7 +627,10 @@ export default function ModalTablaConFiltros<T>({
                                       />
                                     </label>
                                   ) : (
-                                    <label className="flex items-center justify-center cursor-pointer">
+                                    <label
+                                      className="flex items-center justify-center cursor-pointer"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
                                       <input
                                         type="checkbox"
                                         checked={selectedIds.has(id)}

@@ -23,7 +23,7 @@ import type {
 } from "@/services/categoriasComparacion.service";
 import { fmtPrecio } from "@/lib/format";
 import {
-  MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS,
+  MODAL_COMP_CATEGORIAS_REFERENCIA_MAX_WIDTH_CLASS,
   MODAL_COMP_CATEGORIAS_CELDA_DESCRIPCION_CLASS,
   MODAL_COMP_CATEGORIAS_CELDA_ENTIDAD_CLASS,
   MODAL_COMP_CATEGORIAS_CELDA_PRECIO_CLASS,
@@ -91,11 +91,8 @@ export default function ElegirReferenciaCompetenciaModal({
     };
   }, [open, q, competenciaId, presentacionId]);
 
-  async function handleConfirm(ids: string[]) {
-    const selectedId = ids[0];
-    if (!selectedId) return;
-    const row = rowsVisibles.find((r) => `${r.codTienda}:${r.competenciaId}` === selectedId);
-    if (!row || row.pxMostrar == null) {
+  async function handleConfirmSingle(row: OpcionReferenciaCompetencia) {
+    if (row.pxMostrar == null) {
       toast.error("Elegí una fila con precio disponible.");
       throw new Error("Sin precio");
     }
@@ -189,19 +186,20 @@ export default function ElegirReferenciaCompetenciaModal({
     <ModalTablaConFiltros<OpcionReferenciaCompetencia>
       open={open}
       onClose={() => onOpenChange(false)}
-      selectionMode="multi"
+      selectionMode="singleConfirm"
+      showSingleConfirmCheckbox
       title="Agregar Referencia De Competencia"
       filterContent={filterContent}
       columns={columns}
       rows={rowsVisibles}
       getRowId={(row) => `${row.codTienda}:${row.competenciaId}`}
-      onConfirm={handleConfirm}
-      confirmLabel={() => "AGREGAR REFERENCIA"}
+      onConfirmSingle={handleConfirmSingle}
+      confirmSingleLabel="AGREGAR REFERENCIA"
       confirmPending={confirmPending}
       loading={loading}
       emptyMessage="NO HAY REFERENCIAS O NO COINCIDEN LOS FILTROS."
       count={rowsVisibles.length}
-      contentClassName={MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS}
+      contentClassName={MODAL_COMP_CATEGORIAS_REFERENCIA_MAX_WIDTH_CLASS}
       tableColumnWidthsPct={MODAL_COMP_CATEGORIAS_TABLA_COLUMN_WIDTHS_PCT}
     />
   );
