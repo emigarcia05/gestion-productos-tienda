@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -24,6 +24,8 @@ import {
   parsePorcentajeCentNormalized,
   porcentajeCentFromNumber,
 } from "@/lib/porcentajeCentMask";
+import { cn } from "@/lib/utils";
+import { TABLE_ROW_ACTION_ICON_CLASS } from "@/lib/ui-classes";
 import type { FinAnaCosFinaItem } from "@/services/finAnaCosFina.service";
 
 export type FinAnaCosFinaFila = FinAnaCosFinaItem;
@@ -43,6 +45,21 @@ function parseDiasAcreditacionInput(raw: string): number | null | undefined {
   return n;
 }
 
+function CeldaHabilitadoToggleVisual({ activo }: { activo: boolean }) {
+  return (
+    <span
+      className={cn(
+        "tabla-check-toggle tabla-check-toggle--alto-fila shrink-0 !bg-background",
+        activo && "[&_svg]:!text-[#0072bb]"
+      )}
+      role="img"
+      aria-hidden={!activo}
+    >
+      {activo ? <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden /> : null}
+    </span>
+  );
+}
+
 function CeldaHabilitado({
   fila,
   esEditor,
@@ -56,17 +73,18 @@ function CeldaHabilitado({
 
   if (!esEditor) {
     return (
-      <span className="block w-full text-center text-xs text-muted-foreground">
-        {fila.habilitado ? "SÍ" : "NO"}
-      </span>
+      <div className="flex h-full w-full items-center justify-center">
+        <CeldaHabilitadoToggleVisual activo={fila.habilitado} />
+      </div>
     );
   }
 
-  function handleChange(checked: boolean) {
+  function handleToggle() {
+    const siguiente = !fila.habilitado;
     startTransition(async () => {
       const res = await actualizarFinAnaCosFinaAction({
         id: fila.id,
-        campos: { habilitado: checked },
+        campos: { habilitado: siguiente },
       });
       if (res.ok) {
         onFilaActualizada(res.data);
@@ -77,15 +95,23 @@ function CeldaHabilitado({
   }
 
   return (
-    <div className="flex items-center justify-center gap-1">
-      {saving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-      <Switch
-        checked={fila.habilitado}
-        onCheckedChange={handleChange}
+    <div className="flex h-full w-full items-center justify-center gap-1">
+      {saving && <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={handleToggle}
         disabled={saving}
-        className="scale-75"
+        className={cn(
+          "tabla-check-toggle tabla-check-toggle--alto-fila shrink-0 !bg-background",
+          fila.habilitado && "[&_svg]:!text-[#0072bb]"
+        )}
+        aria-pressed={fila.habilitado}
         aria-label={`Habilitar ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
-      />
+      >
+        {fila.habilitado ? <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden /> : null}
+      </Button>
     </div>
   );
 }
@@ -148,7 +174,7 @@ function CeldaDiasAcreditacion({
         inputMode="numeric"
         autoComplete="off"
         disabled={saving}
-        className="h-8 w-20 min-w-0 px-2 py-1 text-center tabular-nums"
+        className="h-[calc(var(--tabla-body-row-min-height)-0.5rem)] w-20 min-w-0 max-h-full px-2 py-0 text-center text-xs tabular-nums"
         aria-label={`Días de acreditación ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
       />
     </div>
@@ -206,7 +232,7 @@ function CeldaCostoFinanciero({
         onValueNormalizedChange={setDraft}
         onCommit={guardar}
         disabled={saving}
-        className="h-8 w-28 min-w-0 px-2 py-1 text-center"
+        className="h-[calc(var(--tabla-body-row-min-height)-0.5rem)] w-28 min-w-0 max-h-full px-2 py-0 text-center text-xs"
         aria-label={`Costo financiero ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
       />
     </div>
@@ -231,7 +257,7 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
           <TableBody>
             {filas.map((fila) => (
               <TableRow key={fila.id}>
-                <TableCell className="celda-datos">
+                <TableCell className="celda-datos celda-datos--accion-relleno-fila">
                   <CeldaHabilitado
                     fila={fila}
                     esEditor={esEditor}
