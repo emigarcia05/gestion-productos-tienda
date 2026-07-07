@@ -1,4 +1,9 @@
 import type { FinAnaCosFinaPago, FinAnaCosFinaTerminal } from "@prisma/client";
+import { roundPorcentaje0a100 } from "@/lib/format";
+import { porcentajeCentFromNumber, porcentajeCentNormalizedToDisplay } from "@/lib/porcentajeCentMask";
+
+/** Factor IVA 21 % para **CX TERMINAL C/ IVA** (misma convención que compras/ventas en el proyecto). */
+export const FIN_ANA_COS_FINA_IVA_FACTOR = 1.21;
 
 /** Orden canónico de terminales en grilla y semilla. */
 export const FIN_ANA_COS_FINA_TERMINALES: FinAnaCosFinaTerminal[] = [
@@ -48,4 +53,19 @@ export function ordenTerminalFinAnaCosFina(terminal: FinAnaCosFinaTerminal): num
 
 export function ordenPagoFinAnaCosFina(pago: FinAnaCosFinaPago): number {
   return FIN_ANA_COS_FINA_PAGOS.indexOf(pago);
+}
+
+/** CX TERMINAL S/ IVA = ARANCEL + CX FINANCIERO (2 decimales). */
+export function cxTerminalSinIvaFinAnaCosFina(arancel: number, costoFinanciero: number): number {
+  return roundPorcentaje0a100(arancel + costoFinanciero);
+}
+
+/** CX TERMINAL C/ IVA = (ARANCEL + CX FINANCIERO) × 1,21 (2 decimales). */
+export function cxTerminalConIvaFinAnaCosFina(arancel: number, costoFinanciero: number): number {
+  return roundPorcentaje0a100((arancel + costoFinanciero) * FIN_ANA_COS_FINA_IVA_FACTOR);
+}
+
+/** Display es-AR con coma y 2 decimales (sin `%`). */
+export function fmtPorcentajeDosDecimalesFinAnaCosFina(valor: number): string {
+  return porcentajeCentNormalizedToDisplay(porcentajeCentFromNumber(valor));
 }

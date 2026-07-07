@@ -7,6 +7,7 @@ import {
   PORCENTAJE_CENT_MASK_MAX_CENTS,
   porcentajeCentCentsToNormalizedString,
   porcentajeCentNormalizedStringToCents,
+  porcentajeCentNormalizedToDisplay,
   porcentajeCentNormalizedToDisplayWithPct,
 } from "@/lib/porcentajeCentMask";
 
@@ -18,6 +19,8 @@ export type PorcentajeCentInputProps = Omit<
   onValueNormalizedChange: (next: string) => void;
   /** Se invoca al perder el foco del input (tras edición con máscara). */
   onCommit?: () => void;
+  /** Si es `false`, el display no agrega sufijo `%` (solo `12,34`). Default `true`. */
+  showPctSuffix?: boolean;
 };
 
 /**
@@ -29,8 +32,10 @@ export default function PorcentajeCentInput({
   valueNormalized,
   onValueNormalizedChange,
   onCommit,
+  showPctSuffix = true,
   className,
   disabled,
+  readOnly,
   ...props
 }: PorcentajeCentInputProps) {
   const overwriteOnNextInputRef = useRef(true);
@@ -42,8 +47,10 @@ export default function PorcentajeCentInput({
 
   const display = useMemo(() => {
     if (valueNormalized.trim() === "") return "";
-    return porcentajeCentNormalizedToDisplayWithPct(valueNormalized);
-  }, [valueNormalized]);
+    return showPctSuffix
+      ? porcentajeCentNormalizedToDisplayWithPct(valueNormalized)
+      : porcentajeCentNormalizedToDisplay(valueNormalized);
+  }, [showPctSuffix, valueNormalized]);
 
   return (
     <Input
@@ -51,6 +58,7 @@ export default function PorcentajeCentInput({
       inputMode="numeric"
       autoComplete="off"
       disabled={disabled}
+      readOnly={readOnly}
       value={display}
       onFocus={() => {
         overwriteOnNextInputRef.current = true;
@@ -63,7 +71,7 @@ export default function PorcentajeCentInput({
         // Entrada solo por teclado / pegado (máscara POS).
       }}
       onKeyDown={(event) => {
-        if (disabled) return;
+        if (disabled || readOnly) return;
         if (event.ctrlKey || event.metaKey || event.altKey) return;
 
         const key = event.key;
@@ -99,7 +107,7 @@ export default function PorcentajeCentInput({
       }}
       onPaste={(event) => {
         event.preventDefault();
-        if (disabled) return;
+        if (disabled || readOnly) return;
         overwriteOnNextInputRef.current = false;
         const digits = event.clipboardData.getData("text").replace(/\D/g, "");
         if (!digits) return;

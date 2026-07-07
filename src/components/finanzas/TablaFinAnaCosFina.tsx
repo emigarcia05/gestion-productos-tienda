@@ -15,10 +15,12 @@ import {
 } from "@/components/ui/table";
 import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import { actualizarFinAnaCosFinaAction } from "@/actions/finAnaCosFina";
-import { fmtPorcentajeTabla } from "@/lib/format";
 import {
+  cxTerminalConIvaFinAnaCosFina,
+  cxTerminalSinIvaFinAnaCosFina,
   etiquetaPagoFinAnaCosFina,
   etiquetaTerminalFinAnaCosFina,
+  fmtPorcentajeDosDecimalesFinAnaCosFina,
 } from "@/lib/finAnaCosFina";
 import {
   parsePorcentajeCentNormalized,
@@ -35,6 +37,16 @@ interface Props {
   esEditor: boolean;
   onFilaActualizada: (fila: FinAnaCosFinaFila) => void;
 }
+
+const INPUT_FILA_CLASS =
+  "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-w-0 max-h-full px-2 py-0 text-center text-xs tabular-nums border-primary";
+
+type CampoDecimalFinAnaCosFina = "arancel" | "costoFinanciero";
+
+const ETIQUETAS_CAMPO_DECIMAL: Record<CampoDecimalFinAnaCosFina, string> = {
+  arancel: "Arancel",
+  costoFinanciero: "Cx. financiero",
+};
 
 function parseDiasAcreditacionInput(raw: string): number | null | undefined {
   const trimmed = raw.trim();
@@ -128,15 +140,9 @@ function CeldaDiasAcreditacion({
   const [draft, setDraft] = useState(fila.diasAcreditacion?.toString() ?? "");
   const [saving, startTransition] = useTransition();
 
-  if (!esEditor) {
-    return (
-      <span className="block w-full text-center text-xs tabular-nums text-muted-foreground">
-        {fila.diasAcreditacion ?? "—"}
-      </span>
-    );
-  }
-
   function guardar() {
+    if (!esEditor) return;
+
     const parsed = parseDiasAcreditacionInput(draft);
     if (parsed === undefined) {
       toast.error("Ingresá días de acreditación válidos (0–999) o dejá vacío.");
@@ -164,7 +170,10 @@ function CeldaDiasAcreditacion({
       {saving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
       <Input
         value={draft}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => {
+          if (!esEditor) return;
+          setDraft(event.target.value);
+        }}
         onBlur={guardar}
         onKeyDown={(event) => {
           if (event.key === "Enter") {
@@ -173,53 +182,52 @@ function CeldaDiasAcreditacion({
         }}
         inputMode="numeric"
         autoComplete="off"
+        readOnly={!esEditor}
         disabled={saving}
-        className="h-[calc(var(--tabla-body-row-min-height)-0.5rem)] w-20 min-w-0 max-h-full px-2 py-0 text-center text-xs tabular-nums"
+        className={cn(INPUT_FILA_CLASS, "w-20")}
         aria-label={`Días de acreditación ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
       />
     </div>
   );
 }
 
-function CeldaCostoFinanciero({
+function CeldaDecimalDosDecimales({
   fila,
+  campo,
   esEditor,
   onFilaActualizada,
 }: {
   fila: FinAnaCosFinaFila;
+  campo: CampoDecimalFinAnaCosFina;
   esEditor: boolean;
   onFilaActualizada: (fila: FinAnaCosFinaFila) => void;
 }) {
-  const [draft, setDraft] = useState(() => porcentajeCentFromNumber(fila.costoFinanciero));
+  const valorPersistido = fila[campo];
+  const [draft, setDraft] = useState(() => porcentajeCentFromNumber(valorPersistido));
   const [saving, startTransition] = useTransition();
-
-  if (!esEditor) {
-    return (
-      <span className="block w-full text-center text-xs tabular-nums text-muted-foreground">
-        {fmtPorcentajeTabla(fila.costoFinanciero) || "—"}
-      </span>
-    );
-  }
+  const etiquetaCampo = ETIQUETAS_CAMPO_DECIMAL[campo];
 
   function guardar() {
+    if (!esEditor) return;
+
     const parsed = parsePorcentajeCentNormalized(draft);
     if (parsed === undefined) {
-      toast.error("Ingresá un costo financiero válido (0–100).");
-      setDraft(porcentajeCentFromNumber(fila.costoFinanciero));
+      toast.error(`Ingresá un ${etiquetaCampo.toLowerCase()} válido (0–100).`);
+      setDraft(porcentajeCentFromNumber(valorPersistido));
       return;
     }
-    if (parsed === fila.costoFinanciero) return;
+    if (parsed === valorPersistido) return;
 
     startTransition(async () => {
       const res = await actualizarFinAnaCosFinaAction({
         id: fila.id,
-        campos: { costoFinanciero: parsed },
+        campos: { [campo]: parsed },
       });
       if (res.ok) {
         onFilaActualizada(res.data);
       } else {
         toast.error(res.error);
-        setDraft(porcentajeCentFromNumber(fila.costoFinanciero));
+        setDraft(porcentajeCentFromNumber(valorPersistido));
       }
     });
   }
@@ -229,13 +237,30 @@ function CeldaCostoFinanciero({
       {saving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
       <PorcentajeCentInput
         valueNormalized={draft}
-        onValueNormalizedChange={setDraft}
+        onValueNormalizedChange={(next) => {
+          if (!esEditor) return;
+          setDraft(next);
+        }}
         onCommit={guardar}
+        showPctSuffix={false}
+        readOnly={!esEditor}
         disabled={saving}
-        className="h-[calc(var(--tabla-body-row-min-height)-0.5rem)] w-28 min-w-0 max-h-full px-2 py-0 text-center text-xs"
-        aria-label={`Costo financiero ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+        className={cn(INPUT_FILA_CLASS, "w-24")}
+        aria-label={`${etiquetaCampo} ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
       />
     </div>
+  );
+}
+
+function CeldaPorcentajeCalculado({ valor, etiqueta }: { valor: number; etiqueta: string }) {
+  return (
+    <Input
+      readOnly
+      tabIndex={-1}
+      value={fmtPorcentajeDosDecimalesFinAnaCosFina(valor)}
+      className={cn(INPUT_FILA_CLASS, "w-24 cursor-default bg-muted/30")}
+      aria-label={etiqueta}
+    />
   );
 }
 
@@ -246,12 +271,14 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
         <Table variant="compact">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[10%]">HABILITADO</TableHead>
-              <TableHead className="w-[18%]">TERMINAL</TableHead>
-              <TableHead className="w-[18%]">PAGO</TableHead>
-              <TableHead className="w-[14%]">DÍAS ACRED.</TableHead>
-              <TableHead className="w-[14%]">ARANCEL</TableHead>
-              <TableHead className="w-[16%]">COSTO FIN.</TableHead>
+              <TableHead className="w-[8%]">HABILITADO</TableHead>
+              <TableHead className="w-[12%]">TERMINAL</TableHead>
+              <TableHead className="w-[12%]">PAGO</TableHead>
+              <TableHead className="w-[10%]">DÍAS ACRED.</TableHead>
+              <TableHead className="w-[10%]">ARANCEL</TableHead>
+              <TableHead className="w-[10%]">CX FINANCIERO</TableHead>
+              <TableHead className="w-[12%]">CX TERMINAL S/ IVA</TableHead>
+              <TableHead className="w-[12%]">CX TERMINAL C/ IVA</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -278,15 +305,34 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
                     onFilaActualizada={onFilaActualizada}
                   />
                 </TableCell>
-                <TableCell className="celda-datos text-center text-xs tabular-nums text-muted-foreground">
-                  {fmtPorcentajeTabla(fila.arancel) || "—"}
-                </TableCell>
                 <TableCell className="celda-datos">
-                  <CeldaCostoFinanciero
-                    key={`${fila.id}-costo-${fila.costoFinanciero}`}
+                  <CeldaDecimalDosDecimales
+                    key={`${fila.id}-arancel-${fila.arancel}`}
                     fila={fila}
+                    campo="arancel"
                     esEditor={esEditor}
                     onFilaActualizada={onFilaActualizada}
+                  />
+                </TableCell>
+                <TableCell className="celda-datos">
+                  <CeldaDecimalDosDecimales
+                    key={`${fila.id}-cxfin-${fila.costoFinanciero}`}
+                    fila={fila}
+                    campo="costoFinanciero"
+                    esEditor={esEditor}
+                    onFilaActualizada={onFilaActualizada}
+                  />
+                </TableCell>
+                <TableCell className="celda-datos">
+                  <CeldaPorcentajeCalculado
+                    valor={cxTerminalSinIvaFinAnaCosFina(fila.arancel, fila.costoFinanciero)}
+                    etiqueta={`Cx. terminal sin IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+                  />
+                </TableCell>
+                <TableCell className="celda-datos">
+                  <CeldaPorcentajeCalculado
+                    valor={cxTerminalConIvaFinAnaCosFina(fila.arancel, fila.costoFinanciero)}
+                    etiqueta={`Cx. terminal con IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
                   />
                 </TableCell>
               </TableRow>

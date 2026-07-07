@@ -99,6 +99,9 @@ export async function actualizarFinAnaCosFina(
   if (campos.diasAcreditacion !== undefined) {
     data.diasAcreditacion = campos.diasAcreditacion;
   }
+  if (campos.arancel !== undefined) {
+    data.arancel = new Prisma.Decimal(campos.arancel);
+  }
   if (campos.costoFinanciero !== undefined) {
     data.costoFinanciero = new Prisma.Decimal(campos.costoFinanciero);
   }
