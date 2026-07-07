@@ -2,6 +2,9 @@ import type { FinAnaCosFinaPago, FinAnaCosFinaTerminal } from "@prisma/client";
 import { roundPorcentaje0a100 } from "@/lib/format";
 import { porcentajeCentFromNumber, porcentajeCentNormalizedToDisplay } from "@/lib/porcentajeCentMask";
 
+/** Factor para **CX IMP. CHEQUE** cuando `imp_cheque` es true: `(1 − CX TERMINAL C/ IVA) × 0,012`. */
+export const FIN_ANA_COS_FINA_IMP_CHEQUE_FACTOR = 0.012;
+
 /** Factor IVA 21 % para **CX TERMINAL C/ IVA** (misma convención que compras/ventas en el proyecto). */
 export const FIN_ANA_COS_FINA_IVA_FACTOR = 1.21;
 
@@ -55,14 +58,24 @@ export function ordenPagoFinAnaCosFina(pago: FinAnaCosFinaPago): number {
   return FIN_ANA_COS_FINA_PAGOS.indexOf(pago);
 }
 
-/** CX TERMINAL S/ IVA = ARANCEL + CX FINANCIERO (2 decimales). */
-export function cxTerminalSinIvaFinAnaCosFina(arancel: number, costoFinanciero: number): number {
-  return roundPorcentaje0a100(arancel + costoFinanciero);
-}
-
 /** CX TERMINAL C/ IVA = (ARANCEL + CX FINANCIERO) × 1,21 (2 decimales). */
 export function cxTerminalConIvaFinAnaCosFina(arancel: number, costoFinanciero: number): number {
   return roundPorcentaje0a100((arancel + costoFinanciero) * FIN_ANA_COS_FINA_IVA_FACTOR);
+}
+
+/**
+ * CX IMP. CHEQUE: si `imp_cheque` es false → 0; si true → `(1 − CX TERMINAL C/ IVA) × 0,012`
+ * expresado en escala % (0–100) para la grilla.
+ */
+export function cxImpChequeFinAnaCosFina(
+  impCheque: boolean,
+  arancel: number,
+  costoFinanciero: number
+): number {
+  if (!impCheque) return 0;
+  const cxTerminalConIva = cxTerminalConIvaFinAnaCosFina(arancel, costoFinanciero);
+  const tasa = (1 - cxTerminalConIva / 100) * FIN_ANA_COS_FINA_IMP_CHEQUE_FACTOR;
+  return roundPorcentaje0a100(tasa * 100);
 }
 
 /** Display es-AR con coma y 2 decimales (sin `%`). */

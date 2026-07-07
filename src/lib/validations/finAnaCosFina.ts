@@ -14,6 +14,7 @@ const porcentajeFinAnaCosFinaSchema = z
 export const actualizarFinAnaCosFinaCamposSchema = z
   .object({
     habilitado: z.boolean().optional(),
+    impCheque: z.boolean().optional(),
     diasAcreditacion: z.number().int().min(0).max(999).nullable().optional(),
     arancel: porcentajeFinAnaCosFinaSchema.optional(),
     costoFinanciero: porcentajeFinAnaCosFinaSchema.optional(),

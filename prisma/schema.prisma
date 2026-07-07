@@ -989,6 +989,7 @@ enum FinAnaCosFinaPago {
 model FinAnaCosFina {
   id               String                @id @default(cuid())
   habilitado       Boolean               @default(true)
+  impCheque        Boolean               @default(false) @map("imp_cheque")
   terminal         FinAnaCosFinaTerminal
   pago             FinAnaCosFinaPago
   diasAcreditacion Int?                  @map("dias_acreditacion")

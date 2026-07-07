@@ -12,6 +12,7 @@ import type { ActualizarFinAnaCosFinaInput } from "@/lib/validations/finAnaCosFi
 export type FinAnaCosFinaItem = {
   id: string;
   habilitado: boolean;
+  impCheque: boolean;
   terminal: FinAnaCosFinaTerminal;
   pago: FinAnaCosFinaPago;
   diasAcreditacion: number | null;
@@ -26,6 +27,7 @@ function decimalToNumber(value: Prisma.Decimal): number {
 function mapRow(row: {
   id: string;
   habilitado: boolean;
+  impCheque: boolean;
   terminal: FinAnaCosFinaTerminal;
   pago: FinAnaCosFinaPago;
   diasAcreditacion: number | null;
@@ -35,6 +37,7 @@ function mapRow(row: {
   return {
     id: row.id,
     habilitado: row.habilitado,
+    impCheque: row.impCheque,
     terminal: row.terminal,
     pago: row.pago,
     diasAcreditacion: row.diasAcreditacion,
@@ -74,6 +77,7 @@ export async function ensureFinAnaCosFinaSeed(): Promise<void> {
       terminal: row.terminal,
       pago: row.pago,
       habilitado: true,
+      impCheque: false,
       arancel: new Prisma.Decimal(0),
       costoFinanciero: new Prisma.Decimal(0),
     })),
@@ -95,6 +99,9 @@ export async function actualizarFinAnaCosFina(
 
   if (campos.habilitado !== undefined) {
     data.habilitado = campos.habilitado;
+  }
+  if (campos.impCheque !== undefined) {
+    data.impCheque = campos.impCheque;
   }
   if (campos.diasAcreditacion !== undefined) {
     data.diasAcreditacion = campos.diasAcreditacion;

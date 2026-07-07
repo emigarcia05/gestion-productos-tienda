@@ -16,8 +16,8 @@ import {
 import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import { actualizarFinAnaCosFinaAction } from "@/actions/finAnaCosFina";
 import {
+  cxImpChequeFinAnaCosFina,
   cxTerminalConIvaFinAnaCosFina,
-  cxTerminalSinIvaFinAnaCosFina,
   etiquetaPagoFinAnaCosFina,
   etiquetaTerminalFinAnaCosFina,
   fmtPorcentajeDosDecimalesFinAnaCosFina,
@@ -39,7 +39,18 @@ interface Props {
 }
 
 const INPUT_FILA_CLASS =
-  "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-w-0 max-h-full px-2 py-0 text-center text-xs tabular-nums border-primary";
+  "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-w-0 max-h-full text-xs tabular-nums";
+
+const INPUT_FILA_PLANO_CLASS = cn(INPUT_FILA_CLASS, "border-primary px-2 py-0 text-center");
+
+const INPUT_FILA_PORCENTAJE_CLASS = cn(INPUT_FILA_CLASS, "w-24");
+
+type CampoBooleanoFinAnaCosFina = "habilitado" | "impCheque";
+
+const ETIQUETAS_CAMPO_BOOLEANO: Record<CampoBooleanoFinAnaCosFina, string> = {
+  habilitado: "Habilitar",
+  impCheque: "Imp. cheque",
+};
 
 type CampoDecimalFinAnaCosFina = "arancel" | "costoFinanciero";
 
@@ -72,31 +83,36 @@ function CeldaHabilitadoToggleVisual({ activo }: { activo: boolean }) {
   );
 }
 
-function CeldaHabilitado({
+function CeldaToggleBooleano({
   fila,
+  campo,
   esEditor,
   onFilaActualizada,
 }: {
   fila: FinAnaCosFinaFila;
+  campo: CampoBooleanoFinAnaCosFina;
   esEditor: boolean;
   onFilaActualizada: (fila: FinAnaCosFinaFila) => void;
 }) {
   const [saving, startTransition] = useTransition();
+  const activo = fila[campo];
+  const etiquetaAccion = ETIQUETAS_CAMPO_BOOLEANO[campo];
+  const contextoFila = `${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`;
 
   if (!esEditor) {
     return (
       <div className="flex h-full w-full items-center justify-center">
-        <CeldaHabilitadoToggleVisual activo={fila.habilitado} />
+        <CeldaHabilitadoToggleVisual activo={activo} />
       </div>
     );
   }
 
   function handleToggle() {
-    const siguiente = !fila.habilitado;
+    const siguiente = !activo;
     startTransition(async () => {
       const res = await actualizarFinAnaCosFinaAction({
         id: fila.id,
-        campos: { habilitado: siguiente },
+        campos: { [campo]: siguiente },
       });
       if (res.ok) {
         onFilaActualizada(res.data);
@@ -117,12 +133,12 @@ function CeldaHabilitado({
         disabled={saving}
         className={cn(
           "tabla-check-toggle tabla-check-toggle--alto-fila shrink-0 !bg-background",
-          fila.habilitado && "[&_svg]:!text-[#0072bb]"
+          activo && "[&_svg]:!text-[#0072bb]"
         )}
-        aria-pressed={fila.habilitado}
-        aria-label={`Habilitar ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+        aria-pressed={activo}
+        aria-label={`${etiquetaAccion} ${contextoFila}`}
       >
-        {fila.habilitado ? <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden /> : null}
+        {activo ? <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden /> : null}
       </Button>
     </div>
   );
@@ -184,7 +200,7 @@ function CeldaDiasAcreditacion({
         autoComplete="off"
         readOnly={!esEditor}
         disabled={saving}
-        className={cn(INPUT_FILA_CLASS, "w-20")}
+        className={cn(INPUT_FILA_PLANO_CLASS, "w-20")}
         aria-label={`Días de acreditación ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
       />
     </div>
@@ -242,10 +258,9 @@ function CeldaDecimalDosDecimales({
           setDraft(next);
         }}
         onCommit={guardar}
-        showPctSuffix={false}
         readOnly={!esEditor}
         disabled={saving}
-        className={cn(INPUT_FILA_CLASS, "w-24")}
+        className={INPUT_FILA_PORCENTAJE_CLASS}
         aria-label={`${etiquetaCampo} ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
       />
     </div>
@@ -254,13 +269,24 @@ function CeldaDecimalDosDecimales({
 
 function CeldaPorcentajeCalculado({ valor, etiqueta }: { valor: number; etiqueta: string }) {
   return (
-    <Input
-      readOnly
-      tabIndex={-1}
-      value={fmtPorcentajeDosDecimalesFinAnaCosFina(valor)}
-      className={cn(INPUT_FILA_CLASS, "w-24 cursor-default bg-muted/30")}
-      aria-label={etiqueta}
-    />
+    <div
+      className={cn(
+        "input-mascara-sufijo flex items-center rounded-md border border-primary bg-muted/30",
+        INPUT_FILA_PORCENTAJE_CLASS,
+        "cursor-default"
+      )}
+    >
+      <input
+        readOnly
+        tabIndex={-1}
+        value={fmtPorcentajeDosDecimalesFinAnaCosFina(valor)}
+        className="min-h-0 min-w-0 flex-1 cursor-default border-0 bg-transparent px-1 py-0 text-center text-xs tabular-nums shadow-none outline-none"
+        aria-label={etiqueta}
+      />
+      <span className="input-mascara-sufijo__pct tabular-nums" aria-hidden>
+        %
+      </span>
+    </div>
   );
 }
 
@@ -271,22 +297,32 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
         <Table variant="compact">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[8%]">HABILITADO</TableHead>
-              <TableHead className="w-[12%]">TERMINAL</TableHead>
-              <TableHead className="w-[12%]">PAGO</TableHead>
-              <TableHead className="w-[10%]">DÍAS ACRED.</TableHead>
-              <TableHead className="w-[10%]">ARANCEL</TableHead>
-              <TableHead className="w-[10%]">CX FINANCIERO</TableHead>
-              <TableHead className="w-[12%]">CX TERMINAL S/ IVA</TableHead>
-              <TableHead className="w-[12%]">CX TERMINAL C/ IVA</TableHead>
+              <TableHead className="w-[7%]">HABILITADO</TableHead>
+              <TableHead className="w-[7%]">IMP. CHEQUE</TableHead>
+              <TableHead className="w-[10%]">TERMINAL</TableHead>
+              <TableHead className="w-[10%]">PAGO</TableHead>
+              <TableHead className="w-[8%]">DÍAS ACRED.</TableHead>
+              <TableHead className="w-[9%]">ARANCEL</TableHead>
+              <TableHead className="w-[9%]">CX FINANCIERO</TableHead>
+              <TableHead className="w-[11%]">CX TERMINAL C/ IVA</TableHead>
+              <TableHead className="w-[11%]">CX IMP. CHEQUE</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filas.map((fila) => (
               <TableRow key={fila.id}>
                 <TableCell className="celda-datos celda-datos--accion-relleno-fila">
-                  <CeldaHabilitado
+                  <CeldaToggleBooleano
                     fila={fila}
+                    campo="habilitado"
+                    esEditor={esEditor}
+                    onFilaActualizada={onFilaActualizada}
+                  />
+                </TableCell>
+                <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                  <CeldaToggleBooleano
+                    fila={fila}
+                    campo="impCheque"
                     esEditor={esEditor}
                     onFilaActualizada={onFilaActualizada}
                   />
@@ -325,14 +361,14 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
                 </TableCell>
                 <TableCell className="celda-datos">
                   <CeldaPorcentajeCalculado
-                    valor={cxTerminalSinIvaFinAnaCosFina(fila.arancel, fila.costoFinanciero)}
-                    etiqueta={`Cx. terminal sin IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+                    valor={cxTerminalConIvaFinAnaCosFina(fila.arancel, fila.costoFinanciero)}
+                    etiqueta={`Cx. terminal con IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
                   />
                 </TableCell>
                 <TableCell className="celda-datos">
                   <CeldaPorcentajeCalculado
-                    valor={cxTerminalConIvaFinAnaCosFina(fila.arancel, fila.costoFinanciero)}
-                    etiqueta={`Cx. terminal con IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+                    valor={cxImpChequeFinAnaCosFina(fila.impCheque, fila.arancel, fila.costoFinanciero)}
+                    etiqueta={`Cx. imp. cheque ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
                   />
                 </TableCell>
               </TableRow>
