@@ -3,7 +3,12 @@ import {
   calcPxListaDesdeMargenSinIvaPct,
   roundPrecioListaTienda,
 } from "@/lib/calculos";
-import { roundMargenPxListaPct } from "@/lib/pxListasPreciosFormat";
+import { margenDesdePrecioDux } from "@/lib/pxListasPreciosCelda";
+import {
+  preciosPxListaEnterosIguales,
+  roundMargenPxListaPct,
+  roundPxListaEntero,
+} from "@/lib/pxListasPreciosFormat";
 import { prisma } from "@/lib/prisma";
 import type { ServiceResult } from "@/types/service.types";
 
@@ -12,27 +17,29 @@ export type ClavePrecioListaEdicion = {
   idLista: number;
 };
 
-/**
- * Guarda el PX calculado desde el margen en `prod_tienda_precios_edicion` (staging hasta Act. Px).
- * `margenManual: null` elimina la fila pendiente.
- */
-export async function guardarPrecioListaEdicionDesdeMargen(
+type ResultadoPrecioListaEdicion = {
+  margenManual: number | null;
+  pxEdicion: number | null;
+  pxEfectivo: number | null;
+};
+
+async function obtenerContextoPrecioListaEdicion(
   codTienda: string,
-  idLista: number,
-  margenManual: number | null
+  idLista: number
 ): Promise<
-  ServiceResult<{
-    margenManual: number | null;
-    pxEdicion: number | null;
-    pxEfectivo: number | null;
-  }>
+  | { ok: false; error: string }
+  | {
+      ok: true;
+      costoCompra: number;
+      pxDux: number | null;
+    }
 > {
   const listaExiste = await prisma.prodTiendaListaPrecio.findUnique({
     where: { idLista },
     select: { idLista: true },
   });
   if (!listaExiste) {
-    return { success: false, error: "Lista de precio no encontrada." };
+    return { ok: false, error: "Lista de precio no encontrada." };
   }
 
   const producto = await prisma.prodTienda.findUnique({
@@ -40,41 +47,39 @@ export async function guardarPrecioListaEdicionDesdeMargen(
     select: { codTienda: true, costoCompra: true },
   });
   if (!producto) {
-    return { success: false, error: "Producto tienda no encontrado." };
+    return { ok: false, error: "Producto tienda no encontrado." };
   }
 
-  const costoCompra = Number(producto.costoCompra);
+  const dux = await prisma.prodTiendaPrecio.findUnique({
+    where: { codTienda_idLista: { codTienda, idLista } },
+    select: { precio: true },
+  });
+  const pxDux = dux ? Number(dux.precio) : null;
 
-  if (margenManual === null) {
-    await prisma.prodTiendaPrecioEdicion.deleteMany({
-      where: { codTienda, idLista },
-    });
+  return {
+    ok: true,
+    costoCompra: Number(producto.costoCompra),
+    pxDux,
+  };
+}
 
-    const dux = await prisma.prodTiendaPrecio.findUnique({
-      where: { codTienda_idLista: { codTienda, idLista } },
-      select: { precio: true },
-    });
-    const pxDux = dux ? Number(dux.precio) : null;
+async function eliminarStagingPrecioLista(
+  codTienda: string,
+  idLista: number,
+  pxDux: number | null
+): Promise<ResultadoPrecioListaEdicion> {
+  await prisma.prodTiendaPrecioEdicion.deleteMany({
+    where: { codTienda, idLista },
+  });
+  return { margenManual: null, pxEdicion: null, pxEfectivo: pxDux };
+}
 
-    return {
-      success: true,
-      data: { margenManual: null, pxEdicion: null, pxEfectivo: pxDux },
-    };
-  }
-
-  const margenRedondeado = roundMargenPxListaPct(margenManual);
-  const pxCalculado = calcPxListaDesdeMargenSinIvaPct(margenRedondeado, costoCompra);
-  if (pxCalculado == null || !(pxCalculado > 0)) {
-    return {
-      success: false,
-      error: "No se pudo calcular el precio desde el margen.",
-    };
-  }
-
-  const precioPersistir = new Prisma.Decimal(
-    roundPrecioListaTienda(pxCalculado)
-  );
-
+async function persistirStagingPrecioLista(
+  codTienda: string,
+  idLista: number,
+  pxEntero: number
+): Promise<void> {
+  const precioPersistir = new Prisma.Decimal(roundPrecioListaTienda(pxEntero));
   await prisma.prodTiendaPrecioEdicion.upsert({
     where: { codTienda_idLista: { codTienda, idLista } },
     create: {
@@ -86,13 +91,103 @@ export async function guardarPrecioListaEdicionDesdeMargen(
       precio: precioPersistir,
     },
   });
+}
+
+/**
+ * Guarda el PX calculado desde el margen en `prod_tienda_precios_edicion` (staging hasta Act. Px).
+ * `margenManual: null` elimina la fila pendiente.
+ */
+export async function guardarPrecioListaEdicionDesdeMargen(
+  codTienda: string,
+  idLista: number,
+  margenManual: number | null
+): Promise<ServiceResult<ResultadoPrecioListaEdicion>> {
+  const ctx = await obtenerContextoPrecioListaEdicion(codTienda, idLista);
+  if (!ctx.ok) {
+    return { success: false, error: ctx.error };
+  }
+
+  const { costoCompra, pxDux } = ctx;
+
+  if (margenManual === null) {
+    const data = await eliminarStagingPrecioLista(codTienda, idLista, pxDux);
+    return { success: true, data };
+  }
+
+  const margenRedondeado = roundMargenPxListaPct(margenManual);
+  const pxCalculado = calcPxListaDesdeMargenSinIvaPct(margenRedondeado, costoCompra);
+  if (pxCalculado == null || !(pxCalculado > 0)) {
+    return {
+      success: false,
+      error: "No se pudo calcular el precio desde el margen.",
+    };
+  }
+
+  const pxEntero = roundPxListaEntero(pxCalculado);
+  if (preciosPxListaEnterosIguales(pxEntero, pxDux)) {
+    const data = await eliminarStagingPrecioLista(codTienda, idLista, pxDux);
+    return { success: true, data };
+  }
+
+  await persistirStagingPrecioLista(codTienda, idLista, pxEntero);
 
   return {
     success: true,
     data: {
       margenManual: margenRedondeado,
-      pxEdicion: pxCalculado,
-      pxEfectivo: pxCalculado,
+      pxEdicion: pxEntero,
+      pxEfectivo: pxEntero,
+    },
+  };
+}
+
+/**
+ * Guarda PX entero en staging desde edición directa del precio.
+ * Deriva el margen % para la respuesta; `pxEdicion: null` elimina staging.
+ */
+export async function guardarPrecioListaEdicionDesdePx(
+  codTienda: string,
+  idLista: number,
+  pxEdicion: number | null
+): Promise<ServiceResult<ResultadoPrecioListaEdicion>> {
+  const ctx = await obtenerContextoPrecioListaEdicion(codTienda, idLista);
+  if (!ctx.ok) {
+    return { success: false, error: ctx.error };
+  }
+
+  const { costoCompra, pxDux } = ctx;
+
+  if (pxEdicion === null) {
+    const data = await eliminarStagingPrecioLista(codTienda, idLista, pxDux);
+    return { success: true, data };
+  }
+
+  const pxEntero = roundPxListaEntero(pxEdicion);
+  if (!(pxEntero > 0)) {
+    return { success: false, error: "Precio inválido." };
+  }
+
+  if (preciosPxListaEnterosIguales(pxEntero, pxDux)) {
+    const data = await eliminarStagingPrecioLista(codTienda, idLista, pxDux);
+    return { success: true, data };
+  }
+
+  const margenManual = margenDesdePrecioDux(pxEntero, costoCompra);
+  if (margenManual == null) {
+    return {
+      success: false,
+      error: "No se pudo calcular el margen desde el precio.",
+    };
+  }
+
+  await persistirStagingPrecioLista(codTienda, idLista, pxEntero);
+
+  return {
+    success: true,
+    data: {
+      margenManual,
+      pxEdicion: pxEntero,
+      pxEfectivo: pxEntero,
     },
   };
 }

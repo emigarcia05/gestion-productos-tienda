@@ -59,6 +59,16 @@ export function margenesPorcUtilidadDifieren(
   );
 }
 
+/** Comparación de PX enteros (staging vs DUX). */
+export function preciosPxListaEnterosIguales(
+  pxA: number | null | undefined,
+  pxB: number | null | undefined
+): boolean {
+  if (pxA == null || pxB == null) return false;
+  if (!(pxA > 0) || !(pxB > 0)) return false;
+  return roundPxListaEntero(pxA) === roundPxListaEntero(pxB);
+}
+
 /** Mismo PX de lista tienda a entero (DUX devuelve precio, no margen). */
 export function preciosPxListaSincronizados(
   pxA: number | null | undefined,

@@ -11,8 +11,12 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { guardarPxListaMargenEdicionAction } from "@/actions/pxListasPrecios";
+import {
+  guardarPxListaMargenEdicionAction,
+  guardarPxListaPrecioEdicionAction,
+} from "@/actions/pxListasPrecios";
 import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
+import PxListaEnteroInput from "@/components/shared/PxListaEnteroInput";
 import {
   calcPxListaDesdeMargenSinIvaPct,
 } from "@/lib/calculos";
@@ -21,14 +25,21 @@ import {
   porcentajeCentFromNumber,
 } from "@/lib/porcentajeCentMask";
 import {
+  margenDesdePrecioDux,
   armarCeldaPrecioPxListas,
   celdaRequiereActualizar,
 } from "@/lib/pxListasPreciosCelda";
+import {
+  parsePxListaEnteroNormalized,
+  pxListaEnteroFromNumber,
+} from "@/lib/pxListaEnteroMask";
 import {
   fmtMargenPxListaTabla,
   fmtPxListaTabla,
   MARGEN_PX_LISTA_MAX_CENTS,
   margenesPorcUtilidadDifieren,
+  preciosPxListaEnterosIguales,
+  roundPxListaEntero,
 } from "@/lib/pxListasPreciosFormat";
 import type {
   ItemPxListasPreciosTabla,
@@ -42,6 +53,11 @@ interface Props {
   listas: ListaPrecioPxListasColumna[];
   puedeEditar: boolean;
 }
+
+type DraftCeldaPxListas = {
+  px: number | null;
+  margen: number | null;
+};
 
 function actualizarCeldaEnItem(
   item: ItemPxListasPreciosTabla,
@@ -59,15 +75,185 @@ function actualizarCeldaEnItem(
   return { ...item, preciosPorLista };
 }
 
-function CeldaPxLista({ celda }: { celda: PrecioListaPxListasCelda }) {
-  const display = fmtPxListaTabla(celda.pxEfectivo);
-  return (
-    <span className="tabular-nums text-foreground">{display || "—"}</span>
-  );
+function aplicarDraftCelda(
+  celda: PrecioListaPxListasCelda,
+  draft: DraftCeldaPxListas | undefined
+): PrecioListaPxListasCelda {
+  if (!draft) return celda;
+  return {
+    ...celda,
+    pxEfectivo: draft.px,
+    margenPct: draft.margen,
+  };
 }
+
+const INPUT_PX_LISTA_CLASS =
+  "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-w-0 max-h-full text-xs tabular-nums";
 
 const INPUT_MARGEN_PX_LISTA_CLASS =
   "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-w-0 max-h-full text-xs tabular-nums";
+
+function CeldaPxLista({
+  codTienda,
+  idLista,
+  costoCompra,
+  celda,
+  puedeEditar,
+  onDraft,
+  onSaved,
+}: {
+  codTienda: string;
+  idLista: number;
+  costoCompra: number;
+  celda: PrecioListaPxListasCelda;
+  puedeEditar: boolean;
+  onDraft: (idLista: number, px: number | null) => void;
+  onSaved: (idLista: number, patch: Partial<PrecioListaPxListasCelda>) => void;
+}) {
+  const pxPersistido = celda.pxEfectivo;
+  const [draftLocal, setDraftLocal] = useState<string | null>(null);
+  const [saving, startTransition] = useTransition();
+  const pxAlIniciarRef = useRef<number | null>(null);
+  const pxEditable = costoCompra > 0;
+  const tieneEdicion = celda.pxEdicion != null;
+
+  const pxVista = fmtPxListaTabla(pxPersistido);
+  const draft =
+    draftLocal ??
+    pxListaEnteroFromNumber(pxPersistido);
+
+  function aplicarDraftEnVivo(next: string) {
+    setDraftLocal(next);
+    if (next.trim() === "") {
+      onDraft(idLista, null);
+      return;
+    }
+    const px = parsePxListaEnteroNormalized(next);
+    if (px !== undefined) {
+      onDraft(idLista, px);
+    }
+  }
+
+  function commit() {
+    if (!pxEditable) {
+      onDraft(idLista, null);
+      pxAlIniciarRef.current = null;
+      setDraftLocal(null);
+      return;
+    }
+
+    if (draft.trim() === "") {
+      if (!tieneEdicion) {
+        onDraft(idLista, null);
+        pxAlIniciarRef.current = null;
+        setDraftLocal(null);
+        return;
+      }
+
+      startTransition(async () => {
+        const res = await guardarPxListaPrecioEdicionAction({
+          codTienda,
+          idLista,
+          pxEdicion: null,
+        });
+        if (res.ok) {
+          onSaved(
+            idLista,
+            armarCeldaPrecioPxListas({
+              idLista,
+              costoCompra,
+              pxDux: celda.pxDux,
+              pxEdicion: null,
+            })
+          );
+        } else {
+          toast.error(res.error);
+        }
+        pxAlIniciarRef.current = null;
+        setDraftLocal(null);
+      });
+      return;
+    }
+
+    const px = parsePxListaEnteroNormalized(draft);
+    if (px === undefined) {
+      toast.error("Precio inválido.");
+      setDraftLocal(null);
+      onDraft(idLista, null);
+      pxAlIniciarRef.current = null;
+      return;
+    }
+
+    const pxInicial = pxAlIniciarRef.current;
+    if (
+      pxInicial != null &&
+      preciosPxListaEnterosIguales(px, pxInicial)
+    ) {
+      onDraft(idLista, null);
+      pxAlIniciarRef.current = null;
+      setDraftLocal(null);
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await guardarPxListaPrecioEdicionAction({
+        codTienda,
+        idLista,
+        pxEdicion: px,
+      });
+      if (res.ok) {
+        onSaved(
+          idLista,
+          armarCeldaPrecioPxListas({
+            idLista,
+            costoCompra,
+            pxDux: celda.pxDux,
+            pxEdicion: res.data.pxEdicion,
+          })
+        );
+      } else {
+        toast.error(res.error);
+        onDraft(idLista, null);
+        setDraftLocal(null);
+      }
+      pxAlIniciarRef.current = null;
+      setDraftLocal(null);
+    });
+  }
+
+  if (!puedeEditar || !pxEditable) {
+    return (
+      <span className="tabular-nums text-foreground">
+        {pxVista || "—"}
+      </span>
+    );
+  }
+
+  return (
+    <PxListaEnteroInput
+      valueNormalized={draft}
+      onValueNormalizedChange={(next) => {
+        if (draftLocal === null) {
+          setDraftLocal(pxListaEnteroFromNumber(pxPersistido));
+        }
+        if (pxAlIniciarRef.current === null) {
+          pxAlIniciarRef.current =
+            celda.pxEfectivo != null ? roundPxListaEntero(celda.pxEfectivo) : null;
+        }
+        aplicarDraftEnVivo(next);
+      }}
+      onCommit={commit}
+      disabled={saving}
+      className={cn(
+        INPUT_PX_LISTA_CLASS,
+        "w-full border-primary",
+        tieneEdicion && "px-lista-input--edicion"
+      )}
+      aria-label="Precio calculado"
+      title="Editar precio"
+    />
+  );
+}
 
 function CeldaMargenLista({
   codTienda,
@@ -87,11 +273,7 @@ function CeldaMargenLista({
   onSaved: (idLista: number, patch: Partial<PrecioListaPxListasCelda>) => void;
 }) {
   const margenPersistido = celda.margenPct;
-  const [draft, setDraft] = useState(() =>
-    margenPersistido != null
-      ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS)
-      : ""
-  );
+  const [draftLocal, setDraftLocal] = useState<string | null>(null);
   const [saving, startTransition] = useTransition();
   const margenAlIniciarRef = useRef<number | null>(null);
   const margenEditable = costoCompra > 0;
@@ -100,8 +282,14 @@ function CeldaMargenLista({
   const margenVista =
     celda.margenPct != null ? fmtMargenPxListaTabla(celda.margenPct) : "";
 
+  const draft =
+    draftLocal ??
+    (margenPersistido != null
+      ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS)
+      : "");
+
   function aplicarDraftEnVivo(next: string) {
-    setDraft(next);
+    setDraftLocal(next);
     if (next.trim() === "") {
       onDraft(idLista, null);
       return;
@@ -114,15 +302,17 @@ function CeldaMargenLista({
 
   function commit() {
     if (!margenEditable) {
-      onDraft(idLista, celda.margenManual);
+      onDraft(idLista, null);
       margenAlIniciarRef.current = null;
+      setDraftLocal(null);
       return;
     }
 
     if (draft.trim() === "") {
       if (!tieneEdicion) {
-        onDraft(idLista, celda.margenManual);
+        onDraft(idLista, null);
         margenAlIniciarRef.current = null;
+        setDraftLocal(null);
         return;
       }
 
@@ -143,6 +333,7 @@ function CeldaMargenLista({
           toast.error(res.error);
         }
         margenAlIniciarRef.current = null;
+        setDraftLocal(null);
       });
       return;
     }
@@ -150,12 +341,8 @@ function CeldaMargenLista({
     const margen = parsePorcentajeCentNormalized(draft, MARGEN_PX_LISTA_MAX_CENTS);
     if (margen === undefined) {
       toast.error("Margen inválido.");
-      setDraft(
-        margenPersistido != null
-          ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS)
-          : ""
-      );
-      onDraft(idLista, celda.margenManual);
+      setDraftLocal(null);
+      onDraft(idLista, null);
       margenAlIniciarRef.current = null;
       return;
     }
@@ -165,8 +352,9 @@ function CeldaMargenLista({
       margenInicial != null &&
       !margenesPorcUtilidadDifieren(margen, margenInicial)
     ) {
-      onDraft(idLista, celda.margenManual);
+      onDraft(idLista, null);
       margenAlIniciarRef.current = null;
+      setDraftLocal(null);
       return;
     }
 
@@ -188,14 +376,11 @@ function CeldaMargenLista({
         );
       } else {
         toast.error(res.error);
-        onDraft(idLista, celda.margenManual);
-        setDraft(
-          margenPersistido != null
-            ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS)
-            : ""
-        );
+        onDraft(idLista, null);
+        setDraftLocal(null);
       }
       margenAlIniciarRef.current = null;
+      setDraftLocal(null);
     });
   }
 
@@ -212,6 +397,13 @@ function CeldaMargenLista({
       valueNormalized={draft}
       maxCents={MARGEN_PX_LISTA_MAX_CENTS}
       onValueNormalizedChange={(next) => {
+        if (draftLocal === null) {
+          setDraftLocal(
+            margenPersistido != null
+              ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS)
+              : ""
+          );
+        }
         if (margenAlIniciarRef.current === null) {
           margenAlIniciarRef.current = celda.margenPct;
         }
@@ -239,36 +431,51 @@ function FilaPxListasPrecios({
   puedeEditar: boolean;
   onItemChange: (item: ItemPxListasPreciosTabla) => void;
 }) {
-  const [draftPxPorLista, setDraftPxPorLista] = useState<
-    Record<number, number | null>
+  const [draftPorLista, setDraftPorLista] = useState<
+    Record<number, DraftCeldaPxListas>
   >({});
 
   const descripcionRequiereActualizar = item.preciosPorLista.some(
     (c) => c.requiereActualizar
   );
 
+  const limpiarDraft = (idLista: number) => {
+    setDraftPorLista((prev) => {
+      const next = { ...prev };
+      delete next[idLista];
+      return next;
+    });
+  };
+
   const handleMargenDraft = (idLista: number, margen: number | null) => {
     if (margen == null) {
-      setDraftPxPorLista((prev) => {
-        const next = { ...prev };
-        delete next[idLista];
-        return next;
-      });
+      limpiarDraft(idLista);
       return;
     }
     const px = calcPxListaDesdeMargenSinIvaPct(margen, item.costoCompra);
-    setDraftPxPorLista((prev) => ({ ...prev, [idLista]: px }));
+    setDraftPorLista((prev) => ({
+      ...prev,
+      [idLista]: { px, margen },
+    }));
+  };
+
+  const handlePxDraft = (idLista: number, px: number | null) => {
+    if (px == null) {
+      limpiarDraft(idLista);
+      return;
+    }
+    const margen = margenDesdePrecioDux(px, item.costoCompra);
+    setDraftPorLista((prev) => ({
+      ...prev,
+      [idLista]: { px, margen },
+    }));
   };
 
   const handleCeldaSaved = (
     idLista: number,
     patch: Partial<PrecioListaPxListasCelda>
   ) => {
-    setDraftPxPorLista((prev) => {
-      const next = { ...prev };
-      delete next[idLista];
-      return next;
-    });
+    limpiarDraft(idLista);
     onItemChange(actualizarCeldaEnItem(item, idLista, patch));
   };
 
@@ -285,11 +492,8 @@ function FilaPxListasPrecios({
         </span>
       </TableCell>
       {item.preciosPorLista.flatMap((celda) => {
-        const pxDraft = draftPxPorLista[celda.idLista];
-        const celdaVista: PrecioListaPxListasCelda =
-          pxDraft !== undefined
-            ? { ...celda, pxEfectivo: pxDraft }
-            : celda;
+        const draft = draftPorLista[celda.idLista];
+        const celdaVista = aplicarDraftCelda(celda, draft);
         const listaActualizar = celda.requiereActualizar;
 
         return [
@@ -300,7 +504,16 @@ function FilaPxListasPrecios({
               listaActualizar && "celda-px-listas-actualizar"
             )}
           >
-            <CeldaPxLista celda={celdaVista} />
+            <CeldaPxLista
+              key={`${item.codTienda}-${celda.idLista}-px-${celda.pxEfectivo ?? "n"}-${celda.pxEdicion ?? "d"}`}
+              codTienda={item.codTienda}
+              idLista={celda.idLista}
+              costoCompra={item.costoCompra}
+              celda={celdaVista}
+              puedeEditar={puedeEditar}
+              onDraft={handlePxDraft}
+              onSaved={handleCeldaSaved}
+            />
           </TableCell>,
           <TableCell
             key={`${item.codTienda}-${celda.idLista}-mg`}
