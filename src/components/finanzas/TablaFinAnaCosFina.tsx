@@ -16,8 +16,8 @@ import {
 import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import { actualizarFinAnaCosFinaAction } from "@/actions/finAnaCosFina";
 import {
-  cxImpChequeFinAnaCosFina,
-  cxTerminalConIvaFinAnaCosFina,
+  cxTotalConIvaFinAnaCosFina,
+  cxTotalSinIvaFinAnaCosFina,
   etiquetaPagoFinAnaCosFina,
   etiquetaTerminalFinAnaCosFina,
   fmtPorcentajeDosDecimalesFinAnaCosFina,
@@ -298,14 +298,14 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
           <TableHeader>
             <TableRow>
               <TableHead className="w-[7%]">HABILITADO</TableHead>
-              <TableHead className="w-[7%]">IMP. CHEQUE</TableHead>
               <TableHead className="w-[10%]">TERMINAL</TableHead>
               <TableHead className="w-[10%]">PAGO</TableHead>
-              <TableHead className="w-[8%]">DÍAS ACRED.</TableHead>
+              <TableHead className="w-[9%]">DÍAS ACREDITACIÓN</TableHead>
               <TableHead className="w-[9%]">ARANCEL</TableHead>
               <TableHead className="w-[9%]">CX FINANCIERO</TableHead>
-              <TableHead className="w-[11%]">CX TERMINAL C/ IVA</TableHead>
-              <TableHead className="w-[11%]">CX IMP. CHEQUE</TableHead>
+              <TableHead className="w-[7%]">IMP. CHEQUE</TableHead>
+              <TableHead className="w-[11%]">CX TOTAL S/ IVA</TableHead>
+              <TableHead className="w-[11%]">CX TOTAL C/ IVA</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -315,14 +315,6 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
                   <CeldaToggleBooleano
                     fila={fila}
                     campo="habilitado"
-                    esEditor={esEditor}
-                    onFilaActualizada={onFilaActualizada}
-                  />
-                </TableCell>
-                <TableCell className="celda-datos celda-datos--accion-relleno-fila">
-                  <CeldaToggleBooleano
-                    fila={fila}
-                    campo="impCheque"
                     esEditor={esEditor}
                     onFilaActualizada={onFilaActualizada}
                   />
@@ -359,16 +351,24 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
                     onFilaActualizada={onFilaActualizada}
                   />
                 </TableCell>
-                <TableCell className="celda-datos">
-                  <CeldaPorcentajeCalculado
-                    valor={cxTerminalConIvaFinAnaCosFina(fila.arancel, fila.costoFinanciero)}
-                    etiqueta={`Cx. terminal con IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+                <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                  <CeldaToggleBooleano
+                    fila={fila}
+                    campo="impCheque"
+                    esEditor={esEditor}
+                    onFilaActualizada={onFilaActualizada}
                   />
                 </TableCell>
                 <TableCell className="celda-datos">
                   <CeldaPorcentajeCalculado
-                    valor={cxImpChequeFinAnaCosFina(fila.impCheque, fila.arancel, fila.costoFinanciero)}
-                    etiqueta={`Cx. imp. cheque ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+                    valor={cxTotalSinIvaFinAnaCosFina(fila.impCheque, fila.arancel, fila.costoFinanciero)}
+                    etiqueta={`Cx. total sin IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+                  />
+                </TableCell>
+                <TableCell className="celda-datos">
+                  <CeldaPorcentajeCalculado
+                    valor={cxTotalConIvaFinAnaCosFina(fila.impCheque, fila.arancel, fila.costoFinanciero)}
+                    etiqueta={`Cx. total con IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
                   />
                 </TableCell>
               </TableRow>
