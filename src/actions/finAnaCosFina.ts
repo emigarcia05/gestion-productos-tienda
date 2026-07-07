@@ -9,6 +9,7 @@ import { actualizarFinAnaCosFinaSchema } from "@/lib/validations/finAnaCosFina";
 import {
   crearFinAnaCosFinaTerminalSchema,
   editarFinAnaCosFinaTerminalSchema,
+  eliminarFinAnaCosFinaTerminalSchema,
 } from "@/lib/validations/finAnaCosFinaTerminal";
 import {
   actualizarFinAnaCosFina,
@@ -17,6 +18,7 @@ import {
 import {
   crearFinAnaCosFinaTerminal,
   editarFinAnaCosFinaTerminal,
+  eliminarFinAnaCosFinaTerminal,
   listarFinAnaCosFinaTerminales,
 } from "@/services/finAnaCosFinaTerminal.service";
 
@@ -101,6 +103,24 @@ export async function editarFinAnaCosFinaTerminalAction(
 
   revalidatePath(RUTA_COSTOS_FINANCIEROS);
   return { ok: true, data: res.data };
+}
+
+export async function eliminarFinAnaCosFinaTerminalAction(raw: unknown): Promise<ActionResult<void>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = eliminarFinAnaCosFinaTerminalSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await eliminarFinAnaCosFinaTerminal(parsed.data.id);
+  if (!res.success) {
+    return { ok: false, error: res.error };
+  }
+
+  revalidatePath(RUTA_COSTOS_FINANCIEROS);
+  return { ok: true, data: undefined };
 }
 
 export async function actualizarFinAnaCosFinaAction(

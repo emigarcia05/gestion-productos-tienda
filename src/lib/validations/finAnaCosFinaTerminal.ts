@@ -16,5 +16,10 @@ export const editarFinAnaCosFinaTerminalSchema = z.object({
   nombre: nombreFinAnaCosFinaTerminalSchema,
 });
 
+export const eliminarFinAnaCosFinaTerminalSchema = z.object({
+  id: prismaCuidOrUuidSchema,
+});
+
 export type CrearFinAnaCosFinaTerminalInput = z.infer<typeof crearFinAnaCosFinaTerminalSchema>;
 export type EditarFinAnaCosFinaTerminalInput = z.infer<typeof editarFinAnaCosFinaTerminalSchema>;
+export type EliminarFinAnaCosFinaTerminalInput = z.infer<typeof eliminarFinAnaCosFinaTerminalSchema>;

@@ -91,7 +91,6 @@ export default function FinAnaCosFinaPageClient({ filas, terminales, esEditor }:
           <div className="flex flex-wrap items-center justify-end gap-2">
             <Button
               type="button"
-              variant="outline"
               onClick={() => setOpenCalculoCxTotal(true)}
               className="h-10 gap-2 px-4"
             >
@@ -100,7 +99,6 @@ export default function FinAnaCosFinaPageClient({ filas, terminales, esEditor }:
             </Button>
             <Button
               type="button"
-              variant="outline"
               onClick={() => setOpenGestionarTerminales(true)}
               className="h-10 gap-2 px-4"
             >

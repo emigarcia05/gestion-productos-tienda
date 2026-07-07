@@ -124,3 +124,15 @@ export async function editarFinAnaCosFinaTerminal(
     };
   }
 }
+
+export async function eliminarFinAnaCosFinaTerminal(id: string): Promise<ServiceResult<void>> {
+  try {
+    await prisma.finAnaCosFinaTerminal.delete({ where: { id } });
+    return { success: true, data: undefined };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: mapDbError(error, "No se pudo eliminar la terminal."),
+    };
+  }
+}

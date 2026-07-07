@@ -46,12 +46,6 @@ export default function CalculoCxTotalFinAnaCosFinaModal({ open, onOpenChange }:
         }
       >
         <div className="flex flex-col gap-5">
-          <p className="text-sm text-muted-foreground">
-            Los valores se expresan en escala porcentual (0–100) con 2 decimales. Los componentes
-            intermedios no se muestran en la grilla; solo <strong>CX TOTAL S/ IVA</strong> y{" "}
-            <strong>CX TOTAL C/ IVA</strong>.
-          </p>
-
           <div className="flex flex-col gap-2">
             <ModalMicroLabel>COMPONENTES</ModalMicroLabel>
             <FormulaLinea>
@@ -61,9 +55,15 @@ export default function CalculoCxTotalFinAnaCosFinaModal({ open, onOpenChange }:
               <strong>IVA</strong> = (CX TERMINAL × {FIN_ANA_COS_FINA_IVA_FACTOR.toLocaleString("es-AR")}) −
               CX TERMINAL
             </FormulaLinea>
+          </div>
+
+          <div className="flex flex-col gap-2 border-t border-border pt-4">
+            <ModalMicroLabel>IMP. CHEQUE</ModalMicroLabel>
             <FormulaLinea>
-              <strong>Imp. Cheque</strong>: si <strong>IMP. CHEQUE</strong> está desactivado → 0; si está
-              activado →
+              <strong>IMP. CHEQUE</strong> = FALSE → 0
+            </FormulaLinea>
+            <FormulaLinea>
+              <strong>IMP. CHEQUE</strong> = TRUE →
             </FormulaLinea>
             <FormulaDestacada>
               (1 − (CX TERMINAL + IVA) / 100) × {FIN_ANA_COS_FINA_IMP_CHEQUE_FACTOR.toLocaleString("es-AR")} ×
@@ -72,13 +72,13 @@ export default function CalculoCxTotalFinAnaCosFinaModal({ open, onOpenChange }:
           </div>
 
           <div className="flex flex-col gap-2 border-t border-border pt-4">
-            <ModalMicroLabel>CX TOTAL S/ IVA</ModalMicroLabel>
-            <FormulaDestacada>CX TERMINAL + Imp. Cheque</FormulaDestacada>
-          </div>
-
-          <div className="flex flex-col gap-2 border-t border-border pt-4">
-            <ModalMicroLabel>CX TOTAL C/ IVA</ModalMicroLabel>
-            <FormulaDestacada>CX TERMINAL + IVA + Imp. Cheque</FormulaDestacada>
+            <ModalMicroLabel>COSTO TOTAL</ModalMicroLabel>
+            <FormulaLinea>
+              <strong>S/ IVA</strong> = CX TERMINAL + IMP. CHEQUE
+            </FormulaLinea>
+            <FormulaLinea>
+              <strong>C/ IVA</strong> = CX TERMINAL + IVA + IMP. CHEQUE
+            </FormulaLinea>
           </div>
         </div>
       </AppModal>
