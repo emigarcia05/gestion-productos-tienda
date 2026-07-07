@@ -1353,8 +1353,22 @@
   font-weight: normal !important;
   box-sizing: border-box;
 }
+.tabla-px-listas-precios tbody td.celda-marcacion-col .input-mascara-sufijo {
+  width: 100%;
+  min-width: 0;
+  max-height: 1.75rem !important;
+  height: 1.75rem !important;
+  box-sizing: border-box;
+}
+.tabla-px-listas-precios tbody td.celda-marcacion-col .input-mascara-sufijo input {
+  color: #000 !important;
+  font-size: 0.75rem !important;
+  line-height: 1.25 !important;
+  font-weight: normal !important;
+}
 .tabla-px-listas-precios tbody td.celda-px-lista-col input.px-lista-input--edicion,
-.tabla-px-listas-precios tbody td.celda-marcacion-col input.px-lista-input--edicion {
+.tabla-px-listas-precios tbody td.celda-marcacion-col input.px-lista-input--edicion,
+.tabla-px-listas-precios tbody td.celda-marcacion-col .input-mascara-sufijo.px-lista-input--edicion input {
   font-weight: 600 !important;
 }
 .tabla-px-listas-precios tbody td.celda-px-lista-col input:read-only:not(:disabled),

@@ -12,9 +12,14 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { guardarPxListaMargenEdicionAction } from "@/actions/pxListasPrecios";
+import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import {
   calcPxListaDesdeMargenSinIvaPct,
 } from "@/lib/calculos";
+import {
+  parsePorcentajeCentNormalized,
+  porcentajeCentFromNumber,
+} from "@/lib/porcentajeCentMask";
 import {
   armarCeldaPrecioPxListas,
   celdaRequiereActualizar,
@@ -22,9 +27,7 @@ import {
 import {
   fmtMargenPxListaTabla,
   fmtPxListaTabla,
-  formatMargenPxListaInput,
   margenesPorcUtilidadDifieren,
-  parseMargenPxListaInput,
 } from "@/lib/pxListasPreciosFormat";
 import type {
   ItemPxListasPreciosTabla,
@@ -62,6 +65,9 @@ function CeldaPxLista({ celda }: { celda: PrecioListaPxListasCelda }) {
   );
 }
 
+const INPUT_MARGEN_PX_LISTA_CLASS =
+  "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-w-0 max-h-full text-xs tabular-nums";
+
 function CeldaMargenLista({
   codTienda,
   idLista,
@@ -79,39 +85,25 @@ function CeldaMargenLista({
   onDraft: (idLista: number, margen: number | null) => void;
   onSaved: (idLista: number, patch: Partial<PrecioListaPxListasCelda>) => void;
 }) {
-  const [editando, setEditando] = useState(false);
-  const [draft, setDraft] = useState("");
+  const margenPersistido = celda.margenPct;
+  const [draft, setDraft] = useState(() =>
+    margenPersistido != null ? porcentajeCentFromNumber(margenPersistido) : ""
+  );
   const [saving, startTransition] = useTransition();
-  const inputRef = useRef<HTMLInputElement>(null);
-  /** Margen % visible al entrar en edición; evita guardar si el usuario solo enfocó y salió. */
   const margenAlIniciarRef = useRef<number | null>(null);
-  const margenDisplay =
-    celda.margenPct != null ? formatMargenPxListaInput(celda.margenPct) : "";
   const margenEditable = costoCompra > 0;
   const tieneEdicion = celda.pxEdicion != null;
 
   const margenVista =
     celda.margenPct != null ? fmtMargenPxListaTabla(celda.margenPct) : "";
 
-  function iniciarEdicion() {
-    margenAlIniciarRef.current = celda.margenPct;
-    setDraft(margenDisplay);
-    setEditando(true);
-    requestAnimationFrame(() => {
-      const el = inputRef.current;
-      el?.focus();
-      el?.select();
-    });
-  }
-
-  function aplicarDraftEnVivo(value: string) {
-    setDraft(value);
-    const trimmed = value.trim().replace("%", "");
-    if (trimmed === "") {
+  function aplicarDraftEnVivo(next: string) {
+    setDraft(next);
+    if (next.trim() === "") {
       onDraft(idLista, null);
       return;
     }
-    const margen = parseMargenPxListaInput(trimmed);
+    const margen = parsePorcentajeCentNormalized(next);
     if (margen !== undefined) {
       onDraft(idLista, margen);
     }
@@ -119,16 +111,13 @@ function CeldaMargenLista({
 
   function commit() {
     if (!margenEditable) {
-      setEditando(false);
       onDraft(idLista, celda.margenManual);
       margenAlIniciarRef.current = null;
       return;
     }
 
-    const trimmed = draft.trim().replace("%", "");
-    if (trimmed === "") {
+    if (draft.trim() === "") {
       if (!tieneEdicion) {
-        setEditando(false);
         onDraft(idLista, celda.margenManual);
         margenAlIniciarRef.current = null;
         return;
@@ -150,18 +139,16 @@ function CeldaMargenLista({
         } else {
           toast.error(res.error);
         }
-        setEditando(false);
         margenAlIniciarRef.current = null;
       });
       return;
     }
 
-    const margen = parseMargenPxListaInput(trimmed);
+    const margen = parsePorcentajeCentNormalized(draft);
     if (margen === undefined) {
       toast.error("Margen inválido.");
-      setDraft(margenDisplay);
+      setDraft(margenPersistido != null ? porcentajeCentFromNumber(margenPersistido) : "");
       onDraft(idLista, celda.margenManual);
-      setEditando(false);
       margenAlIniciarRef.current = null;
       return;
     }
@@ -172,7 +159,6 @@ function CeldaMargenLista({
       !margenesPorcUtilidadDifieren(margen, margenInicial)
     ) {
       onDraft(idLista, celda.margenManual);
-      setEditando(false);
       margenAlIniciarRef.current = null;
       return;
     }
@@ -196,9 +182,8 @@ function CeldaMargenLista({
       } else {
         toast.error(res.error);
         onDraft(idLista, celda.margenManual);
-        setDraft(margenDisplay);
+        setDraft(margenPersistido != null ? porcentajeCentFromNumber(margenPersistido) : "");
       }
-      setEditando(false);
       margenAlIniciarRef.current = null;
     });
   }
@@ -212,35 +197,23 @@ function CeldaMargenLista({
   }
 
   return (
-    <input
-      ref={inputRef}
-      type="text"
-      inputMode="decimal"
-      autoComplete="off"
-      readOnly={!editando}
-      value={editando ? draft : margenVista}
-      disabled={saving}
-      onFocus={() => {
-        if (!editando) iniciarEdicion();
-      }}
-      onChange={(e) => aplicarDraftEnVivo(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") inputRef.current?.blur();
-        if (e.key === "Escape") {
-          setDraft(margenDisplay);
-          onDraft(idLista, celda.margenManual);
-          setEditando(false);
-          margenAlIniciarRef.current = null;
-          inputRef.current?.blur();
+    <PorcentajeCentInput
+      valueNormalized={draft}
+      onValueNormalizedChange={(next) => {
+        if (margenAlIniciarRef.current === null) {
+          margenAlIniciarRef.current = celda.margenPct;
         }
+        aplicarDraftEnVivo(next);
       }}
+      onCommit={commit}
+      disabled={saving}
       className={cn(
-        "w-full min-w-0 text-center tabular-nums",
+        INPUT_MARGEN_PX_LISTA_CLASS,
+        "w-full border-primary",
         tieneEdicion && "px-lista-input--edicion"
       )}
-      aria-label="Margen"
-      title="Clic Para Editar Margen"
+      aria-label="Margen manual"
+      title="Editar margen manual"
     />
   );
 }
@@ -325,6 +298,7 @@ function FilaPxListasPrecios({
             )}
           >
             <CeldaMargenLista
+              key={`${item.codTienda}-${celda.idLista}-mg-${celda.margenPct ?? "n"}-${celda.pxEdicion ?? "d"}`}
               codTienda={item.codTienda}
               idLista={celda.idLista}
               costoCompra={item.costoCompra}
