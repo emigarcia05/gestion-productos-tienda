@@ -27,6 +27,7 @@ import {
 import {
   fmtMargenPxListaTabla,
   fmtPxListaTabla,
+  MARGEN_PX_LISTA_MAX_CENTS,
   margenesPorcUtilidadDifieren,
 } from "@/lib/pxListasPreciosFormat";
 import type {
@@ -87,7 +88,9 @@ function CeldaMargenLista({
 }) {
   const margenPersistido = celda.margenPct;
   const [draft, setDraft] = useState(() =>
-    margenPersistido != null ? porcentajeCentFromNumber(margenPersistido) : ""
+    margenPersistido != null
+      ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS)
+      : ""
   );
   const [saving, startTransition] = useTransition();
   const margenAlIniciarRef = useRef<number | null>(null);
@@ -103,7 +106,7 @@ function CeldaMargenLista({
       onDraft(idLista, null);
       return;
     }
-    const margen = parsePorcentajeCentNormalized(next);
+    const margen = parsePorcentajeCentNormalized(next, MARGEN_PX_LISTA_MAX_CENTS);
     if (margen !== undefined) {
       onDraft(idLista, margen);
     }
@@ -144,10 +147,14 @@ function CeldaMargenLista({
       return;
     }
 
-    const margen = parsePorcentajeCentNormalized(draft);
+    const margen = parsePorcentajeCentNormalized(draft, MARGEN_PX_LISTA_MAX_CENTS);
     if (margen === undefined) {
       toast.error("Margen inválido.");
-      setDraft(margenPersistido != null ? porcentajeCentFromNumber(margenPersistido) : "");
+      setDraft(
+        margenPersistido != null
+          ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS)
+          : ""
+      );
       onDraft(idLista, celda.margenManual);
       margenAlIniciarRef.current = null;
       return;
@@ -182,7 +189,11 @@ function CeldaMargenLista({
       } else {
         toast.error(res.error);
         onDraft(idLista, celda.margenManual);
-        setDraft(margenPersistido != null ? porcentajeCentFromNumber(margenPersistido) : "");
+        setDraft(
+          margenPersistido != null
+            ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS)
+            : ""
+        );
       }
       margenAlIniciarRef.current = null;
     });
@@ -199,6 +210,7 @@ function CeldaMargenLista({
   return (
     <PorcentajeCentInput
       valueNormalized={draft}
+      maxCents={MARGEN_PX_LISTA_MAX_CENTS}
       onValueNormalizedChange={(next) => {
         if (margenAlIniciarRef.current === null) {
           margenAlIniciarRef.current = celda.margenPct;

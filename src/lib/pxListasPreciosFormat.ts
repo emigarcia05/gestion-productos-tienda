@@ -17,6 +17,9 @@ export function roundMargenPxListaPct(value: number): number {
   return Math.round(floored * 100) / 100;
 }
 
+/** Tope máscara **MARG. MAN.** Px Listas: 9.999,99 % (2 decimales; alineado a `margenListaTiendaSchema`). */
+export const MARGEN_PX_LISTA_MAX_CENTS = 999_999;
+
 /** Valor para `<input>` de margen (2 decimales, sin `%`). */
 export function formatMargenPxListaInput(n: number): string {
   return roundMargenPxListaPct(n).toFixed(2);

@@ -23,6 +23,10 @@ export type PorcentajeCentInputProps = Omit<
    * Default `true`: `%` fijo a la derecha, no seleccionable (`.input-mascara-sufijo`).
    */
   showPctSuffix?: boolean;
+  /**
+   * Tope en centésimas de % (default 99,99 %). Px Listas: {@link MARGEN_PX_LISTA_MAX_CENTS}.
+   */
+  maxCents?: number;
 };
 
 /**
@@ -35,6 +39,7 @@ export default function PorcentajeCentInput({
   onValueNormalizedChange,
   onCommit,
   showPctSuffix = true,
+  maxCents = PORCENTAJE_CENT_MASK_MAX_CENTS,
   className,
   disabled,
   readOnly,
@@ -43,14 +48,14 @@ export default function PorcentajeCentInput({
   const overwriteOnNextInputRef = useRef(true);
 
   const centsValue = useMemo(
-    () => porcentajeCentNormalizedStringToCents(valueNormalized),
-    [valueNormalized]
+    () => porcentajeCentNormalizedStringToCents(valueNormalized, maxCents),
+    [valueNormalized, maxCents]
   );
 
   const displayBody = useMemo(() => {
     if (valueNormalized.trim() === "") return "";
-    return porcentajeCentNormalizedToDisplay(valueNormalized);
-  }, [valueNormalized]);
+    return porcentajeCentNormalizedToDisplay(valueNormalized, maxCents);
+  }, [valueNormalized, maxCents]);
 
   function resetEditState() {
     overwriteOnNextInputRef.current = true;
@@ -73,9 +78,9 @@ export default function PorcentajeCentInput({
     if (isDigit) {
       event.preventDefault();
       const base = overwriteOnNextInputRef.current ? 0 : centsValue;
-      const next = Math.min(base * 10 + Number(key), PORCENTAJE_CENT_MASK_MAX_CENTS);
+      const next = Math.min(base * 10 + Number(key), maxCents);
       overwriteOnNextInputRef.current = false;
-      onValueNormalizedChange(porcentajeCentCentsToNormalizedString(next));
+      onValueNormalizedChange(porcentajeCentCentsToNormalizedString(next, maxCents));
       return;
     }
 
@@ -83,7 +88,7 @@ export default function PorcentajeCentInput({
       event.preventDefault();
       overwriteOnNextInputRef.current = false;
       const next = Math.floor(centsValue / 10);
-      onValueNormalizedChange(porcentajeCentCentsToNormalizedString(next));
+      onValueNormalizedChange(porcentajeCentCentsToNormalizedString(next, maxCents));
       return;
     }
 
@@ -100,8 +105,8 @@ export default function PorcentajeCentInput({
     if (!digits) return;
     const pastedCents = Number(digits);
     if (!Number.isFinite(pastedCents)) return;
-    const capped = Math.min(pastedCents, PORCENTAJE_CENT_MASK_MAX_CENTS);
-    onValueNormalizedChange(porcentajeCentCentsToNormalizedString(capped));
+    const capped = Math.min(pastedCents, maxCents);
+    onValueNormalizedChange(porcentajeCentCentsToNormalizedString(capped, maxCents));
   }
 
   const inputClassName = cn(
