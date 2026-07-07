@@ -964,6 +964,44 @@ model ProdPedUltComp {
   @@map("prod_ped_ult_comp")
 }
 
+// ─── Análisis M.C. · Costos financieros por terminal y forma de pago ───────
+
+enum FinAnaCosFinaTerminal {
+  MERCADOPAGO
+  PAYWAY
+  NAVE
+}
+
+enum FinAnaCosFinaPago {
+  DEBITO
+  CUOTA_1
+  CUOTA_3
+  CUOTA_6
+  CUOTA_9
+  CUOTA_12
+  CUOTA_18
+}
+
+/**
+ * Matriz terminal × forma de pago para costos financieros (Análisis M.C.).
+ * Semilla: 3 terminales × 7 modalidades de pago = 21 filas.
+ */
+model FinAnaCosFina {
+  id               String                @id @default(cuid())
+  habilitado       Boolean               @default(true)
+  terminal         FinAnaCosFinaTerminal
+  pago             FinAnaCosFinaPago
+  diasAcreditacion Int?                  @map("dias_acreditacion")
+  arancel          Decimal               @default(0) @db.Decimal(5, 2)
+  costoFinanciero  Decimal               @default(0) @map("costo_financiero") @db.Decimal(5, 2)
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+
+  @@unique([terminal, pago], map: "fin_ana_cos_fina_terminal_pago_ux")
+  @@index([terminal])
+  @@map("fin_ana_cos_fina")
+}
+
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────
 // Persistencia para que el polling en sidebar sea consistente incluso en serverless.
 model SyncDuxStatus {

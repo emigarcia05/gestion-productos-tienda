@@ -52,7 +52,7 @@ import { GP_ROUTES, getGpSidebarModule, isGpRouteActive } from "@/lib/gestionPro
 const iconClass = "h-5 w-5 shrink-0";
 
 type ModuleId = "pedidos" | "ayuda-vendedor" | "analisis-precios";
-type FinanzasModuleId = "balance" | "finanzas-main";
+type FinanzasModuleId = "balance" | "finanzas-main" | "analisis-mc";
 type SidebarModuleId = ModuleId | FinanzasModuleId;
 
 interface SubmoduleItem {
@@ -308,10 +308,24 @@ const FINANZAS_MODULES: NavModule[] = [
       },
     ],
   },
+  {
+    id: "analisis-mc",
+    label: "ANALISIS M.C.",
+    icon: <LineChart className={iconClass} />,
+    submodules: [
+      {
+        href: "/finanzas/analisis-mc/costos-financieros",
+        label: "Costos Financieros",
+        icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
+    ],
+  },
 ];
 
 function getOpenModule(pathname: string): SidebarModuleId {
   if (pathname.startsWith("/finanzas/balance")) return "balance";
+  if (pathname.startsWith("/finanzas/analisis-mc")) return "analisis-mc";
   if (pathname.startsWith("/finanzas")) return "finanzas-main";
   return getGpSidebarModule(pathname);
 }
@@ -332,6 +346,8 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
     return pathname === "/finanzas/balance/mensual" || pathname === "/finanzas/balance";
   if (href === "/finanzas/balance/gastos") return pathname === "/finanzas/balance/gastos";
   if (href === "/finanzas/balance/gastos/catalogo") return pathname === "/finanzas/balance/gastos/catalogo";
+  if (href === "/finanzas/analisis-mc/costos-financieros")
+    return pathname === "/finanzas/analisis-mc/costos-financieros";
   return pathname === href;
 }
 

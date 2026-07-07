@@ -16,6 +16,8 @@ export type PorcentajeCentInputProps = Omit<
 > & {
   valueNormalized: string;
   onValueNormalizedChange: (next: string) => void;
+  /** Se invoca al perder el foco del input (tras edición con máscara). */
+  onCommit?: () => void;
 };
 
 /**
@@ -26,6 +28,7 @@ export type PorcentajeCentInputProps = Omit<
 export default function PorcentajeCentInput({
   valueNormalized,
   onValueNormalizedChange,
+  onCommit,
   className,
   disabled,
   ...props
@@ -54,6 +57,7 @@ export default function PorcentajeCentInput({
       }}
       onBlur={() => {
         overwriteOnNextInputRef.current = true;
+        onCommit?.();
       }}
       onChange={() => {
         // Entrada solo por teclado / pegado (máscara POS).

@@ -284,6 +284,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas | `ComprobanteProveedor` | `fin_compras_comprobante` |
 | Finanzas | `FinTesoreriaEntidad`, `FinTesoreriaTipoCaja`, `CajaTesoreria`, `FinTesoreriaCheque` | `fin_tesoreria_entidades`, `fin_tesoreria_tipo_caja`, `fin_tesoreria`, `fin_tesoreria_cheques` |
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual`, `FinBalPosicionIvaComparacionPedido` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual`, `fin_bal_posicion_iva_comparacion_pedido` |
+| Finanzas análisis M.C. | `FinAnaCosFina` | `fin_ana_cos_fina` |
 | Estadísticas productos | `EstPorProd` | `est_por_prod` |
 | Productos / precios | `ListaPrecioProveedor`, `ComparacionItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_item_comparados`, `prod_comp_item_referencia`, `prod_comp_categorias`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
 | Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
@@ -935,6 +936,17 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Validación** (`@/lib/validations/estPorProd.ts`): `importarEstPorProdSchema` (`mes`/`anio` vía `mesAnioQuerySchema`, `sucursalId` con `globalSucursalIdSchema`, hasta 20 000 líneas); `eliminarEstPorProdSchema`.
 - **Actions** (`src/actions/estPorProd.ts`): `importarEstPorProdAction`, `eliminarEstPorProdAction`, **`verificarEstPorProdPeriodoAction`**; **`reemplazarPeriodo`** en importación borra todos los registros del **mes/año/sucursal** antes del upsert (confirmación en UI). Tras mutar, **`revalidatePath("/estadisticas-productos")`**.
 - **Import UI**: planilla parseada en cliente (`@/lib/parseEstPorProdExcelClient.ts` + `xlsx`). Por defecto omite las **2 primeras filas** del Excel (`FILAS_OMITIR_INICIO_EST_POR_PROD`); la **3.ª** es encabezado; mapeo inicial col. **0** → `codTienda`, col. **1** → `vtasEnUn` (editable en modal). Modal **`ImportarEstPorProdModal`**.
+
+### 2.5h Análisis M.C. · Costos financieros (`fin_ana_cos_fina`, Prisma: `FinAnaCosFina`)
+
+Matriz **terminal × forma de pago** para costos financieros de medios de cobro (módulo **Análisis M.C.**).
+
+- **Ruta**: `/finanzas/analisis-mc/costos-financieros` → `FinAnaCosFinaPageClient` + `TablaFinAnaCosFina`. Permiso lectura: **`PERMISOS.finanzas.acceso`**; mutaciones: **`esEditor()`** + mismo permiso (`actualizarFinAnaCosFinaAction` en `src/actions/finAnaCosFina.ts`).
+- **Tabla** `fin_ana_cos_fina`: `id` (`cuid`), `habilitado` (`BOOLEAN`, default `true`), `terminal` (enum **`FinAnaCosFinaTerminal`**: `MERCADOPAGO` | `PAYWAY` | `NAVE`), `pago` (enum **`FinAnaCosFinaPago`**: `DEBITO` | `CUOTA_1` | `CUOTA_3` | `CUOTA_6` | `CUOTA_9` | `CUOTA_12` | `CUOTA_18`), `dias_acreditacion` (`INTEGER` nullable), `arancel` (`DECIMAL(5,2)`, default 0 — solo lectura en UI por ahora), `costo_financiero` (`DECIMAL(5,2)`, default 0). **`@@unique([terminal, pago])`** (`fin_ana_cos_fina_terminal_pago_ux`). Migración **`20260707120000_fin_ana_cos_fina`**: `CREATE TYPE` + **21 filas** semilla (3 terminales × 7 modalidades).
+- **Etiquetas UI** (no persistidas): `src/lib/finAnaCosFina.ts` (`etiquetaTerminalFinAnaCosFina`, `etiquetaPagoFinAnaCosFina`, orden canónico de grilla).
+- **Servicio** (`src/services/finAnaCosFina.service.ts`): `listarFinAnaCosFina`, `actualizarFinAnaCosFina`, `ensureFinAnaCosFinaSeed` (idempotente si faltan combinaciones).
+- **Validación** (`@/lib/validations/finAnaCosFina.ts`): `actualizarFinAnaCosFinaSchema` — `id` con `prismaCuidSchema`; `campos` estricto con al menos uno de: `habilitado`, `diasAcreditacion` (0–999 o `null`), `costoFinanciero` (porcentaje 0–100, 2 decimales). **`arancel` no es editable** desde la Action actual.
+- Tras mutar: **`revalidatePath("/finanzas/analisis-mc/costos-financieros")`**.
 
 ### 2.5c Cajas de tesorería (`fin_tesoreria`, Prisma: `CajaTesoreria`)
 
