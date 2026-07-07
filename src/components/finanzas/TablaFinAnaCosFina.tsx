@@ -19,7 +19,6 @@ import {
   cxTotalConIvaFinAnaCosFina,
   cxTotalSinIvaFinAnaCosFina,
   etiquetaPagoFinAnaCosFina,
-  etiquetaTerminalFinAnaCosFina,
   fmtPorcentajeDosDecimalesFinAnaCosFina,
 } from "@/lib/finAnaCosFina";
 import {
@@ -99,7 +98,7 @@ function CeldaToggleBooleano({
   const [saving, startTransition] = useTransition();
   const activo = fila[campo];
   const etiquetaAccion = ETIQUETAS_CAMPO_BOOLEANO[campo];
-  const contextoFila = `${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`;
+  const contextoFila = `${fila.terminalNombre} ${etiquetaPagoFinAnaCosFina(fila.pago)}`;
 
   if (!esEditor) {
     return (
@@ -203,7 +202,7 @@ function CeldaDiasAcreditacion({
         readOnly={!esEditor}
         disabled={saving}
         className={cn(INPUT_FILA_PLANO_CLASS, "w-20")}
-        aria-label={`Días de acreditación ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+        aria-label={`Días de acreditación ${fila.terminalNombre} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
       />
     </div>
   );
@@ -263,7 +262,7 @@ function CeldaDecimalDosDecimales({
         readOnly={!esEditor}
         disabled={saving}
         className={INPUT_FILA_PORCENTAJE_CLASS}
-        aria-label={`${etiquetaCampo} ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+        aria-label={`${etiquetaCampo} ${fila.terminalNombre} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
       />
     </div>
   );
@@ -327,7 +326,7 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
                   />
                 </TableCell>
                 <TableCell className="celda-datos text-center text-xs font-medium">
-                  {etiquetaTerminalFinAnaCosFina(fila.terminal)}
+                  {fila.terminalNombre}
                 </TableCell>
                 <TableCell className="celda-datos text-center text-xs">
                   {etiquetaPagoFinAnaCosFina(fila.pago)}
@@ -369,13 +368,13 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
                 <TableCell className="celda-datos">
                   <CeldaPorcentajeLectura
                     valor={cxTotalSinIvaFinAnaCosFina(fila.impCheque, fila.arancel, fila.costoFinanciero)}
-                    etiqueta={`Cx. total sin IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+                    etiqueta={`Cx. total sin IVA ${fila.terminalNombre} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
                   />
                 </TableCell>
                 <TableCell className="celda-datos">
                   <CeldaPorcentajeLectura
                     valor={cxTotalConIvaFinAnaCosFina(fila.impCheque, fila.arancel, fila.costoFinanciero)}
-                    etiqueta={`Cx. total con IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+                    etiqueta={`Cx. total con IVA ${fila.terminalNombre} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
                   />
                 </TableCell>
               </TableRow>

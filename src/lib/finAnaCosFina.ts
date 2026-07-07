@@ -1,4 +1,4 @@
-import type { FinAnaCosFinaPago, FinAnaCosFinaTerminal } from "@prisma/client";
+import type { FinAnaCosFinaPago } from "@prisma/client";
 import { roundPorcentaje0a100 } from "@/lib/format";
 import { porcentajeCentFromNumber, porcentajeCentNormalizedToDisplay } from "@/lib/porcentajeCentMask";
 
@@ -7,13 +7,6 @@ export const FIN_ANA_COS_FINA_IMP_CHEQUE_FACTOR = 0.012;
 
 /** Factor IVA 21 % (misma convención que compras/ventas en el proyecto). */
 export const FIN_ANA_COS_FINA_IVA_FACTOR = 1.21;
-
-/** Orden canónico de terminales en grilla y semilla. */
-export const FIN_ANA_COS_FINA_TERMINALES: FinAnaCosFinaTerminal[] = [
-  "MERCADOPAGO",
-  "PAYWAY",
-  "NAVE",
-];
 
 /** Orden canónico de modalidades de pago en grilla y semilla. */
 export const FIN_ANA_COS_FINA_PAGOS: FinAnaCosFinaPago[] = [
@@ -26,12 +19,6 @@ export const FIN_ANA_COS_FINA_PAGOS: FinAnaCosFinaPago[] = [
   "CUOTA_18",
 ];
 
-const ETIQUETAS_TERMINAL: Record<FinAnaCosFinaTerminal, string> = {
-  MERCADOPAGO: "MercadoPago",
-  PAYWAY: "Payway",
-  NAVE: "Nave",
-};
-
 const ETIQUETAS_PAGO: Record<FinAnaCosFinaPago, string> = {
   DEBITO: "Débito",
   CUOTA_1: "1 Cuota",
@@ -42,16 +29,8 @@ const ETIQUETAS_PAGO: Record<FinAnaCosFinaPago, string> = {
   CUOTA_18: "18 Cuotas",
 };
 
-export function etiquetaTerminalFinAnaCosFina(terminal: FinAnaCosFinaTerminal): string {
-  return ETIQUETAS_TERMINAL[terminal];
-}
-
 export function etiquetaPagoFinAnaCosFina(pago: FinAnaCosFinaPago): string {
   return ETIQUETAS_PAGO[pago];
-}
-
-export function ordenTerminalFinAnaCosFina(terminal: FinAnaCosFinaTerminal): number {
-  return FIN_ANA_COS_FINA_TERMINALES.indexOf(terminal);
 }
 
 export function ordenPagoFinAnaCosFina(pago: FinAnaCosFinaPago): number {

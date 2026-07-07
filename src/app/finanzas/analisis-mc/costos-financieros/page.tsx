@@ -4,6 +4,7 @@ import FinAnaCosFinaPageClient from "@/components/finanzas/FinAnaCosFinaPageClie
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { listarFinAnaCosFina } from "@/services/finAnaCosFina.service";
+import { listarFinAnaCosFinaTerminales } from "@/services/finAnaCosFinaTerminal.service";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,12 @@ export default async function FinAnaCosFinaPage() {
   }
 
   const esEditor = rol === "editor";
-  const filas = await listarFinAnaCosFina();
+  const [filas, terminales] = await Promise.all([
+    listarFinAnaCosFina(),
+    listarFinAnaCosFinaTerminales(),
+  ]);
 
-  return <FinAnaCosFinaPageClient filas={filas} esEditor={esEditor} />;
+  return (
+    <FinAnaCosFinaPageClient filas={filas} terminales={terminales} esEditor={esEditor} />
+  );
 }

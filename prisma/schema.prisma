@@ -966,10 +966,18 @@ model ProdPedUltComp {
 
 // ─── Análisis M.C. · Costos financieros por terminal y forma de pago ───────
 
-enum FinAnaCosFinaTerminal {
-  MERCADOPAGO
-  PAYWAY
-  NAVE
+/** Catálogo de terminales de cobro (`nombre` único en MAYÚSCULAS). */
+model FinAnaCosFinaTerminal {
+  id        String   @id @default(cuid())
+  nombre    String   @unique
+  orden     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  filas FinAnaCosFina[]
+
+  @@index([orden], map: "fin_ana_cos_fina_terminales_orden_idx")
+  @@map("fin_ana_cos_fina_terminales")
 }
 
 enum FinAnaCosFinaPago {
@@ -990,7 +998,8 @@ model FinAnaCosFina {
   id               String                @id @default(cuid())
   habilitado       Boolean               @default(true)
   impCheque        Boolean               @default(false) @map("imp_cheque")
-  terminal         FinAnaCosFinaTerminal
+  terminalId       String                @map("terminal_id")
+  terminal         FinAnaCosFinaTerminal @relation(fields: [terminalId], references: [id], onDelete: Cascade)
   pago             FinAnaCosFinaPago
   diasAcreditacion Int?                  @map("dias_acreditacion")
   arancel          Decimal               @default(0) @db.Decimal(5, 2)
@@ -998,8 +1007,8 @@ model FinAnaCosFina {
   createdAt        DateTime              @default(now()) @map("created_at")
   updatedAt        DateTime              @updatedAt @map("updated_at")
 
-  @@unique([terminal, pago], map: "fin_ana_cos_fina_terminal_pago_ux")
-  @@index([terminal])
+  @@unique([terminalId, pago], map: "fin_ana_cos_fina_terminal_pago_ux")
+  @@index([terminalId], map: "fin_ana_cos_fina_terminal_idx")
   @@map("fin_ana_cos_fina")
 }
 
