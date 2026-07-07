@@ -45,6 +45,8 @@ const INPUT_FILA_PLANO_CLASS = cn(INPUT_FILA_CLASS, "border-primary px-2 py-0 te
 
 const INPUT_FILA_PORCENTAJE_CLASS = cn(INPUT_FILA_CLASS, "w-24");
 
+const TH_COLUMNA_CLASS = "text-center leading-tight";
+
 type CampoBooleanoFinAnaCosFina = "habilitado" | "impCheque";
 
 const ETIQUETAS_CAMPO_BOOLEANO: Record<CampoBooleanoFinAnaCosFina, string> = {
@@ -182,7 +184,7 @@ function CeldaDiasAcreditacion({
   }
 
   return (
-    <div className="flex items-center justify-center gap-1">
+    <div className="flex w-full items-center justify-center gap-1">
       {saving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
       <Input
         value={draft}
@@ -249,7 +251,7 @@ function CeldaDecimalDosDecimales({
   }
 
   return (
-    <div className="flex items-center justify-center gap-1">
+    <div className="flex w-full items-center justify-center gap-1">
       {saving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
       <PorcentajeCentInput
         valueNormalized={draft}
@@ -267,26 +269,11 @@ function CeldaDecimalDosDecimales({
   );
 }
 
-function CeldaPorcentajeCalculado({ valor, etiqueta }: { valor: number; etiqueta: string }) {
+function CeldaPorcentajeLectura({ valor, etiqueta }: { valor: number; etiqueta: string }) {
   return (
-    <div
-      className={cn(
-        "input-mascara-sufijo flex items-center rounded-md border border-primary bg-muted/30",
-        INPUT_FILA_PORCENTAJE_CLASS,
-        "cursor-default"
-      )}
-    >
-      <input
-        readOnly
-        tabIndex={-1}
-        value={fmtPorcentajeDosDecimalesFinAnaCosFina(valor)}
-        className="min-h-0 min-w-0 flex-1 cursor-default border-0 bg-transparent px-1 py-0 text-center text-xs tabular-nums shadow-none outline-none"
-        aria-label={etiqueta}
-      />
-      <span className="input-mascara-sufijo__pct tabular-nums" aria-hidden>
-        %
-      </span>
-    </div>
+    <span className="block w-full text-center text-xs tabular-nums" aria-label={etiqueta}>
+      {fmtPorcentajeDosDecimalesFinAnaCosFina(valor)}%
+    </span>
   );
 }
 
@@ -297,15 +284,35 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
         <Table variant="compact">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[7%]">HABILITADO</TableHead>
-              <TableHead className="w-[10%]">TERMINAL</TableHead>
-              <TableHead className="w-[10%]">PAGO</TableHead>
-              <TableHead className="w-[9%]">DÍAS ACREDITACIÓN</TableHead>
-              <TableHead className="w-[9%]">ARANCEL</TableHead>
-              <TableHead className="w-[9%]">CX FINANCIERO</TableHead>
-              <TableHead className="w-[7%]">IMP. CHEQUE</TableHead>
-              <TableHead className="w-[11%]">CX TOTAL S/ IVA</TableHead>
-              <TableHead className="w-[11%]">CX TOTAL C/ IVA</TableHead>
+              <TableHead className={cn("w-[7%]", TH_COLUMNA_CLASS)}>HABILITADO</TableHead>
+              <TableHead className={cn("w-[10%]", TH_COLUMNA_CLASS)}>TERMINAL</TableHead>
+              <TableHead className={cn("w-[10%]", TH_COLUMNA_CLASS)}>PAGO</TableHead>
+              <TableHead className={cn("w-[9%]", TH_COLUMNA_CLASS)}>
+                DÍAS
+                <br />
+                ACREDITACIÓN
+              </TableHead>
+              <TableHead className={cn("w-[9%]", TH_COLUMNA_CLASS)}>ARANCEL</TableHead>
+              <TableHead className={cn("w-[9%]", TH_COLUMNA_CLASS)}>
+                CX
+                <br />
+                FINANCIERO
+              </TableHead>
+              <TableHead className={cn("w-[7%]", TH_COLUMNA_CLASS)}>
+                IMP.
+                <br />
+                CHEQUE
+              </TableHead>
+              <TableHead className={cn("w-[11%]", TH_COLUMNA_CLASS)}>
+                CX TOTAL
+                <br />
+                S/ IVA
+              </TableHead>
+              <TableHead className={cn("w-[11%]", TH_COLUMNA_CLASS)}>
+                CX TOTAL
+                <br />
+                C/ IVA
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -360,13 +367,13 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
                   />
                 </TableCell>
                 <TableCell className="celda-datos">
-                  <CeldaPorcentajeCalculado
+                  <CeldaPorcentajeLectura
                     valor={cxTotalSinIvaFinAnaCosFina(fila.impCheque, fila.arancel, fila.costoFinanciero)}
                     etiqueta={`Cx. total sin IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
                   />
                 </TableCell>
                 <TableCell className="celda-datos">
-                  <CeldaPorcentajeCalculado
+                  <CeldaPorcentajeLectura
                     valor={cxTotalConIvaFinAnaCosFina(fila.impCheque, fila.arancel, fila.costoFinanciero)}
                     etiqueta={`Cx. total con IVA ${etiquetaTerminalFinAnaCosFina(fila.terminal)} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
                   />
