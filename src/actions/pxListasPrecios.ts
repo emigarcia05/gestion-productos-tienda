@@ -144,7 +144,7 @@ export async function guardarPxListaPrecioEdicionAction(
   }
 }
 
-/** Excel por `nombre_lista` (CODIGO + IMPORTE) y limpieza de staging exportado. */
+/** Excel por `nombre_lista` (CODIGO + PORC UTILIDAD) y limpieza de staging exportado. */
 export async function exportarPxListasMargenAction(): Promise<
   ActionResult<{ grupos: ExportPxListaMargenGrupo[] }>
 > {

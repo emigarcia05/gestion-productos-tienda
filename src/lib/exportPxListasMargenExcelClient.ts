@@ -26,7 +26,7 @@ export function descargarExcelsPxListasMargen(
       setTimeout(() => {
         const hojaFilas = grupo.filas.map((f) => ({
           CODIGO: f.codigo,
-          IMPORTE: f.importe,
+          "PORC UTILIDAD": f.porcUtilidad,
         }));
         const hoja = XLSX.utils.json_to_sheet(hojaFilas);
         const libro = XLSX.utils.book_new();

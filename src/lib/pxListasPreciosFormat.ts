@@ -38,11 +38,15 @@ export function parseMargenPxListaInput(raw: string): number | undefined {
 /** Margen en modo lectura (2 decimales + `%`, es-AR). */
 export function fmtMargenPxListaTabla(n: number | null | undefined): string {
   if (n == null || Number.isNaN(n)) return "";
-  const s = roundMargenPxListaPct(n).toLocaleString("es-AR", {
+  return `${formatMargenPxListaExportExcel(n)}%`;
+}
+
+/** Margen para Excel DUX (**PORC UTILIDAD**): 2 decimales, coma decimal (`106,00`). */
+export function formatMargenPxListaExportExcel(n: number): string {
+  return roundMargenPxListaPct(n).toLocaleString("es-AR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return `${s}%`;
 }
 
 /** Precisión de comparación de margen % (2 decimales). */

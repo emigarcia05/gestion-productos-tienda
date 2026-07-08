@@ -1,10 +1,12 @@
-import { roundPxListaEntero } from "@/lib/pxListasPreciosFormat";
+import { formatMargenPxListaExportExcel } from "@/lib/pxListasPreciosFormat";
+import { margenDesdePrecioDux } from "@/lib/pxListasPreciosCelda";
 import { type ClavePrecioListaEdicion } from "@/services/pxListasPrecioEdicion.service";
 import { prisma } from "@/lib/prisma";
 
 export type FilaExportPxListaMargen = {
   codigo: string;
-  importe: number;
+  /** Texto es-AR con coma decimal para import DUX (`106,00`). */
+  porcUtilidad: string;
 };
 
 export type ExportPxListaMargenGrupo = {
@@ -47,11 +49,21 @@ export async function listarExportPxListasMargenPorLista(): Promise<
 
   const idListas = listas.map((l) => l.idLista);
 
-  const edicionRows = await prisma.prodTiendaPrecioEdicion.findMany({
-    where: { idLista: { in: idListas } },
-    select: { codTienda: true, idLista: true, precio: true },
-    orderBy: [{ codTienda: "asc" }],
-  });
+  const [edicionRows, productos] = await Promise.all([
+    prisma.prodTiendaPrecioEdicion.findMany({
+      where: { idLista: { in: idListas } },
+      select: { codTienda: true, idLista: true, precio: true },
+      orderBy: [{ codTienda: "asc" }],
+    }),
+    prisma.prodTienda.findMany({
+      select: { codTienda: true, costoCompra: true },
+    }),
+  ]);
+
+  const costoMap = new Map<string, number>();
+  for (const p of productos) {
+    costoMap.set(p.codTienda, toNum(p.costoCompra));
+  }
 
   const filasPorLista = new Map<number, FilaExportPxListaMargen[]>();
   for (const lista of listas) {
@@ -59,12 +71,18 @@ export async function listarExportPxListasMargenPorLista(): Promise<
   }
 
   for (const row of edicionRows) {
+    const costoCompra = costoMap.get(row.codTienda) ?? 0;
+    if (!(costoCompra > 0)) continue;
+
     const pxEdicion = toNum(row.precio);
     if (!(pxEdicion > 0)) continue;
 
+    const margen = margenDesdePrecioDux(pxEdicion, costoCompra);
+    if (margen == null) continue;
+
     filasPorLista.get(row.idLista)?.push({
       codigo: row.codTienda,
-      importe: roundPxListaEntero(pxEdicion),
+      porcUtilidad: formatMargenPxListaExportExcel(margen),
     });
   }
 
