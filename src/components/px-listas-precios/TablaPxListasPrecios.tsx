@@ -285,7 +285,7 @@ function CeldaMargenLista({
   const draft =
     draftLocal ??
     (margenPersistido != null
-      ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS)
+      ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS, true)
       : "");
 
   function aplicarDraftEnVivo(next: string) {
@@ -400,7 +400,7 @@ function CeldaMargenLista({
         if (draftLocal === null) {
           setDraftLocal(
             margenPersistido != null
-              ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS)
+              ? porcentajeCentFromNumber(margenPersistido, MARGEN_PX_LISTA_MAX_CENTS, true)
               : ""
           );
         }

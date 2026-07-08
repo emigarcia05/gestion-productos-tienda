@@ -14,8 +14,7 @@ export const getPxListasPreciosPageParamsSchema = z.object({
 const margenListaTiendaSchema = z
   .number()
   .finite()
-  .min(0, "El margen no puede ser negativo.")
-  .max(9999.9999, "Margen demasiado alto.");
+  .min(0, "El margen no puede ser negativo.");
 
 const pxListaEdicionSchema = z
   .number()

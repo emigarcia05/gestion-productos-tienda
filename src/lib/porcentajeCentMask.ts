@@ -51,14 +51,16 @@ export function porcentajeCentNormalizedToDisplayWithPct(
   return body ? `${body}%` : "";
 }
 
-/** Valor inicial desde número en BD (incluye 0). */
+/** Valor inicial desde número en BD (incluye 0). Tope 0–100 % salvo `sinTope100`. */
 export function porcentajeCentFromNumber(
   n: number,
-  maxCents: number = PORCENTAJE_CENT_MASK_MAX_CENTS
+  maxCents: number = PORCENTAJE_CENT_MASK_MAX_CENTS,
+  sinTope100 = false
 ): string {
   if (!Number.isFinite(n) || n < 0) return "";
   if (n === 0) return "0";
-  const cents = Math.min(Math.round(roundPorcentaje0a100(n) * 100), maxCents);
+  const pct = sinTope100 ? Math.max(0, n) : roundPorcentaje0a100(n);
+  const cents = Math.min(Math.round(pct * 100), maxCents);
   return montoArCentsToNormalizedString(cents);
 }
 
