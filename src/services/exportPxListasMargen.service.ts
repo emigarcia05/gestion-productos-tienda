@@ -1,11 +1,11 @@
-import { roundMargenPxListaPct } from "@/lib/pxListasPreciosFormat";
-import { margenDesdePrecioDux } from "@/lib/pxListasPreciosCelda";
+import { calcMargenSinIvaPct } from "@/lib/calculos";
+import { roundPorcUtilidadPxListaExport } from "@/lib/pxListasPreciosFormat";
 import { type ClavePrecioListaEdicion } from "@/services/pxListasPrecioEdicion.service";
 import { prisma } from "@/lib/prisma";
 
 export type FilaExportPxListaMargen = {
   codigo: string;
-  /** Margen % numérico (2 decimales); formato visual en Excel vía `PORC_UTILIDAD_PX_LISTA_EXCEL_NUMFMT`. */
+  /** Margen % numérico (4 decimales); formato visual en Excel vía `PORC_UTILIDAD_PX_LISTA_EXCEL_NUMFMT`. */
   porcUtilidad: number;
 };
 
@@ -77,12 +77,12 @@ export async function listarExportPxListasMargenPorLista(): Promise<
     const pxEdicion = toNum(row.precio);
     if (!(pxEdicion > 0)) continue;
 
-    const margen = margenDesdePrecioDux(pxEdicion, costoCompra);
+    const margen = calcMargenSinIvaPct(pxEdicion, costoCompra);
     if (margen == null) continue;
 
     filasPorLista.get(row.idLista)?.push({
       codigo: row.codTienda,
-      porcUtilidad: roundMargenPxListaPct(margen),
+      porcUtilidad: roundPorcUtilidadPxListaExport(margen),
     });
   }
 

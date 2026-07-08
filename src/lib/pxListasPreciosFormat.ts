@@ -49,8 +49,14 @@ export function formatMargenPxListaExportExcel(n: number): string {
   });
 }
 
-/** Formato de celda Excel es-AR: número con 2 decimales y coma (`106,00`). */
-export const PORC_UTILIDAD_PX_LISTA_EXCEL_NUMFMT = "#.##0,00";
+/** Formato de celda Excel es-AR: número con 4 decimales y coma (`106,0000`). */
+export const PORC_UTILIDAD_PX_LISTA_EXCEL_NUMFMT = "#.##0,0000";
+
+/** Redondeo de **PORC UTILIDAD** en export Excel DUX (4 decimales, mínimo 0). */
+export function roundPorcUtilidadPxListaExport(value: number): number {
+  const floored = Math.max(0, value);
+  return Math.round(floored * 10000) / 10000;
+}
 
 /** Precisión de comparación de margen % (2 decimales). */
 const COMPARACION_MARGEN_FACTOR = 100;

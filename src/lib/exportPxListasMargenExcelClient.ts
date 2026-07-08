@@ -5,7 +5,7 @@ import type { ExportPxListaMargenGrupo } from "@/services/exportPxListasMargen.s
 const INTERVALO_DESCARGAS_MS = 350;
 const COL_PORC_UTILIDAD = 1;
 
-/** Aplica formato numérico es-AR (coma decimal, 2 decimales) a la columna PORC UTILIDAD. */
+/** Aplica formato numérico es-AR (coma decimal, 4 decimales) a la columna PORC UTILIDAD. */
 function aplicarFormatoPorcUtilidadPxLista(
   hoja: import("xlsx").WorkSheet,
   XLSX: typeof import("xlsx")
@@ -51,7 +51,7 @@ export function descargarExcelsPxListasMargen(
         aplicarFormatoPorcUtilidadPxLista(hoja, XLSX);
         const libro = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(libro, hoja, "Px Lista");
-        hoja["!cols"] = [{ wch: 18 }, { wch: 16 }];
+        hoja["!cols"] = [{ wch: 18 }, { wch: 18 }];
         const nombreLista = sanitizarNombreListaArchivo(grupo.nombreLista);
         const nombre = `Act. ${nombreLista} ${stamp}.xls`;
         XLSX.writeFile(libro, nombre, { bookType: "xls" });
