@@ -41,13 +41,16 @@ export function fmtMargenPxListaTabla(n: number | null | undefined): string {
   return `${formatMargenPxListaExportExcel(n)}%`;
 }
 
-/** Margen para Excel DUX (**PORC UTILIDAD**): 2 decimales, coma decimal (`106,00`). */
+/** Margen para visualización es-AR (texto con coma, p. ej. `106,00`). */
 export function formatMargenPxListaExportExcel(n: number): string {
   return roundMargenPxListaPct(n).toLocaleString("es-AR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 }
+
+/** Formato de celda Excel es-AR: número con 2 decimales y coma (`106,00`). */
+export const PORC_UTILIDAD_PX_LISTA_EXCEL_NUMFMT = "#.##0,00";
 
 /** Precisión de comparación de margen % (2 decimales). */
 const COMPARACION_MARGEN_FACTOR = 100;
