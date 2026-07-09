@@ -79,7 +79,24 @@ export function etiquetaFilaMargenContribucion(id: FilaMargenContribucionDatoId)
 }
 
 export function esFilaEditableMargenContribucion(id: FilaMargenContribucionDatoId): boolean {
-  return id === "PX_LISTA" || id === "DESCUENTO";
+  return id === "PX_LISTA";
+}
+
+/** Descuento editable por columna (forma de pago). */
+export function esFilaDescuentoPorFormaPagoMargenContribucion(
+  id: FilaMargenContribucionDatoId
+): boolean {
+  return id === "DESCUENTO";
+}
+
+export function crearDescuentoPctPorFormaPagoVacios(
+  formasPago: readonly FormaPagoMargenContribucion[] = FIN_ANA_MC_FORMAS_PAGO
+): Record<FormaPagoMargenContribucion, number> {
+  const map = {} as Record<FormaPagoMargenContribucion, number>;
+  for (const forma of formasPago) {
+    map[forma] = 0;
+  }
+  return map;
 }
 
 export function esFilaPorFormaPagoMargenContribucion(id: FilaMargenContribucionDatoId): boolean {

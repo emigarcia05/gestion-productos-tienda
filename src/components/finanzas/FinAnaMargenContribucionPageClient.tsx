@@ -9,7 +9,6 @@ import TablaFinAnaMargenContribucion, {
 } from "@/components/finanzas/TablaFinAnaMargenContribucion";
 import ElegirProductoMargenContribucionModal from "@/components/finanzas/ElegirProductoMargenContribucionModal";
 import FilterBar, {
-  FILTER_COUNT_CLASS,
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
   FiltroIndividualContainer,
@@ -136,7 +135,7 @@ export default function FinAnaMargenContribucionPageClient({
     setInputs(
       inputsMargenContribucionDesdeNumeros({
         pxLista: datos.pxLista,
-        descuentoPct: inputs.descuentoPct,
+        descuentoPctPorFormaPago: inputs.descuentoPctPorFormaPago,
       })
     );
 
@@ -245,12 +244,9 @@ export default function FinAnaMargenContribucionPageClient({
                 <div
                   className={cn(
                     FILTER_INLINE_ACTION_SLOT_CLASS,
-                    "col-span-2"
+                    "col-span-2 justify-end"
                   )}
                 >
-                  <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-                    {FIN_ANA_MC_FORMAS_PAGO.length} FORMA(S) DE PAGO
-                  </span>
                   <LimpiarFiltrosButton onClick={limpiarFiltros} />
                 </div>
               </FilaFiltrosDesplegables>
@@ -291,7 +287,7 @@ export default function FinAnaMargenContribucionPageClient({
 
                 {config.modoEvaluacion === "producto" ? (
                   <FiltroIndividualContainer
-                    className={cn(FILTER_SELECT_WRAPPER_CLASS, "col-span-3")}
+                    className={cn(FILTER_SELECT_WRAPPER_CLASS, "col-span-2")}
                     activo={Boolean(config.producto)}
                     onLimpiar={() => {
                       setConfig((prev) => ({ ...prev, producto: null }));
@@ -315,7 +311,7 @@ export default function FinAnaMargenContribucionPageClient({
                   </FiltroIndividualContainer>
                 ) : (
                   <FiltroIndividualContainer
-                    className={cn(FILTER_SELECT_WRAPPER_CLASS, "col-span-3")}
+                    className={cn(FILTER_SELECT_WRAPPER_CLASS, "col-span-2")}
                     activo={Boolean(config.porcUtilidadNorm.trim())}
                     onLimpiar={() =>
                       setConfig((prev) => ({ ...prev, porcUtilidadNorm: "" }))
@@ -330,7 +326,7 @@ export default function FinAnaMargenContribucionPageClient({
                           porcUtilidadNorm: next,
                         }))
                       }
-                      className="input-filtro-unificado h-9 min-h-9 max-h-9 w-full border-primary text-xs"
+                      className="input-filtro-unificado h-9 min-h-9 max-h-9 w-full max-w-[9rem] border-primary text-xs"
                       aria-label="Porc. utilidad"
                       title="Porc. utilidad (CX MERCADERÍA)"
                     />
