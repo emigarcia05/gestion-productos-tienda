@@ -32,7 +32,7 @@ import {
   porcentajeCentFromNumber,
 } from "@/lib/porcentajeCentMask";
 import { MARGEN_PX_LISTA_MAX_CENTS } from "@/lib/pxListasPreciosFormat";
-import type { CxFinancieroPorFormaPago } from "@/services/finAnaMargenContribucion.service";
+import type { CxFinancieroPorFormaPago } from "@/lib/finAnaMargenContribucion";
 import { cn } from "@/lib/utils";
 
 /** Tope descuento: 100,00 %. */

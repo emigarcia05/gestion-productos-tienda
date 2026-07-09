@@ -1,9 +1,11 @@
 import type { FinAnaCosFinaPago } from "@prisma/client";
 import {
+  cxTotalConIvaFinAnaCosFina,
   etiquetaPagoFinAnaCosFina,
   FIN_ANA_COS_FINA_IVA_FACTOR,
   FIN_ANA_COS_FINA_PAGOS,
 } from "@/lib/finAnaCosFina";
+import { roundPorcentaje0a100 } from "@/lib/format";
 
 /** Forma de pago adicional (sin costo financiero en Costos Financieros). */
 export const FIN_ANA_MC_FORMA_PAGO_EFECTIVO = "EFECTIVO" as const;
@@ -135,4 +137,58 @@ export function calcularValoresMargenContribucion(
       inputs.porcUtilidadPct
     ),
   };
+}
+
+export type CxFinancieroPorFormaPago = Record<FormaPagoMargenContribucion, number>;
+
+/** Subconjunto de `FinAnaCosFinaItem` para cálculo en cliente (sin Prisma). */
+export type FilaCostosFinancierosMargenContribucion = {
+  habilitado: boolean;
+  impCheque: boolean;
+  terminalId: string;
+  pago: FinAnaCosFinaPago;
+  arancel: number;
+  costoFinanciero: number;
+};
+
+function promedioCxTotalConIvaMargenContribucion(
+  filas: FilaCostosFinancierosMargenContribucion[]
+): number {
+  if (filas.length === 0) return 0;
+  const suma = filas.reduce(
+    (acc, fila) =>
+      acc +
+      cxTotalConIvaFinAnaCosFina(
+        fila.impCheque,
+        fila.arancel,
+        fila.costoFinanciero
+      ),
+    0
+  );
+  return roundPorcentaje0a100(suma / filas.length);
+}
+
+/**
+ * CX FINANCIERO por forma de pago: **CX TOTAL C/ IVA** de Costos Financieros.
+ * Si `terminalId` está definido, solo filas de esa terminal habilitadas; si no, promedio entre terminales habilitadas.
+ */
+export function mapCxFinancieroPorFormaPago(
+  filas: FilaCostosFinancierosMargenContribucion[],
+  terminalId?: string
+): CxFinancieroPorFormaPago {
+  const habilitadas = filas.filter(
+    (fila) =>
+      fila.habilitado && (terminalId == null || fila.terminalId === terminalId)
+  );
+
+  const map = {} as CxFinancieroPorFormaPago;
+
+  for (const pago of FIN_ANA_COS_FINA_PAGOS) {
+    const delPago = habilitadas.filter((fila) => fila.pago === pago);
+    map[pago] = promedioCxTotalConIvaMargenContribucion(delPago);
+  }
+
+  map[FIN_ANA_MC_FORMA_PAGO_EFECTIVO] = 0;
+
+  return map;
 }

@@ -24,8 +24,8 @@ import {
 import { cn } from "@/lib/utils";
 import {
   FIN_ANA_MC_FORMAS_PAGO,
+  mapCxFinancieroPorFormaPago,
 } from "@/lib/finAnaMargenContribucion";
-import { mapCxFinancieroPorFormaPago } from "@/services/finAnaMargenContribucion.service";
 import type { FinAnaCosFinaItem } from "@/services/finAnaCosFina.service";
 import type { FinAnaCosFinaTerminalItem } from "@/lib/finAnaCosFinaTerminales";
 
