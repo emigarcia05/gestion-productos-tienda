@@ -26,6 +26,7 @@ import {
   FolderTree,
   BookOpen,
   CircleDollarSign,
+  PieChart,
   Percent,
   ListChecks,
   LifeBuoy,
@@ -314,6 +315,12 @@ const FINANZAS_MODULES: NavModule[] = [
     icon: <LineChart className={iconClass} />,
     submodules: [
       {
+        href: "/finanzas/analisis-mc/margen-contribucion",
+        label: "Margen Contribución",
+        icon: <PieChart className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.finanzas.acceso,
+      },
+      {
         href: "/finanzas/analisis-mc/costos-financieros",
         label: "Costos Financieros",
         icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
@@ -346,6 +353,8 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
     return pathname === "/finanzas/balance/mensual" || pathname === "/finanzas/balance";
   if (href === "/finanzas/balance/gastos") return pathname === "/finanzas/balance/gastos";
   if (href === "/finanzas/balance/gastos/catalogo") return pathname === "/finanzas/balance/gastos/catalogo";
+  if (href === "/finanzas/analisis-mc/margen-contribucion")
+    return pathname === "/finanzas/analisis-mc/margen-contribucion";
   if (href === "/finanzas/analisis-mc/costos-financieros")
     return pathname === "/finanzas/analisis-mc/costos-financieros";
   return pathname === href;
