@@ -950,14 +950,18 @@ Matriz **terminal × forma de pago** para costos financieros de medios de cobro 
 - **Validación** (`@/lib/validations/finAnaCosFina.ts`): `actualizarFinAnaCosFinaSchema` — campos opcionales: `habilitado`, `impCheque`, `diasAcreditacion`, `arancel`, `costoFinanciero`. Terminales: `@/lib/validations/finAnaCosFinaTerminal.ts`.
 - Tras mutar: **`revalidatePath("/finanzas/analisis-mc/costos-financieros")`**.
 
-### 2.5i Análisis M.C. · Margen contribución (sin tabla propia; lectura de `fin_ana_cos_fina`)
+### 2.5i Análisis M.C. · Margen contribución (sin tabla propia; lectura de `fin_ana_cos_fina` y `prod_tienda`)
 
 Simulador de márgenes por forma de pago. **Ruta**: `/finanzas/analisis-mc/margen-contribucion`. Permiso: **`PERMISOS.finanzas.acceso`**; inputs editables solo **`esEditor()`**. **Sin persistencia** en BD (estado en cliente).
 
+- **Configuración UI** (estado cliente): **TERMINAL** (opcional; promedio si vacío), **TIPO COMPROBANTE** (`FACTURA_A` | `FACTURA_C` | `FACTURA_X`), **EVALUAR** (`producto` | `porc_utilidad`). Tipos en `src/lib/finAnaMargenContribucion.ts` (`TipoComprobanteVentaMargenContribucion`, `ModoEvaluacionMargenContribucion`). **Factura C**: IVA e IIBB = 0; **A** y **X**: mismas fórmulas de impuestos.
+- **Modo producto**: búsqueda `prod_tienda` vía `buscarProductosMargenContribucionAction`; al elegir, `getProductoDatosMargenContribucion` devuelve `codTienda`, `descripcionTienda`, `costoCompra`, `pxLista` (lista principal DUX, `getPrecioListaPrincipal`) y `porcUtilidadPct` (`margenDesdePrecioDux`). PX LISTA en tabla solo lectura.
+- **Modo porc. utilidad**: usuario ingresa % en filtros; PX LISTA manual en tabla.
 - **Columnas** (formas de pago): enum **`FinAnaCosFinaPago`** (`FIN_ANA_COS_FINA_PAGOS` en `src/lib/finAnaCosFina.ts`) + **EFECTIVO** (constante `FIN_ANA_MC_FORMA_PAGO_EFECTIVO`; CX financiero = 0 %).
-- **Filas / fórmulas** (`src/lib/finAnaMargenContribucion.ts`): **PRECIO VENTA** = `PX LISTA × (1 − descuento % / 100)`; **IVA** = `(PRECIO VENTA / 1,21) × 0,21`; **IIBB** = `(PRECIO VENTA / 1,21) × 0,04`; **CX MERCADERÍA** = `(PRECIO VENTA / 1,21) / (1 + porc. utilidad % / 100)` (factor utilidad sobre costo, alineado a Px Listas); **CX FINANCIERO** = **`cxTotalConIvaFinAnaCosFina`** por forma de pago desde `fin_ana_cos_fina` (solo filas `habilitado = true`). Filtro **TERMINAL** opcional en UI: si se elige terminal, una fila por pago; si no, **promedio** entre terminales habilitadas del mismo `pago`.
-- **Servicio** (`src/services/finAnaMargenContribucion.service.ts`): `getDatosPaginaMargenContribucion`, `mapCxFinancieroPorFormaPago`.
-- **UI**: `FinAnaMargenContribucionPageClient`, `TablaFinAnaMargenContribucion`.
+- **Filas / fórmulas** (`src/lib/finAnaMargenContribucion.ts`): **PRECIO VENTA** = `PX LISTA × (1 − descuento % / 100)`; **IVA** = `(PRECIO VENTA / 1,21) × 0,21` (si comprobante aplica); **IIBB** = `(PRECIO VENTA / 1,21) × 0,04` (si comprobante aplica); **CX MERCADERÍA** = `(PRECIO VENTA / 1,21) / (1 + porc. utilidad % / 100)` (factor utilidad sobre costo, alineado a Px Listas); **CX FINANCIERO** = **`cxTotalConIvaFinAnaCosFina`** por forma de pago desde `fin_ana_cos_fina` (solo filas `habilitado = true`). Filtro **TERMINAL** opcional en UI: si se elige terminal, una fila por pago; si no, **promedio** entre terminales habilitadas del mismo `pago`.
+- **Servicio** (`src/services/finAnaMargenContribucion.service.ts`): `getDatosPaginaMargenContribucion`, `getProductoDatosMargenContribucion`, `mapCxFinancieroPorFormaPago` (helper en lib).
+- **Actions** (`src/actions/finAnaMargenContribucion.ts`): `buscarProductosMargenContribucionAction`, `getProductoDatosMargenContribucionAction` (`PERMISOS.finanzas.acceso`).
+- **UI**: `FinAnaMargenContribucionPageClient`, `TablaFinAnaMargenContribucion`, `ElegirProductoMargenContribucionModal`. Layout de filas (`FIN_ANA_MC_LAYOUT`): **PX LISTA** → **DESCUENTO** → subtotal → **PX VENTA** → espacio → **IVA** / **IIBB** / **CX MERCADERÍA** / **CX FINANCIERO** → subtotal costos → **M.C** (= PX VENTA − subtotal costos por forma de pago).
 
 ### 2.5c Cajas de tesorería (`fin_tesoreria`, Prisma: `CajaTesoreria`)
 

@@ -29,50 +29,136 @@ export function etiquetaFormaPagoMargenContribucion(
   return etiquetaPagoFinAnaCosFina(forma);
 }
 
-/** Filas de la grilla (conceptos / CX). */
-export const FIN_ANA_MC_FILAS = [
+/** Filas de datos de la grilla. */
+export const FIN_ANA_MC_FILAS_DATO = [
   "PX_LISTA",
   "DESCUENTO",
-  "PORC_UTILIDAD",
-  "PRECIO_VENTA",
+  "PX_VENTA",
   "IVA",
   "IIBB",
   "CX_MERCADERIA",
   "CX_FINANCIERO",
+  "MC",
 ] as const;
 
-export type FilaMargenContribucionId = (typeof FIN_ANA_MC_FILAS)[number];
+export type FilaMargenContribucionDatoId = (typeof FIN_ANA_MC_FILAS_DATO)[number];
 
-const ETIQUETAS_FILA: Record<FilaMargenContribucionId, string> = {
+/** Tipos de fila en el layout (secciones, subtotales, espacio). */
+export type FilaMargenContribucionLayout =
+  | { tipo: "dato"; id: FilaMargenContribucionDatoId }
+  | { tipo: "subtotal"; id: "SUBTOTAL_PRE_VENTA" | "SUBTOTAL_COSTOS" }
+  | { tipo: "espacio"; id: "SEPARACION" };
+
+/** Orden visual de filas con secciones. */
+export const FIN_ANA_MC_LAYOUT: FilaMargenContribucionLayout[] = [
+  { tipo: "dato", id: "PX_LISTA" },
+  { tipo: "dato", id: "DESCUENTO" },
+  { tipo: "subtotal", id: "SUBTOTAL_PRE_VENTA" },
+  { tipo: "dato", id: "PX_VENTA" },
+  { tipo: "espacio", id: "SEPARACION" },
+  { tipo: "dato", id: "IVA" },
+  { tipo: "dato", id: "IIBB" },
+  { tipo: "dato", id: "CX_MERCADERIA" },
+  { tipo: "dato", id: "CX_FINANCIERO" },
+  { tipo: "subtotal", id: "SUBTOTAL_COSTOS" },
+  { tipo: "dato", id: "MC" },
+];
+
+const ETIQUETAS_FILA: Record<FilaMargenContribucionDatoId, string> = {
   PX_LISTA: "PX LISTA",
   DESCUENTO: "DESCUENTO",
-  PORC_UTILIDAD: "PORC. UTILIDAD",
-  PRECIO_VENTA: "PRECIO VENTA",
+  PX_VENTA: "PX VENTA",
   IVA: "IVA",
   IIBB: "IIBB",
   CX_MERCADERIA: "CX MERCADERÍA",
   CX_FINANCIERO: "CX FINANCIERO",
+  MC: "M.C",
 };
 
-export function etiquetaFilaMargenContribucion(id: FilaMargenContribucionId): string {
+export function etiquetaFilaMargenContribucion(id: FilaMargenContribucionDatoId): string {
   return ETIQUETAS_FILA[id];
 }
 
-export function esFilaEditableMargenContribucion(id: FilaMargenContribucionId): boolean {
-  return id === "PX_LISTA" || id === "DESCUENTO" || id === "PORC_UTILIDAD";
+export function esFilaEditableMargenContribucion(id: FilaMargenContribucionDatoId): boolean {
+  return id === "PX_LISTA" || id === "DESCUENTO";
 }
 
-export function esFilaPorFormaPagoMargenContribucion(id: FilaMargenContribucionId): boolean {
-  return id === "CX_FINANCIERO";
+export function esFilaPorFormaPagoMargenContribucion(id: FilaMargenContribucionDatoId): boolean {
+  return id === "CX_FINANCIERO" || id === "MC";
 }
+
+/** Modo de evaluación del simulador (mutuamente excluyente). */
+export type ModoEvaluacionMargenContribucion = "producto" | "porc_utilidad";
+
+export const FIN_ANA_MC_MODOS_EVALUACION: ModoEvaluacionMargenContribucion[] = [
+  "producto",
+  "porc_utilidad",
+];
+
+const ETIQUETAS_MODO_EVALUACION: Record<ModoEvaluacionMargenContribucion, string> = {
+  producto: "Un producto",
+  porc_utilidad: "Porc. Utilidad",
+};
+
+export function etiquetaModoEvaluacionMargenContribucion(
+  modo: ModoEvaluacionMargenContribucion
+): string {
+  return ETIQUETAS_MODO_EVALUACION[modo];
+}
+
+/** Tipo de comprobante de venta (afecta IVA e IIBB en el simulador). */
+export type TipoComprobanteVentaMargenContribucion =
+  | "FACTURA_A"
+  | "FACTURA_C"
+  | "FACTURA_X";
+
+export const FIN_ANA_MC_TIPOS_COMPROBANTE: TipoComprobanteVentaMargenContribucion[] = [
+  "FACTURA_A",
+  "FACTURA_C",
+  "FACTURA_X",
+];
+
+const ETIQUETAS_TIPO_COMPROBANTE: Record<
+  TipoComprobanteVentaMargenContribucion,
+  string
+> = {
+  FACTURA_A: "Factura A (Paga IVA e IIBB)",
+  FACTURA_C: "Factura C (No Paga IVA e IIBB)",
+  FACTURA_X: "Factura X (Paga IVA e IIBB)",
+};
+
+export function etiquetaTipoComprobanteVentaMargenContribucion(
+  tipo: TipoComprobanteVentaMargenContribucion
+): string {
+  return ETIQUETAS_TIPO_COMPROBANTE[tipo];
+}
+
+export function aplicaImpuestosComprobanteMargenContribucion(
+  tipo: TipoComprobanteVentaMargenContribucion
+): { aplicaIva: boolean; aplicaIibb: boolean } {
+  switch (tipo) {
+    case "FACTURA_C":
+      return { aplicaIva: false, aplicaIibb: false };
+    case "FACTURA_A":
+    case "FACTURA_X":
+    default:
+      return { aplicaIva: true, aplicaIibb: true };
+  }
+}
+
+/** @deprecated Usar `FilaMargenContribucionDatoId`. */
+export type FilaMargenContribucionId = FilaMargenContribucionDatoId;
+
+/** @deprecated Usar `FIN_ANA_MC_LAYOUT`. */
+export const FIN_ANA_MC_FILAS = FIN_ANA_MC_FILAS_DATO;
 
 /** Precio neto sin IVA desde precio de venta con IVA incluido. */
 export function netoSinIvaMargenContribucion(precioVenta: number): number {
   return precioVenta / FIN_ANA_COS_FINA_IVA_FACTOR;
 }
 
-/** PRECIO VENTA = PX LISTA × (1 − descuento % / 100). */
-export function precioVentaMargenContribucion(
+/** PX VENTA = PX LISTA × (1 − descuento % / 100). */
+export function pxVentaMargenContribucion(
   pxLista: number,
   descuentoPct: number
 ): number {
@@ -80,6 +166,9 @@ export function precioVentaMargenContribucion(
   const factor = 1 - descuentoPct / 100;
   return Math.round(pxLista * Math.max(0, factor));
 }
+
+/** @deprecated Usar `pxVentaMargenContribucion`. */
+export const precioVentaMargenContribucion = pxVentaMargenContribucion;
 
 /** IVA = (PRECIO VENTA / 1,21) × 0,21. */
 export function ivaMargenContribucion(precioVenta: number): number {
@@ -112,6 +201,7 @@ export type InputsMargenContribucion = {
   pxLista: number;
   descuentoPct: number;
   porcUtilidadPct: number;
+  tipoComprobante?: TipoComprobanteVentaMargenContribucion;
 };
 
 export type ValoresCalculadosMargenContribucion = {
@@ -124,19 +214,58 @@ export type ValoresCalculadosMargenContribucion = {
 export function calcularValoresMargenContribucion(
   inputs: InputsMargenContribucion
 ): ValoresCalculadosMargenContribucion {
-  const precioVenta = precioVentaMargenContribucion(
+  const precioVenta = pxVentaMargenContribucion(
     inputs.pxLista,
     inputs.descuentoPct
   );
+  const tipoComprobante = inputs.tipoComprobante ?? "FACTURA_A";
+  const { aplicaIva, aplicaIibb } =
+    aplicaImpuestosComprobanteMargenContribucion(tipoComprobante);
   return {
     precioVenta,
-    iva: ivaMargenContribucion(precioVenta),
-    iibb: iibbMargenContribucion(precioVenta),
+    iva: aplicaIva ? ivaMargenContribucion(precioVenta) : 0,
+    iibb: aplicaIibb ? iibbMargenContribucion(precioVenta) : 0,
     cxMercaderia: cxMercaderiaMargenContribucion(
       precioVenta,
       inputs.porcUtilidadPct
     ),
   };
+}
+
+/** CX FINANCIERO en pesos desde % sobre PX VENTA. */
+export function cxFinancieroPesosMargenContribucion(
+  pxVenta: number,
+  cxFinPct: number
+): number {
+  if (!(pxVenta > 0) || !(cxFinPct > 0)) return 0;
+  return Math.round(pxVenta * (cxFinPct / 100));
+}
+
+/** Subtotal de costos (IVA + IIBB + CX MERCADERÍA + CX FINANCIERO en $) por forma de pago. */
+export function subtotalCostosMargenContribucionPorFormaPago(
+  calculados: ValoresCalculadosMargenContribucion,
+  cxFinPct: number
+): number | null {
+  if (!(calculados.precioVenta > 0)) return null;
+  const cxFin = cxFinancieroPesosMargenContribucion(
+    calculados.precioVenta,
+    cxFinPct
+  );
+  const cxMerc = calculados.cxMercaderia ?? 0;
+  return calculados.iva + calculados.iibb + cxMerc + cxFin;
+}
+
+/** M.C = PX VENTA − subtotal de costos (por forma de pago). */
+export function mcMargenContribucionPorFormaPago(
+  calculados: ValoresCalculadosMargenContribucion,
+  cxFinPct: number
+): number | null {
+  const subtotal = subtotalCostosMargenContribucionPorFormaPago(
+    calculados,
+    cxFinPct
+  );
+  if (subtotal == null || !(calculados.precioVenta > 0)) return null;
+  return calculados.precioVenta - subtotal;
 }
 
 export type CxFinancieroPorFormaPago = Record<FormaPagoMargenContribucion, number>;

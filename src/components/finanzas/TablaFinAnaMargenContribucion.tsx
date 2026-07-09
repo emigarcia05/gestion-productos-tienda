@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
+import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
 import PxListaEnteroInput from "@/components/shared/PxListaEnteroInput";
 import { fmtPrecio } from "@/lib/format";
 import { fmtPorcentajeDosDecimalesFinAnaCosFina } from "@/lib/finAnaCosFina";
@@ -19,32 +19,35 @@ import {
   esFilaPorFormaPagoMargenContribucion,
   etiquetaFilaMargenContribucion,
   etiquetaFormaPagoMargenContribucion,
-  FIN_ANA_MC_FILAS,
-  type FilaMargenContribucionId,
+  FIN_ANA_MC_LAYOUT,
+  mcMargenContribucionPorFormaPago,
+  subtotalCostosMargenContribucionPorFormaPago,
+  type FilaMargenContribucionDatoId,
   type FormaPagoMargenContribucion,
+  type TipoComprobanteVentaMargenContribucion,
 } from "@/lib/finAnaMargenContribucion";
 import {
   parsePxListaEnteroNormalized,
   pxListaEnteroFromNumber,
 } from "@/lib/pxListaEnteroMask";
-import {
-  parsePorcentajeCentNormalized,
-  porcentajeCentFromNumber,
-} from "@/lib/porcentajeCentMask";
-import { MARGEN_PX_LISTA_MAX_CENTS } from "@/lib/pxListasPreciosFormat";
 import type { CxFinancieroPorFormaPago } from "@/lib/finAnaMargenContribucion";
 import { cn } from "@/lib/utils";
 
-/** Tope descuento: 100,00 %. */
-const DESCUENTO_MC_MAX_CENTS = 10_000;
+/** Tope descuento entero en Margen Contribución. */
+const DESCUENTO_MC_MAX_ENTERO = 100;
 
 const INPUT_FILA_CLASS =
   "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-w-0 max-h-full text-xs tabular-nums";
 
+const INPUT_MARGEN_DESCUENTO_CLASS = cn(
+  INPUT_FILA_CLASS,
+  "max-w-[8rem] border border-primary rounded-md"
+);
+
 export type InputsMargenContribucionState = {
   pxListaNorm: string;
-  descuentoNorm: string;
-  porcUtilidadNorm: string;
+  /** Entero 0–100 (%). */
+  descuentoPct: number;
 };
 
 interface Props {
@@ -52,12 +55,21 @@ interface Props {
   cxFinancieroPorFormaPago: CxFinancieroPorFormaPago;
   inputs: InputsMargenContribucionState;
   onInputsChange: (next: InputsMargenContribucionState) => void;
+  porcUtilidadPct: number;
+  tipoComprobante: TipoComprobanteVentaMargenContribucion;
+  pxListaEditable: boolean;
   esEditor: boolean;
 }
 
 function fmtMontoTabla(n: number | null | undefined): string {
-  if (n == null || !(n > 0)) return "—";
+  if (n == null || Number.isNaN(n)) return "—";
+  if (n <= 0) return "—";
   return fmtPrecio(n);
+}
+
+function fmtDescuentoEnteroTabla(n: number | null | undefined): string {
+  if (n == null || n <= 0) return "—";
+  return `${Math.round(n).toLocaleString("es-AR")}%`;
 }
 
 function fmtPorcentajeTabla(n: number | null | undefined): string {
@@ -70,40 +82,36 @@ export default function TablaFinAnaMargenContribucion({
   cxFinancieroPorFormaPago,
   inputs,
   onInputsChange,
+  porcUtilidadPct,
+  tipoComprobante,
+  pxListaEditable,
   esEditor,
 }: Props) {
   const parsed = useMemo(() => {
     const pxLista = parsePxListaEnteroNormalized(inputs.pxListaNorm) ?? 0;
-    const descuentoPct =
-      parsePorcentajeCentNormalized(inputs.descuentoNorm, DESCUENTO_MC_MAX_CENTS) ?? 0;
-    const porcUtilidadPct =
-      parsePorcentajeCentNormalized(inputs.porcUtilidadNorm, MARGEN_PX_LISTA_MAX_CENTS) ??
-      0;
+    const descuentoPct = inputs.descuentoPct;
     const calculados = calcularValoresMargenContribucion({
       pxLista,
       descuentoPct,
       porcUtilidadPct,
+      tipoComprobante,
     });
     return { pxLista, descuentoPct, porcUtilidadPct, calculados };
-  }, [inputs]);
+  }, [inputs, porcUtilidadPct, tipoComprobante]);
 
-  function renderValorFila(
-    filaId: FilaMargenContribucionId,
+  function renderValorDato(
+    filaId: FilaMargenContribucionDatoId,
     formaPago: FormaPagoMargenContribucion
   ): string {
     const { calculados } = parsed;
+    const cxFinPct = cxFinancieroPorFormaPago[formaPago];
+
     switch (filaId) {
       case "PX_LISTA":
         return fmtMontoTabla(parsed.pxLista);
       case "DESCUENTO":
-        return parsed.descuentoPct > 0
-          ? fmtPorcentajeTabla(parsed.descuentoPct)
-          : "—";
-      case "PORC_UTILIDAD":
-        return parsed.porcUtilidadPct > 0
-          ? fmtPorcentajeTabla(parsed.porcUtilidadPct)
-          : "—";
-      case "PRECIO_VENTA":
+        return fmtDescuentoEnteroTabla(parsed.descuentoPct);
+      case "PX_VENTA":
         return fmtMontoTabla(calculados.precioVenta);
       case "IVA":
         return fmtMontoTabla(calculados.iva);
@@ -112,30 +120,41 @@ export default function TablaFinAnaMargenContribucion({
       case "CX_MERCADERIA":
         return fmtMontoTabla(calculados.cxMercaderia);
       case "CX_FINANCIERO":
-        return fmtPorcentajeTabla(cxFinancieroPorFormaPago[formaPago]);
+        return fmtPorcentajeTabla(cxFinPct);
+      case "MC": {
+        const mc = mcMargenContribucionPorFormaPago(calculados, cxFinPct);
+        return fmtMontoTabla(mc);
+      }
       default:
         return "—";
     }
   }
 
-  function renderInputEditable(filaId: FilaMargenContribucionId) {
+  function renderSubtotalCostos(formaPago: FormaPagoMargenContribucion): string {
+    const subtotal = subtotalCostosMargenContribucionPorFormaPago(
+      parsed.calculados,
+      cxFinancieroPorFormaPago[formaPago]
+    );
+    return fmtMontoTabla(subtotal);
+  }
+
+  function renderInputEditable(filaId: FilaMargenContribucionDatoId) {
     if (!esEditor) {
       return (
         <span className="tabular-nums text-foreground">
-          {filaId === "PX_LISTA"
-            ? fmtMontoTabla(parsed.pxLista)
-            : filaId === "DESCUENTO"
-              ? parsed.descuentoPct > 0
-                ? fmtPorcentajeTabla(parsed.descuentoPct)
-                : "—"
-              : parsed.porcUtilidadPct > 0
-                ? fmtPorcentajeTabla(parsed.porcUtilidadPct)
-                : "—"}
+          {renderValorDato(filaId, formasPago[0])}
         </span>
       );
     }
 
     if (filaId === "PX_LISTA") {
+      if (!pxListaEditable || !esEditor) {
+        return (
+          <span className="tabular-nums text-foreground">
+            {renderValorDato(filaId, formasPago[0])}
+          </span>
+        );
+      }
       return (
         <PxListaEnteroInput
           valueNormalized={inputs.pxListaNorm}
@@ -148,31 +167,57 @@ export default function TablaFinAnaMargenContribucion({
       );
     }
 
-    if (filaId === "DESCUENTO") {
+    return (
+      <PorcentajeEnteroMaskInput
+        value={inputs.descuentoPct}
+        min={0}
+        max={DESCUENTO_MC_MAX_ENTERO}
+        onValueChange={(next) =>
+          onInputsChange({ ...inputs, descuentoPct: next })
+        }
+        className={INPUT_MARGEN_DESCUENTO_CLASS}
+        aria-label="Descuento"
+      />
+    );
+  }
+
+  function renderCeldasDatos(filaId: FilaMargenContribucionDatoId) {
+    if (esFilaEditableMargenContribucion(filaId)) {
       return (
-        <PorcentajeCentInput
-          valueNormalized={inputs.descuentoNorm}
-          maxCents={DESCUENTO_MC_MAX_CENTS}
-          onValueNormalizedChange={(next) =>
-            onInputsChange({ ...inputs, descuentoNorm: next })
-          }
-          className={cn(INPUT_FILA_CLASS, "max-w-[8rem] border-primary")}
-          aria-label="Descuento"
-        />
+        <TableCell
+          colSpan={formasPago.length}
+          className="celda-datos celda-numero border-l border-border"
+        >
+          {renderInputEditable(filaId)}
+        </TableCell>
       );
     }
 
-    return (
-      <PorcentajeCentInput
-        valueNormalized={inputs.porcUtilidadNorm}
-        maxCents={MARGEN_PX_LISTA_MAX_CENTS}
-        onValueNormalizedChange={(next) =>
-          onInputsChange({ ...inputs, porcUtilidadNorm: next })
-        }
-        className={cn(INPUT_FILA_CLASS, "max-w-[8rem] border-primary")}
-        aria-label="Porc. utilidad"
-      />
-    );
+    if (esFilaPorFormaPagoMargenContribucion(filaId)) {
+      return formasPago.map((forma) => (
+        <TableCell
+          key={`${filaId}-${forma}`}
+          className={cn(
+            "celda-datos celda-numero border-l border-border tabular-nums",
+            filaId === "MC" && "font-semibold"
+          )}
+        >
+          {renderValorDato(filaId, forma)}
+        </TableCell>
+      ));
+    }
+
+    return formasPago.map((forma, index) => (
+      <TableCell
+        key={`${filaId}-${forma}`}
+        className={cn(
+          "celda-datos celda-numero tabular-nums",
+          index === 0 && "border-l border-border"
+        )}
+      >
+        {renderValorDato(filaId, forma)}
+      </TableCell>
+    ));
   }
 
   return (
@@ -201,42 +246,52 @@ export default function TablaFinAnaMargenContribucion({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {FIN_ANA_MC_FILAS.map((filaId) => (
-          <TableRow key={filaId}>
-            <TableCell className="celda-datos font-medium">
-              {etiquetaFilaMargenContribucion(filaId)}
-            </TableCell>
-            {esFilaEditableMargenContribucion(filaId) ? (
-              <TableCell
-                colSpan={formasPago.length}
-                className="celda-datos celda-numero border-l border-border"
+        {FIN_ANA_MC_LAYOUT.map((fila) => {
+          if (fila.tipo === "espacio") {
+            return (
+              <TableRow
+                key={fila.id}
+                className="tabla-fila-mc-espacio hover:bg-transparent"
+                aria-hidden
               >
-                {renderInputEditable(filaId)}
+                <TableCell colSpan={1 + formasPago.length} className="!p-0 !h-3" />
+              </TableRow>
+            );
+          }
+
+          if (fila.tipo === "subtotal") {
+            return (
+              <TableRow
+                key={fila.id}
+                className="tabla-fila-mc-subtotal hover:bg-transparent"
+              >
+                <TableCell className="celda-datos !border-0" />
+                {formasPago.map((forma) => (
+                  <TableCell
+                    key={`${fila.id}-${forma}`}
+                    className={cn(
+                      "celda-datos celda-numero tabular-nums border-l border-border font-semibold",
+                      fila.id === "SUBTOTAL_COSTOS" && "text-foreground"
+                    )}
+                  >
+                    {fila.id === "SUBTOTAL_COSTOS"
+                      ? renderSubtotalCostos(forma)
+                      : null}
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          }
+
+          return (
+            <TableRow key={fila.id}>
+              <TableCell className="celda-datos font-medium">
+                {etiquetaFilaMargenContribucion(fila.id)}
               </TableCell>
-            ) : esFilaPorFormaPagoMargenContribucion(filaId) ? (
-              formasPago.map((forma) => (
-                <TableCell
-                  key={`${filaId}-${forma}`}
-                  className="celda-datos celda-numero border-l border-border tabular-nums"
-                >
-                  {renderValorFila(filaId, forma)}
-                </TableCell>
-              ))
-            ) : (
-              formasPago.map((forma, index) => (
-                <TableCell
-                  key={`${filaId}-${forma}`}
-                  className={cn(
-                    "celda-datos celda-numero tabular-nums",
-                    index === 0 && "border-l border-border"
-                  )}
-                >
-                  {renderValorFila(filaId, forma)}
-                </TableCell>
-              ))
-            )}
-          </TableRow>
-        ))}
+              {renderCeldasDatos(fila.id)}
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );
@@ -245,28 +300,19 @@ export default function TablaFinAnaMargenContribucion({
 /** Valores por defecto vacíos para simulación. */
 export const INPUTS_MARGEN_CONTRIBUCION_VACIOS: InputsMargenContribucionState = {
   pxListaNorm: "",
-  descuentoNorm: "",
-  porcUtilidadNorm: "",
+  descuentoPct: 0,
 };
 
 /** Serializa inputs persistidos (opcional futuro). */
 export function inputsMargenContribucionDesdeNumeros(params: {
   pxLista?: number | null;
   descuentoPct?: number | null;
-  porcUtilidadPct?: number | null;
 }): InputsMargenContribucionState {
   return {
     pxListaNorm: pxListaEnteroFromNumber(params.pxLista ?? null),
-    descuentoNorm:
-      params.descuentoPct != null && params.descuentoPct > 0
-        ? porcentajeCentFromNumber(params.descuentoPct, DESCUENTO_MC_MAX_CENTS)
-        : "",
-    porcUtilidadNorm:
-      params.porcUtilidadPct != null && params.porcUtilidadPct > 0
-        ? porcentajeCentFromNumber(
-            params.porcUtilidadPct,
-            MARGEN_PX_LISTA_MAX_CENTS
-          )
-        : "",
+    descuentoPct:
+      params.descuentoPct != null && params.descuentoPct >= 0
+        ? Math.min(Math.round(params.descuentoPct), DESCUENTO_MC_MAX_ENTERO)
+        : 0,
   };
 }
