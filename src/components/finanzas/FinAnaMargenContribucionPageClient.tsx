@@ -29,6 +29,7 @@ import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import {
   FIN_ANA_MC_FORMAS_PAGO,
   FIN_ANA_MC_MODOS_EVALUACION,
+  FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD,
   FIN_ANA_MC_TIPOS_COMPROBANTE,
   etiquetaModoEvaluacionMargenContribucion,
   etiquetaTipoComprobanteVentaMargenContribucion,
@@ -70,13 +71,24 @@ function etiquetaFiltroMayusculas(texto: string): string {
   return texto.toLocaleUpperCase("es");
 }
 
+function inputsPxListaEstimadoPorcUtilidad(
+  prev: typeof INPUTS_MARGEN_CONTRIBUCION_VACIOS
+) {
+  return inputsMargenContribucionDesdeNumeros({
+    pxLista: FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD,
+    descuentoPctPorFormaPago: prev.descuentoPctPorFormaPago,
+  });
+}
+
 export default function FinAnaMargenContribucionPageClient({
   filasCostosFinancieros,
   terminales,
   esEditor,
 }: Props) {
   const [config, setConfig] = useState(CONFIG_MARGEN_CONTRIBUCION_VACIA);
-  const [inputs, setInputs] = useState(INPUTS_MARGEN_CONTRIBUCION_VACIOS);
+  const [inputs, setInputs] = useState(() =>
+    inputsPxListaEstimadoPorcUtilidad(INPUTS_MARGEN_CONTRIBUCION_VACIOS)
+  );
   const [modalProductoAbierto, setModalProductoAbierto] = useState(false);
   const [cargandoProducto, setCargandoProducto] = useState(false);
 
@@ -102,7 +114,8 @@ export default function FinAnaMargenContribucionPageClient({
   }, [config]);
 
   const pxListaEditable =
-    config.modoEvaluacion !== "producto" || config.producto == null;
+    config.modoEvaluacion !== "porc_utilidad" &&
+    (config.modoEvaluacion !== "producto" || config.producto == null);
 
   async function elegirProducto(row: ProductoTiendaRowBusqueda) {
     setCargandoProducto(true);
@@ -146,7 +159,7 @@ export default function FinAnaMargenContribucionPageClient({
 
   function limpiarFiltros() {
     setConfig(CONFIG_MARGEN_CONTRIBUCION_VACIA);
-    setInputs(INPUTS_MARGEN_CONTRIBUCION_VACIOS);
+    setInputs(inputsPxListaEstimadoPorcUtilidad(INPUTS_MARGEN_CONTRIBUCION_VACIOS));
   }
 
   function cambiarModoEvaluacion(modo: ModoEvaluacionMargenContribucion) {
@@ -157,7 +170,7 @@ export default function FinAnaMargenContribucionPageClient({
       porcUtilidadNorm: modo === "porc_utilidad" ? prev.porcUtilidadNorm : "",
     }));
     if (modo === "porc_utilidad") {
-      setInputs((prev) => ({ ...prev, pxListaNorm: "" }));
+      setInputs((prev) => inputsPxListaEstimadoPorcUtilidad(prev));
     } else if (modo === "producto") {
       setModalProductoAbierto(true);
     }

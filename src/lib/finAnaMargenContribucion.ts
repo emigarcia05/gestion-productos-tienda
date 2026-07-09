@@ -111,6 +111,9 @@ export const FIN_ANA_MC_MODOS_EVALUACION: ModoEvaluacionMargenContribucion[] = [
   "porc_utilidad",
 ];
 
+/** PX LISTA de referencia en modo **PORC. UTILIDAD** (simulador). */
+export const FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD = 100;
+
 const ETIQUETAS_MODO_EVALUACION: Record<ModoEvaluacionMargenContribucion, string> = {
   producto: "PRODUCTO",
   porc_utilidad: "PORC. UTILIDAD",
