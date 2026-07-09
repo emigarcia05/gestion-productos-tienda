@@ -171,8 +171,8 @@ export default function FinAnaMargenContribucionPageClient({
         subtitle="Margen Contribución"
         filters={
           <FilterBar className="filtros-contenedor-tienda bg-card">
-            <FilterRowSelection>
-              <FilaFiltrosDesplegables columnas={5}>
+            <FilterRowSelection className="w-full min-w-0">
+              <FilaFiltrosDesplegables columnas={4}>
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
                   activo={Boolean(config.terminalId)}
@@ -186,7 +186,7 @@ export default function FinAnaMargenContribucionPageClient({
                       setConfig((prev) => ({ ...prev, terminalId: value }))
                     }
                   >
-                    <SelectTrigger className="input-filtro-unificado">
+                    <SelectTrigger className="input-filtro-unificado w-full">
                       <SelectValue placeholder="TERMINAL" />
                     </SelectTrigger>
                     <SelectContent
@@ -224,8 +224,8 @@ export default function FinAnaMargenContribucionPageClient({
                       }))
                     }
                   >
-                    <SelectTrigger className="input-filtro-unificado">
-                      <SelectValue placeholder="COMPROBANTE" />
+                    <SelectTrigger className="input-filtro-unificado w-full">
+                      <SelectValue placeholder="TIPO DE COMPROBANTE" />
                     </SelectTrigger>
                     <SelectContent
                       position="popper"
@@ -242,6 +242,22 @@ export default function FinAnaMargenContribucionPageClient({
                   </Select>
                 </FiltroIndividualContainer>
 
+                <div
+                  className={cn(
+                    FILTER_INLINE_ACTION_SLOT_CLASS,
+                    "col-span-2"
+                  )}
+                >
+                  <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
+                    {FIN_ANA_MC_FORMAS_PAGO.length} FORMA(S) DE PAGO
+                  </span>
+                  <LimpiarFiltrosButton onClick={limpiarFiltros} />
+                </div>
+              </FilaFiltrosDesplegables>
+            </FilterRowSelection>
+
+            <FilterRowSelection className="w-full min-w-0">
+              <FilaFiltrosDesplegables columnas={4}>
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
                   activo={config.modoEvaluacion !== "porc_utilidad"}
@@ -255,8 +271,8 @@ export default function FinAnaMargenContribucionPageClient({
                       )
                     }
                   >
-                    <SelectTrigger className="input-filtro-unificado">
-                      <SelectValue placeholder="EVALUAR" />
+                    <SelectTrigger className="input-filtro-unificado w-full">
+                      <SelectValue placeholder="TIPO DE ANÁLISIS" />
                     </SelectTrigger>
                     <SelectContent
                       position="popper"
@@ -275,7 +291,7 @@ export default function FinAnaMargenContribucionPageClient({
 
                 {config.modoEvaluacion === "producto" ? (
                   <FiltroIndividualContainer
-                    className={cn(FILTER_SELECT_WRAPPER_CLASS, "col-span-2")}
+                    className={cn(FILTER_SELECT_WRAPPER_CLASS, "col-span-3")}
                     activo={Boolean(config.producto)}
                     onLimpiar={() => {
                       setConfig((prev) => ({ ...prev, producto: null }));
@@ -285,7 +301,7 @@ export default function FinAnaMargenContribucionPageClient({
                     <Button
                       type="button"
                       variant="outline"
-                      className="input-filtro-unificado h-9 min-h-9 max-h-9 w-full justify-start gap-2 truncate border-primary text-xs font-normal"
+                      className="input-filtro-unificado h-9 min-h-9 max-h-9 w-full justify-start gap-2 truncate border-primary text-xs font-normal uppercase"
                       onClick={() => setModalProductoAbierto(true)}
                       disabled={cargandoProducto}
                     >
@@ -299,7 +315,7 @@ export default function FinAnaMargenContribucionPageClient({
                   </FiltroIndividualContainer>
                 ) : (
                   <FiltroIndividualContainer
-                    className={cn(FILTER_SELECT_WRAPPER_CLASS, "col-span-2")}
+                    className={cn(FILTER_SELECT_WRAPPER_CLASS, "col-span-3")}
                     activo={Boolean(config.porcUtilidadNorm.trim())}
                     onLimpiar={() =>
                       setConfig((prev) => ({ ...prev, porcUtilidadNorm: "" }))
@@ -314,7 +330,6 @@ export default function FinAnaMargenContribucionPageClient({
                           porcUtilidadNorm: next,
                         }))
                       }
-                      disabled={!esEditor}
                       className="input-filtro-unificado h-9 min-h-9 max-h-9 w-full border-primary text-xs"
                       aria-label="Porc. utilidad"
                       title="Porc. utilidad (CX MERCADERÍA)"
@@ -322,20 +337,6 @@ export default function FinAnaMargenContribucionPageClient({
                   </FiltroIndividualContainer>
                 )}
               </FilaFiltrosDesplegables>
-            </FilterRowSelection>
-
-            <FilterRowSelection>
-              <div
-                className={cn(
-                  FILTER_INLINE_ACTION_SLOT_CLASS,
-                  "w-full justify-end"
-                )}
-              >
-                <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-                  {FIN_ANA_MC_FORMAS_PAGO.length} FORMA(S) DE PAGO
-                </span>
-                <LimpiarFiltrosButton onClick={limpiarFiltros} />
-              </div>
             </FilterRowSelection>
           </FilterBar>
         }

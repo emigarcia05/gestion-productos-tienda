@@ -46,14 +46,13 @@ export type FilaMargenContribucionDatoId = (typeof FIN_ANA_MC_FILAS_DATO)[number
 /** Tipos de fila en el layout (secciones, subtotales, espacio). */
 export type FilaMargenContribucionLayout =
   | { tipo: "dato"; id: FilaMargenContribucionDatoId }
-  | { tipo: "subtotal"; id: "SUBTOTAL_PRE_VENTA" | "SUBTOTAL_COSTOS" }
+  | { tipo: "subtotal"; id: "SUBTOTAL_COSTOS" }
   | { tipo: "espacio"; id: "SEPARACION" };
 
 /** Orden visual de filas con secciones. */
 export const FIN_ANA_MC_LAYOUT: FilaMargenContribucionLayout[] = [
   { tipo: "dato", id: "PX_LISTA" },
   { tipo: "dato", id: "DESCUENTO" },
-  { tipo: "subtotal", id: "SUBTOTAL_PRE_VENTA" },
   { tipo: "dato", id: "PX_VENTA" },
   { tipo: "espacio", id: "SEPARACION" },
   { tipo: "dato", id: "IVA" },
@@ -96,8 +95,8 @@ export const FIN_ANA_MC_MODOS_EVALUACION: ModoEvaluacionMargenContribucion[] = [
 ];
 
 const ETIQUETAS_MODO_EVALUACION: Record<ModoEvaluacionMargenContribucion, string> = {
-  producto: "Un producto",
-  porc_utilidad: "Porc. Utilidad",
+  producto: "PRODUCTO",
+  porc_utilidad: "PORC. UTILIDAD",
 };
 
 export function etiquetaModoEvaluacionMargenContribucion(
@@ -122,9 +121,9 @@ const ETIQUETAS_TIPO_COMPROBANTE: Record<
   TipoComprobanteVentaMargenContribucion,
   string
 > = {
-  FACTURA_A: "Factura A (Paga IVA e IIBB)",
-  FACTURA_C: "Factura C (No Paga IVA e IIBB)",
-  FACTURA_X: "Factura X (Paga IVA e IIBB)",
+  FACTURA_A: "FACTURA A",
+  FACTURA_C: "FACTURA C",
+  FACTURA_X: "FACTURA X",
 };
 
 export function etiquetaTipoComprobanteVentaMargenContribucion(
