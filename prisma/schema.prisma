@@ -980,36 +980,57 @@ model FinAnaCosFinaTerminal {
   @@map("fin_ana_cos_fina_terminales")
 }
 
-enum FinAnaCosFinaPago {
-  DEBITO
-  CUOTA_1
-  CUOTA_3
-  CUOTA_6
-  CUOTA_9
-  CUOTA_12
-  CUOTA_18
+/** Catálogo de formas de pago (Análisis M.C.). */
+model FinAnaCosFinaPagoCat {
+  id                   String   @id @default(cuid())
+  codigo               String   @unique
+  nombre               String   @unique
+  orden                Int      @default(0)
+  enCostosFinancieros  Boolean  @default(true) @map("en_costos_financieros")
+  enMargenContribucion Boolean  @default(true) @map("en_margen_contribucion")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  filasCostos   FinAnaCosFina[]
+  descuentosFp  FinAnaMcDescuentoFp[]
+
+  @@index([orden], map: "fin_ana_cos_fina_pagos_orden_idx")
+  @@map("fin_ana_cos_fina_pagos")
 }
 
 /**
  * Matriz terminal × forma de pago para costos financieros (Análisis M.C.).
- * Semilla: 3 terminales × 7 modalidades de pago = 21 filas.
  */
 model FinAnaCosFina {
-  id               String                @id @default(cuid())
-  habilitado       Boolean               @default(true)
-  impCheque        Boolean               @default(false) @map("imp_cheque")
-  terminalId       String                @map("terminal_id")
+  id               String              @id @default(cuid())
+  habilitado       Boolean             @default(true)
+  impCheque        Boolean             @default(false) @map("imp_cheque")
+  terminalId       String              @map("terminal_id")
   terminal         FinAnaCosFinaTerminal @relation(fields: [terminalId], references: [id], onDelete: Cascade)
-  pago             FinAnaCosFinaPago
-  diasAcreditacion Int?                  @map("dias_acreditacion")
-  arancel          Decimal               @default(0) @db.Decimal(5, 2)
-  costoFinanciero  Decimal               @default(0) @map("costo_financiero") @db.Decimal(5, 2)
-  createdAt        DateTime              @default(now()) @map("created_at")
-  updatedAt        DateTime              @updatedAt @map("updated_at")
+  pagoId           String              @map("pago_id")
+  pago             FinAnaCosFinaPagoCat @relation(fields: [pagoId], references: [id], onDelete: Cascade)
+  diasAcreditacion Int?                @map("dias_acreditacion")
+  arancel          Decimal             @default(0) @db.Decimal(5, 2)
+  costoFinanciero  Decimal             @default(0) @map("costo_financiero") @db.Decimal(5, 2)
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
 
-  @@unique([terminalId, pago], map: "fin_ana_cos_fina_terminal_pago_ux")
+  @@unique([terminalId, pagoId], map: "fin_ana_cos_fina_terminal_pago_ux")
   @@index([terminalId], map: "fin_ana_cos_fina_terminal_idx")
+  @@index([pagoId], map: "fin_ana_cos_fina_pago_idx")
   @@map("fin_ana_cos_fina")
+}
+
+/** Descuento % (entero −100…100) por forma de pago en simulador Margen Contribución. */
+model FinAnaMcDescuentoFp {
+  id           String               @id @default(cuid())
+  pagoId       String               @unique @map("pago_id")
+  pago         FinAnaCosFinaPagoCat @relation(fields: [pagoId], references: [id], onDelete: Cascade)
+  descuentoPct Int                  @default(0) @map("descuento_pct")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+
+  @@map("fin_ana_mc_descuento_fp")
 }
 
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────

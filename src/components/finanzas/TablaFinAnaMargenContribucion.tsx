@@ -21,6 +21,8 @@ import {
   esFilaPorFormaPagoMargenContribucion,
   etiquetaFilaMargenContribucion,
   etiquetaFormaPagoMargenContribucion,
+  FIN_ANA_MC_DESCUENTO_MAX,
+  FIN_ANA_MC_DESCUENTO_MIN,
   FIN_ANA_MC_LAYOUT,
   mcMargenContribucionPorFormaPago,
   subtotalCostosMargenContribucionPorFormaPago,
@@ -34,10 +36,8 @@ import {
   pxListaEnteroFromNumber,
 } from "@/lib/pxListaEnteroMask";
 import type { CxFinancieroPorFormaPago } from "@/lib/finAnaMargenContribucion";
+import type { FinAnaCosFinaPagoItem } from "@/lib/finAnaCosFinaPagos";
 import { cn } from "@/lib/utils";
-
-/** Tope descuento entero en Margen Contribución. */
-const DESCUENTO_MC_MAX_ENTERO = 100;
 
 const INPUT_FILA_CLASS =
   "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-w-0 max-h-full text-xs tabular-nums";
@@ -55,9 +55,14 @@ export type InputsMargenContribucionState = {
 
 interface Props {
   formasPago: FormaPagoMargenContribucion[];
+  pagosCatalogo: FinAnaCosFinaPagoItem[];
   cxFinancieroPorFormaPago: CxFinancieroPorFormaPago;
   inputs: InputsMargenContribucionState;
   onInputsChange: (next: InputsMargenContribucionState) => void;
+  onDescuentoPorFormaPagoChange: (
+    formaPago: FormaPagoMargenContribucion,
+    descuentoPct: number
+  ) => void | Promise<void>;
   porcUtilidadPct: number;
   tipoComprobante: TipoComprobanteVentaMargenContribucion;
   pxListaEditable: boolean;
@@ -71,7 +76,7 @@ function fmtMontoTabla(n: number | null | undefined): string {
 }
 
 function fmtDescuentoEnteroTabla(n: number | null | undefined): string {
-  if (n == null || n <= 0) return "—";
+  if (n == null || Number.isNaN(n)) return "—";
   return `${Math.round(n).toLocaleString("es-AR")}%`;
 }
 
@@ -82,9 +87,11 @@ function fmtPorcentajeTabla(n: number | null | undefined): string {
 
 export default function TablaFinAnaMargenContribucion({
   formasPago,
+  pagosCatalogo,
   cxFinancieroPorFormaPago,
   inputs,
   onInputsChange,
+  onDescuentoPorFormaPagoChange,
   porcUtilidadPct,
   tipoComprobante,
   pxListaEditable,
@@ -180,19 +187,14 @@ export default function TablaFinAnaMargenContribucion({
     return (
       <PorcentajeEnteroMaskInput
         value={inputs.descuentoPctPorFormaPago[formaPago] ?? 0}
-        min={0}
-        max={DESCUENTO_MC_MAX_ENTERO}
-        onValueChange={(next) =>
-          onInputsChange({
-            ...inputs,
-            descuentoPctPorFormaPago: {
-              ...inputs.descuentoPctPorFormaPago,
-              [formaPago]: next,
-            },
-          })
-        }
+        signed
+        min={FIN_ANA_MC_DESCUENTO_MIN}
+        max={FIN_ANA_MC_DESCUENTO_MAX}
+        onValueChange={(next) => {
+          void onDescuentoPorFormaPagoChange(formaPago, next);
+        }}
         className={INPUT_MARGEN_DESCUENTO_CLASS}
-        aria-label={`Descuento ${etiquetaFormaPagoMargenContribucion(formaPago)}`}
+        aria-label={`Descuento ${etiquetaFormaPagoMargenContribucion(formaPago, pagosCatalogo)}`}
       />
     );
   }
@@ -271,7 +273,7 @@ export default function TablaFinAnaMargenContribucion({
               key={forma}
               className="text-center border-l border-primary-foreground/25 leading-tight"
             >
-              {etiquetaFormaPagoMargenContribucion(forma).toUpperCase()}
+              {etiquetaFormaPagoMargenContribucion(forma, pagosCatalogo).toUpperCase()}
             </TableHead>
           ))}
         </TableRow>
@@ -333,10 +335,14 @@ export const INPUTS_MARGEN_CONTRIBUCION_VACIOS: InputsMargenContribucionState = 
 export function inputsMargenContribucionDesdeNumeros(params: {
   pxLista?: number | null;
   descuentoPctPorFormaPago?: InputsMargenContribucionState["descuentoPctPorFormaPago"];
+  formasPago?: FormaPagoMargenContribucion[];
 }): InputsMargenContribucionState {
+  const formasPago = params.formasPago ?? [];
   return {
     pxListaNorm: pxListaEnteroFromNumber(params.pxLista ?? null),
-    descuentoPctPorFormaPago:
-      params.descuentoPctPorFormaPago ?? crearDescuentoPctPorFormaPagoVacios(),
+    descuentoPctPorFormaPago: {
+      ...crearDescuentoPctPorFormaPagoVacios(formasPago),
+      ...params.descuentoPctPorFormaPago,
+    },
   };
 }

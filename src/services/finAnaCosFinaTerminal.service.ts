@@ -1,7 +1,11 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { FIN_ANA_COS_FINA_PAGOS } from "@/lib/finAnaCosFina";
+import { filtrarPagosCostosFinancieros } from "@/lib/finAnaCosFinaPagos";
 import type { FinAnaCosFinaTerminalItem } from "@/lib/finAnaCosFinaTerminales";
+import {
+  ensureFinAnaCosFinaPagosSeed,
+  listarFinAnaCosFinaPagos,
+} from "@/services/finAnaCosFinaPago.service";
 import type {
   CrearFinAnaCosFinaTerminalInput,
   EditarFinAnaCosFinaTerminalInput,
@@ -78,10 +82,13 @@ export async function crearFinAnaCosFinaTerminal(
         select: { id: true, nombre: true, orden: true },
       });
 
+      await ensureFinAnaCosFinaPagosSeed();
+      const pagosCostos = filtrarPagosCostosFinancieros(await listarFinAnaCosFinaPagos());
+
       await tx.finAnaCosFina.createMany({
-        data: FIN_ANA_COS_FINA_PAGOS.map((pago) => ({
+        data: pagosCostos.map((pago) => ({
           terminalId: created.id,
-          pago,
+          pagoId: pago.id,
           habilitado: true,
           impCheque: false,
           arancel: new Prisma.Decimal(0),

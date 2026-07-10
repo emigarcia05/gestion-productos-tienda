@@ -5,12 +5,19 @@ import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import type { FinAnaCosFinaTerminalItem } from "@/lib/finAnaCosFinaTerminales";
+import type { FinAnaCosFinaPagoItem } from "@/lib/finAnaCosFinaPagos";
 import { actualizarFinAnaCosFinaSchema } from "@/lib/validations/finAnaCosFina";
 import {
   crearFinAnaCosFinaTerminalSchema,
   editarFinAnaCosFinaTerminalSchema,
   eliminarFinAnaCosFinaTerminalSchema,
 } from "@/lib/validations/finAnaCosFinaTerminal";
+import {
+  crearFinAnaCosFinaPagoSchema,
+  editarFinAnaCosFinaPagoSchema,
+  eliminarFinAnaCosFinaPagoSchema,
+  reordenarFinAnaCosFinaPagosSchema,
+} from "@/lib/validations/finAnaCosFinaPago";
 import {
   actualizarFinAnaCosFina,
   type FinAnaCosFinaItem,
@@ -21,8 +28,21 @@ import {
   eliminarFinAnaCosFinaTerminal,
   listarFinAnaCosFinaTerminales,
 } from "@/services/finAnaCosFinaTerminal.service";
+import {
+  crearFinAnaCosFinaPago,
+  editarFinAnaCosFinaPago,
+  eliminarFinAnaCosFinaPago,
+  listarFinAnaCosFinaPagos,
+  reordenarFinAnaCosFinaPagos,
+} from "@/services/finAnaCosFinaPago.service";
 
 const RUTA_COSTOS_FINANCIEROS = "/finanzas/analisis-mc/costos-financieros";
+const RUTA_MARGEN_CONTRIBUCION = "/finanzas/analisis-mc/margen-contribucion";
+
+function revalidateRutasAnalisisMc(): void {
+  revalidatePath(RUTA_COSTOS_FINANCIEROS);
+  revalidatePath(RUTA_MARGEN_CONTRIBUCION);
+}
 
 function firstZodErrorMessage(error: {
   flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
@@ -81,7 +101,7 @@ export async function crearFinAnaCosFinaTerminalAction(
     return { ok: false, error: res.error };
   }
 
-  revalidatePath(RUTA_COSTOS_FINANCIEROS);
+  revalidateRutasAnalisisMc();
   return { ok: true, data: res.data };
 }
 
@@ -101,7 +121,7 @@ export async function editarFinAnaCosFinaTerminalAction(
     return { ok: false, error: res.error };
   }
 
-  revalidatePath(RUTA_COSTOS_FINANCIEROS);
+  revalidateRutasAnalisisMc();
   return { ok: true, data: res.data };
 }
 
@@ -119,8 +139,102 @@ export async function eliminarFinAnaCosFinaTerminalAction(raw: unknown): Promise
     return { ok: false, error: res.error };
   }
 
-  revalidatePath(RUTA_COSTOS_FINANCIEROS);
+  revalidateRutasAnalisisMc();
   return { ok: true, data: undefined };
+}
+
+export async function listarFinAnaCosFinaPagosAction(): Promise<
+  ActionResult<FinAnaCosFinaPagoItem[]>
+> {
+  const gate = await requireFinanzasLectura();
+  if (gate) return gate;
+
+  try {
+    const data = await listarFinAnaCosFinaPagos();
+    return { ok: true, data };
+  } catch {
+    return { ok: false, error: "No se pudieron cargar las formas de pago." };
+  }
+}
+
+export async function crearFinAnaCosFinaPagoAction(
+  raw: unknown
+): Promise<ActionResult<FinAnaCosFinaPagoItem>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = crearFinAnaCosFinaPagoSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await crearFinAnaCosFinaPago(parsed.data);
+  if (!res.success) {
+    return { ok: false, error: res.error };
+  }
+
+  revalidateRutasAnalisisMc();
+  return { ok: true, data: res.data };
+}
+
+export async function editarFinAnaCosFinaPagoAction(
+  raw: unknown
+): Promise<ActionResult<FinAnaCosFinaPagoItem>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = editarFinAnaCosFinaPagoSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await editarFinAnaCosFinaPago(parsed.data);
+  if (!res.success) {
+    return { ok: false, error: res.error };
+  }
+
+  revalidateRutasAnalisisMc();
+  return { ok: true, data: res.data };
+}
+
+export async function eliminarFinAnaCosFinaPagoAction(
+  raw: unknown
+): Promise<ActionResult<void>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = eliminarFinAnaCosFinaPagoSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await eliminarFinAnaCosFinaPago(parsed.data.id);
+  if (!res.success) {
+    return { ok: false, error: res.error };
+  }
+
+  revalidateRutasAnalisisMc();
+  return { ok: true, data: undefined };
+}
+
+export async function reordenarFinAnaCosFinaPagosAction(
+  raw: unknown
+): Promise<ActionResult<FinAnaCosFinaPagoItem[]>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = reordenarFinAnaCosFinaPagosSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const res = await reordenarFinAnaCosFinaPagos(parsed.data);
+  if (!res.success) {
+    return { ok: false, error: res.error };
+  }
+
+  revalidateRutasAnalisisMc();
+  return { ok: true, data: res.data };
 }
 
 export async function actualizarFinAnaCosFinaAction(
@@ -136,7 +250,7 @@ export async function actualizarFinAnaCosFinaAction(
 
   try {
     const data = await actualizarFinAnaCosFina(parsed.data);
-    revalidatePath(RUTA_COSTOS_FINANCIEROS);
+    revalidateRutasAnalisisMc();
     return { ok: true, data };
   } catch {
     return { ok: false, error: "No se pudo actualizar el costo financiero." };

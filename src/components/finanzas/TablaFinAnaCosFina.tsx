@@ -18,7 +18,6 @@ import { actualizarFinAnaCosFinaAction } from "@/actions/finAnaCosFina";
 import {
   cxTotalConIvaFinAnaCosFina,
   cxTotalSinIvaFinAnaCosFina,
-  etiquetaPagoFinAnaCosFina,
   fmtPorcentajeDosDecimalesFinAnaCosFina,
 } from "@/lib/finAnaCosFina";
 import {
@@ -98,7 +97,7 @@ function CeldaToggleBooleano({
   const [saving, startTransition] = useTransition();
   const activo = fila[campo];
   const etiquetaAccion = ETIQUETAS_CAMPO_BOOLEANO[campo];
-  const contextoFila = `${fila.terminalNombre} ${etiquetaPagoFinAnaCosFina(fila.pago)}`;
+  const contextoFila = `${fila.terminalNombre} ${fila.pagoNombre}`;
 
   if (!esEditor) {
     return (
@@ -202,7 +201,7 @@ function CeldaDiasAcreditacion({
         readOnly={!esEditor}
         disabled={saving}
         className={cn(INPUT_FILA_PLANO_CLASS, "w-20")}
-        aria-label={`Días de acreditación ${fila.terminalNombre} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+        aria-label={`Días de acreditación ${fila.terminalNombre} ${fila.pagoNombre}`}
       />
     </div>
   );
@@ -262,7 +261,7 @@ function CeldaDecimalDosDecimales({
         readOnly={!esEditor}
         disabled={saving}
         className={INPUT_FILA_PORCENTAJE_CLASS}
-        aria-label={`${etiquetaCampo} ${fila.terminalNombre} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+        aria-label={`${etiquetaCampo} ${fila.terminalNombre} ${fila.pagoNombre}`}
       />
     </div>
   );
@@ -329,7 +328,7 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
                   {fila.terminalNombre}
                 </TableCell>
                 <TableCell className="celda-datos text-center text-xs">
-                  {etiquetaPagoFinAnaCosFina(fila.pago)}
+                  {fila.pagoNombre}
                 </TableCell>
                 <TableCell className="celda-datos">
                   <CeldaDiasAcreditacion
@@ -368,13 +367,13 @@ export default function TablaFinAnaCosFina({ filas, esEditor, onFilaActualizada 
                 <TableCell className="celda-datos">
                   <CeldaPorcentajeLectura
                     valor={cxTotalSinIvaFinAnaCosFina(fila.impCheque, fila.arancel, fila.costoFinanciero)}
-                    etiqueta={`Cx. total sin IVA ${fila.terminalNombre} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+                    etiqueta={`Cx. total sin IVA ${fila.terminalNombre} ${fila.pagoNombre}`}
                   />
                 </TableCell>
                 <TableCell className="celda-datos">
                   <CeldaPorcentajeLectura
                     valor={cxTotalConIvaFinAnaCosFina(fila.impCheque, fila.arancel, fila.costoFinanciero)}
-                    etiqueta={`Cx. total con IVA ${fila.terminalNombre} ${etiquetaPagoFinAnaCosFina(fila.pago)}`}
+                    etiqueta={`Cx. total con IVA ${fila.terminalNombre} ${fila.pagoNombre}`}
                   />
                 </TableCell>
               </TableRow>

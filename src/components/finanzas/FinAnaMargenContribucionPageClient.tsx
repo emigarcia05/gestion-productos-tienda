@@ -1,13 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PackageSearch } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { PackageSearch, Settings2 } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaFinAnaMargenContribucion, {
   INPUTS_MARGEN_CONTRIBUCION_VACIOS,
   inputsMargenContribucionDesdeNumeros,
 } from "@/components/finanzas/TablaFinAnaMargenContribucion";
 import ElegirProductoMargenContribucionModal from "@/components/finanzas/ElegirProductoMargenContribucionModal";
+import GestionarPagosFinAnaCosFinaModal from "@/components/finanzas/GestionarPagosFinAnaCosFinaModal";
 import FilterBar, {
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
@@ -27,29 +29,34 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import {
-  FIN_ANA_MC_FORMAS_PAGO,
   FIN_ANA_MC_MODOS_EVALUACION,
   FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD,
   FIN_ANA_MC_TIPOS_COMPROBANTE,
+  crearDescuentoPctPorFormaPagoVacios,
   etiquetaModoEvaluacionMargenContribucion,
   etiquetaTipoComprobanteVentaMargenContribucion,
+  idsFormasPagoMargenContribucion,
   mapCxFinancieroPorFormaPago,
   type ModoEvaluacionMargenContribucion,
   type TipoComprobanteVentaMargenContribucion,
 } from "@/lib/finAnaMargenContribucion";
+import type { FinAnaCosFinaPagoItem } from "@/lib/finAnaCosFinaPagos";
 import { getProductoDatosMargenContribucionAction } from "@/actions/finAnaMargenContribucion";
+import { actualizarDescuentoFpMargenContribucionAction } from "@/actions/finAnaMargenContribucion";
 import { MARGEN_PX_LISTA_MAX_CENTS } from "@/lib/pxListasPreciosFormat";
-import {
-  parsePorcentajeCentNormalized,
-} from "@/lib/porcentajeCentMask";
+import { parsePorcentajeCentNormalized } from "@/lib/porcentajeCentMask";
 import type { FinAnaCosFinaItem } from "@/services/finAnaCosFina.service";
 import type { FinAnaCosFinaTerminalItem } from "@/lib/finAnaCosFinaTerminales";
 import type { ProductoTiendaRowBusqueda } from "@/services/productosTienda.service";
+import type { DescuentoFpMargenContribucionMap } from "@/services/finAnaMcDescuentoFp.service";
+import type { FormaPagoMargenContribucion } from "@/lib/finAnaMargenContribucion";
 import { toast } from "sonner";
 
 interface Props {
   filasCostosFinancieros: FinAnaCosFinaItem[];
   terminales: FinAnaCosFinaTerminalItem[];
+  pagos: FinAnaCosFinaPagoItem[];
+  descuentosPorFormaPago: DescuentoFpMargenContribucionMap;
   esEditor: boolean;
 }
 
@@ -80,25 +87,47 @@ function inputsPxListaEstimadoPorcUtilidad(
   });
 }
 
+function inputsMargenContribucionIniciales(
+  formasPago: FormaPagoMargenContribucion[],
+  descuentosPorFormaPago: DescuentoFpMargenContribucionMap
+) {
+  const descuentos = {
+    ...crearDescuentoPctPorFormaPagoVacios(formasPago),
+    ...descuentosPorFormaPago,
+  };
+  return inputsMargenContribucionDesdeNumeros({
+    pxLista: FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD,
+    descuentoPctPorFormaPago: descuentos,
+    formasPago,
+  });
+}
+
 export default function FinAnaMargenContribucionPageClient({
   filasCostosFinancieros,
   terminales,
+  pagos,
+  descuentosPorFormaPago,
   esEditor,
 }: Props) {
+  const router = useRouter();
+  const formasPago = useMemo(() => idsFormasPagoMargenContribucion(pagos), [pagos]);
   const [config, setConfig] = useState(CONFIG_MARGEN_CONTRIBUCION_VACIA);
+  const [descuentosBase, setDescuentosBase] = useState(descuentosPorFormaPago);
   const [inputs, setInputs] = useState(() =>
-    inputsPxListaEstimadoPorcUtilidad(INPUTS_MARGEN_CONTRIBUCION_VACIOS)
+    inputsMargenContribucionIniciales(formasPago, descuentosPorFormaPago)
   );
   const [modalProductoAbierto, setModalProductoAbierto] = useState(false);
+  const [modalGestionarPagosAbierto, setModalGestionarPagosAbierto] = useState(false);
   const [cargandoProducto, setCargandoProducto] = useState(false);
 
   const cxFinancieroPorFormaPago = useMemo(
     () =>
       mapCxFinancieroPorFormaPago(
         filasCostosFinancieros,
+        pagos,
         config.terminalId || undefined
       ),
-    [filasCostosFinancieros, config.terminalId]
+    [filasCostosFinancieros, pagos, config.terminalId]
   );
 
   const porcUtilidadPct = useMemo(() => {
@@ -159,7 +188,36 @@ export default function FinAnaMargenContribucionPageClient({
 
   function limpiarFiltros() {
     setConfig(CONFIG_MARGEN_CONTRIBUCION_VACIA);
-    setInputs(inputsPxListaEstimadoPorcUtilidad(INPUTS_MARGEN_CONTRIBUCION_VACIOS));
+    setInputs(inputsMargenContribucionIniciales(formasPago, descuentosBase));
+  }
+
+  function handleCatalogoPagosChanged() {
+    router.refresh();
+  }
+
+  async function cambiarDescuentoPorFormaPago(
+    formaPago: FormaPagoMargenContribucion,
+    descuentoPct: number
+  ) {
+    setInputs((prev) => ({
+      ...prev,
+      descuentoPctPorFormaPago: {
+        ...prev.descuentoPctPorFormaPago,
+        [formaPago]: descuentoPct,
+      },
+    }));
+
+    if (!esEditor) return;
+
+    const res = await actualizarDescuentoFpMargenContribucionAction({
+      pagoId: formaPago,
+      descuentoPct,
+    });
+    if (!res.ok) {
+      toast.error(res.error ?? "No se pudo guardar el descuento.");
+      return;
+    }
+    setDescuentosBase(res.data);
   }
 
   function cambiarModoEvaluacion(modo: ModoEvaluacionMargenContribucion) {
@@ -181,6 +239,16 @@ export default function FinAnaMargenContribucionPageClient({
       <ClassicFilteredTableLayout
         title="Finanzas"
         subtitle="Margen Contribución"
+        actions={
+          <Button
+            type="button"
+            onClick={() => setModalGestionarPagosAbierto(true)}
+            className="h-10 gap-2 px-4"
+          >
+            <Settings2 className="size-4 shrink-0" aria-hidden />
+            Gestionar Pagos
+          </Button>
+        }
         filters={
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilterRowSelection className="w-full min-w-0">
@@ -352,16 +420,26 @@ export default function FinAnaMargenContribucionPageClient({
         filtersAriaLabel="Configuración de margen contribución"
       >
         <TablaFinAnaMargenContribucion
-          formasPago={FIN_ANA_MC_FORMAS_PAGO}
+          formasPago={formasPago}
+          pagosCatalogo={pagos}
           cxFinancieroPorFormaPago={cxFinancieroPorFormaPago}
           inputs={inputs}
           onInputsChange={setInputs}
+          onDescuentoPorFormaPagoChange={cambiarDescuentoPorFormaPago}
           porcUtilidadPct={porcUtilidadPct}
           tipoComprobante={config.tipoComprobante}
           pxListaEditable={pxListaEditable}
           esEditor={esEditor}
         />
       </ClassicFilteredTableLayout>
+
+      <GestionarPagosFinAnaCosFinaModal
+        open={modalGestionarPagosAbierto}
+        onOpenChange={setModalGestionarPagosAbierto}
+        pagosIniciales={pagos}
+        esEditor={esEditor}
+        onCatalogoChanged={handleCatalogoPagosChanged}
+      />
 
       <ElegirProductoMargenContribucionModal
         open={modalProductoAbierto}

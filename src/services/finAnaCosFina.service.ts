@@ -1,12 +1,15 @@
 import { Prisma } from "@prisma/client";
-import type { FinAnaCosFinaPago } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { FIN_ANA_COS_FINA_PAGOS, ordenPagoFinAnaCosFina } from "@/lib/finAnaCosFina";
 import type { ActualizarFinAnaCosFinaInput } from "@/lib/validations/finAnaCosFina";
 import {
   ensureFinAnaCosFinaTerminalesSeed,
   listarFinAnaCosFinaTerminales,
 } from "@/services/finAnaCosFinaTerminal.service";
+import {
+  ensureFinAnaCosFinaPagosSeed,
+  listarFinAnaCosFinaPagos,
+} from "@/services/finAnaCosFinaPago.service";
+import { filtrarPagosCostosFinancieros } from "@/lib/finAnaCosFinaPagos";
 
 export type FinAnaCosFinaItem = {
   id: string;
@@ -15,7 +18,9 @@ export type FinAnaCosFinaItem = {
   terminalId: string;
   terminalNombre: string;
   terminalOrden: number;
-  pago: FinAnaCosFinaPago;
+  pagoId: string;
+  pagoNombre: string;
+  pagoOrden: number;
   diasAcreditacion: number | null;
   arancel: number;
   costoFinanciero: number;
@@ -30,11 +35,12 @@ function mapRow(row: {
   habilitado: boolean;
   impCheque: boolean;
   terminalId: string;
-  pago: FinAnaCosFinaPago;
+  pagoId: string;
   diasAcreditacion: number | null;
   arancel: Prisma.Decimal;
   costoFinanciero: Prisma.Decimal;
   terminal: { nombre: string; orden: number };
+  pago: { nombre: string; orden: number };
 }): FinAnaCosFinaItem {
   return {
     id: row.id,
@@ -43,7 +49,9 @@ function mapRow(row: {
     terminalId: row.terminalId,
     terminalNombre: row.terminal.nombre.toUpperCase(),
     terminalOrden: row.terminal.orden,
-    pago: row.pago,
+    pagoId: row.pagoId,
+    pagoNombre: row.pago.nombre.toUpperCase(),
+    pagoOrden: row.pago.orden,
     diasAcreditacion: row.diasAcreditacion,
     arancel: decimalToNumber(row.arancel),
     costoFinanciero: decimalToNumber(row.costoFinanciero),
@@ -54,25 +62,27 @@ function sortItems(items: FinAnaCosFinaItem[]): FinAnaCosFinaItem[] {
   return [...items].sort((a, b) => {
     const byTerminal = a.terminalOrden - b.terminalOrden;
     if (byTerminal !== 0) return byTerminal;
-    return ordenPagoFinAnaCosFina(a.pago) - ordenPagoFinAnaCosFina(b.pago);
+    return a.pagoOrden - b.pagoOrden;
   });
 }
 
 /** Asegura la matriz terminal × pago (idempotente; útil si la migración no corrió en un entorno). */
 export async function ensureFinAnaCosFinaSeed(): Promise<void> {
   await ensureFinAnaCosFinaTerminalesSeed();
+  await ensureFinAnaCosFinaPagosSeed();
   const terminales = await listarFinAnaCosFinaTerminales();
+  const pagos = filtrarPagosCostosFinancieros(await listarFinAnaCosFinaPagos());
 
   const existentes = await prisma.finAnaCosFina.findMany({
-    select: { terminalId: true, pago: true },
+    select: { terminalId: true, pagoId: true },
   });
-  const claves = new Set(existentes.map((row) => `${row.terminalId}:${row.pago}`));
-  const faltantes: { terminalId: string; pago: FinAnaCosFinaPago }[] = [];
+  const claves = new Set(existentes.map((row) => `${row.terminalId}:${row.pagoId}`));
+  const faltantes: { terminalId: string; pagoId: string }[] = [];
 
   for (const terminal of terminales) {
-    for (const pago of FIN_ANA_COS_FINA_PAGOS) {
-      if (!claves.has(`${terminal.id}:${pago}`)) {
-        faltantes.push({ terminalId: terminal.id, pago });
+    for (const pago of pagos) {
+      if (!claves.has(`${terminal.id}:${pago.id}`)) {
+        faltantes.push({ terminalId: terminal.id, pagoId: pago.id });
       }
     }
   }
@@ -82,7 +92,7 @@ export async function ensureFinAnaCosFinaSeed(): Promise<void> {
   await prisma.finAnaCosFina.createMany({
     data: faltantes.map((row) => ({
       terminalId: row.terminalId,
-      pago: row.pago,
+      pagoId: row.pagoId,
       habilitado: true,
       impCheque: false,
       arancel: new Prisma.Decimal(0),
@@ -97,6 +107,7 @@ export async function listarFinAnaCosFina(): Promise<FinAnaCosFinaItem[]> {
   const rows = await prisma.finAnaCosFina.findMany({
     include: {
       terminal: { select: { nombre: true, orden: true } },
+      pago: { select: { nombre: true, orden: true } },
     },
   });
   return sortItems(rows.map(mapRow));
@@ -129,6 +140,7 @@ export async function actualizarFinAnaCosFina(
     data,
     include: {
       terminal: { select: { nombre: true, orden: true } },
+      pago: { select: { nombre: true, orden: true } },
     },
   });
 

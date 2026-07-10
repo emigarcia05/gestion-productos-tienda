@@ -6,6 +6,7 @@ import { Calculator, Settings2 } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaFinAnaCosFina, { type FinAnaCosFinaFila } from "@/components/finanzas/TablaFinAnaCosFina";
 import GestionarTerminalesFinAnaCosFinaModal from "@/components/finanzas/GestionarTerminalesFinAnaCosFinaModal";
+import GestionarPagosFinAnaCosFinaModal from "@/components/finanzas/GestionarPagosFinAnaCosFinaModal";
 import CalculoCxTotalFinAnaCosFinaModal from "@/components/finanzas/CalculoCxTotalFinAnaCosFinaModal";
 import FilterBar, {
   FILTER_COUNT_CLASS,
@@ -25,15 +26,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import {
-  etiquetaPagoFinAnaCosFina,
-  FIN_ANA_COS_FINA_PAGOS,
-} from "@/lib/finAnaCosFina";
+import { filtrarPagosCostosFinancieros, type FinAnaCosFinaPagoItem } from "@/lib/finAnaCosFinaPagos";
 import type { FinAnaCosFinaTerminalItem } from "@/lib/finAnaCosFinaTerminales";
 
 interface Props {
   filas: FinAnaCosFinaFila[];
   terminales: FinAnaCosFinaTerminalItem[];
+  pagos: FinAnaCosFinaPagoItem[];
   esEditor: boolean;
 }
 
@@ -41,13 +40,15 @@ function etiquetaFiltroMayusculas(texto: string): string {
   return texto.toLocaleUpperCase("es");
 }
 
-export default function FinAnaCosFinaPageClient({ filas, terminales, esEditor }: Props) {
+export default function FinAnaCosFinaPageClient({ filas, terminales, pagos, esEditor }: Props) {
   const router = useRouter();
+  const pagosCostos = useMemo(() => filtrarPagosCostosFinancieros(pagos), [pagos]);
   const [filasOverrides, setFilasOverrides] = useState<Record<string, FinAnaCosFinaFila>>({});
   const [filtroTerminalId, setFiltroTerminalId] = useState("");
   const [filtroPago, setFiltroPago] = useState("");
   const [filtroHabilitado, setFiltroHabilitado] = useState("");
   const [openGestionarTerminales, setOpenGestionarTerminales] = useState(false);
+  const [openGestionarPagos, setOpenGestionarPagos] = useState(false);
   const [openCalculoCxTotal, setOpenCalculoCxTotal] = useState(false);
 
   const filasState = useMemo(
@@ -59,7 +60,7 @@ export default function FinAnaCosFinaPageClient({ filas, terminales, esEditor }:
     () =>
       filasState.filter((fila) => {
         if (filtroTerminalId && fila.terminalId !== filtroTerminalId) return false;
-        if (filtroPago && fila.pago !== filtroPago) return false;
+        if (filtroPago && fila.pagoId !== filtroPago) return false;
         if (filtroHabilitado === "si" && !fila.habilitado) return false;
         if (filtroHabilitado === "no" && fila.habilitado) return false;
         return true;
@@ -82,6 +83,11 @@ export default function FinAnaCosFinaPageClient({ filas, terminales, esEditor }:
     router.refresh();
   }
 
+  function handleCatalogoPagosChanged() {
+    setFilasOverrides({});
+    router.refresh();
+  }
+
   return (
     <>
       <ClassicFilteredTableLayout
@@ -96,6 +102,14 @@ export default function FinAnaCosFinaPageClient({ filas, terminales, esEditor }:
             >
               <Calculator className="size-4 shrink-0" aria-hidden />
               Cálculo Cx. Total
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setOpenGestionarPagos(true)}
+              className="h-10 gap-2 px-4"
+            >
+              <Settings2 className="size-4 shrink-0" aria-hidden />
+              Gestionar Pagos
             </Button>
             <Button
               type="button"
@@ -152,9 +166,9 @@ export default function FinAnaCosFinaPageClient({ filas, terminales, esEditor }:
                       align="start"
                       className="select-content-filtro"
                     >
-                      {FIN_ANA_COS_FINA_PAGOS.map((pago) => (
-                        <SelectItem key={pago} value={pago}>
-                          {etiquetaFiltroMayusculas(etiquetaPagoFinAnaCosFina(pago))}
+                      {pagosCostos.map((pago) => (
+                        <SelectItem key={pago.id} value={pago.id}>
+                          {etiquetaFiltroMayusculas(pago.nombre)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -201,6 +215,14 @@ export default function FinAnaCosFinaPageClient({ filas, terminales, esEditor }:
           onFilaActualizada={handleFilaActualizada}
         />
       </ClassicFilteredTableLayout>
+
+      <GestionarPagosFinAnaCosFinaModal
+        open={openGestionarPagos}
+        onOpenChange={setOpenGestionarPagos}
+        pagosIniciales={pagos}
+        esEditor={esEditor}
+        onCatalogoChanged={handleCatalogoPagosChanged}
+      />
 
       <GestionarTerminalesFinAnaCosFinaModal
         open={openGestionarTerminales}

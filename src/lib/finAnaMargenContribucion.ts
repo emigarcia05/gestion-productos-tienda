@@ -1,32 +1,30 @@
-import type { FinAnaCosFinaPago } from "@prisma/client";
+import {
+  buscarPagoPorId,
+  etiquetaPagoDesdeItem,
+  filtrarPagosMargenContribucion,
+  type FinAnaCosFinaPagoItem,
+  type FormaPagoMargenContribucion,
+} from "@/lib/finAnaCosFinaPagos";
 import {
   cxTotalConIvaFinAnaCosFina,
-  etiquetaPagoFinAnaCosFina,
   FIN_ANA_COS_FINA_IVA_FACTOR,
-  FIN_ANA_COS_FINA_PAGOS,
 } from "@/lib/finAnaCosFina";
 import { roundPorcentaje0a100 } from "@/lib/format";
 
-/** Forma de pago adicional (sin costo financiero en Costos Financieros). */
-export const FIN_ANA_MC_FORMA_PAGO_EFECTIVO = "EFECTIVO" as const;
+export type { FormaPagoMargenContribucion } from "@/lib/finAnaCosFinaPagos";
 
-export type FormaPagoMargenContribucion =
-  | FinAnaCosFinaPago
-  | typeof FIN_ANA_MC_FORMA_PAGO_EFECTIVO;
-
-/** Columnas de la grilla: modalidades de Costos Financieros + Efectivo. */
-export const FIN_ANA_MC_FORMAS_PAGO: FormaPagoMargenContribucion[] = [
-  ...FIN_ANA_COS_FINA_PAGOS,
-  FIN_ANA_MC_FORMA_PAGO_EFECTIVO,
-];
-
-const ETIQUETA_EFECTIVO = "Efectivo";
+export function idsFormasPagoMargenContribucion(
+  pagos: FinAnaCosFinaPagoItem[]
+): FormaPagoMargenContribucion[] {
+  return filtrarPagosMargenContribucion(pagos).map((p) => p.id);
+}
 
 export function etiquetaFormaPagoMargenContribucion(
-  forma: FormaPagoMargenContribucion
+  formaPagoId: FormaPagoMargenContribucion,
+  pagos: FinAnaCosFinaPagoItem[]
 ): string {
-  if (forma === FIN_ANA_MC_FORMA_PAGO_EFECTIVO) return ETIQUETA_EFECTIVO;
-  return etiquetaPagoFinAnaCosFina(forma);
+  const item = buscarPagoPorId(pagos, formaPagoId);
+  return item ? etiquetaPagoDesdeItem(item) : formaPagoId;
 }
 
 /** Filas de datos de la grilla. */
@@ -90,7 +88,7 @@ export function esFilaDescuentoPorFormaPagoMargenContribucion(
 }
 
 export function crearDescuentoPctPorFormaPagoVacios(
-  formasPago: readonly FormaPagoMargenContribucion[] = FIN_ANA_MC_FORMAS_PAGO
+  formasPago: readonly FormaPagoMargenContribucion[] = []
 ): Record<FormaPagoMargenContribucion, number> {
   const map = {} as Record<FormaPagoMargenContribucion, number>;
   for (const forma of formasPago) {
@@ -113,6 +111,10 @@ export const FIN_ANA_MC_MODOS_EVALUACION: ModoEvaluacionMargenContribucion[] = [
 
 /** PX LISTA de referencia en modo **PORC. UTILIDAD** (simulador). */
 export const FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD = 100;
+
+/** Rango del descuento % por forma de pago (entero, puede ser negativo). */
+export const FIN_ANA_MC_DESCUENTO_MIN = -100;
+export const FIN_ANA_MC_DESCUENTO_MAX = 100;
 
 const ETIQUETAS_MODO_EVALUACION: Record<ModoEvaluacionMargenContribucion, string> = {
   producto: "PRODUCTO",
@@ -294,7 +296,7 @@ export type FilaCostosFinancierosMargenContribucion = {
   habilitado: boolean;
   impCheque: boolean;
   terminalId: string;
-  pago: FinAnaCosFinaPago;
+  pagoId: string;
   arancel: number;
   costoFinanciero: number;
 };
@@ -322,6 +324,7 @@ function promedioCxTotalConIvaMargenContribucion(
  */
 export function mapCxFinancieroPorFormaPago(
   filas: FilaCostosFinancierosMargenContribucion[],
+  pagosCatalogo: FinAnaCosFinaPagoItem[],
   terminalId?: string
 ): CxFinancieroPorFormaPago {
   const habilitadas = filas.filter(
@@ -331,12 +334,14 @@ export function mapCxFinancieroPorFormaPago(
 
   const map = {} as CxFinancieroPorFormaPago;
 
-  for (const pago of FIN_ANA_COS_FINA_PAGOS) {
-    const delPago = habilitadas.filter((fila) => fila.pago === pago);
-    map[pago] = promedioCxTotalConIvaMargenContribucion(delPago);
+  for (const pago of filtrarPagosMargenContribucion(pagosCatalogo)) {
+    if (pago.enCostosFinancieros) {
+      const delPago = habilitadas.filter((fila) => fila.pagoId === pago.id);
+      map[pago.id] = promedioCxTotalConIvaMargenContribucion(delPago);
+    } else {
+      map[pago.id] = 0;
+    }
   }
-
-  map[FIN_ANA_MC_FORMA_PAGO_EFECTIVO] = 0;
 
   return map;
 }
