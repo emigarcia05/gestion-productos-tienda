@@ -1033,6 +1033,28 @@ model FinAnaMcDescuentoFp {
   @@map("fin_ana_mc_descuento_fp")
 }
 
+// ─── Marketing · Publicaciones (catálogos) ─────────────────────────────────
+
+/** Catálogo de redes sociales para publicaciones (`red_social_nombre` único). */
+model MktPublicacionRed {
+  id               String   @id @default(cuid())
+  redSocialNombre  String   @unique(map: "mkt_publicaciones_redes_red_social_nombre_key") @map("red_social_nombre")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("mkt_publicaciones_redes")
+}
+
+/** Catálogo de tipos de publicación (`tipo_publicacion_nombre` único). */
+model MktPublicacionTipo {
+  id                     String   @id @default(cuid())
+  tipoPublicacionNombre  String   @unique(map: "mkt_publicaciones_tipo_tipo_publicacion_nombre_key") @map("tipo_publicacion_nombre")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@map("mkt_publicaciones_tipo")
+}
+
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────
 // Persistencia para que el polling en sidebar sea consistente incluso en serverless.
 model SyncDuxStatus {

@@ -34,6 +34,9 @@ import {
   PackageSearch,
   Layers,
   PackageCheck,
+  Megaphone,
+  CalendarRange,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -49,12 +52,14 @@ import type { Rol } from "@/lib/permisos";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
 import { GP_ROUTES, getGpSidebarModule, isGpRouteActive } from "@/lib/gestionProductosRoutes";
+import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 
 const iconClass = "h-5 w-5 shrink-0";
 
 type ModuleId = "pedidos" | "ayuda-vendedor" | "analisis-precios";
 type FinanzasModuleId = "balance" | "finanzas-main" | "analisis-mc";
-type SidebarModuleId = ModuleId | FinanzasModuleId;
+type MarketingModuleId = "publicaciones";
+type SidebarModuleId = ModuleId | FinanzasModuleId | MarketingModuleId;
 
 interface SubmoduleItem {
   /** Omitir en agrupadores solo desplegables (sin página propia). */
@@ -330,10 +335,35 @@ const FINANZAS_MODULES: NavModule[] = [
   },
 ];
 
+const MARKETING_MODULES: NavModule[] = [
+  {
+    id: "publicaciones",
+    label: "PUBLICACIONES",
+    icon: <Megaphone className={iconClass} />,
+    submodules: [
+      {
+        href: MARKETING_ROUTES.publicaciones.calendario,
+        label: "Calendario de Publicaciones",
+        icon: <CalendarRange className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.marketing.acceso,
+      },
+      {
+        href: MARKETING_ROUTES.publicaciones.ideas,
+        label: "Ideas",
+        icon: <Lightbulb className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.marketing.acceso,
+      },
+    ],
+  },
+];
+
 function getOpenModule(pathname: string): SidebarModuleId {
   if (pathname.startsWith("/finanzas/balance")) return "balance";
   if (pathname.startsWith("/finanzas/analisis-mc")) return "analisis-mc";
   if (pathname.startsWith("/finanzas")) return "finanzas-main";
+  if (pathname.startsWith("/marketing/publicaciones") || pathname === "/marketing") {
+    return "publicaciones";
+  }
   return getGpSidebarModule(pathname);
 }
 
@@ -357,6 +387,12 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
     return pathname === "/finanzas/analisis-mc/margen-contribucion";
   if (href === "/finanzas/analisis-mc/costos-financieros")
     return pathname === "/finanzas/analisis-mc/costos-financieros";
+  if (href === MARKETING_ROUTES.publicaciones.calendario) {
+    return pathname === MARKETING_ROUTES.publicaciones.calendario;
+  }
+  if (href === MARKETING_ROUTES.publicaciones.ideas) {
+    return pathname === MARKETING_ROUTES.publicaciones.ideas;
+  }
   return pathname === href;
 }
 
@@ -392,7 +428,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
       ? MODULES
       : mainAreaId === "finanzas"
         ? FINANZAS_MODULES
-        : [];
+        : mainAreaId === "marketing"
+          ? MARKETING_MODULES
+          : [];
 
   const visibleModules: NavModule[] = modulesForArea.filter((module) => {
     if (module.href && module.permiso && puede(rol, module.permiso)) return true;
@@ -409,7 +447,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
         ? MODULES
         : mainAreaId === "finanzas"
           ? FINANZAS_MODULES
-          : [];
+          : mainAreaId === "marketing"
+            ? MARKETING_MODULES
+            : [];
     const autoOpenByModule = new Map<SidebarModuleId, string>();
     for (const navModule of areaModules) {
       for (const sub of navModule.submodules) {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Boxes, Landmark, type LucideIcon } from "lucide-react";
+import { BarChart3, Boxes, Landmark, Megaphone, type LucideIcon } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,7 @@ const areaIcons: Record<MainAppAreaId, LucideIcon> = {
   "gestion-productos": Boxes,
   finanzas: Landmark,
   "estadisticas-productos": BarChart3,
+  marketing: Megaphone,
 };
 
 export interface SidebarMainAppAreaProps {
@@ -64,7 +65,7 @@ export interface SidebarMainAppAreaProps {
   showLabel?: boolean;
   /**
    * Si es `false` (rol simple), el modal del logo solo lista **Gestión Productos**.
-   * Finanzas y Estadísticas Productos quedan reservados para `editor`.
+   * Finanzas, Estadísticas Productos y Marketing quedan reservados para `editor`.
    * @default true (compatibilidad; el layout pasa `rol === "editor"`).
    */
   esEditor?: boolean;

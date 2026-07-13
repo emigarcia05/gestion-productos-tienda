@@ -1,0 +1,179 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
+import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
+import { PERMISOS, puede } from "@/lib/permisos";
+import { esEditor, getRol } from "@/lib/sesion";
+import type { ActionResult } from "@/lib/types";
+import {
+  crearMktCatalogoNombreSchema,
+  editarMktCatalogoNombreSchema,
+  eliminarMktCatalogoNombreSchema,
+} from "@/lib/validations/mktPublicacionesCatalogo";
+import {
+  crearMktPublicacionRed,
+  crearMktPublicacionTipo,
+  editarMktPublicacionRed,
+  editarMktPublicacionTipo,
+  eliminarMktPublicacionRed,
+  eliminarMktPublicacionTipo,
+  listarMktPublicacionRedes,
+  listarMktPublicacionTipos,
+} from "@/services/mktPublicacionesCatalogo.service";
+
+function firstZodErrorMessage(error: {
+  flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
+}): string {
+  const flattened = error.flatten();
+  return (
+    [...Object.values(flattened.fieldErrors).flat(), ...flattened.formErrors][0] ??
+    "Datos inválidos."
+  );
+}
+
+function revalidateMarketingPublicaciones(): void {
+  revalidatePath(MARKETING_ROUTES.publicaciones.calendario);
+  revalidatePath(MARKETING_ROUTES.publicaciones.ideas);
+}
+
+async function requireMarketingLectura(): Promise<{ ok: false; error: string } | null> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.marketing.acceso)) {
+    return { ok: false, error: "Sin permisos para marketing." };
+  }
+  return null;
+}
+
+async function requireEditorMarketing(): Promise<{ ok: false; error: string } | null> {
+  const gate = await requireMarketingLectura();
+  if (gate) return gate;
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+  return null;
+}
+
+// ─── Redes ───────────────────────────────────────────────────────────────────
+
+export async function listarMktPublicacionRedesAction(): Promise<
+  ActionResult<MktCatalogoNombreItem[]>
+> {
+  const gate = await requireMarketingLectura();
+  if (gate) return gate;
+  try {
+    return { ok: true, data: await listarMktPublicacionRedes() };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudieron listar las redes.",
+    };
+  }
+}
+
+export async function crearMktPublicacionRedAction(
+  raw: unknown
+): Promise<ActionResult<MktCatalogoNombreItem>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = crearMktCatalogoNombreSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await crearMktPublicacionRed(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateMarketingPublicaciones();
+  return { ok: true, data: res.data };
+}
+
+export async function editarMktPublicacionRedAction(
+  raw: unknown
+): Promise<ActionResult<MktCatalogoNombreItem>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = editarMktCatalogoNombreSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await editarMktPublicacionRed(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateMarketingPublicaciones();
+  return { ok: true, data: res.data };
+}
+
+export async function eliminarMktPublicacionRedAction(
+  raw: unknown
+): Promise<ActionResult<{ id: string }>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = eliminarMktCatalogoNombreSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await eliminarMktPublicacionRed(parsed.data.id);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateMarketingPublicaciones();
+  return { ok: true, data: res.data };
+}
+
+// ─── Tipos ───────────────────────────────────────────────────────────────────
+
+export async function listarMktPublicacionTiposAction(): Promise<
+  ActionResult<MktCatalogoNombreItem[]>
+> {
+  const gate = await requireMarketingLectura();
+  if (gate) return gate;
+  try {
+    return { ok: true, data: await listarMktPublicacionTipos() };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudieron listar los tipos.",
+    };
+  }
+}
+
+export async function crearMktPublicacionTipoAction(
+  raw: unknown
+): Promise<ActionResult<MktCatalogoNombreItem>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = crearMktCatalogoNombreSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await crearMktPublicacionTipo(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateMarketingPublicaciones();
+  return { ok: true, data: res.data };
+}
+
+export async function editarMktPublicacionTipoAction(
+  raw: unknown
+): Promise<ActionResult<MktCatalogoNombreItem>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = editarMktCatalogoNombreSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await editarMktPublicacionTipo(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateMarketingPublicaciones();
+  return { ok: true, data: res.data };
+}
+
+export async function eliminarMktPublicacionTipoAction(
+  raw: unknown
+): Promise<ActionResult<{ id: string }>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = eliminarMktCatalogoNombreSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await eliminarMktPublicacionTipo(parsed.data.id);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateMarketingPublicaciones();
+  return { ok: true, data: res.data };
+}

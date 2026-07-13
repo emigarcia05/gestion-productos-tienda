@@ -4,8 +4,13 @@
  */
 
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 
-export type MainAppAreaId = "gestion-productos" | "finanzas" | "estadisticas-productos";
+export type MainAppAreaId =
+  | "gestion-productos"
+  | "finanzas"
+  | "estadisticas-productos"
+  | "marketing";
 
 export interface MainAppAreaDefinition {
   id: MainAppAreaId;
@@ -36,6 +41,12 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
     statusLabel: "A construir",
     href: "/estadisticas-productos",
   },
+  {
+    id: "marketing",
+    label: "Marketing",
+    statusLabel: "A construir",
+    href: MARKETING_ROUTES.defaultEntry,
+  },
 ];
 
 export function getMainAppAreaIdFromPathname(pathname: string): MainAppAreaId {
@@ -50,6 +61,9 @@ export function getMainAppAreaIdFromPathname(pathname: string): MainAppAreaId {
     pathname.startsWith("/estadisticas-productos/")
   ) {
     return "estadisticas-productos";
+  }
+  if (pathname === "/marketing" || pathname.startsWith("/marketing/")) {
+    return "marketing";
   }
   return "gestion-productos";
 }

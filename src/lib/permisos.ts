@@ -125,6 +125,11 @@ export const PERMISOS = {
     acceso: { simple: true, editor: true },
   },
 
+  // ─── Área /marketing ──────────────────────────────────────────────────────
+  marketing: {
+    acceso: { simple: false, editor: true },
+  },
+
 } as const;
 
 /**
