@@ -20,6 +20,21 @@ export const eliminarMktCatalogoNombreSchema = z.object({
   id: prismaCuidSchema,
 });
 
+const contenidoIdsPermitidosSchema = z.array(prismaCuidSchema).default([]);
+
+export const crearMktPublicacionTipoSchema = z.object({
+  nombre: nombreMktCatalogoSchema,
+  contenidoIdsPermitidos: contenidoIdsPermitidosSchema,
+});
+
+export const editarMktPublicacionTipoSchema = z.object({
+  id: prismaCuidSchema,
+  nombre: nombreMktCatalogoSchema,
+  contenidoIdsPermitidos: contenidoIdsPermitidosSchema,
+});
+
 export type CrearMktCatalogoNombreInput = z.infer<typeof crearMktCatalogoNombreSchema>;
 export type EditarMktCatalogoNombreInput = z.infer<typeof editarMktCatalogoNombreSchema>;
 export type EliminarMktCatalogoNombreInput = z.infer<typeof eliminarMktCatalogoNombreSchema>;
+export type CrearMktPublicacionTipoInput = z.infer<typeof crearMktPublicacionTipoSchema>;
+export type EditarMktPublicacionTipoInput = z.infer<typeof editarMktPublicacionTipoSchema>;

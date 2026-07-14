@@ -1054,29 +1054,38 @@ model MktPublicacionTipo {
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 
-  contenidosTipo MktPublicacionContenidoTipo[]
-  publicaciones  MktPublicacion[]
+  contenidosPermitidos MktPublicacionTipoContenido[]
+  publicaciones        MktPublicacion[]
 
   @@map("mkt_publicaciones_tipo")
 }
 
 /**
- * Catálogo de tipos de contenido por tipo de publicación.
- * Un `MktPublicacionTipo` puede tener varios contenidos (`tipo` 1 → N `contenido`).
+ * Catálogo global de tipos de contenido (`contenido_nombre` único).
+ * Se asocia a tipos de publicación vía `mkt_publicaciones_tipo_contenido` (N:M permitidos).
  */
 model MktPublicacionContenidoTipo {
   id               String   @id @default(cuid())
-  contenidoNombre  String   @map("contenido_nombre")
-  tipoPublicacionId String  @map("tipo_publicacion_id")
-  tipoPublicacion  MktPublicacionTipo @relation(fields: [tipoPublicacionId], references: [id], onDelete: Restrict)
+  contenidoNombre  String   @unique(map: "mkt_publicaciones_contenido_tipo_contenido_nombre_key") @map("contenido_nombre")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  publicaciones MktPublicacion[]
+  tiposPermitidos MktPublicacionTipoContenido[]
+  publicaciones   MktPublicacion[]
 
-  @@unique([tipoPublicacionId, contenidoNombre], map: "mkt_publicaciones_contenido_tipo_tipo_nombre_ux")
-  @@index([tipoPublicacionId], map: "mkt_publicaciones_contenido_tipo_tipo_idx")
   @@map("mkt_publicaciones_contenido_tipo")
+}
+
+/** Contenidos permitidos por tipo de publicación (N:M). */
+model MktPublicacionTipoContenido {
+  tipoPublicacionId String @map("tipo_publicacion_id")
+  tipoPublicacion   MktPublicacionTipo @relation(fields: [tipoPublicacionId], references: [id], onDelete: Cascade)
+  contenidoTipoId   String @map("contenido_tipo_id")
+  contenidoTipo     MktPublicacionContenidoTipo @relation(fields: [contenidoTipoId], references: [id], onDelete: Cascade)
+
+  @@id([tipoPublicacionId, contenidoTipoId])
+  @@index([contenidoTipoId], map: "mkt_publicaciones_tipo_contenido_contenido_idx")
+  @@map("mkt_publicaciones_tipo_contenido")
 }
 
 /** Publicación (hecho de marketing). */

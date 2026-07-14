@@ -4,6 +4,7 @@ import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import {
+  listarMktPublicacionContenidos,
   listarMktPublicacionRedes,
   listarMktPublicacionTipos,
 } from "@/services/mktPublicacionesCatalogo.service";
@@ -17,9 +18,10 @@ export default async function MarketingCalendarioPublicacionesPage() {
   }
 
   const esEditor = rol === "editor";
-  const [redesIniciales, tiposIniciales] = await Promise.all([
+  const [redesIniciales, tiposIniciales, contenidosIniciales] = await Promise.all([
     listarMktPublicacionRedes(),
     listarMktPublicacionTipos(),
+    listarMktPublicacionContenidos(),
   ]);
 
   return (
@@ -27,6 +29,7 @@ export default async function MarketingCalendarioPublicacionesPage() {
       <MarketingCalendarioPageClient
         redesIniciales={redesIniciales}
         tiposIniciales={tiposIniciales}
+        contenidosIniciales={contenidosIniciales}
         esEditor={esEditor}
       />
     </div>

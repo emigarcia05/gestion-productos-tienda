@@ -2,22 +2,31 @@
 
 import { revalidatePath } from "next/cache";
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
-import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
+import type {
+  MktCatalogoNombreItem,
+  MktPublicacionTipoItem,
+} from "@/lib/mktPublicacionesCatalogo";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { esEditor, getRol } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 import {
   crearMktCatalogoNombreSchema,
+  crearMktPublicacionTipoSchema,
   editarMktCatalogoNombreSchema,
+  editarMktPublicacionTipoSchema,
   eliminarMktCatalogoNombreSchema,
 } from "@/lib/validations/mktPublicacionesCatalogo";
 import {
+  crearMktPublicacionContenido,
   crearMktPublicacionRed,
   crearMktPublicacionTipo,
+  editarMktPublicacionContenido,
   editarMktPublicacionRed,
   editarMktPublicacionTipo,
+  eliminarMktPublicacionContenido,
   eliminarMktPublicacionRed,
   eliminarMktPublicacionTipo,
+  listarMktPublicacionContenidos,
   listarMktPublicacionRedes,
   listarMktPublicacionTipos,
 } from "@/services/mktPublicacionesCatalogo.service";
@@ -116,10 +125,72 @@ export async function eliminarMktPublicacionRedAction(
   return { ok: true, data: res.data };
 }
 
-// ─── Tipos ───────────────────────────────────────────────────────────────────
+// ─── Tipos de contenido ──────────────────────────────────────────────────────
+
+export async function listarMktPublicacionContenidosAction(): Promise<
+  ActionResult<MktCatalogoNombreItem[]>
+> {
+  const gate = await requireMarketingLectura();
+  if (gate) return gate;
+  try {
+    return { ok: true, data: await listarMktPublicacionContenidos() };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudieron listar los tipos de contenido.",
+    };
+  }
+}
+
+export async function crearMktPublicacionContenidoAction(
+  raw: unknown
+): Promise<ActionResult<MktCatalogoNombreItem>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = crearMktCatalogoNombreSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await crearMktPublicacionContenido(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateMarketingPublicaciones();
+  return { ok: true, data: res.data };
+}
+
+export async function editarMktPublicacionContenidoAction(
+  raw: unknown
+): Promise<ActionResult<MktCatalogoNombreItem>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = editarMktCatalogoNombreSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await editarMktPublicacionContenido(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateMarketingPublicaciones();
+  return { ok: true, data: res.data };
+}
+
+export async function eliminarMktPublicacionContenidoAction(
+  raw: unknown
+): Promise<ActionResult<{ id: string }>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = eliminarMktCatalogoNombreSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await eliminarMktPublicacionContenido(parsed.data.id);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateMarketingPublicaciones();
+  return { ok: true, data: res.data };
+}
+
+// ─── Tipos de publicación ────────────────────────────────────────────────────
 
 export async function listarMktPublicacionTiposAction(): Promise<
-  ActionResult<MktCatalogoNombreItem[]>
+  ActionResult<MktPublicacionTipoItem[]>
 > {
   const gate = await requireMarketingLectura();
   if (gate) return gate;
@@ -135,10 +206,10 @@ export async function listarMktPublicacionTiposAction(): Promise<
 
 export async function crearMktPublicacionTipoAction(
   raw: unknown
-): Promise<ActionResult<MktCatalogoNombreItem>> {
+): Promise<ActionResult<MktPublicacionTipoItem>> {
   const gate = await requireEditorMarketing();
   if (gate) return gate;
-  const parsed = crearMktCatalogoNombreSchema.safeParse(raw);
+  const parsed = crearMktPublicacionTipoSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
@@ -150,10 +221,10 @@ export async function crearMktPublicacionTipoAction(
 
 export async function editarMktPublicacionTipoAction(
   raw: unknown
-): Promise<ActionResult<MktCatalogoNombreItem>> {
+): Promise<ActionResult<MktPublicacionTipoItem>> {
   const gate = await requireEditorMarketing();
   if (gate) return gate;
-  const parsed = editarMktCatalogoNombreSchema.safeParse(raw);
+  const parsed = editarMktPublicacionTipoSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }

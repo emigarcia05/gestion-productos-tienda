@@ -6,6 +6,7 @@
 import {
   addDaysToIsoYmdArgentina,
   dateToIsoYmdArgentina,
+  formatMesAnioMayusculasDesdeIsoYmd,
 } from "@/lib/fechaArgentina";
 
 export const MKT_CALENDARIO_SEMANAS_VISIBLE = 5;
@@ -19,6 +20,13 @@ export const MKT_CALENDARIO_DIAS_SEMANA = [
   "DOM.",
 ] as const;
 
+export type MktCalendarioMesAnio = {
+  /** Año civil. */
+  anio: number;
+  /** Mes 1–12. */
+  mes: number;
+};
+
 export type MktCalendarioDiaCelda = {
   isoYmd: string;
   /** Día del mes (1–31). */
@@ -27,7 +35,7 @@ export type MktCalendarioDiaCelda = {
   mes: number;
   /** Año. */
   anio: number;
-  /** Pertenece al mes calendario de “hoy” en Argentina. */
+  /** Pertenece al mes en vista (navegación). */
   delMesActual: boolean;
   /** Coincide con hoy (Argentina). */
   esHoy: boolean;
@@ -65,10 +73,42 @@ export function lunesSemanaActualArgentina(ahora: Date = new Date()): string {
   return lunesDeSemanaIsoYmdArgentina(dateToIsoYmdArgentina(ahora));
 }
 
+/** Mes/año civiles de “hoy” en Argentina. */
+export function mesAnioActualArgentina(ahora: Date = new Date()): MktCalendarioMesAnio {
+  const partes = partesIsoYmd(dateToIsoYmdArgentina(ahora));
+  return { anio: partes?.y ?? 1970, mes: partes?.m ?? 1 };
+}
+
+/** `YYYY-MM-01` del mes indicado. */
+export function isoYmdPrimerDiaMes(anio: number, mes: number): string {
+  return `${anio}-${String(mes).padStart(2, "0")}-01`;
+}
+
+/** Lunes de la semana que contiene el día 1 del mes (inicio de fila del mes). */
+export function lunesInicioMesArgentina(anio: number, mes: number): string {
+  return lunesDeSemanaIsoYmdArgentina(isoYmdPrimerDiaMes(anio, mes));
+}
+
+/** Desplaza mes/año ±N meses (sin día). */
+export function desplazarMesAnio(
+  vista: MktCalendarioMesAnio,
+  deltaMeses: number
+): MktCalendarioMesAnio {
+  const idx = vista.anio * 12 + (vista.mes - 1) + deltaMeses;
+  const anio = Math.floor(idx / 12);
+  const mes = (idx % 12) + 1;
+  return { anio, mes };
+}
+
+/** Etiqueta centrada: `JULIO 2026`. */
+export function etiquetaMesAnioMayusculas(vista: MktCalendarioMesAnio): string {
+  return formatMesAnioMayusculasDesdeIsoYmd(isoYmdPrimerDiaMes(vista.anio, vista.mes));
+}
+
 function armarCelda(
   isoYmd: string,
-  mesActual: number,
-  anioActual: number,
+  mesVista: number,
+  anioVista: number,
   hoyIso: string
 ): MktCalendarioDiaCelda {
   const partes = partesIsoYmd(isoYmd);
@@ -80,24 +120,24 @@ function armarCelda(
     diaMes,
     mes,
     anio,
-    delMesActual: mes === mesActual && anio === anioActual,
+    delMesActual: mes === mesVista && anio === anioVista,
     esHoy: isoYmd === hoyIso,
   };
 }
 
 /**
  * 5 semanas consecutivas a partir del lunes `lunesInicioIso` (inclusive).
- * `mesActual`/`anioActual` definen el resaltado “mes actual” (hoy AR al abrir, fijo para la sesión UI).
+ * `mesVista`/`anioVista` definen el resaltado del mes navegable (default: mes de hoy AR).
  */
 export function construirVentanaCincoSemanas(
   lunesInicioIso: string,
-  opciones?: { ahora?: Date }
+  opciones?: { ahora?: Date; mesVista?: number; anioVista?: number }
 ): MktCalendarioSemana[] {
   const ahora = opciones?.ahora ?? new Date();
   const hoyIso = dateToIsoYmdArgentina(ahora);
-  const hoyPartes = partesIsoYmd(hoyIso);
-  const mesActual = hoyPartes?.m ?? 1;
-  const anioActual = hoyPartes?.y ?? 1970;
+  const hoy = mesAnioActualArgentina(ahora);
+  const mesVista = opciones?.mesVista ?? hoy.mes;
+  const anioVista = opciones?.anioVista ?? hoy.anio;
 
   const lunesBase = lunesDeSemanaIsoYmdArgentina(lunesInicioIso);
   const semanas: MktCalendarioSemana[] = [];
@@ -107,30 +147,10 @@ export function construirVentanaCincoSemanas(
     const dias: MktCalendarioDiaCelda[] = [];
     for (let d = 0; d < 7; d += 1) {
       const iso = addDaysToIsoYmdArgentina(lunesIso, d);
-      dias.push(armarCelda(iso, mesActual, anioActual, hoyIso));
+      dias.push(armarCelda(iso, mesVista, anioVista, hoyIso));
     }
     semanas.push({ lunesIso, dias });
   }
 
   return semanas;
-}
-
-/** Mueve el ancla (lunes) ±N semanas. */
-export function desplazarLunesSemanas(lunesIso: string, deltaSemanas: number): string {
-  return addDaysToIsoYmdArgentina(lunesIso, deltaSemanas * 7);
-}
-
-/** Rótulo de rango visible: `13/07 — 16/08/2026`. */
-export function etiquetaRangoVentanaCincoSemanas(lunesInicioIso: string): string {
-  const semanas = construirVentanaCincoSemanas(lunesInicioIso);
-  const primero = semanas[0]?.dias[0]?.isoYmd;
-  const ultimo = semanas[MKT_CALENDARIO_SEMANAS_VISIBLE - 1]?.dias[6]?.isoYmd;
-  if (!primero || !ultimo) return "";
-  const a = partesIsoYmd(primero);
-  const b = partesIsoYmd(ultimo);
-  if (!a || !b) return "";
-  const dd = (n: number) => String(n).padStart(2, "0");
-  const desde = `${dd(a.d)}/${dd(a.m)}`;
-  const hasta = `${dd(b.d)}/${dd(b.m)}/${b.y}`;
-  return `${desde} — ${hasta}`;
 }

@@ -19,14 +19,14 @@ import {
 } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import {
+  crearMktPublicacionContenidoAction,
   crearMktPublicacionRedAction,
-  crearMktPublicacionTipoAction,
+  editarMktPublicacionContenidoAction,
   editarMktPublicacionRedAction,
-  editarMktPublicacionTipoAction,
+  eliminarMktPublicacionContenidoAction,
   eliminarMktPublicacionRedAction,
-  eliminarMktPublicacionTipoAction,
+  listarMktPublicacionContenidosAction,
   listarMktPublicacionRedesAction,
-  listarMktPublicacionTiposAction,
 } from "@/actions/mktPublicacionesCatalogo";
 
 type CatalogoCopy = {
@@ -55,17 +55,17 @@ const COPY_BY_KIND: Record<MktCatalogoNombreKind, CatalogoCopy> = {
     toastActualizado: "Red actualizada.",
     toastEliminado: "Red eliminada.",
   },
-  tipo: {
-    title: "Gestionar Tipo Publicaciones",
-    labelNuevo: "NUEVO TIPO",
-    labelListado: "TIPOS EXISTENTES",
+  contenido: {
+    title: "Gestionar Tipo Contenido",
+    labelNuevo: "NUEVO TIPO DE CONTENIDO",
+    labelListado: "TIPOS DE CONTENIDO EXISTENTES",
     placeholder: "Nombre (se guardará en mayúsculas)",
-    emptyMessage: "No hay tipos de publicación.",
-    deleteTitle: "Eliminar Tipo",
-    deleteNoun: "el tipo",
-    toastCreado: "Tipo de publicación creado.",
-    toastActualizado: "Tipo de publicación actualizado.",
-    toastEliminado: "Tipo de publicación eliminado.",
+    emptyMessage: "No hay tipos de contenido.",
+    deleteTitle: "Eliminar Tipo De Contenido",
+    deleteNoun: "el tipo de contenido",
+    toastCreado: "Tipo de contenido creado.",
+    toastActualizado: "Tipo de contenido actualizado.",
+    toastEliminado: "Tipo de contenido eliminado.",
   },
 };
 
@@ -84,10 +84,10 @@ function actionsForKind(kind: MktCatalogoNombreKind) {
     };
   }
   return {
-    listar: listarMktPublicacionTiposAction,
-    crear: crearMktPublicacionTipoAction,
-    editar: editarMktPublicacionTipoAction,
-    eliminar: eliminarMktPublicacionTipoAction,
+    listar: listarMktPublicacionContenidosAction,
+    crear: crearMktPublicacionContenidoAction,
+    editar: editarMktPublicacionContenidoAction,
+    eliminar: eliminarMktPublicacionContenidoAction,
   };
 }
 
