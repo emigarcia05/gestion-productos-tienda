@@ -286,7 +286,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual`, `FinBalPosicionIvaComparacionPedido` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual`, `fin_bal_posicion_iva_comparacion_pedido` |
 | Finanzas análisis M.C. | `FinAnaCosFinaTerminal`, `FinAnaCosFinaPagoCat`, `FinAnaCosFina`, `FinAnaMcDescuentoFp` | `fin_ana_cos_fina_terminales`, `fin_ana_cos_fina_pagos`, `fin_ana_cos_fina`, `fin_ana_mc_descuento_fp` |
 | Estadísticas productos | `EstPorProd` | `est_por_prod` |
-| Marketing | `MktPublicacionRed`, `MktPublicacionTipo`, `MktPublicacionContenidoTipo`, `MktPublicacion`, `MktPublicacionIdeaSeccion`, `MktPublicacionIdeaDetalle` | `mkt_publicaciones_redes`, `mkt_publicaciones_tipo`, `mkt_publicaciones_contenido_tipo`, `mkt_publicaciones`, `mkt_publicaciones_ideas_secciones`, `mkt_publicaciones_ideas_detalle` |
+| Marketing | `MktPublicacionRed`, `MktPublicacionTipo`, `MktPublicacionContenidoTipo`, `MktPublicacion`, `MktPublicacionIdeaSeccion`, `MktPublicacionIdeaDetalle` | `mkt_publi_tipo_redes`, `mkt_publi_tipo_publicacion`, `mkt_publi_tipo_contenido`, `mkt_publi`, `mkt_publi_ideas_secciones`, `mkt_publi_ideas_detalle` |
 | Productos / precios | `ListaPrecioProveedor`, `ComparacionItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_item_comparados`, `prod_comp_item_referencia`, `prod_comp_categorias`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
 | Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
 | Pedidos / sync | `ProdPedMerc2`, `PedidoHistoria`, `PedidoHistoriaItem`, `ProdPedUltComp`, `ImportProgress`, `SyncDuxStatus` | `prod_ped_merc`, `prod_ped_historial`, `prod_ped_historial_merc`, `prod_ped_ult_comp`, `import_progress`, `sync_dux_status` |
@@ -938,25 +938,25 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Actions** (`src/actions/estPorProd.ts`): `importarEstPorProdAction`, `eliminarEstPorProdAction`, **`verificarEstPorProdPeriodoAction`**; **`reemplazarPeriodo`** en importación borra todos los registros del **mes/año/sucursal** antes del upsert (confirmación en UI). Tras mutar, **`revalidatePath("/estadisticas-productos")`**.
 - **Import UI**: planilla parseada en cliente (`@/lib/parseEstPorProdExcelClient.ts` + `xlsx`). Por defecto omite las **2 primeras filas** del Excel (`FILAS_OMITIR_INICIO_EST_POR_PROD`); la **3.ª** es encabezado; mapeo inicial col. **0** → `codTienda`, col. **1** → `vtasEnUn` (editable en modal). Modal **`ImportarEstPorProdModal`**.
 
-### 2.5g-bis Marketing · publicaciones (`mkt_publicaciones_*`)
+### 2.5g-bis Marketing · publicaciones (`mkt_publi*`)
 
-Dominio **Marketing · Publicaciones**. Tres catálogos **independientes** (sin relación entre sí) + hechos. CRUD desde **Calendario De Publicaciones**.
+Dominio **Marketing · Publicaciones**. Tres catálogos **independientes** (sin relación entre sí) + hechos. CRUD desde **Calendario De Publicaciones**. Renombre tablas: migración **`20260714240000_mkt_publi_rename_tables`**.
 
-- **`mkt_publicaciones_redes`** (Prisma `MktPublicacionRed`): `id` (`cuid`), `red_social_nombre` (`TEXT` **único**, MAYÚSCULAS al persistir), `created_at`, `updated_at`.
-- **`mkt_publicaciones_tipo`** (Prisma `MktPublicacionTipo`): `id` (`cuid`), `tipo_publicacion_nombre` (`TEXT` **único**, MAYÚSCULAS), `created_at`, `updated_at`.
-- **`mkt_publicaciones_contenido_tipo`** (Prisma `MktPublicacionContenidoTipo`): `id` (`cuid`), `contenido_nombre` (`TEXT` **único**, MAYÚSCULAS), `created_at`, `updated_at`.
-- **`mkt_publicaciones`** (Prisma `MktPublicacion`): hecho que referencia **de forma independiente** a red / tipo / contenido (`onDelete: Restrict` en las tres FK). No hay validación cruzada entre catálogos. Migraciones: **`20260713180000`**, **`20260714120000`**, global contenido **`20260714140000`**, baja puente N:M **`20260714180000_mkt_catalogos_sin_relacion`** (elimina `mkt_publicaciones_tipo_contenido`).
+- **`mkt_publi_tipo_redes`** (Prisma `MktPublicacionRed`): `id` (`cuid`), `red_social_nombre` (`TEXT` **único**, MAYÚSCULAS al persistir), `created_at`, `updated_at`.
+- **`mkt_publi_tipo_publicacion`** (Prisma `MktPublicacionTipo`): `id` (`cuid`), `tipo_publicacion_nombre` (`TEXT` **único**, MAYÚSCULAS), `created_at`, `updated_at`.
+- **`mkt_publi_tipo_contenido`** (Prisma `MktPublicacionContenidoTipo`): `id` (`cuid`), `contenido_nombre` (`TEXT` **único**, MAYÚSCULAS), `created_at`, `updated_at`.
+- **`mkt_publi`** (Prisma `MktPublicacion`): hecho que referencia **de forma independiente** a red / tipo / contenido (`onDelete: Restrict` en las tres FK). No hay validación cruzada entre catálogos. Migraciones históricas: **`20260713180000`**, **`20260714120000`**, global contenido **`20260714140000`**, baja puente N:M **`20260714180000_mkt_catalogos_sin_relacion`** (elimina `mkt_publicaciones_tipo_contenido`).
 - **Servicio** (`src/services/mktPublicacionesCatalogo.service.ts`): CRUD de los tres catálogos (solo nombre).
 - **Validación** (`@/lib/validations/mktPublicacionesCatalogo.ts`): `crearMktCatalogoNombreSchema`, `editarMktCatalogoNombreSchema`, `eliminarMktCatalogoNombreSchema`.
 - **Actions** (`src/actions/mktPublicacionesCatalogo.ts`): lectura **`PERMISOS.marketing.acceso`**; mutaciones + **`esEditor()`**; `revalidatePath` calendario e ideas.
 - **Permiso de área**: **`PERMISOS.marketing.acceso`** (solo `editor`). Rutas UI: `/marketing/publicaciones/{calendario|ideas}`.
 
-### 2.5g-ter Marketing · ideas (`mkt_publicaciones_ideas_*`)
+### 2.5g-ter Marketing · ideas (`mkt_publi_ideas_*`)
 
-Secciones de ideas y sus detalles. UI aún placeholder en `/marketing/publicaciones/ideas`. Migración **`20260714190000_mkt_publicaciones_ideas`**.
+Secciones de ideas y sus detalles. UI en `/marketing/publicaciones/ideas`. Migración original **`20260714190000_mkt_publicaciones_ideas`**; renombre **`20260714240000`**.
 
-- **`mkt_publicaciones_ideas_secciones`** (Prisma `MktPublicacionIdeaSeccion`): `id` (`cuid`), `idea_nombre` (`TEXT` **único**, MAYÚSCULAS al persistir), `idea_resumen` (`TEXT`, default `''`; migración **`20260714230000_mkt_ideas_secciones_idea_resumen`**), `created_at`, `updated_at`.
-- **`mkt_publicaciones_ideas_detalle`** (Prisma `MktPublicacionIdeaDetalle`): `id` (`cuid`); `seccion_id` FK → secciones (**`onDelete: Cascade`**); `titulo_idea` (`TEXT` corto); `detalle` (`TEXT` largo); `tipo_contenido_id` → contenido (**`onDelete: Restrict`**); `usada` (default **NO** al crear); `created_at`, `updated_at`.
+- **`mkt_publi_ideas_secciones`** (Prisma `MktPublicacionIdeaSeccion`): `id` (`cuid`), `idea_nombre` (`TEXT` **único**, MAYÚSCULAS al persistir), `idea_resumen` (`TEXT`, default `''`; migración **`20260714230000_mkt_ideas_secciones_idea_resumen`**), `created_at`, `updated_at`.
+- **`mkt_publi_ideas_detalle`** (Prisma `MktPublicacionIdeaDetalle`): `id` (`cuid`); `seccion_id` FK → secciones (**`onDelete: Cascade`**); `titulo_idea` (`TEXT` corto); `detalle` (`TEXT` largo); `tipo_contenido_id` → contenido (**`onDelete: Restrict`**); `usada` (default **NO** al crear); `created_at`, `updated_at`.
 - **N:M redes / tipos** (mín. 1 cada uno al guardar): `mkt_publicaciones_ideas_detalle_redes` (`MktPublicacionIdeaDetalleRed`) y `mkt_publicaciones_ideas_detalle_tipos` (`MktPublicacionIdeaDetalleTipo`); FKs detalle **Cascade**, catálogo **Restrict**. Migración **`20260714220000_mkt_ideas_detalle_red_tipo_nm`**.
 - **Servicio** (`src/services/mktPublicacionesIdeas.service.ts`): `listarMktIdeasJerarquia`, CRUD sección/detalle.
 - **Validación** (`@/lib/validations/mktPublicacionesIdeas.ts`).

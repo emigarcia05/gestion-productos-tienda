@@ -56,7 +56,7 @@ export default function MarketingCalendarioPageClient({
                 onClick={() => setOpenTipos(true)}
               >
                 <Settings2 className="size-4 shrink-0" aria-hidden />
-                Gestionar Publicaciones
+                Gestionar Tipo Publicaciones
               </Button>
               <Button
                 type="button"
@@ -65,7 +65,7 @@ export default function MarketingCalendarioPageClient({
                 onClick={() => setOpenContenidos(true)}
               >
                 <Settings2 className="size-4 shrink-0" aria-hidden />
-                Gestionar Contenido
+                Gestionar Tipo Contenido
               </Button>
             </div>
           ) : null
