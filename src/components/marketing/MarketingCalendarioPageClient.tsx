@@ -187,10 +187,12 @@ export default function MarketingCalendarioPageClient({
         id={modalEliminar.open ? modalEliminar.id : null}
         label={modalEliminar.open ? modalEliminar.label : null}
         onSuccess={() => {
+          const eliminadoId = modalEliminar.open ? modalEliminar.id : null;
+          const diaIso = modalDia.open ? modalDia.fechaIso : null;
           refresh();
-          if (modalDia.open) {
+          if (diaIso && eliminadoId) {
             const restantes = publicaciones.filter(
-              (p) => p.fechaIso === modalDia.fechaIso && p.id !== modalEliminar.id
+              (p) => p.fechaIso === diaIso && p.id !== eliminadoId
             );
             if (restantes.length === 0) {
               setModalDia({ open: false });
