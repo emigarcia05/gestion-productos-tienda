@@ -286,7 +286,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual`, `FinBalPosicionIvaComparacionPedido` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual`, `fin_bal_posicion_iva_comparacion_pedido` |
 | Finanzas análisis M.C. | `FinAnaCosFinaTerminal`, `FinAnaCosFinaPagoCat`, `FinAnaCosFina`, `FinAnaMcDescuentoFp` | `fin_ana_cos_fina_terminales`, `fin_ana_cos_fina_pagos`, `fin_ana_cos_fina`, `fin_ana_mc_descuento_fp` |
 | Estadísticas productos | `EstPorProd` | `est_por_prod` |
-| Marketing | `MktPublicacionRed`, `MktPublicacionTipo` | `mkt_publicaciones_redes`, `mkt_publicaciones_tipo` |
+| Marketing | `MktPublicacionRed`, `MktPublicacionTipo`, `MktPublicacionContenidoTipo`, `MktPublicacion` | `mkt_publicaciones_redes`, `mkt_publicaciones_tipo`, `mkt_publicaciones_contenido_tipo`, `mkt_publicaciones` |
 | Productos / precios | `ListaPrecioProveedor`, `ComparacionItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_item_comparados`, `prod_comp_item_referencia`, `prod_comp_categorias`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
 | Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
 | Pedidos / sync | `ProdPedMerc2`, `PedidoHistoria`, `PedidoHistoriaItem`, `ProdPedUltComp`, `ImportProgress`, `SyncDuxStatus` | `prod_ped_merc`, `prod_ped_historial`, `prod_ped_historial_merc`, `prod_ped_ult_comp`, `import_progress`, `sync_dux_status` |
@@ -938,14 +938,16 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Actions** (`src/actions/estPorProd.ts`): `importarEstPorProdAction`, `eliminarEstPorProdAction`, **`verificarEstPorProdPeriodoAction`**; **`reemplazarPeriodo`** en importación borra todos los registros del **mes/año/sucursal** antes del upsert (confirmación en UI). Tras mutar, **`revalidatePath("/estadisticas-productos")`**.
 - **Import UI**: planilla parseada en cliente (`@/lib/parseEstPorProdExcelClient.ts` + `xlsx`). Por defecto omite las **2 primeras filas** del Excel (`FILAS_OMITIR_INICIO_EST_POR_PROD`); la **3.ª** es encabezado; mapeo inicial col. **0** → `codTienda`, col. **1** → `vtasEnUn` (editable en modal). Modal **`ImportarEstPorProdModal`**.
 
-### 2.5g-bis Marketing · catálogos publicaciones (`mkt_publicaciones_redes`, `mkt_publicaciones_tipo`)
+### 2.5g-bis Marketing · publicaciones (`mkt_publicaciones_*`)
 
-Catálogos del área **Marketing** (módulo Publicaciones). CRUD UI desde **Calendario De Publicaciones**.
+Dominio **Marketing · Publicaciones**. Catálogos + hechos. CRUD de redes/tipos desde **Calendario De Publicaciones**; contenido y publicaciones sin UI aún.
 
 - **`mkt_publicaciones_redes`** (Prisma `MktPublicacionRed`): `id` (`cuid`), `red_social_nombre` (`TEXT` **único**, MAYÚSCULAS al persistir), `created_at`, `updated_at`.
 - **`mkt_publicaciones_tipo`** (Prisma `MktPublicacionTipo`): `id` (`cuid`), `tipo_publicacion_nombre` (`TEXT` **único**, MAYÚSCULAS al persistir), `created_at`, `updated_at`.
-- **Migración**: **`20260713180000_mkt_publicaciones_redes_y_tipo`**.
-- **Servicio** (`src/services/mktPublicacionesCatalogo.service.ts`): listar/crear/editar/eliminar para ambos catálogos.
+- **`mkt_publicaciones_contenido_tipo`** (Prisma `MktPublicacionContenidoTipo`): `id` (`cuid`), `contenido_nombre` (`TEXT`), `tipo_publicacion_id` (FK → `mkt_publicaciones_tipo`, **`onDelete: Restrict`**). Relación **1 tipo → N contenidos**. **`@@unique([tipo_publicacion_id, contenido_nombre])`**. Migración **`20260714120000_mkt_publicaciones_contenido_y_hechos`**.
+- **`mkt_publicaciones`** (Prisma `MktPublicacion`): `id` (`cuid`); `red_id` → `mkt_publicaciones_redes`; `tipo_publicacion_id` → `mkt_publicaciones_tipo`; `tipo_contenido_id` → `mkt_publicaciones_contenido_tipo`; las tres FK con **`onDelete: Restrict`**. Integridad de negocio (contenido perteneciente al tipo elegido) se valida en servicio al implementar altas.
+- Migración catálogos base: **`20260713180000_mkt_publicaciones_redes_y_tipo`**.
+- **Servicio** redes/tipos (`src/services/mktPublicacionesCatalogo.service.ts`): listar/crear/editar/eliminar.
 - **Validación** (`@/lib/validations/mktPublicacionesCatalogo.ts`): `crearMktCatalogoNombreSchema`, `editarMktCatalogoNombreSchema`, `eliminarMktCatalogoNombreSchema`.
 - **Actions** (`src/actions/mktPublicacionesCatalogo.ts`): lectura con **`PERMISOS.marketing.acceso`**; mutaciones + **`esEditor()`**. Tras mutar, `revalidatePath` de calendario e ideas.
 - **Permiso de área**: **`PERMISOS.marketing.acceso`** (solo `editor`). Rutas UI: `/marketing/publicaciones/{calendario|ideas}`.
@@ -1870,7 +1872,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-06): **Auditoría esquema — DROP `prod_tienda_margen_edicion`** — tabla huérfana tras migración a `prod_tienda_precios_edicion`; modelo `ProdTiendaMargenEdicion` retirado de Prisma; script `scripts/audit-schema-columns.mjs` para futuras auditorías columna a columna.*
 
-*Última actualización (2026-07-13): **Área Marketing** — `PERMISOS.marketing.acceso` (solo `editor`); rutas `/marketing/publicaciones/{calendario|ideas}` (placeholders UI). Catálogos **`mkt_publicaciones_redes`** / **`mkt_publicaciones_tipo`** (migración **`20260713180000_mkt_publicaciones_redes_y_tipo`**).*
+*Última actualización (2026-07-13): **Área Marketing** — `PERMISOS.marketing.acceso` (solo `editor`); rutas `/marketing/publicaciones/{calendario|ideas}`. Catálogos **`mkt_publicaciones_redes`** / **`mkt_publicaciones_tipo`** (`20260713180000`); **`mkt_publicaciones_contenido_tipo`** + **`mkt_publicaciones`** (`20260714120000_mkt_publicaciones_contenido_y_hechos`).*
 
 *Última actualización (2026-07-06): **Comp. Categorias — costo objetivo sin FK legacy** — columna `prod_ref_cod_ext` eliminada; prioridad objetivo: (1) primera referencia competencia `pxMostrar`, (2) `costo_compra_objetivo` numérico; modal «desde lista» persiste el valor en `costo_compra_objetivo` directamente.*
 

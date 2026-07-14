@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Settings2 } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import GestionarMktCatalogoNombreModal from "@/components/marketing/GestionarMktCatalogoNombreModal";
+import MktCalendarioPublicacionesGrid from "@/components/marketing/MktCalendarioPublicacionesGrid";
 import { Button } from "@/components/ui/button";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 
@@ -32,6 +33,7 @@ export default function MarketingCalendarioPageClient({
       <ClassicFilteredTableLayout
         title="Marketing"
         subtitle="Calendario De Publicaciones"
+        contentWidth="full"
         actions={
           esEditor ? (
             <div className="flex flex-wrap items-center gap-2">
@@ -57,9 +59,7 @@ export default function MarketingCalendarioPageClient({
           ) : null
         }
       >
-        <div className="flex flex-1 items-center justify-center px-4 py-12 text-sm text-muted-foreground">
-          Módulo En Construcción.
-        </div>
+        <MktCalendarioPublicacionesGrid />
       </ClassicFilteredTableLayout>
 
       <GestionarMktCatalogoNombreModal

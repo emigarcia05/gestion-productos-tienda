@@ -1033,7 +1033,7 @@ model FinAnaMcDescuentoFp {
   @@map("fin_ana_mc_descuento_fp")
 }
 
-// ─── Marketing · Publicaciones (catálogos) ─────────────────────────────────
+// ─── Marketing · Publicaciones (catálogos + hechos) ────────────────────────
 
 /** Catálogo de redes sociales para publicaciones (`red_social_nombre` único). */
 model MktPublicacionRed {
@@ -1041,6 +1041,8 @@ model MktPublicacionRed {
   redSocialNombre  String   @unique(map: "mkt_publicaciones_redes_red_social_nombre_key") @map("red_social_nombre")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
+
+  publicaciones MktPublicacion[]
 
   @@map("mkt_publicaciones_redes")
 }
@@ -1052,7 +1054,47 @@ model MktPublicacionTipo {
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 
+  contenidosTipo MktPublicacionContenidoTipo[]
+  publicaciones  MktPublicacion[]
+
   @@map("mkt_publicaciones_tipo")
+}
+
+/**
+ * Catálogo de tipos de contenido por tipo de publicación.
+ * Un `MktPublicacionTipo` puede tener varios contenidos (`tipo` 1 → N `contenido`).
+ */
+model MktPublicacionContenidoTipo {
+  id               String   @id @default(cuid())
+  contenidoNombre  String   @map("contenido_nombre")
+  tipoPublicacionId String  @map("tipo_publicacion_id")
+  tipoPublicacion  MktPublicacionTipo @relation(fields: [tipoPublicacionId], references: [id], onDelete: Restrict)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  publicaciones MktPublicacion[]
+
+  @@unique([tipoPublicacionId, contenidoNombre], map: "mkt_publicaciones_contenido_tipo_tipo_nombre_ux")
+  @@index([tipoPublicacionId], map: "mkt_publicaciones_contenido_tipo_tipo_idx")
+  @@map("mkt_publicaciones_contenido_tipo")
+}
+
+/** Publicación (hecho de marketing). */
+model MktPublicacion {
+  id                String   @id @default(cuid())
+  redId             String   @map("red_id")
+  red               MktPublicacionRed @relation(fields: [redId], references: [id], onDelete: Restrict)
+  tipoPublicacionId String   @map("tipo_publicacion_id")
+  tipoPublicacion   MktPublicacionTipo @relation(fields: [tipoPublicacionId], references: [id], onDelete: Restrict)
+  tipoContenidoId   String   @map("tipo_contenido_id")
+  tipoContenido     MktPublicacionContenidoTipo @relation(fields: [tipoContenidoId], references: [id], onDelete: Restrict)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([redId], map: "mkt_publicaciones_red_idx")
+  @@index([tipoPublicacionId], map: "mkt_publicaciones_tipo_idx")
+  @@index([tipoContenidoId], map: "mkt_publicaciones_contenido_idx")
+  @@map("mkt_publicaciones")
 }
 
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────
