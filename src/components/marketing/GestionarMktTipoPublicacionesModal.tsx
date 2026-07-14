@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -9,15 +9,13 @@ import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { matchByMultiTerm } from "@/lib/busqueda";
 import type { ActionResult } from "@/lib/types";
 import type {
   MktCatalogoNombreItem,
   MktPublicacionTipoItem,
 } from "@/lib/mktPublicacionesCatalogo";
-import {
-  TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-} from "@/lib/ui-classes";
+import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import {
   crearMktPublicacionTipoAction,
@@ -27,9 +25,9 @@ import {
   listarMktPublicacionTiposAction,
 } from "@/actions/mktPublicacionesCatalogo";
 
-const BOTON_ACCION_CATALOGO_CLASS = cn(
+const LIST_ROW_ICON_BTN_CLASS = cn(
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-  "!size-8 max-h-8 min-h-8 min-w-8 shrink-0 !p-0"
+  "h-9 w-9 min-h-9 max-h-9"
 );
 
 function ControlesContenidoPermitidos({
@@ -164,13 +162,13 @@ export default function GestionarMktTipoPublicacionesModal({
 }: Props) {
   const [items, setItems] = useState<MktPublicacionTipoItem[]>(itemsIniciales);
   const [contenidos, setContenidos] = useState<MktCatalogoNombreItem[]>(contenidosIniciales);
-  const [nuevoNombre, setNuevoNombre] = useState("");
-  const [nuevoContenidoIds, setNuevoContenidoIds] = useState<string[]>([]);
-  const [nuevoListOpen, setNuevoListOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState("");
-  const [editContenidoIds, setEditContenidoIds] = useState<string[]>([]);
-  const [editListOpen, setEditListOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MktPublicacionTipoItem | null>(null);
+  const [formNombre, setFormNombre] = useState("");
+  const [formContenidoIds, setFormContenidoIds] = useState<string[]>([]);
+  const [formListOpen, setFormListOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [borrarTarget, setBorrarTarget] = useState<MktPublicacionTipoItem | null>(null);
   const [borrando, setBorrando] = useState(false);
@@ -182,21 +180,26 @@ export default function GestionarMktTipoPublicacionesModal({
   }, [contenidos]);
 
   const cargar = useCallback(async () => {
-    const [tiposRes, contenidosRes]: [
-      ActionResult<MktPublicacionTipoItem[]>,
-      ActionResult<MktCatalogoNombreItem[]>,
-    ] = await Promise.all([listarMktPublicacionTiposAction(), listarMktPublicacionContenidosAction()]);
-    if (!tiposRes.ok) {
-      toast.error(tiposRes.error ?? "No se pudieron cargar los tipos.");
-      setItems([]);
-    } else {
-      setItems(tiposRes.data);
-    }
-    if (!contenidosRes.ok) {
-      toast.error(contenidosRes.error ?? "No se pudieron cargar los contenidos.");
-      setContenidos([]);
-    } else {
-      setContenidos(contenidosRes.data);
+    setLoading(true);
+    try {
+      const [tiposRes, contenidosRes]: [
+        ActionResult<MktPublicacionTipoItem[]>,
+        ActionResult<MktCatalogoNombreItem[]>,
+      ] = await Promise.all([listarMktPublicacionTiposAction(), listarMktPublicacionContenidosAction()]);
+      if (!tiposRes.ok) {
+        toast.error(tiposRes.error ?? "No se pudieron cargar los tipos.");
+        setItems([]);
+      } else {
+        setItems(tiposRes.data);
+      }
+      if (!contenidosRes.ok) {
+        toast.error(contenidosRes.error ?? "No se pudieron cargar los contenidos.");
+        setContenidos([]);
+      } else {
+        setContenidos(contenidosRes.data);
+      }
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -204,58 +207,76 @@ export default function GestionarMktTipoPublicacionesModal({
     if (!open) return;
     setItems(itemsIniciales);
     setContenidos(contenidosIniciales);
-    void cargar();
-    setNuevoNombre("");
-    setNuevoContenidoIds([]);
-    setNuevoListOpen(false);
-    setEditingId(null);
-    setEditDraft("");
-    setEditContenidoIds([]);
-    setEditListOpen(false);
+    setBusqueda("");
+    setFormOpen(false);
+    setEditingItem(null);
+    setFormNombre("");
+    setFormContenidoIds([]);
+    setFormListOpen(false);
     setBorrarTarget(null);
+    void cargar();
   }, [open, cargar, itemsIniciales, contenidosIniciales]);
 
-  async function handleCrear() {
-    if (!esEditor || !nuevoNombre.trim() || pending) return;
-    setPending(true);
-    try {
-      const res = await crearMktPublicacionTipoAction({
-        nombre: nuevoNombre,
-        contenidoIdsPermitidos: nuevoContenidoIds,
-      });
-      if (!res.ok) {
-        toast.error(res.error ?? "No se pudo crear.");
-        return;
-      }
-      toast.success("Tipo de publicación creado.");
-      setNuevoNombre("");
-      setNuevoContenidoIds([]);
-      setNuevoListOpen(false);
-      await cargar();
-      onCatalogoChanged?.();
-    } finally {
-      setPending(false);
-    }
+  const listaFiltrada = useMemo(() => {
+    const q = busqueda.trim();
+    if (!q) return items;
+    return items.filter((item) => {
+      const nombresContenido = item.contenidoIdsPermitidos
+        .map((id) => contenidoById.get(id) ?? "")
+        .filter(Boolean);
+      return matchByMultiTerm([item.nombre, ...nombresContenido], q);
+    });
+  }, [items, busqueda, contenidoById]);
+
+  function abrirCrear() {
+    if (!esEditor || pending) return;
+    setEditingItem(null);
+    setFormNombre("");
+    setFormContenidoIds([]);
+    setFormListOpen(false);
+    setFormOpen(true);
   }
 
-  async function handleGuardarEdicion() {
-    if (!esEditor || !editingId || !editDraft.trim() || pending) return;
+  function abrirEditar(item: MktPublicacionTipoItem) {
+    if (!esEditor || pending) return;
+    setEditingItem(item);
+    setFormNombre(item.nombre);
+    setFormContenidoIds([...item.contenidoIdsPermitidos]);
+    setFormListOpen(false);
+    setFormOpen(true);
+  }
+
+  async function handleGuardarForm() {
+    if (!esEditor || !formNombre.trim() || pending) return;
     setPending(true);
     try {
-      const res = await editarMktPublicacionTipoAction({
-        id: editingId,
-        nombre: editDraft,
-        contenidoIdsPermitidos: editContenidoIds,
-      });
-      if (!res.ok) {
-        toast.error(res.error ?? "No se pudo guardar.");
-        return;
+      if (editingItem) {
+        const res = await editarMktPublicacionTipoAction({
+          id: editingItem.id,
+          nombre: formNombre,
+          contenidoIdsPermitidos: formContenidoIds,
+        });
+        if (!res.ok) {
+          toast.error(res.error ?? "No se pudo guardar.");
+          return;
+        }
+        toast.success("Tipo de publicación actualizado.");
+      } else {
+        const res = await crearMktPublicacionTipoAction({
+          nombre: formNombre,
+          contenidoIdsPermitidos: formContenidoIds,
+        });
+        if (!res.ok) {
+          toast.error(res.error ?? "No se pudo crear.");
+          return;
+        }
+        toast.success("Tipo de publicación creado.");
       }
-      toast.success("Tipo de publicación actualizado.");
-      setEditingId(null);
-      setEditDraft("");
-      setEditContenidoIds([]);
-      setEditListOpen(false);
+      setFormOpen(false);
+      setEditingItem(null);
+      setFormNombre("");
+      setFormContenidoIds([]);
+      setFormListOpen(false);
       await cargar();
       onCatalogoChanged?.();
     } finally {
@@ -281,20 +302,6 @@ export default function GestionarMktTipoPublicacionesModal({
     }
   }
 
-  function chipsFor(ids: string[]) {
-    return ids
-      .map((id) => {
-        const nombre = contenidoById.get(id);
-        if (!nombre) return null;
-        return (
-          <Badge key={id} variant="secondary" className="font-medium tracking-wide">
-            {nombre}
-          </Badge>
-        );
-      })
-      .filter(Boolean);
-  }
-
   return (
     <>
       <Dialog open={open} onOpenChange={(next) => !pending && !borrando && onOpenChange(next)}>
@@ -310,150 +317,168 @@ export default function GestionarMktTipoPublicacionesModal({
             </Button>
           }
         >
-          <div className="flex min-h-0 flex-col gap-4">
-            {esEditor ? (
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1">
-                  <ModalMicroLabel>Nuevo Tipo</ModalMicroLabel>
-                  <Input
-                    value={nuevoNombre}
-                    onChange={(e) => setNuevoNombre(e.target.value)}
-                    placeholder="Nombre (se guardará en mayúsculas)"
-                    disabled={pending}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        void handleCrear();
-                      }
-                    }}
-                  />
-                </div>
-                <ControlesContenidoPermitidos
-                  contenidos={contenidos}
-                  selectedIds={nuevoContenidoIds}
-                  onChange={setNuevoContenidoIds}
-                  disabled={pending}
-                  listOpen={nuevoListOpen}
-                  onListOpenChange={setNuevoListOpen}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+                <Input
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar tipo de publicación por nombre..."
+                  className="h-10 pl-9"
+                  aria-label="Buscar tipo de publicación por nombre"
                 />
+              </div>
+              {esEditor ? (
                 <Button
                   type="button"
-                  disabled={pending || !nuevoNombre.trim()}
-                  onClick={() => void handleCrear()}
-                  className="gap-2 self-start"
+                  variant="default"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  aria-label="Agregar tipo de publicación"
+                  disabled={pending}
+                  onClick={abrirCrear}
                 >
-                  <Plus className="size-4 shrink-0" aria-hidden />
-                  Crear
+                  <Plus className="h-5 w-5" />
                 </Button>
-              </div>
-            ) : null}
-
-            <div className={cn("flex min-h-0 flex-1 flex-col gap-1", esEditor && "border-t pt-3")}>
-              <ModalMicroLabel>Tipos Existentes</ModalMicroLabel>
-              <ul className="max-h-[min(26rem,55vh)] space-y-2 overflow-y-auto pr-1">
-                {items.map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex flex-col gap-2 rounded-md border border-border bg-muted/20 px-2 py-2"
-                  >
-                    {editingId === item.id && esEditor ? (
-                      <div className="flex flex-col gap-3">
-                        <Input
-                          value={editDraft}
-                          onChange={(ev) => setEditDraft(ev.target.value)}
-                          className="h-8 text-xs"
-                          disabled={pending}
-                        />
-                        <ControlesContenidoPermitidos
-                          contenidos={contenidos}
-                          selectedIds={editContenidoIds}
-                          onChange={setEditContenidoIds}
-                          disabled={pending}
-                          listOpen={editListOpen}
-                          onListOpenChange={setEditListOpen}
-                        />
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="h-8"
-                            disabled={pending}
-                            onClick={() => void handleGuardarEdicion()}
-                          >
-                            Guardar
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="h-8"
-                            disabled={pending}
-                            onClick={() => {
-                              setEditingId(null);
-                              setEditDraft("");
-                              setEditContenidoIds([]);
-                              setEditListOpen(false);
-                            }}
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-start gap-2">
-                        <div className="min-w-0 flex-1 space-y-1.5">
-                          <span className="block truncate text-sm font-medium">{item.nombre}</span>
-                          <div className="flex flex-wrap gap-1">
-                            {item.contenidoIdsPermitidos.length === 0 ? (
-                              <span className="text-xs text-muted-foreground">Sin contenidos permitidos.</span>
-                            ) : (
-                              chipsFor(item.contenidoIdsPermitidos)
-                            )}
-                          </div>
-                        </div>
-                        {esEditor ? (
-                          <div className="flex shrink-0 items-center gap-1.5">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className={BOTON_ACCION_CATALOGO_CLASS}
-                              aria-label={`Editar ${item.nombre}`}
-                              disabled={pending}
-                              onClick={() => {
-                                setEditingId(item.id);
-                                setEditDraft(item.nombre);
-                                setEditContenidoIds([...item.contenidoIdsPermitidos]);
-                                setEditListOpen(false);
-                                setNuevoListOpen(false);
-                              }}
-                            >
-                              <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className={BOTON_ACCION_CATALOGO_CLASS}
-                              aria-label={`Eliminar ${item.nombre}`}
-                              disabled={pending}
-                              onClick={() => setBorrarTarget(item)}
-                            >
-                              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                            </Button>
-                          </div>
-                        ) : null}
-                      </div>
-                    )}
-                  </li>
-                ))}
-                {items.length === 0 ? (
-                  <li className="py-6 text-center text-sm text-muted-foreground">
-                    No hay tipos de publicación.
-                  </li>
-                ) : null}
-              </ul>
+              ) : null}
             </div>
+
+            <div className="min-h-[12rem]">
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Cargando...</p>
+              ) : items.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No hay tipos de publicación. Usá el botón + para agregar el primero.
+                </p>
+              ) : listaFiltrada.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Ningún tipo de publicación coincide con la búsqueda.
+                </p>
+              ) : (
+                <ul className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto pr-1">
+                  {listaFiltrada.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2"
+                    >
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <p className="truncate text-left font-medium text-foreground">{item.nombre}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {item.contenidoIdsPermitidos.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">Sin contenidos permitidos.</span>
+                          ) : (
+                            item.contenidoIdsPermitidos.map((id) => {
+                              const nombre = contenidoById.get(id);
+                              if (!nombre) return null;
+                              return (
+                                <Badge key={id} variant="secondary" className="font-medium tracking-wide">
+                                  {nombre}
+                                </Badge>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                      {esEditor ? (
+                        <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5 self-start">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={LIST_ROW_ICON_BTN_CLASS}
+                            aria-label={`Editar ${item.nombre}`}
+                            disabled={pending}
+                            onClick={() => abrirEditar(item)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={LIST_ROW_ICON_BTN_CLASS}
+                            aria-label={`Eliminar ${item.nombre}`}
+                            disabled={pending}
+                            onClick={() => setBorrarTarget(item)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </AppModal>
+      </Dialog>
+
+      <Dialog
+        open={formOpen}
+        onOpenChange={(next) => {
+          if (pending) return;
+          setFormOpen(next);
+          if (!next) {
+            setEditingItem(null);
+            setFormNombre("");
+            setFormContenidoIds([]);
+            setFormListOpen(false);
+          }
+        }}
+      >
+        <AppModal
+          title={editingItem ? "Editar Tipo De Publicación" : "Nuevo Tipo De Publicación"}
+          size="md"
+          className="max-w-lg"
+          scrollBody
+          hideBodyScrollbars
+          actions={
+            <div className="flex w-full justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={() => {
+                  setFormOpen(false);
+                  setEditingItem(null);
+                  setFormNombre("");
+                  setFormContenidoIds([]);
+                  setFormListOpen(false);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={pending || !formNombre.trim()}
+                onClick={() => void handleGuardarForm()}
+              >
+                Guardar
+              </Button>
+            </div>
+          }
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <ModalMicroLabel>Nombre</ModalMicroLabel>
+              <Input
+                value={formNombre}
+                onChange={(e) => setFormNombre(e.target.value)}
+                placeholder="Nombre (se guardará en mayúsculas)"
+                disabled={pending}
+                autoFocus
+              />
+            </div>
+            <ControlesContenidoPermitidos
+              contenidos={contenidos}
+              selectedIds={formContenidoIds}
+              onChange={setFormContenidoIds}
+              disabled={pending}
+              listOpen={formListOpen}
+              onListOpenChange={setFormListOpen}
+            />
           </div>
         </AppModal>
       </Dialog>

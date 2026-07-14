@@ -96,7 +96,7 @@ export default function MktCalendarioPublicacionesGrid() {
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="icon"
             className="size-10 shrink-0"
             aria-label="Mes anterior"
@@ -106,7 +106,7 @@ export default function MktCalendarioPublicacionesGrid() {
           </Button>
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="icon"
             className="size-10 shrink-0"
             aria-label="Mes siguiente"
