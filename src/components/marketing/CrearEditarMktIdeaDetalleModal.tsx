@@ -313,7 +313,7 @@ export default function CrearEditarMktIdeaDetalleModal({
           </Select>
           <Input
             value={tituloIdea}
-            onChange={(e) => setTituloIdea(e.target.value)}
+            onChange={(e) => setTituloIdea(e.target.value.toLocaleUpperCase("es-AR"))}
             placeholder="TITULO"
             disabled={saving}
             aria-label="Título"

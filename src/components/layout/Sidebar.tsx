@@ -343,13 +343,13 @@ const MARKETING_MODULES: NavModule[] = [
     submodules: [
       {
         href: MARKETING_ROUTES.publicaciones.calendario,
-        label: "Calendario de Publicaciones",
+        label: "Calendario",
         icon: <CalendarRange className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.marketing.acceso,
       },
       {
         href: MARKETING_ROUTES.publicaciones.ideas,
-        label: "Ideas",
+        label: "Ideas Contenido",
         icon: <Lightbulb className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.marketing.acceso,
       },

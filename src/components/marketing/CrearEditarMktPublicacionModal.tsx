@@ -298,7 +298,7 @@ export default function CrearEditarMktPublicacionModal({
               <SelectContent>
                 {ideasDisponibles.map((idea) => (
                   <SelectItem key={idea.id} value={idea.id}>
-                    {idea.tituloIdea.toLocaleUpperCase("es-AR")}
+                    {idea.tituloIdea}
                   </SelectItem>
                 ))}
               </SelectContent>

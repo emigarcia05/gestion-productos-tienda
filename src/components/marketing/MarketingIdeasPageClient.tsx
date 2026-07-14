@@ -97,7 +97,7 @@ export default function MarketingIdeasPageClient({
 
   return (
     <>
-      <ClassicFilteredTableLayout title="Marketing" subtitle="Ideas" contentWidth="full">
+      <ClassicFilteredTableLayout title="Marketing" subtitle="Ideas Contenido" contentWidth="full">
         <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 px-4 pb-4 sm:px-6 lg:grid-cols-2 lg:px-8">
           <CatalogoFinderColumn
             titulo="Secciones"

@@ -51,6 +51,16 @@ const detalleSelect = {
   },
 } as const;
 
+/** DETALLE: primero `usada = false`, luego `titulo_idea` A–Z (es). */
+function ordenarDetallesIdeas(items: MktIdeaDetalleItem[]): MktIdeaDetalleItem[] {
+  return [...items].sort((a, b) => {
+    if (a.usada !== b.usada) return a.usada ? 1 : -1;
+    return a.tituloIdea.localeCompare(b.tituloIdea, "es", { sensitivity: "base" });
+  });
+}
+
+const detallesOrderBy = [{ usada: "asc" as const }, { tituloIdea: "asc" as const }];
+
 function mapDetalle(row: {
   id: string;
   seccionId: string;
@@ -74,7 +84,7 @@ function mapDetalle(row: {
   return {
     id: row.id,
     seccionId: row.seccionId,
-    tituloIdea: row.tituloIdea.trim(),
+    tituloIdea: row.tituloIdea.trim().toLocaleUpperCase("es-AR"),
     detalle: row.detalle,
     redIds: redesSorted.map((r) => r.redId),
     redesNombres: redesSorted.map((r) => r.red.redSocialNombre.toLocaleUpperCase("es-AR")),
@@ -121,7 +131,7 @@ export async function listarMktIdeasJerarquia(): Promise<MktIdeaSeccionItem[]> {
       ideaNombre: true,
       ideaResumen: true,
       detalles: {
-        orderBy: { createdAt: "asc" },
+        orderBy: detallesOrderBy,
         select: detalleSelect,
       },
     },
@@ -130,7 +140,7 @@ export async function listarMktIdeasJerarquia(): Promise<MktIdeaSeccionItem[]> {
     id: s.id,
     nombre: s.ideaNombre.toLocaleUpperCase("es-AR"),
     resumen: s.ideaResumen.trim(),
-    detalles: s.detalles.map(mapDetalle),
+    detalles: ordenarDetallesIdeas(s.detalles.map(mapDetalle)),
   }));
 }
 
@@ -181,7 +191,7 @@ export async function editarMktIdeaSeccion(
         ideaNombre: true,
         ideaResumen: true,
         detalles: {
-          orderBy: { createdAt: "asc" },
+          orderBy: detallesOrderBy,
           select: detalleSelect,
         },
       },
@@ -192,7 +202,7 @@ export async function editarMktIdeaSeccion(
         id: updated.id,
         nombre: updated.ideaNombre,
         resumen: updated.ideaResumen.trim(),
-        detalles: updated.detalles.map(mapDetalle),
+        detalles: ordenarDetallesIdeas(updated.detalles.map(mapDetalle)),
       },
     };
   } catch (error) {
@@ -220,7 +230,7 @@ export async function eliminarMktIdeaSeccion(
 export async function crearMktIdeaDetalle(
   input: CrearMktIdeaDetalleInput
 ): Promise<ServiceResult<MktIdeaDetalleItem>> {
-  const tituloIdea = input.tituloIdea.trim();
+  const tituloIdea = input.tituloIdea.trim().toLocaleUpperCase("es-AR");
   const detalle = input.detalle.trim();
   if (!tituloIdea) {
     return { success: false, error: "El título no puede quedar vacío." };
@@ -271,7 +281,7 @@ export async function crearMktIdeaDetalle(
 export async function editarMktIdeaDetalle(
   input: EditarMktIdeaDetalleInput
 ): Promise<ServiceResult<MktIdeaDetalleItem>> {
-  const tituloIdea = input.tituloIdea.trim();
+  const tituloIdea = input.tituloIdea.trim().toLocaleUpperCase("es-AR");
   const detalle = input.detalle.trim();
   if (!tituloIdea) {
     return { success: false, error: "El título no puede quedar vacío." };
