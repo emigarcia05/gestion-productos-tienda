@@ -7,6 +7,7 @@ import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   crearMktIdeaSeccionAction,
   editarMktIdeaSeccionAction,
@@ -18,6 +19,7 @@ interface Props {
   modo: "crear" | "editar";
   id?: string;
   nombreInicial?: string;
+  resumenInicial?: string;
   onSuccess?: () => void;
 }
 
@@ -27,15 +29,18 @@ export default function CrearEditarMktIdeaSeccionModal({
   modo,
   id,
   nombreInicial = "",
+  resumenInicial = "",
   onSuccess,
 }: Props) {
   const [nombre, setNombre] = useState("");
+  const [resumen, setResumen] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setNombre(modo === "editar" ? nombreInicial : "");
-  }, [open, modo, nombreInicial]);
+    setResumen(modo === "editar" ? resumenInicial : "");
+  }, [open, modo, nombreInicial, resumenInicial]);
 
   async function handleSubmit() {
     if (!nombre.trim() || saving) return;
@@ -44,8 +49,8 @@ export default function CrearEditarMktIdeaSeccionModal({
     try {
       const res =
         modo === "crear"
-          ? await crearMktIdeaSeccionAction({ nombre })
-          : await editarMktIdeaSeccionAction({ id: id!, nombre });
+          ? await crearMktIdeaSeccionAction({ nombre, resumen })
+          : await editarMktIdeaSeccionAction({ id: id!, nombre, resumen });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo guardar.");
         return;
@@ -69,6 +74,8 @@ export default function CrearEditarMktIdeaSeccionModal({
       <AppModal
         title={modo === "crear" ? "Nueva Sección" : "Editar Sección"}
         size="sm"
+        scrollBody
+        hideBodyScrollbars
         actions={
           <div className="flex w-full justify-end gap-2">
             <Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}>
@@ -84,21 +91,39 @@ export default function CrearEditarMktIdeaSeccionModal({
           </div>
         }
       >
-        <div className="flex flex-col gap-1">
-          <ModalMicroLabel>Nombre</ModalMicroLabel>
-          <Input
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value.toLocaleUpperCase("es-AR"))}
-            placeholder="Nombre (se guardará en mayúsculas)"
-            disabled={saving}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void handleSubmit();
-              }
-            }}
-          />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <ModalMicroLabel>Nombre</ModalMicroLabel>
+            <Input
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value.toLocaleUpperCase("es-AR"))}
+              placeholder="Nombre (se guardará en mayúsculas)"
+              disabled={saving}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleSubmit();
+                }
+              }}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <ModalMicroLabel>Resumen</ModalMicroLabel>
+            <textarea
+              value={resumen}
+              onChange={(e) => setResumen(e.target.value)}
+              placeholder="RESUMEN"
+              disabled={saving}
+              rows={4}
+              aria-label="Resumen"
+              className={cn(
+                "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50",
+                "flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none",
+                "focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+              )}
+            />
+          </div>
         </div>
       </AppModal>
     </Dialog>

@@ -955,8 +955,9 @@ Dominio **Marketing · Publicaciones**. Tres catálogos **independientes** (sin 
 
 Secciones de ideas y sus detalles. UI aún placeholder en `/marketing/publicaciones/ideas`. Migración **`20260714190000_mkt_publicaciones_ideas`**.
 
-- **`mkt_publicaciones_ideas_secciones`** (Prisma `MktPublicacionIdeaSeccion`): `id` (`cuid`), `idea_nombre` (`TEXT` **único**, MAYÚSCULAS al persistir), `created_at`, `updated_at`.
-- **`mkt_publicaciones_ideas_detalle`** (Prisma `MktPublicacionIdeaDetalle`): `id` (`cuid`); `seccion_id` FK → secciones (**`onDelete: Cascade`**); `detalle` (`TEXT` largo); `red_id` → `mkt_publicaciones_redes`; `tipo_publicacion_id` → `mkt_publicaciones_tipo`; `tipo_contenido_id` → `mkt_publicaciones_contenido_tipo` (las tres con **`onDelete: Restrict`**); `usada` (`BOOLEAN`, default **`false`** / NO — forzada en alta de servicio); `created_at`, `updated_at`. Migración FKs catálogo: **`20260714200000_mkt_ideas_detalle_catalogos`**.
+- **`mkt_publicaciones_ideas_secciones`** (Prisma `MktPublicacionIdeaSeccion`): `id` (`cuid`), `idea_nombre` (`TEXT` **único**, MAYÚSCULAS al persistir), `idea_resumen` (`TEXT`, default `''`; migración **`20260714230000_mkt_ideas_secciones_idea_resumen`**), `created_at`, `updated_at`.
+- **`mkt_publicaciones_ideas_detalle`** (Prisma `MktPublicacionIdeaDetalle`): `id` (`cuid`); `seccion_id` FK → secciones (**`onDelete: Cascade`**); `titulo_idea` (`TEXT` corto); `detalle` (`TEXT` largo); `tipo_contenido_id` → contenido (**`onDelete: Restrict`**); `usada` (default **NO** al crear); `created_at`, `updated_at`.
+- **N:M redes / tipos** (mín. 1 cada uno al guardar): `mkt_publicaciones_ideas_detalle_redes` (`MktPublicacionIdeaDetalleRed`) y `mkt_publicaciones_ideas_detalle_tipos` (`MktPublicacionIdeaDetalleTipo`); FKs detalle **Cascade**, catálogo **Restrict**. Migración **`20260714220000_mkt_ideas_detalle_red_tipo_nm`**.
 - **Servicio** (`src/services/mktPublicacionesIdeas.service.ts`): `listarMktIdeasJerarquia`, CRUD sección/detalle.
 - **Validación** (`@/lib/validations/mktPublicacionesIdeas.ts`).
 - **Actions** (`src/actions/mktPublicacionesIdeas.ts`): lectura **`PERMISOS.marketing.acceso`**; mutaciones + **`esEditor()`**; `revalidatePath` ideas.

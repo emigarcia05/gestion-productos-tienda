@@ -22,7 +22,13 @@ interface Props {
 
 type ModalSeccion =
   | { open: false }
-  | { open: true; modo: "crear" | "editar"; id?: string; nombreInicial?: string };
+  | {
+      open: true;
+      modo: "crear" | "editar";
+      id?: string;
+      nombreInicial?: string;
+      resumenInicial?: string;
+    };
 
 type ModalDetalle =
   | { open: false }
@@ -32,9 +38,10 @@ type ModalDetalle =
       seccionId: string;
       seccionNombre: string;
       id?: string;
+      tituloIdeaInicial?: string;
       detalleInicial?: string;
-      redIdInicial?: string;
-      tipoPublicacionIdInicial?: string;
+      redIdsIniciales?: string[];
+      tipoPublicacionIdsIniciales?: string[];
       tipoContenidoIdInicial?: string;
       usadaInicial?: boolean;
     };
@@ -75,7 +82,6 @@ export default function MarketingIdeasPageClient({
             titulo="Secciones"
             subtitulo={`${jerarquia.length} sección(es)`}
             mostrarNuevo={esEditor}
-            nuevoLado="start"
             onNuevo={() => setModalSeccion({ open: true, modo: "crear" })}
           >
             {jerarquia.length === 0 ? (
@@ -85,7 +91,14 @@ export default function MarketingIdeasPageClient({
                 <CatalogoFinderRow
                   key={seccion.id}
                   nombre={seccion.nombre}
-                  meta={`${seccion.detalles.length} detalle(s)`}
+                  meta={
+                    seccion.resumen
+                      ? seccion.resumen
+                      : `${seccion.detalles.length} detalle(s)`
+                  }
+                  terceraLinea={
+                    seccion.resumen ? `${seccion.detalles.length} detalle(s)` : undefined
+                  }
                   selected={seccion.id === selectedSeccionId}
                   onClick={() => setSelectedSeccionId(seccion.id)}
                   mostrarAcciones={esEditor}
@@ -95,6 +108,7 @@ export default function MarketingIdeasPageClient({
                       modo: "editar",
                       id: seccion.id,
                       nombreInicial: seccion.nombre,
+                      resumenInicial: seccion.resumen,
                     })
                   }
                   onEliminar={() =>
@@ -116,7 +130,6 @@ export default function MarketingIdeasPageClient({
               seccionSeleccionada ? seccionSeleccionada.nombre : "Seleccioná una sección"
             }
             mostrarNuevo={esEditor && Boolean(seccionSeleccionada)}
-            nuevoLado="start"
             deshabilitada={!seccionSeleccionada}
             onNuevo={() => {
               if (!seccionSeleccionada) return;
@@ -136,8 +149,8 @@ export default function MarketingIdeasPageClient({
               detalles.map((item) => (
                 <CatalogoFinderRow
                   key={item.id}
-                  nombre={item.detalle}
-                  meta={`${item.redNombre} · ${item.tipoPublicacionNombre} · ${item.tipoContenidoNombre}`}
+                  nombre={item.tituloIdea || item.detalle}
+                  meta={`${item.redesNombres.join(" · ") || "—"} · ${item.tiposPublicacionNombres.join(" · ") || "—"} · ${item.tipoContenidoNombre}`}
                   terceraLinea={item.usada ? "USADA: SI" : "USADA: NO"}
                   selected={false}
                   mostrarAcciones={esEditor}
@@ -148,9 +161,10 @@ export default function MarketingIdeasPageClient({
                       seccionId: item.seccionId,
                       seccionNombre: seccionSeleccionada.nombre,
                       id: item.id,
+                      tituloIdeaInicial: item.tituloIdea,
                       detalleInicial: item.detalle,
-                      redIdInicial: item.redId,
-                      tipoPublicacionIdInicial: item.tipoPublicacionId,
+                      redIdsIniciales: item.redIds,
+                      tipoPublicacionIdsIniciales: item.tipoPublicacionIds,
                       tipoContenidoIdInicial: item.tipoContenidoId,
                       usadaInicial: item.usada,
                     })
@@ -160,7 +174,7 @@ export default function MarketingIdeasPageClient({
                       open: true,
                       kind: "detalle",
                       id: item.id,
-                      label: item.detalle.slice(0, 80) + (item.detalle.length > 80 ? "…" : ""),
+                      label: item.tituloIdea || item.detalle.slice(0, 80),
                     })
                   }
                 />
@@ -176,6 +190,7 @@ export default function MarketingIdeasPageClient({
         modo={modalSeccion.open ? modalSeccion.modo : "crear"}
         id={modalSeccion.open ? modalSeccion.id : undefined}
         nombreInicial={modalSeccion.open ? modalSeccion.nombreInicial : undefined}
+        resumenInicial={modalSeccion.open ? modalSeccion.resumenInicial : undefined}
         onSuccess={refresh}
       />
 
@@ -189,10 +204,11 @@ export default function MarketingIdeasPageClient({
         tipos={tipos}
         contenidos={contenidos}
         id={modalDetalle.open ? modalDetalle.id : undefined}
+        tituloIdeaInicial={modalDetalle.open ? modalDetalle.tituloIdeaInicial : undefined}
         detalleInicial={modalDetalle.open ? modalDetalle.detalleInicial : undefined}
-        redIdInicial={modalDetalle.open ? modalDetalle.redIdInicial : undefined}
-        tipoPublicacionIdInicial={
-          modalDetalle.open ? modalDetalle.tipoPublicacionIdInicial : undefined
+        redIdsIniciales={modalDetalle.open ? modalDetalle.redIdsIniciales : undefined}
+        tipoPublicacionIdsIniciales={
+          modalDetalle.open ? modalDetalle.tipoPublicacionIdsIniciales : undefined
         }
         tipoContenidoIdInicial={modalDetalle.open ? modalDetalle.tipoContenidoIdInicial : undefined}
         usadaInicial={modalDetalle.open ? modalDetalle.usadaInicial : undefined}

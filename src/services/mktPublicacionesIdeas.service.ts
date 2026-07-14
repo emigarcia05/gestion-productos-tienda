@@ -32,36 +32,56 @@ function mapDbError(error: unknown, fallback: string, etiqueta: string): string 
 const detalleSelect = {
   id: true,
   seccionId: true,
+  tituloIdea: true,
   detalle: true,
-  redId: true,
-  tipoPublicacionId: true,
   tipoContenidoId: true,
   usada: true,
-  red: { select: { redSocialNombre: true } },
-  tipoPublicacion: { select: { tipoPublicacionNombre: true } },
   tipoContenido: { select: { contenidoNombre: true } },
+  redes: {
+    select: {
+      redId: true,
+      red: { select: { redSocialNombre: true } },
+    },
+  },
+  tipos: {
+    select: {
+      tipoPublicacionId: true,
+      tipoPublicacion: { select: { tipoPublicacionNombre: true } },
+    },
+  },
 } as const;
 
 function mapDetalle(row: {
   id: string;
   seccionId: string;
+  tituloIdea: string;
   detalle: string;
-  redId: string;
-  tipoPublicacionId: string;
   tipoContenidoId: string;
   usada: boolean;
-  red: { redSocialNombre: string };
-  tipoPublicacion: { tipoPublicacionNombre: string };
   tipoContenido: { contenidoNombre: string };
+  redes: { redId: string; red: { redSocialNombre: string } }[];
+  tipos: { tipoPublicacionId: string; tipoPublicacion: { tipoPublicacionNombre: string } }[];
 }): MktIdeaDetalleItem {
+  const redesSorted = [...row.redes].sort((a, b) =>
+    a.red.redSocialNombre.localeCompare(b.red.redSocialNombre, "es")
+  );
+  const tiposSorted = [...row.tipos].sort((a, b) =>
+    a.tipoPublicacion.tipoPublicacionNombre.localeCompare(
+      b.tipoPublicacion.tipoPublicacionNombre,
+      "es"
+    )
+  );
   return {
     id: row.id,
     seccionId: row.seccionId,
+    tituloIdea: row.tituloIdea.trim(),
     detalle: row.detalle,
-    redId: row.redId,
-    redNombre: row.red.redSocialNombre.toLocaleUpperCase("es-AR"),
-    tipoPublicacionId: row.tipoPublicacionId,
-    tipoPublicacionNombre: row.tipoPublicacion.tipoPublicacionNombre.toLocaleUpperCase("es-AR"),
+    redIds: redesSorted.map((r) => r.redId),
+    redesNombres: redesSorted.map((r) => r.red.redSocialNombre.toLocaleUpperCase("es-AR")),
+    tipoPublicacionIds: tiposSorted.map((t) => t.tipoPublicacionId),
+    tiposPublicacionNombres: tiposSorted.map((t) =>
+      t.tipoPublicacion.tipoPublicacionNombre.toLocaleUpperCase("es-AR")
+    ),
     tipoContenidoId: row.tipoContenidoId,
     tipoContenidoNombre: row.tipoContenido.contenidoNombre.toLocaleUpperCase("es-AR"),
     usada: row.usada,
@@ -69,23 +89,26 @@ function mapDetalle(row: {
 }
 
 async function assertCatalogosExisten(input: {
-  redId: string;
-  tipoPublicacionId: string;
+  redIds: string[];
+  tipoPublicacionIds: string[];
   tipoContenidoId: string;
 }): Promise<ServiceResult<true>> {
-  const [red, tipo, contenido] = await Promise.all([
-    prisma.mktPublicacionRed.findUnique({ where: { id: input.redId }, select: { id: true } }),
-    prisma.mktPublicacionTipo.findUnique({
-      where: { id: input.tipoPublicacionId },
-      select: { id: true },
-    }),
+  const redIds = [...new Set(input.redIds)];
+  const tipoIds = [...new Set(input.tipoPublicacionIds)];
+  const [redCount, tipoCount, contenido] = await Promise.all([
+    prisma.mktPublicacionRed.count({ where: { id: { in: redIds } } }),
+    prisma.mktPublicacionTipo.count({ where: { id: { in: tipoIds } } }),
     prisma.mktPublicacionContenidoTipo.findUnique({
       where: { id: input.tipoContenidoId },
       select: { id: true },
     }),
   ]);
-  if (!red) return { success: false, error: "La red seleccionada no existe." };
-  if (!tipo) return { success: false, error: "El tipo de publicación no existe." };
+  if (redCount !== redIds.length) {
+    return { success: false, error: "Hay redes inválidas o inexistentes." };
+  }
+  if (tipoCount !== tipoIds.length) {
+    return { success: false, error: "Hay tipos de publicación inválidos o inexistentes." };
+  }
   if (!contenido) return { success: false, error: "El tipo de contenido no existe." };
   return { success: true, data: true };
 }
@@ -96,6 +119,7 @@ export async function listarMktIdeasJerarquia(): Promise<MktIdeaSeccionItem[]> {
     select: {
       id: true,
       ideaNombre: true,
+      ideaResumen: true,
       detalles: {
         orderBy: { createdAt: "asc" },
         select: detalleSelect,
@@ -105,6 +129,7 @@ export async function listarMktIdeasJerarquia(): Promise<MktIdeaSeccionItem[]> {
   return rows.map((s) => ({
     id: s.id,
     nombre: s.ideaNombre.toLocaleUpperCase("es-AR"),
+    resumen: s.ideaResumen.trim(),
     detalles: s.detalles.map(mapDetalle),
   }));
 }
@@ -113,17 +138,23 @@ export async function crearMktIdeaSeccion(
   input: CrearMktIdeaSeccionInput
 ): Promise<ServiceResult<MktIdeaSeccionItem>> {
   const nombre = normalizarNombre(input.nombre);
+  const resumen = input.resumen.trim();
   if (!nombre) {
     return { success: false, error: "El nombre no puede quedar vacío." };
   }
   try {
     const created = await prisma.mktPublicacionIdeaSeccion.create({
-      data: { ideaNombre: nombre },
-      select: { id: true, ideaNombre: true },
+      data: { ideaNombre: nombre, ideaResumen: resumen },
+      select: { id: true, ideaNombre: true, ideaResumen: true },
     });
     return {
       success: true,
-      data: { id: created.id, nombre: created.ideaNombre, detalles: [] },
+      data: {
+        id: created.id,
+        nombre: created.ideaNombre,
+        resumen: created.ideaResumen.trim(),
+        detalles: [],
+      },
     };
   } catch (error) {
     return {
@@ -137,16 +168,18 @@ export async function editarMktIdeaSeccion(
   input: EditarMktIdeaSeccionInput
 ): Promise<ServiceResult<MktIdeaSeccionItem>> {
   const nombre = normalizarNombre(input.nombre);
+  const resumen = input.resumen.trim();
   if (!nombre) {
     return { success: false, error: "El nombre no puede quedar vacío." };
   }
   try {
     const updated = await prisma.mktPublicacionIdeaSeccion.update({
       where: { id: input.id },
-      data: { ideaNombre: nombre },
+      data: { ideaNombre: nombre, ideaResumen: resumen },
       select: {
         id: true,
         ideaNombre: true,
+        ideaResumen: true,
         detalles: {
           orderBy: { createdAt: "asc" },
           select: detalleSelect,
@@ -158,6 +191,7 @@ export async function editarMktIdeaSeccion(
       data: {
         id: updated.id,
         nombre: updated.ideaNombre,
+        resumen: updated.ideaResumen.trim(),
         detalles: updated.detalles.map(mapDetalle),
       },
     };
@@ -186,11 +220,21 @@ export async function eliminarMktIdeaSeccion(
 export async function crearMktIdeaDetalle(
   input: CrearMktIdeaDetalleInput
 ): Promise<ServiceResult<MktIdeaDetalleItem>> {
+  const tituloIdea = input.tituloIdea.trim();
   const detalle = input.detalle.trim();
+  if (!tituloIdea) {
+    return { success: false, error: "El título no puede quedar vacío." };
+  }
   if (!detalle) {
     return { success: false, error: "El detalle no puede quedar vacío." };
   }
-  const cats = await assertCatalogosExisten(input);
+  const redIds = [...new Set(input.redIds)];
+  const tipoPublicacionIds = [...new Set(input.tipoPublicacionIds)];
+  const cats = await assertCatalogosExisten({
+    redIds,
+    tipoPublicacionIds,
+    tipoContenidoId: input.tipoContenidoId,
+  });
   if (!cats.success) return cats;
 
   try {
@@ -204,11 +248,14 @@ export async function crearMktIdeaDetalle(
     const created = await prisma.mktPublicacionIdeaDetalle.create({
       data: {
         seccionId: input.seccionId,
+        tituloIdea,
         detalle,
-        redId: input.redId,
-        tipoPublicacionId: input.tipoPublicacionId,
         tipoContenidoId: input.tipoContenidoId,
         usada: false,
+        redes: { create: redIds.map((redId) => ({ redId })) },
+        tipos: {
+          create: tipoPublicacionIds.map((tipoPublicacionId) => ({ tipoPublicacionId })),
+        },
       },
       select: detalleSelect,
     });
@@ -224,24 +271,45 @@ export async function crearMktIdeaDetalle(
 export async function editarMktIdeaDetalle(
   input: EditarMktIdeaDetalleInput
 ): Promise<ServiceResult<MktIdeaDetalleItem>> {
+  const tituloIdea = input.tituloIdea.trim();
   const detalle = input.detalle.trim();
+  if (!tituloIdea) {
+    return { success: false, error: "El título no puede quedar vacío." };
+  }
   if (!detalle) {
     return { success: false, error: "El detalle no puede quedar vacío." };
   }
-  const cats = await assertCatalogosExisten(input);
+  const redIds = [...new Set(input.redIds)];
+  const tipoPublicacionIds = [...new Set(input.tipoPublicacionIds)];
+  const cats = await assertCatalogosExisten({
+    redIds,
+    tipoPublicacionIds,
+    tipoContenidoId: input.tipoContenidoId,
+  });
   if (!cats.success) return cats;
 
   try {
-    const updated = await prisma.mktPublicacionIdeaDetalle.update({
-      where: { id: input.id },
-      data: {
-        detalle,
-        redId: input.redId,
-        tipoPublicacionId: input.tipoPublicacionId,
-        tipoContenidoId: input.tipoContenidoId,
-        usada: input.usada,
-      },
-      select: detalleSelect,
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.mktPublicacionIdeaDetalleRed.deleteMany({
+        where: { ideaDetalleId: input.id },
+      });
+      await tx.mktPublicacionIdeaDetalleTipo.deleteMany({
+        where: { ideaDetalleId: input.id },
+      });
+      return tx.mktPublicacionIdeaDetalle.update({
+        where: { id: input.id },
+        data: {
+          tituloIdea,
+          detalle,
+          tipoContenidoId: input.tipoContenidoId,
+          usada: input.usada,
+          redes: { create: redIds.map((redId) => ({ redId })) },
+          tipos: {
+            create: tipoPublicacionIds.map((tipoPublicacionId) => ({ tipoPublicacionId })),
+          },
+        },
+        select: detalleSelect,
+      });
     });
     return { success: true, data: mapDetalle(updated) };
   } catch (error) {

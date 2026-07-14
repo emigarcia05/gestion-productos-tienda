@@ -1043,7 +1043,7 @@ model MktPublicacionRed {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   publicaciones MktPublicacion[]
-  ideasDetalle  MktPublicacionIdeaDetalle[]
+  ideasDetalleRedes MktPublicacionIdeaDetalleRed[]
 
   @@map("mkt_publicaciones_redes")
 }
@@ -1056,7 +1056,7 @@ model MktPublicacionTipo {
   updatedAt              DateTime @updatedAt @map("updated_at")
 
   publicaciones MktPublicacion[]
-  ideasDetalle  MktPublicacionIdeaDetalle[]
+  ideasDetalleTipos MktPublicacionIdeaDetalleTipo[]
 
   @@map("mkt_publicaciones_tipo")
 }
@@ -1094,10 +1094,11 @@ model MktPublicacion {
 
 /** Sección / agrupador de ideas de publicación (`idea_nombre` único). */
 model MktPublicacionIdeaSeccion {
-  id         String   @id @default(cuid())
-  ideaNombre String   @unique(map: "mkt_publicaciones_ideas_secciones_idea_nombre_key") @map("idea_nombre")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(cuid())
+  ideaNombre  String   @unique(map: "mkt_publicaciones_ideas_secciones_idea_nombre_key") @map("idea_nombre")
+  ideaResumen String   @default("") @map("idea_resumen") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   detalles MktPublicacionIdeaDetalle[]
 
@@ -1106,27 +1107,49 @@ model MktPublicacionIdeaSeccion {
 
 /** Detalle de idea dentro de una sección. */
 model MktPublicacionIdeaDetalle {
-  id                String   @id @default(cuid())
-  seccionId         String   @map("seccion_id")
-  seccion           MktPublicacionIdeaSeccion @relation(fields: [seccionId], references: [id], onDelete: Cascade)
-  detalle           String   @db.Text
-  redId             String   @map("red_id")
-  red               MktPublicacionRed @relation(fields: [redId], references: [id], onDelete: Restrict)
-  tipoPublicacionId String   @map("tipo_publicacion_id")
-  tipoPublicacion   MktPublicacionTipo @relation(fields: [tipoPublicacionId], references: [id], onDelete: Restrict)
-  tipoContenidoId   String   @map("tipo_contenido_id")
-  tipoContenido     MktPublicacionContenidoTipo @relation(fields: [tipoContenidoId], references: [id], onDelete: Restrict)
+  id              String   @id @default(cuid())
+  seccionId       String   @map("seccion_id")
+  seccion         MktPublicacionIdeaSeccion @relation(fields: [seccionId], references: [id], onDelete: Cascade)
+  tituloIdea      String   @map("titulo_idea")
+  detalle         String   @db.Text
+  tipoContenidoId String   @map("tipo_contenido_id")
+  tipoContenido   MktPublicacionContenidoTipo @relation(fields: [tipoContenidoId], references: [id], onDelete: Restrict)
   /** Siempre `false` (= NO) al crear. */
-  usada             Boolean  @default(false)
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  usada           Boolean  @default(false)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  redes MktPublicacionIdeaDetalleRed[]
+  tipos MktPublicacionIdeaDetalleTipo[]
 
   @@index([seccionId], map: "mkt_publicaciones_ideas_detalle_seccion_idx")
-  @@index([redId], map: "mkt_publicaciones_ideas_detalle_red_idx")
-  @@index([tipoPublicacionId], map: "mkt_publicaciones_ideas_detalle_tipo_idx")
   @@index([tipoContenidoId], map: "mkt_publicaciones_ideas_detalle_contenido_idx")
   @@index([usada], map: "mkt_publicaciones_ideas_detalle_usada_idx")
   @@map("mkt_publicaciones_ideas_detalle")
+}
+
+/** Redes asociadas a un detalle de idea (N:M). */
+model MktPublicacionIdeaDetalleRed {
+  ideaDetalleId String @map("idea_detalle_id")
+  ideaDetalle   MktPublicacionIdeaDetalle @relation(fields: [ideaDetalleId], references: [id], onDelete: Cascade)
+  redId         String @map("red_id")
+  red           MktPublicacionRed @relation(fields: [redId], references: [id], onDelete: Restrict)
+
+  @@id([ideaDetalleId, redId])
+  @@index([redId], map: "mkt_ideas_detalle_red_red_idx")
+  @@map("mkt_publicaciones_ideas_detalle_redes")
+}
+
+/** Tipos de publicación asociados a un detalle de idea (N:M). */
+model MktPublicacionIdeaDetalleTipo {
+  ideaDetalleId     String @map("idea_detalle_id")
+  ideaDetalle       MktPublicacionIdeaDetalle @relation(fields: [ideaDetalleId], references: [id], onDelete: Cascade)
+  tipoPublicacionId String @map("tipo_publicacion_id")
+  tipoPublicacion   MktPublicacionTipo @relation(fields: [tipoPublicacionId], references: [id], onDelete: Restrict)
+
+  @@id([ideaDetalleId, tipoPublicacionId])
+  @@index([tipoPublicacionId], map: "mkt_ideas_detalle_tipo_tipo_idx")
+  @@map("mkt_publicaciones_ideas_detalle_tipos")
 }
 
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────
