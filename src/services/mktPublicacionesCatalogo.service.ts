@@ -1,13 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import type {
-  MktCatalogoNombreItem,
-  MktPublicacionTipoItem,
-} from "@/lib/mktPublicacionesCatalogo";
+import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 import type {
   CrearMktCatalogoNombreInput,
-  CrearMktPublicacionTipoInput,
   EditarMktCatalogoNombreInput,
-  EditarMktPublicacionTipoInput,
 } from "@/lib/validations/mktPublicacionesCatalogo";
 import type { ServiceResult } from "@/types/service.types";
 
@@ -30,30 +25,6 @@ function mapDbError(error: unknown, fallback: string, etiqueta: string): string 
     }
   }
   return error instanceof Error ? error.message : fallback;
-}
-
-async function assertContenidosExisten(ids: string[]): Promise<ServiceResult<true>> {
-  const unique = [...new Set(ids)];
-  if (unique.length === 0) return { success: true, data: true };
-  const count = await prisma.mktPublicacionContenidoTipo.count({
-    where: { id: { in: unique } },
-  });
-  if (count !== unique.length) {
-    return { success: false, error: "Hay tipos de contenido inválidos o inexistentes." };
-  }
-  return { success: true, data: true };
-}
-
-function mapTipoRow(row: {
-  id: string;
-  tipoPublicacionNombre: string;
-  contenidosPermitidos: { contenidoTipoId: string }[];
-}): MktPublicacionTipoItem {
-  return {
-    id: row.id,
-    nombre: row.tipoPublicacionNombre.toLocaleUpperCase("es-AR"),
-    contenidoIdsPermitidos: row.contenidosPermitidos.map((l) => l.contenidoTipoId),
-  };
 }
 
 // ─── Redes ───────────────────────────────────────────────────────────────────
@@ -132,7 +103,7 @@ export async function eliminarMktPublicacionRed(
   }
 }
 
-// ─── Tipos de contenido (catálogo global) ────────────────────────────────────
+// ─── Tipos de contenido ──────────────────────────────────────────────────────
 
 export async function listarMktPublicacionContenidos(): Promise<MktCatalogoNombreItem[]> {
   const rows = await prisma.mktPublicacionContenidoTipo.findMany({
@@ -210,47 +181,33 @@ export async function eliminarMktPublicacionContenido(
 
 // ─── Tipos de publicación ────────────────────────────────────────────────────
 
-export async function listarMktPublicacionTipos(): Promise<MktPublicacionTipoItem[]> {
+export async function listarMktPublicacionTipos(): Promise<MktCatalogoNombreItem[]> {
   const rows = await prisma.mktPublicacionTipo.findMany({
     orderBy: { tipoPublicacionNombre: "asc" },
-    select: {
-      id: true,
-      tipoPublicacionNombre: true,
-      contenidosPermitidos: { select: { contenidoTipoId: true } },
-    },
+    select: { id: true, tipoPublicacionNombre: true },
   });
-  return rows.map(mapTipoRow);
+  return rows.map((r) => ({
+    id: r.id,
+    nombre: r.tipoPublicacionNombre.toLocaleUpperCase("es-AR"),
+  }));
 }
 
 export async function crearMktPublicacionTipo(
-  input: CrearMktPublicacionTipoInput
-): Promise<ServiceResult<MktPublicacionTipoItem>> {
+  input: CrearMktCatalogoNombreInput
+): Promise<ServiceResult<MktCatalogoNombreItem>> {
   const nombre = normalizarNombreCatalogo(input.nombre);
   if (!nombre) {
     return { success: false, error: "El nombre no puede quedar vacío." };
   }
-  const ids = [...new Set(input.contenidoIdsPermitidos)];
-  const check = await assertContenidosExisten(ids);
-  if (!check.success) return check;
-
   try {
-    const created = await prisma.$transaction(async (tx) => {
-      const tipo = await tx.mktPublicacionTipo.create({
-        data: {
-          tipoPublicacionNombre: nombre,
-          contenidosPermitidos: {
-            create: ids.map((contenidoTipoId) => ({ contenidoTipoId })),
-          },
-        },
-        select: {
-          id: true,
-          tipoPublicacionNombre: true,
-          contenidosPermitidos: { select: { contenidoTipoId: true } },
-        },
-      });
-      return tipo;
+    const created = await prisma.mktPublicacionTipo.create({
+      data: { tipoPublicacionNombre: nombre },
+      select: { id: true, tipoPublicacionNombre: true },
     });
-    return { success: true, data: mapTipoRow(created) };
+    return {
+      success: true,
+      data: { id: created.id, nombre: created.tipoPublicacionNombre },
+    };
   } catch (error) {
     return {
       success: false,
@@ -260,38 +217,22 @@ export async function crearMktPublicacionTipo(
 }
 
 export async function editarMktPublicacionTipo(
-  input: EditarMktPublicacionTipoInput
-): Promise<ServiceResult<MktPublicacionTipoItem>> {
+  input: EditarMktCatalogoNombreInput
+): Promise<ServiceResult<MktCatalogoNombreItem>> {
   const nombre = normalizarNombreCatalogo(input.nombre);
   if (!nombre) {
     return { success: false, error: "El nombre no puede quedar vacío." };
   }
-  const ids = [...new Set(input.contenidoIdsPermitidos)];
-  const check = await assertContenidosExisten(ids);
-  if (!check.success) return check;
-
   try {
-    const updated = await prisma.$transaction(async (tx) => {
-      await tx.mktPublicacionTipoContenido.deleteMany({
-        where: { tipoPublicacionId: input.id },
-      });
-      const tipo = await tx.mktPublicacionTipo.update({
-        where: { id: input.id },
-        data: {
-          tipoPublicacionNombre: nombre,
-          contenidosPermitidos: {
-            create: ids.map((contenidoTipoId) => ({ contenidoTipoId })),
-          },
-        },
-        select: {
-          id: true,
-          tipoPublicacionNombre: true,
-          contenidosPermitidos: { select: { contenidoTipoId: true } },
-        },
-      });
-      return tipo;
+    const updated = await prisma.mktPublicacionTipo.update({
+      where: { id: input.id },
+      data: { tipoPublicacionNombre: nombre },
+      select: { id: true, tipoPublicacionNombre: true },
     });
-    return { success: true, data: mapTipoRow(updated) };
+    return {
+      success: true,
+      data: { id: updated.id, nombre: updated.tipoPublicacionNombre },
+    };
   } catch (error) {
     return {
       success: false,

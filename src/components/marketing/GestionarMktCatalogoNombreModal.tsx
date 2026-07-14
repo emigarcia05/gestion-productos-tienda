@@ -19,12 +19,16 @@ import { cn } from "@/lib/utils";
 import {
   crearMktPublicacionContenidoAction,
   crearMktPublicacionRedAction,
+  crearMktPublicacionTipoAction,
   editarMktPublicacionContenidoAction,
   editarMktPublicacionRedAction,
+  editarMktPublicacionTipoAction,
   eliminarMktPublicacionContenidoAction,
   eliminarMktPublicacionRedAction,
+  eliminarMktPublicacionTipoAction,
   listarMktPublicacionContenidosAction,
   listarMktPublicacionRedesAction,
+  listarMktPublicacionTiposAction,
 } from "@/actions/mktPublicacionesCatalogo";
 
 type CatalogoCopy = {
@@ -61,6 +65,22 @@ const COPY_BY_KIND: Record<MktCatalogoNombreKind, CatalogoCopy> = {
     toastActualizado: "Red actualizada.",
     toastEliminado: "Red eliminada.",
   },
+  tipo: {
+    title: "Gestionar Tipo Publicaciones",
+    searchPlaceholder: "Buscar tipo de publicación por nombre...",
+    searchAria: "Buscar tipo de publicación por nombre",
+    addAria: "Agregar tipo de publicación",
+    emptyMessage: "No hay tipos de publicación. Usá el botón + para agregar el primero.",
+    emptyFilterMessage: "Ningún tipo de publicación coincide con la búsqueda.",
+    formCreateTitle: "Nuevo Tipo De Publicación",
+    formEditTitle: "Editar Tipo De Publicación",
+    formLabel: "Nombre",
+    deleteTitle: "Eliminar Tipo De Publicación",
+    deleteNoun: "el tipo de publicación",
+    toastCreado: "Tipo de publicación creado.",
+    toastActualizado: "Tipo de publicación actualizado.",
+    toastEliminado: "Tipo de publicación eliminado.",
+  },
   contenido: {
     title: "Gestionar Tipo Contenido",
     searchPlaceholder: "Buscar tipo de contenido por nombre...",
@@ -91,6 +111,14 @@ function actionsForKind(kind: MktCatalogoNombreKind) {
       crear: crearMktPublicacionRedAction,
       editar: editarMktPublicacionRedAction,
       eliminar: eliminarMktPublicacionRedAction,
+    };
+  }
+  if (kind === "tipo") {
+    return {
+      listar: listarMktPublicacionTiposAction,
+      crear: crearMktPublicacionTipoAction,
+      editar: editarMktPublicacionTipoAction,
+      eliminar: eliminarMktPublicacionTipoAction,
     };
   }
   return {

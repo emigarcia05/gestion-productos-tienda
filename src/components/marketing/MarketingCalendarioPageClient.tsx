@@ -5,17 +5,13 @@ import { useRouter } from "next/navigation";
 import { Settings2 } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import GestionarMktCatalogoNombreModal from "@/components/marketing/GestionarMktCatalogoNombreModal";
-import GestionarMktTipoPublicacionesModal from "@/components/marketing/GestionarMktTipoPublicacionesModal";
 import MktCalendarioPublicacionesGrid from "@/components/marketing/MktCalendarioPublicacionesGrid";
 import { Button } from "@/components/ui/button";
-import type {
-  MktCatalogoNombreItem,
-  MktPublicacionTipoItem,
-} from "@/lib/mktPublicacionesCatalogo";
+import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 
 interface Props {
   redesIniciales: MktCatalogoNombreItem[];
-  tiposIniciales: MktPublicacionTipoItem[];
+  tiposIniciales: MktCatalogoNombreItem[];
   contenidosIniciales: MktCatalogoNombreItem[];
   esEditor: boolean;
 }
@@ -86,11 +82,11 @@ export default function MarketingCalendarioPageClient({
         esEditor={esEditor}
         onCatalogoChanged={refreshCatalogos}
       />
-      <GestionarMktTipoPublicacionesModal
+      <GestionarMktCatalogoNombreModal
         open={openTipos}
         onOpenChange={setOpenTipos}
+        kind="tipo"
         itemsIniciales={tiposIniciales}
-        contenidosIniciales={contenidosIniciales}
         esEditor={esEditor}
         onCatalogoChanged={refreshCatalogos}
       />

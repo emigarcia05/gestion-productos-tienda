@@ -2,18 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
-import type {
-  MktCatalogoNombreItem,
-  MktPublicacionTipoItem,
-} from "@/lib/mktPublicacionesCatalogo";
+import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { esEditor, getRol } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 import {
   crearMktCatalogoNombreSchema,
-  crearMktPublicacionTipoSchema,
   editarMktCatalogoNombreSchema,
-  editarMktPublicacionTipoSchema,
   eliminarMktCatalogoNombreSchema,
 } from "@/lib/validations/mktPublicacionesCatalogo";
 import {
@@ -190,7 +185,7 @@ export async function eliminarMktPublicacionContenidoAction(
 // ─── Tipos de publicación ────────────────────────────────────────────────────
 
 export async function listarMktPublicacionTiposAction(): Promise<
-  ActionResult<MktPublicacionTipoItem[]>
+  ActionResult<MktCatalogoNombreItem[]>
 > {
   const gate = await requireMarketingLectura();
   if (gate) return gate;
@@ -206,10 +201,10 @@ export async function listarMktPublicacionTiposAction(): Promise<
 
 export async function crearMktPublicacionTipoAction(
   raw: unknown
-): Promise<ActionResult<MktPublicacionTipoItem>> {
+): Promise<ActionResult<MktCatalogoNombreItem>> {
   const gate = await requireEditorMarketing();
   if (gate) return gate;
-  const parsed = crearMktPublicacionTipoSchema.safeParse(raw);
+  const parsed = crearMktCatalogoNombreSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
@@ -221,10 +216,10 @@ export async function crearMktPublicacionTipoAction(
 
 export async function editarMktPublicacionTipoAction(
   raw: unknown
-): Promise<ActionResult<MktPublicacionTipoItem>> {
+): Promise<ActionResult<MktCatalogoNombreItem>> {
   const gate = await requireEditorMarketing();
   if (gate) return gate;
-  const parsed = editarMktPublicacionTipoSchema.safeParse(raw);
+  const parsed = editarMktCatalogoNombreSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
