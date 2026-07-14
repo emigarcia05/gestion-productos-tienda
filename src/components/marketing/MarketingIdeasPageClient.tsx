@@ -9,6 +9,8 @@ import CatalogoFinderRow from "@/components/shared/catalogo-finder/CatalogoFinde
 import CrearEditarMktIdeaDetalleModal from "@/components/marketing/CrearEditarMktIdeaDetalleModal";
 import CrearEditarMktIdeaSeccionModal from "@/components/marketing/CrearEditarMktIdeaSeccionModal";
 import EliminarMktIdeaModal from "@/components/marketing/EliminarMktIdeaModal";
+import VerMktIdeaDetalleModal from "@/components/marketing/VerMktIdeaDetalleModal";
+import VerMktIdeaSeccionModal from "@/components/marketing/VerMktIdeaSeccionModal";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 import type { MktIdeaDetalleItem, MktIdeaSeccionItem } from "@/lib/mktPublicacionesIdeas";
 
@@ -30,6 +32,10 @@ type ModalSeccion =
       resumenInicial?: string;
     };
 
+type ModalVerSeccion =
+  | { open: false }
+  | { open: true; nombre: string; resumen: string };
+
 type ModalDetalle =
   | { open: false }
   | {
@@ -46,6 +52,19 @@ type ModalDetalle =
       usadaInicial?: boolean;
     };
 
+type ModalVerDetalle =
+  | { open: false }
+  | {
+      open: true;
+      seccionNombre: string;
+      tituloIdea: string;
+      detalle: string;
+      redesNombres: string[];
+      tiposPublicacionNombres: string[];
+      tipoContenidoNombre: string;
+      usada: boolean;
+    };
+
 type ModalEliminar =
   | { open: false }
   | { open: true; kind: "seccion" | "detalle"; id: string; label: string };
@@ -60,7 +79,9 @@ export default function MarketingIdeasPageClient({
   const router = useRouter();
   const [selectedSeccionId, setSelectedSeccionId] = useState<string | null>(null);
   const [modalSeccion, setModalSeccion] = useState<ModalSeccion>({ open: false });
+  const [modalVerSeccion, setModalVerSeccion] = useState<ModalVerSeccion>({ open: false });
   const [modalDetalle, setModalDetalle] = useState<ModalDetalle>({ open: false });
+  const [modalVerDetalle, setModalVerDetalle] = useState<ModalVerDetalle>({ open: false });
   const [modalEliminar, setModalEliminar] = useState<ModalEliminar>({ open: false });
 
   const seccionSeleccionada = useMemo(
@@ -102,6 +123,13 @@ export default function MarketingIdeasPageClient({
                   selected={seccion.id === selectedSeccionId}
                   onClick={() => setSelectedSeccionId(seccion.id)}
                   mostrarAcciones={esEditor}
+                  onVer={() =>
+                    setModalVerSeccion({
+                      open: true,
+                      nombre: seccion.nombre,
+                      resumen: seccion.resumen,
+                    })
+                  }
                   onEditar={() =>
                     setModalSeccion({
                       open: true,
@@ -154,6 +182,18 @@ export default function MarketingIdeasPageClient({
                   terceraLinea={item.usada ? "USADA: SI" : "USADA: NO"}
                   selected={false}
                   mostrarAcciones={esEditor}
+                  onVer={() =>
+                    setModalVerDetalle({
+                      open: true,
+                      seccionNombre: seccionSeleccionada.nombre,
+                      tituloIdea: item.tituloIdea,
+                      detalle: item.detalle,
+                      redesNombres: item.redesNombres,
+                      tiposPublicacionNombres: item.tiposPublicacionNombres,
+                      tipoContenidoNombre: item.tipoContenidoNombre,
+                      usada: item.usada,
+                    })
+                  }
                   onEditar={() =>
                     setModalDetalle({
                       open: true,
@@ -194,6 +234,13 @@ export default function MarketingIdeasPageClient({
         onSuccess={refresh}
       />
 
+      <VerMktIdeaSeccionModal
+        open={modalVerSeccion.open}
+        onOpenChange={(o) => !o && setModalVerSeccion({ open: false })}
+        nombre={modalVerSeccion.open ? modalVerSeccion.nombre : ""}
+        resumen={modalVerSeccion.open ? modalVerSeccion.resumen : ""}
+      />
+
       <CrearEditarMktIdeaDetalleModal
         open={modalDetalle.open}
         onOpenChange={(o) => !o && setModalDetalle({ open: false })}
@@ -213,6 +260,20 @@ export default function MarketingIdeasPageClient({
         tipoContenidoIdInicial={modalDetalle.open ? modalDetalle.tipoContenidoIdInicial : undefined}
         usadaInicial={modalDetalle.open ? modalDetalle.usadaInicial : undefined}
         onSuccess={refresh}
+      />
+
+      <VerMktIdeaDetalleModal
+        open={modalVerDetalle.open}
+        onOpenChange={(o) => !o && setModalVerDetalle({ open: false })}
+        seccionNombre={modalVerDetalle.open ? modalVerDetalle.seccionNombre : ""}
+        tituloIdea={modalVerDetalle.open ? modalVerDetalle.tituloIdea : ""}
+        detalle={modalVerDetalle.open ? modalVerDetalle.detalle : ""}
+        redesNombres={modalVerDetalle.open ? modalVerDetalle.redesNombres : []}
+        tiposPublicacionNombres={
+          modalVerDetalle.open ? modalVerDetalle.tiposPublicacionNombres : []
+        }
+        tipoContenidoNombre={modalVerDetalle.open ? modalVerDetalle.tipoContenidoNombre : ""}
+        usada={modalVerDetalle.open ? modalVerDetalle.usada : false}
       />
 
       <EliminarMktIdeaModal

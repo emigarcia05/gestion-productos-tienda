@@ -30,6 +30,7 @@ export default function CatalogoFinderRow({
   selected,
   onClick,
   mostrarAcciones,
+  onVer,
   onEditar,
   onEliminar,
 }: {
@@ -42,6 +43,8 @@ export default function CatalogoFinderRow({
   selected: boolean;
   onClick?: () => void;
   mostrarAcciones: boolean;
+  /** Opcional: modal de solo lectura (p. ej. Marketing · Ideas). */
+  onVer?: () => void;
   onEditar: () => void;
   onEliminar: () => void;
 }) {
@@ -132,6 +135,25 @@ export default function CatalogoFinderRow({
 
       {mostrarAcciones && (
         <div className="pointer-events-none absolute right-2 bottom-2 flex items-center justify-end gap-1 bg-card/75 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          {onVer ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className={cn(
+                TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                "pointer-events-auto !h-7 !min-w-7 !px-1.5 text-[10px] font-bold tracking-wide"
+              )}
+              title="Ver"
+              aria-label={`Ver ${nombre}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onVer();
+              }}
+            >
+              VER
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="ghost"
