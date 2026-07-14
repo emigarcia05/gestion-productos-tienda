@@ -30,6 +30,8 @@ function firstZodErrorMessage(error: {
 
 function revalidateCalendario(): void {
   revalidatePath(MARKETING_ROUTES.publicaciones.calendario);
+  /** `usada` de ideas cambia al programar / liberar. */
+  revalidatePath(MARKETING_ROUTES.publicaciones.ideas);
 }
 
 async function requireMarketingLectura(): Promise<{ ok: false; error: string } | null> {

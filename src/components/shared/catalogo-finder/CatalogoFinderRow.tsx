@@ -1,4 +1,4 @@
-import { ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { ChevronRight, Eye, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   CATALOGO_FINDER_ROW_INTERACTIVE_CLASS,
@@ -139,11 +139,8 @@ export default function CatalogoFinderRow({
             <Button
               type="button"
               variant="ghost"
-              size="sm"
-              className={cn(
-                TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-                "pointer-events-auto !h-7 !min-w-7 !px-1.5 text-[10px] font-bold tracking-wide"
-              )}
+              size="icon"
+              className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "pointer-events-auto !h-7 !w-7 !p-1")}
               title="Ver"
               aria-label={`Ver ${nombre}`}
               onClick={(e) => {
@@ -151,7 +148,7 @@ export default function CatalogoFinderRow({
                 onVer();
               }}
             >
-              VER
+              <Eye className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
             </Button>
           ) : null}
           <Button

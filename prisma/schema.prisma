@@ -1089,6 +1089,9 @@ model MktPublicacion {
   tipoPublicacion   MktPublicacionTipo @relation(fields: [tipoPublicacionId], references: [id], onDelete: Restrict)
   tipoContenidoId   String   @map("tipo_contenido_id")
   tipoContenido     MktPublicacionContenidoTipo @relation(fields: [tipoContenidoId], references: [id], onDelete: Restrict)
+  /** Idea de detalle programada (1:1 opcional; al vincular se marca `usada`). */
+  ideaDetalleId     String?  @unique(map: "mkt_publi_idea_detalle_id_key") @map("idea_detalle_id")
+  ideaDetalle       MktPublicacionIdeaDetalle? @relation(fields: [ideaDetalleId], references: [id], onDelete: Restrict)
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
@@ -1128,6 +1131,7 @@ model MktPublicacionIdeaDetalle {
 
   redes MktPublicacionIdeaDetalleRed[]
   tipos MktPublicacionIdeaDetalleTipo[]
+  publicacion MktPublicacion?
 
   @@index([seccionId], map: "mkt_publi_ideas_detalle_seccion_idx")
   @@index([tipoContenidoId], map: "mkt_publi_ideas_detalle_contenido_idx")

@@ -13,4 +13,8 @@ export type MktPublicacionCalendarioItem = {
   tipoPublicacionNombre: string;
   tipoContenidoId: string;
   tipoContenidoNombre: string;
+  /** Idea de detalle vinculada (`mkt_publi_ideas_detalle`), si existe. */
+  ideaDetalleId: string | null;
+  /** Sección de la idea vinculada. */
+  ideaSeccionId: string | null;
 };

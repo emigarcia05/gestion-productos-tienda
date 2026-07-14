@@ -1,7 +1,13 @@
 "use client";
 
 import MktRedSocialIcon from "@/components/marketing/MktRedSocialIcon";
-import type { MktCuadroMandoStats, MktStatFila } from "@/lib/mktPublicacionesEstadisticas";
+import { Button } from "@/components/ui/button";
+import type {
+  MktCuadroMandoPeriodo,
+  MktCuadroMandoStats,
+  MktStatFila,
+} from "@/lib/mktPublicacionesEstadisticas";
+import { MKT_CUADRO_MANDO_PERIODOS } from "@/lib/mktPublicacionesEstadisticas";
 import { cn } from "@/lib/utils";
 
 function ColumnaStats({
@@ -59,16 +65,35 @@ function ColumnaStats({
 /** Tres columnas: Redes · Tipo · Contenido (Planificado / Terminado). */
 export default function MktPublicacionesCuadroMando({
   stats,
+  periodo,
+  onPeriodoChange,
 }: {
   stats: MktCuadroMandoStats;
+  periodo: MktCuadroMandoPeriodo;
+  onPeriodoChange: (periodo: MktCuadroMandoPeriodo) => void;
 }) {
   return (
-    <div className="flex shrink-0 flex-col gap-2 px-8 pb-6">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold tracking-wide text-foreground">Cuadro De Mando</h2>
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {stats.total} Publicacion(es) Del Mes
-        </p>
+    <div
+      className="flex shrink-0 flex-col gap-2 px-8 pb-2 pt-2"
+      aria-label="Cuadro de mando de publicaciones"
+    >
+      <div
+        className="flex flex-wrap items-center gap-2"
+        role="group"
+        aria-label="Periodo De Indicadores"
+      >
+        {MKT_CUADRO_MANDO_PERIODOS.map((op) => (
+          <Button
+            key={op.id}
+            type="button"
+            size="sm"
+            variant={periodo === op.id ? "default" : "outline"}
+            aria-pressed={periodo === op.id}
+            onClick={() => onPeriodoChange(op.id)}
+          >
+            {op.label}
+          </Button>
+        ))}
       </div>
       <div className="grid min-h-[10rem] grid-cols-3 gap-3">
         <ColumnaStats titulo="Redes" filas={stats.redes} mostrarIconoRed />

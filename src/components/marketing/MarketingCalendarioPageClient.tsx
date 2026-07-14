@@ -12,6 +12,7 @@ import MktPublicacionesCuadroMando from "@/components/marketing/MktPublicaciones
 import MktPublicacionesDiaModal from "@/components/marketing/MktPublicacionesDiaModal";
 import { Button } from "@/components/ui/button";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
+import type { MktIdeaSeccionItem } from "@/lib/mktPublicacionesIdeas";
 import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
 import {
   mesAnioActualArgentina,
@@ -19,13 +20,15 @@ import {
 } from "@/lib/mktCalendarioPublicaciones";
 import {
   calcularCuadroMandoPublicaciones,
-  filtrarPublicacionesPorMesAnio,
+  filtrarPublicacionesPorPeriodoCuadroMando,
+  type MktCuadroMandoPeriodo,
 } from "@/lib/mktPublicacionesEstadisticas";
 
 interface Props {
   redesIniciales: MktCatalogoNombreItem[];
   tiposIniciales: MktCatalogoNombreItem[];
   contenidosIniciales: MktCatalogoNombreItem[];
+  seccionesIdeas: MktIdeaSeccionItem[];
   publicaciones: MktPublicacionCalendarioItem[];
   esEditor: boolean;
 }
@@ -49,6 +52,7 @@ export default function MarketingCalendarioPageClient({
   redesIniciales,
   tiposIniciales,
   contenidosIniciales,
+  seccionesIdeas,
   publicaciones,
   esEditor,
 }: Props) {
@@ -57,6 +61,8 @@ export default function MarketingCalendarioPageClient({
   const [openTipos, setOpenTipos] = useState(false);
   const [openContenidos, setOpenContenidos] = useState(false);
   const [mesVista, setMesVista] = useState<MktCalendarioMesAnio>(() => mesAnioActualArgentina());
+  const [periodoCuadro, setPeriodoCuadro] =
+    useState<MktCuadroMandoPeriodo>("este_mes");
   const [modalDia, setModalDia] = useState<ModalDia>({ open: false });
   const [modalForm, setModalForm] = useState<ModalForm>({ open: false });
   const [modalEliminar, setModalEliminar] = useState<ModalEliminar>({ open: false });
@@ -65,15 +71,19 @@ export default function MarketingCalendarioPageClient({
     router.refresh();
   }, [router]);
 
-  const publicacionesMes = useMemo(
-    () => filtrarPublicacionesPorMesAnio(publicaciones, mesVista.mes, mesVista.anio),
-    [publicaciones, mesVista]
+  const publicacionesPeriodo = useMemo(
+    () => filtrarPublicacionesPorPeriodoCuadroMando(publicaciones, periodoCuadro),
+    [publicaciones, periodoCuadro]
   );
 
   const stats = useMemo(
     () =>
-      calcularCuadroMandoPublicaciones(publicacionesMes, redesIniciales, tiposIniciales),
-    [publicacionesMes, redesIniciales, tiposIniciales]
+      calcularCuadroMandoPublicaciones(
+        publicacionesPeriodo,
+        redesIniciales,
+        tiposIniciales
+      ),
+    [publicacionesPeriodo, redesIniciales, tiposIniciales]
   );
 
   const publicacionesDelDia = useMemo(() => {
@@ -132,13 +142,17 @@ export default function MarketingCalendarioPageClient({
         }
       >
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <MktPublicacionesCuadroMando
+            stats={stats}
+            periodo={periodoCuadro}
+            onPeriodoChange={setPeriodoCuadro}
+          />
           <MktCalendarioPublicacionesGrid
             publicaciones={publicaciones}
             onSeleccionarDia={handleSeleccionarDia}
             mesVista={mesVista}
             onMesVistaChange={(next) => setMesVista(next)}
           />
-          <MktPublicacionesCuadroMando stats={stats} />
         </div>
       </ClassicFilteredTableLayout>
 
@@ -177,6 +191,7 @@ export default function MarketingCalendarioPageClient({
         redes={redesIniciales}
         tipos={tiposIniciales}
         contenidos={contenidosIniciales}
+        seccionesIdeas={seccionesIdeas}
         item={modalForm.open ? (modalForm.item ?? null) : null}
         onSuccess={refresh}
       />

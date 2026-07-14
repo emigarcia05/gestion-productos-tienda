@@ -23,6 +23,7 @@ export const crearMktPublicacionSchema = z.object({
   redId: prismaCuidSchema,
   tipoPublicacionId: prismaCuidSchema,
   tipoContenidoId: prismaCuidSchema,
+  ideaDetalleId: prismaCuidSchema,
 });
 
 export const editarMktPublicacionSchema = z.object({
@@ -33,6 +34,7 @@ export const editarMktPublicacionSchema = z.object({
   redId: prismaCuidSchema,
   tipoPublicacionId: prismaCuidSchema,
   tipoContenidoId: prismaCuidSchema,
+  ideaDetalleId: prismaCuidSchema,
 });
 
 export const eliminarMktPublicacionSchema = z.object({

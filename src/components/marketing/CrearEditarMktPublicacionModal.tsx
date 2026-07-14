@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -19,6 +19,7 @@ import {
   editarMktPublicacionAction,
 } from "@/actions/mktPublicaciones";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
+import type { MktIdeaSeccionItem } from "@/lib/mktPublicacionesIdeas";
 import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ interface Props {
   redes: MktCatalogoNombreItem[];
   tipos: MktCatalogoNombreItem[];
   contenidos: MktCatalogoNombreItem[];
+  seccionesIdeas: MktIdeaSeccionItem[];
   /** Obligatorio en modo editar. */
   item?: MktPublicacionCalendarioItem | null;
   onSuccess?: () => void;
@@ -44,12 +46,15 @@ export default function CrearEditarMktPublicacionModal({
   redes,
   tipos,
   contenidos,
+  seccionesIdeas,
   item = null,
   onSuccess,
 }: Props) {
   const [redId, setRedId] = useState("");
   const [tipoPublicacionId, setTipoPublicacionId] = useState("");
   const [tipoContenidoId, setTipoContenidoId] = useState("");
+  const [seccionId, setSeccionId] = useState("");
+  const [ideaDetalleId, setIdeaDetalleId] = useState("");
   const [publicacion, setPublicacion] = useState("");
   const [contenidoCreado, setContenidoCreado] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -60,6 +65,8 @@ export default function CrearEditarMktPublicacionModal({
       setRedId(item.redId);
       setTipoPublicacionId(item.tipoPublicacionId);
       setTipoContenidoId(item.tipoContenidoId);
+      setSeccionId(item.ideaSeccionId ?? "");
+      setIdeaDetalleId(item.ideaDetalleId ?? "");
       setPublicacion(item.publicacion);
       setContenidoCreado(item.contenidoCreado);
       return;
@@ -67,15 +74,42 @@ export default function CrearEditarMktPublicacionModal({
     setRedId("");
     setTipoPublicacionId("");
     setTipoContenidoId("");
+    setSeccionId("");
+    setIdeaDetalleId("");
     setPublicacion("");
     setContenidoCreado(false);
   }, [open, modo, fechaIso, item]);
+
+  const ideasDisponibles = useMemo(() => {
+    const seccion = seccionesIdeas.find((s) => s.id === seccionId);
+    if (!seccion) return [];
+    return seccion.detalles
+      .filter((d) => !d.usada || d.id === ideaDetalleId)
+      .slice()
+      .sort((a, b) => a.tituloIdea.localeCompare(b.tituloIdea, "es"));
+  }, [seccionesIdeas, seccionId, ideaDetalleId]);
+
+  function handleSeccionChange(nextSeccionId: string) {
+    setSeccionId(nextSeccionId);
+    setIdeaDetalleId("");
+  }
+
+  function handleIdeaChange(nextIdeaId: string) {
+    setIdeaDetalleId(nextIdeaId);
+    const seccion = seccionesIdeas.find((s) => s.id === seccionId);
+    const idea = seccion?.detalles.find((d) => d.id === nextIdeaId);
+    if (!idea) return;
+    setTipoContenidoId(idea.tipoContenidoId);
+    setPublicacion(idea.detalle.trim());
+  }
 
   const puedeGuardar =
     Boolean(fechaIso) &&
     Boolean(redId) &&
     Boolean(tipoPublicacionId) &&
     Boolean(tipoContenidoId) &&
+    Boolean(seccionId) &&
+    Boolean(ideaDetalleId) &&
     publicacion.trim().length > 0 &&
     (modo === "crear" || Boolean(item?.id));
 
@@ -90,6 +124,7 @@ export default function CrearEditarMktPublicacionModal({
               redId,
               tipoPublicacionId,
               tipoContenidoId,
+              ideaDetalleId,
               publicacion,
               contenidoCreado,
             })
@@ -99,6 +134,7 @@ export default function CrearEditarMktPublicacionModal({
               redId,
               tipoPublicacionId,
               tipoContenidoId,
+              ideaDetalleId,
               publicacion,
               contenidoCreado,
             });
@@ -200,6 +236,50 @@ export default function CrearEditarMktPublicacionModal({
               {contenidos.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={seccionId || undefined}
+            onValueChange={handleSeccionChange}
+            disabled={saving || seccionesIdeas.length === 0}
+          >
+            <SelectTrigger className="w-full" aria-label="Secciones">
+              <SelectValue
+                placeholder={
+                  seccionesIdeas.length === 0 ? "SIN SECCIONES CARGADAS" : "SECCIONES"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {seccionesIdeas.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={ideaDetalleId || undefined}
+            onValueChange={handleIdeaChange}
+            disabled={saving || !seccionId || ideasDisponibles.length === 0}
+          >
+            <SelectTrigger className="w-full" aria-label="Idea">
+              <SelectValue
+                placeholder={
+                  !seccionId
+                    ? "ELEGIR SECCION"
+                    : ideasDisponibles.length === 0
+                      ? "SIN IDEAS DISPONIBLES"
+                      : "IDEA"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {ideasDisponibles.map((idea) => (
+                <SelectItem key={idea.id} value={idea.id}>
+                  {idea.tituloIdea.toLocaleUpperCase("es-AR")}
                 </SelectItem>
               ))}
             </SelectContent>

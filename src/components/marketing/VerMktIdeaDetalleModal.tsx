@@ -4,6 +4,7 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -17,9 +18,17 @@ interface Props {
   usada: boolean;
 }
 
-function CampoLectura({ label, value }: { label: string; value: string }) {
+function CampoLectura({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className={cn("flex flex-col gap-1 py-3", className)}>
       <ModalMicroLabel>{label}</ModalMicroLabel>
       <p className="whitespace-pre-wrap text-sm text-foreground">{value.trim() ? value : "—"}</p>
     </div>
@@ -53,8 +62,8 @@ export default function VerMktIdeaDetalleModal({
           </div>
         }
       >
-        <div className="flex flex-col gap-4">
-          <CampoLectura label="Sección" value={seccionNombre} />
+        <div className="flex flex-col divide-y divide-primary/25">
+          <CampoLectura label="Sección" value={seccionNombre} className="pt-0" />
           <CampoLectura
             label="Red"
             value={redesNombres.length > 0 ? redesNombres.join(" · ") : "—"}
@@ -68,7 +77,7 @@ export default function VerMktIdeaDetalleModal({
           <CampoLectura label="Tipo De Contenido" value={tipoContenidoNombre} />
           <CampoLectura label="Título" value={tituloIdea} />
           <CampoLectura label="Detalle" value={detalle} />
-          <CampoLectura label="Usada" value={usada ? "SI" : "NO"} />
+          <CampoLectura label="Usada" value={usada ? "SI" : "NO"} className="pb-0" />
         </div>
       </AppModal>
     </Dialog>
