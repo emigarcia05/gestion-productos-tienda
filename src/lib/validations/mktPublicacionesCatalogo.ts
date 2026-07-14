@@ -20,7 +20,9 @@ export const eliminarMktCatalogoNombreSchema = z.object({
   id: prismaCuidSchema,
 });
 
-const contenidoIdsPermitidosSchema = z.array(prismaCuidSchema).default([]);
+const contenidoIdsPermitidosSchema = z
+  .array(prismaCuidSchema)
+  .min(1, "Seleccioná al menos un contenido permitido.");
 
 export const crearMktPublicacionTipoSchema = z.object({
   nombre: nombreMktCatalogoSchema,

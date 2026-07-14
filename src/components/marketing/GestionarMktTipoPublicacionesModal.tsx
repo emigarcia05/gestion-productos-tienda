@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -35,21 +35,30 @@ function ControlesContenidoPermitidos({
   selectedIds,
   onChange,
   disabled,
-  listOpen,
-  onListOpenChange,
 }: {
   contenidos: MktCatalogoNombreItem[];
   selectedIds: string[];
   onChange: (ids: string[]) => void;
   disabled?: boolean;
-  listOpen: boolean;
-  onListOpenChange: (open: boolean) => void;
 }) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [listOpen, setListOpen] = useState(false);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedItems = useMemo(
     () => contenidos.filter((c) => selectedSet.has(c.id)),
     [contenidos, selectedSet]
   );
+
+  useEffect(() => {
+    if (!listOpen) return;
+    function onPointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setListOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [listOpen]);
 
   function toggle(id: string) {
     if (disabled) return;
@@ -60,85 +69,72 @@ function ControlesContenidoPermitidos({
     onChange([...selectedIds, id]);
   }
 
+  const labelTrigger =
+    contenidos.length === 0
+      ? "No hay tipos de contenido. Creá uno primero."
+      : selectedItems.length === 0
+        ? "Seleccionar contenidos permitidos"
+        : selectedItems.length === 1
+          ? selectedItems[0]!.nombre
+          : `${selectedItems.length} contenidos seleccionados`;
+
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1">
       <ModalMicroLabel>Contenidos Permitidos</ModalMicroLabel>
-      <div className="flex min-h-8 flex-wrap gap-1.5">
-        {selectedItems.length === 0 ? (
-          <span className="text-xs text-muted-foreground">Ninguno seleccionado.</span>
-        ) : (
-          selectedItems.map((item) => (
-            <Badge key={item.id} variant="secondary" className="gap-1 pr-1 font-medium tracking-wide">
-              {item.nombre}
-              {!disabled ? (
-                <button
-                  type="button"
-                  className="rounded-sm p-0.5 hover:bg-muted"
-                  aria-label={`Quitar ${item.nombre}`}
-                  onClick={() => toggle(item.id)}
-                >
-                  <X className="size-3" aria-hidden />
-                </button>
-              ) : null}
-            </Badge>
-          ))
-        )}
-      </div>
-      <Button
-        type="button"
-        variant="outline"
-        className="h-9 justify-between gap-2"
-        disabled={disabled || contenidos.length === 0}
-        aria-expanded={listOpen}
-        onClick={() => onListOpenChange(!listOpen)}
-      >
-        <span className="truncate text-sm">
-          {contenidos.length === 0
-            ? "No hay tipos de contenido. Creá uno primero."
-            : "Seleccionar tipos de contenido"}
-        </span>
-        <ChevronDown
-          className={cn("size-4 shrink-0 transition-transform", listOpen && "rotate-180")}
-          aria-hidden
-        />
-      </Button>
-      {listOpen && contenidos.length > 0 ? (
-        <ul
-          className="max-h-40 space-y-0.5 overflow-y-auto rounded-md border border-border bg-background p-1"
-          role="listbox"
-          aria-multiselectable
+      <div className="relative" ref={rootRef}>
+        <button
+          type="button"
+          disabled={disabled || contenidos.length === 0}
+          aria-expanded={listOpen}
+          aria-haspopup="listbox"
+          aria-label="Contenidos permitidos"
+          className={cn(
+            "border-input flex h-9 w-full items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-1 text-left text-sm shadow-xs outline-none",
+            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+            "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+            selectedItems.length === 0 && "text-muted-foreground"
+          )}
+          onClick={() => setListOpen((o) => !o)}
         >
-          {contenidos.map((item) => {
-            const checked = selectedSet.has(item.id);
-            return (
-              <li key={item.id}>
-                <button
-                  type="button"
+          <span className="min-w-0 flex-1 truncate">{labelTrigger}</span>
+          <ChevronDown
+            className={cn("size-4 shrink-0 opacity-50 transition-transform", listOpen && "rotate-180")}
+            aria-hidden
+          />
+        </button>
+        {listOpen && contenidos.length > 0 ? (
+          <div
+            className="absolute top-full left-0 z-50 mt-1 max-h-48 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+            role="listbox"
+            aria-multiselectable="true"
+          >
+            {contenidos.map((item) => {
+              const checked = selectedSet.has(item.id);
+              return (
+                <label
+                  key={item.id}
                   role="option"
                   aria-selected={checked}
-                  disabled={disabled}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-muted/60",
-                    checked && "bg-primary/8 font-medium"
+                    "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                    checked && "bg-muted"
                   )}
-                  onClick={() => toggle(item.id)}
                 >
-                  <span
-                    className={cn(
-                      "flex size-4 shrink-0 items-center justify-center rounded-sm border border-border",
-                      checked && "border-primary bg-primary text-primary-foreground"
-                    )}
-                    aria-hidden
-                  >
-                    {checked ? <Check className="size-3" /> : null}
-                  </span>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={() => toggle(item.id)}
+                    className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                    aria-label={item.nombre}
+                  />
                   <span className="min-w-0 truncate">{item.nombre}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
+                </label>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -168,7 +164,6 @@ export default function GestionarMktTipoPublicacionesModal({
   const [editingItem, setEditingItem] = useState<MktPublicacionTipoItem | null>(null);
   const [formNombre, setFormNombre] = useState("");
   const [formContenidoIds, setFormContenidoIds] = useState<string[]>([]);
-  const [formListOpen, setFormListOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [borrarTarget, setBorrarTarget] = useState<MktPublicacionTipoItem | null>(null);
   const [borrando, setBorrando] = useState(false);
@@ -178,6 +173,8 @@ export default function GestionarMktTipoPublicacionesModal({
     for (const c of contenidos) map.set(c.id, c.nombre);
     return map;
   }, [contenidos]);
+
+  const puedeGuardar = formNombre.trim().length > 0 && formContenidoIds.length > 0;
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -212,7 +209,6 @@ export default function GestionarMktTipoPublicacionesModal({
     setEditingItem(null);
     setFormNombre("");
     setFormContenidoIds([]);
-    setFormListOpen(false);
     setBorrarTarget(null);
     void cargar();
   }, [open, cargar, itemsIniciales, contenidosIniciales]);
@@ -233,7 +229,6 @@ export default function GestionarMktTipoPublicacionesModal({
     setEditingItem(null);
     setFormNombre("");
     setFormContenidoIds([]);
-    setFormListOpen(false);
     setFormOpen(true);
   }
 
@@ -242,12 +237,15 @@ export default function GestionarMktTipoPublicacionesModal({
     setEditingItem(item);
     setFormNombre(item.nombre);
     setFormContenidoIds([...item.contenidoIdsPermitidos]);
-    setFormListOpen(false);
     setFormOpen(true);
   }
 
   async function handleGuardarForm() {
     if (!esEditor || !formNombre.trim() || pending) return;
+    if (formContenidoIds.length === 0) {
+      toast.error("Seleccioná al menos un contenido permitido.");
+      return;
+    }
     setPending(true);
     try {
       if (editingItem) {
@@ -276,7 +274,6 @@ export default function GestionarMktTipoPublicacionesModal({
       setEditingItem(null);
       setFormNombre("");
       setFormContenidoIds([]);
-      setFormListOpen(false);
       await cargar();
       onCatalogoChanged?.();
     } finally {
@@ -424,7 +421,6 @@ export default function GestionarMktTipoPublicacionesModal({
             setEditingItem(null);
             setFormNombre("");
             setFormContenidoIds([]);
-            setFormListOpen(false);
           }
         }}
       >
@@ -445,14 +441,13 @@ export default function GestionarMktTipoPublicacionesModal({
                   setEditingItem(null);
                   setFormNombre("");
                   setFormContenidoIds([]);
-                  setFormListOpen(false);
                 }}
               >
                 Cancelar
               </Button>
               <Button
                 type="button"
-                disabled={pending || !formNombre.trim()}
+                disabled={pending || !puedeGuardar}
                 onClick={() => void handleGuardarForm()}
               >
                 Guardar
@@ -476,8 +471,6 @@ export default function GestionarMktTipoPublicacionesModal({
               selectedIds={formContenidoIds}
               onChange={setFormContenidoIds}
               disabled={pending}
-              listOpen={formListOpen}
-              onListOpenChange={setFormListOpen}
             />
           </div>
         </AppModal>

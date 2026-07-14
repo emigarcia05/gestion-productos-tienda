@@ -949,7 +949,7 @@ Dominio **Marketing · Publicaciones**. Catálogos + hechos. CRUD de redes / tip
 - **`mkt_publicaciones`** (Prisma `MktPublicacion`): `id` (`cuid`); `red_id` → redes; `tipo_publicacion_id` → tipo; `tipo_contenido_id` → contenido; las tres FK **`onDelete: Restrict`**. Al implementar altas: validar que el `tipo_contenido_id` figure en la puente para el `tipo_publicacion_id` elegido.
 - Migración catálogos base: **`20260713180000_mkt_publicaciones_redes_y_tipo`**.
 - **Servicio** (`src/services/mktPublicacionesCatalogo.service.ts`): CRUD redes, contenidos y tipos (tipos incluyen `contenidoIdsPermitidos[]`).
-- **Validación** (`@/lib/validations/mktPublicacionesCatalogo.ts`): esquemas nombre genéricos + `crearMktPublicacionTipoSchema` / `editarMktPublicacionTipoSchema` (`contenidoIdsPermitidos`).
+- **Validación** (`@/lib/validations/mktPublicacionesCatalogo.ts`): esquemas nombre genéricos + `crearMktPublicacionTipoSchema` / `editarMktPublicacionTipoSchema` (`contenidoIdsPermitidos` con **mínimo 1**).
 - **Actions** (`src/actions/mktPublicacionesCatalogo.ts`): lectura **`PERMISOS.marketing.acceso`**; mutaciones + **`esEditor()`**; `revalidatePath` calendario e ideas.
 - **Permiso de área**: **`PERMISOS.marketing.acceso`** (solo `editor`). Rutas UI: `/marketing/publicaciones/{calendario|ideas}`.
 
