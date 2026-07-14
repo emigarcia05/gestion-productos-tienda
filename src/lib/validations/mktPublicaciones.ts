@@ -25,4 +25,20 @@ export const crearMktPublicacionSchema = z.object({
   tipoContenidoId: prismaCuidSchema,
 });
 
+export const editarMktPublicacionSchema = z.object({
+  id: prismaCuidSchema,
+  fechaIso: isoYmdSchema,
+  publicacion: publicacionTextoSchema,
+  contenidoCreado: z.boolean(),
+  redId: prismaCuidSchema,
+  tipoPublicacionId: prismaCuidSchema,
+  tipoContenidoId: prismaCuidSchema,
+});
+
+export const eliminarMktPublicacionSchema = z.object({
+  id: prismaCuidSchema,
+});
+
 export type CrearMktPublicacionInput = z.infer<typeof crearMktPublicacionSchema>;
+export type EditarMktPublicacionInput = z.infer<typeof editarMktPublicacionSchema>;
+export type EliminarMktPublicacionInput = z.infer<typeof eliminarMktPublicacionSchema>;

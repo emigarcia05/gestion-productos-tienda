@@ -14,28 +14,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { crearMktPublicacionAction } from "@/actions/mktPublicaciones";
+import {
+  crearMktPublicacionAction,
+  editarMktPublicacionAction,
+} from "@/actions/mktPublicaciones";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
+import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  modo: "crear" | "editar";
   fechaIso: string;
   redes: MktCatalogoNombreItem[];
   tipos: MktCatalogoNombreItem[];
   contenidos: MktCatalogoNombreItem[];
+  /** Obligatorio en modo editar. */
+  item?: MktPublicacionCalendarioItem | null;
   onSuccess?: () => void;
 }
 
-export default function CrearMktPublicacionModal({
+export default function CrearEditarMktPublicacionModal({
   open,
   onOpenChange,
+  modo,
   fechaIso,
   redes,
   tipos,
   contenidos,
+  item = null,
   onSuccess,
 }: Props) {
   const [redId, setRedId] = useState("");
@@ -47,37 +56,57 @@ export default function CrearMktPublicacionModal({
 
   useEffect(() => {
     if (!open) return;
+    if (modo === "editar" && item) {
+      setRedId(item.redId);
+      setTipoPublicacionId(item.tipoPublicacionId);
+      setTipoContenidoId(item.tipoContenidoId);
+      setPublicacion(item.publicacion);
+      setContenidoCreado(item.contenidoCreado);
+      return;
+    }
     setRedId("");
     setTipoPublicacionId("");
     setTipoContenidoId("");
     setPublicacion("");
     setContenidoCreado(false);
-  }, [open, fechaIso]);
+  }, [open, modo, fechaIso, item]);
 
   const puedeGuardar =
     Boolean(fechaIso) &&
     Boolean(redId) &&
     Boolean(tipoPublicacionId) &&
     Boolean(tipoContenidoId) &&
-    publicacion.trim().length > 0;
+    publicacion.trim().length > 0 &&
+    (modo === "crear" || Boolean(item?.id));
 
   async function handleSubmit() {
     if (!puedeGuardar || saving) return;
     setSaving(true);
     try {
-      const res = await crearMktPublicacionAction({
-        fechaIso,
-        redId,
-        tipoPublicacionId,
-        tipoContenidoId,
-        publicacion,
-        contenidoCreado,
-      });
+      const res =
+        modo === "crear"
+          ? await crearMktPublicacionAction({
+              fechaIso,
+              redId,
+              tipoPublicacionId,
+              tipoContenidoId,
+              publicacion,
+              contenidoCreado,
+            })
+          : await editarMktPublicacionAction({
+              id: item!.id,
+              fechaIso,
+              redId,
+              tipoPublicacionId,
+              tipoContenidoId,
+              publicacion,
+              contenidoCreado,
+            });
       if (!res.ok) {
-        toast.error(res.error ?? "No se pudo crear la publicación.");
+        toast.error(res.error ?? "No se pudo guardar.");
         return;
       }
-      toast.success("Publicación creada.");
+      toast.success(modo === "crear" ? "Publicación creada." : "Publicación actualizada.");
       onOpenChange(false);
       onSuccess?.();
     } finally {
@@ -94,7 +123,7 @@ export default function CrearMktPublicacionModal({
       }}
     >
       <AppModal
-        title="Nueva Publicación"
+        title={modo === "crear" ? "Nueva Publicación" : "Editar Publicación"}
         size="md"
         className="max-w-lg"
         scrollBody

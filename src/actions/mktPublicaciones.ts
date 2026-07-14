@@ -6,9 +6,15 @@ import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { esEditor, getRol } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
-import { crearMktPublicacionSchema } from "@/lib/validations/mktPublicaciones";
+import {
+  crearMktPublicacionSchema,
+  editarMktPublicacionSchema,
+  eliminarMktPublicacionSchema,
+} from "@/lib/validations/mktPublicaciones";
 import {
   crearMktPublicacion,
+  editarMktPublicacion,
+  eliminarMktPublicacion,
   listarMktPublicacionesCalendario,
 } from "@/services/mktPublicaciones.service";
 
@@ -68,6 +74,36 @@ export async function crearMktPublicacionAction(
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
   const res = await crearMktPublicacion(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateCalendario();
+  return { ok: true, data: res.data };
+}
+
+export async function editarMktPublicacionAction(
+  raw: unknown
+): Promise<ActionResult<MktPublicacionCalendarioItem>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = editarMktPublicacionSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await editarMktPublicacion(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidateCalendario();
+  return { ok: true, data: res.data };
+}
+
+export async function eliminarMktPublicacionAction(
+  raw: unknown
+): Promise<ActionResult<{ id: string }>> {
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
+  const parsed = eliminarMktPublicacionSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await eliminarMktPublicacion(parsed.data.id);
   if (!res.success) return { ok: false, error: res.error };
   revalidateCalendario();
   return { ok: true, data: res.data };
