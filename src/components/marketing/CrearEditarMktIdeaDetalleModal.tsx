@@ -1,0 +1,146 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Dialog } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  crearMktIdeaDetalleAction,
+  editarMktIdeaDetalleAction,
+} from "@/actions/mktPublicacionesIdeas";
+import { cn } from "@/lib/utils";
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  modo: "crear" | "editar";
+  seccionId: string;
+  seccionNombre: string;
+  id?: string;
+  detalleInicial?: string;
+  usadaInicial?: boolean;
+  onSuccess?: () => void;
+}
+
+export default function CrearEditarMktIdeaDetalleModal({
+  open,
+  onOpenChange,
+  modo,
+  seccionId,
+  seccionNombre,
+  id,
+  detalleInicial = "",
+  usadaInicial = false,
+  onSuccess,
+}: Props) {
+  const [detalle, setDetalle] = useState("");
+  const [usada, setUsada] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setDetalle(modo === "editar" ? detalleInicial : "");
+    setUsada(modo === "editar" ? usadaInicial : false);
+  }, [open, modo, detalleInicial, usadaInicial]);
+
+  async function handleSubmit() {
+    if (!detalle.trim() || saving) return;
+    if (modo === "editar" && !id) return;
+    setSaving(true);
+    try {
+      const res =
+        modo === "crear"
+          ? await crearMktIdeaDetalleAction({ seccionId, detalle, usada })
+          : await editarMktIdeaDetalleAction({ id: id!, detalle, usada });
+      if (!res.ok) {
+        toast.error(res.error ?? "No se pudo guardar.");
+        return;
+      }
+      toast.success(modo === "crear" ? "Detalle creado." : "Detalle actualizado.");
+      onOpenChange(false);
+      onSuccess?.();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (saving && !next) return;
+        onOpenChange(next);
+      }}
+    >
+      <AppModal
+        title={modo === "crear" ? "Nuevo Detalle" : "Editar Detalle"}
+        size="md"
+        className="max-w-lg"
+        scrollBody
+        hideBodyScrollbars
+        actions={
+          <div className="flex w-full justify-end gap-2">
+            <Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={saving || !detalle.trim()}
+              onClick={() => void handleSubmit()}
+            >
+              Guardar
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <ModalMicroLabel>Sección</ModalMicroLabel>
+            <p className="text-sm font-medium text-foreground">{seccionNombre}</p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <ModalMicroLabel>Detalle</ModalMicroLabel>
+            <textarea
+              value={detalle}
+              onChange={(e) => setDetalle(e.target.value)}
+              disabled={saving}
+              placeholder="Texto de la idea..."
+              rows={6}
+              autoFocus
+              className={cn(
+                "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50",
+                "flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none",
+                "focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+              )}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <ModalMicroLabel>Usada</ModalMicroLabel>
+            <Select
+              value={usada ? "SI" : "NO"}
+              onValueChange={(v) => setUsada(v === "SI")}
+              disabled={saving}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NO">NO</SelectItem>
+                <SelectItem value="SI">SI</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </AppModal>
+    </Dialog>
+  );
+}

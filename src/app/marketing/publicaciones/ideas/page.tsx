@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import MarketingIdeasPageClient from "@/components/marketing/MarketingIdeasPageClient";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
+import { listarMktIdeasJerarquia } from "@/services/mktPublicacionesIdeas.service";
 
 export const dynamic = "force-dynamic";
 
@@ -12,13 +13,11 @@ export default async function MarketingIdeasPublicacionesPage() {
     redirect(GP_ROUTES.defaultEntry);
   }
 
+  const jerarquia = await listarMktIdeasJerarquia();
+
   return (
     <div className="area-page-shell">
-      <ClassicFilteredTableLayout title="Marketing" subtitle="Ideas">
-        <div className="flex flex-1 items-center justify-center px-4 py-12 text-sm text-muted-foreground">
-          Módulo En Construcción.
-        </div>
-      </ClassicFilteredTableLayout>
+      <MarketingIdeasPageClient jerarquia={jerarquia} esEditor={rol === "editor"} />
     </div>
   );
 }

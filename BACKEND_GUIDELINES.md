@@ -955,8 +955,12 @@ Dominio **Marketing · Publicaciones**. Tres catálogos **independientes** (sin 
 
 Secciones de ideas y sus detalles. UI aún placeholder en `/marketing/publicaciones/ideas`. Migración **`20260714190000_mkt_publicaciones_ideas`**.
 
-- **`mkt_publicaciones_ideas_secciones`** (Prisma `MktPublicacionIdeaSeccion`): `id` (`cuid`), `idea_nombre` (`TEXT` **único**, MAYÚSCULAS al persistir cuando exista servicio), `created_at`, `updated_at`.
+- **`mkt_publicaciones_ideas_secciones`** (Prisma `MktPublicacionIdeaSeccion`): `id` (`cuid`), `idea_nombre` (`TEXT` **único**, MAYÚSCULAS al persistir), `created_at`, `updated_at`.
 - **`mkt_publicaciones_ideas_detalle`** (Prisma `MktPublicacionIdeaDetalle`): `id` (`cuid`); `seccion_id` FK → secciones (**`onDelete: Cascade`**); `detalle` (`TEXT` largo); `usada` (`BOOLEAN`, default `false`); `created_at`, `updated_at`. Índices en `seccion_id` y `usada`.
+- **Servicio** (`src/services/mktPublicacionesIdeas.service.ts`): `listarMktIdeasJerarquia`, CRUD sección/detalle.
+- **Validación** (`@/lib/validations/mktPublicacionesIdeas.ts`).
+- **Actions** (`src/actions/mktPublicacionesIdeas.ts`): lectura **`PERMISOS.marketing.acceso`**; mutaciones + **`esEditor()`**; `revalidatePath` ideas.
+- **UI**: Finder 2 columnas en `/marketing/publicaciones/ideas` (`MarketingIdeasPageClient`).
 
 ### 2.5h Análisis M.C. · Costos financieros (`fin_ana_cos_fina`, Prisma: `FinAnaCosFina`)
 
@@ -1878,7 +1882,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-06): **Auditoría esquema — DROP `prod_tienda_margen_edicion`** — tabla huérfana tras migración a `prod_tienda_precios_edicion`; modelo `ProdTiendaMargenEdicion` retirado de Prisma; script `scripts/audit-schema-columns.mjs` para futuras auditorías columna a columna.*
 
-*Última actualización (2026-07-14): **Marketing · Ideas** — tablas **`mkt_publicaciones_ideas_secciones`** / **`mkt_publicaciones_ideas_detalle`** (`20260714190000_mkt_publicaciones_ideas`).*
+*Última actualización (2026-07-14): **Marketing · Ideas** — CRUD secciones/detalles (`mktPublicacionesIdeas.service` / actions); UI Finder 2 columnas.*
 
 *Última actualización (2026-07-06): **Comp. Categorias — costo objetivo sin FK legacy** — columna `prod_ref_cod_ext` eliminada; prioridad objetivo: (1) primera referencia competencia `pxMostrar`, (2) `costo_compra_objetivo` numérico; modal «desde lista» persiste el valor en `costo_compra_objetivo` directamente.*
 
