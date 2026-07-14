@@ -10,15 +10,8 @@ const isoYmdSchema = z
     return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
   }, "Fecha de calendario inválida.");
 
-const publicacionTextoSchema = z
-  .string()
-  .trim()
-  .min(1, "Ingresá el texto de la publicación.")
-  .max(10000, "El texto es demasiado largo.");
-
 export const crearMktPublicacionSchema = z.object({
   fechaIso: isoYmdSchema,
-  publicacion: publicacionTextoSchema,
   contenidoCreado: z.boolean(),
   redId: prismaCuidSchema,
   tipoPublicacionId: prismaCuidSchema,
@@ -29,7 +22,6 @@ export const crearMktPublicacionSchema = z.object({
 export const editarMktPublicacionSchema = z.object({
   id: prismaCuidSchema,
   fechaIso: isoYmdSchema,
-  publicacion: publicacionTextoSchema,
   contenidoCreado: z.boolean(),
   redId: prismaCuidSchema,
   tipoPublicacionId: prismaCuidSchema,

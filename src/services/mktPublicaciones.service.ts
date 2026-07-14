@@ -82,24 +82,29 @@ async function assertCatalogos(input: {
 }
 
 /**
- * Valida idea disponible para programar.
+ * Valida idea disponible para programar y devuelve su `detalle` (texto de publicación).
  * `permitirIdeaId` = idea ya vinculada a la publicación en edición.
  */
 async function assertIdeaDetalleDisponible(
   ideaDetalleId: string,
   permitirIdeaId?: string | null
-): Promise<ServiceResult<true>> {
+): Promise<ServiceResult<{ detalle: string }>> {
   const idea = await prisma.mktPublicacionIdeaDetalle.findUnique({
     where: { id: ideaDetalleId },
     select: {
       id: true,
+      detalle: true,
       usada: true,
       publicacion: { select: { id: true } },
     },
   });
   if (!idea) return { success: false, error: "La idea seleccionada no existe." };
+  const detalle = idea.detalle.trim();
+  if (!detalle) {
+    return { success: false, error: "La idea no tiene detalle para publicar." };
+  }
   if (permitirIdeaId && idea.id === permitirIdeaId) {
-    return { success: true, data: true };
+    return { success: true, data: { detalle } };
   }
   if (idea.usada || idea.publicacion) {
     return {
@@ -107,7 +112,7 @@ async function assertIdeaDetalleDisponible(
       error: "La idea ya está programada o marcada como usada.",
     };
   }
-  return { success: true, data: true };
+  return { success: true, data: { detalle } };
 }
 
 export async function listarMktPublicacionesCalendario(): Promise<
@@ -123,16 +128,12 @@ export async function listarMktPublicacionesCalendario(): Promise<
 export async function crearMktPublicacion(
   input: CrearMktPublicacionInput
 ): Promise<ServiceResult<MktPublicacionCalendarioItem>> {
-  const publicacion = input.publicacion.trim();
-  if (!publicacion) {
-    return { success: false, error: "El texto de la publicación no puede quedar vacío." };
-  }
-
   const cats = await assertCatalogos(input);
   if (!cats.success) return cats;
 
   const ideaOk = await assertIdeaDetalleDisponible(input.ideaDetalleId);
   if (!ideaOk.success) return ideaOk;
+  const publicacion = ideaOk.data.detalle;
 
   try {
     const created = await prisma.$transaction(async (tx) => {
@@ -174,11 +175,6 @@ export async function crearMktPublicacion(
 export async function editarMktPublicacion(
   input: EditarMktPublicacionInput
 ): Promise<ServiceResult<MktPublicacionCalendarioItem>> {
-  const publicacion = input.publicacion.trim();
-  if (!publicacion) {
-    return { success: false, error: "El texto de la publicación no puede quedar vacío." };
-  }
-
   const cats = await assertCatalogos(input);
   if (!cats.success) return cats;
 
@@ -193,6 +189,7 @@ export async function editarMktPublicacion(
     actual.ideaDetalleId
   );
   if (!ideaOk.success) return ideaOk;
+  const publicacion = ideaOk.data.detalle;
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
