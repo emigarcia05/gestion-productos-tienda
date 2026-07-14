@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 import {
   crearMktIdeaDetalleAction,
   editarMktIdeaDetalleAction,
@@ -25,8 +26,14 @@ interface Props {
   modo: "crear" | "editar";
   seccionId: string;
   seccionNombre: string;
+  redes: MktCatalogoNombreItem[];
+  tipos: MktCatalogoNombreItem[];
+  contenidos: MktCatalogoNombreItem[];
   id?: string;
   detalleInicial?: string;
+  redIdInicial?: string;
+  tipoPublicacionIdInicial?: string;
+  tipoContenidoIdInicial?: string;
   usadaInicial?: boolean;
   onSuccess?: () => void;
 }
@@ -37,30 +44,69 @@ export default function CrearEditarMktIdeaDetalleModal({
   modo,
   seccionId,
   seccionNombre,
+  redes,
+  tipos,
+  contenidos,
   id,
   detalleInicial = "",
+  redIdInicial,
+  tipoPublicacionIdInicial,
+  tipoContenidoIdInicial,
   usadaInicial = false,
   onSuccess,
 }: Props) {
   const [detalle, setDetalle] = useState("");
+  const [redId, setRedId] = useState("");
+  const [tipoPublicacionId, setTipoPublicacionId] = useState("");
+  const [tipoContenidoId, setTipoContenidoId] = useState("");
   const [usada, setUsada] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setDetalle(modo === "editar" ? detalleInicial : "");
+    setRedId(modo === "editar" ? (redIdInicial ?? "") : "");
+    setTipoPublicacionId(modo === "editar" ? (tipoPublicacionIdInicial ?? "") : "");
+    setTipoContenidoId(modo === "editar" ? (tipoContenidoIdInicial ?? "") : "");
     setUsada(modo === "editar" ? usadaInicial : false);
-  }, [open, modo, detalleInicial, usadaInicial]);
+  }, [
+    open,
+    modo,
+    detalleInicial,
+    redIdInicial,
+    tipoPublicacionIdInicial,
+    tipoContenidoIdInicial,
+    usadaInicial,
+  ]);
+
+  const puedeGuardar =
+    detalle.trim().length > 0 &&
+    Boolean(redId) &&
+    Boolean(tipoPublicacionId) &&
+    Boolean(tipoContenidoId);
 
   async function handleSubmit() {
-    if (!detalle.trim() || saving) return;
+    if (!puedeGuardar || saving) return;
     if (modo === "editar" && !id) return;
     setSaving(true);
     try {
       const res =
         modo === "crear"
-          ? await crearMktIdeaDetalleAction({ seccionId, detalle, usada })
-          : await editarMktIdeaDetalleAction({ id: id!, detalle, usada });
+          ? await crearMktIdeaDetalleAction({
+              seccionId,
+              detalle,
+              redId,
+              tipoPublicacionId,
+              tipoContenidoId,
+            })
+          : await editarMktIdeaDetalleAction({
+              id: id!,
+              detalle,
+              redId,
+              tipoPublicacionId,
+              tipoContenidoId,
+              usada,
+            });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo guardar.");
         return;
@@ -94,7 +140,7 @@ export default function CrearEditarMktIdeaDetalleModal({
             </Button>
             <Button
               type="button"
-              disabled={saving || !detalle.trim()}
+              disabled={saving || !puedeGuardar}
               onClick={() => void handleSubmit()}
             >
               Guardar
@@ -114,7 +160,7 @@ export default function CrearEditarMktIdeaDetalleModal({
               onChange={(e) => setDetalle(e.target.value)}
               disabled={saving}
               placeholder="Texto de la idea..."
-              rows={6}
+              rows={5}
               autoFocus
               className={cn(
                 "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50",
@@ -124,21 +170,80 @@ export default function CrearEditarMktIdeaDetalleModal({
             />
           </div>
           <div className="flex flex-col gap-1">
-            <ModalMicroLabel>Usada</ModalMicroLabel>
-            <Select
-              value={usada ? "SI" : "NO"}
-              onValueChange={(v) => setUsada(v === "SI")}
-              disabled={saving}
-            >
+            <ModalMicroLabel>Red</ModalMicroLabel>
+            <Select value={redId || undefined} onValueChange={setRedId} disabled={saving || redes.length === 0}>
               <SelectTrigger className="w-full">
-                <SelectValue />
+                <SelectValue placeholder={redes.length === 0 ? "Sin redes cargadas" : "Elegí una red"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="NO">NO</SelectItem>
-                <SelectItem value="SI">SI</SelectItem>
+                {redes.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.nombre}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
+          <div className="flex flex-col gap-1">
+            <ModalMicroLabel>Tipo De Publicación</ModalMicroLabel>
+            <Select
+              value={tipoPublicacionId || undefined}
+              onValueChange={setTipoPublicacionId}
+              disabled={saving || tipos.length === 0}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={tipos.length === 0 ? "Sin tipos cargados" : "Elegí un tipo"} />
+              </SelectTrigger>
+              <SelectContent>
+                {tipos.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <ModalMicroLabel>Tipo De Contenido</ModalMicroLabel>
+            <Select
+              value={tipoContenidoId || undefined}
+              onValueChange={setTipoContenidoId}
+              disabled={saving || contenidos.length === 0}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  placeholder={contenidos.length === 0 ? "Sin contenidos cargados" : "Elegí un contenido"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {contenidos.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {modo === "editar" ? (
+            <div className="flex flex-col gap-1">
+              <ModalMicroLabel>Usada</ModalMicroLabel>
+              <Select
+                value={usada ? "SI" : "NO"}
+                onValueChange={(v) => setUsada(v === "SI")}
+                disabled={saving}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NO">NO</SelectItem>
+                  <SelectItem value="SI">SI</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Al crear, Usada queda en NO.</p>
+          )}
         </div>
       </AppModal>
     </Dialog>

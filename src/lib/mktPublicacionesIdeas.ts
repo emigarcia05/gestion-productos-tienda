@@ -4,6 +4,12 @@ export type MktIdeaDetalleItem = {
   id: string;
   seccionId: string;
   detalle: string;
+  redId: string;
+  redNombre: string;
+  tipoPublicacionId: string;
+  tipoPublicacionNombre: string;
+  tipoContenidoId: string;
+  tipoContenidoNombre: string;
   usada: boolean;
 };
 

@@ -29,18 +29,65 @@ function mapDbError(error: unknown, fallback: string, etiqueta: string): string 
   return error instanceof Error ? error.message : fallback;
 }
 
+const detalleSelect = {
+  id: true,
+  seccionId: true,
+  detalle: true,
+  redId: true,
+  tipoPublicacionId: true,
+  tipoContenidoId: true,
+  usada: true,
+  red: { select: { redSocialNombre: true } },
+  tipoPublicacion: { select: { tipoPublicacionNombre: true } },
+  tipoContenido: { select: { contenidoNombre: true } },
+} as const;
+
 function mapDetalle(row: {
   id: string;
   seccionId: string;
   detalle: string;
+  redId: string;
+  tipoPublicacionId: string;
+  tipoContenidoId: string;
   usada: boolean;
+  red: { redSocialNombre: string };
+  tipoPublicacion: { tipoPublicacionNombre: string };
+  tipoContenido: { contenidoNombre: string };
 }): MktIdeaDetalleItem {
   return {
     id: row.id,
     seccionId: row.seccionId,
     detalle: row.detalle,
+    redId: row.redId,
+    redNombre: row.red.redSocialNombre.toLocaleUpperCase("es-AR"),
+    tipoPublicacionId: row.tipoPublicacionId,
+    tipoPublicacionNombre: row.tipoPublicacion.tipoPublicacionNombre.toLocaleUpperCase("es-AR"),
+    tipoContenidoId: row.tipoContenidoId,
+    tipoContenidoNombre: row.tipoContenido.contenidoNombre.toLocaleUpperCase("es-AR"),
     usada: row.usada,
   };
+}
+
+async function assertCatalogosExisten(input: {
+  redId: string;
+  tipoPublicacionId: string;
+  tipoContenidoId: string;
+}): Promise<ServiceResult<true>> {
+  const [red, tipo, contenido] = await Promise.all([
+    prisma.mktPublicacionRed.findUnique({ where: { id: input.redId }, select: { id: true } }),
+    prisma.mktPublicacionTipo.findUnique({
+      where: { id: input.tipoPublicacionId },
+      select: { id: true },
+    }),
+    prisma.mktPublicacionContenidoTipo.findUnique({
+      where: { id: input.tipoContenidoId },
+      select: { id: true },
+    }),
+  ]);
+  if (!red) return { success: false, error: "La red seleccionada no existe." };
+  if (!tipo) return { success: false, error: "El tipo de publicación no existe." };
+  if (!contenido) return { success: false, error: "El tipo de contenido no existe." };
+  return { success: true, data: true };
 }
 
 export async function listarMktIdeasJerarquia(): Promise<MktIdeaSeccionItem[]> {
@@ -51,7 +98,7 @@ export async function listarMktIdeasJerarquia(): Promise<MktIdeaSeccionItem[]> {
       ideaNombre: true,
       detalles: {
         orderBy: { createdAt: "asc" },
-        select: { id: true, seccionId: true, detalle: true, usada: true },
+        select: detalleSelect,
       },
     },
   });
@@ -102,7 +149,7 @@ export async function editarMktIdeaSeccion(
         ideaNombre: true,
         detalles: {
           orderBy: { createdAt: "asc" },
-          select: { id: true, seccionId: true, detalle: true, usada: true },
+          select: detalleSelect,
         },
       },
     });
@@ -143,6 +190,9 @@ export async function crearMktIdeaDetalle(
   if (!detalle) {
     return { success: false, error: "El detalle no puede quedar vacío." };
   }
+  const cats = await assertCatalogosExisten(input);
+  if (!cats.success) return cats;
+
   try {
     const seccion = await prisma.mktPublicacionIdeaSeccion.findUnique({
       where: { id: input.seccionId },
@@ -155,9 +205,12 @@ export async function crearMktIdeaDetalle(
       data: {
         seccionId: input.seccionId,
         detalle,
-        usada: input.usada ?? false,
+        redId: input.redId,
+        tipoPublicacionId: input.tipoPublicacionId,
+        tipoContenidoId: input.tipoContenidoId,
+        usada: false,
       },
-      select: { id: true, seccionId: true, detalle: true, usada: true },
+      select: detalleSelect,
     });
     return { success: true, data: mapDetalle(created) };
   } catch (error) {
@@ -175,11 +228,20 @@ export async function editarMktIdeaDetalle(
   if (!detalle) {
     return { success: false, error: "El detalle no puede quedar vacío." };
   }
+  const cats = await assertCatalogosExisten(input);
+  if (!cats.success) return cats;
+
   try {
     const updated = await prisma.mktPublicacionIdeaDetalle.update({
       where: { id: input.id },
-      data: { detalle, usada: input.usada },
-      select: { id: true, seccionId: true, detalle: true, usada: true },
+      data: {
+        detalle,
+        redId: input.redId,
+        tipoPublicacionId: input.tipoPublicacionId,
+        tipoContenidoId: input.tipoContenidoId,
+        usada: input.usada,
+      },
+      select: detalleSelect,
     });
     return { success: true, data: mapDetalle(updated) };
   } catch (error) {

@@ -9,10 +9,14 @@ import CatalogoFinderRow from "@/components/shared/catalogo-finder/CatalogoFinde
 import CrearEditarMktIdeaDetalleModal from "@/components/marketing/CrearEditarMktIdeaDetalleModal";
 import CrearEditarMktIdeaSeccionModal from "@/components/marketing/CrearEditarMktIdeaSeccionModal";
 import EliminarMktIdeaModal from "@/components/marketing/EliminarMktIdeaModal";
+import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 import type { MktIdeaDetalleItem, MktIdeaSeccionItem } from "@/lib/mktPublicacionesIdeas";
 
 interface Props {
   jerarquia: MktIdeaSeccionItem[];
+  redes: MktCatalogoNombreItem[];
+  tipos: MktCatalogoNombreItem[];
+  contenidos: MktCatalogoNombreItem[];
   esEditor: boolean;
 }
 
@@ -29,6 +33,9 @@ type ModalDetalle =
       seccionNombre: string;
       id?: string;
       detalleInicial?: string;
+      redIdInicial?: string;
+      tipoPublicacionIdInicial?: string;
+      tipoContenidoIdInicial?: string;
       usadaInicial?: boolean;
     };
 
@@ -36,7 +43,13 @@ type ModalEliminar =
   | { open: false }
   | { open: true; kind: "seccion" | "detalle"; id: string; label: string };
 
-export default function MarketingIdeasPageClient({ jerarquia, esEditor }: Props) {
+export default function MarketingIdeasPageClient({
+  jerarquia,
+  redes,
+  tipos,
+  contenidos,
+  esEditor,
+}: Props) {
   const router = useRouter();
   const [selectedSeccionId, setSelectedSeccionId] = useState<string | null>(null);
   const [modalSeccion, setModalSeccion] = useState<ModalSeccion>({ open: false });
@@ -100,9 +113,7 @@ export default function MarketingIdeasPageClient({ jerarquia, esEditor }: Props)
           <CatalogoFinderColumn
             titulo="Detalle"
             subtitulo={
-              seccionSeleccionada
-                ? seccionSeleccionada.nombre
-                : "Seleccioná una sección"
+              seccionSeleccionada ? seccionSeleccionada.nombre : "Seleccioná una sección"
             }
             mostrarNuevo={esEditor && Boolean(seccionSeleccionada)}
             nuevoLado="start"
@@ -126,7 +137,8 @@ export default function MarketingIdeasPageClient({ jerarquia, esEditor }: Props)
                 <CatalogoFinderRow
                   key={item.id}
                   nombre={item.detalle}
-                  meta={item.usada ? "USADA: SI" : "USADA: NO"}
+                  meta={`${item.redNombre} · ${item.tipoPublicacionNombre} · ${item.tipoContenidoNombre}`}
+                  terceraLinea={item.usada ? "USADA: SI" : "USADA: NO"}
                   selected={false}
                   mostrarAcciones={esEditor}
                   onEditar={() =>
@@ -137,6 +149,9 @@ export default function MarketingIdeasPageClient({ jerarquia, esEditor }: Props)
                       seccionNombre: seccionSeleccionada.nombre,
                       id: item.id,
                       detalleInicial: item.detalle,
+                      redIdInicial: item.redId,
+                      tipoPublicacionIdInicial: item.tipoPublicacionId,
+                      tipoContenidoIdInicial: item.tipoContenidoId,
                       usadaInicial: item.usada,
                     })
                   }
@@ -170,8 +185,16 @@ export default function MarketingIdeasPageClient({ jerarquia, esEditor }: Props)
         modo={modalDetalle.open ? modalDetalle.modo : "crear"}
         seccionId={modalDetalle.open ? modalDetalle.seccionId : ""}
         seccionNombre={modalDetalle.open ? modalDetalle.seccionNombre : ""}
+        redes={redes}
+        tipos={tipos}
+        contenidos={contenidos}
         id={modalDetalle.open ? modalDetalle.id : undefined}
         detalleInicial={modalDetalle.open ? modalDetalle.detalleInicial : undefined}
+        redIdInicial={modalDetalle.open ? modalDetalle.redIdInicial : undefined}
+        tipoPublicacionIdInicial={
+          modalDetalle.open ? modalDetalle.tipoPublicacionIdInicial : undefined
+        }
+        tipoContenidoIdInicial={modalDetalle.open ? modalDetalle.tipoContenidoIdInicial : undefined}
         usadaInicial={modalDetalle.open ? modalDetalle.usadaInicial : undefined}
         onSuccess={refresh}
       />

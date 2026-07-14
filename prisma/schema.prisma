@@ -1043,6 +1043,7 @@ model MktPublicacionRed {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   publicaciones MktPublicacion[]
+  ideasDetalle  MktPublicacionIdeaDetalle[]
 
   @@map("mkt_publicaciones_redes")
 }
@@ -1055,6 +1056,7 @@ model MktPublicacionTipo {
   updatedAt              DateTime @updatedAt @map("updated_at")
 
   publicaciones MktPublicacion[]
+  ideasDetalle  MktPublicacionIdeaDetalle[]
 
   @@map("mkt_publicaciones_tipo")
 }
@@ -1067,6 +1069,7 @@ model MktPublicacionContenidoTipo {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   publicaciones MktPublicacion[]
+  ideasDetalle  MktPublicacionIdeaDetalle[]
 
   @@map("mkt_publicaciones_contenido_tipo")
 }
@@ -1103,15 +1106,25 @@ model MktPublicacionIdeaSeccion {
 
 /** Detalle de idea dentro de una sección. */
 model MktPublicacionIdeaDetalle {
-  id        String   @id @default(cuid())
-  seccionId String   @map("seccion_id")
-  seccion   MktPublicacionIdeaSeccion @relation(fields: [seccionId], references: [id], onDelete: Cascade)
-  detalle   String   @db.Text
-  usada     Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(cuid())
+  seccionId         String   @map("seccion_id")
+  seccion           MktPublicacionIdeaSeccion @relation(fields: [seccionId], references: [id], onDelete: Cascade)
+  detalle           String   @db.Text
+  redId             String   @map("red_id")
+  red               MktPublicacionRed @relation(fields: [redId], references: [id], onDelete: Restrict)
+  tipoPublicacionId String   @map("tipo_publicacion_id")
+  tipoPublicacion   MktPublicacionTipo @relation(fields: [tipoPublicacionId], references: [id], onDelete: Restrict)
+  tipoContenidoId   String   @map("tipo_contenido_id")
+  tipoContenido     MktPublicacionContenidoTipo @relation(fields: [tipoContenidoId], references: [id], onDelete: Restrict)
+  /** Siempre `false` (= NO) al crear. */
+  usada             Boolean  @default(false)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@index([seccionId], map: "mkt_publicaciones_ideas_detalle_seccion_idx")
+  @@index([redId], map: "mkt_publicaciones_ideas_detalle_red_idx")
+  @@index([tipoPublicacionId], map: "mkt_publicaciones_ideas_detalle_tipo_idx")
+  @@index([tipoContenidoId], map: "mkt_publicaciones_ideas_detalle_contenido_idx")
   @@index([usada], map: "mkt_publicaciones_ideas_detalle_usada_idx")
   @@map("mkt_publicaciones_ideas_detalle")
 }

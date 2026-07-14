@@ -26,15 +26,21 @@ export const eliminarMktIdeaSeccionSchema = z.object({
   id: prismaCuidSchema,
 });
 
+/** Alta: `usada` siempre NO en servicio (no se acepta desde el cliente). */
 export const crearMktIdeaDetalleSchema = z.object({
   seccionId: prismaCuidSchema,
   detalle: detalleTextoSchema,
-  usada: z.boolean().optional().default(false),
+  redId: prismaCuidSchema,
+  tipoPublicacionId: prismaCuidSchema,
+  tipoContenidoId: prismaCuidSchema,
 });
 
 export const editarMktIdeaDetalleSchema = z.object({
   id: prismaCuidSchema,
   detalle: detalleTextoSchema,
+  redId: prismaCuidSchema,
+  tipoPublicacionId: prismaCuidSchema,
+  tipoContenidoId: prismaCuidSchema,
   usada: z.boolean(),
 });
 
