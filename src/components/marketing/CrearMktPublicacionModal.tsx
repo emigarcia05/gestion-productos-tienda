@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
+import ModalSiNoChoice from "@/components/shared/ModalSiNoChoice";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -41,6 +42,7 @@ export default function CrearMktPublicacionModal({
   const [tipoPublicacionId, setTipoPublicacionId] = useState("");
   const [tipoContenidoId, setTipoContenidoId] = useState("");
   const [publicacion, setPublicacion] = useState("");
+  const [contenidoCreado, setContenidoCreado] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export default function CrearMktPublicacionModal({
     setTipoPublicacionId("");
     setTipoContenidoId("");
     setPublicacion("");
+    setContenidoCreado(false);
   }, [open, fechaIso]);
 
   const puedeGuardar =
@@ -68,6 +71,7 @@ export default function CrearMktPublicacionModal({
         tipoPublicacionId,
         tipoContenidoId,
         publicacion,
+        contenidoCreado,
       });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo crear la publicación.");
@@ -184,6 +188,14 @@ export default function CrearMktPublicacionModal({
               "focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
             )}
           />
+          <div className="flex flex-col gap-1">
+            <ModalMicroLabel>Contenido Creado</ModalMicroLabel>
+            <ModalSiNoChoice
+              value={contenidoCreado}
+              onChange={setContenidoCreado}
+              disabled={saving}
+            />
+          </div>
         </div>
       </AppModal>
     </Dialog>

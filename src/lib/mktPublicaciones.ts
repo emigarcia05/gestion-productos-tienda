@@ -5,6 +5,8 @@ export type MktPublicacionCalendarioItem = {
   /** Día de calendario `YYYY-MM-DD`. */
   fechaIso: string;
   publicacion: string;
+  /** SI = true / NO = false. */
+  contenidoCreado: boolean;
   redId: string;
   redNombre: string;
   tipoPublicacionId: string;

@@ -19,6 +19,7 @@ const publicacionTextoSchema = z
 export const crearMktPublicacionSchema = z.object({
   fechaIso: isoYmdSchema,
   publicacion: publicacionTextoSchema,
+  contenidoCreado: z.boolean(),
   redId: prismaCuidSchema,
   tipoPublicacionId: prismaCuidSchema,
   tipoContenidoId: prismaCuidSchema,

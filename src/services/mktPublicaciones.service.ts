@@ -8,6 +8,7 @@ const publicacionSelect = {
   id: true,
   fecha: true,
   publicacion: true,
+  contenidoCreado: true,
   redId: true,
   tipoPublicacionId: true,
   tipoContenidoId: true,
@@ -20,6 +21,7 @@ function mapPublicacion(row: {
   id: string;
   fecha: Date;
   publicacion: string;
+  contenidoCreado: boolean;
   redId: string;
   tipoPublicacionId: string;
   tipoContenidoId: string;
@@ -31,6 +33,7 @@ function mapPublicacion(row: {
     id: row.id,
     fechaIso: isoYmdFromPrismaDateOnly(row.fecha),
     publicacion: row.publicacion.trim(),
+    contenidoCreado: row.contenidoCreado,
     redId: row.redId,
     redNombre: row.red.redSocialNombre.toLocaleUpperCase("es-AR"),
     tipoPublicacionId: row.tipoPublicacionId,
@@ -86,6 +89,7 @@ export async function crearMktPublicacion(
       data: {
         fecha: dateFromIsoYmd(input.fechaIso),
         publicacion,
+        contenidoCreado: input.contenidoCreado,
         redId: input.redId,
         tipoPublicacionId: input.tipoPublicacionId,
         tipoContenidoId: input.tipoContenidoId,
