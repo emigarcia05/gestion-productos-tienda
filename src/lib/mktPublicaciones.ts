@@ -1,0 +1,14 @@
+/** Tipos de hechos de publicación (`mkt_publi`) para el calendario. */
+
+export type MktPublicacionCalendarioItem = {
+  id: string;
+  /** Día de calendario `YYYY-MM-DD`. */
+  fechaIso: string;
+  publicacion: string;
+  redId: string;
+  redNombre: string;
+  tipoPublicacionId: string;
+  tipoPublicacionNombre: string;
+  tipoContenidoId: string;
+  tipoContenidoNombre: string;
+};

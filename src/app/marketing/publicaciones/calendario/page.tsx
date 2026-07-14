@@ -8,6 +8,7 @@ import {
   listarMktPublicacionRedes,
   listarMktPublicacionTipos,
 } from "@/services/mktPublicacionesCatalogo.service";
+import { listarMktPublicacionesCalendario } from "@/services/mktPublicaciones.service";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +19,11 @@ export default async function MarketingCalendarioPublicacionesPage() {
   }
 
   const esEditor = rol === "editor";
-  const [redesIniciales, tiposIniciales, contenidosIniciales] = await Promise.all([
+  const [redesIniciales, tiposIniciales, contenidosIniciales, publicaciones] = await Promise.all([
     listarMktPublicacionRedes(),
     listarMktPublicacionTipos(),
     listarMktPublicacionContenidos(),
+    listarMktPublicacionesCalendario(),
   ]);
 
   return (
@@ -30,6 +32,7 @@ export default async function MarketingCalendarioPublicacionesPage() {
         redesIniciales={redesIniciales}
         tiposIniciales={tiposIniciales}
         contenidosIniciales={contenidosIniciales}
+        publicaciones={publicaciones}
         esEditor={esEditor}
       />
     </div>

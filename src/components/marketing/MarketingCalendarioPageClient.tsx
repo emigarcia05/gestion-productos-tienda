@@ -4,15 +4,18 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Settings2 } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import CrearMktPublicacionModal from "@/components/marketing/CrearMktPublicacionModal";
 import GestionarMktCatalogoNombreModal from "@/components/marketing/GestionarMktCatalogoNombreModal";
 import MktCalendarioPublicacionesGrid from "@/components/marketing/MktCalendarioPublicacionesGrid";
 import { Button } from "@/components/ui/button";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
+import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
 
 interface Props {
   redesIniciales: MktCatalogoNombreItem[];
   tiposIniciales: MktCatalogoNombreItem[];
   contenidosIniciales: MktCatalogoNombreItem[];
+  publicaciones: MktPublicacionCalendarioItem[];
   esEditor: boolean;
 }
 
@@ -20,14 +23,18 @@ export default function MarketingCalendarioPageClient({
   redesIniciales,
   tiposIniciales,
   contenidosIniciales,
+  publicaciones,
   esEditor,
 }: Props) {
   const router = useRouter();
   const [openRedes, setOpenRedes] = useState(false);
   const [openTipos, setOpenTipos] = useState(false);
   const [openContenidos, setOpenContenidos] = useState(false);
+  const [modalNueva, setModalNueva] = useState<{ open: false } | { open: true; fechaIso: string }>({
+    open: false,
+  });
 
-  const refreshCatalogos = useCallback(() => {
+  const refresh = useCallback(() => {
     router.refresh();
   }, [router]);
 
@@ -71,8 +78,22 @@ export default function MarketingCalendarioPageClient({
           ) : null
         }
       >
-        <MktCalendarioPublicacionesGrid />
+        <MktCalendarioPublicacionesGrid
+          publicaciones={publicaciones}
+          esEditor={esEditor}
+          onNuevoEnDia={(fechaIso) => setModalNueva({ open: true, fechaIso })}
+        />
       </ClassicFilteredTableLayout>
+
+      <CrearMktPublicacionModal
+        open={modalNueva.open}
+        onOpenChange={(o) => !o && setModalNueva({ open: false })}
+        fechaIso={modalNueva.open ? modalNueva.fechaIso : ""}
+        redes={redesIniciales}
+        tipos={tiposIniciales}
+        contenidos={contenidosIniciales}
+        onSuccess={refresh}
+      />
 
       <GestionarMktCatalogoNombreModal
         open={openRedes}
@@ -80,7 +101,7 @@ export default function MarketingCalendarioPageClient({
         kind="red"
         itemsIniciales={redesIniciales}
         esEditor={esEditor}
-        onCatalogoChanged={refreshCatalogos}
+        onCatalogoChanged={refresh}
       />
       <GestionarMktCatalogoNombreModal
         open={openTipos}
@@ -88,7 +109,7 @@ export default function MarketingCalendarioPageClient({
         kind="tipo"
         itemsIniciales={tiposIniciales}
         esEditor={esEditor}
-        onCatalogoChanged={refreshCatalogos}
+        onCatalogoChanged={refresh}
       />
       <GestionarMktCatalogoNombreModal
         open={openContenidos}
@@ -96,7 +117,7 @@ export default function MarketingCalendarioPageClient({
         kind="contenido"
         itemsIniciales={contenidosIniciales}
         esEditor={esEditor}
-        onCatalogoChanged={refreshCatalogos}
+        onCatalogoChanged={refresh}
       />
     </>
   );

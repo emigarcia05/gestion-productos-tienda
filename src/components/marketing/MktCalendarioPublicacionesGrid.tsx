@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import MktRedSocialIcon from "@/components/marketing/MktRedSocialIcon";
 import {
   construirVentanaCincoSemanas,
   desplazarMesAnio,
@@ -13,13 +14,23 @@ import {
   MKT_CALENDARIO_DIAS_SEMANA,
   type MktCalendarioMesAnio,
 } from "@/lib/mktCalendarioPublicaciones";
+import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
 import { cn } from "@/lib/utils";
 
 /**
  * Grilla 5 semanas × 7 días (LUN–DOM).
  * Al cargar: 1.ª fila = semana actual (AR). Navegación ←/→ = ±1 mes (1.ª fila = inicio del mes).
+ * Íconos de red por publicación del día; click en día (editor) abre alta.
  */
-export default function MktCalendarioPublicacionesGrid() {
+export default function MktCalendarioPublicacionesGrid({
+  publicaciones,
+  esEditor,
+  onNuevoEnDia,
+}: {
+  publicaciones: MktPublicacionCalendarioItem[];
+  esEditor: boolean;
+  onNuevoEnDia?: (fechaIso: string) => void;
+}) {
   const [mesVista, setMesVista] = useState<MktCalendarioMesAnio>(() => mesAnioActualArgentina());
   const [lunesAncla, setLunesAncla] = useState(() => lunesSemanaActualArgentina());
 
@@ -33,6 +44,16 @@ export default function MktCalendarioPublicacionesGrid() {
     [lunesAncla, mesVista]
   );
   const etiquetaMes = useMemo(() => etiquetaMesAnioMayusculas(mesVista), [mesVista]);
+
+  const porFecha = useMemo(() => {
+    const map = new Map<string, MktPublicacionCalendarioItem[]>();
+    for (const p of publicaciones) {
+      const list = map.get(p.fechaIso) ?? [];
+      list.push(p);
+      map.set(p.fechaIso, list);
+    }
+    return map;
+  }, [publicaciones]);
 
   const lunesEstaSemana = lunesSemanaActualArgentina();
   const lunesEsteMes = lunesInicioMesArgentina(hoyMes.anio, hoyMes.mes);
@@ -141,31 +162,62 @@ export default function MktCalendarioPublicacionesGrid() {
               role="row"
               className="grid min-h-[5.5rem] grid-cols-7 border-b border-border last:border-b-0"
             >
-              {semana.dias.map((celda) => (
-                <div
-                  key={celda.isoYmd}
-                  role="gridcell"
-                  aria-label={celda.isoYmd}
-                  className={cn(
-                    "relative flex min-h-[5.5rem] flex-col border-r border-border p-2 last:border-r-0",
-                    celda.delMesActual ? "bg-primary/8" : "bg-card",
-                    celda.esHoy && "ring-2 ring-inset ring-primary"
-                  )}
-                >
-                  <span
+              {semana.dias.map((celda) => {
+                const items = porFecha.get(celda.isoYmd) ?? [];
+                const clickable = Boolean(esEditor && onNuevoEnDia);
+                return (
+                  <div
+                    key={celda.isoYmd}
+                    role="gridcell"
+                    aria-label={celda.isoYmd}
                     className={cn(
-                      "inline-flex size-7 items-center justify-center rounded-full text-sm font-semibold tabular-nums",
-                      celda.esHoy
-                        ? "bg-primary text-primary-foreground"
-                        : celda.delMesActual
-                          ? "text-foreground"
-                          : "text-muted-foreground"
+                      "relative flex min-h-[5.5rem] flex-col gap-1 border-r border-border p-2 last:border-r-0",
+                      celda.delMesActual ? "bg-primary/8" : "bg-card",
+                      celda.esHoy && "ring-2 ring-inset ring-primary",
+                      clickable && "cursor-pointer hover:bg-primary/15"
                     )}
+                    onClick={() => {
+                      if (!clickable) return;
+                      onNuevoEnDia?.(celda.isoYmd);
+                    }}
+                    onKeyDown={(e) => {
+                      if (!clickable) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onNuevoEnDia?.(celda.isoYmd);
+                      }
+                    }}
+                    tabIndex={clickable ? 0 : undefined}
                   >
-                    {celda.diaMes}
-                  </span>
-                </div>
-              ))}
+                    <span
+                      className={cn(
+                        "inline-flex size-7 items-center justify-center rounded-full text-sm font-semibold tabular-nums",
+                        celda.esHoy
+                          ? "bg-primary text-primary-foreground"
+                          : celda.delMesActual
+                            ? "text-foreground"
+                            : "text-muted-foreground"
+                      )}
+                    >
+                      {celda.diaMes}
+                    </span>
+                    {items.length > 0 ? (
+                      <div className="mt-auto flex flex-wrap gap-1" aria-label="Publicaciones del día">
+                        {items.map((item) => (
+                          <span
+                            key={item.id}
+                            title={`${item.redNombre}: ${item.publicacion.slice(0, 80)}`}
+                            className="inline-flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground"
+                          >
+                            <MktRedSocialIcon redNombre={item.redNombre} className="size-3.5" />
+                            <span className="sr-only">{item.redNombre}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>

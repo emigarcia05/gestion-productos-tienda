@@ -1077,6 +1077,10 @@ model MktPublicacionContenidoTipo {
 /** Publicación (hecho de marketing). Referencia independiente a cada catálogo. */
 model MktPublicacion {
   id                String   @id @default(cuid())
+  /** Día del calendario de publicaciones (`YYYY-MM-DD`, sin hora). */
+  fecha             DateTime @map("fecha") @db.Date
+  /** Texto / contenido de la publicación. */
+  publicacion       String   @default("") @map("publicacion") @db.Text
   redId             String   @map("red_id")
   red               MktPublicacionRed @relation(fields: [redId], references: [id], onDelete: Restrict)
   tipoPublicacionId String   @map("tipo_publicacion_id")
@@ -1086,6 +1090,7 @@ model MktPublicacion {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
+  @@index([fecha], map: "mkt_publi_fecha_idx")
   @@index([redId], map: "mkt_publi_red_idx")
   @@index([tipoPublicacionId], map: "mkt_publi_tipo_idx")
   @@index([tipoContenidoId], map: "mkt_publi_contenido_idx")
@@ -1148,8 +1153,8 @@ model MktPublicacionIdeaDetalleTipo {
   tipoPublicacion   MktPublicacionTipo @relation(fields: [tipoPublicacionId], references: [id], onDelete: Restrict)
 
   @@id([ideaDetalleId, tipoPublicacionId])
-  @@index([tipoPublicacionId], map: "mkt_ideas_detalle_tipo_tipo_idx")
-  @@map("mkt_publicaciones_ideas_detalle_tipos")
+  @@index([tipoPublicacionId], map: "mkt_publi_puente_ideas_detalle_tipos_tipo_idx")
+  @@map("mkt_publi_puente_ideas_detalle_tipos")
 }
 
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────
