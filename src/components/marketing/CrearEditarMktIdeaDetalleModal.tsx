@@ -153,97 +153,80 @@ export default function CrearEditarMktIdeaDetalleModal({
             <ModalMicroLabel>Sección</ModalMicroLabel>
             <p className="text-sm font-medium text-foreground">{seccionNombre}</p>
           </div>
-          <div className="flex flex-col gap-1">
-            <ModalMicroLabel>Detalle</ModalMicroLabel>
-            <textarea
-              value={detalle}
-              onChange={(e) => setDetalle(e.target.value)}
-              disabled={saving}
-              placeholder="Texto de la idea..."
-              rows={5}
-              autoFocus
-              className={cn(
-                "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50",
-                "flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none",
-                "focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
-              )}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <ModalMicroLabel>Red</ModalMicroLabel>
-            <Select value={redId || undefined} onValueChange={setRedId} disabled={saving || redes.length === 0}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={redes.length === 0 ? "Sin redes cargadas" : "Elegí una red"} />
-              </SelectTrigger>
-              <SelectContent>
-                {redes.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <ModalMicroLabel>Tipo De Publicación</ModalMicroLabel>
-            <Select
-              value={tipoPublicacionId || undefined}
-              onValueChange={setTipoPublicacionId}
-              disabled={saving || tipos.length === 0}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={tipos.length === 0 ? "Sin tipos cargados" : "Elegí un tipo"} />
-              </SelectTrigger>
-              <SelectContent>
-                {tipos.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <ModalMicroLabel>Tipo De Contenido</ModalMicroLabel>
-            <Select
-              value={tipoContenidoId || undefined}
-              onValueChange={setTipoContenidoId}
-              disabled={saving || contenidos.length === 0}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue
-                  placeholder={contenidos.length === 0 ? "Sin contenidos cargados" : "Elegí un contenido"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {contenidos.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={redId || undefined} onValueChange={setRedId} disabled={saving || redes.length === 0}>
+            <SelectTrigger className="w-full" aria-label="Red">
+              <SelectValue placeholder={redes.length === 0 ? "SIN REDES CARGADAS" : "RED"} />
+            </SelectTrigger>
+            <SelectContent>
+              {redes.map((r) => (
+                <SelectItem key={r.id} value={r.id}>
+                  {r.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={tipoPublicacionId || undefined}
+            onValueChange={setTipoPublicacionId}
+            disabled={saving || tipos.length === 0}
+          >
+            <SelectTrigger className="w-full" aria-label="Tipo de publicación">
+              <SelectValue placeholder={tipos.length === 0 ? "SIN TIPOS CARGADOS" : "TIPO DE PUBLICACION"} />
+            </SelectTrigger>
+            <SelectContent>
+              {tipos.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={tipoContenidoId || undefined}
+            onValueChange={setTipoContenidoId}
+            disabled={saving || contenidos.length === 0}
+          >
+            <SelectTrigger className="w-full" aria-label="Tipo de contenido">
+              <SelectValue
+                placeholder={contenidos.length === 0 ? "SIN CONTENIDOS CARGADOS" : "TIPO DE CONTENIDO"}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {contenidos.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <textarea
+            value={detalle}
+            onChange={(e) => setDetalle(e.target.value)}
+            disabled={saving}
+            placeholder="DETALLE"
+            rows={5}
+            aria-label="Detalle"
+            className={cn(
+              "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50",
+              "flex w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none",
+              "focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+            )}
+          />
           {modo === "editar" ? (
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Usada</ModalMicroLabel>
-              <Select
-                value={usada ? "SI" : "NO"}
-                onValueChange={(v) => setUsada(v === "SI")}
-                disabled={saving}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NO">NO</SelectItem>
-                  <SelectItem value="SI">SI</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">Al crear, Usada queda en NO.</p>
-          )}
+            <Select
+              value={usada ? "SI" : "NO"}
+              onValueChange={(v) => setUsada(v === "SI")}
+              disabled={saving}
+            >
+              <SelectTrigger className="w-full" aria-label="Usada">
+                <SelectValue placeholder="USADA" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NO">NO</SelectItem>
+                <SelectItem value="SI">SI</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : null}
         </div>
       </AppModal>
     </Dialog>
