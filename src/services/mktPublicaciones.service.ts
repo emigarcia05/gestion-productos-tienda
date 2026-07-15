@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { isoYmdFromPrismaDateOnly } from "@/lib/fechaArgentina";
-import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
+import {
+  mktContenidoCreadoDesdeUrl,
+  type MktPublicacionCalendarioItem,
+} from "@/lib/mktPublicaciones";
 import type {
   CrearMktPublicacionInput,
   EditarMktPublicacionInput,
@@ -11,6 +14,7 @@ const publicacionSelect = {
   id: true,
   fecha: true,
   publicacion: true,
+  contenidoUrl: true,
   contenidoCreado: true,
   redId: true,
   tipoContenidoId: true,
@@ -24,6 +28,7 @@ function mapPublicacion(row: {
   id: string;
   fecha: Date;
   publicacion: string;
+  contenidoUrl: string;
   contenidoCreado: boolean;
   redId: string;
   tipoContenidoId: string;
@@ -32,11 +37,13 @@ function mapPublicacion(row: {
   red: { redSocialNombre: string };
   tipoContenido: { contenidoNombre: string };
 }): MktPublicacionCalendarioItem {
+  const contenidoUrl = row.contenidoUrl.trim();
   return {
     id: row.id,
     fechaIso: isoYmdFromPrismaDateOnly(row.fecha),
     publicacion: row.publicacion.trim(),
-    contenidoCreado: row.contenidoCreado,
+    contenidoUrl,
+    contenidoCreado: mktContenidoCreadoDesdeUrl(contenidoUrl),
     redId: row.redId,
     redNombre: row.red.redSocialNombre.toLocaleUpperCase("es-AR"),
     tipoContenidoId: row.tipoContenidoId,
@@ -48,6 +55,17 @@ function mapPublicacion(row: {
 
 function dateFromIsoYmd(isoYmd: string): Date {
   return new Date(`${isoYmd}T12:00:00.000Z`);
+}
+
+function persistContenido(contenidoUrl: string): {
+  contenidoUrl: string;
+  contenidoCreado: boolean;
+} {
+  const url = contenidoUrl.trim();
+  return {
+    contenidoUrl: url,
+    contenidoCreado: mktContenidoCreadoDesdeUrl(url),
+  };
 }
 
 async function assertCatalogos(input: {
@@ -122,6 +140,7 @@ export async function crearMktPublicacion(
   const ideaOk = await assertIdeaDetalleDisponible(input.ideaDetalleId);
   if (!ideaOk.success) return ideaOk;
   const publicacion = ideaOk.data.detalle;
+  const contenido = persistContenido(input.contenidoUrl);
 
   try {
     const created = await prisma.$transaction(async (tx) => {
@@ -129,7 +148,8 @@ export async function crearMktPublicacion(
         data: {
           fecha: dateFromIsoYmd(input.fechaIso),
           publicacion,
-          contenidoCreado: input.contenidoCreado,
+          contenidoUrl: contenido.contenidoUrl,
+          contenidoCreado: contenido.contenidoCreado,
           redId: input.redId,
           tipoContenidoId: input.tipoContenidoId,
           ideaDetalleId: input.ideaDetalleId,
@@ -177,6 +197,7 @@ export async function editarMktPublicacion(
   );
   if (!ideaOk.success) return ideaOk;
   const publicacion = ideaOk.data.detalle;
+  const contenido = persistContenido(input.contenidoUrl);
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
@@ -195,7 +216,8 @@ export async function editarMktPublicacion(
         data: {
           fecha: dateFromIsoYmd(input.fechaIso),
           publicacion,
-          contenidoCreado: input.contenidoCreado,
+          contenidoUrl: contenido.contenidoUrl,
+          contenidoCreado: contenido.contenidoCreado,
           redId: input.redId,
           tipoContenidoId: input.tipoContenidoId,
           ideaDetalleId: ideaNuevaId,

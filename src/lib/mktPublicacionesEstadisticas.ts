@@ -46,7 +46,7 @@ function contarPorId(
 
 /**
  * Estadísticas del cuadro de mando.
- * **Contenido**: Planificado = `contenidoCreado === false`; Terminado = `true`.
+ * **Contenido**: Planificado = sin `contenidoUrl`; Terminado = con URL (`contenidoCreado`).
  */
 export function calcularCuadroMandoPublicaciones(
   publicaciones: MktPublicacionCalendarioItem[],

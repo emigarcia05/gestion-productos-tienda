@@ -1070,7 +1070,9 @@ model MktPublicacion {
   fecha             DateTime @map("fecha") @db.Date
   /** Texto / contenido de la publicación. */
   publicacion       String   @default("") @map("publicacion") @db.Text
-  /** SI/NO: si el contenido ya fue creado. */
+  /** URL de Google Drive del contenido; vacío ⇒ `contenido_creado = false`. */
+  contenidoUrl      String   @default("") @map("contenido_url") @db.Text
+  /** Derivado: true si `contenido_url` no está vacío. */
   contenidoCreado   Boolean  @default(false) @map("contenido_creado")
   redId             String   @map("red_id")
   red               MktPublicacionRed @relation(fields: [redId], references: [id], onDelete: Restrict)

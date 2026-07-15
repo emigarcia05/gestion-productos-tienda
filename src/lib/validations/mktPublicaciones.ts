@@ -10,9 +10,19 @@ const isoYmdSchema = z
     return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
   }, "Fecha de calendario inválida.");
 
+/** Vacío = sin contenido; si hay texto, debe ser URL http(s). */
+const contenidoUrlSchema = z
+  .string()
+  .trim()
+  .max(2048, "La URL es demasiado larga.")
+  .refine(
+    (s) => s === "" || /^https?:\/\//i.test(s),
+    "Ingresá una URL válida (http/https)."
+  );
+
 export const crearMktPublicacionSchema = z.object({
   fechaIso: isoYmdSchema,
-  contenidoCreado: z.boolean(),
+  contenidoUrl: contenidoUrlSchema,
   redId: prismaCuidSchema,
   tipoContenidoId: prismaCuidSchema,
   ideaDetalleId: prismaCuidSchema,
@@ -21,7 +31,7 @@ export const crearMktPublicacionSchema = z.object({
 export const editarMktPublicacionSchema = z.object({
   id: prismaCuidSchema,
   fechaIso: isoYmdSchema,
-  contenidoCreado: z.boolean(),
+  contenidoUrl: contenidoUrlSchema,
   redId: prismaCuidSchema,
   tipoContenidoId: prismaCuidSchema,
   ideaDetalleId: prismaCuidSchema,

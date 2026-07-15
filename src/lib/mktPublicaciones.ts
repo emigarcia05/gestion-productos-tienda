@@ -5,7 +5,9 @@ export type MktPublicacionCalendarioItem = {
   /** Día de calendario `YYYY-MM-DD`. */
   fechaIso: string;
   publicacion: string;
-  /** SI = true / NO = false. */
+  /** URL de Drive; vacío = sin contenido creado. */
+  contenidoUrl: string;
+  /** Derivado: `contenidoUrl` no vacío. */
   contenidoCreado: boolean;
   redId: string;
   redNombre: string;
@@ -16,3 +18,8 @@ export type MktPublicacionCalendarioItem = {
   /** Sección de la idea vinculada. */
   ideaSeccionId: string | null;
 };
+
+/** `contenido_creado` se deriva de `contenido_url`. */
+export function mktContenidoCreadoDesdeUrl(contenidoUrl: string): boolean {
+  return contenidoUrl.trim().length > 0;
+}

@@ -85,8 +85,22 @@ export default function MktPublicacionesDiaModal({
                     </p>
                     <p className="truncate text-[11px] text-muted-foreground">
                       {item.tipoContenidoNombre}
-                      {item.contenidoCreado ? " · CONTENIDO CREADO: SI" : " · CONTENIDO CREADO: NO"}
+                      {item.contenidoCreado
+                        ? " · CONTENIDO: SI"
+                        : " · CONTENIDO: NO"}
                     </p>
+                    {item.contenidoUrl ? (
+                      <a
+                        href={item.contenidoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate text-[11px] text-primary underline-offset-2 hover:underline"
+                        title={item.contenidoUrl}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Abrir contenido
+                      </a>
+                    ) : null}
                   </div>
                   {esEditor ? (
                     <div className="flex shrink-0 items-center gap-1">

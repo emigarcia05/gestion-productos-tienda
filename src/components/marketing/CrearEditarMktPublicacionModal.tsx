@@ -5,8 +5,8 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
-import ModalSiNoChoice from "@/components/shared/ModalSiNoChoice";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -51,7 +51,7 @@ export default function CrearEditarMktPublicacionModal({
   const [tipoContenidoId, setTipoContenidoId] = useState("");
   const [seccionId, setSeccionId] = useState("");
   const [ideaDetalleId, setIdeaDetalleId] = useState("");
-  const [contenidoCreado, setContenidoCreado] = useState(false);
+  const [contenidoUrl, setContenidoUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -61,14 +61,14 @@ export default function CrearEditarMktPublicacionModal({
       setTipoContenidoId(item.tipoContenidoId);
       setSeccionId(item.ideaSeccionId ?? "");
       setIdeaDetalleId(item.ideaDetalleId ?? "");
-      setContenidoCreado(item.contenidoCreado);
+      setContenidoUrl(item.contenidoUrl ?? "");
       return;
     }
     setRedId("");
     setTipoContenidoId("");
     setSeccionId("");
     setIdeaDetalleId("");
-    setContenidoCreado(false);
+    setContenidoUrl("");
   }, [open, modo, fechaIso, item]);
 
   const ideasDisponibles = useMemo(() => {
@@ -123,7 +123,7 @@ export default function CrearEditarMktPublicacionModal({
               redId,
               tipoContenidoId,
               ideaDetalleId,
-              contenidoCreado,
+              contenidoUrl: contenidoUrl.trim(),
             })
           : await editarMktPublicacionAction({
               id: item!.id,
@@ -131,7 +131,7 @@ export default function CrearEditarMktPublicacionModal({
               redId,
               tipoContenidoId,
               ideaDetalleId,
-              contenidoCreado,
+              contenidoUrl: contenidoUrl.trim(),
             });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo guardar.");
@@ -226,12 +226,12 @@ export default function CrearEditarMktPublicacionModal({
             </Select>
           </section>
 
-          <section className="flex flex-col gap-3 py-4" aria-labelledby="mkt-pub-sec-contenido">
+          <section className="flex flex-col gap-3 py-4" aria-labelledby="mkt-pub-sec-idea">
             <h3
-              id="mkt-pub-sec-contenido"
+              id="mkt-pub-sec-idea"
               className="text-xs font-bold uppercase tracking-wide text-primary"
             >
-              Contenido
+              Idea
             </h3>
             <Select
               value={seccionId || undefined}
@@ -288,18 +288,28 @@ export default function CrearEditarMktPublicacionModal({
             </div>
           </section>
 
-          <section className="flex flex-col gap-3 pt-4" aria-labelledby="mkt-pub-sec-creado">
+          <section className="flex flex-col gap-3 pt-4" aria-labelledby="mkt-pub-sec-contenido">
             <h3
-              id="mkt-pub-sec-creado"
+              id="mkt-pub-sec-contenido"
               className="text-xs font-bold uppercase tracking-wide text-primary"
             >
-              Contenido Creado
+              Contenido
             </h3>
-            <ModalSiNoChoice
-              value={contenidoCreado}
-              onChange={setContenidoCreado}
-              disabled={saving}
-            />
+            <div className="flex flex-col gap-1">
+              <ModalMicroLabel>URL (Google Drive)</ModalMicroLabel>
+              <Input
+                type="url"
+                value={contenidoUrl}
+                onChange={(e) => setContenidoUrl(e.target.value)}
+                placeholder="https://drive.google.com/..."
+                disabled={saving}
+                aria-label="URL del contenido"
+                autoComplete="off"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Vacío = contenido planificado. Con URL = contenido creado.
+              </p>
+            </div>
           </section>
         </div>
       </AppModal>
