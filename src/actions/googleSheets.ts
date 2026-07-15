@@ -3,8 +3,8 @@
 import { esEditor } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 import {
-  exportarMktSeccionesAGoogleSheets,
-  type ExportMktSeccionesGoogleSheetsResult,
+  exportarMktAGoogleSheets,
+  type ExportMktGoogleSheetsResult,
 } from "@/services/googleSheetsExportMktSecciones.service";
 import {
   probarConexionGoogleSheets,
@@ -33,22 +33,25 @@ export async function probarConexionGoogleSheetsAction(): Promise<
   }
 }
 
-/** Exporta secciones de ideas a la pestaña Secciones (solo editor). */
-export async function exportarMktSeccionesGoogleSheetsAction(): Promise<
-  ActionResult<ExportMktSeccionesGoogleSheetsResult>
+/**
+ * Exporta Marketing a Google Sheets (solo editor): Secciones, Redes,
+ * Tipo de Contenido, Ideas y Publicaciones (sobrescribe cada pestaña).
+ */
+export async function exportarMktGoogleSheetsAction(): Promise<
+  ActionResult<ExportMktGoogleSheetsResult>
 > {
   if (!(await esEditor())) {
     return { ok: false, error: "Sin permisos de editor." };
   }
   try {
-    const res = await exportarMktSeccionesAGoogleSheets();
+    const res = await exportarMktAGoogleSheets();
     if (!res.success) return { ok: false, error: res.error };
     return { ok: true, data: res.data };
   } catch (e) {
     return {
       ok: false,
       error:
-        e instanceof Error ? e.message : "No se pudo exportar Secciones a Google Sheets.",
+        e instanceof Error ? e.message : "No se pudo exportar a Google Sheets.",
     };
   }
 }

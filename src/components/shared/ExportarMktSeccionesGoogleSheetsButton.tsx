@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { exportarMktSeccionesGoogleSheetsAction } from "@/actions/googleSheets";
+import { exportarMktGoogleSheetsAction } from "@/actions/googleSheets";
 import { cn } from "@/lib/utils";
 
-/** Exporta mkt_publi_ideas_secciones → pestaña Secciones del spreadsheet fijo. */
+/** Exporta Marketing (todas las pestañas) al spreadsheet fijo de Google Sheets. */
 export default function ExportarMktSeccionesGoogleSheetsButton({
   className,
 }: {
@@ -19,13 +19,15 @@ export default function ExportarMktSeccionesGoogleSheetsButton({
     if (pending) return;
     setPending(true);
     try {
-      const res = await exportarMktSeccionesGoogleSheetsAction();
+      const res = await exportarMktGoogleSheetsAction();
       if (!res.ok) {
-        toast.error(res.error ?? "No se pudo exportar Secciones.");
+        toast.error(res.error ?? "No se pudo exportar a Google Sheets.");
         return;
       }
-      toast.success(`Secciones exportadas (${res.data.filasDatos} fila(s)).`, {
-        description: `Pestaña «${res.data.sheetTitle}».`,
+      const totalFilas = res.data.tabs.reduce((acc, t) => acc + t.filasDatos, 0);
+      const nombresHojas = res.data.tabs.map((t) => t.sheetTitle).join(", ");
+      toast.success(`Exportado (${totalFilas} fila(s) en ${res.data.tabs.length} hoja(s)).`, {
+        description: nombresHojas,
         action: {
           label: "Abrir",
           onClick: () => window.open(res.data.url, "_blank", "noopener,noreferrer"),
@@ -45,7 +47,7 @@ export default function ExportarMktSeccionesGoogleSheetsButton({
       onClick={() => void handleClick()}
     >
       <Upload className="size-4 shrink-0" aria-hidden />
-      {pending ? "Exportando…" : "Exportar Secciones"}
+      {pending ? "Exportando…" : "Exportar a Sheets"}
     </Button>
   );
 }
