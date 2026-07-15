@@ -631,6 +631,7 @@
   }
   /* Fila de filtros desplegables: 4 o 5 columnas; cada una mismo tamaño. */
   .fila-filtros-desplegables > div,
+  .fila-filtros-2 > div,
   .fila-filtros-4 > div,
   .fila-filtros-5 > div {
     min-width: 0;
@@ -638,6 +639,8 @@
   }
   .fila-filtros-desplegables [data-slot="select-trigger"].input-filtro-unificado,
   .fila-filtros-desplegables [data-slot="select-trigger"].input-filtro-custom,
+  .fila-filtros-2 [data-slot="select-trigger"].input-filtro-unificado,
+  .fila-filtros-2 [data-slot="select-trigger"].input-filtro-custom,
   .fila-filtros-4 [data-slot="select-trigger"].input-filtro-unificado,
   .fila-filtros-4 [data-slot="select-trigger"].input-filtro-custom,
   .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado,
@@ -649,6 +652,8 @@
   }
   .fila-filtros-desplegables [data-slot="select-trigger"].input-filtro-unificado [data-slot="select-value"],
   .fila-filtros-desplegables [data-slot="select-trigger"].input-filtro-custom [data-slot="select-value"],
+  .fila-filtros-2 [data-slot="select-trigger"].input-filtro-unificado [data-slot="select-value"],
+  .fila-filtros-2 [data-slot="select-trigger"].input-filtro-custom [data-slot="select-value"],
   .fila-filtros-4 [data-slot="select-trigger"].input-filtro-unificado [data-slot="select-value"],
   .fila-filtros-4 [data-slot="select-trigger"].input-filtro-custom [data-slot="select-value"],
   .fila-filtros-5 [data-slot="select-trigger"].input-filtro-unificado [data-slot="select-value"],
