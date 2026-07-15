@@ -1044,6 +1044,7 @@ model MktPublicacionRed {
 
   publicaciones MktPublicacion[]
   ideasDetalleRedes MktPublicacionIdeaDetalleRed[]
+  objetivos MktPublicacionObj[]
 
   @@map("mkt_publi_tipo_redes")
 }
@@ -1057,6 +1058,7 @@ model MktPublicacionContenidoTipo {
 
   publicaciones MktPublicacion[]
   ideasDetalle  MktPublicacionIdeaDetalle[]
+  objetivos     MktPublicacionObj[]
 
   @@map("mkt_publi_tipo_contenido")
 }
@@ -1095,6 +1097,7 @@ model MktPublicacionIdeaSeccion {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   detalles MktPublicacionIdeaDetalle[]
+  objetivos MktPublicacionObj[]
 
   @@map("mkt_publi_ideas_secciones")
 }
@@ -1132,6 +1135,44 @@ model MktPublicacionIdeaDetalleRed {
   @@id([ideaDetalleId, redId])
   @@index([redId], map: "mkt_ideas_detalle_red_red_idx")
   @@map("mkt_publicaciones_ideas_detalle_redes")
+}
+
+/** Periodo de evaluación de un objetivo de publicaciones. */
+enum MktPubliObjPeriodo {
+  SEMANAL
+  MENSUAL
+}
+
+/** Eje de conteo de un objetivo (exactamente una FK de destino). */
+enum MktPubliObjEje {
+  RED
+  CONTENIDO
+  SECCION
+}
+
+/**
+ * Objetivo recurrente de cantidad de publicaciones programadas.
+ * Un destino (red / contenido / sección) solo puede tener un objetivo.
+ */
+model MktPublicacionObj {
+  id              String            @id @default(cuid())
+  periodo         MktPubliObjPeriodo
+  eje             MktPubliObjEje
+  /** Clave única de destino: `RED:{id}` | `CONTENIDO:{id}` | `SECCION:{id}`. */
+  destinoClave    String            @unique(map: "mkt_publi_obj_destino_clave_key") @map("destino_clave")
+  cantidad        Int
+  redId           String?           @map("red_id")
+  red             MktPublicacionRed? @relation(fields: [redId], references: [id], onDelete: Restrict)
+  tipoContenidoId String?           @map("tipo_contenido_id")
+  tipoContenido   MktPublicacionContenidoTipo? @relation(fields: [tipoContenidoId], references: [id], onDelete: Restrict)
+  seccionId       String?           @map("seccion_id")
+  seccion         MktPublicacionIdeaSeccion? @relation(fields: [seccionId], references: [id], onDelete: Restrict)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  @@index([periodo], map: "mkt_publi_obj_periodo_idx")
+  @@index([eje], map: "mkt_publi_obj_eje_idx")
+  @@map("mkt_publi_obj")
 }
 
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────

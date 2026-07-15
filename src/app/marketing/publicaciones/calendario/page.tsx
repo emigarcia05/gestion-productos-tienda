@@ -9,6 +9,7 @@ import {
 } from "@/services/mktPublicacionesCatalogo.service";
 import { listarMktIdeasJerarquia } from "@/services/mktPublicacionesIdeas.service";
 import { listarMktPublicacionesCalendario } from "@/services/mktPublicaciones.service";
+import { listarMktPublicacionObjs } from "@/services/mktPublicacionesObj.service";
 
 export const dynamic = "force-dynamic";
 
@@ -19,13 +20,19 @@ export default async function MarketingCalendarioPublicacionesPage() {
   }
 
   const esEditor = rol === "editor";
-  const [redesIniciales, contenidosIniciales, seccionesIdeas, publicaciones] =
-    await Promise.all([
-      listarMktPublicacionRedes(),
-      listarMktPublicacionContenidos(),
-      listarMktIdeasJerarquia(),
-      listarMktPublicacionesCalendario(),
-    ]);
+  const [
+    redesIniciales,
+    contenidosIniciales,
+    seccionesIdeas,
+    objetivosIniciales,
+    publicaciones,
+  ] = await Promise.all([
+    listarMktPublicacionRedes(),
+    listarMktPublicacionContenidos(),
+    listarMktIdeasJerarquia(),
+    listarMktPublicacionObjs(),
+    listarMktPublicacionesCalendario(),
+  ]);
 
   return (
     <div className="area-page-shell">
@@ -33,6 +40,7 @@ export default async function MarketingCalendarioPublicacionesPage() {
         redesIniciales={redesIniciales}
         contenidosIniciales={contenidosIniciales}
         seccionesIdeas={seccionesIdeas}
+        objetivosIniciales={objetivosIniciales}
         publicaciones={publicaciones}
         esEditor={esEditor}
       />
