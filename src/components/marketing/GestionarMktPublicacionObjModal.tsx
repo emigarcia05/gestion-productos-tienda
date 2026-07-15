@@ -53,6 +53,12 @@ const BOTON_ACCION_CLASS = cn(
   "!size-8 max-h-8 min-h-8 min-w-8 shrink-0 !p-0"
 );
 
+function parseCantidad(raw: string): number | null {
+  const n = Number(raw.trim());
+  if (!Number.isInteger(n) || n < 1 || n > 9999) return null;
+  return n;
+}
+
 export default function GestionarMktPublicacionObjModal({
   open,
   onOpenChange,
@@ -64,8 +70,10 @@ export default function GestionarMktPublicacionObjModal({
   onCatalogoChanged,
 }: Props) {
   const [items, setItems] = useState<MktPublicacionObjItem[]>(objetivosIniciales);
+  const [filtroEje, setFiltroEje] = useState<MktPubliObjEje>("RED");
+  const [openCrear, setOpenCrear] = useState(false);
   const [periodo, setPeriodo] = useState<MktPubliObjPeriodo>("SEMANAL");
-  const [eje, setEje] = useState<MktPubliObjEje>("RED");
+  const [ejeAlta, setEjeAlta] = useState<MktPubliObjEje>("RED");
   const [destinoId, setDestinoId] = useState("");
   const [cantidadNorm, setCantidadNorm] = useState("1");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -75,16 +83,21 @@ export default function GestionarMktPublicacionObjModal({
   const [borrarTarget, setBorrarTarget] = useState<MktPublicacionObjItem | null>(null);
   const [borrando, setBorrando] = useState(false);
 
+  const itemsFiltrados = useMemo(
+    () => items.filter((i) => i.eje === filtroEje),
+    [items, filtroEje]
+  );
+
   const opcionesDestino = useMemo(() => {
-    if (eje === "RED") return redes;
-    if (eje === "CONTENIDO") return contenidos;
+    if (ejeAlta === "RED") return redes;
+    if (ejeAlta === "CONTENIDO") return contenidos;
     return secciones;
-  }, [eje, redes, contenidos, secciones]);
+  }, [ejeAlta, redes, contenidos, secciones]);
 
   const destinosConObjetivo = useMemo(() => {
-    const set = new Set(items.filter((i) => i.eje === eje).map((i) => i.destinoId));
+    const set = new Set(items.filter((i) => i.eje === ejeAlta).map((i) => i.destinoId));
     return set;
-  }, [items, eje]);
+  }, [items, ejeAlta]);
 
   const opcionesDestinoDisponibles = useMemo(
     () => opcionesDestino.filter((o) => !destinosConObjetivo.has(o.id)),
@@ -105,22 +118,28 @@ export default function GestionarMktPublicacionObjModal({
     if (!open) return;
     setItems(objetivosIniciales);
     void cargar();
-    setPeriodo("SEMANAL");
-    setEje("RED");
-    setDestinoId("");
-    setCantidadNorm("1");
+    setFiltroEje("RED");
+    setOpenCrear(false);
     setEditingId(null);
     setBorrarTarget(null);
   }, [open, cargar, objetivosIniciales]);
 
   useEffect(() => {
     setDestinoId("");
-  }, [eje]);
+  }, [ejeAlta]);
 
-  function parseCantidad(raw: string): number | null {
-    const n = Number(raw.trim());
-    if (!Number.isInteger(n) || n < 1 || n > 9999) return null;
-    return n;
+  function resetFormAlta(ejeInicial: MktPubliObjEje = filtroEje) {
+    setPeriodo("SEMANAL");
+    setEjeAlta(ejeInicial);
+    setDestinoId("");
+    setCantidadNorm("1");
+  }
+
+  function abrirCrear() {
+    if (!esEditor || pending || borrando) return;
+    setEditingId(null);
+    resetFormAlta(filtroEje);
+    setOpenCrear(true);
   }
 
   async function handleCrear() {
@@ -138,7 +157,7 @@ export default function GestionarMktPublicacionObjModal({
     try {
       const res = await crearMktPublicacionObjAction({
         periodo,
-        eje,
+        eje: ejeAlta,
         destinoId,
         cantidad,
       });
@@ -147,8 +166,9 @@ export default function GestionarMktPublicacionObjModal({
         return;
       }
       toast.success("Objetivo creado.");
-      setDestinoId("");
-      setCantidadNorm("1");
+      setFiltroEje(ejeAlta);
+      setOpenCrear(false);
+      resetFormAlta(ejeAlta);
       await cargar();
       onCatalogoChanged?.();
     } finally {
@@ -205,7 +225,13 @@ export default function GestionarMktPublicacionObjModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(next) => !bloqueado && onOpenChange(next)}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (bloqueado || openCrear) return;
+          onOpenChange(next);
+        }}
+      >
         <AppModal
           title="Gestionar Objetivos"
           size="lg"
@@ -216,7 +242,7 @@ export default function GestionarMktPublicacionObjModal({
             <Button
               type="button"
               variant="outline"
-              disabled={bloqueado}
+              disabled={bloqueado || openCrear}
               onClick={() => onOpenChange(false)}
             >
               Cerrar
@@ -225,93 +251,50 @@ export default function GestionarMktPublicacionObjModal({
         >
           <div className="flex min-h-0 flex-col gap-4">
             {esEditor ? (
-              <div className="flex flex-col gap-3">
-                <ModalMicroLabel>Nuevo Objetivo</ModalMicroLabel>
-                <div className="grid grid-cols-2 gap-2">
-                  <Select
-                    value={periodo}
-                    onValueChange={(v) => setPeriodo(v as MktPubliObjPeriodo)}
-                    disabled={bloqueado}
-                  >
-                    <SelectTrigger className="w-full" aria-label="Periodo">
-                      <SelectValue placeholder="PERIODO" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {etiquetaMktPubliObjPeriodo(p)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select
-                    value={eje}
-                    onValueChange={(v) => setEje(v as MktPubliObjEje)}
-                    disabled={bloqueado}
-                  >
-                    <SelectTrigger className="w-full" aria-label="Eje">
-                      <SelectValue placeholder="EJE" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MKT_PUBLI_OBJ_EJES.map((e) => (
-                        <SelectItem key={e} value={e}>
-                          {etiquetaMktPubliObjEje(e)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Select
-                  value={destinoId || undefined}
-                  onValueChange={setDestinoId}
-                  disabled={bloqueado || opcionesDestinoDisponibles.length === 0}
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  aria-label="Agregar objetivo"
+                  disabled={bloqueado}
+                  onClick={abrirCrear}
                 >
-                  <SelectTrigger className="w-full" aria-label="Destino">
-                    <SelectValue
-                      placeholder={
-                        opcionesDestino.length === 0
-                          ? "SIN OPCIONES"
-                          : opcionesDestinoDisponibles.length === 0
-                            ? "TODOS CON OBJETIVO"
-                            : "DESTINO"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {opcionesDestinoDisponibles.map((o) => (
-                      <SelectItem key={o.id} value={o.id}>
-                        {o.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="flex gap-2">
-                  <Input
-                    value={cantidadNorm}
-                    onChange={(e) => setCantidadNorm(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    inputMode="numeric"
-                    placeholder="CANTIDAD"
-                    disabled={bloqueado}
-                    className="flex-1"
-                    aria-label="Cantidad de publicaciones"
-                  />
-                  <Button
-                    type="button"
-                    disabled={bloqueado || !destinoId || !cantidadNorm.trim()}
-                    onClick={() => void handleCrear()}
-                    className="gap-2"
-                  >
-                    <Plus className="size-4 shrink-0" aria-hidden />
-                    Crear
-                  </Button>
-                </div>
+                  <Plus className="h-5 w-5" />
+                </Button>
               </div>
             ) : null}
 
-            <div className={cn("flex min-h-0 flex-1 flex-col gap-1", esEditor && "border-t pt-3")}>
-              <ModalMicroLabel>Objetivos Existentes</ModalMicroLabel>
+            <div className="flex flex-col gap-1">
+              <ModalMicroLabel>Filtrar Por</ModalMicroLabel>
+              <div
+                className="flex flex-wrap items-center gap-2"
+                role="group"
+                aria-label="Filtrar objetivos por eje"
+              >
+                {MKT_PUBLI_OBJ_EJES.map((e) => (
+                  <Button
+                    key={e}
+                    type="button"
+                    size="sm"
+                    variant={filtroEje === e ? "default" : "outline"}
+                    disabled={bloqueado}
+                    onClick={() => {
+                      setFiltroEje(e);
+                      setEditingId(null);
+                    }}
+                  >
+                    {etiquetaMktPubliObjEje(e)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex min-h-0 flex-1 flex-col gap-1">
+              <ModalMicroLabel>Objetivos</ModalMicroLabel>
               <ul className="max-h-[min(22rem,55vh)] space-y-2 overflow-y-auto pr-1">
-                {items.map((obj) => (
+                {itemsFiltrados.map((obj) => (
                   <li
                     key={obj.id}
                     className="flex items-center gap-2 rounded-md border border-border bg-muted/20 px-2 py-1.5"
@@ -375,8 +358,7 @@ export default function GestionarMktPublicacionObjModal({
                             {obj.destinoNombre}
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
-                            {etiquetaMktPubliObjPeriodo(obj.periodo)} ·{" "}
-                            {etiquetaMktPubliObjEje(obj.eje)} · {obj.cantidad} PUB.
+                            {etiquetaMktPubliObjPeriodo(obj.periodo)} · {obj.cantidad} PUB.
                           </p>
                         </div>
                         {esEditor ? (
@@ -413,12 +395,125 @@ export default function GestionarMktPublicacionObjModal({
                     )}
                   </li>
                 ))}
-                {items.length === 0 ? (
+                {itemsFiltrados.length === 0 ? (
                   <li className="py-6 text-center text-sm text-muted-foreground">
-                    No hay objetivos configurados.
+                    {items.length === 0
+                      ? "No hay objetivos configurados."
+                      : `No hay objetivos de ${etiquetaMktPubliObjEje(filtroEje)}.`}
                   </li>
                 ) : null}
               </ul>
+            </div>
+          </div>
+        </AppModal>
+      </Dialog>
+
+      <Dialog
+        open={openCrear}
+        onOpenChange={(next) => {
+          if (pending) return;
+          setOpenCrear(next);
+          if (!next) resetFormAlta(filtroEje);
+        }}
+      >
+        <AppModal
+          title="Nuevo Objetivo"
+          size="md"
+          scrollBody
+          hideBodyScrollbars
+          actions={
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() => {
+                setOpenCrear(false);
+                resetFormAlta(filtroEje);
+              }}
+            >
+              Cancelar
+            </Button>
+          }
+        >
+          <div className="flex flex-col gap-3">
+            <ModalMicroLabel>Nuevo Objetivo</ModalMicroLabel>
+            <div className="grid grid-cols-2 gap-2">
+              <Select
+                value={periodo}
+                onValueChange={(v) => setPeriodo(v as MktPubliObjPeriodo)}
+                disabled={pending}
+              >
+                <SelectTrigger className="w-full" aria-label="Periodo">
+                  <SelectValue placeholder="PERIODO" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {etiquetaMktPubliObjPeriodo(p)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={ejeAlta}
+                onValueChange={(v) => setEjeAlta(v as MktPubliObjEje)}
+                disabled={pending}
+              >
+                <SelectTrigger className="w-full" aria-label="Eje">
+                  <SelectValue placeholder="EJE" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MKT_PUBLI_OBJ_EJES.map((e) => (
+                    <SelectItem key={e} value={e}>
+                      {etiquetaMktPubliObjEje(e)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Select
+              value={destinoId || undefined}
+              onValueChange={setDestinoId}
+              disabled={pending || opcionesDestinoDisponibles.length === 0}
+            >
+              <SelectTrigger className="w-full" aria-label="Destino">
+                <SelectValue
+                  placeholder={
+                    opcionesDestino.length === 0
+                      ? "SIN OPCIONES"
+                      : opcionesDestinoDisponibles.length === 0
+                        ? "TODOS CON OBJETIVO"
+                        : "DESTINO"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {opcionesDestinoDisponibles.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    {o.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2">
+              <Input
+                value={cantidadNorm}
+                onChange={(e) => setCantidadNorm(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                inputMode="numeric"
+                placeholder="CANTIDAD"
+                disabled={pending}
+                className="flex-1"
+                aria-label="Cantidad de publicaciones"
+              />
+              <Button
+                type="button"
+                disabled={pending || !destinoId || !cantidadNorm.trim()}
+                onClick={() => void handleCrear()}
+                className="gap-2"
+              >
+                <Plus className="size-4 shrink-0" aria-hidden />
+                Crear
+              </Button>
             </div>
           </div>
         </AppModal>

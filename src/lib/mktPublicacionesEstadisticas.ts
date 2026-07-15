@@ -2,8 +2,8 @@ import { addDaysToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
 import {
-  lunesSemanaActualArgentina,
-  mesAnioActualArgentina,
+  construirSemanasDelMes,
+  type MktCalendarioMesAnio,
 } from "@/lib/mktCalendarioPublicaciones";
 
 export type MktStatFila = {
@@ -17,16 +17,19 @@ export type MktCuadroMandoStats = {
   contenido: MktStatFila[];
 };
 
-/** Periodo de los indicadores del cuadro de mando (calendario AR). */
-export type MktCuadroMandoPeriodo = "este_mes" | "esta_semana" | "siguiente_semana";
+/** Semana dentro del mes en vista: todas o fila 1–5 del calendario. */
+export type MktCuadroMandoSemanaFiltro = "TODAS" | 1 | 2 | 3 | 4 | 5;
 
-export const MKT_CUADRO_MANDO_PERIODOS: ReadonlyArray<{
-  id: MktCuadroMandoPeriodo;
+export const MKT_CUADRO_MANDO_SEMANAS: ReadonlyArray<{
+  id: MktCuadroMandoSemanaFiltro;
   label: string;
 }> = [
-  { id: "este_mes", label: "Este Mes" },
-  { id: "esta_semana", label: "Esta Semana" },
-  { id: "siguiente_semana", label: "Siguiente Semana" },
+  { id: "TODAS", label: "Todas" },
+  { id: 1, label: "1" },
+  { id: 2, label: "2" },
+  { id: 3, label: "3" },
+  { id: 4, label: "4" },
+  { id: 5, label: "5" },
 ];
 
 function contarPorId(
@@ -97,24 +100,20 @@ export function filtrarPublicacionesPorRangoIsoYmd(
 }
 
 /**
- * Filtra hechos del cuadro de mando según periodo (zona AR).
- * Semana = lunes–domingo; **siguiente_semana** = semana que empieza el próximo lunes.
+ * Filtra publicaciones según el mes/semana del calendario.
+ * **Todas** = mes civil completo; **1–5** = lun–dom de esa fila de la grilla.
  */
-export function filtrarPublicacionesPorPeriodoCuadroMando(
+export function filtrarPublicacionesPorVistaCalendario(
   publicaciones: MktPublicacionCalendarioItem[],
-  periodo: MktCuadroMandoPeriodo,
-  ahora: Date = new Date()
+  mesVista: MktCalendarioMesAnio,
+  semana: MktCuadroMandoSemanaFiltro
 ): MktPublicacionCalendarioItem[] {
-  if (periodo === "este_mes") {
-    const { mes, anio } = mesAnioActualArgentina(ahora);
-    return filtrarPublicacionesPorMesAnio(publicaciones, mes, anio);
+  if (semana === "TODAS") {
+    return filtrarPublicacionesPorMesAnio(publicaciones, mesVista.mes, mesVista.anio);
   }
-
-  const lunesActual = lunesSemanaActualArgentina(ahora);
-  const lunes =
-    periodo === "esta_semana"
-      ? lunesActual
-      : addDaysToIsoYmdArgentina(lunesActual, 7);
-  const domingo = addDaysToIsoYmdArgentina(lunes, 6);
-  return filtrarPublicacionesPorRangoIsoYmd(publicaciones, lunes, domingo);
+  const semanas = construirSemanasDelMes(mesVista);
+  const fila = semanas.find((s) => s.numero === semana);
+  if (!fila) return [];
+  const domingo = addDaysToIsoYmdArgentina(fila.lunesIso, 6);
+  return filtrarPublicacionesPorRangoIsoYmd(publicaciones, fila.lunesIso, domingo);
 }

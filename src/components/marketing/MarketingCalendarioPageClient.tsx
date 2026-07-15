@@ -15,15 +15,19 @@ import { Button } from "@/components/ui/button";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 import type { MktIdeaSeccionItem } from "@/lib/mktPublicacionesIdeas";
 import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
-import type { MktPublicacionObjItem } from "@/lib/mktPublicacionesObj";
+import {
+  evaluarMktPublicacionObjsCliente,
+  periodoObjParaSemanaFiltro,
+  type MktPublicacionObjItem,
+} from "@/lib/mktPublicacionesObj";
 import {
   mesAnioActualArgentina,
   type MktCalendarioMesAnio,
 } from "@/lib/mktCalendarioPublicaciones";
 import {
   calcularCuadroMandoPublicaciones,
-  filtrarPublicacionesPorPeriodoCuadroMando,
-  type MktCuadroMandoPeriodo,
+  filtrarPublicacionesPorVistaCalendario,
+  type MktCuadroMandoSemanaFiltro,
 } from "@/lib/mktPublicacionesEstadisticas";
 
 interface Props {
@@ -68,9 +72,11 @@ export default function MarketingCalendarioPageClient({
       seccionesIdeas.map((s) => ({ id: s.id, nombre: s.nombre })),
     [seccionesIdeas]
   );
-  const [mesVista, setMesVista] = useState<MktCalendarioMesAnio>(() => mesAnioActualArgentina());
-  const [periodoCuadro, setPeriodoCuadro] =
-    useState<MktCuadroMandoPeriodo>("este_mes");
+  const [mesVista, setMesVista] = useState<MktCalendarioMesAnio>(() =>
+    mesAnioActualArgentina()
+  );
+  const [semanaFiltro, setSemanaFiltro] =
+    useState<MktCuadroMandoSemanaFiltro>("TODAS");
   const [modalDia, setModalDia] = useState<ModalDia>({ open: false });
   const [modalForm, setModalForm] = useState<ModalForm>({ open: false });
   const [modalEliminar, setModalEliminar] = useState<ModalEliminar>({ open: false });
@@ -80,13 +86,23 @@ export default function MarketingCalendarioPageClient({
   }, [router]);
 
   const publicacionesPeriodo = useMemo(
-    () => filtrarPublicacionesPorPeriodoCuadroMando(publicaciones, periodoCuadro),
-    [publicaciones, periodoCuadro]
+    () => filtrarPublicacionesPorVistaCalendario(publicaciones, mesVista, semanaFiltro),
+    [publicaciones, mesVista, semanaFiltro]
   );
 
   const stats = useMemo(
     () => calcularCuadroMandoPublicaciones(publicacionesPeriodo, redesIniciales),
     [publicacionesPeriodo, redesIniciales]
+  );
+
+  const evaluacionesObjetivos = useMemo(
+    () =>
+      evaluarMktPublicacionObjsCliente(
+        objetivosIniciales,
+        publicacionesPeriodo,
+        periodoObjParaSemanaFiltro(semanaFiltro)
+      ),
+    [objetivosIniciales, publicacionesPeriodo, semanaFiltro]
   );
 
   const publicacionesDelDia = useMemo(() => {
@@ -147,14 +163,20 @@ export default function MarketingCalendarioPageClient({
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <MktPublicacionesCuadroMando
             stats={stats}
-            periodo={periodoCuadro}
-            onPeriodoChange={setPeriodoCuadro}
+            evaluacionesObjetivos={evaluacionesObjetivos}
+            mesVista={mesVista}
+            onMesVistaChange={(next) => {
+              setMesVista(next);
+              setSemanaFiltro("TODAS");
+            }}
+            semana={semanaFiltro}
+            onSemanaChange={setSemanaFiltro}
           />
           <MktCalendarioPublicacionesGrid
             publicaciones={publicaciones}
             onSeleccionarDia={handleSeleccionarDia}
             mesVista={mesVista}
-            onMesVistaChange={(next) => setMesVista(next)}
+            semanaSeleccionada={semanaFiltro}
           />
         </div>
       </ClassicFilteredTableLayout>

@@ -42,6 +42,8 @@ export type MktCalendarioDiaCelda = {
 };
 
 export type MktCalendarioSemana = {
+  /** Índice 1–5 dentro de la ventana del mes. */
+  numero: number;
   /** Lunes de la semana (`YYYY-MM-DD`). */
   lunesIso: string;
   dias: MktCalendarioDiaCelda[];
@@ -126,8 +128,8 @@ function armarCelda(
 }
 
 /**
- * 5 semanas consecutivas a partir del lunes `lunesInicioIso` (inclusive).
- * `mesVista`/`anioVista` definen el resaltado del mes navegable (default: mes de hoy AR).
+ * 5 semanas del mes en vista, desde el lunes que contiene el día 1.
+ * `mesVista`/`anioVista` definen el resaltado de días del mes.
  */
 export function construirVentanaCincoSemanas(
   lunesInicioIso: string,
@@ -149,8 +151,20 @@ export function construirVentanaCincoSemanas(
       const iso = addDaysToIsoYmdArgentina(lunesIso, d);
       dias.push(armarCelda(iso, mesVista, anioVista, hoyIso));
     }
-    semanas.push({ lunesIso, dias });
+    semanas.push({ numero: s + 1, lunesIso, dias });
   }
 
   return semanas;
+}
+
+/** Ventana de 5 semanas del mes civil indicado (AR). */
+export function construirSemanasDelMes(
+  vista: MktCalendarioMesAnio,
+  ahora: Date = new Date()
+): MktCalendarioSemana[] {
+  return construirVentanaCincoSemanas(lunesInicioMesArgentina(vista.anio, vista.mes), {
+    ahora,
+    mesVista: vista.mes,
+    anioVista: vista.anio,
+  });
 }
