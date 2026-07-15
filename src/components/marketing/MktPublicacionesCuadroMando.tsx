@@ -1,15 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, ListChecks } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ListChecks } from "lucide-react";
 import MktRedSocialIcon from "@/components/marketing/MktRedSocialIcon";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import {
-  desplazarMesAnio,
-  etiquetaMesAnioMayusculas,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  mesAnioActualArgentina,
+  opcionesSelectMesAnio,
+  parseValorSelectMesAnio,
+  valorSelectMesAnio,
   type MktCalendarioMesAnio,
 } from "@/lib/mktCalendarioPublicaciones";
 import type {
@@ -203,68 +212,65 @@ export default function MktPublicacionesCuadroMando({
   semana: MktCuadroMandoSemanaFiltro;
   onSemanaChange: (next: MktCuadroMandoSemanaFiltro) => void;
 }) {
-  const etiquetaMes = etiquetaMesAnioMayusculas(mesVista);
+  const opcionesMes = useMemo(() => {
+    const base = opcionesSelectMesAnio(mesAnioActualArgentina());
+    const valorActual = valorSelectMesAnio(mesVista);
+    if (base.some((o) => o.value === valorActual)) return base;
+    return [
+      { value: valorActual, label: opcionesSelectMesAnio(mesVista, 0, 0)[0]?.label ?? valorActual },
+      ...base,
+    ];
+  }, [mesVista]);
 
   return (
     <div
       className="flex shrink-0 flex-col gap-2 px-8 pb-2 pt-2"
       aria-label="Cuadro de mando de publicaciones"
     >
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        <div
-          className="flex flex-wrap items-center gap-2"
-          role="group"
-          aria-label="Mes Obligatorios"
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={valorSelectMesAnio(mesVista)}
+          onValueChange={(value) => {
+            const next = parseValorSelectMesAnio(value);
+            if (next) onMesVistaChange(next);
+          }}
         >
-          <span className="text-xs font-semibold uppercase tracking-wide text-foreground">
-            Mes Obligatorios
-          </span>
-          <Button
-            type="button"
-            variant="default"
-            size="icon"
-            className="size-8 shrink-0"
-            aria-label="Mes anterior"
-            onClick={() => onMesVistaChange(desplazarMesAnio(mesVista, -1))}
-          >
-            <ChevronLeft className="size-4" aria-hidden />
-          </Button>
-          <span className="min-w-[8.5rem] text-center text-sm font-semibold tracking-wide text-foreground">
-            {etiquetaMes}
-          </span>
-          <Button
-            type="button"
-            variant="default"
-            size="icon"
-            className="size-8 shrink-0"
-            aria-label="Mes siguiente"
-            onClick={() => onMesVistaChange(desplazarMesAnio(mesVista, 1))}
-          >
-            <ChevronRight className="size-4" aria-hidden />
-          </Button>
-        </div>
+          <SelectTrigger className="w-[11rem]" aria-label="Mes">
+            <SelectValue placeholder="MES" />
+          </SelectTrigger>
+          <SelectContent>
+            {opcionesMes.map((op) => (
+              <SelectItem key={op.value} value={op.value}>
+                {op.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <div
-          className="flex flex-wrap items-center gap-2"
-          role="group"
-          aria-label="Semana"
+        <Select
+          value={String(semana)}
+          onValueChange={(value) => {
+            if (value === "TODAS") {
+              onSemanaChange("TODAS");
+              return;
+            }
+            const n = Number(value);
+            if (n >= 1 && n <= 5) {
+              onSemanaChange(n as Exclude<MktCuadroMandoSemanaFiltro, "TODAS">);
+            }
+          }}
         >
-          <span className="text-xs font-semibold uppercase tracking-wide text-foreground">
-            Semana
-          </span>
-          {MKT_CUADRO_MANDO_SEMANAS.map((op) => (
-            <Button
-              key={String(op.id)}
-              type="button"
-              size="sm"
-              variant={semana === op.id ? "default" : "outline"}
-              aria-pressed={semana === op.id}
-              onClick={() => onSemanaChange(op.id)}
-            >
-              {op.label}
-            </Button>
-          ))}
-        </div>
+          <SelectTrigger className="w-[9rem]" aria-label="Semana">
+            <SelectValue placeholder="SEMANA" />
+          </SelectTrigger>
+          <SelectContent>
+            {MKT_CUADRO_MANDO_SEMANAS.map((op) => (
+              <SelectItem key={String(op.id)} value={String(op.id)}>
+                {op.id === "TODAS" ? "TODAS" : `SEMANA ${op.label}`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid min-h-[10rem] grid-cols-3 gap-3">

@@ -4,6 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Target, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
+import FilterBar, {
+  FiltroIndividualContainer,
+  FilaFiltrosDesplegables,
+  FILTER_SELECT_WRAPPER_CLASS,
+} from "@/components/FilterBar";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
@@ -70,7 +75,8 @@ export default function GestionarMktPublicacionObjModal({
   onCatalogoChanged,
 }: Props) {
   const [items, setItems] = useState<MktPublicacionObjItem[]>(objetivosIniciales);
-  const [filtroEje, setFiltroEje] = useState<MktPubliObjEje>("RED");
+  const [filtroEje, setFiltroEje] = useState<MktPubliObjEje | "">("");
+  const [filtroPeriodo, setFiltroPeriodo] = useState<MktPubliObjPeriodo | "">("");
   const [openCrear, setOpenCrear] = useState(false);
   const [periodo, setPeriodo] = useState<MktPubliObjPeriodo>("SEMANAL");
   const [ejeAlta, setEjeAlta] = useState<MktPubliObjEje>("RED");
@@ -84,8 +90,13 @@ export default function GestionarMktPublicacionObjModal({
   const [borrando, setBorrando] = useState(false);
 
   const itemsFiltrados = useMemo(
-    () => items.filter((i) => i.eje === filtroEje),
-    [items, filtroEje]
+    () =>
+      items.filter((i) => {
+        if (filtroEje && i.eje !== filtroEje) return false;
+        if (filtroPeriodo && i.periodo !== filtroPeriodo) return false;
+        return true;
+      }),
+    [items, filtroEje, filtroPeriodo]
   );
 
   const opcionesDestino = useMemo(() => {
@@ -118,7 +129,8 @@ export default function GestionarMktPublicacionObjModal({
     if (!open) return;
     setItems(objetivosIniciales);
     void cargar();
-    setFiltroEje("RED");
+    setFiltroEje("");
+    setFiltroPeriodo("");
     setOpenCrear(false);
     setEditingId(null);
     setBorrarTarget(null);
@@ -128,8 +140,8 @@ export default function GestionarMktPublicacionObjModal({
     setDestinoId("");
   }, [ejeAlta]);
 
-  function resetFormAlta(ejeInicial: MktPubliObjEje = filtroEje) {
-    setPeriodo("SEMANAL");
+  function resetFormAlta(ejeInicial: MktPubliObjEje = "RED") {
+    setPeriodo(filtroPeriodo || "SEMANAL");
     setEjeAlta(ejeInicial);
     setDestinoId("");
     setCantidadNorm("1");
@@ -138,7 +150,7 @@ export default function GestionarMktPublicacionObjModal({
   function abrirCrear() {
     if (!esEditor || pending || borrando) return;
     setEditingId(null);
-    resetFormAlta(filtroEje);
+    resetFormAlta(filtroEje || "RED");
     setOpenCrear(true);
   }
 
@@ -250,45 +262,95 @@ export default function GestionarMktPublicacionObjModal({
           }
         >
           <div className="flex min-h-0 flex-col gap-4">
-            {esEditor ? (
-              <div className="flex justify-end">
+            <div className="flex flex-col gap-2">
+              {esEditor ? (
                 <Button
                   type="button"
                   variant="default"
-                  size="icon"
-                  className="h-10 w-10 shrink-0"
+                  className="h-10 w-full gap-2"
                   aria-label="Agregar objetivo"
                   disabled={bloqueado}
                   onClick={abrirCrear}
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus className="h-5 w-5 shrink-0" aria-hidden />
                 </Button>
-              </div>
-            ) : null}
-
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Filtrar Por</ModalMicroLabel>
-              <div
-                className="flex flex-wrap items-center gap-2"
-                role="group"
-                aria-label="Filtrar objetivos por eje"
-              >
-                {MKT_PUBLI_OBJ_EJES.map((e) => (
-                  <Button
-                    key={e}
-                    type="button"
-                    size="sm"
-                    variant={filtroEje === e ? "default" : "outline"}
-                    disabled={bloqueado}
-                    onClick={() => {
-                      setFiltroEje(e);
+              ) : null}
+              <FilterBar className="filtros-contenedor-tienda w-full shrink-0 bg-card">
+                <FilaFiltrosDesplegables columnas={2}>
+                  <FiltroIndividualContainer
+                    className={FILTER_SELECT_WRAPPER_CLASS}
+                    activo={Boolean(filtroEje)}
+                    onLimpiar={() => {
+                      setFiltroEje("");
                       setEditingId(null);
                     }}
                   >
-                    {etiquetaMktPubliObjEje(e)}
-                  </Button>
-                ))}
-              </div>
+                    <Select
+                      value={filtroEje || undefined}
+                      onValueChange={(v) => {
+                        setFiltroEje(v as MktPubliObjEje);
+                        setEditingId(null);
+                      }}
+                      disabled={bloqueado}
+                    >
+                      <SelectTrigger
+                        className="input-filtro-unificado"
+                        aria-label="Filtrar por eje"
+                      >
+                        <SelectValue placeholder="EJE" />
+                      </SelectTrigger>
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        className="select-content-filtro"
+                      >
+                        {MKT_PUBLI_OBJ_EJES.map((e) => (
+                          <SelectItem key={e} value={e}>
+                            {etiquetaMktPubliObjEje(e)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FiltroIndividualContainer>
+                  <FiltroIndividualContainer
+                    className={FILTER_SELECT_WRAPPER_CLASS}
+                    activo={Boolean(filtroPeriodo)}
+                    onLimpiar={() => {
+                      setFiltroPeriodo("");
+                      setEditingId(null);
+                    }}
+                  >
+                    <Select
+                      value={filtroPeriodo || undefined}
+                      onValueChange={(v) => {
+                        setFiltroPeriodo(v as MktPubliObjPeriodo);
+                        setEditingId(null);
+                      }}
+                      disabled={bloqueado}
+                    >
+                      <SelectTrigger
+                        className="input-filtro-unificado"
+                        aria-label="Filtrar por periodo"
+                      >
+                        <SelectValue placeholder="PERIODO" />
+                      </SelectTrigger>
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        className="select-content-filtro"
+                      >
+                        {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {etiquetaMktPubliObjPeriodo(p)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FiltroIndividualContainer>
+                </FilaFiltrosDesplegables>
+              </FilterBar>
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-1">
@@ -399,7 +461,7 @@ export default function GestionarMktPublicacionObjModal({
                   <li className="py-6 text-center text-sm text-muted-foreground">
                     {items.length === 0
                       ? "No hay objetivos configurados."
-                      : `No hay objetivos de ${etiquetaMktPubliObjEje(filtroEje)}.`}
+                      : "Ningún objetivo coincide con los filtros."}
                   </li>
                 ) : null}
               </ul>
@@ -413,7 +475,7 @@ export default function GestionarMktPublicacionObjModal({
         onOpenChange={(next) => {
           if (pending) return;
           setOpenCrear(next);
-          if (!next) resetFormAlta(filtroEje);
+          if (!next) resetFormAlta(filtroEje || "RED");
         }}
       >
         <AppModal
@@ -428,7 +490,7 @@ export default function GestionarMktPublicacionObjModal({
               disabled={pending}
               onClick={() => {
                 setOpenCrear(false);
-                resetFormAlta(filtroEje);
+                  resetFormAlta(filtroEje || "RED");
               }}
             >
               Cancelar

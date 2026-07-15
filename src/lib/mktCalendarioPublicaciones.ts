@@ -107,6 +107,41 @@ export function etiquetaMesAnioMayusculas(vista: MktCalendarioMesAnio): string {
   return formatMesAnioMayusculasDesdeIsoYmd(isoYmdPrimerDiaMes(vista.anio, vista.mes));
 }
 
+/** Valor estable para Select: `YYYY-M` (mes 1–12). */
+export function valorSelectMesAnio(vista: MktCalendarioMesAnio): string {
+  return `${vista.anio}-${vista.mes}`;
+}
+
+export function parseValorSelectMesAnio(value: string): MktCalendarioMesAnio | null {
+  const [anioRaw, mesRaw] = value.split("-");
+  const anio = Number(anioRaw);
+  const mes = Number(mesRaw);
+  if (!Number.isInteger(anio) || !Number.isInteger(mes) || mes < 1 || mes > 12) {
+    return null;
+  }
+  return { anio, mes };
+}
+
+/**
+ * Opciones de mes para el selector del Calendario (alrededor de un mes ancla).
+ * Labels: `JULIO 2026`.
+ */
+export function opcionesSelectMesAnio(
+  ancla: MktCalendarioMesAnio = mesAnioActualArgentina(),
+  mesesAtras = 12,
+  mesesAdelante = 6
+): ReadonlyArray<{ value: string; label: string }> {
+  const opciones: { value: string; label: string }[] = [];
+  for (let delta = -mesesAtras; delta <= mesesAdelante; delta += 1) {
+    const vista = desplazarMesAnio(ancla, delta);
+    opciones.push({
+      value: valorSelectMesAnio(vista),
+      label: etiquetaMesAnioMayusculas(vista),
+    });
+  }
+  return opciones;
+}
+
 function armarCelda(
   isoYmd: string,
   mesVista: number,
