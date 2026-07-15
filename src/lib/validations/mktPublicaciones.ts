@@ -20,10 +20,14 @@ const contenidoUrlSchema = z
     "Ingresá una URL válida (http/https)."
   );
 
+const redIdsSchema = z
+  .array(prismaCuidSchema)
+  .min(1, "Seleccioná al menos una red.");
+
 export const crearMktPublicacionSchema = z.object({
   fechaIso: isoYmdSchema,
   contenidoUrl: contenidoUrlSchema,
-  redId: prismaCuidSchema,
+  redIds: redIdsSchema,
   tipoContenidoId: prismaCuidSchema,
   ideaDetalleId: prismaCuidSchema,
 });
@@ -32,7 +36,7 @@ export const editarMktPublicacionSchema = z.object({
   id: prismaCuidSchema,
   fechaIso: isoYmdSchema,
   contenidoUrl: contenidoUrlSchema,
-  redId: prismaCuidSchema,
+  redIds: redIdsSchema,
   tipoContenidoId: prismaCuidSchema,
   ideaDetalleId: prismaCuidSchema,
 });

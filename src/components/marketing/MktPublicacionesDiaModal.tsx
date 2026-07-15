@@ -72,19 +72,29 @@ export default function MktPublicacionesDiaModal({
                   key={item.id}
                   className="flex items-center gap-3 px-3 py-3"
                 >
-                  <span
-                    className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground"
-                    title={item.redNombre}
-                    aria-label={item.redNombre}
-                  >
-                    <MktRedSocialIcon redNombre={item.redNombre} className="size-4" />
-                  </span>
+                  <div className="flex shrink-0 items-center gap-1">
+                    {(item.redesNombres.length > 0 ? item.redesNombres : ["SIN RED"]).map(
+                      (redNombre, idx) => (
+                        <span
+                          key={`${item.id}-red-${item.redIds[idx] ?? idx}`}
+                          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground"
+                          title={redNombre}
+                          aria-label={redNombre}
+                        >
+                          <MktRedSocialIcon redNombre={redNombre} className="size-4" />
+                        </span>
+                      )
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1 flex flex-col gap-0.5">
                     <p className="line-clamp-2 text-sm font-medium text-foreground" title={item.publicacion}>
                       {item.publicacion}
                     </p>
                     <p className="truncate text-[11px] text-muted-foreground">
                       {item.tipoContenidoNombre}
+                      {item.redesNombres.length > 0
+                        ? ` · ${item.redesNombres.join(", ")}`
+                        : ""}
                       {item.contenidoCreado
                         ? " · CONTENIDO: SI"
                         : " · CONTENIDO: NO"}

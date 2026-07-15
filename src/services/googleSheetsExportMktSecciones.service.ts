@@ -63,12 +63,12 @@ export async function exportarMktAGoogleSheets(): Promise<
       prisma.mktPublicacion.findMany({
         select: {
           id: true,
-          redId: true,
           tipoContenidoId: true,
           ideaDetalleId: true,
           fecha: true,
           publicacion: true,
           contenidoUrl: true,
+          redes: { select: { redId: true } },
         },
         orderBy: [{ fecha: "asc" }, { id: "asc" }],
       }),
@@ -115,15 +115,25 @@ export async function exportarMktAGoogleSheets(): Promise<
             "publicacion",
             "contenido_url",
           ],
-          ...publicaciones.map((r) => [
-            r.id,
-            r.redId,
-            r.tipoContenidoId,
-            r.ideaDetalleId ?? "",
-            isoYmdFromPrismaDateOnly(r.fecha),
-            r.publicacion ?? "",
-            r.contenidoUrl ?? "",
-          ]),
+          // Una fila por red (1 publicación × N redes).
+          ...publicaciones.flatMap((r) => {
+            const base = [
+              r.id,
+              "", // red_id placeholder replaced below
+              r.tipoContenidoId,
+              r.ideaDetalleId ?? "",
+              isoYmdFromPrismaDateOnly(r.fecha),
+              r.publicacion ?? "",
+              r.contenidoUrl ?? "",
+            ];
+            const redIds =
+              r.redes.length > 0 ? r.redes.map((x) => x.redId) : [""];
+            return redIds.map((redId) => {
+              const row = [...base];
+              row[1] = redId;
+              return row;
+            });
+          }),
         ],
       },
     ];

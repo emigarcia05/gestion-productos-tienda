@@ -1042,7 +1042,7 @@ model MktPublicacionRed {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  publicaciones MktPublicacion[]
+  publicacionesRedes MktPublicacionRedLink[]
   ideasDetalleRedes MktPublicacionIdeaDetalleRed[]
   objetivos MktPublicacionObj[]
 
@@ -1063,7 +1063,7 @@ model MktPublicacionContenidoTipo {
   @@map("mkt_publi_tipo_contenido")
 }
 
-/** Publicación (hecho de marketing). Referencia independiente a cada catálogo. */
+/** Publicación (hecho de marketing). Redes N:M; tipo contenido 1. */
 model MktPublicacion {
   id                String   @id @default(cuid())
   /** Día del calendario de publicaciones (`YYYY-MM-DD`, sin hora). */
@@ -1074,8 +1074,6 @@ model MktPublicacion {
   contenidoUrl      String   @default("") @map("contenido_url") @db.Text
   /** Derivado: true si `contenido_url` no está vacío. */
   contenidoCreado   Boolean  @default(false) @map("contenido_creado")
-  redId             String   @map("red_id")
-  red               MktPublicacionRed @relation(fields: [redId], references: [id], onDelete: Restrict)
   tipoContenidoId   String   @map("tipo_contenido_id")
   tipoContenido     MktPublicacionContenidoTipo @relation(fields: [tipoContenidoId], references: [id], onDelete: Restrict)
   /** Idea de detalle programada (1:1 opcional; al vincular se marca `usada`). */
@@ -1084,10 +1082,23 @@ model MktPublicacion {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
+  redes MktPublicacionRedLink[]
+
   @@index([fecha], map: "mkt_publi_fecha_idx")
-  @@index([redId], map: "mkt_publi_red_idx")
   @@index([tipoContenidoId], map: "mkt_publi_contenido_idx")
   @@map("mkt_publi")
+}
+
+/** Redes asociadas a una publicación (N:M; mín. 1). */
+model MktPublicacionRedLink {
+  publicacionId String @map("publicacion_id")
+  publicacion   MktPublicacion @relation(fields: [publicacionId], references: [id], onDelete: Cascade)
+  redId         String @map("red_id")
+  red           MktPublicacionRed @relation(fields: [redId], references: [id], onDelete: Restrict)
+
+  @@id([publicacionId, redId])
+  @@index([redId], map: "mkt_publi_redes_red_idx")
+  @@map("mkt_publi_redes")
 }
 
 /** Sección / agrupador de ideas de publicación (`idea_nombre` único). */

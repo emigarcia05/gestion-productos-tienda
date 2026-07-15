@@ -16,12 +16,16 @@ const publicacionSelect = {
   publicacion: true,
   contenidoUrl: true,
   contenidoCreado: true,
-  redId: true,
   tipoContenidoId: true,
   ideaDetalleId: true,
   ideaDetalle: { select: { seccionId: true } },
-  red: { select: { redSocialNombre: true } },
   tipoContenido: { select: { contenidoNombre: true } },
+  redes: {
+    select: {
+      redId: true,
+      red: { select: { redSocialNombre: true } },
+    },
+  },
 } as const;
 
 function mapPublicacion(row: {
@@ -30,22 +34,26 @@ function mapPublicacion(row: {
   publicacion: string;
   contenidoUrl: string;
   contenidoCreado: boolean;
-  redId: string;
   tipoContenidoId: string;
   ideaDetalleId: string | null;
   ideaDetalle: { seccionId: string } | null;
-  red: { redSocialNombre: string };
   tipoContenido: { contenidoNombre: string };
+  redes: { redId: string; red: { redSocialNombre: string } }[];
 }): MktPublicacionCalendarioItem {
   const contenidoUrl = row.contenidoUrl.trim();
+  const redesSorted = [...row.redes].sort((a, b) =>
+    a.red.redSocialNombre.localeCompare(b.red.redSocialNombre, "es")
+  );
   return {
     id: row.id,
     fechaIso: isoYmdFromPrismaDateOnly(row.fecha),
     publicacion: row.publicacion.trim(),
     contenidoUrl,
     contenidoCreado: mktContenidoCreadoDesdeUrl(contenidoUrl),
-    redId: row.redId,
-    redNombre: row.red.redSocialNombre.toLocaleUpperCase("es-AR"),
+    redIds: redesSorted.map((r) => r.redId),
+    redesNombres: redesSorted.map((r) =>
+      r.red.redSocialNombre.toLocaleUpperCase("es-AR")
+    ),
     tipoContenidoId: row.tipoContenidoId,
     tipoContenidoNombre: row.tipoContenido.contenidoNombre.toLocaleUpperCase("es-AR"),
     ideaDetalleId: row.ideaDetalleId,
@@ -69,22 +77,22 @@ function persistContenido(contenidoUrl: string): {
 }
 
 async function assertCatalogos(input: {
-  redId: string;
+  redIds: string[];
   tipoContenidoId: string;
-}): Promise<ServiceResult<true>> {
-  const [red, contenido] = await Promise.all([
-    prisma.mktPublicacionRed.findUnique({
-      where: { id: input.redId },
-      select: { id: true },
-    }),
+}): Promise<ServiceResult<{ redIds: string[] }>> {
+  const redIds = [...new Set(input.redIds)];
+  const [redCount, contenido] = await Promise.all([
+    prisma.mktPublicacionRed.count({ where: { id: { in: redIds } } }),
     prisma.mktPublicacionContenidoTipo.findUnique({
       where: { id: input.tipoContenidoId },
       select: { id: true },
     }),
   ]);
-  if (!red) return { success: false, error: "La red no existe." };
+  if (redCount !== redIds.length) {
+    return { success: false, error: "Hay redes inválidas o inexistentes." };
+  }
   if (!contenido) return { success: false, error: "El tipo de contenido no existe." };
-  return { success: true, data: true };
+  return { success: true, data: { redIds } };
 }
 
 /**
@@ -136,6 +144,7 @@ export async function crearMktPublicacion(
 ): Promise<ServiceResult<MktPublicacionCalendarioItem>> {
   const cats = await assertCatalogos(input);
   if (!cats.success) return cats;
+  const { redIds } = cats.data;
 
   const ideaOk = await assertIdeaDetalleDisponible(input.ideaDetalleId);
   if (!ideaOk.success) return ideaOk;
@@ -150,9 +159,9 @@ export async function crearMktPublicacion(
           publicacion,
           contenidoUrl: contenido.contenidoUrl,
           contenidoCreado: contenido.contenidoCreado,
-          redId: input.redId,
           tipoContenidoId: input.tipoContenidoId,
           ideaDetalleId: input.ideaDetalleId,
+          redes: { create: redIds.map((redId) => ({ redId })) },
         },
         select: publicacionSelect,
       });
@@ -184,6 +193,7 @@ export async function editarMktPublicacion(
 ): Promise<ServiceResult<MktPublicacionCalendarioItem>> {
   const cats = await assertCatalogos(input);
   if (!cats.success) return cats;
+  const { redIds } = cats.data;
 
   const actual = await prisma.mktPublicacion.findUnique({
     where: { id: input.id },
@@ -211,6 +221,10 @@ export async function editarMktPublicacion(
         });
       }
 
+      await tx.mktPublicacionRedLink.deleteMany({
+        where: { publicacionId: input.id },
+      });
+
       const row = await tx.mktPublicacion.update({
         where: { id: input.id },
         data: {
@@ -218,9 +232,9 @@ export async function editarMktPublicacion(
           publicacion,
           contenidoUrl: contenido.contenidoUrl,
           contenidoCreado: contenido.contenidoCreado,
-          redId: input.redId,
           tipoContenidoId: input.tipoContenidoId,
           ideaDetalleId: ideaNuevaId,
+          redes: { create: redIds.map((redId) => ({ redId })) },
         },
         select: publicacionSelect,
       });

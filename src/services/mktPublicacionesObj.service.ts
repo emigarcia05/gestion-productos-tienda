@@ -14,6 +14,7 @@ import {
   filtrarPublicacionesPorRangoIsoYmd,
 } from "@/lib/mktPublicacionesEstadisticas";
 import { addDaysToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import { contarPublicacionesConRed } from "@/lib/mktPublicaciones";
 import { listarMktPublicacionesCalendario } from "@/services/mktPublicaciones.service";
 import type { ServiceResult } from "@/types/service.types";
 
@@ -263,7 +264,7 @@ export async function evaluarMktPublicacionObjs(
     .map((o) => {
       let actual = 0;
       if (o.eje === "RED") {
-        actual = enVentana.filter((p) => p.redId === o.destinoId).length;
+        actual = contarPublicacionesConRed(enVentana, o.destinoId);
       } else if (o.eje === "CONTENIDO") {
         actual = enVentana.filter((p) => p.tipoContenidoId === o.destinoId).length;
       } else {

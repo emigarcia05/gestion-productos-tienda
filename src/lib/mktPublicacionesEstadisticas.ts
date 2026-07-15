@@ -32,27 +32,21 @@ export const MKT_CUADRO_MANDO_SEMANAS: ReadonlyArray<{
   { id: 5, label: "5" },
 ];
 
-function contarPorId(
-  items: MktPublicacionCalendarioItem[],
-  getId: (p: MktPublicacionCalendarioItem) => string
-): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const p of items) {
-    const id = getId(p);
-    map.set(id, (map.get(id) ?? 0) + 1);
-  }
-  return map;
-}
-
 /**
  * Estadísticas del cuadro de mando.
+ * **Redes**: 1 por cada red vinculada a la publicación (N:M).
  * **Contenido**: Planificado = sin `contenidoUrl`; Terminado = con URL (`contenidoCreado`).
  */
 export function calcularCuadroMandoPublicaciones(
   publicaciones: MktPublicacionCalendarioItem[],
   redes: MktCatalogoNombreItem[]
 ): MktCuadroMandoStats {
-  const porRed = contarPorId(publicaciones, (p) => p.redId);
+  const porRed = new Map<string, number>();
+  for (const p of publicaciones) {
+    for (const redId of p.redIds) {
+      porRed.set(redId, (porRed.get(redId) ?? 0) + 1);
+    }
+  }
 
   const redesStats: MktStatFila[] = redes
     .map((r) => ({

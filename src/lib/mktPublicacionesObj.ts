@@ -1,5 +1,8 @@
 import type { MktPubliObjEje, MktPubliObjPeriodo } from "@prisma/client";
-import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
+import {
+  contarPublicacionesConRed,
+  type MktPublicacionCalendarioItem,
+} from "@/lib/mktPublicaciones";
 import type { MktCuadroMandoSemanaFiltro } from "@/lib/mktPublicacionesEstadisticas";
 
 export type { MktPubliObjEje, MktPubliObjPeriodo };
@@ -66,6 +69,7 @@ export function periodoObjParaSemanaFiltro(
 /**
  * Evalúa objetivos contra publicaciones ya filtradas a la ventana del cuadro de mando.
  * Cuenta cualquier publicación programada (fila `mkt_publi`).
+ * Eje RED: 1 por cada red vinculada (N:M).
  */
 export function evaluarMktPublicacionObjsCliente(
   objetivos: MktPublicacionObjItem[],
@@ -77,7 +81,7 @@ export function evaluarMktPublicacionObjsCliente(
     .map((o) => {
       let actual = 0;
       if (o.eje === "RED") {
-        actual = publicaciones.filter((p) => p.redId === o.destinoId).length;
+        actual = contarPublicacionesConRed(publicaciones, o.destinoId);
       } else if (o.eje === "CONTENIDO") {
         actual = publicaciones.filter((p) => p.tipoContenidoId === o.destinoId).length;
       } else {

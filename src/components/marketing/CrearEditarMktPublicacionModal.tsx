@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
+import MktMultiSelectCatalogo from "@/components/marketing/MktMultiSelectCatalogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -47,7 +48,7 @@ export default function CrearEditarMktPublicacionModal({
   item = null,
   onSuccess,
 }: Props) {
-  const [redId, setRedId] = useState("");
+  const [redIds, setRedIds] = useState<string[]>([]);
   const [tipoContenidoId, setTipoContenidoId] = useState("");
   const [seccionId, setSeccionId] = useState("");
   const [ideaDetalleId, setIdeaDetalleId] = useState("");
@@ -57,14 +58,14 @@ export default function CrearEditarMktPublicacionModal({
   useEffect(() => {
     if (!open) return;
     if (modo === "editar" && item) {
-      setRedId(item.redId);
+      setRedIds([...item.redIds]);
       setTipoContenidoId(item.tipoContenidoId);
       setSeccionId(item.ideaSeccionId ?? "");
       setIdeaDetalleId(item.ideaDetalleId ?? "");
       setContenidoUrl(item.contenidoUrl ?? "");
       return;
     }
-    setRedId("");
+    setRedIds([]);
     setTipoContenidoId("");
     setSeccionId("");
     setIdeaDetalleId("");
@@ -101,11 +102,14 @@ export default function CrearEditarMktPublicacionModal({
     const idea = seccion?.detalles.find((d) => d.id === nextIdeaId);
     if (!idea) return;
     setTipoContenidoId(idea.tipoContenidoId);
+    if (idea.redIds.length > 0) {
+      setRedIds([...idea.redIds]);
+    }
   }
 
   const puedeGuardar =
     Boolean(fechaIso) &&
-    Boolean(redId) &&
+    redIds.length > 0 &&
     Boolean(tipoContenidoId) &&
     Boolean(seccionId) &&
     Boolean(ideaDetalleId) &&
@@ -120,7 +124,7 @@ export default function CrearEditarMktPublicacionModal({
         modo === "crear"
           ? await crearMktPublicacionAction({
               fechaIso,
-              redId,
+              redIds,
               tipoContenidoId,
               ideaDetalleId,
               contenidoUrl: contenidoUrl.trim(),
@@ -128,7 +132,7 @@ export default function CrearEditarMktPublicacionModal({
           : await editarMktPublicacionAction({
               id: item!.id,
               fechaIso,
-              redId,
+              redIds,
               tipoContenidoId,
               ideaDetalleId,
               contenidoUrl: contenidoUrl.trim(),
@@ -188,22 +192,15 @@ export default function CrearEditarMktPublicacionModal({
                 {fechaIso ? formatIsoYmdDdMmYyyyArgentina(fechaIso) : "—"}
               </p>
             </div>
-            <Select
-              value={redId || undefined}
-              onValueChange={setRedId}
-              disabled={saving || redes.length === 0}
-            >
-              <SelectTrigger className="w-full" aria-label="Red">
-                <SelectValue placeholder={redes.length === 0 ? "SIN REDES CARGADAS" : "RED"} />
-              </SelectTrigger>
-              <SelectContent>
-                {redes.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MktMultiSelectCatalogo
+              opciones={redes}
+              selectedIds={redIds}
+              onChange={setRedIds}
+              placeholder="RED"
+              emptyPlaceholder="SIN REDES CARGADAS"
+              ariaLabel="Redes"
+              disabled={saving}
+            />
             <Select
               value={tipoContenidoId || undefined}
               onValueChange={setTipoContenidoId}

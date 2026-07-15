@@ -120,10 +120,11 @@ export default function MktCalendarioPublicacionesGrid({
                         >
                           {items.map((item) => {
                             const terminado = item.contenidoCreado;
-                            return (
+                            const nombres = item.redesNombres.join(", ") || "SIN RED";
+                            return item.redesNombres.map((redNombre, idx) => (
                               <span
-                                key={item.id}
-                                title={`${item.redNombre}: ${item.publicacion.slice(0, 80)} · CONTENIDO: ${terminado ? "SI" : "NO"}`}
+                                key={`${item.id}-${item.redIds[idx] ?? idx}`}
+                                title={`${nombres}: ${item.publicacion.slice(0, 80)} · CONTENIDO: ${terminado ? "SI" : "NO"}`}
                                 className={cn(
                                   "inline-flex size-5 items-center justify-center rounded-md",
                                   terminado
@@ -132,13 +133,13 @@ export default function MktCalendarioPublicacionesGrid({
                                 )}
                                 aria-label={
                                   terminado
-                                    ? `${item.redNombre}, contenido terminado`
-                                    : `${item.redNombre}, contenido planificado`
+                                    ? `${redNombre}, contenido terminado`
+                                    : `${redNombre}, contenido planificado`
                                 }
                               >
-                                <MktRedSocialIcon redNombre={item.redNombre} className="size-3" />
+                                <MktRedSocialIcon redNombre={redNombre} className="size-3" />
                               </span>
-                            );
+                            ));
                           })}
                         </div>
                       ) : null}
