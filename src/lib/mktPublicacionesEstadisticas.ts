@@ -14,7 +14,6 @@ export type MktStatFila = {
 
 export type MktCuadroMandoStats = {
   redes: MktStatFila[];
-  tipos: MktStatFila[];
   contenido: MktStatFila[];
 };
 
@@ -48,25 +47,15 @@ function contarPorId(
  */
 export function calcularCuadroMandoPublicaciones(
   publicaciones: MktPublicacionCalendarioItem[],
-  redes: MktCatalogoNombreItem[],
-  tipos: MktCatalogoNombreItem[]
+  redes: MktCatalogoNombreItem[]
 ): MktCuadroMandoStats {
   const porRed = contarPorId(publicaciones, (p) => p.redId);
-  const porTipo = contarPorId(publicaciones, (p) => p.tipoPublicacionId);
 
   const redesStats: MktStatFila[] = redes
     .map((r) => ({
       id: r.id,
       nombre: r.nombre,
       cantidad: porRed.get(r.id) ?? 0,
-    }))
-    .sort((a, b) => b.cantidad - a.cantidad || a.nombre.localeCompare(b.nombre, "es"));
-
-  const tiposStats: MktStatFila[] = tipos
-    .map((t) => ({
-      id: t.id,
-      nombre: t.nombre,
-      cantidad: porTipo.get(t.id) ?? 0,
     }))
     .sort((a, b) => b.cantidad - a.cantidad || a.nombre.localeCompare(b.nombre, "es"));
 
@@ -79,7 +68,6 @@ export function calcularCuadroMandoPublicaciones(
 
   return {
     redes: redesStats,
-    tipos: tiposStats,
     contenido: [
       { id: "planificado", nombre: "PLANIFICADO", cantidad: planificado },
       { id: "terminado", nombre: "TERMINADO", cantidad: terminado },

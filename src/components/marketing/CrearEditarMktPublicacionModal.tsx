@@ -29,7 +29,6 @@ interface Props {
   modo: "crear" | "editar";
   fechaIso: string;
   redes: MktCatalogoNombreItem[];
-  tipos: MktCatalogoNombreItem[];
   contenidos: MktCatalogoNombreItem[];
   seccionesIdeas: MktIdeaSeccionItem[];
   /** Obligatorio en modo editar. */
@@ -43,14 +42,12 @@ export default function CrearEditarMktPublicacionModal({
   modo,
   fechaIso,
   redes,
-  tipos,
   contenidos,
   seccionesIdeas,
   item = null,
   onSuccess,
 }: Props) {
   const [redId, setRedId] = useState("");
-  const [tipoPublicacionId, setTipoPublicacionId] = useState("");
   const [tipoContenidoId, setTipoContenidoId] = useState("");
   const [seccionId, setSeccionId] = useState("");
   const [ideaDetalleId, setIdeaDetalleId] = useState("");
@@ -61,7 +58,6 @@ export default function CrearEditarMktPublicacionModal({
     if (!open) return;
     if (modo === "editar" && item) {
       setRedId(item.redId);
-      setTipoPublicacionId(item.tipoPublicacionId);
       setTipoContenidoId(item.tipoContenidoId);
       setSeccionId(item.ideaSeccionId ?? "");
       setIdeaDetalleId(item.ideaDetalleId ?? "");
@@ -69,7 +65,6 @@ export default function CrearEditarMktPublicacionModal({
       return;
     }
     setRedId("");
-    setTipoPublicacionId("");
     setTipoContenidoId("");
     setSeccionId("");
     setIdeaDetalleId("");
@@ -111,7 +106,6 @@ export default function CrearEditarMktPublicacionModal({
   const puedeGuardar =
     Boolean(fechaIso) &&
     Boolean(redId) &&
-    Boolean(tipoPublicacionId) &&
     Boolean(tipoContenidoId) &&
     Boolean(seccionId) &&
     Boolean(ideaDetalleId) &&
@@ -127,7 +121,6 @@ export default function CrearEditarMktPublicacionModal({
           ? await crearMktPublicacionAction({
               fechaIso,
               redId,
-              tipoPublicacionId,
               tipoContenidoId,
               ideaDetalleId,
               contenidoCreado,
@@ -136,7 +129,6 @@ export default function CrearEditarMktPublicacionModal({
               id: item!.id,
               fechaIso,
               redId,
-              tipoPublicacionId,
               tipoContenidoId,
               ideaDetalleId,
               contenidoCreado,
@@ -208,24 +200,6 @@ export default function CrearEditarMktPublicacionModal({
                 {redes.map((r) => (
                   <SelectItem key={r.id} value={r.id}>
                     {r.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={tipoPublicacionId || undefined}
-              onValueChange={setTipoPublicacionId}
-              disabled={saving || tipos.length === 0}
-            >
-              <SelectTrigger className="w-full" aria-label="Tipo de publicación">
-                <SelectValue
-                  placeholder={tipos.length === 0 ? "SIN TIPOS CARGADOS" : "TIPO DE PUBLICACION"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {tipos.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.nombre}
                   </SelectItem>
                 ))}
               </SelectContent>

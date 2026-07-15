@@ -62,7 +62,7 @@ function ColumnaStats({
   );
 }
 
-/** Tres columnas: Redes · Tipo · Contenido (Planificado / Terminado). */
+/** Dos columnas: Redes · Contenido (Planificado / Terminado). */
 export default function MktPublicacionesCuadroMando({
   stats,
   periodo,
@@ -95,9 +95,8 @@ export default function MktPublicacionesCuadroMando({
           </Button>
         ))}
       </div>
-      <div className="grid min-h-[10rem] grid-cols-3 gap-3">
+      <div className="grid min-h-[10rem] grid-cols-2 gap-3">
         <ColumnaStats titulo="Redes" filas={stats.redes} mostrarIconoRed />
-        <ColumnaStats titulo="Tipo" filas={stats.tipos} />
         <ColumnaStats titulo="Contenido" filas={stats.contenido} />
       </div>
     </div>

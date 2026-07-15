@@ -17,7 +17,6 @@ import type { MktIdeaDetalleItem, MktIdeaSeccionItem } from "@/lib/mktPublicacio
 interface Props {
   jerarquia: MktIdeaSeccionItem[];
   redes: MktCatalogoNombreItem[];
-  tipos: MktCatalogoNombreItem[];
   contenidos: MktCatalogoNombreItem[];
   esEditor: boolean;
 }
@@ -47,7 +46,6 @@ type ModalDetalle =
       tituloIdeaInicial?: string;
       detalleInicial?: string;
       redIdsIniciales?: string[];
-      tipoPublicacionIdsIniciales?: string[];
       tipoContenidoIdInicial?: string;
       usadaInicial?: boolean;
     };
@@ -60,7 +58,6 @@ type ModalVerDetalle =
       tituloIdea: string;
       detalle: string;
       redesNombres: string[];
-      tiposPublicacionNombres: string[];
       tipoContenidoNombre: string;
       usada: boolean;
     };
@@ -72,7 +69,6 @@ type ModalEliminar =
 export default function MarketingIdeasPageClient({
   jerarquia,
   redes,
-  tipos,
   contenidos,
   esEditor,
 }: Props) {
@@ -178,7 +174,7 @@ export default function MarketingIdeasPageClient({
                 <CatalogoFinderRow
                   key={item.id}
                   nombre={item.tituloIdea || item.detalle}
-                  meta={`${item.redesNombres.join(" · ") || "—"} · ${item.tiposPublicacionNombres.join(" · ") || "—"} · ${item.tipoContenidoNombre}`}
+                  meta={`${item.redesNombres.join(" · ") || "—"} · ${item.tipoContenidoNombre}`}
                   terceraLinea={item.usada ? "USADA: SI" : "USADA: NO"}
                   selected={false}
                   mostrarAcciones={esEditor}
@@ -189,7 +185,6 @@ export default function MarketingIdeasPageClient({
                       tituloIdea: item.tituloIdea,
                       detalle: item.detalle,
                       redesNombres: item.redesNombres,
-                      tiposPublicacionNombres: item.tiposPublicacionNombres,
                       tipoContenidoNombre: item.tipoContenidoNombre,
                       usada: item.usada,
                     })
@@ -204,7 +199,6 @@ export default function MarketingIdeasPageClient({
                       tituloIdeaInicial: item.tituloIdea,
                       detalleInicial: item.detalle,
                       redIdsIniciales: item.redIds,
-                      tipoPublicacionIdsIniciales: item.tipoPublicacionIds,
                       tipoContenidoIdInicial: item.tipoContenidoId,
                       usadaInicial: item.usada,
                     })
@@ -248,15 +242,11 @@ export default function MarketingIdeasPageClient({
         seccionId={modalDetalle.open ? modalDetalle.seccionId : ""}
         seccionNombre={modalDetalle.open ? modalDetalle.seccionNombre : ""}
         redes={redes}
-        tipos={tipos}
         contenidos={contenidos}
         id={modalDetalle.open ? modalDetalle.id : undefined}
         tituloIdeaInicial={modalDetalle.open ? modalDetalle.tituloIdeaInicial : undefined}
         detalleInicial={modalDetalle.open ? modalDetalle.detalleInicial : undefined}
         redIdsIniciales={modalDetalle.open ? modalDetalle.redIdsIniciales : undefined}
-        tipoPublicacionIdsIniciales={
-          modalDetalle.open ? modalDetalle.tipoPublicacionIdsIniciales : undefined
-        }
         tipoContenidoIdInicial={modalDetalle.open ? modalDetalle.tipoContenidoIdInicial : undefined}
         usadaInicial={modalDetalle.open ? modalDetalle.usadaInicial : undefined}
         onSuccess={refresh}
@@ -269,9 +259,6 @@ export default function MarketingIdeasPageClient({
         tituloIdea={modalVerDetalle.open ? modalVerDetalle.tituloIdea : ""}
         detalle={modalVerDetalle.open ? modalVerDetalle.detalle : ""}
         redesNombres={modalVerDetalle.open ? modalVerDetalle.redesNombres : []}
-        tiposPublicacionNombres={
-          modalVerDetalle.open ? modalVerDetalle.tiposPublicacionNombres : []
-        }
         tipoContenidoNombre={modalVerDetalle.open ? modalVerDetalle.tipoContenidoNombre : ""}
         usada={modalVerDetalle.open ? modalVerDetalle.usada : false}
       />

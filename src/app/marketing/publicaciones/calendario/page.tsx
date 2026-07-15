@@ -6,7 +6,6 @@ import { getRol } from "@/lib/sesion";
 import {
   listarMktPublicacionContenidos,
   listarMktPublicacionRedes,
-  listarMktPublicacionTipos,
 } from "@/services/mktPublicacionesCatalogo.service";
 import { listarMktIdeasJerarquia } from "@/services/mktPublicacionesIdeas.service";
 import { listarMktPublicacionesCalendario } from "@/services/mktPublicaciones.service";
@@ -20,25 +19,18 @@ export default async function MarketingCalendarioPublicacionesPage() {
   }
 
   const esEditor = rol === "editor";
-  const [
-    redesIniciales,
-    tiposIniciales,
-    contenidosIniciales,
-    seccionesIdeas,
-    publicaciones,
-  ] = await Promise.all([
-    listarMktPublicacionRedes(),
-    listarMktPublicacionTipos(),
-    listarMktPublicacionContenidos(),
-    listarMktIdeasJerarquia(),
-    listarMktPublicacionesCalendario(),
-  ]);
+  const [redesIniciales, contenidosIniciales, seccionesIdeas, publicaciones] =
+    await Promise.all([
+      listarMktPublicacionRedes(),
+      listarMktPublicacionContenidos(),
+      listarMktIdeasJerarquia(),
+      listarMktPublicacionesCalendario(),
+    ]);
 
   return (
     <div className="area-page-shell">
       <MarketingCalendarioPageClient
         redesIniciales={redesIniciales}
-        tiposIniciales={tiposIniciales}
         contenidosIniciales={contenidosIniciales}
         seccionesIdeas={seccionesIdeas}
         publicaciones={publicaciones}

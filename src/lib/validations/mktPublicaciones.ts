@@ -14,7 +14,6 @@ export const crearMktPublicacionSchema = z.object({
   fechaIso: isoYmdSchema,
   contenidoCreado: z.boolean(),
   redId: prismaCuidSchema,
-  tipoPublicacionId: prismaCuidSchema,
   tipoContenidoId: prismaCuidSchema,
   ideaDetalleId: prismaCuidSchema,
 });
@@ -24,7 +23,6 @@ export const editarMktPublicacionSchema = z.object({
   fechaIso: isoYmdSchema,
   contenidoCreado: z.boolean(),
   redId: prismaCuidSchema,
-  tipoPublicacionId: prismaCuidSchema,
   tipoContenidoId: prismaCuidSchema,
   ideaDetalleId: prismaCuidSchema,
 });

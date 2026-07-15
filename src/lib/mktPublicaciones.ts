@@ -9,8 +9,6 @@ export type MktPublicacionCalendarioItem = {
   contenidoCreado: boolean;
   redId: string;
   redNombre: string;
-  tipoPublicacionId: string;
-  tipoPublicacionNombre: string;
   tipoContenidoId: string;
   tipoContenidoNombre: string;
   /** Idea de detalle vinculada (`mkt_publi_ideas_detalle`), si existe. */

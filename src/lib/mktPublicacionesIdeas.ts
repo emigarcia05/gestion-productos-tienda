@@ -7,8 +7,6 @@ export type MktIdeaDetalleItem = {
   detalle: string;
   redIds: string[];
   redesNombres: string[];
-  tipoPublicacionIds: string[];
-  tiposPublicacionNombres: string[];
   tipoContenidoId: string;
   tipoContenidoNombre: string;
   usada: boolean;

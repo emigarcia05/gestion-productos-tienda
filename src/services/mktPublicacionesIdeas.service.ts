@@ -43,12 +43,6 @@ const detalleSelect = {
       red: { select: { redSocialNombre: true } },
     },
   },
-  tipos: {
-    select: {
-      tipoPublicacionId: true,
-      tipoPublicacion: { select: { tipoPublicacionNombre: true } },
-    },
-  },
 } as const;
 
 /** DETALLE: primero `usada = false`, luego `titulo_idea` A–Z (es). */
@@ -70,16 +64,9 @@ function mapDetalle(row: {
   usada: boolean;
   tipoContenido: { contenidoNombre: string };
   redes: { redId: string; red: { redSocialNombre: string } }[];
-  tipos: { tipoPublicacionId: string; tipoPublicacion: { tipoPublicacionNombre: string } }[];
 }): MktIdeaDetalleItem {
   const redesSorted = [...row.redes].sort((a, b) =>
     a.red.redSocialNombre.localeCompare(b.red.redSocialNombre, "es")
-  );
-  const tiposSorted = [...row.tipos].sort((a, b) =>
-    a.tipoPublicacion.tipoPublicacionNombre.localeCompare(
-      b.tipoPublicacion.tipoPublicacionNombre,
-      "es"
-    )
   );
   return {
     id: row.id,
@@ -88,10 +75,6 @@ function mapDetalle(row: {
     detalle: row.detalle,
     redIds: redesSorted.map((r) => r.redId),
     redesNombres: redesSorted.map((r) => r.red.redSocialNombre.toLocaleUpperCase("es-AR")),
-    tipoPublicacionIds: tiposSorted.map((t) => t.tipoPublicacionId),
-    tiposPublicacionNombres: tiposSorted.map((t) =>
-      t.tipoPublicacion.tipoPublicacionNombre.toLocaleUpperCase("es-AR")
-    ),
     tipoContenidoId: row.tipoContenidoId,
     tipoContenidoNombre: row.tipoContenido.contenidoNombre.toLocaleUpperCase("es-AR"),
     usada: row.usada,
@@ -100,14 +83,11 @@ function mapDetalle(row: {
 
 async function assertCatalogosExisten(input: {
   redIds: string[];
-  tipoPublicacionIds: string[];
   tipoContenidoId: string;
 }): Promise<ServiceResult<true>> {
   const redIds = [...new Set(input.redIds)];
-  const tipoIds = [...new Set(input.tipoPublicacionIds)];
-  const [redCount, tipoCount, contenido] = await Promise.all([
+  const [redCount, contenido] = await Promise.all([
     prisma.mktPublicacionRed.count({ where: { id: { in: redIds } } }),
-    prisma.mktPublicacionTipo.count({ where: { id: { in: tipoIds } } }),
     prisma.mktPublicacionContenidoTipo.findUnique({
       where: { id: input.tipoContenidoId },
       select: { id: true },
@@ -115,9 +95,6 @@ async function assertCatalogosExisten(input: {
   ]);
   if (redCount !== redIds.length) {
     return { success: false, error: "Hay redes inválidas o inexistentes." };
-  }
-  if (tipoCount !== tipoIds.length) {
-    return { success: false, error: "Hay tipos de publicación inválidos o inexistentes." };
   }
   if (!contenido) return { success: false, error: "El tipo de contenido no existe." };
   return { success: true, data: true };
@@ -239,10 +216,8 @@ export async function crearMktIdeaDetalle(
     return { success: false, error: "El detalle no puede quedar vacío." };
   }
   const redIds = [...new Set(input.redIds)];
-  const tipoPublicacionIds = [...new Set(input.tipoPublicacionIds)];
   const cats = await assertCatalogosExisten({
     redIds,
-    tipoPublicacionIds,
     tipoContenidoId: input.tipoContenidoId,
   });
   if (!cats.success) return cats;
@@ -263,9 +238,6 @@ export async function crearMktIdeaDetalle(
         tipoContenidoId: input.tipoContenidoId,
         usada: false,
         redes: { create: redIds.map((redId) => ({ redId })) },
-        tipos: {
-          create: tipoPublicacionIds.map((tipoPublicacionId) => ({ tipoPublicacionId })),
-        },
       },
       select: detalleSelect,
     });
@@ -290,10 +262,8 @@ export async function editarMktIdeaDetalle(
     return { success: false, error: "El detalle no puede quedar vacío." };
   }
   const redIds = [...new Set(input.redIds)];
-  const tipoPublicacionIds = [...new Set(input.tipoPublicacionIds)];
   const cats = await assertCatalogosExisten({
     redIds,
-    tipoPublicacionIds,
     tipoContenidoId: input.tipoContenidoId,
   });
   if (!cats.success) return cats;
@@ -301,9 +271,6 @@ export async function editarMktIdeaDetalle(
   try {
     const updated = await prisma.$transaction(async (tx) => {
       await tx.mktPublicacionIdeaDetalleRed.deleteMany({
-        where: { ideaDetalleId: input.id },
-      });
-      await tx.mktPublicacionIdeaDetalleTipo.deleteMany({
         where: { ideaDetalleId: input.id },
       });
       return tx.mktPublicacionIdeaDetalle.update({
@@ -314,9 +281,6 @@ export async function editarMktIdeaDetalle(
           tipoContenidoId: input.tipoContenidoId,
           usada: input.usada,
           redes: { create: redIds.map((redId) => ({ redId })) },
-          tipos: {
-            create: tipoPublicacionIds.map((tipoPublicacionId) => ({ tipoPublicacionId })),
-          },
         },
         select: detalleSelect,
       });

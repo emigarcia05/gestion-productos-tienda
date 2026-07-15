@@ -6,7 +6,6 @@ import { getRol } from "@/lib/sesion";
 import {
   listarMktPublicacionContenidos,
   listarMktPublicacionRedes,
-  listarMktPublicacionTipos,
 } from "@/services/mktPublicacionesCatalogo.service";
 import { listarMktIdeasJerarquia } from "@/services/mktPublicacionesIdeas.service";
 
@@ -18,10 +17,9 @@ export default async function MarketingIdeasPublicacionesPage() {
     redirect(GP_ROUTES.defaultEntry);
   }
 
-  const [jerarquia, redes, tipos, contenidos] = await Promise.all([
+  const [jerarquia, redes, contenidos] = await Promise.all([
     listarMktIdeasJerarquia(),
     listarMktPublicacionRedes(),
-    listarMktPublicacionTipos(),
     listarMktPublicacionContenidos(),
   ]);
 
@@ -30,7 +28,6 @@ export default async function MarketingIdeasPublicacionesPage() {
       <MarketingIdeasPageClient
         jerarquia={jerarquia}
         redes={redes}
-        tipos={tipos}
         contenidos={contenidos}
         esEditor={rol === "editor"}
       />

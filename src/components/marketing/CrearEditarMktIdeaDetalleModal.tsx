@@ -141,13 +141,11 @@ interface Props {
   seccionId: string;
   seccionNombre: string;
   redes: MktCatalogoNombreItem[];
-  tipos: MktCatalogoNombreItem[];
   contenidos: MktCatalogoNombreItem[];
   id?: string;
   tituloIdeaInicial?: string;
   detalleInicial?: string;
   redIdsIniciales?: string[];
-  tipoPublicacionIdsIniciales?: string[];
   tipoContenidoIdInicial?: string;
   usadaInicial?: boolean;
   onSuccess?: () => void;
@@ -160,13 +158,11 @@ export default function CrearEditarMktIdeaDetalleModal({
   seccionId,
   seccionNombre,
   redes,
-  tipos,
   contenidos,
   id,
   tituloIdeaInicial = "",
   detalleInicial = "",
   redIdsIniciales,
-  tipoPublicacionIdsIniciales,
   tipoContenidoIdInicial,
   usadaInicial = false,
   onSuccess,
@@ -174,7 +170,6 @@ export default function CrearEditarMktIdeaDetalleModal({
   const [tituloIdea, setTituloIdea] = useState("");
   const [detalle, setDetalle] = useState("");
   const [redIds, setRedIds] = useState<string[]>([]);
-  const [tipoPublicacionIds, setTipoPublicacionIds] = useState<string[]>([]);
   const [tipoContenidoId, setTipoContenidoId] = useState("");
   const [usada, setUsada] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -184,7 +179,6 @@ export default function CrearEditarMktIdeaDetalleModal({
     setTituloIdea(modo === "editar" ? tituloIdeaInicial : "");
     setDetalle(modo === "editar" ? detalleInicial : "");
     setRedIds(modo === "editar" ? [...(redIdsIniciales ?? [])] : []);
-    setTipoPublicacionIds(modo === "editar" ? [...(tipoPublicacionIdsIniciales ?? [])] : []);
     setTipoContenidoId(modo === "editar" ? (tipoContenidoIdInicial ?? "") : "");
     setUsada(modo === "editar" ? usadaInicial : false);
   }, [
@@ -193,7 +187,6 @@ export default function CrearEditarMktIdeaDetalleModal({
     tituloIdeaInicial,
     detalleInicial,
     redIdsIniciales,
-    tipoPublicacionIdsIniciales,
     tipoContenidoIdInicial,
     usadaInicial,
   ]);
@@ -202,7 +195,6 @@ export default function CrearEditarMktIdeaDetalleModal({
     tituloIdea.trim().length > 0 &&
     detalle.trim().length > 0 &&
     redIds.length > 0 &&
-    tipoPublicacionIds.length > 0 &&
     Boolean(tipoContenidoId);
 
   async function handleSubmit() {
@@ -217,7 +209,6 @@ export default function CrearEditarMktIdeaDetalleModal({
               tituloIdea,
               detalle,
               redIds,
-              tipoPublicacionIds,
               tipoContenidoId,
             })
           : await editarMktIdeaDetalleAction({
@@ -225,7 +216,6 @@ export default function CrearEditarMktIdeaDetalleModal({
               tituloIdea,
               detalle,
               redIds,
-              tipoPublicacionIds,
               tipoContenidoId,
               usada,
             });
@@ -282,15 +272,6 @@ export default function CrearEditarMktIdeaDetalleModal({
             placeholder="RED"
             emptyPlaceholder="SIN REDES CARGADAS"
             ariaLabel="Redes"
-            disabled={saving}
-          />
-          <MultiSelectCatalogo
-            opciones={tipos}
-            selectedIds={tipoPublicacionIds}
-            onChange={setTipoPublicacionIds}
-            placeholder="TIPO DE PUBLICACION"
-            emptyPlaceholder="SIN TIPOS CARGADOS"
-            ariaLabel="Tipos de publicación"
             disabled={saving}
           />
           <Select

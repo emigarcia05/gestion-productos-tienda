@@ -1,7 +1,7 @@
-/** Ítem de catálogo Marketing (red / tipo publicación / tipo contenido). */
+/** Ítem de catálogo Marketing (red / tipo contenido). */
 export type MktCatalogoNombreItem = {
   id: string;
   nombre: string;
 };
 
-export type MktCatalogoNombreKind = "red" | "tipo" | "contenido";
+export type MktCatalogoNombreKind = "red" | "contenido";

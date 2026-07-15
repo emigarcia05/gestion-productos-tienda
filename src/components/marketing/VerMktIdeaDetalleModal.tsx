@@ -13,7 +13,6 @@ interface Props {
   tituloIdea: string;
   detalle: string;
   redesNombres: string[];
-  tiposPublicacionNombres: string[];
   tipoContenidoNombre: string;
   usada: boolean;
 }
@@ -42,7 +41,6 @@ export default function VerMktIdeaDetalleModal({
   tituloIdea,
   detalle,
   redesNombres,
-  tiposPublicacionNombres,
   tipoContenidoNombre,
   usada,
 }: Props) {
@@ -67,12 +65,6 @@ export default function VerMktIdeaDetalleModal({
           <CampoLectura
             label="Red"
             value={redesNombres.length > 0 ? redesNombres.join(" · ") : "—"}
-          />
-          <CampoLectura
-            label="Tipo De Publicación"
-            value={
-              tiposPublicacionNombres.length > 0 ? tiposPublicacionNombres.join(" · ") : "—"
-            }
           />
           <CampoLectura label="Tipo De Contenido" value={tipoContenidoNombre} />
           <CampoLectura label="Título" value={tituloIdea} />

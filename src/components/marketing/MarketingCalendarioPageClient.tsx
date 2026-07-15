@@ -26,7 +26,6 @@ import {
 
 interface Props {
   redesIniciales: MktCatalogoNombreItem[];
-  tiposIniciales: MktCatalogoNombreItem[];
   contenidosIniciales: MktCatalogoNombreItem[];
   seccionesIdeas: MktIdeaSeccionItem[];
   publicaciones: MktPublicacionCalendarioItem[];
@@ -50,7 +49,6 @@ type ModalEliminar =
 
 export default function MarketingCalendarioPageClient({
   redesIniciales,
-  tiposIniciales,
   contenidosIniciales,
   seccionesIdeas,
   publicaciones,
@@ -58,7 +56,6 @@ export default function MarketingCalendarioPageClient({
 }: Props) {
   const router = useRouter();
   const [openRedes, setOpenRedes] = useState(false);
-  const [openTipos, setOpenTipos] = useState(false);
   const [openContenidos, setOpenContenidos] = useState(false);
   const [mesVista, setMesVista] = useState<MktCalendarioMesAnio>(() => mesAnioActualArgentina());
   const [periodoCuadro, setPeriodoCuadro] =
@@ -77,13 +74,8 @@ export default function MarketingCalendarioPageClient({
   );
 
   const stats = useMemo(
-    () =>
-      calcularCuadroMandoPublicaciones(
-        publicacionesPeriodo,
-        redesIniciales,
-        tiposIniciales
-      ),
-    [publicacionesPeriodo, redesIniciales, tiposIniciales]
+    () => calcularCuadroMandoPublicaciones(publicacionesPeriodo, redesIniciales),
+    [publicacionesPeriodo, redesIniciales]
   );
 
   const publicacionesDelDia = useMemo(() => {
@@ -118,15 +110,6 @@ export default function MarketingCalendarioPageClient({
               >
                 <Settings2 className="size-4 shrink-0" aria-hidden />
                 Gestionar Redes
-              </Button>
-              <Button
-                type="button"
-                variant="default"
-                className="h-10 gap-2 px-4"
-                onClick={() => setOpenTipos(true)}
-              >
-                <Settings2 className="size-4 shrink-0" aria-hidden />
-                Gestionar Tipo Publicaciones
               </Button>
               <Button
                 type="button"
@@ -189,7 +172,6 @@ export default function MarketingCalendarioPageClient({
         modo={modalForm.open ? modalForm.modo : "crear"}
         fechaIso={modalForm.open ? modalForm.fechaIso : ""}
         redes={redesIniciales}
-        tipos={tiposIniciales}
         contenidos={contenidosIniciales}
         seccionesIdeas={seccionesIdeas}
         item={modalForm.open ? (modalForm.item ?? null) : null}
@@ -221,14 +203,6 @@ export default function MarketingCalendarioPageClient({
         onOpenChange={setOpenRedes}
         kind="red"
         itemsIniciales={redesIniciales}
-        esEditor={esEditor}
-        onCatalogoChanged={refresh}
-      />
-      <GestionarMktCatalogoNombreModal
-        open={openTipos}
-        onOpenChange={setOpenTipos}
-        kind="tipo"
-        itemsIniciales={tiposIniciales}
         esEditor={esEditor}
         onCatalogoChanged={refresh}
       />

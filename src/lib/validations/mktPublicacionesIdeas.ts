@@ -49,7 +49,6 @@ export const crearMktIdeaDetalleSchema = z.object({
   tituloIdea: tituloIdeaSchema,
   detalle: detalleTextoSchema,
   redIds: idsCatalogoMinUnoSchema,
-  tipoPublicacionIds: idsCatalogoMinUnoSchema,
   tipoContenidoId: prismaCuidSchema,
 });
 
@@ -58,7 +57,6 @@ export const editarMktIdeaDetalleSchema = z.object({
   tituloIdea: tituloIdeaSchema,
   detalle: detalleTextoSchema,
   redIds: idsCatalogoMinUnoSchema,
-  tipoPublicacionIds: idsCatalogoMinUnoSchema,
   tipoContenidoId: prismaCuidSchema,
   usada: z.boolean(),
 });

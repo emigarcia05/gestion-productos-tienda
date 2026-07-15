@@ -13,12 +13,10 @@ const publicacionSelect = {
   publicacion: true,
   contenidoCreado: true,
   redId: true,
-  tipoPublicacionId: true,
   tipoContenidoId: true,
   ideaDetalleId: true,
   ideaDetalle: { select: { seccionId: true } },
   red: { select: { redSocialNombre: true } },
-  tipoPublicacion: { select: { tipoPublicacionNombre: true } },
   tipoContenido: { select: { contenidoNombre: true } },
 } as const;
 
@@ -28,12 +26,10 @@ function mapPublicacion(row: {
   publicacion: string;
   contenidoCreado: boolean;
   redId: string;
-  tipoPublicacionId: string;
   tipoContenidoId: string;
   ideaDetalleId: string | null;
   ideaDetalle: { seccionId: string } | null;
   red: { redSocialNombre: string };
-  tipoPublicacion: { tipoPublicacionNombre: string };
   tipoContenido: { contenidoNombre: string };
 }): MktPublicacionCalendarioItem {
   return {
@@ -43,8 +39,6 @@ function mapPublicacion(row: {
     contenidoCreado: row.contenidoCreado,
     redId: row.redId,
     redNombre: row.red.redSocialNombre.toLocaleUpperCase("es-AR"),
-    tipoPublicacionId: row.tipoPublicacionId,
-    tipoPublicacionNombre: row.tipoPublicacion.tipoPublicacionNombre.toLocaleUpperCase("es-AR"),
     tipoContenidoId: row.tipoContenidoId,
     tipoContenidoNombre: row.tipoContenido.contenidoNombre.toLocaleUpperCase("es-AR"),
     ideaDetalleId: row.ideaDetalleId,
@@ -58,16 +52,11 @@ function dateFromIsoYmd(isoYmd: string): Date {
 
 async function assertCatalogos(input: {
   redId: string;
-  tipoPublicacionId: string;
   tipoContenidoId: string;
 }): Promise<ServiceResult<true>> {
-  const [red, tipo, contenido] = await Promise.all([
+  const [red, contenido] = await Promise.all([
     prisma.mktPublicacionRed.findUnique({
       where: { id: input.redId },
-      select: { id: true },
-    }),
-    prisma.mktPublicacionTipo.findUnique({
-      where: { id: input.tipoPublicacionId },
       select: { id: true },
     }),
     prisma.mktPublicacionContenidoTipo.findUnique({
@@ -76,7 +65,6 @@ async function assertCatalogos(input: {
     }),
   ]);
   if (!red) return { success: false, error: "La red no existe." };
-  if (!tipo) return { success: false, error: "El tipo de publicación no existe." };
   if (!contenido) return { success: false, error: "El tipo de contenido no existe." };
   return { success: true, data: true };
 }
@@ -143,7 +131,6 @@ export async function crearMktPublicacion(
           publicacion,
           contenidoCreado: input.contenidoCreado,
           redId: input.redId,
-          tipoPublicacionId: input.tipoPublicacionId,
           tipoContenidoId: input.tipoContenidoId,
           ideaDetalleId: input.ideaDetalleId,
         },
@@ -210,7 +197,6 @@ export async function editarMktPublicacion(
           publicacion,
           contenidoCreado: input.contenidoCreado,
           redId: input.redId,
-          tipoPublicacionId: input.tipoPublicacionId,
           tipoContenidoId: input.tipoContenidoId,
           ideaDetalleId: ideaNuevaId,
         },
