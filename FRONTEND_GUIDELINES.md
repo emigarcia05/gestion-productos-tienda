@@ -1387,7 +1387,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-15): **Marketing · contenido_url** — modal Nueva/Editar Publicación: bloque **Contenido** = input URL Drive; `contenido_creado` derivado (vacío=NO). Ver BACKEND §2.5g-bis.*
 
-*Última actualización (2026-07-16): **Calendario · objetivos** — 8.ª columna **OBJ.** angosta: tilde azul / X roja por cumplimiento semanal; en la fila final, el estado del mes se muestra junto al texto **Objetivos Mensuales** dentro de las primeras 7 columnas y la celda de **OBJ.** queda vacía para separar visualmente los estados semanales y mensuales; **—** cuando no hay objetivos del periodo.*
+*Última actualización (2026-07-16): **Calendario · objetivos** — columna **OBJ.** angosta ubicada a la izquierda del calendario; cada fila muestra el número de semana seguido por tilde azul / X roja según su cumplimiento semanal. En la fila final, la celda **OBJ.** queda vacía y el estado del mes se muestra junto al texto **Objetivos Mensuales** a través de las 7 columnas de días, separando visualmente los estados semanales y mensuales; **—** cuando no hay objetivos del periodo.*
 
 
 ---

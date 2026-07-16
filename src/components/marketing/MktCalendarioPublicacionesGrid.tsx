@@ -22,11 +22,11 @@ import {
 import { TEXT_SUCCESS_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
-const GRID_COLS_CLASS = "grid-cols-[repeat(7,minmax(0,1fr))_2.75rem]";
+const GRID_COLS_CLASS = "grid-cols-[2.75rem_repeat(7,minmax(0,1fr))]";
 
 /**
- * Grilla 5 semanas × 7 días + columna OBJ. del mes elegido (LUN–DOM).
- * La columna OBJ. indica si se cumplieron todos los objetivos SEMANALES de esa fila.
+ * Grilla con columna OBJ. a la izquierda + 7 días del mes elegido (LUN–DOM).
+ * La columna OBJ. muestra el número y el cumplimiento de cada semana.
  */
 export default function MktCalendarioPublicacionesGrid({
   publicaciones,
@@ -108,6 +108,13 @@ export default function MktCalendarioPublicacionesGrid({
         aria-label="Calendario de publicaciones"
       >
         <div className={cn("grid min-w-[48rem] border-b border-border bg-primary", GRID_COLS_CLASS)}>
+          <div
+            role="columnheader"
+            className="border-r border-primary-foreground/30 px-1 py-1.5 text-center text-[11px] font-bold tracking-wide text-primary-foreground"
+            title="Objetivos semanales"
+          >
+            OBJ.
+          </div>
           {MKT_CALENDARIO_DIAS_SEMANA.map((dia) => (
             <div
               key={dia}
@@ -117,13 +124,6 @@ export default function MktCalendarioPublicacionesGrid({
               {dia}
             </div>
           ))}
-          <div
-            role="columnheader"
-            className="border-l border-primary-foreground/30 px-1 py-1.5 text-center text-[11px] font-bold tracking-wide text-primary-foreground"
-            title="Objetivos semanales"
-          >
-            OBJ.
-          </div>
         </div>
 
         <div className="flex flex-col">
@@ -141,6 +141,39 @@ export default function MktCalendarioPublicacionesGrid({
                   esSemanaSeleccionada && "bg-primary/15"
                 )}
               >
+                <div
+                  role="gridcell"
+                  className={cn(
+                    "flex min-h-[3.25rem] items-center justify-center gap-1 border-r border-border px-1",
+                    esSemanaSeleccionada ? "bg-primary/20" : "bg-muted/30"
+                  )}
+                  aria-label={
+                    cumplimiento === null
+                      ? `Semana ${semana.numero}: sin objetivos semanales`
+                      : cumplimiento
+                        ? `Semana ${semana.numero}: objetivos semanales cumplidos`
+                        : `Semana ${semana.numero}: objetivos semanales incumplidos`
+                  }
+                >
+                  <span className="text-xs font-bold tabular-nums text-foreground">
+                    {semana.numero}
+                  </span>
+                  {cumplimiento === null ? (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ) : cumplimiento ? (
+                    <Check
+                      className={cn("size-5 shrink-0", TEXT_SUCCESS_CLASS)}
+                      aria-hidden
+                      strokeWidth={2.5}
+                    />
+                  ) : (
+                    <X
+                      className="size-5 shrink-0 text-destructive"
+                      aria-hidden
+                      strokeWidth={2.5}
+                    />
+                  )}
+                </div>
                 {semana.dias.map((celda) => {
                   const items = porFecha.get(celda.isoYmd) ?? [];
                   const clickable = Boolean(onSeleccionarDia);
@@ -217,36 +250,6 @@ export default function MktCalendarioPublicacionesGrid({
                     </div>
                   );
                 })}
-                <div
-                  role="gridcell"
-                  className={cn(
-                    "flex min-h-[3.25rem] items-center justify-center border-l border-border px-1",
-                    esSemanaSeleccionada ? "bg-primary/20" : "bg-muted/30"
-                  )}
-                  aria-label={
-                    cumplimiento === null
-                      ? `Semana ${semana.numero}: sin objetivos semanales`
-                      : cumplimiento
-                        ? `Semana ${semana.numero}: objetivos semanales cumplidos`
-                        : `Semana ${semana.numero}: objetivos semanales incumplidos`
-                  }
-                >
-                  {cumplimiento === null ? (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  ) : cumplimiento ? (
-                    <Check
-                      className={cn("size-5 shrink-0", TEXT_SUCCESS_CLASS)}
-                      aria-hidden
-                      strokeWidth={2.5}
-                    />
-                  ) : (
-                    <X
-                      className="size-5 shrink-0 text-destructive"
-                      aria-hidden
-                      strokeWidth={2.5}
-                    />
-                  )}
-                </div>
               </div>
             );
           })}
@@ -257,6 +260,11 @@ export default function MktCalendarioPublicacionesGrid({
               GRID_COLS_CLASS
             )}
           >
+            <div
+              role="gridcell"
+              className="flex min-h-[3.25rem] items-center justify-center border-r border-border px-1"
+              aria-hidden
+            />
             <div
               role="gridcell"
               className="col-span-7 flex min-h-[3.25rem] items-center justify-center gap-2 px-3 text-center text-xs font-bold uppercase tracking-wide text-foreground"
@@ -285,11 +293,6 @@ export default function MktCalendarioPublicacionesGrid({
                 />
               )}
             </div>
-            <div
-              role="gridcell"
-              className="flex min-h-[3.25rem] items-center justify-center border-l border-border px-1"
-              aria-hidden
-            />
           </div>
         </div>
       </div>
