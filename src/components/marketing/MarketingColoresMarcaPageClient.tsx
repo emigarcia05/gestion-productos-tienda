@@ -6,6 +6,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEditarMktColorMarcaModal from "@/components/marketing/CrearEditarMktColorMarcaModal";
+import ExportarMktSeccionesGoogleSheetsButton from "@/components/shared/ExportarMktSeccionesGoogleSheetsButton";
 import FilterBar, {
   FILTER_COUNT_CLASS,
   FilterRowSearch,
@@ -45,15 +46,20 @@ function MktColorMarcaSwatches({ codes }: { codes: string[] }) {
     return <span className="text-sm text-muted-foreground">—</span>;
   }
   return (
-    <div className="flex flex-wrap items-center justify-center gap-1">
+    <div className="flex flex-wrap items-center gap-2">
       {codes.map((hex) => (
         <span
           key={hex}
-          className="size-5 shrink-0 rounded-sm border border-border"
-          style={{ backgroundColor: hex }}
+          className="inline-flex min-w-0 items-center gap-1.5 rounded border border-border bg-card px-1.5 py-0.5 text-xs font-mono tabular-nums"
           title={hex}
-          aria-label={hex}
-        />
+        >
+          <span
+            className="size-4 shrink-0 rounded-sm border border-border"
+            style={{ backgroundColor: hex }}
+            aria-hidden
+          />
+          {hex}
+        </span>
       ))}
     </div>
   );
@@ -121,15 +127,18 @@ export default function MarketingColoresMarcaPageClient({ items, esEditor }: Pro
         contentWidth="full"
         actions={
           esEditor ? (
-            <Button
-              type="button"
-              variant="default"
-              className="h-10 gap-2 px-4"
-              onClick={() => setModalForm({ open: true, modo: "crear" })}
-            >
-              <Plus className="size-4 shrink-0" aria-hidden />
-              Nuevo
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <ExportarMktSeccionesGoogleSheetsButton />
+              <Button
+                type="button"
+                variant="default"
+                className="h-10 gap-2 px-4"
+                onClick={() => setModalForm({ open: true, modo: "crear" })}
+              >
+                <Plus className="size-4 shrink-0" aria-hidden />
+                Nuevo
+              </Button>
+            </div>
           ) : undefined
         }
         filters={
@@ -165,7 +174,7 @@ export default function MarketingColoresMarcaPageClient({ items, esEditor }: Pro
             <TableHeader>
               <TableRow>
                 <TableHead>NOMBRE</TableHead>
-                <TableHead className="text-center">CÓD. HEX.</TableHead>
+                <TableHead>CÓD. HEX.</TableHead>
                 <TableHead>DESCRIPCIÓN</TableHead>
                 <TableHead className="tabla-bloque-secundario-head-divider text-center">
                   ACCIONES
@@ -186,7 +195,7 @@ export default function MarketingColoresMarcaPageClient({ items, esEditor }: Pro
                 itemsFiltrados.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium uppercase">{item.nombre}</TableCell>
-                      <TableCell className="text-center">
+                      <TableCell>
                         <MktColorMarcaSwatches codes={item.codHexadecimales} />
                       </TableCell>
                       <TableCell>
