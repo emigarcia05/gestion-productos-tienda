@@ -8,6 +8,7 @@ export const MARKETING_ROUTES = {
   publicaciones: {
     calendario: "/marketing/publicaciones/calendario",
     ideas: "/marketing/publicaciones/ideas",
+    objetivo: "/marketing/publicaciones/objetivo",
   },
   baseMultimedia: {
     contenido: "/marketing/base-multimedia",

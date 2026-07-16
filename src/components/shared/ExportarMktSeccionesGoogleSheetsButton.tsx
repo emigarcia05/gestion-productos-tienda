@@ -24,15 +24,7 @@ export default function ExportarMktSeccionesGoogleSheetsButton({
         toast.error(res.error ?? "No se pudo exportar a Google Sheets.");
         return;
       }
-      const totalFilas = res.data.tabs.reduce((acc, t) => acc + t.filasDatos, 0);
-      const nombresHojas = res.data.tabs.map((t) => t.sheetTitle).join(", ");
-      toast.success(`Exportado (${totalFilas} fila(s) en ${res.data.tabs.length} hoja(s)).`, {
-        description: nombresHojas,
-        action: {
-          label: "Abrir",
-          onClick: () => window.open(res.data.url, "_blank", "noopener,noreferrer"),
-        },
-      });
+      toast.success("Datos Actualizados correctamente");
     } finally {
       setPending(false);
     }

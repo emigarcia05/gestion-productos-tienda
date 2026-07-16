@@ -2,12 +2,11 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings2, Target } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEditarMktPublicacionModal from "@/components/marketing/CrearEditarMktPublicacionModal";
 import EliminarMktPublicacionModal from "@/components/marketing/EliminarMktPublicacionModal";
 import GestionarMktCatalogoNombreModal from "@/components/marketing/GestionarMktCatalogoNombreModal";
-import GestionarMktPublicacionObjModal from "@/components/marketing/GestionarMktPublicacionObjModal";
 import MktCalendarioPublicacionesGrid from "@/components/marketing/MktCalendarioPublicacionesGrid";
 import MktPublicacionesCuadroMando from "@/components/marketing/MktPublicacionesCuadroMando";
 import MktPublicacionesDiaModal from "@/components/marketing/MktPublicacionesDiaModal";
@@ -66,13 +65,7 @@ export default function MarketingCalendarioPageClient({
   const router = useRouter();
   const [openRedes, setOpenRedes] = useState(false);
   const [openContenidos, setOpenContenidos] = useState(false);
-  const [openObjetivos, setOpenObjetivos] = useState(false);
 
-  const seccionesCatalogo = useMemo(
-    (): MktCatalogoNombreItem[] =>
-      seccionesIdeas.map((s) => ({ id: s.id, nombre: s.nombre })),
-    [seccionesIdeas]
-  );
   const [mesVista, setMesVista] = useState<MktCalendarioMesAnio>(() =>
     mesAnioActualArgentina()
   );
@@ -131,15 +124,6 @@ export default function MarketingCalendarioPageClient({
           esEditor ? (
             <div className="flex flex-wrap items-center gap-2">
               <ExportarMktSeccionesGoogleSheetsButton />
-              <Button
-                type="button"
-                variant="default"
-                className="h-10 gap-2 px-4"
-                onClick={() => setOpenObjetivos(true)}
-              >
-                <Target className="size-4 shrink-0" aria-hidden />
-                Gestionar Objetivos
-              </Button>
               <Button
                 type="button"
                 variant="default"
@@ -255,16 +239,6 @@ export default function MarketingCalendarioPageClient({
         onOpenChange={setOpenContenidos}
         kind="contenido"
         itemsIniciales={contenidosIniciales}
-        esEditor={esEditor}
-        onCatalogoChanged={refresh}
-      />
-      <GestionarMktPublicacionObjModal
-        open={openObjetivos}
-        onOpenChange={setOpenObjetivos}
-        objetivosIniciales={objetivosIniciales}
-        redes={redesIniciales}
-        contenidos={contenidosIniciales}
-        secciones={seccionesCatalogo}
         esEditor={esEditor}
         onCatalogoChanged={refresh}
       />

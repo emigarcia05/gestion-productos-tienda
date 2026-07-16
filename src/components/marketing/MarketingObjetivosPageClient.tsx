@@ -1,17 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil, Plus, Target, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog } from "@/components/ui/dialog";
+import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import ExportarMktSeccionesGoogleSheetsButton from "@/components/shared/ExportarMktSeccionesGoogleSheetsButton";
 import FilterBar, {
+  FILTER_COUNT_CLASS,
+  FILTER_SELECT_WRAPPER_CLASS,
   FiltroIndividualContainer,
   FilaFiltrosDesplegables,
-  FILTER_SELECT_WRAPPER_CLASS,
 } from "@/components/FilterBar";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -43,14 +47,11 @@ import {
 import { cn } from "@/lib/utils";
 
 interface Props {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   objetivosIniciales: MktPublicacionObjItem[];
   redes: MktCatalogoNombreItem[];
   contenidos: MktCatalogoNombreItem[];
   secciones: MktCatalogoNombreItem[];
   esEditor: boolean;
-  onCatalogoChanged?: () => void;
 }
 
 const BOTON_ACCION_CLASS = cn(
@@ -64,16 +65,14 @@ function parseCantidad(raw: string): number | null {
   return n;
 }
 
-export default function GestionarMktPublicacionObjModal({
-  open,
-  onOpenChange,
+export default function MarketingObjetivosPageClient({
   objetivosIniciales,
   redes,
   contenidos,
   secciones,
   esEditor,
-  onCatalogoChanged,
 }: Props) {
+  const router = useRouter();
   const [items, setItems] = useState<MktPublicacionObjItem[]>(objetivosIniciales);
   const [filtroEje, setFiltroEje] = useState<MktPubliObjEje | "">("");
   const [filtroPeriodo, setFiltroPeriodo] = useState<MktPubliObjPeriodo | "">("");
@@ -126,15 +125,8 @@ export default function GestionarMktPublicacionObjModal({
   }, []);
 
   useEffect(() => {
-    if (!open) return;
     setItems(objetivosIniciales);
-    void cargar();
-    setFiltroEje("");
-    setFiltroPeriodo("");
-    setOpenCrear(false);
-    setEditingId(null);
-    setBorrarTarget(null);
-  }, [open, cargar, objetivosIniciales]);
+  }, [objetivosIniciales]);
 
   useEffect(() => {
     setDestinoId("");
@@ -152,6 +144,10 @@ export default function GestionarMktPublicacionObjModal({
     setEditingId(null);
     resetFormAlta(filtroEje || "RED");
     setOpenCrear(true);
+  }
+
+  function refresh() {
+    router.refresh();
   }
 
   async function handleCrear() {
@@ -182,7 +178,7 @@ export default function GestionarMktPublicacionObjModal({
       setOpenCrear(false);
       resetFormAlta(ejeAlta);
       await cargar();
-      onCatalogoChanged?.();
+      refresh();
     } finally {
       setPending(false);
     }
@@ -209,7 +205,7 @@ export default function GestionarMktPublicacionObjModal({
       toast.success("Objetivo actualizado.");
       setEditingId(null);
       await cargar();
-      onCatalogoChanged?.();
+      refresh();
     } finally {
       setPending(false);
     }
@@ -227,7 +223,7 @@ export default function GestionarMktPublicacionObjModal({
       toast.success("Objetivo eliminado.");
       setBorrarTarget(null);
       await cargar();
-      onCatalogoChanged?.();
+      refresh();
     } finally {
       setBorrando(false);
     }
@@ -237,45 +233,32 @@ export default function GestionarMktPublicacionObjModal({
 
   return (
     <>
-      <Dialog
-        open={open}
-        onOpenChange={(next) => {
-          if (bloqueado || openCrear) return;
-          onOpenChange(next);
-        }}
-      >
-        <AppModal
-          title="Gestionar Objetivos"
-          size="lg"
-          className="max-w-xl"
-          scrollBody
-          hideBodyScrollbars
-          actions={
-            <Button
-              type="button"
-              variant="outline"
-              disabled={bloqueado || openCrear}
-              onClick={() => onOpenChange(false)}
-            >
-              Cerrar
-            </Button>
-          }
-        >
-          <div className="flex min-h-0 flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              {esEditor ? (
-                <Button
-                  type="button"
-                  variant="default"
-                  className="h-10 w-full gap-2"
-                  aria-label="Agregar objetivo"
-                  disabled={bloqueado}
-                  onClick={abrirCrear}
-                >
-                  <Plus className="h-5 w-5 shrink-0" aria-hidden />
-                </Button>
-              ) : null}
-              <FilterBar className="filtros-contenedor-tienda w-full shrink-0 bg-card">
+      <ClassicFilteredTableLayout
+        title="Marketing"
+        subtitle="Objetivo"
+        contentWidth="full"
+        actions={
+          esEditor ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <ExportarMktSeccionesGoogleSheetsButton />
+              <Button
+                type="button"
+                variant="default"
+                className="h-10 gap-2 px-4"
+                aria-label="Agregar objetivo"
+                disabled={bloqueado}
+                onClick={abrirCrear}
+              >
+                <Plus className="size-4 shrink-0" aria-hidden />
+                Nuevo
+              </Button>
+            </div>
+          ) : undefined
+        }
+        filters={
+          <FilterBar className="filtros-contenedor-tienda bg-card">
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
                 <FilaFiltrosDesplegables columnas={2}>
                   <FiltroIndividualContainer
                     className={FILTER_SELECT_WRAPPER_CLASS}
@@ -350,125 +333,126 @@ export default function GestionarMktPublicacionObjModal({
                     </Select>
                   </FiltroIndividualContainer>
                 </FilaFiltrosDesplegables>
-              </FilterBar>
+              </div>
+              <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
+                {itemsFiltrados.length.toLocaleString("es-AR")} OBJETIVO
+                {itemsFiltrados.length === 1 ? "" : "S"}
+              </span>
             </div>
-
-            <div className="flex min-h-0 flex-1 flex-col gap-1">
-              <ModalMicroLabel>Objetivos</ModalMicroLabel>
-              <ul className="max-h-[min(22rem,55vh)] space-y-2 overflow-y-auto pr-1">
-                {itemsFiltrados.map((obj) => (
-                  <li
-                    key={obj.id}
-                    className="flex items-center gap-2 rounded-md border border-border bg-muted/20 px-2 py-1.5"
-                  >
-                    {editingId === obj.id && esEditor ? (
-                      <>
-                        <Select
-                          value={editPeriodo}
-                          onValueChange={(v) => setEditPeriodo(v as MktPubliObjPeriodo)}
-                          disabled={bloqueado}
-                        >
-                          <SelectTrigger className="h-8 w-[8.5rem] text-xs" aria-label="Periodo">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
-                              <SelectItem key={p} value={p}>
-                                {etiquetaMktPubliObjPeriodo(p)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          value={editCantidadNorm}
-                          onChange={(e) =>
-                            setEditCantidadNorm(e.target.value.replace(/\D/g, "").slice(0, 4))
-                          }
-                          inputMode="numeric"
-                          className="h-8 w-16 text-xs"
-                          disabled={bloqueado}
-                          aria-label="Cantidad"
-                        />
+          </FilterBar>
+        }
+      >
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <ul className="space-y-2 pr-1">
+            {itemsFiltrados.map((obj) => (
+              <li
+                key={obj.id}
+                className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2"
+              >
+                {editingId === obj.id && esEditor ? (
+                  <>
+                    <Select
+                      value={editPeriodo}
+                      onValueChange={(v) => setEditPeriodo(v as MktPubliObjPeriodo)}
+                      disabled={bloqueado}
+                    >
+                      <SelectTrigger className="h-8 w-[8.5rem] text-xs" aria-label="Periodo">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {etiquetaMktPubliObjPeriodo(p)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      value={editCantidadNorm}
+                      onChange={(e) =>
+                        setEditCantidadNorm(e.target.value.replace(/\D/g, "").slice(0, 4))
+                      }
+                      inputMode="numeric"
+                      className="h-8 w-16 text-xs"
+                      disabled={bloqueado}
+                      aria-label="Cantidad"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 shrink-0"
+                      disabled={bloqueado}
+                      onClick={() => void handleGuardarEdicion()}
+                    >
+                      Guardar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 shrink-0"
+                      disabled={bloqueado}
+                      onClick={() => setEditingId(null)}
+                    >
+                      Cancelar
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Target className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {obj.destinoNombre}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {etiquetaMktPubliObjEje(obj.eje)} ·{" "}
+                        {etiquetaMktPubliObjPeriodo(obj.periodo)} · {obj.cantidad} PUB.
+                      </p>
+                    </div>
+                    {esEditor ? (
+                      <div className="flex shrink-0 items-center gap-1.5">
                         <Button
                           type="button"
-                          size="sm"
-                          className="h-8 shrink-0"
-                          disabled={bloqueado}
-                          onClick={() => void handleGuardarEdicion()}
-                        >
-                          Guardar
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
                           variant="ghost"
-                          className="h-8 shrink-0"
+                          size="icon"
+                          className={BOTON_ACCION_CLASS}
+                          aria-label={`Editar ${obj.destinoNombre}`}
                           disabled={bloqueado}
-                          onClick={() => setEditingId(null)}
+                          onClick={() => {
+                            setEditingId(obj.id);
+                            setEditPeriodo(obj.periodo);
+                            setEditCantidadNorm(String(obj.cantidad));
+                          }}
                         >
-                          Cancelar
+                          <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                         </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Target
-                          className="size-4 shrink-0 text-muted-foreground"
-                          aria-hidden
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-foreground">
-                            {obj.destinoNombre}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {etiquetaMktPubliObjPeriodo(obj.periodo)} · {obj.cantidad} PUB.
-                          </p>
-                        </div>
-                        {esEditor ? (
-                          <div className="flex shrink-0 items-center gap-1.5">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className={BOTON_ACCION_CLASS}
-                              aria-label={`Editar ${obj.destinoNombre}`}
-                              disabled={bloqueado}
-                              onClick={() => {
-                                setEditingId(obj.id);
-                                setEditPeriodo(obj.periodo);
-                                setEditCantidadNorm(String(obj.cantidad));
-                              }}
-                            >
-                              <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className={BOTON_ACCION_CLASS}
-                              aria-label={`Eliminar ${obj.destinoNombre}`}
-                              disabled={bloqueado}
-                              onClick={() => setBorrarTarget(obj)}
-                            >
-                              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                            </Button>
-                          </div>
-                        ) : null}
-                      </>
-                    )}
-                  </li>
-                ))}
-                {itemsFiltrados.length === 0 ? (
-                  <li className="py-6 text-center text-sm text-muted-foreground">
-                    {items.length === 0
-                      ? "No hay objetivos configurados."
-                      : "Ningún objetivo coincide con los filtros."}
-                  </li>
-                ) : null}
-              </ul>
-            </div>
-          </div>
-        </AppModal>
-      </Dialog>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className={BOTON_ACCION_CLASS}
+                          aria-label={`Eliminar ${obj.destinoNombre}`}
+                          disabled={bloqueado}
+                          onClick={() => setBorrarTarget(obj)}
+                        >
+                          <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                        </Button>
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </li>
+            ))}
+            {itemsFiltrados.length === 0 ? (
+              <li className="py-10 text-center text-sm text-muted-foreground">
+                {items.length === 0
+                  ? "No hay objetivos configurados."
+                  : "Ningún objetivo coincide con los filtros."}
+              </li>
+            ) : null}
+          </ul>
+        </div>
+      </ClassicFilteredTableLayout>
 
       <Dialog
         open={openCrear}
@@ -490,7 +474,7 @@ export default function GestionarMktPublicacionObjModal({
               disabled={pending}
               onClick={() => {
                 setOpenCrear(false);
-                  resetFormAlta(filtroEje || "RED");
+                resetFormAlta(filtroEje || "RED");
               }}
             >
               Cancelar
