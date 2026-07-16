@@ -144,8 +144,7 @@ export default function MktCalendarioPublicacionesGrid({
                 <div
                   role="gridcell"
                   className={cn(
-                    "flex min-h-[3.25rem] items-center justify-center gap-1 border-r border-border px-1",
-                    esSemanaSeleccionada ? "bg-primary/20" : "bg-muted/30"
+                    "flex min-h-[3.25rem] items-center justify-center gap-1 border-r border-primary/30 bg-primary/15 px-1"
                   )}
                   aria-label={
                     cumplimiento === null
@@ -155,7 +154,7 @@ export default function MktCalendarioPublicacionesGrid({
                         : `Semana ${semana.numero}: objetivos semanales incumplidos`
                   }
                 >
-                  <span className="text-xs font-bold tabular-nums text-foreground">
+                  <span className="text-xs font-bold tabular-nums text-primary">
                     {semana.numero}
                   </span>
                   {cumplimiento === null ? (
@@ -256,18 +255,18 @@ export default function MktCalendarioPublicacionesGrid({
           <div
             role="row"
             className={cn(
-              "grid min-h-[3.25rem] border-t border-border bg-muted/30",
+              "grid min-h-[3.25rem] border-t border-primary/30 bg-primary/15",
               GRID_COLS_CLASS
             )}
           >
             <div
               role="gridcell"
-              className="flex min-h-[3.25rem] items-center justify-center border-r border-border px-1"
+              className="flex min-h-[3.25rem] items-center justify-center border-r border-primary/30 px-1"
               aria-hidden
             />
             <div
               role="gridcell"
-              className="col-span-7 flex min-h-[3.25rem] items-center justify-center gap-2 px-3 text-center text-xs font-bold uppercase tracking-wide text-foreground"
+              className="col-span-7 flex min-h-[3.25rem] items-center justify-center gap-2 px-3 text-center text-xs font-bold uppercase tracking-wide text-primary"
               aria-label={
                 cumplimientoMensual === null
                   ? "Objetivos Mensuales: sin objetivos"
