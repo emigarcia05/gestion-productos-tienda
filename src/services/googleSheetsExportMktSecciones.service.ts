@@ -6,13 +6,13 @@ import {
 } from "@/lib/googleSheetsWrite";
 import type { ServiceResult } from "@/types/service.types";
 
-/** Pestañas del spreadsheet fijo de Marketing. */
+/** Pestañas del spreadsheet fijo de Marketing (orden de escritura). */
 export const GOOGLE_SHEET_TABS_MKT = {
-  secciones: "Secciones",
-  redes: "Redes",
-  tipoContenido: "Tipo de Contenido",
-  ideas: "Ideas",
   publicaciones: "Publicaciones",
+  redes: "Publicaciones Redes",
+  secciones: "Publicaciones Secciones",
+  ideas: "Publicaciones Ideas",
+  tipoContenido: "Publi Tipo Contenido",
   contenidoMultimedia: "Contenido Multimedia",
   contenidoMultimediaTipo: "Contenido Multimedia Tipo",
 } as const;
@@ -100,34 +100,6 @@ export async function exportarMktAGoogleSheets(): Promise<
 
     const tabsPayload: { title: string; values: string[][] }[] = [
       {
-        title: GOOGLE_SHEET_TABS_MKT.secciones,
-        values: [
-          ["id", "idea_nombre", "idea_resumen"],
-          ...secciones.map((r) => [r.id, r.ideaNombre, r.ideaResumen ?? ""]),
-        ],
-      },
-      {
-        title: GOOGLE_SHEET_TABS_MKT.redes,
-        values: [
-          ["id", "red_social_nombre"],
-          ...redes.map((r) => [r.id, r.redSocialNombre]),
-        ],
-      },
-      {
-        title: GOOGLE_SHEET_TABS_MKT.tipoContenido,
-        values: [
-          ["id", "contenido_nombre"],
-          ...tiposContenido.map((r) => [r.id, r.contenidoNombre]),
-        ],
-      },
-      {
-        title: GOOGLE_SHEET_TABS_MKT.ideas,
-        values: [
-          ["id", "seccion_id", "detalle", "usada"],
-          ...ideas.map((r) => [r.id, r.seccionId, r.detalle, boolSheet(r.usada)]),
-        ],
-      },
-      {
         title: GOOGLE_SHEET_TABS_MKT.publicaciones,
         values: [
           [
@@ -158,6 +130,34 @@ export async function exportarMktAGoogleSheets(): Promise<
               return row;
             });
           }),
+        ],
+      },
+      {
+        title: GOOGLE_SHEET_TABS_MKT.redes,
+        values: [
+          ["id", "red_social_nombre"],
+          ...redes.map((r) => [r.id, r.redSocialNombre]),
+        ],
+      },
+      {
+        title: GOOGLE_SHEET_TABS_MKT.secciones,
+        values: [
+          ["id", "idea_nombre", "idea_resumen"],
+          ...secciones.map((r) => [r.id, r.ideaNombre, r.ideaResumen ?? ""]),
+        ],
+      },
+      {
+        title: GOOGLE_SHEET_TABS_MKT.ideas,
+        values: [
+          ["id", "seccion_id", "detalle", "usada"],
+          ...ideas.map((r) => [r.id, r.seccionId, r.detalle, boolSheet(r.usada)]),
+        ],
+      },
+      {
+        title: GOOGLE_SHEET_TABS_MKT.tipoContenido,
+        values: [
+          ["id", "contenido_nombre"],
+          ...tiposContenido.map((r) => [r.id, r.contenidoNombre]),
         ],
       },
       {

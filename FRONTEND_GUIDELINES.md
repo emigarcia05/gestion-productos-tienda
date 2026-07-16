@@ -664,6 +664,7 @@ Layout reutilizable para páginas con **header + filtros + tabla**. Centraliza e
   - **`density`**: `"default" | "compact"` (default `"default"`).
   - **`filtersAriaLabel`**: `string` (default `"Filtros"`), para accesibilidad del bloque `role="search"`.
   - **`className`** / **`contentClassName`**: overrides puntuales.
+  - **Ancho filtros ↔ tabla (obligatorio):** el padding horizontal lo define **solo** el contenedor CVA (`density` default → **`px-8`**, `compact` → **`px-6`**) sobre `contenedor-pagina-con-filtros`. **`filters` y `children` comparten ese ancho.** No volver a aplicar `px-*` (ni `sm:`/`lg:`) en el envoltorio de la tabla; patrón correcto: `children` = `.contenedor-tabla-gestion` directo (ej. `PedidoTintometricoPageClient`, `MarketingBaseMultimediaPageClient`).
 
 ### Balance mensual (`src/components/finanzas/FinanzasBalanceMensualPageClient.tsx`)
 
@@ -1361,6 +1362,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-07-15): **Marketing · Objetivos** — botón **Gestionar Objetivos** en header del Calendario; modal `GestionarMktPublicacionObjModal` con `+` → submodal alta, filtro RED/CONTENIDO/SECCION y listado; columna **Objetivos** en Cuadro De Mando + modal de incumplidos.*
 
 *Última actualización (2026-07-15): **Google Sheets — Exportar a Sheets** — botón `ExportarMktSeccionesGoogleSheetsButton` en Calendario (editor); un click exporta Secciones, Redes, Tipo de Contenido, Ideas y Publicaciones. Ver BACKEND_GUIDELINES (Google Sheets).*
+
+*Última actualización (2026-07-16): **ClassicFilteredTableLayout — simetría filtros/tabla** — sin `px-*` extra en `children`; ancho = `density` (`px-8` default).*
 
 *Última actualización (2026-07-16): **Base Multimedia — Exportar a Sheets** — mismo `ExportarMktSeccionesGoogleSheetsButton` que Calendario (solo editor).*
 

@@ -209,8 +209,7 @@ export default function MarketingBaseMultimediaPageClient({
           </FilterBar>
         }
       >
-        <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 sm:px-6 lg:px-8">
-          <div className="contenedor-tabla-gestion min-h-0 flex-1">
+        <div className="contenedor-tabla-gestion min-h-0 flex-1">
             <Table variant="compact" className="tabla-gestion-compacta w-full">
               <colgroup>
                 <col style={{ width: "40%" }} />
@@ -305,7 +304,6 @@ export default function MarketingBaseMultimediaPageClient({
               </TableBody>
             </Table>
           </div>
-        </div>
       </ClassicFilteredTableLayout>
 
       <CrearEditarMktContenidoUrlDriveModal
