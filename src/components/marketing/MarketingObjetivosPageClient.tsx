@@ -140,21 +140,22 @@ export default function MarketingObjetivosPageClient({
     setDestinoId("");
   }, [ejeAlta]);
 
-  function resetFormAlta(eje: MktPubliObjEje) {
-    setPeriodo("SEMANAL");
+  function resetFormAlta(eje: MktPubliObjEje, periodoAlta: MktPubliObjPeriodo) {
+    setPeriodo(periodoAlta);
     setEjeAlta(eje);
     setDestinoId("");
     setCantidadNorm("1");
   }
 
-  function abrirCrear(eje: MktPubliObjEje) {
+  function abrirCrear(eje: MktPubliObjEje, periodoAlta: MktPubliObjPeriodo) {
     if (!esEditor || pending || borrando) return;
     setEditingId(null);
-    resetFormAlta(eje);
+    resetFormAlta(eje, periodoAlta);
   }
 
   function cerrarCrear() {
     setEjeAlta(null);
+    setPeriodo("SEMANAL");
     setDestinoId("");
     setCantidadNorm("1");
   }
@@ -369,38 +370,42 @@ export default function MarketingObjetivosPageClient({
                 className="flex min-h-0 min-w-0 flex-col rounded-lg border border-border bg-card"
                 aria-label={titulo}
               >
-                <header className="relative flex shrink-0 items-center justify-center border-b border-border bg-primary px-10 py-2 text-center">
+                <header className="flex shrink-0 items-center justify-center border-b border-border bg-primary px-3 py-2 text-center">
                   <h3 className="text-xs font-bold uppercase tracking-wide text-primary-foreground">
                     {titulo}
                   </h3>
-                  {esEditor ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1.5 top-1/2 size-7 -translate-y-1/2 text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground"
-                      aria-label={`Agregar objetivo ${titulo}`}
-                      disabled={bloqueado}
-                      onClick={() => abrirCrear(eje)}
-                    >
-                      <Plus className="size-4" aria-hidden />
-                    </Button>
-                  ) : null}
                 </header>
                 <div className="grid min-h-0 flex-1 grid-rows-2 divide-y divide-border">
                   {MKT_PUBLI_OBJ_PERIODOS.map((periodoObjetivo) => {
                     const filasPeriodo = filas.filter(
                       (obj) => obj.periodo === periodoObjetivo
                     );
+                    const etiquetaPeriodo =
+                      periodoObjetivo === "SEMANAL" ? "SEMANALES" : "MENSUALES";
                     return (
                       <section
                         key={periodoObjetivo}
                         className="flex min-h-0 flex-col"
-                        aria-label={`${titulo} ${etiquetaMktPubliObjPeriodo(periodoObjetivo)}`}
+                        aria-label={`${titulo} ${etiquetaPeriodo}`}
                       >
-                        <h4 className="shrink-0 border-b border-border bg-muted/40 px-3 py-1.5 text-center text-xs font-semibold uppercase text-foreground">
-                          {periodoObjetivo === "SEMANAL" ? "SEMANALES" : "MENSUALES"}
-                        </h4>
+                        <div className="relative flex shrink-0 items-center justify-center border-b border-border bg-muted/40 px-10 py-1.5">
+                          <h4 className="text-xs font-semibold uppercase text-foreground">
+                            {etiquetaPeriodo}
+                          </h4>
+                          {esEditor ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-1.5 top-1/2 size-7 -translate-y-1/2 text-foreground hover:bg-muted hover:text-foreground"
+                              aria-label={`Agregar objetivo ${titulo} ${etiquetaPeriodo}`}
+                              disabled={bloqueado}
+                              onClick={() => abrirCrear(eje, periodoObjetivo)}
+                            >
+                              <Plus className="size-4" aria-hidden />
+                            </Button>
+                          ) : null}
+                        </div>
                         <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                           {filasPeriodo.length === 0 ? (
                             <li className="px-3 py-5 text-center text-xs text-muted-foreground">
@@ -430,7 +435,7 @@ export default function MarketingObjetivosPageClient({
         <AppModal
           title={
             ejeAlta
-              ? `Nuevo Objetivo · ${etiquetaMktPubliObjEje(ejeAlta)}`
+              ? `Nuevo Objetivo · ${etiquetaMktPubliObjEje(ejeAlta)} · ${etiquetaMktPubliObjPeriodo(periodo)}`
               : "Nuevo Objetivo"
           }
           size="md"
@@ -449,22 +454,6 @@ export default function MarketingObjetivosPageClient({
         >
           <div className="flex flex-col gap-3">
             <ModalMicroLabel>Nuevo Objetivo</ModalMicroLabel>
-            <Select
-              value={periodo}
-              onValueChange={(v) => setPeriodo(v as MktPubliObjPeriodo)}
-              disabled={pending}
-            >
-              <SelectTrigger className="w-full" aria-label="Periodo">
-                <SelectValue placeholder="PERIODO" />
-              </SelectTrigger>
-              <SelectContent>
-                {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {etiquetaMktPubliObjPeriodo(p)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Select
               value={destinoId || undefined}
               onValueChange={setDestinoId}
