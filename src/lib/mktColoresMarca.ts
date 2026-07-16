@@ -42,9 +42,14 @@ export function serializeCodHexadecimales(codes: string[]): string {
   return codes.join(",");
 }
 
-/** Sanitiza texto del input: hex, `#` y separadores coma/espacio. */
+/** Texto editable del input (sin `#`; el prefijo visual lo aporta la máscara). */
+export function formatCodHexadecimalesForInput(codes: string[]): string {
+  return codes.map((c) => c.replace(/^#/, "")).join(", ");
+}
+
+/** Sanitiza texto del input: hex y separadores coma/espacio (sin `#`). */
 export function sanitizeHexDigitsInput(raw: string): string {
-  return raw.replace(/[^0-9A-Fa-f#,\s]/g, "").toUpperCase();
+  return raw.replace(/[^0-9A-Fa-f,\s]/g, "").toUpperCase();
 }
 
 /** Parsea valor persistido a array de códigos. */

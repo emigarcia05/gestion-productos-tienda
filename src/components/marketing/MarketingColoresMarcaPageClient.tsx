@@ -46,7 +46,7 @@ function MktColorMarcaSwatches({ codes }: { codes: string[] }) {
     return <span className="text-sm text-muted-foreground">—</span>;
   }
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center justify-center gap-2">
       {codes.map((hex) => (
         <span
           key={hex}
@@ -174,7 +174,7 @@ export default function MarketingColoresMarcaPageClient({ items, esEditor }: Pro
             <TableHeader>
               <TableRow>
                 <TableHead>NOMBRE</TableHead>
-                <TableHead>CÓD. HEX.</TableHead>
+                <TableHead className="text-center">CÓD. HEX.</TableHead>
                 <TableHead>DESCRIPCIÓN</TableHead>
                 <TableHead className="tabla-bloque-secundario-head-divider text-center">
                   ACCIONES
@@ -195,7 +195,7 @@ export default function MarketingColoresMarcaPageClient({ items, esEditor }: Pro
                 itemsFiltrados.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium uppercase">{item.nombre}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         <MktColorMarcaSwatches codes={item.codHexadecimales} />
                       </TableCell>
                       <TableCell>

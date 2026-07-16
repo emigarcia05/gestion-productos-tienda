@@ -12,7 +12,10 @@ import {
   editarMktColorMarcaAction,
 } from "@/actions/mktColoresMarca";
 import type { MktColorMarcaItem } from "@/lib/mktColoresMarca";
-import { sanitizeHexDigitsInput } from "@/lib/mktColoresMarca";
+import {
+  formatCodHexadecimalesForInput,
+  sanitizeHexDigitsInput,
+} from "@/lib/mktColoresMarca";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -40,7 +43,7 @@ export default function CrearEditarMktColorMarcaModal({
     if (modo === "editar" && item) {
       setNombre(item.nombre);
       setDescripcion(item.descripcion);
-      setCodHexadecimales(item.codHexadecimales.join(", "));
+      setCodHexadecimales(formatCodHexadecimalesForInput(item.codHexadecimales));
       return;
     }
     setNombre("");
@@ -144,16 +147,37 @@ export default function CrearEditarMktColorMarcaModal({
           </div>
           <div className="flex flex-col gap-1">
             <ModalMicroLabel>Cód. Hexadecimales</ModalMicroLabel>
-            <Input
-              id="mkt-color-marca-hex"
-              value={codHexadecimales}
-              onChange={(e) => setCodHexadecimales(sanitizeHexDigitsInput(e.target.value))}
-              disabled={saving}
-              placeholder="0072BB, FF0000"
-              aria-label="Códigos hexadecimales"
-              autoComplete="off"
-              className="font-mono"
-            />
+            <div
+              className={cn(
+                "border-input flex h-9 w-full min-w-0 items-center rounded-md border bg-transparent shadow-xs",
+                "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
+                saving && "pointer-events-none opacity-50"
+              )}
+            >
+              <span
+                className="text-muted-foreground pointer-events-none shrink-0 select-none pl-3 font-mono text-sm"
+                aria-hidden
+              >
+                #
+              </span>
+              <input
+                id="mkt-color-marca-hex"
+                type="text"
+                data-slot="input"
+                value={codHexadecimales}
+                onChange={(e) =>
+                  setCodHexadecimales(sanitizeHexDigitsInput(e.target.value))
+                }
+                disabled={saving}
+                aria-label="Códigos hexadecimales"
+                autoComplete="off"
+                className={cn(
+                  "placeholder:text-muted-foreground min-w-0 flex-1 border-0 bg-transparent py-1 pr-3 pl-0.5 font-mono text-sm shadow-none outline-none",
+                  "focus-visible:ring-0 focus-visible:outline-none",
+                  "disabled:cursor-not-allowed"
+                )}
+              />
+            </div>
           </div>
         </div>
       </AppModal>
