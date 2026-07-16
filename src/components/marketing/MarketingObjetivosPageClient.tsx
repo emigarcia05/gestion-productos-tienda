@@ -373,8 +373,8 @@ export default function MarketingObjetivosPageClient({
                         className="flex min-h-0 flex-col"
                         aria-label={`${titulo} ${etiquetaPeriodo}`}
                       >
-                        <div className="relative flex shrink-0 items-center justify-center border-b border-border bg-muted/40 px-10 py-1.5">
-                          <h4 className="text-xs font-semibold uppercase text-foreground">
+                        <div className="relative flex shrink-0 items-center justify-center border-b border-primary/30 bg-primary/15 px-10 py-1.5">
+                          <h4 className="text-xs font-bold uppercase tracking-wide text-primary">
                             {etiquetaPeriodo}
                           </h4>
                           {esEditor ? (
@@ -382,12 +382,12 @@ export default function MarketingObjetivosPageClient({
                               type="button"
                               variant="default"
                               size="icon"
-                              className="absolute right-1.5 top-1/2 size-7 -translate-y-1/2 bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground hover:brightness-100"
+                              className="absolute right-2 top-1/2 !size-5 -translate-y-1/2 rounded-sm border border-primary-foreground/40 bg-primary p-0 text-primary-foreground shadow-none hover:bg-primary hover:text-primary-foreground hover:brightness-100"
                               aria-label={`Agregar objetivo ${titulo} ${etiquetaPeriodo}`}
                               disabled={bloqueado}
                               onClick={() => abrirCrear(eje, periodoObjetivo)}
                             >
-                              <Plus className="size-4" aria-hidden />
+                              <Plus className="size-3.5" aria-hidden />
                             </Button>
                           ) : null}
                         </div>
