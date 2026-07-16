@@ -12,7 +12,7 @@ import {
   editarMktColorMarcaAction,
 } from "@/actions/mktColoresMarca";
 import type { MktColorMarcaItem } from "@/lib/mktColoresMarca";
-import { hexDigitsFromStored, sanitizeHexDigitsInput } from "@/lib/mktColoresMarca";
+import { sanitizeHexDigitsInput } from "@/lib/mktColoresMarca";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -40,7 +40,7 @@ export default function CrearEditarMktColorMarcaModal({
     if (modo === "editar" && item) {
       setNombre(item.nombre);
       setDescripcion(item.descripcion);
-      setCodHexadecimales(hexDigitsFromStored(item.codHexadecimales));
+      setCodHexadecimales(item.codHexadecimales.join(", "));
       return;
     }
     setNombre("");
@@ -144,31 +144,16 @@ export default function CrearEditarMktColorMarcaModal({
           </div>
           <div className="flex flex-col gap-1">
             <ModalMicroLabel>Cód. Hexadecimales</ModalMicroLabel>
-            <div
-              className={cn(
-                "flex h-9 w-full min-w-0 items-center rounded-md border border-input bg-transparent shadow-xs",
-                "focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
-                saving && "pointer-events-none opacity-50"
-              )}
-            >
-              <span
-                className="pointer-events-none shrink-0 select-none pl-3 font-mono text-sm text-foreground"
-                aria-hidden
-              >
-                #
-              </span>
-              <input
-                id="mkt-color-marca-hex"
-                type="text"
-                value={codHexadecimales}
-                onChange={(e) => setCodHexadecimales(sanitizeHexDigitsInput(e.target.value))}
-                disabled={saving}
-                placeholder="0072BB, FF0000"
-                aria-label="Códigos hexadecimales"
-                autoComplete="off"
-                className="min-w-0 flex-1 border-0 bg-transparent py-1 pr-3 font-mono text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
-              />
-            </div>
+            <Input
+              id="mkt-color-marca-hex"
+              value={codHexadecimales}
+              onChange={(e) => setCodHexadecimales(sanitizeHexDigitsInput(e.target.value))}
+              disabled={saving}
+              placeholder="0072BB, FF0000"
+              aria-label="Códigos hexadecimales"
+              autoComplete="off"
+              className="font-mono"
+            />
           </div>
         </div>
       </AppModal>

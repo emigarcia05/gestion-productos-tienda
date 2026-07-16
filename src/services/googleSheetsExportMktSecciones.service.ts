@@ -16,6 +16,7 @@ export const GOOGLE_SHEET_TABS_MKT = {
   tipoContenido: "Publi Tipo Contenido",
   contenidoMultimedia: "Contenido Multimedia",
   contenidoMultimediaTipo: "Contenido Multimedia Tipo",
+  coloresMarca: "Colores Marca",
 } as const;
 
 export type ExportMktGoogleSheetsTabResult = {
@@ -121,6 +122,15 @@ export function buildMktGoogleSheetsIndiceValues(): string[][] {
       "id,tipo",
       "Catalogo de tipos de contenido multimedia.",
     ],
+    [
+      "CATALOGO",
+      T.coloresMarca,
+      "mkt_colores_marca",
+      "1 fila = 1 color",
+      "id",
+      "id,nombre,descripcion,cod_hexadecimales",
+      "Paleta de colores de marca. cod_hexadecimales: codigos #RRGGBB separados por coma.",
+    ],
     [],
     [
       "seccion",
@@ -200,6 +210,7 @@ export async function exportarMktAGoogleSheets(): Promise<
       publicaciones,
       contenidoMultimedia,
       contenidoMultimediaTipos,
+      coloresMarca,
     ] = await Promise.all([
       prisma.mktPublicacionIdeaSeccion.findMany({
         select: { id: true, ideaNombre: true, ideaResumen: true },
@@ -242,6 +253,15 @@ export async function exportarMktAGoogleSheets(): Promise<
       prisma.mktContenidoDriveTipo.findMany({
         select: { id: true, tipo: true },
         orderBy: { tipo: "asc" },
+      }),
+      prisma.mktColoresMarca.findMany({
+        select: {
+          id: true,
+          nombre: true,
+          descripcion: true,
+          codHexadecimales: true,
+        },
+        orderBy: [{ nombre: "asc" }, { id: "asc" }],
       }),
     ]);
 
@@ -329,6 +349,18 @@ export async function exportarMktAGoogleSheets(): Promise<
         values: [
           ["id", "tipo"],
           ...contenidoMultimediaTipos.map((r) => [r.id, r.tipo]),
+        ],
+      },
+      {
+        title: GOOGLE_SHEET_TABS_MKT.coloresMarca,
+        values: [
+          ["id", "nombre", "descripcion", "cod_hexadecimales"],
+          ...coloresMarca.map((r) => [
+            r.id,
+            r.nombre,
+            r.descripcion ?? "",
+            r.codHexadecimales,
+          ]),
         ],
       },
     ];
