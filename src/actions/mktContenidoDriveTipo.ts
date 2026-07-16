@@ -29,7 +29,7 @@ function firstZodErrorMessage(error: {
 }
 
 function revalidateBaseMultimedia(): void {
-  revalidatePath(MARKETING_ROUTES.baseMultimedia);
+  revalidatePath(MARKETING_ROUTES.baseMultimedia.contenido);
 }
 
 async function requireMarketingLectura(): Promise<{ ok: false; error: string } | null> {

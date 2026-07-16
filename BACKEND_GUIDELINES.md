@@ -287,7 +287,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual`, `FinBalPosicionIvaComparacionPedido` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual`, `fin_bal_posicion_iva_comparacion_pedido` |
 | Finanzas análisis M.C. | `FinAnaCosFinaTerminal`, `FinAnaCosFinaPagoCat`, `FinAnaCosFina`, `FinAnaMcDescuentoFp` | `fin_ana_cos_fina_terminales`, `fin_ana_cos_fina_pagos`, `fin_ana_cos_fina`, `fin_ana_mc_descuento_fp` |
 | Estadísticas productos | `EstPorProd` | `est_por_prod` |
-| Marketing | `MktPublicacionRed`, `MktPublicacionContenidoTipo`, `MktPublicacion`, `MktPublicacionRedLink`, `MktPublicacionIdeaSeccion`, `MktPublicacionIdeaDetalle`, `MktPublicacionObj`, `MktContenidoUrlDrive`, `MktContenidoDriveTipo` | `mkt_publi_tipo_redes`, `mkt_publi_tipo_contenido`, `mkt_publi`, `mkt_publi_redes`, `mkt_publi_ideas_secciones`, `mkt_publi_ideas_detalle`, `mkt_publi_obj`, `mkt_contenido_drive_url`, `mkt_contenido_drive_tipo` |
+| Marketing | `MktPublicacionRed`, `MktPublicacionContenidoTipo`, `MktPublicacion`, `MktPublicacionRedLink`, `MktPublicacionIdeaSeccion`, `MktPublicacionIdeaDetalle`, `MktPublicacionObj`, `MktContenidoUrlDrive`, `MktContenidoDriveTipo`, `MktColoresMarca` | `mkt_publi_tipo_redes`, `mkt_publi_tipo_contenido`, `mkt_publi`, `mkt_publi_redes`, `mkt_publi_ideas_secciones`, `mkt_publi_ideas_detalle`, `mkt_publi_obj`, `mkt_contenido_drive_url`, `mkt_contenido_drive_tipo`, `mkt_colores_marca` |
 | Productos / precios | `ListaPrecioProveedor`, `ComparacionItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_item_comparados`, `prod_comp_item_referencia`, `prod_comp_categorias`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
 | Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
 | Pedidos / sync | `ProdPedMerc2`, `PedidoHistoria`, `PedidoHistoriaItem`, `ProdPedUltComp`, `ImportProgress`, `SyncDuxStatus` | `prod_ped_merc`, `prod_ped_historial`, `prod_ped_historial_merc`, `prod_ped_ult_comp`, `import_progress`, `sync_dux_status` |
@@ -974,6 +974,13 @@ Catálogo de archivos en Google Drive. UI: `/marketing/base-multimedia` (**Base 
 - **`mkt_contenido_drive_tipo`** (Prisma `MktContenidoDriveTipo`): `id` (`cuid`), `tipo` (`TEXT` **único**, MAYÚSCULAS), `created_at`, `updated_at`. CRUD modal **Gestionar Tipos De Contenido**.
 - **`mkt_contenido_drive_url`** (Prisma `MktContenidoUrlDrive`): `id` (`cuid`), `nombre` (`TEXT`, MAYÚSCULAS), `descripcion` (`TEXT`, default `''`), `url` (`TEXT`, http/https), **`tipo_id`** FK → `mkt_contenido_drive_tipo` (`onDelete: Restrict`), `created_at`, `updated_at`. Índices por `nombre` y `tipo_id`.
 - **Servicios**: `mktContenidoUrlDrive.service.ts` + `mktContenidoDriveTipo.service.ts`. Actions: `mktContenidoUrlDrive.ts`, `mktContenidoDriveTipo.ts`. Export Sheets **Contenido Multimedia**: `id`, `nombre`, `descripcion`, `url`, `tipo_id`; **Contenido Multimedia Tipo**: `id`, `tipo`.
+
+### 2.5g-quinquies Marketing · Colores Marca (`mkt_colores_marca`)
+
+Paleta de colores de marca. UI: `/marketing/base-multimedia/colores-marca` (**Colores Marca**, submódulo **BASE MULTIMEDIA**). Migración **`20260716150000_mkt_colores_marca`**.
+
+- **`mkt_colores_marca`** (Prisma `MktColoresMarca`): `id` (`cuid`), `nombre` (`TEXT`, MAYÚSCULAS), `descripcion` (`TEXT`, default `''`), **`cod_hexadecimales`** (`TEXT` — códigos `#RRGGBB` separados por coma; entrada UI: líneas o comas), `created_at`, `updated_at`. Índice por `nombre`.
+- **Servicios**: `mktColoresMarca.service.ts`. Actions: `mktColoresMarca.ts`. Helpers hex: `src/lib/mktColoresMarca.ts` (`parseCodHexadecimalesInput`, `normalizeHexToken`).
 
 
 ### 2.5h Análisis M.C. · Costos financieros (`fin_ana_cos_fina`, Prisma: `FinAnaCosFina`)
@@ -1903,6 +1910,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-07-15): **Marketing · contenido_url** — `mkt_publi.contenido_url` (`20260715160000`); `contenido_creado` se sincroniza desde URL no vacía; form modal input URL.*
 
 *Última actualización (2026-07-16): **Google Sheets — Contenido Multimedia / Tipo** — pestaña renombrada a **Contenido Multimedia**; nueva **Contenido Multimedia Tipo** (`mkt_contenido_drive_tipo`: `id`, `tipo`).*
+
+*Última actualización (2026-07-16): **Colores Marca** — `mkt_colores_marca`; CRUD `/marketing/base-multimedia/colores-marca`.*
 
 *Última actualización (2026-07-16): **Google Sheets — Indice** — pestaña **Indice** primera: catálogo hoja↔tabla + relaciones (`buildMktGoogleSheetsIndiceValues`).*
 

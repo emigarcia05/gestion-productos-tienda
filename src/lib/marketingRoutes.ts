@@ -9,5 +9,12 @@ export const MARKETING_ROUTES = {
     calendario: "/marketing/publicaciones/calendario",
     ideas: "/marketing/publicaciones/ideas",
   },
-  baseMultimedia: "/marketing/base-multimedia",
+  baseMultimedia: {
+    contenido: "/marketing/base-multimedia",
+    coloresMarca: "/marketing/base-multimedia/colores-marca",
+  },
 } as const;
+
+/** @deprecated Usar `MARKETING_ROUTES.baseMultimedia.contenido`. */
+export const MARKETING_ROUTE_BASE_MULTIMEDIA_LEGACY =
+  MARKETING_ROUTES.baseMultimedia.contenido;

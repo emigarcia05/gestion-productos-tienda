@@ -1216,6 +1216,19 @@ model MktContenidoUrlDrive {
   @@map("mkt_contenido_drive_url")
 }
 
+/** Paleta de colores de marca (nombre + descripción + códigos hex). */
+model MktColoresMarca {
+  id               String   @id @default(cuid())
+  nombre           String   @map("nombre")
+  descripcion      String   @default("") @map("descripcion") @db.Text
+  codHexadecimales String   @map("cod_hexadecimales") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([nombre], map: "mkt_colores_marca_nombre_idx")
+  @@map("mkt_colores_marca")
+}
+
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────
 // Persistencia para que el polling en sidebar sea consistente incluso en serverless.
 model SyncDuxStatus {

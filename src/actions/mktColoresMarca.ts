@@ -2,21 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
-import type { MktContenidoUrlDriveItem } from "@/lib/mktContenidoUrlDrive";
+import type { MktColorMarcaItem } from "@/lib/mktColoresMarca";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { esEditor, getRol } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 import {
-  crearMktContenidoUrlDriveSchema,
-  editarMktContenidoUrlDriveSchema,
-  eliminarMktContenidoUrlDriveSchema,
-} from "@/lib/validations/mktContenidoUrlDrive";
+  crearMktColorMarcaSchema,
+  editarMktColorMarcaSchema,
+  eliminarMktColorMarcaSchema,
+} from "@/lib/validations/mktColoresMarca";
 import {
-  crearMktContenidoUrlDrive,
-  editarMktContenidoUrlDrive,
-  eliminarMktContenidoUrlDrive,
-  listarMktContenidoUrlDrive,
-} from "@/services/mktContenidoUrlDrive.service";
+  crearMktColorMarca,
+  editarMktColorMarca,
+  eliminarMktColorMarca,
+  listarMktColoresMarca,
+} from "@/services/mktColoresMarca.service";
 
 function firstZodErrorMessage(error: {
   flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
@@ -28,8 +28,8 @@ function firstZodErrorMessage(error: {
   );
 }
 
-function revalidateBaseMultimedia(): void {
-  revalidatePath(MARKETING_ROUTES.baseMultimedia.contenido);
+function revalidateColoresMarca(): void {
+  revalidatePath(MARKETING_ROUTES.baseMultimedia.coloresMarca);
 }
 
 async function requireMarketingLectura(): Promise<{ ok: false; error: string } | null> {
@@ -49,13 +49,13 @@ async function requireEditorMarketing(): Promise<{ ok: false; error: string } | 
   return null;
 }
 
-export async function listarMktContenidoUrlDriveAction(): Promise<
-  ActionResult<MktContenidoUrlDriveItem[]>
+export async function listarMktColoresMarcaAction(): Promise<
+  ActionResult<MktColorMarcaItem[]>
 > {
   const gate = await requireMarketingLectura();
   if (gate) return gate;
   try {
-    return { ok: true, data: await listarMktContenidoUrlDrive() };
+    return { ok: true, data: await listarMktColoresMarca() };
   } catch (e) {
     return {
       ok: false,
@@ -64,47 +64,47 @@ export async function listarMktContenidoUrlDriveAction(): Promise<
   }
 }
 
-export async function crearMktContenidoUrlDriveAction(
+export async function crearMktColorMarcaAction(
   raw: unknown
-): Promise<ActionResult<MktContenidoUrlDriveItem>> {
+): Promise<ActionResult<MktColorMarcaItem>> {
   const gate = await requireEditorMarketing();
   if (gate) return gate;
-  const parsed = crearMktContenidoUrlDriveSchema.safeParse(raw);
+  const parsed = crearMktColorMarcaSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
-  const res = await crearMktContenidoUrlDrive(parsed.data);
+  const res = await crearMktColorMarca(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
-  revalidateBaseMultimedia();
+  revalidateColoresMarca();
   return { ok: true, data: res.data };
 }
 
-export async function editarMktContenidoUrlDriveAction(
+export async function editarMktColorMarcaAction(
   raw: unknown
-): Promise<ActionResult<MktContenidoUrlDriveItem>> {
+): Promise<ActionResult<MktColorMarcaItem>> {
   const gate = await requireEditorMarketing();
   if (gate) return gate;
-  const parsed = editarMktContenidoUrlDriveSchema.safeParse(raw);
+  const parsed = editarMktColorMarcaSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
-  const res = await editarMktContenidoUrlDrive(parsed.data);
+  const res = await editarMktColorMarca(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
-  revalidateBaseMultimedia();
+  revalidateColoresMarca();
   return { ok: true, data: res.data };
 }
 
-export async function eliminarMktContenidoUrlDriveAction(
+export async function eliminarMktColorMarcaAction(
   raw: unknown
 ): Promise<ActionResult<{ id: string }>> {
   const gate = await requireEditorMarketing();
   if (gate) return gate;
-  const parsed = eliminarMktContenidoUrlDriveSchema.safeParse(raw);
+  const parsed = eliminarMktColorMarcaSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
-  const res = await eliminarMktContenidoUrlDrive(parsed.data.id);
+  const res = await eliminarMktColorMarca(parsed.data.id);
   if (!res.success) return { ok: false, error: res.error };
-  revalidateBaseMultimedia();
+  revalidateColoresMarca();
   return { ok: true, data: res.data };
 }

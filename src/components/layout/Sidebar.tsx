@@ -38,6 +38,7 @@ import {
   CalendarRange,
   Lightbulb,
   Images,
+  Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -362,9 +363,15 @@ const MARKETING_MODULES: NavModule[] = [
     icon: <Images className={iconClass} />,
     submodules: [
       {
-        href: MARKETING_ROUTES.baseMultimedia,
+        href: MARKETING_ROUTES.baseMultimedia.contenido,
         label: "Base Multimedia",
         icon: <Images className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.marketing.acceso,
+      },
+      {
+        href: MARKETING_ROUTES.baseMultimedia.coloresMarca,
+        label: "Colores Marca",
+        icon: <Palette className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.marketing.acceso,
       },
     ],
@@ -410,8 +417,11 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === MARKETING_ROUTES.publicaciones.ideas) {
     return pathname === MARKETING_ROUTES.publicaciones.ideas;
   }
-  if (href === MARKETING_ROUTES.baseMultimedia) {
-    return pathname === MARKETING_ROUTES.baseMultimedia;
+  if (href === MARKETING_ROUTES.baseMultimedia.contenido) {
+    return pathname === MARKETING_ROUTES.baseMultimedia.contenido;
+  }
+  if (href === MARKETING_ROUTES.baseMultimedia.coloresMarca) {
+    return pathname === MARKETING_ROUTES.baseMultimedia.coloresMarca;
   }
   return pathname === href;
 }
