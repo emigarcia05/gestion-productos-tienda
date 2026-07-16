@@ -72,7 +72,7 @@ export async function crearMktPublicacionObjAction(
   const res = await crearMktPublicacionObj(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
   revalidatePath(MARKETING_ROUTES.publicaciones.calendario);
-  revalidatePath(MARKETING_ROUTES.publicaciones.objetivo);
+  revalidatePath(MARKETING_ROUTES.publicaciones.objetivos);
   return { ok: true, data: res.data };
 }
 
@@ -88,7 +88,7 @@ export async function editarMktPublicacionObjAction(
   const res = await editarMktPublicacionObj(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
   revalidatePath(MARKETING_ROUTES.publicaciones.calendario);
-  revalidatePath(MARKETING_ROUTES.publicaciones.objetivo);
+  revalidatePath(MARKETING_ROUTES.publicaciones.objetivos);
   return { ok: true, data: res.data };
 }
 
@@ -104,6 +104,6 @@ export async function eliminarMktPublicacionObjAction(
   const res = await eliminarMktPublicacionObj(parsed.data.id);
   if (!res.success) return { ok: false, error: res.error };
   revalidatePath(MARKETING_ROUTES.publicaciones.calendario);
-  revalidatePath(MARKETING_ROUTES.publicaciones.objetivo);
+  revalidatePath(MARKETING_ROUTES.publicaciones.objetivos);
   return { ok: true, data: res.data };
 }

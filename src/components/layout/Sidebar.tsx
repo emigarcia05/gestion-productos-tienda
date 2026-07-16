@@ -357,8 +357,8 @@ const MARKETING_MODULES: NavModule[] = [
         permiso: PERMISOS.marketing.acceso,
       },
       {
-        href: MARKETING_ROUTES.publicaciones.objetivo,
-        label: "Objetivo",
+        href: MARKETING_ROUTES.publicaciones.objetivos,
+        label: "Objetivos",
         icon: <Target className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.marketing.acceso,
       },
@@ -424,8 +424,8 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === MARKETING_ROUTES.publicaciones.ideas) {
     return pathname === MARKETING_ROUTES.publicaciones.ideas;
   }
-  if (href === MARKETING_ROUTES.publicaciones.objetivo) {
-    return pathname === MARKETING_ROUTES.publicaciones.objetivo;
+  if (href === MARKETING_ROUTES.publicaciones.objetivos) {
+    return pathname === MARKETING_ROUTES.publicaciones.objetivos;
   }
   if (href === MARKETING_ROUTES.baseMultimedia.contenido) {
     return pathname === MARKETING_ROUTES.baseMultimedia.contenido;

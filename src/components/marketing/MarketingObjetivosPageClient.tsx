@@ -6,12 +6,6 @@ import { Pencil, Plus, Target, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import ExportarMktSeccionesGoogleSheetsButton from "@/components/shared/ExportarMktSeccionesGoogleSheetsButton";
-import FilterBar, {
-  FILTER_COUNT_CLASS,
-  FILTER_SELECT_WRAPPER_CLASS,
-  FiltroIndividualContainer,
-  FilaFiltrosDesplegables,
-} from "@/components/FilterBar";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
@@ -65,6 +59,17 @@ function parseCantidad(raw: string): number | null {
   return n;
 }
 
+function catalogoPorEje(
+  eje: MktPubliObjEje,
+  redes: MktCatalogoNombreItem[],
+  contenidos: MktCatalogoNombreItem[],
+  secciones: MktCatalogoNombreItem[]
+): MktCatalogoNombreItem[] {
+  if (eje === "RED") return redes;
+  if (eje === "CONTENIDO") return contenidos;
+  return secciones;
+}
+
 export default function MarketingObjetivosPageClient({
   objetivosIniciales,
   redes,
@@ -74,11 +79,8 @@ export default function MarketingObjetivosPageClient({
 }: Props) {
   const router = useRouter();
   const [items, setItems] = useState<MktPublicacionObjItem[]>(objetivosIniciales);
-  const [filtroEje, setFiltroEje] = useState<MktPubliObjEje | "">("");
-  const [filtroPeriodo, setFiltroPeriodo] = useState<MktPubliObjPeriodo | "">("");
-  const [openCrear, setOpenCrear] = useState(false);
+  const [ejeAlta, setEjeAlta] = useState<MktPubliObjEje | null>(null);
   const [periodo, setPeriodo] = useState<MktPubliObjPeriodo>("SEMANAL");
-  const [ejeAlta, setEjeAlta] = useState<MktPubliObjEje>("RED");
   const [destinoId, setDestinoId] = useState("");
   const [cantidadNorm, setCantidadNorm] = useState("1");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -88,25 +90,31 @@ export default function MarketingObjetivosPageClient({
   const [borrarTarget, setBorrarTarget] = useState<MktPublicacionObjItem | null>(null);
   const [borrando, setBorrando] = useState(false);
 
-  const itemsFiltrados = useMemo(
-    () =>
-      items.filter((i) => {
-        if (filtroEje && i.eje !== filtroEje) return false;
-        if (filtroPeriodo && i.periodo !== filtroPeriodo) return false;
-        return true;
-      }),
-    [items, filtroEje, filtroPeriodo]
-  );
+  const itemsPorEje = useMemo(() => {
+    const map: Record<MktPubliObjEje, MktPublicacionObjItem[]> = {
+      RED: [],
+      CONTENIDO: [],
+      SECCION: [],
+    };
+    for (const item of items) {
+      map[item.eje].push(item);
+    }
+    for (const eje of MKT_PUBLI_OBJ_EJES) {
+      map[eje].sort((a, b) =>
+        a.destinoNombre.localeCompare(b.destinoNombre, "es", { sensitivity: "base" })
+      );
+    }
+    return map;
+  }, [items]);
 
   const opcionesDestino = useMemo(() => {
-    if (ejeAlta === "RED") return redes;
-    if (ejeAlta === "CONTENIDO") return contenidos;
-    return secciones;
+    if (!ejeAlta) return [];
+    return catalogoPorEje(ejeAlta, redes, contenidos, secciones);
   }, [ejeAlta, redes, contenidos, secciones]);
 
   const destinosConObjetivo = useMemo(() => {
-    const set = new Set(items.filter((i) => i.eje === ejeAlta).map((i) => i.destinoId));
-    return set;
+    if (!ejeAlta) return new Set<string>();
+    return new Set(items.filter((i) => i.eje === ejeAlta).map((i) => i.destinoId));
   }, [items, ejeAlta]);
 
   const opcionesDestinoDisponibles = useMemo(
@@ -132,18 +140,23 @@ export default function MarketingObjetivosPageClient({
     setDestinoId("");
   }, [ejeAlta]);
 
-  function resetFormAlta(ejeInicial: MktPubliObjEje = "RED") {
-    setPeriodo(filtroPeriodo || "SEMANAL");
-    setEjeAlta(ejeInicial);
+  function resetFormAlta(eje: MktPubliObjEje) {
+    setPeriodo("SEMANAL");
+    setEjeAlta(eje);
     setDestinoId("");
     setCantidadNorm("1");
   }
 
-  function abrirCrear() {
+  function abrirCrear(eje: MktPubliObjEje) {
     if (!esEditor || pending || borrando) return;
     setEditingId(null);
-    resetFormAlta(filtroEje || "RED");
-    setOpenCrear(true);
+    resetFormAlta(eje);
+  }
+
+  function cerrarCrear() {
+    setEjeAlta(null);
+    setDestinoId("");
+    setCantidadNorm("1");
   }
 
   function refresh() {
@@ -151,7 +164,7 @@ export default function MarketingObjetivosPageClient({
   }
 
   async function handleCrear() {
-    if (!esEditor || pending) return;
+    if (!esEditor || pending || !ejeAlta) return;
     const cantidad = parseCantidad(cantidadNorm);
     if (cantidad == null) {
       toast.error("Ingresá una cantidad válida (1–9999).");
@@ -174,9 +187,7 @@ export default function MarketingObjetivosPageClient({
         return;
       }
       toast.success("Objetivo creado.");
-      setFiltroEje(ejeAlta);
-      setOpenCrear(false);
-      resetFormAlta(ejeAlta);
+      cerrarCrear();
       await cargar();
       refresh();
     } finally {
@@ -230,227 +241,182 @@ export default function MarketingObjetivosPageClient({
   }
 
   const bloqueado = pending || borrando;
+  const openCrear = ejeAlta !== null;
+
+  function renderFila(obj: MktPublicacionObjItem) {
+    if (editingId === obj.id && esEditor) {
+      return (
+        <li
+          key={obj.id}
+          className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 last:border-b-0"
+        >
+          <Select
+            value={editPeriodo}
+            onValueChange={(v) => setEditPeriodo(v as MktPubliObjPeriodo)}
+            disabled={bloqueado}
+          >
+            <SelectTrigger className="h-8 w-[8.5rem] text-xs" aria-label="Periodo">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {etiquetaMktPubliObjPeriodo(p)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            value={editCantidadNorm}
+            onChange={(e) =>
+              setEditCantidadNorm(e.target.value.replace(/\D/g, "").slice(0, 4))
+            }
+            inputMode="numeric"
+            className="h-8 w-16 text-xs"
+            disabled={bloqueado}
+            aria-label="Cantidad"
+          />
+          <Button
+            type="button"
+            size="sm"
+            className="h-8 shrink-0"
+            disabled={bloqueado}
+            onClick={() => void handleGuardarEdicion()}
+          >
+            Guardar
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-8 shrink-0"
+            disabled={bloqueado}
+            onClick={() => setEditingId(null)}
+          >
+            Cancelar
+          </Button>
+        </li>
+      );
+    }
+
+    return (
+      <li
+        key={obj.id}
+        className="flex items-center gap-2 border-b border-border px-3 py-2 last:border-b-0"
+      >
+        <Target className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-foreground">{obj.destinoNombre}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {etiquetaMktPubliObjPeriodo(obj.periodo)} · {obj.cantidad} PUB.
+          </p>
+        </div>
+        {esEditor ? (
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={BOTON_ACCION_CLASS}
+              aria-label={`Editar ${obj.destinoNombre}`}
+              disabled={bloqueado}
+              onClick={() => {
+                setEditingId(obj.id);
+                setEditPeriodo(obj.periodo);
+                setEditCantidadNorm(String(obj.cantidad));
+              }}
+            >
+              <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={BOTON_ACCION_CLASS}
+              aria-label={`Eliminar ${obj.destinoNombre}`}
+              disabled={bloqueado}
+              onClick={() => setBorrarTarget(obj)}
+            >
+              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+            </Button>
+          </div>
+        ) : null}
+      </li>
+    );
+  }
 
   return (
     <>
       <ClassicFilteredTableLayout
         title="Marketing"
-        subtitle="Objetivo"
+        subtitle="Objetivos"
         contentWidth="full"
         actions={
           esEditor ? (
             <div className="flex flex-wrap items-center gap-2">
               <ExportarMktSeccionesGoogleSheetsButton />
-              <Button
-                type="button"
-                variant="default"
-                className="h-10 gap-2 px-4"
-                aria-label="Agregar objetivo"
-                disabled={bloqueado}
-                onClick={abrirCrear}
-              >
-                <Plus className="size-4 shrink-0" aria-hidden />
-                Nuevo
-              </Button>
             </div>
           ) : undefined
         }
-        filters={
-          <FilterBar className="filtros-contenedor-tienda bg-card">
-            <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <FilaFiltrosDesplegables columnas={2}>
-                  <FiltroIndividualContainer
-                    className={FILTER_SELECT_WRAPPER_CLASS}
-                    activo={Boolean(filtroEje)}
-                    onLimpiar={() => {
-                      setFiltroEje("");
-                      setEditingId(null);
-                    }}
-                  >
-                    <Select
-                      value={filtroEje || undefined}
-                      onValueChange={(v) => {
-                        setFiltroEje(v as MktPubliObjEje);
-                        setEditingId(null);
-                      }}
-                      disabled={bloqueado}
-                    >
-                      <SelectTrigger
-                        className="input-filtro-unificado"
-                        aria-label="Filtrar por eje"
-                      >
-                        <SelectValue placeholder="EJE" />
-                      </SelectTrigger>
-                      <SelectContent
-                        position="popper"
-                        side="bottom"
-                        align="start"
-                        className="select-content-filtro"
-                      >
-                        {MKT_PUBLI_OBJ_EJES.map((e) => (
-                          <SelectItem key={e} value={e}>
-                            {etiquetaMktPubliObjEje(e)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FiltroIndividualContainer>
-                  <FiltroIndividualContainer
-                    className={FILTER_SELECT_WRAPPER_CLASS}
-                    activo={Boolean(filtroPeriodo)}
-                    onLimpiar={() => {
-                      setFiltroPeriodo("");
-                      setEditingId(null);
-                    }}
-                  >
-                    <Select
-                      value={filtroPeriodo || undefined}
-                      onValueChange={(v) => {
-                        setFiltroPeriodo(v as MktPubliObjPeriodo);
-                        setEditingId(null);
-                      }}
-                      disabled={bloqueado}
-                    >
-                      <SelectTrigger
-                        className="input-filtro-unificado"
-                        aria-label="Filtrar por periodo"
-                      >
-                        <SelectValue placeholder="PERIODO" />
-                      </SelectTrigger>
-                      <SelectContent
-                        position="popper"
-                        side="bottom"
-                        align="start"
-                        className="select-content-filtro"
-                      >
-                        {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
-                          <SelectItem key={p} value={p}>
-                            {etiquetaMktPubliObjPeriodo(p)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FiltroIndividualContainer>
-                </FilaFiltrosDesplegables>
-              </div>
-              <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-                {itemsFiltrados.length.toLocaleString("es-AR")} OBJETIVO
-                {itemsFiltrados.length === 1 ? "" : "S"}
-              </span>
-            </div>
-          </FilterBar>
-        }
       >
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <ul className="space-y-2 pr-1">
-            {itemsFiltrados.map((obj) => (
-              <li
-                key={obj.id}
-                className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2"
+        <div className="grid min-h-0 flex-1 grid-cols-3 gap-3 overflow-hidden">
+          {MKT_PUBLI_OBJ_EJES.map((eje) => {
+            const filas = itemsPorEje[eje];
+            const titulo = etiquetaMktPubliObjEje(eje);
+            return (
+              <section
+                key={eje}
+                className="flex min-h-0 min-w-0 flex-col rounded-lg border border-border bg-card"
+                aria-label={titulo}
               >
-                {editingId === obj.id && esEditor ? (
-                  <>
-                    <Select
-                      value={editPeriodo}
-                      onValueChange={(v) => setEditPeriodo(v as MktPubliObjPeriodo)}
-                      disabled={bloqueado}
-                    >
-                      <SelectTrigger className="h-8 w-[8.5rem] text-xs" aria-label="Periodo">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
-                          <SelectItem key={p} value={p}>
-                            {etiquetaMktPubliObjPeriodo(p)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      value={editCantidadNorm}
-                      onChange={(e) =>
-                        setEditCantidadNorm(e.target.value.replace(/\D/g, "").slice(0, 4))
-                      }
-                      inputMode="numeric"
-                      className="h-8 w-16 text-xs"
-                      disabled={bloqueado}
-                      aria-label="Cantidad"
-                    />
+                <header className="relative flex shrink-0 items-center justify-center border-b border-border bg-primary px-10 py-2 text-center">
+                  <h3 className="text-xs font-bold uppercase tracking-wide text-primary-foreground">
+                    {titulo}
+                  </h3>
+                  {esEditor ? (
                     <Button
                       type="button"
-                      size="sm"
-                      className="h-8 shrink-0"
-                      disabled={bloqueado}
-                      onClick={() => void handleGuardarEdicion()}
-                    >
-                      Guardar
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
                       variant="ghost"
-                      className="h-8 shrink-0"
+                      size="icon"
+                      className="absolute right-1.5 top-1/2 size-7 -translate-y-1/2 text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground"
+                      aria-label={`Agregar objetivo ${titulo}`}
                       disabled={bloqueado}
-                      onClick={() => setEditingId(null)}
+                      onClick={() => abrirCrear(eje)}
                     >
-                      Cancelar
+                      <Plus className="size-4" aria-hidden />
                     </Button>
-                  </>
-                ) : (
-                  <>
-                    <Target className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {obj.destinoNombre}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {etiquetaMktPubliObjEje(obj.eje)} ·{" "}
-                        {etiquetaMktPubliObjPeriodo(obj.periodo)} · {obj.cantidad} PUB.
-                      </p>
-                    </div>
-                    {esEditor ? (
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className={BOTON_ACCION_CLASS}
-                          aria-label={`Editar ${obj.destinoNombre}`}
-                          disabled={bloqueado}
-                          onClick={() => {
-                            setEditingId(obj.id);
-                            setEditPeriodo(obj.periodo);
-                            setEditCantidadNorm(String(obj.cantidad));
-                          }}
-                        >
-                          <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className={BOTON_ACCION_CLASS}
-                          aria-label={`Eliminar ${obj.destinoNombre}`}
-                          disabled={bloqueado}
-                          onClick={() => setBorrarTarget(obj)}
-                        >
-                          <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                        </Button>
-                      </div>
-                    ) : null}
-                  </>
-                )}
-              </li>
-            ))}
-            {itemsFiltrados.length === 0 ? (
-              <li className="py-10 text-center text-sm text-muted-foreground">
-                {items.length === 0
-                  ? "No hay objetivos configurados."
-                  : "Ningún objetivo coincide con los filtros."}
-              </li>
-            ) : null}
-          </ul>
+                  ) : null}
+                </header>
+                <div className="grid min-h-0 flex-1 grid-rows-2 divide-y divide-border">
+                  {MKT_PUBLI_OBJ_PERIODOS.map((periodoObjetivo) => {
+                    const filasPeriodo = filas.filter(
+                      (obj) => obj.periodo === periodoObjetivo
+                    );
+                    return (
+                      <section
+                        key={periodoObjetivo}
+                        className="flex min-h-0 flex-col"
+                        aria-label={`${titulo} ${etiquetaMktPubliObjPeriodo(periodoObjetivo)}`}
+                      >
+                        <h4 className="shrink-0 border-b border-border bg-muted/40 px-3 py-1.5 text-center text-xs font-semibold uppercase text-foreground">
+                          {periodoObjetivo === "SEMANAL" ? "SEMANALES" : "MENSUALES"}
+                        </h4>
+                        <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                          {filasPeriodo.length === 0 ? (
+                            <li className="px-3 py-5 text-center text-xs text-muted-foreground">
+                              Sin objetivos
+                            </li>
+                          ) : (
+                            filasPeriodo.map((obj) => renderFila(obj))
+                          )}
+                        </ul>
+                      </section>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
         </div>
       </ClassicFilteredTableLayout>
 
@@ -458,12 +424,15 @@ export default function MarketingObjetivosPageClient({
         open={openCrear}
         onOpenChange={(next) => {
           if (pending) return;
-          setOpenCrear(next);
-          if (!next) resetFormAlta(filtroEje || "RED");
+          if (!next) cerrarCrear();
         }}
       >
         <AppModal
-          title="Nuevo Objetivo"
+          title={
+            ejeAlta
+              ? `Nuevo Objetivo · ${etiquetaMktPubliObjEje(ejeAlta)}`
+              : "Nuevo Objetivo"
+          }
           size="md"
           scrollBody
           hideBodyScrollbars
@@ -472,10 +441,7 @@ export default function MarketingObjetivosPageClient({
               type="button"
               variant="outline"
               disabled={pending}
-              onClick={() => {
-                setOpenCrear(false);
-                resetFormAlta(filtroEje || "RED");
-              }}
+              onClick={cerrarCrear}
             >
               Cancelar
             </Button>
@@ -483,40 +449,22 @@ export default function MarketingObjetivosPageClient({
         >
           <div className="flex flex-col gap-3">
             <ModalMicroLabel>Nuevo Objetivo</ModalMicroLabel>
-            <div className="grid grid-cols-2 gap-2">
-              <Select
-                value={periodo}
-                onValueChange={(v) => setPeriodo(v as MktPubliObjPeriodo)}
-                disabled={pending}
-              >
-                <SelectTrigger className="w-full" aria-label="Periodo">
-                  <SelectValue placeholder="PERIODO" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {etiquetaMktPubliObjPeriodo(p)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={ejeAlta}
-                onValueChange={(v) => setEjeAlta(v as MktPubliObjEje)}
-                disabled={pending}
-              >
-                <SelectTrigger className="w-full" aria-label="Eje">
-                  <SelectValue placeholder="EJE" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MKT_PUBLI_OBJ_EJES.map((e) => (
-                    <SelectItem key={e} value={e}>
-                      {etiquetaMktPubliObjEje(e)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={periodo}
+              onValueChange={(v) => setPeriodo(v as MktPubliObjPeriodo)}
+              disabled={pending}
+            >
+              <SelectTrigger className="w-full" aria-label="Periodo">
+                <SelectValue placeholder="PERIODO" />
+              </SelectTrigger>
+              <SelectContent>
+                {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {etiquetaMktPubliObjPeriodo(p)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select
               value={destinoId || undefined}
               onValueChange={setDestinoId}
