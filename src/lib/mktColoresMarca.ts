@@ -42,6 +42,19 @@ export function serializeCodHexadecimales(codes: string[]): string {
   return codes.join(",");
 }
 
+/** Valor editable del input (sin `#`) a partir de códigos persistidos. */
+export function hexDigitsFromStored(codes: string[]): string {
+  return codes.map((c) => c.replace(/^#/, "")).join(", ");
+}
+
+/** Sanitiza texto del input: sin `#`, solo hex y separadores coma/espacio. */
+export function sanitizeHexDigitsInput(raw: string): string {
+  return raw
+    .replace(/#/g, "")
+    .replace(/[^0-9A-Fa-f,\s]/g, "")
+    .toUpperCase();
+}
+
 /** Parsea valor persistido a array de códigos. */
 export function parseCodHexadecimalesStored(raw: string): string[] {
   if (!raw.trim()) return [];

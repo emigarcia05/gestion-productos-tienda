@@ -45,20 +45,15 @@ function MktColorMarcaSwatches({ codes }: { codes: string[] }) {
     return <span className="text-sm text-muted-foreground">—</span>;
   }
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center justify-center gap-1">
       {codes.map((hex) => (
         <span
           key={hex}
-          className="inline-flex items-center gap-1.5 rounded border border-border bg-card px-1.5 py-0.5 text-xs font-mono tabular-nums"
+          className="size-5 shrink-0 rounded-sm border border-border"
+          style={{ backgroundColor: hex }}
           title={hex}
-        >
-          <span
-            className="size-4 shrink-0 rounded-sm border border-border"
-            style={{ backgroundColor: hex }}
-            aria-hidden
-          />
-          {hex}
-        </span>
+          aria-label={hex}
+        />
       ))}
     </div>
   );
@@ -162,16 +157,16 @@ export default function MarketingColoresMarcaPageClient({ items, esEditor }: Pro
         <div className="contenedor-tabla-gestion min-h-0 flex-1">
           <Table variant="compact" className="tabla-gestion-compacta w-full">
             <colgroup>
-              <col style={{ width: "25%" }} />
-              <col style={{ width: "35%" }} />
-              <col style={{ width: "30%" }} />
+              <col style={{ width: "40%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "40%" }} />
               <col style={{ width: "10%" }} />
             </colgroup>
             <TableHeader>
               <TableRow>
                 <TableHead>NOMBRE</TableHead>
+                <TableHead className="text-center">CÓD. HEX.</TableHead>
                 <TableHead>DESCRIPCIÓN</TableHead>
-                <TableHead>CÓD. HEX.</TableHead>
                 <TableHead className="tabla-bloque-secundario-head-divider text-center">
                   ACCIONES
                 </TableHead>
@@ -189,16 +184,16 @@ export default function MarketingColoresMarcaPageClient({ items, esEditor }: Pro
                 />
               ) : (
                 itemsFiltrados.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium uppercase">{item.nombre}</TableCell>
-                    <TableCell>
-                      <span className="line-clamp-2 whitespace-pre-wrap break-words text-sm">
-                        {item.descripcion || "—"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <MktColorMarcaSwatches codes={item.codHexadecimales} />
-                    </TableCell>
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium uppercase">{item.nombre}</TableCell>
+                      <TableCell className="text-center">
+                        <MktColorMarcaSwatches codes={item.codHexadecimales} />
+                      </TableCell>
+                      <TableCell>
+                        <span className="line-clamp-2 whitespace-pre-wrap break-words text-sm">
+                          {item.descripcion || "—"}
+                        </span>
+                      </TableCell>
                     <TableCell className="tabla-bloque-secundario-cell-divider">
                       {esEditor ? (
                         <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
