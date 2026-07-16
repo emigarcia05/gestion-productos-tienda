@@ -287,7 +287,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual`, `FinBalPosicionIvaComparacionPedido` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual`, `fin_bal_posicion_iva_comparacion_pedido` |
 | Finanzas análisis M.C. | `FinAnaCosFinaTerminal`, `FinAnaCosFinaPagoCat`, `FinAnaCosFina`, `FinAnaMcDescuentoFp` | `fin_ana_cos_fina_terminales`, `fin_ana_cos_fina_pagos`, `fin_ana_cos_fina`, `fin_ana_mc_descuento_fp` |
 | Estadísticas productos | `EstPorProd` | `est_por_prod` |
-| Marketing | `MktPublicacionRed`, `MktPublicacionContenidoTipo`, `MktPublicacion`, `MktPublicacionRedLink`, `MktPublicacionIdeaSeccion`, `MktPublicacionIdeaDetalle`, `MktPublicacionObj` | `mkt_publi_tipo_redes`, `mkt_publi_tipo_contenido`, `mkt_publi`, `mkt_publi_redes`, `mkt_publi_ideas_secciones`, `mkt_publi_ideas_detalle`, `mkt_publi_obj` |
+| Marketing | `MktPublicacionRed`, `MktPublicacionContenidoTipo`, `MktPublicacion`, `MktPublicacionRedLink`, `MktPublicacionIdeaSeccion`, `MktPublicacionIdeaDetalle`, `MktPublicacionObj`, `MktContenidoUrlDrive` | `mkt_publi_tipo_redes`, `mkt_publi_tipo_contenido`, `mkt_publi`, `mkt_publi_redes`, `mkt_publi_ideas_secciones`, `mkt_publi_ideas_detalle`, `mkt_publi_obj`, `mkt_contenido_url_drive` |
 | Productos / precios | `ListaPrecioProveedor`, `ComparacionItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_item_comparados`, `prod_comp_item_referencia`, `prod_comp_categorias`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
 | Competencia | `ProdCompetencia`, `ProdPrecioCompetencia` | `prod_competencia`, `prod_precios_competencia` |
 | Pedidos / sync | `ProdPedMerc2`, `PedidoHistoria`, `PedidoHistoriaItem`, `ProdPedUltComp`, `ImportProgress`, `SyncDuxStatus` | `prod_ped_merc`, `prod_ped_historial`, `prod_ped_historial_merc`, `prod_ped_ult_comp`, `import_progress`, `sync_dux_status` |
@@ -965,6 +965,15 @@ Secciones de ideas y sus detalles. UI en `/marketing/publicaciones/ideas`. Migra
 - **Validación** (`@/lib/validations/mktPublicacionesIdeas.ts`).
 - **Actions** (`src/actions/mktPublicacionesIdeas.ts`): lectura **`PERMISOS.marketing.acceso`**; mutaciones + **`esEditor()`**; `revalidatePath` ideas.
 - **UI**: Finder 2 columnas en `/marketing/publicaciones/ideas` (`MarketingIdeasPageClient`).
+
+
+### 2.5g-quater Marketing · Base Multimedia (`mkt_contenido_url_drive`)
+
+Catálogo de archivos en Google Drive. UI: `/marketing/base-multimedia` (**Base Multimedia**). Migración **`20260716120000_mkt_contenido_url_drive`**.
+
+- **`mkt_contenido_url_drive`** (Prisma `MktContenidoUrlDrive`): `id` (`cuid`), `nombre` (`TEXT`, MAYÚSCULAS al persistir), `descripcion` (`TEXT`, default `''`), `url` (`TEXT`, http/https obligatorio), `created_at`, `updated_at`. Índice por `nombre`.
+- **Servicio** (`src/services/mktContenidoUrlDrive.service.ts`): `listarMktContenidoUrlDrive`, `crearMktContenidoUrlDrive`, `editarMktContenidoUrlDrive`, `eliminarMktContenidoUrlDrive`. Actions: `src/actions/mktContenidoUrlDrive.ts` (mutaciones solo `esEditor()`; lectura con `PERMISOS.marketing.acceso`). Validación: `@/lib/validations/mktContenidoUrlDrive.ts`.
+
 
 ### 2.5h Análisis M.C. · Costos financieros (`fin_ana_cos_fina`, Prisma: `FinAnaCosFina`)
 
@@ -1891,6 +1900,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-07-15): **Google Sheets — export Marketing** — un proceso `exportarMktAGoogleSheets`: pestañas Secciones, Redes, Tipo de Contenido, Ideas, Publicaciones (clear+write cada una); Action `exportarMktGoogleSheetsAction`; botón **Exportar a Sheets** en Calendario.*
 
 *Última actualización (2026-07-15): **Marketing · contenido_url** — `mkt_publi.contenido_url` (`20260715160000`); `contenido_creado` se sincroniza desde URL no vacía; form modal input URL.*
+
+*Última actualización (2026-07-16): **Marketing · Base Multimedia** — tabla `mkt_contenido_url_drive` (`20260716120000`); CRUD; ruta `/marketing/base-multimedia`.*
 
 *Última actualización (2026-07-15): **Marketing · publicaciones N:M redes** — `mkt_publi_redes` (`20260715170000`); quita `mkt_publi.red_id`; modal multi-red; objetivos/cuadro = 1 por red; export Sheets expande filas por red.*
 

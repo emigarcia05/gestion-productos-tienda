@@ -37,6 +37,7 @@ import {
   Megaphone,
   CalendarRange,
   Lightbulb,
+  Images,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -58,7 +59,7 @@ const iconClass = "h-5 w-5 shrink-0";
 
 type ModuleId = "pedidos" | "ayuda-vendedor" | "analisis-precios";
 type FinanzasModuleId = "balance" | "finanzas-main" | "analisis-mc";
-type MarketingModuleId = "publicaciones";
+type MarketingModuleId = "publicaciones" | "base-multimedia";
 type SidebarModuleId = ModuleId | FinanzasModuleId | MarketingModuleId;
 
 interface SubmoduleItem {
@@ -355,6 +356,19 @@ const MARKETING_MODULES: NavModule[] = [
       },
     ],
   },
+  {
+    id: "base-multimedia",
+    label: "BASE MULTIMEDIA",
+    icon: <Images className={iconClass} />,
+    submodules: [
+      {
+        href: MARKETING_ROUTES.baseMultimedia,
+        label: "Base Multimedia",
+        icon: <Images className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.marketing.acceso,
+      },
+    ],
+  },
 ];
 
 function getOpenModule(pathname: string): SidebarModuleId {
@@ -363,6 +377,9 @@ function getOpenModule(pathname: string): SidebarModuleId {
   if (pathname.startsWith("/finanzas")) return "finanzas-main";
   if (pathname.startsWith("/marketing/publicaciones") || pathname === "/marketing") {
     return "publicaciones";
+  }
+  if (pathname.startsWith("/marketing/base-multimedia")) {
+    return "base-multimedia";
   }
   return getGpSidebarModule(pathname);
 }
@@ -392,6 +409,9 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   }
   if (href === MARKETING_ROUTES.publicaciones.ideas) {
     return pathname === MARKETING_ROUTES.publicaciones.ideas;
+  }
+  if (href === MARKETING_ROUTES.baseMultimedia) {
+    return pathname === MARKETING_ROUTES.baseMultimedia;
   }
   return pathname === href;
 }

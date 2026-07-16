@@ -11,7 +11,6 @@ import GestionarMktPublicacionObjModal from "@/components/marketing/GestionarMkt
 import MktCalendarioPublicacionesGrid from "@/components/marketing/MktCalendarioPublicacionesGrid";
 import MktPublicacionesCuadroMando from "@/components/marketing/MktPublicacionesCuadroMando";
 import MktPublicacionesDiaModal from "@/components/marketing/MktPublicacionesDiaModal";
-import ProbarGoogleSheetsButton from "@/components/shared/ProbarGoogleSheetsButton";
 import ExportarMktSeccionesGoogleSheetsButton from "@/components/shared/ExportarMktSeccionesGoogleSheetsButton";
 import { Button } from "@/components/ui/button";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
@@ -132,7 +131,6 @@ export default function MarketingCalendarioPageClient({
           esEditor ? (
             <div className="flex flex-wrap items-center gap-2">
               <ExportarMktSeccionesGoogleSheetsButton />
-              <ProbarGoogleSheetsButton />
               <Button
                 type="button"
                 variant="default"

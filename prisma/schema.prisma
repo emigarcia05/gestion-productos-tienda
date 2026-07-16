@@ -1188,6 +1188,19 @@ model MktPublicacionObj {
   @@map("mkt_publi_obj")
 }
 
+/** Base multimedia: archivo en Google Drive (nombre + descripción + URL). */
+model MktContenidoUrlDrive {
+  id          String   @id @default(cuid())
+  nombre      String   @map("nombre")
+  descripcion String   @default("") @map("descripcion") @db.Text
+  url         String   @map("url") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([nombre], map: "mkt_contenido_url_drive_nombre_idx")
+  @@map("mkt_contenido_url_drive")
+}
+
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────
 // Persistencia para que el polling en sidebar sea consistente incluso en serverless.
 model SyncDuxStatus {

@@ -108,14 +108,6 @@ export default function MarketingIdeasPageClient({
                 <CatalogoFinderRow
                   key={seccion.id}
                   nombre={seccion.nombre}
-                  meta={
-                    seccion.resumen
-                      ? seccion.resumen
-                      : `${seccion.detalles.length} detalle(s)`
-                  }
-                  terceraLinea={
-                    seccion.resumen ? `${seccion.detalles.length} detalle(s)` : undefined
-                  }
                   selected={seccion.id === selectedSeccionId}
                   onClick={() => setSelectedSeccionId(seccion.id)}
                   mostrarAcciones={esEditor}

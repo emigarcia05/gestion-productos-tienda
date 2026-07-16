@@ -1,6 +1,6 @@
 /**
  * Rutas canónicas del área Marketing.
- * Prefijo: `/marketing/{módulo}/{submódulo}`.
+ * Prefijo: `/marketing/{módulo}/{submódulo?}`.
  */
 
 export const MARKETING_ROUTES = {
@@ -9,4 +9,5 @@ export const MARKETING_ROUTES = {
     calendario: "/marketing/publicaciones/calendario",
     ideas: "/marketing/publicaciones/ideas",
   },
+  baseMultimedia: "/marketing/base-multimedia",
 } as const;
