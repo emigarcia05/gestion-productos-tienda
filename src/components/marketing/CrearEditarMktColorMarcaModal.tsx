@@ -113,18 +113,20 @@ export default function CrearEditarMktColorMarcaModal({
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <ModalMicroLabel htmlFor="mkt-color-marca-nombre">Nombre</ModalMicroLabel>
+            <ModalMicroLabel>Nombre</ModalMicroLabel>
             <Input
               id="mkt-color-marca-nombre"
               value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              onChange={(e) => setNombre(e.target.value.toLocaleUpperCase("es-AR"))}
               disabled={saving}
               className="uppercase"
               autoComplete="off"
+              aria-label="Nombre"
+              autoFocus
             />
           </div>
           <div className="flex flex-col gap-1">
-            <ModalMicroLabel htmlFor="mkt-color-marca-descripcion">Descripción</ModalMicroLabel>
+            <ModalMicroLabel>Descripción</ModalMicroLabel>
             <textarea
               id="mkt-color-marca-descripcion"
               value={descripcion}
@@ -140,7 +142,7 @@ export default function CrearEditarMktColorMarcaModal({
             />
           </div>
           <div className="flex flex-col gap-1">
-            <ModalMicroLabel htmlFor="mkt-color-marca-hex">Cód. Hexadecimales</ModalMicroLabel>
+            <ModalMicroLabel>Cód. Hexadecimales</ModalMicroLabel>
             <textarea
               id="mkt-color-marca-hex"
               value={codHexadecimales}
