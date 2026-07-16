@@ -23,6 +23,7 @@ export const crearMktContenidoUrlDriveSchema = z.object({
   nombre: nombreSchema,
   descripcion: descripcionSchema,
   url: urlSchema,
+  tipoId: prismaCuidSchema,
 });
 
 export const editarMktContenidoUrlDriveSchema = z.object({
@@ -30,6 +31,7 @@ export const editarMktContenidoUrlDriveSchema = z.object({
   nombre: nombreSchema,
   descripcion: descripcionSchema,
   url: urlSchema,
+  tipoId: prismaCuidSchema,
 });
 
 export const eliminarMktContenidoUrlDriveSchema = z.object({

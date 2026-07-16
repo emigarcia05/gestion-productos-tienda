@@ -8,10 +8,20 @@ import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   crearMktContenidoUrlDriveAction,
   editarMktContenidoUrlDriveAction,
 } from "@/actions/mktContenidoUrlDrive";
-import type { MktContenidoUrlDriveItem } from "@/lib/mktContenidoUrlDrive";
+import type {
+  MktContenidoDriveTipoItem,
+  MktContenidoUrlDriveItem,
+} from "@/lib/mktContenidoUrlDrive";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -19,6 +29,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   modo: "crear" | "editar";
   item?: MktContenidoUrlDriveItem | null;
+  tipos: MktContenidoDriveTipoItem[];
   onSuccess?: () => void;
 }
 
@@ -27,11 +38,13 @@ export default function CrearEditarMktContenidoUrlDriveModal({
   onOpenChange,
   modo,
   item = null,
+  tipos,
   onSuccess,
 }: Props) {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [url, setUrl] = useState("");
+  const [tipoId, setTipoId] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -40,16 +53,19 @@ export default function CrearEditarMktContenidoUrlDriveModal({
       setNombre(item.nombre);
       setDescripcion(item.descripcion);
       setUrl(item.url);
+      setTipoId(item.tipoId);
       return;
     }
     setNombre("");
     setDescripcion("");
     setUrl("");
+    setTipoId("");
   }, [open, modo, item]);
 
   const puedeGuardar =
     nombre.trim().length > 0 &&
     url.trim().length > 0 &&
+    Boolean(tipoId) &&
     (modo === "crear" || Boolean(item?.id));
 
   async function handleSubmit() {
@@ -60,6 +76,7 @@ export default function CrearEditarMktContenidoUrlDriveModal({
         nombre: nombre.trim(),
         descripcion: descripcion.trim(),
         url: url.trim(),
+        tipoId,
       };
       const res =
         modo === "crear"
@@ -118,6 +135,26 @@ export default function CrearEditarMktContenidoUrlDriveModal({
               aria-label="Nombre"
             />
           </div>
+          <Select
+            value={tipoId || undefined}
+            onValueChange={setTipoId}
+            disabled={saving || tipos.length === 0}
+          >
+            <SelectTrigger className="w-full" aria-label="Tipo de contenido">
+              <SelectValue
+                placeholder={
+                  tipos.length === 0 ? "SIN TIPOS CARGADOS" : "TIPO DE CONTENIDO"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {tipos.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.tipo}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="flex flex-col gap-1">
             <ModalMicroLabel>Descripción</ModalMicroLabel>
             <textarea

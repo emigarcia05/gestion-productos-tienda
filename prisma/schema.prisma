@@ -1188,16 +1188,31 @@ model MktPublicacionObj {
   @@map("mkt_publi_obj")
 }
 
-/** Base multimedia: archivo en Google Drive (nombre + descripción + URL). */
+/** Catálogo de tipos para Base Multimedia. */
+model MktContenidoDriveTipo {
+  id        String   @id @default(cuid())
+  tipo      String   @unique(map: "mkt_contenido_drive_tipo_tipo_key") @map("tipo")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  contenidos MktContenidoUrlDrive[]
+
+  @@map("mkt_contenido_drive_tipo")
+}
+
+/** Base multimedia: archivo en Google Drive (nombre + descripción + URL + tipo). */
 model MktContenidoUrlDrive {
   id          String   @id @default(cuid())
   nombre      String   @map("nombre")
   descripcion String   @default("") @map("descripcion") @db.Text
   url         String   @map("url") @db.Text
+  tipoId      String   @map("tipo_id")
+  tipo        MktContenidoDriveTipo @relation(fields: [tipoId], references: [id], onDelete: Restrict)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@index([nombre], map: "mkt_contenido_url_drive_nombre_idx")
+  @@index([tipoId], map: "mkt_contenido_url_drive_tipo_idx")
   @@map("mkt_contenido_url_drive")
 }
 

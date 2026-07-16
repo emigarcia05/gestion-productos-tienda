@@ -13,6 +13,7 @@ export const GOOGLE_SHEET_TABS_MKT = {
   tipoContenido: "Tipo de Contenido",
   ideas: "Ideas",
   publicaciones: "Publicaciones",
+  contenidoMultimedia: "CONTENIDO MULTIMEDIA",
 } as const;
 
 export type ExportMktGoogleSheetsTabResult = {
@@ -43,7 +44,8 @@ export async function exportarMktAGoogleSheets(): Promise<
   const { config, sheets, url } = client.data;
 
   try {
-    const [secciones, redes, tiposContenido, ideas, publicaciones] = await Promise.all([
+    const [secciones, redes, tiposContenido, ideas, publicaciones, contenidoMultimedia] =
+      await Promise.all([
       prisma.mktPublicacionIdeaSeccion.findMany({
         select: { id: true, ideaNombre: true, ideaResumen: true },
         orderBy: { ideaNombre: "asc" },
@@ -71,6 +73,16 @@ export async function exportarMktAGoogleSheets(): Promise<
           redes: { select: { redId: true } },
         },
         orderBy: [{ fecha: "asc" }, { id: "asc" }],
+      }),
+      prisma.mktContenidoUrlDrive.findMany({
+        select: {
+          id: true,
+          nombre: true,
+          descripcion: true,
+          url: true,
+          tipoId: true,
+        },
+        orderBy: [{ nombre: "asc" }, { id: "asc" }],
       }),
     ]);
 
@@ -134,6 +146,19 @@ export async function exportarMktAGoogleSheets(): Promise<
               return row;
             });
           }),
+        ],
+      },
+      {
+        title: GOOGLE_SHEET_TABS_MKT.contenidoMultimedia,
+        values: [
+          ["id", "nombre", "descripcion", "url", "tipo_id"],
+          ...contenidoMultimedia.map((r) => [
+            r.id,
+            r.nombre,
+            r.descripcion ?? "",
+            r.url ?? "",
+            r.tipoId,
+          ]),
         ],
       },
     ];

@@ -11,6 +11,8 @@ const select = {
   nombre: true,
   descripcion: true,
   url: true,
+  tipoId: true,
+  tipo: { select: { tipo: true } },
 } as const;
 
 function mapRow(row: {
@@ -18,13 +20,26 @@ function mapRow(row: {
   nombre: string;
   descripcion: string;
   url: string;
+  tipoId: string;
+  tipo: { tipo: string };
 }): MktContenidoUrlDriveItem {
   return {
     id: row.id,
     nombre: row.nombre.toLocaleUpperCase("es-AR"),
     descripcion: row.descripcion.trim(),
     url: row.url.trim(),
+    tipoId: row.tipoId,
+    tipoNombre: row.tipo.tipo.toLocaleUpperCase("es-AR"),
   };
+}
+
+async function assertTipoExiste(tipoId: string): Promise<ServiceResult<true>> {
+  const tipo = await prisma.mktContenidoDriveTipo.findUnique({
+    where: { id: tipoId },
+    select: { id: true },
+  });
+  if (!tipo) return { success: false, error: "El tipo de contenido no existe." };
+  return { success: true, data: true };
 }
 
 export async function listarMktContenidoUrlDrive(): Promise<MktContenidoUrlDriveItem[]> {
@@ -38,12 +53,16 @@ export async function listarMktContenidoUrlDrive(): Promise<MktContenidoUrlDrive
 export async function crearMktContenidoUrlDrive(
   input: CrearMktContenidoUrlDriveInput
 ): Promise<ServiceResult<MktContenidoUrlDriveItem>> {
+  const tipoOk = await assertTipoExiste(input.tipoId);
+  if (!tipoOk.success) return tipoOk;
+
   try {
     const row = await prisma.mktContenidoUrlDrive.create({
       data: {
         nombre: input.nombre.trim().toLocaleUpperCase("es-AR"),
         descripcion: input.descripcion.trim(),
         url: input.url.trim(),
+        tipoId: input.tipoId,
       },
       select,
     });
@@ -60,6 +79,9 @@ export async function crearMktContenidoUrlDrive(
 export async function editarMktContenidoUrlDrive(
   input: EditarMktContenidoUrlDriveInput
 ): Promise<ServiceResult<MktContenidoUrlDriveItem>> {
+  const tipoOk = await assertTipoExiste(input.tipoId);
+  if (!tipoOk.success) return tipoOk;
+
   try {
     const row = await prisma.mktContenidoUrlDrive.update({
       where: { id: input.id },
@@ -67,6 +89,7 @@ export async function editarMktContenidoUrlDrive(
         nombre: input.nombre.trim().toLocaleUpperCase("es-AR"),
         descripcion: input.descripcion.trim(),
         url: input.url.trim(),
+        tipoId: input.tipoId,
       },
       select,
     });

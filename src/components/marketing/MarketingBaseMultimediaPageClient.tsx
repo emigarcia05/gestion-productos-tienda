@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEditarMktContenidoUrlDriveModal from "@/components/marketing/CrearEditarMktContenidoUrlDriveModal";
+import GestionarMktContenidoDriveTipoModal from "@/components/marketing/GestionarMktContenidoDriveTipoModal";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -19,7 +20,10 @@ import {
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { eliminarMktContenidoUrlDriveAction } from "@/actions/mktContenidoUrlDrive";
-import type { MktContenidoUrlDriveItem } from "@/lib/mktContenidoUrlDrive";
+import type {
+  MktContenidoDriveTipoItem,
+  MktContenidoUrlDriveItem,
+} from "@/lib/mktContenidoUrlDrive";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -30,15 +34,21 @@ import { FILTER_COUNT_CLASS } from "@/components/FilterBar";
 
 interface Props {
   items: MktContenidoUrlDriveItem[];
+  tipos: MktContenidoDriveTipoItem[];
   esEditor: boolean;
 }
 
-export default function MarketingBaseMultimediaPageClient({ items, esEditor }: Props) {
+export default function MarketingBaseMultimediaPageClient({
+  items,
+  tipos,
+  esEditor,
+}: Props) {
   const router = useRouter();
   const [modalForm, setModalForm] = useState<
     | { open: false }
     | { open: true; modo: "crear" | "editar"; item?: MktContenidoUrlDriveItem }
   >({ open: false });
+  const [modalTipos, setModalTipos] = useState(false);
   const [modalEliminar, setModalEliminar] = useState<
     { open: false } | { open: true; id: string; label: string }
   >({ open: false });
@@ -73,15 +83,26 @@ export default function MarketingBaseMultimediaPageClient({ items, esEditor }: P
         contentWidth="full"
         actions={
           esEditor ? (
-            <Button
-              type="button"
-              variant="default"
-              className="h-10 gap-2 px-4"
-              onClick={() => setModalForm({ open: true, modo: "crear" })}
-            >
-              <Plus className="size-4 shrink-0" aria-hidden />
-              Nuevo
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="default"
+                className="h-10 gap-2 px-4"
+                onClick={() => setModalTipos(true)}
+              >
+                <Settings2 className="size-4 shrink-0" aria-hidden />
+                Gestionar Tipos
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                className="h-10 gap-2 px-4"
+                onClick={() => setModalForm({ open: true, modo: "crear" })}
+              >
+                <Plus className="size-4 shrink-0" aria-hidden />
+                Nuevo
+              </Button>
+            </div>
           ) : undefined
         }
       >
@@ -92,16 +113,16 @@ export default function MarketingBaseMultimediaPageClient({ items, esEditor }: P
           <div className="contenedor-tabla-gestion min-h-0 flex-1">
             <Table variant="compact" className="tabla-gestion-compacta w-full">
               <colgroup>
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "38%" }} />
                 <col style={{ width: "30%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "40%" }} />
                 <col style={{ width: "10%" }} />
               </colgroup>
               <TableHeader>
                 <TableRow>
                   <TableHead>NOMBRE</TableHead>
+                  <TableHead>TIPO DE CONTENIDO</TableHead>
                   <TableHead>DESCRIPCIÓN</TableHead>
-                  <TableHead>URL</TableHead>
                   <TableHead className="tabla-bloque-secundario-head-divider text-center">
                     ACCIONES
                   </TableHead>
@@ -114,59 +135,62 @@ export default function MarketingBaseMultimediaPageClient({ items, esEditor }: P
                   items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium uppercase">{item.nombre}</TableCell>
+                      <TableCell className="uppercase">{item.tipoNombre}</TableCell>
                       <TableCell>
                         <span className="line-clamp-2 whitespace-pre-wrap break-words text-sm">
                           {item.descripcion || "—"}
                         </span>
                       </TableCell>
-                      <TableCell>
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="line-clamp-2 break-all text-sm text-primary underline-offset-2 hover:underline"
-                          title={item.url}
-                        >
-                          {item.url}
-                        </a>
-                      </TableCell>
                       <TableCell className="tabla-bloque-secundario-cell-divider">
-                        {esEditor ? (
-                          <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                              title="Editar"
-                              aria-label={`Editar ${item.nombre}`}
-                              onClick={() =>
-                                setModalForm({ open: true, modo: "editar", item })
-                              }
-                            >
-                              <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                              title="Eliminar"
-                              aria-label={`Eliminar ${item.nombre}`}
-                              onClick={() =>
-                                setModalEliminar({
-                                  open: true,
-                                  id: item.id,
-                                  label: item.nombre,
-                                })
-                              }
-                            >
-                              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
+                        <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            title="Ver"
+                            aria-label={`Ver ${item.nombre}`}
+                            onClick={() =>
+                              window.open(item.url, "_blank", "noopener,noreferrer")
+                            }
+                          >
+                            <Eye className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                          </Button>
+                          {esEditor ? (
+                            <>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                title="Editar"
+                                aria-label={`Editar ${item.nombre}`}
+                                onClick={() =>
+                                  setModalForm({ open: true, modo: "editar", item })
+                                }
+                              >
+                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                title="Eliminar"
+                                aria-label={`Eliminar ${item.nombre}`}
+                                onClick={() =>
+                                  setModalEliminar({
+                                    open: true,
+                                    id: item.id,
+                                    label: item.nombre,
+                                  })
+                                }
+                              >
+                                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -182,7 +206,16 @@ export default function MarketingBaseMultimediaPageClient({ items, esEditor }: P
         onOpenChange={(o) => !o && setModalForm({ open: false })}
         modo={modalForm.open ? modalForm.modo : "crear"}
         item={modalForm.open ? modalForm.item ?? null : null}
+        tipos={tipos}
         onSuccess={refresh}
+      />
+
+      <GestionarMktContenidoDriveTipoModal
+        open={modalTipos}
+        onOpenChange={setModalTipos}
+        itemsIniciales={tipos}
+        esEditor={esEditor}
+        onCatalogoChanged={refresh}
       />
 
       <Dialog

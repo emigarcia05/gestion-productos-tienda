@@ -3,6 +3,7 @@ import MarketingBaseMultimediaPageClient from "@/components/marketing/MarketingB
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
+import { listarMktContenidoDriveTipos } from "@/services/mktContenidoDriveTipo.service";
 import { listarMktContenidoUrlDrive } from "@/services/mktContenidoUrlDrive.service";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +14,18 @@ export default async function MarketingBaseMultimediaPage() {
     redirect(GP_ROUTES.defaultEntry);
   }
 
-  const items = await listarMktContenidoUrlDrive();
+  const [items, tipos] = await Promise.all([
+    listarMktContenidoUrlDrive(),
+    listarMktContenidoDriveTipos(),
+  ]);
 
   return (
     <div className="area-page-shell">
-      <MarketingBaseMultimediaPageClient items={items} esEditor={rol === "editor"} />
+      <MarketingBaseMultimediaPageClient
+        items={items}
+        tipos={tipos}
+        esEditor={rol === "editor"}
+      />
     </div>
   );
 }
