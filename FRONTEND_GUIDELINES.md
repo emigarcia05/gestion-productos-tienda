@@ -1359,7 +1359,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-14): **Marketing · Calendario** — alta publicación al clickear día; íconos de red en celdas; Ideas VER/N:M/`idea_resumen`.*
 
-*Última actualización (2026-07-16): **Marketing · Objetivos** — 3 columnas RED/CONTENIDO/SECCION con `+` por dimensión; modal sin select de eje; filtro PERIODO; Exportar a Sheets.*
+*Última actualización (2026-07-16): **Marketing · Objetivos** — 3 columnas RED/CONTENIDO/SECCION con `+` por dimensión; cada `+` queda contenido en el alto del subtítulo con inset y padding compacto; modal **Nuevo Objetivo** / **Editar Objetivo** (lápiz abre el mismo modal en modo edición: destino fijo, solo cantidad editable; sin edición inline); control de cantidad compacto y centrado, con botones **−** / **+** adyacentes; filtro PERIODO; Exportar a Sheets.*
 
 *Última actualización (2026-07-15): **Google Sheets — Exportar a Sheets** — botón `ExportarMktSeccionesGoogleSheetsButton` en Calendario / Base Multimedia / Colores Marca (editor); un click exporta todas las pestañas Marketing. Éxito: toast **«Datos Actualizados correctamente»** (sin botón Abrir ni detalle de hojas). Ver BACKEND_GUIDELINES (Google Sheets).*
 
@@ -1387,7 +1387,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-15): **Marketing · contenido_url** — modal Nueva/Editar Publicación: bloque **Contenido** = input URL Drive; `contenido_creado` derivado (vacío=NO). Ver BACKEND §2.5g-bis.*
 
-*Última actualización (2026-07-16): **Calendario · objetivos** — 8.ª columna **OBJ.** angosta: tilde azul / X roja por cumplimiento semanal; fila final **Objetivos Mensuales** con la misma lógica para el mes visible; **—** cuando no hay objetivos del periodo.*
+*Última actualización (2026-07-16): **Calendario · objetivos** — 8.ª columna **OBJ.** angosta: tilde azul / X roja por cumplimiento semanal; en la fila final, el estado del mes se muestra junto al texto **Objetivos Mensuales** dentro de las primeras 7 columnas y la celda de **OBJ.** queda vacía para separar visualmente los estados semanales y mensuales; **—** cuando no hay objetivos del periodo.*
 
 
 ---

@@ -259,21 +259,16 @@ export default function MktCalendarioPublicacionesGrid({
           >
             <div
               role="gridcell"
-              className="col-span-7 flex min-h-[3.25rem] items-center justify-center px-3 text-center text-xs font-bold uppercase tracking-wide text-foreground"
-            >
-              Objetivos Mensuales
-            </div>
-            <div
-              role="gridcell"
-              className="flex min-h-[3.25rem] items-center justify-center border-l border-border px-1"
+              className="col-span-7 flex min-h-[3.25rem] items-center justify-center gap-2 px-3 text-center text-xs font-bold uppercase tracking-wide text-foreground"
               aria-label={
                 cumplimientoMensual === null
-                  ? "Mes: sin objetivos mensuales"
+                  ? "Objetivos Mensuales: sin objetivos"
                   : cumplimientoMensual
-                    ? "Mes: objetivos mensuales cumplidos"
-                    : "Mes: objetivos mensuales incumplidos"
+                    ? "Objetivos Mensuales: cumplidos"
+                    : "Objetivos Mensuales: incumplidos"
               }
             >
+              <span>Objetivos Mensuales</span>
               {cumplimientoMensual === null ? (
                 <span className="text-xs text-muted-foreground">—</span>
               ) : cumplimientoMensual ? (
@@ -290,6 +285,11 @@ export default function MktCalendarioPublicacionesGrid({
                 />
               )}
             </div>
+            <div
+              role="gridcell"
+              className="flex min-h-[3.25rem] items-center justify-center border-l border-border px-1"
+              aria-hidden
+            />
           </div>
         </div>
       </div>

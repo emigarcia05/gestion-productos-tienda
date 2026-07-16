@@ -53,6 +53,20 @@ const BOTON_ACCION_CLASS = cn(
   "!size-8 max-h-8 min-h-8 min-w-8 shrink-0 !p-0"
 );
 
+type ModalForm =
+  | { open: false }
+  | {
+      open: true;
+      modo: "crear";
+      eje: MktPubliObjEje;
+      periodo: MktPubliObjPeriodo;
+    }
+  | {
+      open: true;
+      modo: "editar";
+      item: MktPublicacionObjItem;
+    };
+
 function parseCantidad(raw: string): number | null {
   const n = Number(raw.trim());
   if (!Number.isInteger(n) || n < 1 || n > 9999) return null;
@@ -79,13 +93,9 @@ export default function MarketingObjetivosPageClient({
 }: Props) {
   const router = useRouter();
   const [items, setItems] = useState<MktPublicacionObjItem[]>(objetivosIniciales);
-  const [ejeAlta, setEjeAlta] = useState<MktPubliObjEje | null>(null);
-  const [periodo, setPeriodo] = useState<MktPubliObjPeriodo>("SEMANAL");
+  const [modalForm, setModalForm] = useState<ModalForm>({ open: false });
   const [destinoId, setDestinoId] = useState("");
   const [cantidadNorm, setCantidadNorm] = useState("1");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editPeriodo, setEditPeriodo] = useState<MktPubliObjPeriodo>("SEMANAL");
-  const [editCantidadNorm, setEditCantidadNorm] = useState("1");
   const [pending, setPending] = useState(false);
   const [borrarTarget, setBorrarTarget] = useState<MktPublicacionObjItem | null>(null);
   const [borrando, setBorrando] = useState(false);
@@ -107,15 +117,27 @@ export default function MarketingObjetivosPageClient({
     return map;
   }, [items]);
 
+  const ejeModal = modalForm.open
+    ? modalForm.modo === "crear"
+      ? modalForm.eje
+      : modalForm.item.eje
+    : null;
+  const periodoModal = modalForm.open
+    ? modalForm.modo === "crear"
+      ? modalForm.periodo
+      : modalForm.item.periodo
+    : null;
+  const esEdicion = modalForm.open && modalForm.modo === "editar";
+
   const opcionesDestino = useMemo(() => {
-    if (!ejeAlta) return [];
-    return catalogoPorEje(ejeAlta, redes, contenidos, secciones);
-  }, [ejeAlta, redes, contenidos, secciones]);
+    if (!ejeModal) return [];
+    return catalogoPorEje(ejeModal, redes, contenidos, secciones);
+  }, [ejeModal, redes, contenidos, secciones]);
 
   const destinosConObjetivo = useMemo(() => {
-    if (!ejeAlta) return new Set<string>();
-    return new Set(items.filter((i) => i.eje === ejeAlta).map((i) => i.destinoId));
-  }, [items, ejeAlta]);
+    if (!ejeModal) return new Set<string>();
+    return new Set(items.filter((i) => i.eje === ejeModal).map((i) => i.destinoId));
+  }, [items, ejeModal]);
 
   const opcionesDestinoDisponibles = useMemo(
     () => opcionesDestino.filter((o) => !destinosConObjetivo.has(o.id)),
@@ -136,26 +158,22 @@ export default function MarketingObjetivosPageClient({
     setItems(objetivosIniciales);
   }, [objetivosIniciales]);
 
-  useEffect(() => {
-    setDestinoId("");
-  }, [ejeAlta]);
-
-  function resetFormAlta(eje: MktPubliObjEje, periodoAlta: MktPubliObjPeriodo) {
-    setPeriodo(periodoAlta);
-    setEjeAlta(eje);
-    setDestinoId("");
-    setCantidadNorm("1");
-  }
-
   function abrirCrear(eje: MktPubliObjEje, periodoAlta: MktPubliObjPeriodo) {
     if (!esEditor || pending || borrando) return;
-    setEditingId(null);
-    resetFormAlta(eje, periodoAlta);
+    setDestinoId("");
+    setCantidadNorm("1");
+    setModalForm({ open: true, modo: "crear", eje, periodo: periodoAlta });
   }
 
-  function cerrarCrear() {
-    setEjeAlta(null);
-    setPeriodo("SEMANAL");
+  function abrirEditar(item: MktPublicacionObjItem) {
+    if (!esEditor || pending || borrando) return;
+    setDestinoId(item.destinoId);
+    setCantidadNorm(String(item.cantidad));
+    setModalForm({ open: true, modo: "editar", item });
+  }
+
+  function cerrarModalForm() {
+    setModalForm({ open: false });
     setDestinoId("");
     setCantidadNorm("1");
   }
@@ -164,58 +182,44 @@ export default function MarketingObjetivosPageClient({
     router.refresh();
   }
 
-  async function handleCrear() {
-    if (!esEditor || pending || !ejeAlta) return;
+  async function handleGuardar() {
+    if (!esEditor || pending || !modalForm.open || !ejeModal || !periodoModal) return;
     const cantidad = parseCantidad(cantidadNorm);
     if (cantidad == null) {
       toast.error("Ingresá una cantidad válida (1–9999).");
       return;
     }
-    if (!destinoId) {
-      toast.error("Seleccioná un destino.");
-      return;
-    }
     setPending(true);
     try {
-      const res = await crearMktPublicacionObjAction({
-        periodo,
-        eje: ejeAlta,
-        destinoId,
-        cantidad,
-      });
-      if (!res.ok) {
-        toast.error(res.error ?? "No se pudo crear el objetivo.");
-        return;
+      if (modalForm.modo === "crear") {
+        if (!destinoId) {
+          toast.error("Seleccioná un destino.");
+          return;
+        }
+        const res = await crearMktPublicacionObjAction({
+          periodo: periodoModal,
+          eje: ejeModal,
+          destinoId,
+          cantidad,
+        });
+        if (!res.ok) {
+          toast.error(res.error ?? "No se pudo crear el objetivo.");
+          return;
+        }
+        toast.success("Objetivo creado.");
+      } else {
+        const res = await editarMktPublicacionObjAction({
+          id: modalForm.item.id,
+          periodo: modalForm.item.periodo,
+          cantidad,
+        });
+        if (!res.ok) {
+          toast.error(res.error ?? "No se pudo guardar.");
+          return;
+        }
+        toast.success("Objetivo actualizado.");
       }
-      toast.success("Objetivo creado.");
-      cerrarCrear();
-      await cargar();
-      refresh();
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleGuardarEdicion() {
-    if (!esEditor || !editingId || pending) return;
-    const cantidad = parseCantidad(editCantidadNorm);
-    if (cantidad == null) {
-      toast.error("Ingresá una cantidad válida (1–9999).");
-      return;
-    }
-    setPending(true);
-    try {
-      const res = await editarMktPublicacionObjAction({
-        id: editingId,
-        periodo: editPeriodo,
-        cantidad,
-      });
-      if (!res.ok) {
-        toast.error(res.error ?? "No se pudo guardar.");
-        return;
-      }
-      toast.success("Objetivo actualizado.");
-      setEditingId(null);
+      cerrarModalForm();
       await cargar();
       refresh();
     } finally {
@@ -242,52 +246,19 @@ export default function MarketingObjetivosPageClient({
   }
 
   const bloqueado = pending || borrando;
-  const openCrear = ejeAlta !== null;
+  const cantidadActual = parseCantidad(cantidadNorm) ?? 1;
+  const puedeGuardar =
+    cantidadNorm.trim().length > 0 &&
+    (esEdicion || Boolean(destinoId));
+
+  const tituloModal =
+    ejeModal && periodoModal
+      ? `${esEdicion ? "Editar Objetivo" : "Nuevo Objetivo"} · ${etiquetaMktPubliObjEje(ejeModal)} · ${etiquetaMktPubliObjPeriodo(periodoModal)}`
+      : esEdicion
+        ? "Editar Objetivo"
+        : "Nuevo Objetivo";
 
   function renderFila(obj: MktPublicacionObjItem) {
-    if (editingId === obj.id && esEditor) {
-      return (
-        <li
-          key={obj.id}
-          className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 last:border-b-0"
-        >
-          <Target className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-            {obj.destinoNombre}
-          </p>
-          <Input
-            value={editCantidadNorm}
-            onChange={(e) =>
-              setEditCantidadNorm(e.target.value.replace(/\D/g, "").slice(0, 4))
-            }
-            inputMode="numeric"
-            className="h-8 w-16 text-xs"
-            disabled={bloqueado}
-            aria-label="Cantidad de publicaciones"
-          />
-          <Button
-            type="button"
-            size="sm"
-            className="h-8 shrink-0"
-            disabled={bloqueado}
-            onClick={() => void handleGuardarEdicion()}
-          >
-            Guardar
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="h-8 shrink-0"
-            disabled={bloqueado}
-            onClick={() => setEditingId(null)}
-          >
-            Cancelar
-          </Button>
-        </li>
-      );
-    }
-
     return (
       <li
         key={obj.id}
@@ -306,11 +277,7 @@ export default function MarketingObjetivosPageClient({
               className={BOTON_ACCION_CLASS}
               aria-label={`Editar ${obj.destinoNombre}`}
               disabled={bloqueado}
-              onClick={() => {
-                setEditingId(obj.id);
-                setEditPeriodo(obj.periodo);
-                setEditCantidadNorm(String(obj.cantidad));
-              }}
+              onClick={() => abrirEditar(obj)}
             >
               <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
             </Button>
@@ -382,7 +349,11 @@ export default function MarketingObjetivosPageClient({
                               type="button"
                               variant="default"
                               size="icon"
-                              className="absolute right-2 top-1/2 !size-5 -translate-y-1/2 rounded-sm border border-primary-foreground/40 bg-primary p-0 text-primary-foreground shadow-none hover:bg-primary hover:text-primary-foreground hover:brightness-100"
+                              className={cn(
+                                "absolute inset-y-1 right-2 !h-auto !min-h-0 !w-6 rounded-sm",
+                                "border border-primary-foreground/40 bg-primary !p-0.5 text-primary-foreground shadow-none",
+                                "hover:bg-primary hover:text-primary-foreground hover:brightness-100"
+                              )}
                               aria-label={`Agregar objetivo ${titulo} ${etiquetaPeriodo}`}
                               disabled={bloqueado}
                               onClick={() => abrirCrear(eje, periodoObjetivo)}
@@ -411,18 +382,14 @@ export default function MarketingObjetivosPageClient({
       </ClassicFilteredTableLayout>
 
       <Dialog
-        open={openCrear}
+        open={modalForm.open}
         onOpenChange={(next) => {
           if (pending) return;
-          if (!next) cerrarCrear();
+          if (!next) cerrarModalForm();
         }}
       >
         <AppModal
-          title={
-            ejeAlta
-              ? `Nuevo Objetivo · ${etiquetaMktPubliObjEje(ejeAlta)} · ${etiquetaMktPubliObjPeriodo(periodo)}`
-              : "Nuevo Objetivo"
-          }
+          title={tituloModal}
           size="md"
           scrollBody
           hideBodyScrollbars
@@ -432,56 +399,67 @@ export default function MarketingObjetivosPageClient({
                 type="button"
                 variant="outline"
                 disabled={pending}
-                onClick={cerrarCrear}
+                onClick={cerrarModalForm}
               >
                 Cancelar
               </Button>
               <Button
                 type="button"
-                disabled={pending || !destinoId || !cantidadNorm.trim()}
-                onClick={() => void handleCrear()}
+                disabled={pending || !puedeGuardar}
+                onClick={() => void handleGuardar()}
               >
-                Crear
+                {esEdicion ? "Guardar" : "Crear"}
               </Button>
             </div>
           }
         >
           <div className="flex flex-col gap-3">
-            <ModalMicroLabel>Nuevo Objetivo</ModalMicroLabel>
-            <Select
-              value={destinoId || undefined}
-              onValueChange={setDestinoId}
-              disabled={pending || opcionesDestinoDisponibles.length === 0}
-            >
-              <SelectTrigger className="w-full" aria-label="Destino">
-                <SelectValue
-                  placeholder={
-                    opcionesDestino.length === 0
-                      ? "SIN OPCIONES"
-                      : opcionesDestinoDisponibles.length === 0
-                        ? "TODOS CON OBJETIVO"
-                        : "DESTINO"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {opcionesDestinoDisponibles.map((o) => (
-                  <SelectItem key={o.id} value={o.id}>
-                    {o.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex w-full items-center gap-2">
+            <ModalMicroLabel>
+              {esEdicion ? "Editar Objetivo" : "Nuevo Objetivo"}
+            </ModalMicroLabel>
+            {esEdicion && modalForm.open && modalForm.modo === "editar" ? (
+              <Input
+                value={modalForm.item.destinoNombre}
+                readOnly
+                disabled
+                aria-label="Destino"
+                className="w-full"
+              />
+            ) : (
+              <Select
+                value={destinoId || undefined}
+                onValueChange={setDestinoId}
+                disabled={pending || opcionesDestinoDisponibles.length === 0}
+              >
+                <SelectTrigger className="w-full" aria-label="Destino">
+                  <SelectValue
+                    placeholder={
+                      opcionesDestino.length === 0
+                        ? "SIN OPCIONES"
+                        : opcionesDestinoDisponibles.length === 0
+                          ? "TODOS CON OBJETIVO"
+                          : "DESTINO"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {opcionesDestinoDisponibles.map((o) => (
+                    <SelectItem key={o.id} value={o.id}>
+                      {o.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <div className={cn("flex w-full items-center justify-center gap-2")}>
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 size="icon"
-                disabled={pending || (parseCantidad(cantidadNorm) ?? 1) <= 1}
+                className={cn("shrink-0")}
+                disabled={pending || cantidadActual <= 1}
                 aria-label="Disminuir cantidad"
-                onClick={() =>
-                  setCantidadNorm(String(Math.max(1, (parseCantidad(cantidadNorm) ?? 1) - 1)))
-                }
+                onClick={() => setCantidadNorm(String(Math.max(1, cantidadActual - 1)))}
               >
                 <Minus className="size-4" aria-hidden />
               </Button>
@@ -491,19 +469,18 @@ export default function MarketingObjetivosPageClient({
                 inputMode="numeric"
                 placeholder="CANTIDAD"
                 disabled={pending}
-                className="min-w-0 flex-1 text-center tabular-nums"
+                className={cn("w-1/4 min-w-0 flex-none text-center tabular-nums")}
                 aria-label="Cantidad de publicaciones"
               />
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 size="icon"
-                disabled={pending || (parseCantidad(cantidadNorm) ?? 1) >= 9999}
+                className={cn("shrink-0")}
+                disabled={pending || cantidadActual >= 9999}
                 aria-label="Aumentar cantidad"
                 onClick={() =>
-                  setCantidadNorm(
-                    String(Math.min(9999, (parseCantidad(cantidadNorm) ?? 1) + 1))
-                  )
+                  setCantidadNorm(String(Math.min(9999, cantidadActual + 1)))
                 }
               >
                 <Plus className="size-4" aria-hidden />
