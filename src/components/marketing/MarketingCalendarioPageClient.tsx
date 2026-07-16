@@ -160,6 +160,7 @@ export default function MarketingCalendarioPageClient({
           />
           <MktCalendarioPublicacionesGrid
             publicaciones={publicaciones}
+            objetivos={objetivosIniciales}
             onSeleccionarDia={handleSeleccionarDia}
             mesVista={mesVista}
             semanaSeleccionada={semanaFiltro}

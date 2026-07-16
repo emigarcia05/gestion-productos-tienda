@@ -1,32 +1,52 @@
 "use client";
 
 import { useMemo } from "react";
+import { Check, X } from "lucide-react";
 import MktRedSocialIcon from "@/components/marketing/MktRedSocialIcon";
 import {
   construirSemanasDelMes,
   MKT_CALENDARIO_DIAS_SEMANA,
   type MktCalendarioMesAnio,
 } from "@/lib/mktCalendarioPublicaciones";
+import { addDaysToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
-import type { MktCuadroMandoSemanaFiltro } from "@/lib/mktPublicacionesEstadisticas";
+import {
+  evaluarMktPublicacionObjsCliente,
+  type MktPublicacionObjItem,
+} from "@/lib/mktPublicacionesObj";
+import {
+  filtrarPublicacionesPorMesAnio,
+  filtrarPublicacionesPorRangoIsoYmd,
+  type MktCuadroMandoSemanaFiltro,
+} from "@/lib/mktPublicacionesEstadisticas";
+import { TEXT_SUCCESS_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
+const GRID_COLS_CLASS = "grid-cols-[repeat(7,minmax(0,1fr))_2.75rem]";
+
 /**
- * Grilla 5 semanas × 7 días del mes elegido (LUN–DOM).
- * Si hay una semana 1–5 seleccionada, esa fila se resalta.
+ * Grilla 5 semanas × 7 días + columna OBJ. del mes elegido (LUN–DOM).
+ * La columna OBJ. indica si se cumplieron todos los objetivos SEMANALES de esa fila.
  */
 export default function MktCalendarioPublicacionesGrid({
   publicaciones,
+  objetivos,
   onSeleccionarDia,
   mesVista,
   semanaSeleccionada,
 }: {
   publicaciones: MktPublicacionCalendarioItem[];
+  objetivos: MktPublicacionObjItem[];
   onSeleccionarDia?: (fechaIso: string) => void;
   mesVista: MktCalendarioMesAnio;
   semanaSeleccionada: MktCuadroMandoSemanaFiltro;
 }) {
   const semanas = useMemo(() => construirSemanasDelMes(mesVista), [mesVista]);
+
+  const objetivosSemanales = useMemo(
+    () => objetivos.filter((o) => o.periodo === "SEMANAL"),
+    [objetivos]
+  );
 
   const porFecha = useMemo(() => {
     const map = new Map<string, MktPublicacionCalendarioItem[]>();
@@ -38,6 +58,48 @@ export default function MktCalendarioPublicacionesGrid({
     return map;
   }, [publicaciones]);
 
+  const cumplimientoPorSemana = useMemo(() => {
+    const map = new Map<number, boolean | null>();
+    for (const semana of semanas) {
+      if (objetivosSemanales.length === 0) {
+        map.set(semana.numero, null);
+        continue;
+      }
+      const domingo = addDaysToIsoYmdArgentina(semana.lunesIso, 6);
+      const pubsSemana = filtrarPublicacionesPorRangoIsoYmd(
+        publicaciones,
+        semana.lunesIso,
+        domingo
+      );
+      const evals = evaluarMktPublicacionObjsCliente(
+        objetivosSemanales,
+        pubsSemana,
+        "SEMANAL"
+      );
+      map.set(
+        semana.numero,
+        evals.length > 0 && evals.every((e) => e.cumplido)
+      );
+    }
+    return map;
+  }, [semanas, objetivosSemanales, publicaciones]);
+
+  const cumplimientoMensual = useMemo((): boolean | null => {
+    const objetivosMensuales = objetivos.filter((o) => o.periodo === "MENSUAL");
+    if (objetivosMensuales.length === 0) return null;
+    const publicacionesMes = filtrarPublicacionesPorMesAnio(
+      publicaciones,
+      mesVista.mes,
+      mesVista.anio
+    );
+    const evaluaciones = evaluarMktPublicacionObjsCliente(
+      objetivosMensuales,
+      publicacionesMes,
+      "MENSUAL"
+    );
+    return evaluaciones.length > 0 && evaluaciones.every((e) => e.cumplido);
+  }, [objetivos, publicaciones, mesVista]);
+
   return (
     <div className="flex shrink-0 flex-col gap-2 px-8 pb-2 pt-2">
       <div
@@ -45,7 +107,7 @@ export default function MktCalendarioPublicacionesGrid({
         role="grid"
         aria-label="Calendario de publicaciones"
       >
-        <div className="grid min-w-[48rem] grid-cols-7 border-b border-border bg-primary">
+        <div className={cn("grid min-w-[48rem] border-b border-border bg-primary", GRID_COLS_CLASS)}>
           {MKT_CALENDARIO_DIAS_SEMANA.map((dia) => (
             <div
               key={dia}
@@ -55,18 +117,27 @@ export default function MktCalendarioPublicacionesGrid({
               {dia}
             </div>
           ))}
+          <div
+            role="columnheader"
+            className="border-l border-primary-foreground/30 px-1 py-1.5 text-center text-[11px] font-bold tracking-wide text-primary-foreground"
+            title="Objetivos semanales"
+          >
+            OBJ.
+          </div>
         </div>
 
         <div className="flex flex-col">
           {semanas.map((semana) => {
             const esSemanaSeleccionada =
               semanaSeleccionada !== "TODAS" && semana.numero === semanaSeleccionada;
+            const cumplimiento = cumplimientoPorSemana.get(semana.numero) ?? null;
             return (
               <div
                 key={semana.lunesIso}
                 role="row"
                 className={cn(
-                  "grid min-h-[3.25rem] grid-cols-7 border-b border-border last:border-b-0",
+                  "grid min-h-[3.25rem] border-b border-border last:border-b-0",
+                  GRID_COLS_CLASS,
                   esSemanaSeleccionada && "bg-primary/15"
                 )}
               >
@@ -79,7 +150,7 @@ export default function MktCalendarioPublicacionesGrid({
                       role="gridcell"
                       aria-label={celda.isoYmd}
                       className={cn(
-                        "relative flex min-h-[3.25rem] flex-col gap-0.5 border-r border-border p-1 last:border-r-0",
+                        "relative flex min-h-[3.25rem] flex-col gap-0.5 border-r border-border p-1",
                         esSemanaSeleccionada
                           ? "bg-primary/20"
                           : celda.delMesActual
@@ -146,9 +217,80 @@ export default function MktCalendarioPublicacionesGrid({
                     </div>
                   );
                 })}
+                <div
+                  role="gridcell"
+                  className={cn(
+                    "flex min-h-[3.25rem] items-center justify-center border-l border-border px-1",
+                    esSemanaSeleccionada ? "bg-primary/20" : "bg-muted/30"
+                  )}
+                  aria-label={
+                    cumplimiento === null
+                      ? `Semana ${semana.numero}: sin objetivos semanales`
+                      : cumplimiento
+                        ? `Semana ${semana.numero}: objetivos semanales cumplidos`
+                        : `Semana ${semana.numero}: objetivos semanales incumplidos`
+                  }
+                >
+                  {cumplimiento === null ? (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ) : cumplimiento ? (
+                    <Check
+                      className={cn("size-5 shrink-0", TEXT_SUCCESS_CLASS)}
+                      aria-hidden
+                      strokeWidth={2.5}
+                    />
+                  ) : (
+                    <X
+                      className="size-5 shrink-0 text-destructive"
+                      aria-hidden
+                      strokeWidth={2.5}
+                    />
+                  )}
+                </div>
               </div>
             );
           })}
+          <div
+            role="row"
+            className={cn(
+              "grid min-h-[3.25rem] border-t border-border bg-muted/30",
+              GRID_COLS_CLASS
+            )}
+          >
+            <div
+              role="gridcell"
+              className="col-span-7 flex min-h-[3.25rem] items-center justify-center px-3 text-center text-xs font-bold uppercase tracking-wide text-foreground"
+            >
+              Objetivos Mensuales
+            </div>
+            <div
+              role="gridcell"
+              className="flex min-h-[3.25rem] items-center justify-center border-l border-border px-1"
+              aria-label={
+                cumplimientoMensual === null
+                  ? "Mes: sin objetivos mensuales"
+                  : cumplimientoMensual
+                    ? "Mes: objetivos mensuales cumplidos"
+                    : "Mes: objetivos mensuales incumplidos"
+              }
+            >
+              {cumplimientoMensual === null ? (
+                <span className="text-xs text-muted-foreground">—</span>
+              ) : cumplimientoMensual ? (
+                <Check
+                  className={cn("size-5 shrink-0", TEXT_SUCCESS_CLASS)}
+                  aria-hidden
+                  strokeWidth={2.5}
+                />
+              ) : (
+                <X
+                  className="size-5 shrink-0 text-destructive"
+                  aria-hidden
+                  strokeWidth={2.5}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
