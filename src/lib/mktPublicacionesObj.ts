@@ -95,9 +95,9 @@ export function evaluarMktPublicacionObjsCliente(
     });
 }
 
-/** Ej.: `Red INSTAGRAM → Faltan 2 contenidos` / `Sección X → Falta 1 contenido`. */
+/** Ej.: `Red INSTAGRAM → Faltan 2` / `Sección X → Falta 1`. */
 export function textoIncumplimientoObjetivo(e: MktPublicacionObjEvaluacion): string {
   const faltan = Math.max(0, e.cantidad - e.actual);
-  const frase = faltan === 1 ? "Falta 1 contenido" : `Faltan ${faltan} contenidos`;
+  const frase = faltan === 1 ? "Falta 1" : `Faltan ${faltan}`;
   return `${prefijoEjeObjetivoUi(e.eje)} ${e.destinoNombre} → ${frase}`;
 }

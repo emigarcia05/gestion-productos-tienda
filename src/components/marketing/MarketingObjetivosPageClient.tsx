@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, Target, Trash2 } from "lucide-react";
+import { Minus, Pencil, Plus, Target, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import ExportarMktSeccionesGoogleSheetsButton from "@/components/shared/ExportarMktSeccionesGoogleSheetsButton";
@@ -251,22 +251,10 @@ export default function MarketingObjetivosPageClient({
           key={obj.id}
           className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 last:border-b-0"
         >
-          <Select
-            value={editPeriodo}
-            onValueChange={(v) => setEditPeriodo(v as MktPubliObjPeriodo)}
-            disabled={bloqueado}
-          >
-            <SelectTrigger className="h-8 w-[8.5rem] text-xs" aria-label="Periodo">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MKT_PUBLI_OBJ_PERIODOS.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {etiquetaMktPubliObjPeriodo(p)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Target className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+            {obj.destinoNombre}
+          </p>
           <Input
             value={editCantidadNorm}
             onChange={(e) =>
@@ -275,7 +263,7 @@ export default function MarketingObjetivosPageClient({
             inputMode="numeric"
             className="h-8 w-16 text-xs"
             disabled={bloqueado}
-            aria-label="Cantidad"
+            aria-label="Cantidad de publicaciones"
           />
           <Button
             type="button"
@@ -308,9 +296,6 @@ export default function MarketingObjetivosPageClient({
         <Target className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">{obj.destinoNombre}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {etiquetaMktPubliObjPeriodo(obj.periodo)} · {obj.cantidad} PUB.
-          </p>
         </div>
         {esEditor ? (
           <div className="flex shrink-0 items-center gap-1.5">
@@ -395,9 +380,9 @@ export default function MarketingObjetivosPageClient({
                           {esEditor ? (
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="default"
                               size="icon"
-                              className="absolute right-1.5 top-1/2 size-7 -translate-y-1/2 text-foreground hover:bg-muted hover:text-foreground"
+                              className="absolute right-1.5 top-1/2 size-7 -translate-y-1/2 bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground hover:brightness-100"
                               aria-label={`Agregar objetivo ${titulo} ${etiquetaPeriodo}`}
                               disabled={bloqueado}
                               onClick={() => abrirCrear(eje, periodoObjetivo)}
@@ -442,14 +427,23 @@ export default function MarketingObjetivosPageClient({
           scrollBody
           hideBodyScrollbars
           actions={
-            <Button
-              type="button"
-              variant="outline"
-              disabled={pending}
-              onClick={cerrarCrear}
-            >
-              Cancelar
-            </Button>
+            <div className="flex w-full justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={cerrarCrear}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={pending || !destinoId || !cantidadNorm.trim()}
+                onClick={() => void handleCrear()}
+              >
+                Crear
+              </Button>
+            </div>
           }
         >
           <div className="flex flex-col gap-3">
@@ -478,24 +472,41 @@ export default function MarketingObjetivosPageClient({
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex gap-2">
+            <div className="flex w-full items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                disabled={pending || (parseCantidad(cantidadNorm) ?? 1) <= 1}
+                aria-label="Disminuir cantidad"
+                onClick={() =>
+                  setCantidadNorm(String(Math.max(1, (parseCantidad(cantidadNorm) ?? 1) - 1)))
+                }
+              >
+                <Minus className="size-4" aria-hidden />
+              </Button>
               <Input
                 value={cantidadNorm}
                 onChange={(e) => setCantidadNorm(e.target.value.replace(/\D/g, "").slice(0, 4))}
                 inputMode="numeric"
                 placeholder="CANTIDAD"
                 disabled={pending}
-                className="flex-1"
+                className="min-w-0 flex-1 text-center tabular-nums"
                 aria-label="Cantidad de publicaciones"
               />
               <Button
                 type="button"
-                disabled={pending || !destinoId || !cantidadNorm.trim()}
-                onClick={() => void handleCrear()}
-                className="gap-2"
+                variant="outline"
+                size="icon"
+                disabled={pending || (parseCantidad(cantidadNorm) ?? 1) >= 9999}
+                aria-label="Aumentar cantidad"
+                onClick={() =>
+                  setCantidadNorm(
+                    String(Math.min(9999, (parseCantidad(cantidadNorm) ?? 1) + 1))
+                  )
+                }
               >
-                <Plus className="size-4 shrink-0" aria-hidden />
-                Crear
+                <Plus className="size-4" aria-hidden />
               </Button>
             </div>
           </div>
