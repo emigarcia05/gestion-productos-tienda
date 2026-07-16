@@ -5,7 +5,7 @@ export type MktContenidoDriveTipoItem = {
   tipo: string;
 };
 
-/** Tipos de Base Multimedia (`mkt_contenido_url_drive`). */
+/** Tipos de Base Multimedia (`mkt_contenido_drive_url`). */
 
 export type MktContenidoUrlDriveItem = {
   id: string;

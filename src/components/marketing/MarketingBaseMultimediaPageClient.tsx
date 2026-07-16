@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEditarMktContenidoUrlDriveModal from "@/components/marketing/CrearEditarMktContenidoUrlDriveModal";
 import GestionarMktContenidoDriveTipoModal from "@/components/marketing/GestionarMktContenidoDriveTipoModal";
+import ExportarMktSeccionesGoogleSheetsButton from "@/components/shared/ExportarMktSeccionesGoogleSheetsButton";
+import FilterBar, {
+  FILTER_COUNT_CLASS,
+  FILTER_SELECT_WRAPPER_CLASS,
+  FiltroIndividualContainer,
+  FilaFiltrosDesplegables,
+  FilterRowSearch,
+  FilterRowSelection,
+  LimpiarFiltrosButton,
+  SELECT_TRIGGER_FILTER_CLASS,
+} from "@/components/FilterBar";
+import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -17,6 +29,13 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { eliminarMktContenidoUrlDriveAction } from "@/actions/mktContenidoUrlDrive";
@@ -24,13 +43,16 @@ import type {
   MktContenidoDriveTipoItem,
   MktContenidoUrlDriveItem,
 } from "@/lib/mktContenidoUrlDrive";
+import { matchByMultiTerm } from "@/lib/busqueda";
+import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
-import { FILTER_COUNT_CLASS } from "@/components/FilterBar";
+
+const FILTRO_TODOS = "__todos__";
 
 interface Props {
   items: MktContenidoUrlDriveItem[];
@@ -44,6 +66,13 @@ export default function MarketingBaseMultimediaPageClient({
   esEditor,
 }: Props) {
   const router = useRouter();
+  const [filtroTipoId, setFiltroTipoId] = useState(FILTRO_TODOS);
+  const [qDebounced, setQDebounced] = useState("");
+  const { q, setQ, handleQChange, isDebouncing, ref: searchRef } = useFiltrosConBusqueda({
+    qActual: qDebounced,
+    debounceMs: 300,
+    onDebouncedSearch: setQDebounced,
+  });
   const [modalForm, setModalForm] = useState<
     | { open: false }
     | { open: true; modo: "crear" | "editar"; item?: MktContenidoUrlDriveItem }
@@ -53,6 +82,22 @@ export default function MarketingBaseMultimediaPageClient({
     { open: false } | { open: true; id: string; label: string }
   >({ open: false });
   const [deleting, setDeleting] = useState(false);
+
+  const itemsFiltrados = useMemo(() => {
+    return items.filter((item) => {
+      if (filtroTipoId !== FILTRO_TODOS && item.tipoId !== filtroTipoId) return false;
+      if (qDebounced.trim() && !matchByMultiTerm([item.descripcion], qDebounced)) {
+        return false;
+      }
+      return true;
+    });
+  }, [items, filtroTipoId, qDebounced]);
+
+  function limpiarFiltros() {
+    setFiltroTipoId(FILTRO_TODOS);
+    setQ("");
+    setQDebounced("");
+  }
 
   function refresh() {
     router.refresh();
@@ -84,6 +129,7 @@ export default function MarketingBaseMultimediaPageClient({
         actions={
           esEditor ? (
             <div className="flex flex-wrap items-center gap-2">
+              <ExportarMktSeccionesGoogleSheetsButton />
               <Button
                 type="button"
                 variant="default"
@@ -105,23 +151,77 @@ export default function MarketingBaseMultimediaPageClient({
             </div>
           ) : undefined
         }
+        filters={
+          <FilterBar className="filtros-contenedor-tienda bg-card">
+            <FilterRowSelection className="w-full min-w-0">
+              <FilaFiltrosDesplegables>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={filtroTipoId !== FILTRO_TODOS}
+                  onLimpiar={() => setFiltroTipoId(FILTRO_TODOS)}
+                >
+                  <Select value={filtroTipoId} onValueChange={setFiltroTipoId}>
+                    <SelectTrigger
+                      className={SELECT_TRIGGER_FILTER_CLASS}
+                      aria-label="Tipo"
+                    >
+                      <SelectValue placeholder="TIPO" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro max-h-60"
+                    >
+                      <SelectItem value={FILTRO_TODOS}>TIPO</SelectItem>
+                      {tipos.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.tipo.toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FiltroIndividualContainer>
+                <div className={FILTER_SELECT_WRAPPER_CLASS} />
+                <div className={FILTER_SELECT_WRAPPER_CLASS} />
+                <div className={FILTER_SELECT_WRAPPER_CLASS} />
+                <div className={FILTER_SELECT_WRAPPER_CLASS} />
+              </FilaFiltrosDesplegables>
+            </FilterRowSelection>
+
+            <div className="flex items-center gap-3">
+              <FilterRowSearch className="flex-1">
+                <FiltroBusquedaInput
+                  id="filtro-base-multimedia-descripcion"
+                  placeholder="BUSCAR POR DESCRIPCIÓN..."
+                  value={q}
+                  onChange={handleQChange}
+                  isDebouncing={isDebouncing}
+                  inputRef={searchRef}
+                />
+              </FilterRowSearch>
+              <LimpiarFiltrosButton onClick={limpiarFiltros} />
+              <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
+                {itemsFiltrados.length.toLocaleString("es-AR")} REGISTRO
+                {itemsFiltrados.length === 1 ? "" : "S"}
+              </span>
+            </div>
+          </FilterBar>
+        }
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-2 px-4 pb-4 sm:px-6 lg:px-8">
-          <p className={cn(FILTER_COUNT_CLASS, "shrink-0")}>
-            {items.length} REGISTRO(S)
-          </p>
+        <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 sm:px-6 lg:px-8">
           <div className="contenedor-tabla-gestion min-h-0 flex-1">
             <Table variant="compact" className="tabla-gestion-compacta w-full">
               <colgroup>
-                <col style={{ width: "30%" }} />
-                <col style={{ width: "20%" }} />
                 <col style={{ width: "40%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "30%" }} />
                 <col style={{ width: "10%" }} />
               </colgroup>
               <TableHeader>
                 <TableRow>
                   <TableHead>NOMBRE</TableHead>
-                  <TableHead>TIPO DE CONTENIDO</TableHead>
+                  <TableHead>TIPO</TableHead>
                   <TableHead>DESCRIPCIÓN</TableHead>
                   <TableHead className="tabla-bloque-secundario-head-divider text-center">
                     ACCIONES
@@ -129,10 +229,17 @@ export default function MarketingBaseMultimediaPageClient({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.length === 0 ? (
-                  <EmptyTableRow colSpan={4} message="No hay registros. Usá Nuevo para crear el primero." />
+                {itemsFiltrados.length === 0 ? (
+                  <EmptyTableRow
+                    colSpan={4}
+                    message={
+                      items.length === 0
+                        ? "No hay registros. Usá Nuevo para crear el primero."
+                        : "No hay registros con los filtros aplicados."
+                    }
+                  />
                 ) : (
-                  items.map((item) => (
+                  itemsFiltrados.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium uppercase">{item.nombre}</TableCell>
                       <TableCell className="uppercase">{item.tipoNombre}</TableCell>

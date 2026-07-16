@@ -1211,9 +1211,9 @@ model MktContenidoUrlDrive {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@index([nombre], map: "mkt_contenido_url_drive_nombre_idx")
-  @@index([tipoId], map: "mkt_contenido_url_drive_tipo_idx")
-  @@map("mkt_contenido_url_drive")
+  @@index([nombre], map: "mkt_contenido_drive_url_nombre_idx")
+  @@index([tipoId], map: "mkt_contenido_drive_url_tipo_idx")
+  @@map("mkt_contenido_drive_url")
 }
 
 // ─── Estado de sincronización DUX (singleton) ─────────────────────────────
