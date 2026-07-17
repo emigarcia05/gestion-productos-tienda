@@ -34,9 +34,7 @@ const detalleSelect = {
   seccionId: true,
   tituloIdea: true,
   detalle: true,
-  tipoContenidoId: true,
-  usada: true,
-  tipoContenido: { select: { contenidoNombre: true } },
+  publicacion: { select: { id: true } },
   redes: {
     select: {
       redId: true,
@@ -45,7 +43,7 @@ const detalleSelect = {
   },
 } as const;
 
-/** DETALLE: primero `usada = false`, luego `titulo_idea` A–Z (es). */
+/** DETALLE: primero libres (sin publicación), luego `titulo_idea` A–Z (es). */
 function ordenarDetallesIdeas(items: MktIdeaDetalleItem[]): MktIdeaDetalleItem[] {
   return [...items].sort((a, b) => {
     if (a.usada !== b.usada) return a.usada ? 1 : -1;
@@ -53,16 +51,12 @@ function ordenarDetallesIdeas(items: MktIdeaDetalleItem[]): MktIdeaDetalleItem[]
   });
 }
 
-const detallesOrderBy = [{ usada: "asc" as const }, { tituloIdea: "asc" as const }];
-
 function mapDetalle(row: {
   id: string;
   seccionId: string;
   tituloIdea: string;
   detalle: string;
-  tipoContenidoId: string;
-  usada: boolean;
-  tipoContenido: { contenidoNombre: string };
+  publicacion: { id: string } | null;
   redes: { redId: string; red: { redSocialNombre: string } }[];
 }): MktIdeaDetalleItem {
   const redesSorted = [...row.redes].sort((a, b) =>
@@ -75,29 +69,8 @@ function mapDetalle(row: {
     detalle: row.detalle,
     redIds: redesSorted.map((r) => r.redId),
     redesNombres: redesSorted.map((r) => r.red.redSocialNombre.toLocaleUpperCase("es-AR")),
-    tipoContenidoId: row.tipoContenidoId,
-    tipoContenidoNombre: row.tipoContenido.contenidoNombre.toLocaleUpperCase("es-AR"),
-    usada: row.usada,
+    usada: Boolean(row.publicacion),
   };
-}
-
-async function assertCatalogosExisten(input: {
-  redIds: string[];
-  tipoContenidoId: string;
-}): Promise<ServiceResult<true>> {
-  const redIds = [...new Set(input.redIds)];
-  const [redCount, contenido] = await Promise.all([
-    prisma.mktPublicacionRed.count({ where: { id: { in: redIds } } }),
-    prisma.mktPublicacionContenidoTipo.findUnique({
-      where: { id: input.tipoContenidoId },
-      select: { id: true },
-    }),
-  ]);
-  if (redCount !== redIds.length) {
-    return { success: false, error: "Hay redes inválidas o inexistentes." };
-  }
-  if (!contenido) return { success: false, error: "El tipo de contenido no existe." };
-  return { success: true, data: true };
 }
 
 export async function listarMktIdeasJerarquia(): Promise<MktIdeaSeccionItem[]> {
@@ -108,7 +81,7 @@ export async function listarMktIdeasJerarquia(): Promise<MktIdeaSeccionItem[]> {
       ideaNombre: true,
       ideaResumen: true,
       detalles: {
-        orderBy: detallesOrderBy,
+        orderBy: { tituloIdea: "asc" },
         select: detalleSelect,
       },
     },
@@ -119,6 +92,21 @@ export async function listarMktIdeasJerarquia(): Promise<MktIdeaSeccionItem[]> {
     resumen: s.ideaResumen.trim(),
     detalles: ordenarDetallesIdeas(s.detalles.map(mapDetalle)),
   }));
+}
+
+export async function listarMktIdeaSecciones(): Promise<
+  Omit<MktIdeaSeccionItem, "detalles">[]
+> {
+  const jerarquia = await listarMktIdeasJerarquia();
+  return jerarquia.map(({ id, nombre, resumen }) => ({ id, nombre, resumen }));
+}
+
+export async function listarMktIdeaDetalles(): Promise<MktIdeaDetalleItem[]> {
+  const rows = await prisma.mktPublicacionIdeaDetalle.findMany({
+    orderBy: { tituloIdea: "asc" },
+    select: detalleSelect,
+  });
+  return ordenarDetallesIdeas(rows.map(mapDetalle));
 }
 
 export async function crearMktIdeaSeccion(
@@ -138,7 +126,7 @@ export async function crearMktIdeaSeccion(
       success: true,
       data: {
         id: created.id,
-        nombre: created.ideaNombre,
+        nombre: created.ideaNombre.toLocaleUpperCase("es-AR"),
         resumen: created.ideaResumen.trim(),
         detalles: [],
       },
@@ -168,7 +156,7 @@ export async function editarMktIdeaSeccion(
         ideaNombre: true,
         ideaResumen: true,
         detalles: {
-          orderBy: detallesOrderBy,
+          orderBy: { tituloIdea: "asc" },
           select: detalleSelect,
         },
       },
@@ -177,7 +165,7 @@ export async function editarMktIdeaSeccion(
       success: true,
       data: {
         id: updated.id,
-        nombre: updated.ideaNombre,
+        nombre: updated.ideaNombre.toLocaleUpperCase("es-AR"),
         resumen: updated.ideaResumen.trim(),
         detalles: ordenarDetallesIdeas(updated.detalles.map(mapDetalle)),
       },
@@ -212,15 +200,6 @@ export async function crearMktIdeaDetalle(
   if (!tituloIdea) {
     return { success: false, error: "El título no puede quedar vacío." };
   }
-  if (!detalle) {
-    return { success: false, error: "El detalle no puede quedar vacío." };
-  }
-  const redIds = [...new Set(input.redIds)];
-  const cats = await assertCatalogosExisten({
-    redIds,
-    tipoContenidoId: input.tipoContenidoId,
-  });
-  if (!cats.success) return cats;
 
   try {
     const seccion = await prisma.mktPublicacionIdeaSeccion.findUnique({
@@ -235,9 +214,6 @@ export async function crearMktIdeaDetalle(
         seccionId: input.seccionId,
         tituloIdea,
         detalle,
-        tipoContenidoId: input.tipoContenidoId,
-        usada: false,
-        redes: { create: redIds.map((redId) => ({ redId })) },
       },
       select: detalleSelect,
     });
@@ -258,32 +234,15 @@ export async function editarMktIdeaDetalle(
   if (!tituloIdea) {
     return { success: false, error: "El título no puede quedar vacío." };
   }
-  if (!detalle) {
-    return { success: false, error: "El detalle no puede quedar vacío." };
-  }
-  const redIds = [...new Set(input.redIds)];
-  const cats = await assertCatalogosExisten({
-    redIds,
-    tipoContenidoId: input.tipoContenidoId,
-  });
-  if (!cats.success) return cats;
 
   try {
-    const updated = await prisma.$transaction(async (tx) => {
-      await tx.mktPublicacionIdeaDetalleRed.deleteMany({
-        where: { ideaDetalleId: input.id },
-      });
-      return tx.mktPublicacionIdeaDetalle.update({
-        where: { id: input.id },
-        data: {
-          tituloIdea,
-          detalle,
-          tipoContenidoId: input.tipoContenidoId,
-          usada: input.usada,
-          redes: { create: redIds.map((redId) => ({ redId })) },
-        },
-        select: detalleSelect,
-      });
+    const updated = await prisma.mktPublicacionIdeaDetalle.update({
+      where: { id: input.id },
+      data: {
+        tituloIdea,
+        detalle,
+      },
+      select: detalleSelect,
     });
     return { success: true, data: mapDetalle(updated) };
   } catch (error) {

@@ -241,24 +241,6 @@ export async function evaluarMktPublicacionObjs(
         )
       : filtrarPublicacionesPorMesAnio(publicaciones, ventana.mes, ventana.anio);
 
-  const seccionPorIdeaDetalleId = new Map<string, string>();
-  const ideaIds = [
-    ...new Set(
-      enVentana
-        .map((p) => p.ideaDetalleId)
-        .filter((id): id is string => Boolean(id))
-    ),
-  ];
-  if (ideaIds.length > 0) {
-    const ideas = await prisma.mktPublicacionIdeaDetalle.findMany({
-      where: { id: { in: ideaIds } },
-      select: { id: true, seccionId: true },
-    });
-    for (const idea of ideas) {
-      seccionPorIdeaDetalleId.set(idea.id, idea.seccionId);
-    }
-  }
-
   return objetivos
     .filter((o) => o.periodo === periodoFiltro)
     .map((o) => {
@@ -268,10 +250,7 @@ export async function evaluarMktPublicacionObjs(
       } else if (o.eje === "CONTENIDO") {
         actual = enVentana.filter((p) => p.tipoContenidoId === o.destinoId).length;
       } else {
-        actual = enVentana.filter((p) => {
-          if (!p.ideaDetalleId) return false;
-          return seccionPorIdeaDetalleId.get(p.ideaDetalleId) === o.destinoId;
-        }).length;
+        actual = enVentana.filter((p) => p.ideaSeccionId === o.destinoId).length;
       }
       return {
         ...o,

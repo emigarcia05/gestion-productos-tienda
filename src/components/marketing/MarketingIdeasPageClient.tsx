@@ -11,13 +11,10 @@ import CrearEditarMktIdeaSeccionModal from "@/components/marketing/CrearEditarMk
 import EliminarMktIdeaModal from "@/components/marketing/EliminarMktIdeaModal";
 import VerMktIdeaDetalleModal from "@/components/marketing/VerMktIdeaDetalleModal";
 import VerMktIdeaSeccionModal from "@/components/marketing/VerMktIdeaSeccionModal";
-import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 import type { MktIdeaDetalleItem, MktIdeaSeccionItem } from "@/lib/mktPublicacionesIdeas";
 
 interface Props {
   jerarquia: MktIdeaSeccionItem[];
-  redes: MktCatalogoNombreItem[];
-  contenidos: MktCatalogoNombreItem[];
   esEditor: boolean;
 }
 
@@ -45,20 +42,14 @@ type ModalDetalle =
       id?: string;
       tituloIdeaInicial?: string;
       detalleInicial?: string;
-      redIdsIniciales?: string[];
-      tipoContenidoIdInicial?: string;
-      usadaInicial?: boolean;
     };
 
 type ModalVerDetalle =
   | { open: false }
   | {
       open: true;
-      seccionNombre: string;
       tituloIdea: string;
       detalle: string;
-      redesNombres: string[];
-      tipoContenidoNombre: string;
       usada: boolean;
     };
 
@@ -68,8 +59,6 @@ type ModalEliminar =
 
 export default function MarketingIdeasPageClient({
   jerarquia,
-  redes,
-  contenidos,
   esEditor,
 }: Props) {
   const router = useRouter();
@@ -94,7 +83,7 @@ export default function MarketingIdeasPageClient({
   return (
     <>
       <ClassicFilteredTableLayout title="Marketing" subtitle="Ideas Contenido" contentWidth="full">
-        <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 px-4 pb-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <div className="grid h-full min-h-0 flex-1 grid-cols-2 gap-3 px-8 pb-4">
           <CatalogoFinderColumn
             titulo="Secciones"
             subtitulo={`${jerarquia.length} sección(es)`}
@@ -165,19 +154,16 @@ export default function MarketingIdeasPageClient({
               detalles.map((item) => (
                 <CatalogoFinderRow
                   key={item.id}
-                  nombre={item.tituloIdea || item.detalle}
-                  meta={`${item.redesNombres.join(" · ") || "—"} · ${item.tipoContenidoNombre}`}
+                  nombre={item.tituloIdea || item.detalle || "SIN TÍTULO"}
+                  meta={item.detalle.trim() || undefined}
                   terceraLinea={item.usada ? "USADA: SI" : "USADA: NO"}
                   selected={false}
                   mostrarAcciones={esEditor}
                   onVer={() =>
                     setModalVerDetalle({
                       open: true,
-                      seccionNombre: seccionSeleccionada.nombre,
                       tituloIdea: item.tituloIdea,
                       detalle: item.detalle,
-                      redesNombres: item.redesNombres,
-                      tipoContenidoNombre: item.tipoContenidoNombre,
                       usada: item.usada,
                     })
                   }
@@ -190,9 +176,6 @@ export default function MarketingIdeasPageClient({
                       id: item.id,
                       tituloIdeaInicial: item.tituloIdea,
                       detalleInicial: item.detalle,
-                      redIdsIniciales: item.redIds,
-                      tipoContenidoIdInicial: item.tipoContenidoId,
-                      usadaInicial: item.usada,
                     })
                   }
                   onEliminar={() =>
@@ -200,7 +183,7 @@ export default function MarketingIdeasPageClient({
                       open: true,
                       kind: "detalle",
                       id: item.id,
-                      label: item.tituloIdea || item.detalle.slice(0, 80),
+                      label: item.tituloIdea || item.detalle.slice(0, 80) || "Detalle",
                     })
                   }
                 />
@@ -233,25 +216,17 @@ export default function MarketingIdeasPageClient({
         modo={modalDetalle.open ? modalDetalle.modo : "crear"}
         seccionId={modalDetalle.open ? modalDetalle.seccionId : ""}
         seccionNombre={modalDetalle.open ? modalDetalle.seccionNombre : ""}
-        redes={redes}
-        contenidos={contenidos}
         id={modalDetalle.open ? modalDetalle.id : undefined}
         tituloIdeaInicial={modalDetalle.open ? modalDetalle.tituloIdeaInicial : undefined}
         detalleInicial={modalDetalle.open ? modalDetalle.detalleInicial : undefined}
-        redIdsIniciales={modalDetalle.open ? modalDetalle.redIdsIniciales : undefined}
-        tipoContenidoIdInicial={modalDetalle.open ? modalDetalle.tipoContenidoIdInicial : undefined}
-        usadaInicial={modalDetalle.open ? modalDetalle.usadaInicial : undefined}
         onSuccess={refresh}
       />
 
       <VerMktIdeaDetalleModal
         open={modalVerDetalle.open}
         onOpenChange={(o) => !o && setModalVerDetalle({ open: false })}
-        seccionNombre={modalVerDetalle.open ? modalVerDetalle.seccionNombre : ""}
         tituloIdea={modalVerDetalle.open ? modalVerDetalle.tituloIdea : ""}
         detalle={modalVerDetalle.open ? modalVerDetalle.detalle : ""}
-        redesNombres={modalVerDetalle.open ? modalVerDetalle.redesNombres : []}
-        tipoContenidoNombre={modalVerDetalle.open ? modalVerDetalle.tipoContenidoNombre : ""}
         usada={modalVerDetalle.open ? modalVerDetalle.usada : false}
       />
 
@@ -259,14 +234,9 @@ export default function MarketingIdeasPageClient({
         open={modalEliminar.open}
         onOpenChange={(o) => !o && setModalEliminar({ open: false })}
         kind={modalEliminar.open ? modalEliminar.kind : "seccion"}
-        id={modalEliminar.open ? modalEliminar.id : null}
-        label={modalEliminar.open ? modalEliminar.label : null}
-        onSuccess={() => {
-          if (modalEliminar.open && modalEliminar.kind === "seccion") {
-            setSelectedSeccionId((prev) => (prev === modalEliminar.id ? null : prev));
-          }
-          refresh();
-        }}
+        id={modalEliminar.open ? modalEliminar.id : ""}
+        label={modalEliminar.open ? modalEliminar.label : ""}
+        onSuccess={refresh}
       />
     </>
   );

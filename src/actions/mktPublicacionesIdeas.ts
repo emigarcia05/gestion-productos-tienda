@@ -36,6 +36,7 @@ function firstZodErrorMessage(error: {
 
 function revalidateIdeas(): void {
   revalidatePath(MARKETING_ROUTES.publicaciones.ideas);
+  revalidatePath(MARKETING_ROUTES.publicaciones.calendario);
 }
 
 async function requireMarketingLectura(): Promise<{ ok: false; error: string } | null> {

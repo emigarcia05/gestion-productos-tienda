@@ -3,10 +3,6 @@ import MarketingIdeasPageClient from "@/components/marketing/MarketingIdeasPageC
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
-import {
-  listarMktPublicacionContenidos,
-  listarMktPublicacionRedes,
-} from "@/services/mktPublicacionesCatalogo.service";
 import { listarMktIdeasJerarquia } from "@/services/mktPublicacionesIdeas.service";
 
 export const dynamic = "force-dynamic";
@@ -17,18 +13,12 @@ export default async function MarketingIdeasPublicacionesPage() {
     redirect(GP_ROUTES.defaultEntry);
   }
 
-  const [jerarquia, redes, contenidos] = await Promise.all([
-    listarMktIdeasJerarquia(),
-    listarMktPublicacionRedes(),
-    listarMktPublicacionContenidos(),
-  ]);
+  const jerarquia = await listarMktIdeasJerarquia();
 
   return (
     <div className="area-page-shell">
       <MarketingIdeasPageClient
         jerarquia={jerarquia}
-        redes={redes}
-        contenidos={contenidos}
         esEditor={rol === "editor"}
       />
     </div>

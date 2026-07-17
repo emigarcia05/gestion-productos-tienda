@@ -1057,7 +1057,6 @@ model MktPublicacionContenidoTipo {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   publicaciones MktPublicacion[]
-  ideasDetalle  MktPublicacionIdeaDetalle[]
   objetivos     MktPublicacionObj[]
 
   @@map("mkt_publi_tipo_contenido")
@@ -1109,32 +1108,27 @@ model MktPublicacionIdeaSeccion {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  detalles MktPublicacionIdeaDetalle[]
   objetivos MktPublicacionObj[]
+  detalles  MktPublicacionIdeaDetalle[]
 
   @@map("mkt_publi_ideas_secciones")
 }
 
-/** Detalle de idea dentro de una sección. */
+/** Idea de contenido (título + detalle) dentro de una sección. */
 model MktPublicacionIdeaDetalle {
-  id              String   @id @default(cuid())
-  seccionId       String   @map("seccion_id")
-  seccion         MktPublicacionIdeaSeccion @relation(fields: [seccionId], references: [id], onDelete: Cascade)
-  tituloIdea      String   @map("titulo_idea")
-  detalle         String   @db.Text
-  tipoContenidoId String   @map("tipo_contenido_id")
-  tipoContenido   MktPublicacionContenidoTipo @relation(fields: [tipoContenidoId], references: [id], onDelete: Restrict)
-  /** Siempre `false` (= NO) al crear. */
-  usada           Boolean  @default(false)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  seccionId  String   @map("seccion_id")
+  seccion    MktPublicacionIdeaSeccion @relation(fields: [seccionId], references: [id], onDelete: Cascade)
+  tituloIdea String   @map("titulo_idea")
+  /** Texto largo opcional (puede quedar vacío). */
+  detalle    String   @default("") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
-  redes MktPublicacionIdeaDetalleRed[]
+  redes       MktPublicacionIdeaDetalleRed[]
   publicacion MktPublicacion?
 
   @@index([seccionId], map: "mkt_publi_ideas_detalle_seccion_idx")
-  @@index([tipoContenidoId], map: "mkt_publi_ideas_detalle_contenido_idx")
-  @@index([usada], map: "mkt_publi_ideas_detalle_usada_idx")
   @@map("mkt_publi_ideas_detalle")
 }
 

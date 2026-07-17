@@ -203,6 +203,7 @@ export default function MarketingCalendarioPageClient({
         redes={redesIniciales}
         contenidos={contenidosIniciales}
         seccionesIdeas={seccionesIdeas}
+        onIdeasChange={refresh}
         item={modalForm.open ? (modalForm.item ?? null) : null}
         onSuccess={refresh}
       />

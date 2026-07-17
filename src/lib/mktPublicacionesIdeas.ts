@@ -5,10 +5,10 @@ export type MktIdeaDetalleItem = {
   seccionId: string;
   tituloIdea: string;
   detalle: string;
+  /** Legado N:M (altas nuevas no escriben redes). */
   redIds: string[];
   redesNombres: string[];
-  tipoContenidoId: string;
-  tipoContenidoNombre: string;
+  /** Derivado: hay publicación 1:1 vinculada (`mkt_publi.idea_detalle_id`). */
   usada: boolean;
 };
 

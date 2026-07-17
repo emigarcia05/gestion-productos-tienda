@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import MktMultiSelectCatalogo from "@/components/marketing/MktMultiSelectCatalogo";
+import CrearEditarMktIdeaDetalleModal from "@/components/marketing/CrearEditarMktIdeaDetalleModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,9 +22,10 @@ import {
   editarMktPublicacionAction,
 } from "@/actions/mktPublicaciones";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
-import type { MktIdeaSeccionItem } from "@/lib/mktPublicacionesIdeas";
+import type { MktIdeaDetalleItem, MktIdeaSeccionItem } from "@/lib/mktPublicacionesIdeas";
 import type { MktPublicacionCalendarioItem } from "@/lib/mktPublicaciones";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -35,6 +38,8 @@ interface Props {
   /** Obligatorio en modo editar. */
   item?: MktPublicacionCalendarioItem | null;
   onSuccess?: () => void;
+  /** Tras crear una idea desde el «+» (refresca jerarquía en el padre). */
+  onIdeasChange?: () => void;
 }
 
 export default function CrearEditarMktPublicacionModal({
@@ -47,6 +52,7 @@ export default function CrearEditarMktPublicacionModal({
   seccionesIdeas,
   item = null,
   onSuccess,
+  onIdeasChange,
 }: Props) {
   const [redIds, setRedIds] = useState<string[]>([]);
   const [tipoContenidoId, setTipoContenidoId] = useState("");
@@ -54,9 +60,14 @@ export default function CrearEditarMktPublicacionModal({
   const [ideaDetalleId, setIdeaDetalleId] = useState("");
   const [contenidoUrl, setContenidoUrl] = useState("");
   const [saving, setSaving] = useState(false);
+  const [openNuevaIdea, setOpenNuevaIdea] = useState(false);
+  /** Ideas creadas en esta sesión (antes del refresh del padre). */
+  const [ideasLocales, setIdeasLocales] = useState<MktIdeaDetalleItem[]>([]);
 
   useEffect(() => {
     if (!open) return;
+    setIdeasLocales([]);
+    setOpenNuevaIdea(false);
     if (modo === "editar" && item) {
       setRedIds([...item.redIds]);
       setTipoContenidoId(item.tipoContenidoId);
@@ -72,24 +83,35 @@ export default function CrearEditarMktPublicacionModal({
     setContenidoUrl("");
   }, [open, modo, fechaIso, item]);
 
+  const seccionSeleccionada = useMemo(
+    () => seccionesIdeas.find((s) => s.id === seccionId) ?? null,
+    [seccionesIdeas, seccionId]
+  );
+
   const ideasDisponibles = useMemo(() => {
-    const seccion = seccionesIdeas.find((s) => s.id === seccionId);
-    if (!seccion) return [];
-    return seccion.detalles
+    if (!seccionId) return [];
+    const deJerarquia = seccionSeleccionada?.detalles ?? [];
+    const locales = ideasLocales.filter((d) => d.seccionId === seccionId);
+    const byId = new Map<string, MktIdeaDetalleItem>();
+    for (const d of [...deJerarquia, ...locales]) {
+      byId.set(d.id, d);
+    }
+    return [...byId.values()]
       .filter((d) => !d.usada || d.id === ideaDetalleId)
-      .slice()
       .sort((a, b) => a.tituloIdea.localeCompare(b.tituloIdea, "es"));
-  }, [seccionesIdeas, seccionId, ideaDetalleId]);
+  }, [seccionId, seccionSeleccionada, ideasLocales, ideaDetalleId]);
 
   /** Solo lectura: `detalle` de `mkt_publi_ideas_detalle`. */
   const detalleIdea = useMemo(() => {
     if (!ideaDetalleId) return "";
+    const local = ideasLocales.find((d) => d.id === ideaDetalleId);
+    if (local) return local.detalle.trim();
     for (const seccion of seccionesIdeas) {
       const idea = seccion.detalles.find((d) => d.id === ideaDetalleId);
       if (idea) return idea.detalle.trim();
     }
     return modo === "editar" ? (item?.publicacion.trim() ?? "") : "";
-  }, [ideaDetalleId, seccionesIdeas, modo, item]);
+  }, [ideaDetalleId, ideasLocales, seccionesIdeas, modo, item]);
 
   function handleSeccionChange(nextSeccionId: string) {
     setSeccionId(nextSeccionId);
@@ -98,10 +120,10 @@ export default function CrearEditarMktPublicacionModal({
 
   function handleIdeaChange(nextIdeaId: string) {
     setIdeaDetalleId(nextIdeaId);
-    const seccion = seccionesIdeas.find((s) => s.id === seccionId);
-    const idea = seccion?.detalles.find((d) => d.id === nextIdeaId);
+    const idea =
+      ideasLocales.find((d) => d.id === nextIdeaId) ??
+      seccionSeleccionada?.detalles.find((d) => d.id === nextIdeaId);
     if (!idea) return;
-    setTipoContenidoId(idea.tipoContenidoId);
     if (idea.redIds.length > 0) {
       setRedIds([...idea.redIds]);
     }
@@ -113,7 +135,6 @@ export default function CrearEditarMktPublicacionModal({
     Boolean(tipoContenidoId) &&
     Boolean(seccionId) &&
     Boolean(ideaDetalleId) &&
-    detalleIdea.length > 0 &&
     (modo === "crear" || Boolean(item?.id));
 
   async function handleSubmit() {
@@ -150,166 +171,195 @@ export default function CrearEditarMktPublicacionModal({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (saving && !next) return;
-        onOpenChange(next);
-      }}
-    >
-      <AppModal
-        title={modo === "crear" ? "Nueva Publicación" : "Editar Publicación"}
-        size="md"
-        className="max-w-lg"
-        scrollBody
-        hideBodyScrollbars
-        actions={
-          <div className="flex w-full justify-end gap-2">
-            <Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              disabled={saving || !puedeGuardar}
-              onClick={() => void handleSubmit()}
-            >
-              Guardar
-            </Button>
-          </div>
-        }
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (saving && !next) return;
+          if (openNuevaIdea && !next) return;
+          onOpenChange(next);
+        }}
       >
-        <div className="flex flex-col divide-y divide-primary/25">
-          <section className="flex flex-col gap-3 pb-4" aria-labelledby="mkt-pub-sec-publicacion">
-            <h3
-              id="mkt-pub-sec-publicacion"
-              className="text-xs font-bold uppercase tracking-wide text-primary"
-            >
-              Publicación
-            </h3>
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Fecha</ModalMicroLabel>
-              <p className="text-sm font-medium text-foreground">
-                {fechaIso ? formatIsoYmdDdMmYyyyArgentina(fechaIso) : "—"}
-              </p>
-            </div>
-            <MktMultiSelectCatalogo
-              opciones={redes}
-              selectedIds={redIds}
-              onChange={setRedIds}
-              placeholder="RED"
-              emptyPlaceholder="SIN REDES CARGADAS"
-              ariaLabel="Redes"
-              disabled={saving}
-            />
-            <Select
-              value={tipoContenidoId || undefined}
-              onValueChange={setTipoContenidoId}
-              disabled={saving || contenidos.length === 0}
-            >
-              <SelectTrigger className="w-full" aria-label="Tipo de contenido">
-                <SelectValue
-                  placeholder={
-                    contenidos.length === 0 ? "SIN CONTENIDOS CARGADOS" : "TIPO DE CONTENIDO"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {contenidos.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </section>
-
-          <section className="flex flex-col gap-3 py-4" aria-labelledby="mkt-pub-sec-idea">
-            <h3
-              id="mkt-pub-sec-idea"
-              className="text-xs font-bold uppercase tracking-wide text-primary"
-            >
-              Idea
-            </h3>
-            <Select
-              value={seccionId || undefined}
-              onValueChange={handleSeccionChange}
-              disabled={saving || seccionesIdeas.length === 0}
-            >
-              <SelectTrigger className="w-full" aria-label="Sección">
-                <SelectValue
-                  placeholder={
-                    seccionesIdeas.length === 0 ? "SIN SECCIONES CARGADAS" : "SECCION"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {seccionesIdeas.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={ideaDetalleId || undefined}
-              onValueChange={handleIdeaChange}
-              disabled={saving || !seccionId || ideasDisponibles.length === 0}
-            >
-              <SelectTrigger className="w-full" aria-label="Idea">
-                <SelectValue
-                  placeholder={
-                    !seccionId
-                      ? "ELEGIR SECCION"
-                      : ideasDisponibles.length === 0
-                        ? "SIN IDEAS DISPONIBLES"
-                        : "IDEA"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {ideasDisponibles.map((idea) => (
-                  <SelectItem key={idea.id} value={idea.id}>
-                    {idea.tituloIdea}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Detalle</ModalMicroLabel>
-              <p
-                className="min-h-[5.5rem] whitespace-pre-wrap rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-foreground"
-                aria-label="Detalle de la idea"
+        <AppModal
+          title={modo === "crear" ? "Nueva Publicación" : "Editar Publicación"}
+          size="md"
+          className="max-w-lg"
+          scrollBody
+          hideBodyScrollbars
+          actions={
+            <div className="flex w-full justify-end gap-2">
+              <Button type="button" variant="outline" disabled={saving} onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={saving || !puedeGuardar}
+                onClick={() => void handleSubmit()}
               >
-                {detalleIdea || "Seleccioná una idea para ver el detalle."}
-              </p>
+                Guardar
+              </Button>
             </div>
-          </section>
-
-          <section className="flex flex-col gap-3 pt-4" aria-labelledby="mkt-pub-sec-contenido">
-            <h3
-              id="mkt-pub-sec-contenido"
-              className="text-xs font-bold uppercase tracking-wide text-primary"
-            >
-              Contenido
-            </h3>
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>URL (Google Drive)</ModalMicroLabel>
-              <Input
-                type="url"
-                value={contenidoUrl}
-                onChange={(e) => setContenidoUrl(e.target.value)}
-                placeholder="https://drive.google.com/..."
+          }
+        >
+          <div className="flex flex-col divide-y divide-primary/25">
+            <section className="flex flex-col gap-3 pb-4" aria-labelledby="mkt-pub-sec-publicacion">
+              <h3
+                id="mkt-pub-sec-publicacion"
+                className="text-xs font-bold uppercase tracking-wide text-primary"
+              >
+                Publicación
+              </h3>
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>Fecha</ModalMicroLabel>
+                <p className="text-sm font-medium text-foreground">
+                  {fechaIso ? formatIsoYmdDdMmYyyyArgentina(fechaIso) : "—"}
+                </p>
+              </div>
+              <MktMultiSelectCatalogo
+                opciones={redes}
+                selectedIds={redIds}
+                onChange={setRedIds}
+                placeholder="RED"
+                emptyPlaceholder="SIN REDES CARGADAS"
+                ariaLabel="Redes"
                 disabled={saving}
-                aria-label="URL del contenido"
-                autoComplete="off"
               />
-              <p className="text-[11px] text-muted-foreground">
-                Vacío = contenido planificado. Con URL = contenido creado.
-              </p>
-            </div>
-          </section>
-        </div>
-      </AppModal>
-    </Dialog>
+              <Select
+                value={tipoContenidoId || undefined}
+                onValueChange={setTipoContenidoId}
+                disabled={saving || contenidos.length === 0}
+              >
+                <SelectTrigger className="w-full" aria-label="Tipo de contenido">
+                  <SelectValue
+                    placeholder={
+                      contenidos.length === 0 ? "SIN CONTENIDOS CARGADOS" : "TIPO DE CONTENIDO"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {contenidos.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </section>
+
+            <section className="flex flex-col gap-3 py-4" aria-labelledby="mkt-pub-sec-idea">
+              <h3
+                id="mkt-pub-sec-idea"
+                className="text-xs font-bold uppercase tracking-wide text-primary"
+              >
+                Idea
+              </h3>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={seccionId || undefined}
+                  onValueChange={handleSeccionChange}
+                  disabled={saving || seccionesIdeas.length === 0}
+                >
+                  <SelectTrigger className={cn("min-w-0 flex-1")} aria-label="Sección">
+                    <SelectValue
+                      placeholder={
+                        seccionesIdeas.length === 0 ? "SIN SECCIONES CARGADAS" : "SECCION"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seccionesIdeas.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="icon"
+                  className="size-9 shrink-0"
+                  aria-label="Nueva idea en la sección"
+                  disabled={saving || !seccionId}
+                  onClick={() => setOpenNuevaIdea(true)}
+                >
+                  <Plus className="size-4" aria-hidden />
+                </Button>
+              </div>
+              <Select
+                value={ideaDetalleId || undefined}
+                onValueChange={handleIdeaChange}
+                disabled={saving || !seccionId || ideasDisponibles.length === 0}
+              >
+                <SelectTrigger className="w-full" aria-label="Idea">
+                  <SelectValue
+                    placeholder={
+                      !seccionId
+                        ? "ELEGIR SECCION"
+                        : ideasDisponibles.length === 0
+                          ? "SIN IDEAS DISPONIBLES"
+                          : "IDEA"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {ideasDisponibles.map((idea) => (
+                    <SelectItem key={idea.id} value={idea.id}>
+                      {idea.tituloIdea}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>Detalle</ModalMicroLabel>
+                <p
+                  className="min-h-[5.5rem] whitespace-pre-wrap rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-foreground"
+                  aria-label="Detalle de la idea"
+                >
+                  {detalleIdea || "Seleccioná una idea para ver el detalle."}
+                </p>
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-3 pt-4" aria-labelledby="mkt-pub-sec-contenido">
+              <h3
+                id="mkt-pub-sec-contenido"
+                className="text-xs font-bold uppercase tracking-wide text-primary"
+              >
+                Contenido
+              </h3>
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>URL (Google Drive)</ModalMicroLabel>
+                <Input
+                  type="url"
+                  value={contenidoUrl}
+                  onChange={(e) => setContenidoUrl(e.target.value)}
+                  placeholder="https://drive.google.com/..."
+                  disabled={saving}
+                  aria-label="URL del contenido"
+                  autoComplete="off"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Vacío = contenido planificado. Con URL = contenido creado.
+                </p>
+              </div>
+            </section>
+          </div>
+        </AppModal>
+      </Dialog>
+
+      <CrearEditarMktIdeaDetalleModal
+        open={openNuevaIdea}
+        onOpenChange={setOpenNuevaIdea}
+        modo="crear"
+        seccionId={seccionId}
+        seccionNombre={seccionSeleccionada?.nombre ?? ""}
+        onSuccessCreated={(idea) => {
+          setIdeasLocales((prev) => [...prev.filter((d) => d.id !== idea.id), idea]);
+          setIdeaDetalleId(idea.id);
+          onIdeasChange?.();
+        }}
+      />
+    </>
   );
 }

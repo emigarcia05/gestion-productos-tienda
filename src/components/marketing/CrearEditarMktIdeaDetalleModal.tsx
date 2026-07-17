@@ -5,39 +5,27 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
-import MktMultiSelectCatalogo from "@/components/marketing/MktMultiSelectCatalogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
 import {
   crearMktIdeaDetalleAction,
   editarMktIdeaDetalleAction,
 } from "@/actions/mktPublicacionesIdeas";
+import type { MktIdeaDetalleItem } from "@/lib/mktPublicacionesIdeas";
 import { cn } from "@/lib/utils";
-
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   modo: "crear" | "editar";
   seccionId: string;
-  seccionNombre: string;
-  redes: MktCatalogoNombreItem[];
-  contenidos: MktCatalogoNombreItem[];
+  seccionNombre?: string;
   id?: string;
   tituloIdeaInicial?: string;
   detalleInicial?: string;
-  redIdsIniciales?: string[];
-  tipoContenidoIdInicial?: string;
-  usadaInicial?: boolean;
   onSuccess?: () => void;
+  /** Solo en alta: entrega el ítem creado (p. ej. para seleccionarlo en el padre). */
+  onSuccessCreated?: (item: MktIdeaDetalleItem) => void;
 }
 
 export default function CrearEditarMktIdeaDetalleModal({
@@ -45,46 +33,24 @@ export default function CrearEditarMktIdeaDetalleModal({
   onOpenChange,
   modo,
   seccionId,
-  seccionNombre,
-  redes,
-  contenidos,
+  seccionNombre = "",
   id,
   tituloIdeaInicial = "",
   detalleInicial = "",
-  redIdsIniciales,
-  tipoContenidoIdInicial,
-  usadaInicial = false,
   onSuccess,
+  onSuccessCreated,
 }: Props) {
   const [tituloIdea, setTituloIdea] = useState("");
   const [detalle, setDetalle] = useState("");
-  const [redIds, setRedIds] = useState<string[]>([]);
-  const [tipoContenidoId, setTipoContenidoId] = useState("");
-  const [usada, setUsada] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setTituloIdea(modo === "editar" ? tituloIdeaInicial : "");
     setDetalle(modo === "editar" ? detalleInicial : "");
-    setRedIds(modo === "editar" ? [...(redIdsIniciales ?? [])] : []);
-    setTipoContenidoId(modo === "editar" ? (tipoContenidoIdInicial ?? "") : "");
-    setUsada(modo === "editar" ? usadaInicial : false);
-  }, [
-    open,
-    modo,
-    tituloIdeaInicial,
-    detalleInicial,
-    redIdsIniciales,
-    tipoContenidoIdInicial,
-    usadaInicial,
-  ]);
+  }, [open, modo, tituloIdeaInicial, detalleInicial]);
 
-  const puedeGuardar =
-    tituloIdea.trim().length > 0 &&
-    detalle.trim().length > 0 &&
-    redIds.length > 0 &&
-    Boolean(tipoContenidoId);
+  const puedeGuardar = tituloIdea.trim().length > 0 && Boolean(seccionId);
 
   async function handleSubmit() {
     if (!puedeGuardar || saving) return;
@@ -97,22 +63,20 @@ export default function CrearEditarMktIdeaDetalleModal({
               seccionId,
               tituloIdea,
               detalle,
-              redIds,
-              tipoContenidoId,
             })
           : await editarMktIdeaDetalleAction({
               id: id!,
               tituloIdea,
               detalle,
-              redIds,
-              tipoContenidoId,
-              usada,
             });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo guardar.");
         return;
       }
       toast.success(modo === "crear" ? "Detalle creado." : "Detalle actualizado.");
+      if (modo === "crear" && res.data) {
+        onSuccessCreated?.(res.data);
+      }
       onOpenChange(false);
       onSuccess?.();
     } finally {
@@ -150,37 +114,12 @@ export default function CrearEditarMktIdeaDetalleModal({
         }
       >
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <ModalMicroLabel>Sección</ModalMicroLabel>
-            <p className="text-sm font-medium text-foreground">{seccionNombre}</p>
-          </div>
-          <MktMultiSelectCatalogo
-            opciones={redes}
-            selectedIds={redIds}
-            onChange={setRedIds}
-            placeholder="RED"
-            emptyPlaceholder="SIN REDES CARGADAS"
-            ariaLabel="Redes"
-            disabled={saving}
-          />
-          <Select
-            value={tipoContenidoId || undefined}
-            onValueChange={setTipoContenidoId}
-            disabled={saving || contenidos.length === 0}
-          >
-            <SelectTrigger className="w-full" aria-label="Tipo de contenido">
-              <SelectValue
-                placeholder={contenidos.length === 0 ? "SIN CONTENIDOS CARGADOS" : "TIPO DE CONTENIDO"}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {contenidos.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {seccionNombre ? (
+            <div className="flex flex-col gap-1">
+              <ModalMicroLabel>Sección</ModalMicroLabel>
+              <p className="text-sm font-medium text-foreground">{seccionNombre}</p>
+            </div>
+          ) : null}
           <Input
             value={tituloIdea}
             onChange={(e) => setTituloIdea(e.target.value.toLocaleUpperCase("es-AR"))}
@@ -202,21 +141,6 @@ export default function CrearEditarMktIdeaDetalleModal({
               "focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
             )}
           />
-          {modo === "editar" ? (
-            <Select
-              value={usada ? "SI" : "NO"}
-              onValueChange={(v) => setUsada(v === "SI")}
-              disabled={saving}
-            >
-              <SelectTrigger className="w-full" aria-label="Usada">
-                <SelectValue placeholder="USADA" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="NO">NO</SelectItem>
-                <SelectItem value="SI">SI</SelectItem>
-              </SelectContent>
-            </Select>
-          ) : null}
         </div>
       </AppModal>
     </Dialog>

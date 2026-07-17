@@ -1381,6 +1381,12 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-16): **Ideas · Secciones** — columna Secciones muestra solo el título (sin resumen ni contador de detalles en la fila).*
 
+*Última actualización (2026-07-17): **Ideas · Nuevo/Editar Detalle** — modal solo **TITULO** (obligatorio) + **DETALLE** (opcional); sin RED / TIPO DE CONTENIDO / USADA en el form. Ver BACKEND § Ideas.*
+
+*Última actualización (2026-07-17): **Ideas · columnas independientes** — Secciones y Detalles son catálogos separados (sin `seccion_id` en detalle); USADA en listado/ver se deriva de publicación vinculada; modal Nueva Publicación elige idea en lista plana (sin selector de sección).*
+
+*Última actualización (2026-07-17): **Calendario · Nueva Publicación** — selector **SECCION** + botón **+** a la derecha (crea idea en esa sección vía `Nuevo Detalle`); luego selector **IDEA** filtrado por sección.*
+
 *Última actualización (2026-07-16): **Calendario — sin Probar Google Sheets** — se quitó el botón de probe A1 del header; queda **Exportar a Sheets**.*
 
 *Última actualización (2026-07-15): **Marketing · publicaciones multi-red** — una publicación N:M redes (mkt_publi_redes); editar actualiza todas; conteo 1 por red. Ver BACKEND §2.5g-bis.*

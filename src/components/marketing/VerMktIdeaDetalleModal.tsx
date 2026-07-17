@@ -9,11 +9,8 @@ import { cn } from "@/lib/utils";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  seccionNombre: string;
   tituloIdea: string;
   detalle: string;
-  redesNombres: string[];
-  tipoContenidoNombre: string;
   usada: boolean;
 }
 
@@ -37,11 +34,8 @@ function CampoLectura({
 export default function VerMktIdeaDetalleModal({
   open,
   onOpenChange,
-  seccionNombre,
   tituloIdea,
   detalle,
-  redesNombres,
-  tipoContenidoNombre,
   usada,
 }: Props) {
   return (
@@ -61,13 +55,7 @@ export default function VerMktIdeaDetalleModal({
         }
       >
         <div className="flex flex-col divide-y divide-primary/25">
-          <CampoLectura label="Sección" value={seccionNombre} className="pt-0" />
-          <CampoLectura
-            label="Red"
-            value={redesNombres.length > 0 ? redesNombres.join(" · ") : "—"}
-          />
-          <CampoLectura label="Tipo De Contenido" value={tipoContenidoNombre} />
-          <CampoLectura label="Título" value={tituloIdea} />
+          <CampoLectura label="Título" value={tituloIdea} className="pt-0" />
           <CampoLectura label="Detalle" value={detalle} />
           <CampoLectura label="Usada" value={usada ? "SI" : "NO"} className="pb-0" />
         </div>

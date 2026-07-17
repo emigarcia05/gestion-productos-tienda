@@ -30,10 +30,6 @@ export type ExportMktGoogleSheetsResult = {
   tabs: ExportMktGoogleSheetsTabResult[];
 };
 
-function boolSheet(value: boolean): string {
-  return value ? "TRUE" : "FALSE";
-}
-
 /**
  * Diccionario estático del export (SSOT): catálogo hoja↔tabla + relaciones.
  * Formato tabular plano para humanos e IA.
@@ -92,8 +88,8 @@ export function buildMktGoogleSheetsIndiceValues(): string[][] {
       "mkt_publi_ideas_detalle",
       "1 fila = 1 idea",
       "id",
-      "id,seccion_id,detalle,usada",
-      "Ideas detalle. usada = TRUE/FALSE. seccion_id → Publicaciones Secciones.id.",
+      "id,seccion_id,titulo_idea,detalle",
+      "Ideas detalle (titulo + detalle) por seccion. seccion_id → Publicaciones Secciones.id.",
     ],
     [
       "CATALOGO",
@@ -225,8 +221,8 @@ export async function exportarMktAGoogleSheets(): Promise<
         orderBy: { contenidoNombre: "asc" },
       }),
       prisma.mktPublicacionIdeaDetalle.findMany({
-        select: { id: true, seccionId: true, detalle: true, usada: true },
-        orderBy: [{ seccionId: "asc" }, { id: "asc" }],
+        select: { id: true, seccionId: true, tituloIdea: true, detalle: true },
+        orderBy: [{ seccionId: "asc" }, { tituloIdea: "asc" }, { id: "asc" }],
       }),
       prisma.mktPublicacion.findMany({
         select: {
@@ -320,8 +316,8 @@ export async function exportarMktAGoogleSheets(): Promise<
       {
         title: GOOGLE_SHEET_TABS_MKT.ideas,
         values: [
-          ["id", "seccion_id", "detalle", "usada"],
-          ...ideas.map((r) => [r.id, r.seccionId, r.detalle, boolSheet(r.usada)]),
+          ["id", "seccion_id", "titulo_idea", "detalle"],
+          ...ideas.map((r) => [r.id, r.seccionId, r.tituloIdea, r.detalle]),
         ],
       },
       {

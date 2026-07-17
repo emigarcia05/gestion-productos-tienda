@@ -108,19 +108,15 @@ async function assertIdeaDetalleDisponible(
     select: {
       id: true,
       detalle: true,
-      usada: true,
       publicacion: { select: { id: true } },
     },
   });
   if (!idea) return { success: false, error: "La idea seleccionada no existe." };
   const detalle = idea.detalle.trim();
-  if (!detalle) {
-    return { success: false, error: "La idea no tiene detalle para publicar." };
-  }
   if (permitirIdeaId && idea.id === permitirIdeaId) {
     return { success: true, data: { detalle } };
   }
-  if (idea.usada || idea.publicacion) {
+  if (idea.publicacion) {
     return {
       success: false,
       error: "La idea ya está programada o marcada como usada.",
@@ -165,10 +161,6 @@ export async function crearMktPublicacion(
         },
         select: publicacionSelect,
       });
-      await tx.mktPublicacionIdeaDetalle.update({
-        where: { id: input.ideaDetalleId },
-        data: { usada: true },
-      });
       return row;
     });
     return { success: true, data: mapPublicacion(created) };
@@ -211,15 +203,7 @@ export async function editarMktPublicacion(
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
-      const ideaAnteriorId = actual.ideaDetalleId;
       const ideaNuevaId = input.ideaDetalleId;
-
-      if (ideaAnteriorId && ideaAnteriorId !== ideaNuevaId) {
-        await tx.mktPublicacionIdeaDetalle.update({
-          where: { id: ideaAnteriorId },
-          data: { usada: false },
-        });
-      }
 
       await tx.mktPublicacionRedLink.deleteMany({
         where: { publicacionId: input.id },
@@ -237,11 +221,6 @@ export async function editarMktPublicacion(
           redes: { create: redIds.map((redId) => ({ redId })) },
         },
         select: publicacionSelect,
-      });
-
-      await tx.mktPublicacionIdeaDetalle.update({
-        where: { id: ideaNuevaId },
-        data: { usada: true },
       });
 
       return row;
@@ -278,18 +257,12 @@ export async function eliminarMktPublicacion(
     await prisma.$transaction(async (tx) => {
       const actual = await tx.mktPublicacion.findUnique({
         where: { id },
-        select: { id: true, ideaDetalleId: true },
+        select: { id: true },
       });
       if (!actual) {
         throw Object.assign(new Error("La publicación no existe."), { code: "P2025" });
       }
       await tx.mktPublicacion.delete({ where: { id } });
-      if (actual.ideaDetalleId) {
-        await tx.mktPublicacionIdeaDetalle.update({
-          where: { id: actual.ideaDetalleId },
-          data: { usada: false },
-        });
-      }
     });
     return { success: true, data: { id } };
   } catch (error) {

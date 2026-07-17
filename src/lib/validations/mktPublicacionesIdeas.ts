@@ -12,10 +12,10 @@ const ideaResumenSchema = z
   .trim()
   .max(10000, "El resumen es demasiado largo.");
 
+/** Detalle de idea: opcional (puede quedar vacío). */
 const detalleTextoSchema = z
   .string()
   .trim()
-  .min(1, "Ingresá el detalle.")
   .max(10000, "El detalle es demasiado largo.");
 
 const tituloIdeaSchema = z
@@ -23,10 +23,6 @@ const tituloIdeaSchema = z
   .trim()
   .min(1, "Ingresá un título.")
   .max(200, "El título es demasiado largo.");
-
-const idsCatalogoMinUnoSchema = z
-  .array(prismaCuidSchema)
-  .min(1, "Seleccioná al menos una opción.");
 
 export const crearMktIdeaSeccionSchema = z.object({
   nombre: ideaNombreSchema,
@@ -43,22 +39,17 @@ export const eliminarMktIdeaSeccionSchema = z.object({
   id: prismaCuidSchema,
 });
 
-/** Alta: `usada` siempre NO en servicio (no se acepta desde el cliente). */
+/** Alta: sección + título (obligatorio) + detalle (opcional). */
 export const crearMktIdeaDetalleSchema = z.object({
   seccionId: prismaCuidSchema,
   tituloIdea: tituloIdeaSchema,
-  detalle: detalleTextoSchema,
-  redIds: idsCatalogoMinUnoSchema,
-  tipoContenidoId: prismaCuidSchema,
+  detalle: detalleTextoSchema.default(""),
 });
 
 export const editarMktIdeaDetalleSchema = z.object({
   id: prismaCuidSchema,
   tituloIdea: tituloIdeaSchema,
-  detalle: detalleTextoSchema,
-  redIds: idsCatalogoMinUnoSchema,
-  tipoContenidoId: prismaCuidSchema,
-  usada: z.boolean(),
+  detalle: detalleTextoSchema.default(""),
 });
 
 export const eliminarMktIdeaDetalleSchema = z.object({
