@@ -1403,6 +1403,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-21): **Margen Contribución · PX LISTA** — en modo **PRODUCTO** solo muestra `$` (`colSpan={2}`); sin columna `%`.*
 
+*Última actualización (2026-07-21): **Margen Contribución · tipografía** — **PRODUCTO**: `$` peso normal, `%` negrita. **PORC. UTILIDAD**: solo sección **MARGEN** (concepto + valores) en negrita.*
+
 *Última actualización (2026-07-16): **Calendario — sin Probar Google Sheets** — se quitó el botón de probe A1 del header; queda **Exportar a Sheets**.*
 
 *Última actualización (2026-07-15): **Marketing · publicaciones multi-red** — una publicación N:M redes (mkt_publi_redes); editar actualiza todas; conteo 1 por red. Ver BACKEND §2.5g-bis.*

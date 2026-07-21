@@ -1409,14 +1409,50 @@
   border-bottom: none !important;
 }
 /**
- * Columna CONCEPTO fija al scrollear horizontalmente (muchas formas de pago).
+ * Columna SECCIÓN (etiqueta vertical) + CONCEPTO fijas al scrollear horizontalmente.
  * `!important` en position: gana a `tbody td { position: relative }` de `.tabla-gestion-compacta`.
- * Fondo opaco con `--tabla-row-bg` (cebra / hover). Esquina thead: sticky top+left, z-index alto.
  */
+.tabla-fin-ana-margen-contribucion {
+  --tabla-mc-seccion-width: 1.75rem;
+}
+.tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-seccion,
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-seccion {
+  position: sticky !important;
+  left: 0;
+  width: var(--tabla-mc-seccion-width);
+  min-width: var(--tabla-mc-seccion-width);
+  max-width: var(--tabla-mc-seccion-width);
+  padding: 0.25rem 0 !important;
+  vertical-align: middle;
+}
+.tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-seccion {
+  z-index: 32;
+  background-color: var(--primary);
+}
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-seccion {
+  z-index: 12;
+  background-color: color-mix(in oklab, var(--primary) 12%, var(--tabla-row-bg, var(--card)));
+  border-right: 2px solid color-mix(in oklab, var(--primary) 55%, var(--border)) !important;
+}
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-seccion-cell {
+  overflow: hidden;
+}
+.tabla-fin-ana-margen-contribucion .tabla-mc-seccion-label {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.1;
+  color: var(--primary);
+  white-space: nowrap;
+}
 .tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-concepto,
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-concepto {
   position: sticky !important;
-  left: 0;
+  left: var(--tabla-mc-seccion-width);
   box-shadow: 2px 0 0 0 color-mix(in oklab, var(--border) 80%, transparent);
 }
 .tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-concepto {
@@ -1445,6 +1481,7 @@
  */
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-pesos {
   text-align: center !important;
+  font-weight: var(--font-weight-normal);
   padding-left: 0.5rem !important;
   padding-right: 0.25rem !important;
 }

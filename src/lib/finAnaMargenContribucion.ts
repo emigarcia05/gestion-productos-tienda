@@ -37,18 +37,48 @@ export const FIN_ANA_MC_FILAS_DATO = [
   "CX_MERCADERIA",
   "CX_FINANCIERO",
   "MC",
+  "MC_PONDERADO",
 ] as const;
 
 export type FilaMargenContribucionDatoId = (typeof FIN_ANA_MC_FILAS_DATO)[number];
 
-/** Tipos de fila en el layout (secciones, subtotales, separador de línea). */
+export type SeccionMargenContribucionId = "INGRESO" | "COSTOS" | "MARGEN";
+
+export type SeccionMargenContribucion = {
+  id: SeccionMargenContribucionId;
+  etiqueta: string;
+  filas: readonly FilaMargenContribucionDatoId[];
+};
+
+/**
+ * Tres bloques visuales (columna izquierda con etiqueta vertical).
+ * Separadores primary entre secciones en la UI.
+ */
+export const FIN_ANA_MC_SECCIONES: readonly SeccionMargenContribucion[] = [
+  {
+    id: "INGRESO",
+    etiqueta: "INGRESO",
+    filas: ["PX_LISTA", "DESCUENTO", "PX_VENTA"],
+  },
+  {
+    id: "COSTOS",
+    etiqueta: "COSTOS",
+    filas: ["IVA", "IIBB", "CX_MERCADERIA", "CX_FINANCIERO"],
+  },
+  {
+    id: "MARGEN",
+    etiqueta: "MARGEN",
+    filas: ["MC", "MC_PONDERADO"],
+  },
+];
+
+/** @deprecated Preferir `FIN_ANA_MC_SECCIONES`. Layout plano legacy. */
 export type FilaMargenContribucionLayout =
   | { tipo: "dato"; id: FilaMargenContribucionDatoId }
   | { tipo: "subtotal"; id: "SUBTOTAL_COSTOS" }
-  /** Línea primary entre PX VENTA y bloque de costos (misma marca que el subtotal). */
   | { tipo: "espacio"; id: "SEPARACION" };
 
-/** Orden visual de filas con secciones. */
+/** @deprecated Preferir `FIN_ANA_MC_SECCIONES`. */
 export const FIN_ANA_MC_LAYOUT: FilaMargenContribucionLayout[] = [
   { tipo: "dato", id: "PX_LISTA" },
   { tipo: "dato", id: "DESCUENTO" },
@@ -58,8 +88,8 @@ export const FIN_ANA_MC_LAYOUT: FilaMargenContribucionLayout[] = [
   { tipo: "dato", id: "IIBB" },
   { tipo: "dato", id: "CX_MERCADERIA" },
   { tipo: "dato", id: "CX_FINANCIERO" },
-  { tipo: "subtotal", id: "SUBTOTAL_COSTOS" },
   { tipo: "dato", id: "MC" },
+  { tipo: "dato", id: "MC_PONDERADO" },
 ];
 
 const ETIQUETAS_FILA: Record<FilaMargenContribucionDatoId, string> = {
@@ -71,6 +101,7 @@ const ETIQUETAS_FILA: Record<FilaMargenContribucionDatoId, string> = {
   CX_MERCADERIA: "CX MERCADERÍA",
   CX_FINANCIERO: "CX FINANCIERO",
   MC: "M.C",
+  MC_PONDERADO: "M.C PONDERADO",
 };
 
 export function etiquetaFilaMargenContribucion(id: FilaMargenContribucionDatoId): string {
@@ -99,7 +130,7 @@ export function crearDescuentoPctPorFormaPagoVacios(
 }
 
 export function esFilaPorFormaPagoMargenContribucion(id: FilaMargenContribucionDatoId): boolean {
-  return id === "CX_FINANCIERO" || id === "MC";
+  return id === "CX_FINANCIERO" || id === "MC" || id === "MC_PONDERADO";
 }
 
 /** Modo de evaluación del simulador (mutuamente excluyente). */

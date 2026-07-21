@@ -22,12 +22,11 @@ import {
   etiquetaFormaPagoMargenContribucion,
   FIN_ANA_MC_DESCUENTO_MAX,
   FIN_ANA_MC_DESCUENTO_MIN,
-  FIN_ANA_MC_LAYOUT,
+  FIN_ANA_MC_SECCIONES,
   fmtCeldaMontoMargenContribucion,
   fmtPesosMargenContribucion,
   fmtPctSobrePxListaMargenContribucion,
   mcMargenContribucionPorFormaPago,
-  subtotalCostosMargenContribucionPorFormaPago,
   type FilaMargenContribucionDatoId,
   type FormaPagoMargenContribucion,
   type ModoEvaluacionMargenContribucion,
@@ -55,7 +54,9 @@ const COL_PRODUCTO_PESOS = "w-[6.75rem]";
 const COL_PRODUCTO_PCT = "w-[2.75rem]";
 const COL_PORC_UTILIDAD = "w-[5rem]";
 const COL_CONCEPTO = "w-[9rem]";
-/** Primera columna fija (scroll horizontal). Clase en `globals.css`. */
+const COL_SECCION = "w-[1.75rem]";
+/** Columna de sección (etiqueta vertical) + CONCEPTO fijos al scroll. */
+const COL_SECCION_STICKY = "tabla-mc-col-seccion";
 const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
 /** Separador vertical entre formas de pago (más marcado). */
 const SEP_FORMA = "tabla-mc-sep-forma";
@@ -171,16 +172,12 @@ export default function TablaFinAnaMargenContribucion({
       }
       case "MC":
         return mcMargenContribucionPorFormaPago(calculados, cxFinPct);
+      case "MC_PONDERADO":
+        /** Fórmula de ponderación pendiente de definir. */
+        return null;
       default:
         return null;
     }
-  }
-
-  function valorSubtotalPesos(formaPago: FormaPagoMargenContribucion): number | null {
-    return subtotalCostosMargenContribucionPorFormaPago(
-      calculadosParaForma(formaPago),
-      cxFinancieroPorFormaPago[formaPago]
-    );
   }
 
   function fmtCeldaUnica(valorPesos: number | null | undefined): string {
@@ -287,7 +284,7 @@ export default function TablaFinAnaMargenContribucion({
       ));
     }
 
-    const emphasizePesos = filaId === "MC" || filaId === "PX_VENTA";
+    const esFilaMargen = filaId === "MC" || filaId === "MC_PONDERADO";
 
     if (esProducto) {
       return formasPago.flatMap((forma) => {
@@ -298,8 +295,7 @@ export default function TablaFinAnaMargenContribucion({
             className={cn(
               "celda-datos celda-numero tabular-nums",
               CELDA_PESOS,
-              SEP_FORMA,
-              emphasizePesos && "font-semibold"
+              SEP_FORMA
             )}
           >
             {fmtPesosMargenContribucion(pesos)}
@@ -321,7 +317,7 @@ export default function TablaFinAnaMargenContribucion({
           className={cn(
             "celda-datos celda-numero tabular-nums",
             SEP_FORMA,
-            filaId === "MC" && "font-semibold"
+            esFilaMargen && "font-bold"
           )}
         >
           {fmtCeldaUnica(valorPesosFila(filaId, forma))}
@@ -332,11 +328,7 @@ export default function TablaFinAnaMargenContribucion({
     return formasPago.map((forma) => (
       <TableCell
         key={`${filaId}-${forma}`}
-        className={cn(
-          "celda-datos celda-numero tabular-nums",
-          SEP_FORMA,
-          filaId === "PX_VENTA" && "font-semibold"
-        )}
+        className={cn("celda-datos celda-numero tabular-nums", SEP_FORMA)}
       >
         {fmtCeldaUnica(valorPesosFila(filaId, forma))}
       </TableCell>
@@ -352,6 +344,7 @@ export default function TablaFinAnaMargenContribucion({
           className="tabla-fin-ana-margen-contribucion min-w-max"
         >
           <colgroup>
+            <col className={COL_SECCION} />
             <col className={COL_CONCEPTO} />
             {formasPago.flatMap((forma) =>
               esProducto
@@ -364,6 +357,10 @@ export default function TablaFinAnaMargenContribucion({
           </colgroup>
           <TableHeader>
             <TableRow>
+              <TableHead
+                className={cn("text-center p-0", COL_SECCION_STICKY)}
+                aria-label="Sección"
+              />
               <TableHead className={cn("text-center", COL_CONCEPTO_STICKY)}>
                 CONCEPTO
               </TableHead>
@@ -371,10 +368,7 @@ export default function TablaFinAnaMargenContribucion({
                 <TableHead
                   key={forma}
                   colSpan={colsPorForma}
-                  className={cn(
-                    "text-center leading-tight",
-                    SEP_FORMA
-                  )}
+                  className={cn("text-center leading-tight", SEP_FORMA)}
                 >
                   {etiquetaFormaPagoMargenContribucion(
                     forma,
@@ -385,87 +379,55 @@ export default function TablaFinAnaMargenContribucion({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {FIN_ANA_MC_LAYOUT.map((fila) => {
-              if (fila.tipo === "espacio") {
-                return (
-                  <TableRow
-                    key={fila.id}
-                    className="tabla-fila-mc-sep-linea hover:bg-transparent"
-                    aria-hidden
-                  >
+            {FIN_ANA_MC_SECCIONES.map((seccion, seccionIndex) => {
+              const filas = seccion.filas;
+              const filasJsx = filas.map((filaId, filaIndex) => (
+                <TableRow key={`${seccion.id}-${filaId}`}>
+                  {filaIndex === 0 ? (
                     <TableCell
-                      colSpan={1 + totalColsDatos}
-                      className="!p-0 !h-0 border-0"
-                    />
-                  </TableRow>
-                );
-              }
-
-              if (fila.tipo === "subtotal") {
-                return (
-                  <TableRow
-                    key={fila.id}
-                    className="tabla-fila-mc-subtotal hover:bg-transparent"
-                  >
-                    <TableCell
-                      className={cn("celda-datos", COL_CONCEPTO_STICKY)}
-                    />
-                    {esProducto
-                      ? formasPago.flatMap((forma) => {
-                          const pesos = valorSubtotalPesos(forma);
-                          return [
-                            <TableCell
-                              key={`${fila.id}-${forma}-$`}
-                              className={cn(
-                                "celda-datos celda-numero tabular-nums font-semibold text-foreground",
-                                CELDA_PESOS,
-                                SEP_FORMA
-                              )}
-                            >
-                              {fmtPesosMargenContribucion(pesos)}
-                            </TableCell>,
-                            <TableCell
-                              key={`${fila.id}-${forma}-pct`}
-                              className={cn(
-                                "celda-datos celda-numero tabular-nums font-bold text-foreground",
-                                CELDA_PCT
-                              )}
-                            >
-                              {fmtPctSobrePxListaMargenContribucion(
-                                pesos,
-                                parsed.pxLista
-                              )}
-                            </TableCell>,
-                          ];
-                        })
-                      : formasPago.map((forma) => (
-                          <TableCell
-                            key={`${fila.id}-${forma}`}
-                            className={cn(
-                              "celda-datos celda-numero tabular-nums font-semibold text-foreground",
-                              SEP_FORMA
-                            )}
-                          >
-                            {fmtCeldaUnica(valorSubtotalPesos(forma))}
-                          </TableCell>
-                        ))}
-                  </TableRow>
-                );
-              }
-
-              return (
-                <TableRow key={fila.id}>
+                      rowSpan={filas.length}
+                      className={cn(
+                        "celda-datos tabla-mc-col-seccion-cell",
+                        COL_SECCION_STICKY
+                      )}
+                    >
+                      <span className="tabla-mc-seccion-label">
+                        {seccion.etiqueta}
+                      </span>
+                    </TableCell>
+                  ) : null}
                   <TableCell
                     className={cn(
                       "celda-datos font-medium",
-                      COL_CONCEPTO_STICKY
+                      COL_CONCEPTO_STICKY,
+                      !esProducto &&
+                        (filaId === "MC" || filaId === "MC_PONDERADO") &&
+                        "font-bold"
                     )}
                   >
-                    {etiquetaFilaMargenContribucion(fila.id)}
+                    {etiquetaFilaMargenContribucion(filaId)}
                   </TableCell>
-                  {renderCeldasDatos(fila.id)}
+                  {renderCeldasDatos(filaId)}
                 </TableRow>
-              );
+              ));
+
+              if (seccionIndex >= FIN_ANA_MC_SECCIONES.length - 1) {
+                return filasJsx;
+              }
+
+              return [
+                ...filasJsx,
+                <TableRow
+                  key={`sep-${seccion.id}`}
+                  className="tabla-fila-mc-sep-linea hover:bg-transparent"
+                  aria-hidden
+                >
+                  <TableCell
+                    colSpan={2 + totalColsDatos}
+                    className="!p-0 !h-0 border-0"
+                  />
+                </TableRow>,
+              ];
             })}
           </TableBody>
         </Table>
