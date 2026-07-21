@@ -308,6 +308,19 @@
   }
 
   /**
+   * Altura = contenido de la tabla (scrollbar horizontal justo bajo la última fila).
+   * `max-height: 100%` conserva scroll vertical si la grilla supera el viewport.
+   * Usar en Margen Contribución y tablas cortas con muchas columnas.
+   */
+  .contenedor-tabla-gestion.contenedor-tabla-gestion--altura-contenido {
+    flex: 0 1 auto;
+    height: auto;
+    max-height: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+
+  /**
    * Tabla con pie de totales siempre visible: el scroll vertical solo afecta a encabezado + cuerpo.
    * Estructura (misma tarjeta / borde que `.contenedor-tabla-gestion`):
    * `.contenedor-tabla-gestion.contenedor-tabla-gestion--pie-fijo` (flex column, overflow hidden)

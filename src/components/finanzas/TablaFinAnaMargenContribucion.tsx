@@ -49,10 +49,14 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
   "w-full max-w-full border border-primary rounded-md"
 );
 
-/** Ancho por forma de pago (≈10 % más angosto que el layout previo). */
-const COL_PRODUCTO_PESOS = "w-[6.75rem]";
-const COL_PRODUCTO_PCT = "w-[2.75rem]";
-const COL_PORC_UTILIDAD = "w-[5rem]";
+/**
+ * Ancho fijo por forma de pago (mismo en PRODUCTO y PORC. UTILIDAD).
+ * PRODUCTO reparte 75% $ + 25% % sobre ese total.
+ */
+const COL_FORMA_ANCHO = "w-[5rem]";
+const COL_PRODUCTO_PESOS = "w-[3.75rem]";
+const COL_PRODUCTO_PCT = "w-[1.25rem]";
+const COL_PORC_UTILIDAD = COL_FORMA_ANCHO;
 const COL_CONCEPTO = "w-[9rem]";
 const COL_SECCION = "w-[1.75rem]";
 /** Columna de sección (etiqueta vertical) + CONCEPTO fijos al scroll. */
@@ -336,13 +340,12 @@ export default function TablaFinAnaMargenContribucion({
   }
 
   return (
-    <div className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto">
-        <Table
-          variant="compact"
-          scrollX={false}
-          className="tabla-fin-ana-margen-contribucion min-w-max"
-        >
+    <div className="contenedor-tabla-gestion contenedor-tabla-gestion--altura-contenido min-w-0 w-full">
+      <Table
+        variant="compact"
+        scrollX={false}
+        className="tabla-fin-ana-margen-contribucion min-w-max"
+      >
           <colgroup>
             <col className={COL_SECCION} />
             <col className={COL_CONCEPTO} />
@@ -431,7 +434,6 @@ export default function TablaFinAnaMargenContribucion({
             })}
           </TableBody>
         </Table>
-      </div>
     </div>
   );
 }
