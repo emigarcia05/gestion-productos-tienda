@@ -51,11 +51,11 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
 
 /**
  * Ancho fijo por forma de pago (mismo en PRODUCTO y PORC. UTILIDAD).
- * PRODUCTO reparte 75% $ + 25% % sobre ese total.
+ * PRODUCTO reparte 70% $ + 30% % sobre ese total.
  */
 const COL_FORMA_ANCHO = "w-[5rem]";
-const COL_PRODUCTO_PESOS = "w-[3.75rem]";
-const COL_PRODUCTO_PCT = "w-[1.25rem]";
+const COL_PRODUCTO_PESOS = "w-[3.5rem]";
+const COL_PRODUCTO_PCT = "w-[1.5rem]";
 const COL_PORC_UTILIDAD = COL_FORMA_ANCHO;
 const COL_CONCEPTO = "w-[9rem]";
 const COL_SECCION = "w-[1.75rem]";
@@ -66,7 +66,7 @@ const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
 const SEP_FORMA = "tabla-mc-sep-forma";
 /** Celdas $ / % en modo PRODUCTO (padding simétrico respecto al separador). */
 const CELDA_PESOS = "tabla-mc-celda-pesos";
-const CELDA_PCT = "tabla-mc-celda-pct";
+const CELDA_PCT = "tabla-mc-celda-pct !text-left";
 
 export type InputsMargenContribucionState = {
   pxListaNorm: string;
