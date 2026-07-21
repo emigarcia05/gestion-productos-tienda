@@ -1402,6 +1402,26 @@
   border: none !important;
   background: transparent !important;
 }
+/**
+ * Columna CONCEPTO fija al scrollear horizontalmente (muchas formas de pago).
+ * `!important` en position: gana a `tbody td { position: relative }` de `.tabla-gestion-compacta`.
+ * Fondo opaco con `--tabla-row-bg` (cebra / hover). Esquina thead: sticky top+left, z-index alto.
+ */
+.tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-concepto,
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-concepto {
+  position: sticky !important;
+  left: 0;
+  box-shadow: 2px 0 0 0 color-mix(in oklab, var(--border) 80%, transparent);
+}
+.tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-concepto {
+  z-index: 30;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-concepto {
+  z-index: 11;
+  background-color: var(--tabla-row-bg, var(--card));
+}
 .tabla-fin-ana-margen-contribucion tbody td .input-mascara-sufijo {
   width: 100%;
   min-width: 0;

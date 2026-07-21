@@ -63,6 +63,8 @@ interface Props {
 type ProductoSeleccionadoMargenContribucion = {
   codTienda: string;
   descripcion: string;
+  /** `prod_tienda.costo_compra` — CX MERCADERÍA en modo PRODUCTO. */
+  costoCompra: number | null;
   porcUtilidadPct: number | null;
 };
 
@@ -170,6 +172,8 @@ export default function FinAnaMargenContribucionPageClient({
       producto: {
         codTienda: datos.codTienda,
         descripcion: datos.descripcionTienda,
+        costoCompra:
+          datos.costoCompra > 0 ? datos.costoCompra : null,
         porcUtilidadPct: datos.porcUtilidadPct,
       },
       porcUtilidadNorm: "",
@@ -181,8 +185,8 @@ export default function FinAnaMargenContribucionPageClient({
       })
     );
 
-    if (datos.porcUtilidadPct == null) {
-      toast.warning("Sin costo de compra válido: CX MERCADERÍA no se calculará.");
+    if (!(datos.costoCompra > 0)) {
+      toast.warning("Sin costo de compra válido: CX MERCADERÍA no se mostrará.");
     }
   }
 
@@ -429,6 +433,11 @@ export default function FinAnaMargenContribucionPageClient({
           porcUtilidadPct={porcUtilidadPct}
           tipoComprobante={config.tipoComprobante}
           modoEvaluacion={config.modoEvaluacion}
+          cxMercaderiaFijo={
+            config.modoEvaluacion === "producto"
+              ? (config.producto?.costoCompra ?? null)
+              : undefined
+          }
           pxListaEditable={pxListaEditable}
           esEditor={esEditor}
         />
