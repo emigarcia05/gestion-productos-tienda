@@ -1444,12 +1444,12 @@
  * - gap interno $↔% con el mismo valor pequeño.
  */
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-pesos {
-  text-align: right !important;
+  text-align: center !important;
   padding-left: 0.5rem !important;
   padding-right: 0.25rem !important;
 }
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-pct {
-  text-align: right !important;
+  text-align: left !important;
   font-weight: var(--font-weight-bold);
   padding-left: 0.25rem !important;
   padding-right: 0.5rem !important;

@@ -233,40 +233,26 @@ export default function TablaFinAnaMargenContribucion({
     const editable = pxListaEditable && esEditor;
 
     if (esProducto) {
-      return formasPago.flatMap((forma, index) => {
+      return formasPago.map((forma, index) => {
         const pesos = parsed.pxLista > 0 ? parsed.pxLista : null;
-        if (editable && index === 0) {
-          return [
-            <TableCell
-              key={`PX_LISTA-${forma}-edit`}
-              colSpan={2}
-              className={cn(
-                "celda-datos celda-numero p-1",
-                SEP_FORMA
-              )}
-            >
-              <div className="flex justify-center">{renderInputPxLista()}</div>
-            </TableCell>,
-          ];
-        }
-        return [
+        return (
           <TableCell
-            key={`PX_LISTA-${forma}-$`}
+            key={`PX_LISTA-${forma}`}
+            colSpan={2}
             className={cn(
               "celda-datos celda-numero tabular-nums",
               CELDA_PESOS,
-              SEP_FORMA
+              SEP_FORMA,
+              editable && index === 0 && "p-1"
             )}
           >
-            {fmtPesosMargenContribucion(pesos)}
-          </TableCell>,
-          <TableCell
-            key={`PX_LISTA-${forma}-pct`}
-            className={cn("celda-datos celda-numero tabular-nums", CELDA_PCT)}
-          >
-            {fmtPctSobrePxListaMargenContribucion(pesos, parsed.pxLista)}
-          </TableCell>,
-        ];
+            {editable && index === 0 ? (
+              <div className="flex justify-center">{renderInputPxLista()}</div>
+            ) : (
+              fmtPesosMargenContribucion(pesos)
+            )}
+          </TableCell>
+        );
       });
     }
 
@@ -422,7 +408,7 @@ export default function TablaFinAnaMargenContribucion({
                     className="tabla-fila-mc-subtotal hover:bg-transparent"
                   >
                     <TableCell
-                      className={cn("celda-datos !border-0", COL_CONCEPTO_STICKY)}
+                      className={cn("celda-datos", COL_CONCEPTO_STICKY)}
                     />
                     {esProducto
                       ? formasPago.flatMap((forma) => {

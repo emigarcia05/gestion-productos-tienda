@@ -1399,7 +1399,9 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-21): **Margen Contribución · separador** — entre **PX VENTA** e **IVA**: línea primary `.tabla-fila-mc-sep-linea` (misma marca que el subtotal); se elimina la fila hueca.*
 
-*Última actualización (2026-07-21): **Margen Contribución · padding PRODUCTO** — `.tabla-mc-celda-pesos` / `.tabla-mc-celda-pct`: `pl` de $ = `pr` de % (0,5 rem) para margen simétrico respecto al separador vertical.*
+*Última actualización (2026-07-21): **Margen Contribución · padding PRODUCTO** — `.tabla-mc-celda-pesos` centrado; `.tabla-mc-celda-pct` alineado a la **izquierda**; `pl` de $ = `pr` de % (0,5 rem) respecto al separador vertical.*
+
+*Última actualización (2026-07-21): **Margen Contribución · PX LISTA** — en modo **PRODUCTO** solo muestra `$` (`colSpan={2}`); sin columna `%`.*
 
 *Última actualización (2026-07-16): **Calendario — sin Probar Google Sheets** — se quitó el botón de probe A1 del header; queda **Exportar a Sheets**.*
 
