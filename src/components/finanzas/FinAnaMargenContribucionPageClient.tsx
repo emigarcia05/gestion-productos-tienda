@@ -428,6 +428,7 @@ export default function FinAnaMargenContribucionPageClient({
           onDescuentoPorFormaPagoChange={cambiarDescuentoPorFormaPago}
           porcUtilidadPct={porcUtilidadPct}
           tipoComprobante={config.tipoComprobante}
+          modoEvaluacion={config.modoEvaluacion}
           pxListaEditable={pxListaEditable}
           esEditor={esEditor}
         />

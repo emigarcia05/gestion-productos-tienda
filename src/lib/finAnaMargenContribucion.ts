@@ -9,7 +9,7 @@ import {
   cxTotalConIvaFinAnaCosFina,
   FIN_ANA_COS_FINA_IVA_FACTOR,
 } from "@/lib/finAnaCosFina";
-import { roundPorcentaje0a100 } from "@/lib/format";
+import { fmtPrecio, roundPorcentaje0a100 } from "@/lib/format";
 
 export type { FormaPagoMargenContribucion } from "@/lib/finAnaCosFinaPagos";
 
@@ -178,13 +178,13 @@ export function netoSinIvaMargenContribucion(precioVenta: number): number {
   return precioVenta / FIN_ANA_COS_FINA_IVA_FACTOR;
 }
 
-/** PX VENTA = PX LISTA × (1 − descuento % / 100). */
+/** PX VENTA = PX LISTA × (1 + descuento % / 100). Negativo = descuento; positivo = recargo. */
 export function pxVentaMargenContribucion(
   pxLista: number,
   descuentoPct: number
 ): number {
   if (!(pxLista > 0)) return 0;
-  const factor = 1 - descuentoPct / 100;
+  const factor = 1 + descuentoPct / 100;
   return Math.round(pxLista * Math.max(0, factor));
 }
 
@@ -260,6 +260,30 @@ export function cxFinancieroPesosMargenContribucion(
 ): number {
   if (!(pxVenta > 0) || !(cxFinPct > 0)) return 0;
   return Math.round(pxVenta * (cxFinPct / 100));
+}
+
+/**
+ * Formato de montos (ingresos/costos) en la grilla según modo de evaluación.
+ * - `porc_utilidad` (PX LISTA = 100): el monto en $ equivale al % → `10%`
+ * - `producto`: pesos + % sobre PX LISTA → `$1.426 (54%)`
+ * DESCUENTO sigue siendo % firmado (no usa esta función).
+ */
+export function fmtCeldaMontoMargenContribucion(
+  valorPesos: number | null | undefined,
+  modo: ModoEvaluacionMargenContribucion,
+  pxLista: number
+): string {
+  if (valorPesos == null || Number.isNaN(valorPesos) || valorPesos <= 0) {
+    return "—";
+  }
+  const n = Math.round(valorPesos);
+  if (modo === "porc_utilidad") {
+    return `${n.toLocaleString("es-AR")}%`;
+  }
+  const money = `$${fmtPrecio(n)}`;
+  if (!(pxLista > 0)) return money;
+  const pct = Math.round((valorPesos / pxLista) * 100);
+  return `${money} (${pct.toLocaleString("es-AR")}%)`;
 }
 
 /** Subtotal de costos (IVA + IIBB + CX MERCADERÍA + CX FINANCIERO en $) por forma de pago. */

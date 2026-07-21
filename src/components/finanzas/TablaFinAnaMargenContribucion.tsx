@@ -11,11 +11,10 @@ import {
 } from "@/components/ui/table";
 import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
 import PxListaEnteroInput from "@/components/shared/PxListaEnteroInput";
-import { fmtPrecio } from "@/lib/format";
-import { fmtPorcentajeDosDecimalesFinAnaCosFina } from "@/lib/finAnaCosFina";
 import {
   calcularValoresMargenContribucion,
   crearDescuentoPctPorFormaPagoVacios,
+  cxFinancieroPesosMargenContribucion,
   esFilaDescuentoPorFormaPagoMargenContribucion,
   esFilaEditableMargenContribucion,
   esFilaPorFormaPagoMargenContribucion,
@@ -24,10 +23,12 @@ import {
   FIN_ANA_MC_DESCUENTO_MAX,
   FIN_ANA_MC_DESCUENTO_MIN,
   FIN_ANA_MC_LAYOUT,
+  fmtCeldaMontoMargenContribucion,
   mcMargenContribucionPorFormaPago,
   subtotalCostosMargenContribucionPorFormaPago,
   type FilaMargenContribucionDatoId,
   type FormaPagoMargenContribucion,
+  type ModoEvaluacionMargenContribucion,
   type TipoComprobanteVentaMargenContribucion,
   type ValoresCalculadosMargenContribucion,
 } from "@/lib/finAnaMargenContribucion";
@@ -49,7 +50,7 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
 
 export type InputsMargenContribucionState = {
   pxListaNorm: string;
-  /** Entero 0–100 (%) por forma de pago. */
+  /** Entero −100…100 (%) por forma de pago. Negativo = descuento; positivo = recargo. */
   descuentoPctPorFormaPago: Record<FormaPagoMargenContribucion, number>;
 };
 
@@ -65,24 +66,16 @@ interface Props {
   ) => void | Promise<void>;
   porcUtilidadPct: number;
   tipoComprobante: TipoComprobanteVentaMargenContribucion;
+  modoEvaluacion: ModoEvaluacionMargenContribucion;
   pxListaEditable: boolean;
   esEditor: boolean;
 }
 
-function fmtMontoTabla(n: number | null | undefined): string {
-  if (n == null || Number.isNaN(n)) return "—";
-  if (n <= 0) return "—";
-  return fmtPrecio(n);
-}
-
 function fmtDescuentoEnteroTabla(n: number | null | undefined): string {
   if (n == null || Number.isNaN(n)) return "—";
-  return `${Math.round(n).toLocaleString("es-AR")}%`;
-}
-
-function fmtPorcentajeTabla(n: number | null | undefined): string {
-  if (n == null || Number.isNaN(n)) return "—";
-  return `${fmtPorcentajeDosDecimalesFinAnaCosFina(n)}%`;
+  const entero = Math.round(n);
+  if (entero > 0) return `+${entero.toLocaleString("es-AR")}%`;
+  return `${entero.toLocaleString("es-AR")}%`;
 }
 
 export default function TablaFinAnaMargenContribucion({
@@ -94,6 +87,7 @@ export default function TablaFinAnaMargenContribucion({
   onDescuentoPorFormaPagoChange,
   porcUtilidadPct,
   tipoComprobante,
+  modoEvaluacion,
   pxListaEditable,
   esEditor,
 }: Props) {
@@ -122,6 +116,10 @@ export default function TablaFinAnaMargenContribucion({
     return parsed.calculadosPorFormaPago[formaPago];
   }
 
+  function fmtMonto(n: number | null | undefined): string {
+    return fmtCeldaMontoMargenContribucion(n, modoEvaluacion, parsed.pxLista);
+  }
+
   function renderValorDato(
     filaId: FilaMargenContribucionDatoId,
     formaPago: FormaPagoMargenContribucion
@@ -132,22 +130,27 @@ export default function TablaFinAnaMargenContribucion({
 
     switch (filaId) {
       case "PX_LISTA":
-        return fmtMontoTabla(parsed.pxLista);
+        return fmtMonto(parsed.pxLista);
       case "DESCUENTO":
         return fmtDescuentoEnteroTabla(descuentoPct);
       case "PX_VENTA":
-        return fmtMontoTabla(calculados.precioVenta);
+        return fmtMonto(calculados.precioVenta);
       case "IVA":
-        return fmtMontoTabla(calculados.iva);
+        return fmtMonto(calculados.iva);
       case "IIBB":
-        return fmtMontoTabla(calculados.iibb);
+        return fmtMonto(calculados.iibb);
       case "CX_MERCADERIA":
-        return fmtMontoTabla(calculados.cxMercaderia);
+        return fmtMonto(calculados.cxMercaderia);
       case "CX_FINANCIERO":
-        return fmtPorcentajeTabla(cxFinPct);
+        return fmtMonto(
+          cxFinancieroPesosMargenContribucion(
+            calculados.precioVenta,
+            cxFinPct
+          )
+        );
       case "MC": {
         const mc = mcMargenContribucionPorFormaPago(calculados, cxFinPct);
-        return fmtMontoTabla(mc);
+        return fmtMonto(mc);
       }
       default:
         return "—";
@@ -159,7 +162,7 @@ export default function TablaFinAnaMargenContribucion({
       calculadosParaForma(formaPago),
       cxFinancieroPorFormaPago[formaPago]
     );
-    return fmtMontoTabla(subtotal);
+    return fmtMonto(subtotal);
   }
 
   function renderInputPxLista() {
@@ -188,6 +191,7 @@ export default function TablaFinAnaMargenContribucion({
       <PorcentajeEnteroMaskInput
         value={inputs.descuentoPctPorFormaPago[formaPago] ?? 0}
         signed
+        defaultNegative
         min={FIN_ANA_MC_DESCUENTO_MIN}
         max={FIN_ANA_MC_DESCUENTO_MAX}
         onValueChange={(next) => {
@@ -262,7 +266,7 @@ export default function TablaFinAnaMargenContribucion({
       <colgroup>
         <col className="w-[10rem]" />
         {formasPago.map((forma) => (
-          <col key={forma} className="w-[6.5rem]" />
+          <col key={forma} className="w-[8.5rem]" />
         ))}
       </colgroup>
       <TableHeader>

@@ -65,14 +65,14 @@ const PAGOS_SEMILLA: {
   enCostosFinancieros: boolean;
   enMargenContribucion: boolean;
 }[] = [
-  { id: "clfinapago0000001deb", codigo: "DEBITO", nombre: "DÉBITO", orden: 0, enCostosFinancieros: true, enMargenContribucion: true },
-  { id: "clfinapago0000002c01", codigo: "CUOTA_1", nombre: "1 CUOTA", orden: 1, enCostosFinancieros: true, enMargenContribucion: true },
-  { id: "clfinapago0000003c03", codigo: "CUOTA_3", nombre: "3 CUOTAS", orden: 2, enCostosFinancieros: true, enMargenContribucion: true },
-  { id: "clfinapago0000004c06", codigo: "CUOTA_6", nombre: "6 CUOTAS", orden: 3, enCostosFinancieros: true, enMargenContribucion: true },
-  { id: "clfinapago0000005c09", codigo: "CUOTA_9", nombre: "9 CUOTAS", orden: 4, enCostosFinancieros: true, enMargenContribucion: true },
-  { id: "clfinapago0000006c12", codigo: "CUOTA_12", nombre: "12 CUOTAS", orden: 5, enCostosFinancieros: true, enMargenContribucion: true },
-  { id: "clfinapago0000007c18", codigo: "CUOTA_18", nombre: "18 CUOTAS", orden: 6, enCostosFinancieros: true, enMargenContribucion: true },
-  { id: "clfinapago0000008efe", codigo: "EFECTIVO", nombre: "EFECTIVO", orden: 7, enCostosFinancieros: false, enMargenContribucion: true },
+  { id: "clfinapago0000008efe", codigo: "EFECTIVO", nombre: "EFECTIVO", orden: 0, enCostosFinancieros: false, enMargenContribucion: true },
+  { id: "clfinapago0000001deb", codigo: "DEBITO", nombre: "DÉBITO", orden: 1, enCostosFinancieros: true, enMargenContribucion: true },
+  { id: "clfinapago0000002c01", codigo: "CUOTA_1", nombre: "1 CUOTA", orden: 2, enCostosFinancieros: true, enMargenContribucion: true },
+  { id: "clfinapago0000003c03", codigo: "CUOTA_3", nombre: "3 CUOTAS", orden: 3, enCostosFinancieros: true, enMargenContribucion: true },
+  { id: "clfinapago0000004c06", codigo: "CUOTA_6", nombre: "6 CUOTAS", orden: 4, enCostosFinancieros: true, enMargenContribucion: true },
+  { id: "clfinapago0000005c09", codigo: "CUOTA_9", nombre: "9 CUOTAS", orden: 5, enCostosFinancieros: true, enMargenContribucion: true },
+  { id: "clfinapago0000006c12", codigo: "CUOTA_12", nombre: "12 CUOTAS", orden: 6, enCostosFinancieros: true, enMargenContribucion: true },
+  { id: "clfinapago0000007c18", codigo: "CUOTA_18", nombre: "18 CUOTAS", orden: 7, enCostosFinancieros: true, enMargenContribucion: true },
 ];
 
 export async function ensureFinAnaCosFinaPagosSeed(): Promise<void> {
