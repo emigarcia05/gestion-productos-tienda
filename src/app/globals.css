@@ -1386,21 +1386,27 @@
   background-color: color-mix(in srgb, var(--accent2) 22%, transparent);
 }
 
-/* Margen Contribución — filas de subtotal y separación entre secciones. */
-.tabla-fin-ana-margen-contribucion tbody tr.tabla-fila-mc-subtotal td {
+/* Margen Contribución — línea divisora primary (entre bloques y sobre subtotal). */
+.tabla-fin-ana-margen-contribucion tbody tr.tabla-fila-mc-subtotal td,
+.tabla-fin-ana-margen-contribucion tbody tr.tabla-fila-mc-sep-linea td {
   border-top: 2px solid var(--primary) !important;
+}
+.tabla-fin-ana-margen-contribucion tbody tr.tabla-fila-mc-subtotal td {
   padding-top: 0.35rem !important;
   padding-bottom: 0.35rem !important;
   vertical-align: middle;
 }
-.tabla-fin-ana-margen-contribucion tbody tr.tabla-fila-mc-espacio,
-.tabla-fin-ana-margen-contribucion tbody tr.tabla-fila-mc-espacio td {
-  height: 0.75rem !important;
-  min-height: 0.75rem !important;
-  max-height: 0.75rem !important;
+/** Separador entre PX VENTA y bloque de costos (reemplaza la fila hueca). */
+.tabla-fin-ana-margen-contribucion tbody tr.tabla-fila-mc-sep-linea,
+.tabla-fin-ana-margen-contribucion tbody tr.tabla-fila-mc-sep-linea td {
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
   padding: 0 !important;
-  border: none !important;
   background: transparent !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
 }
 /**
  * Columna CONCEPTO fija al scrollear horizontalmente (muchas formas de pago).
@@ -1421,6 +1427,16 @@
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-concepto {
   z-index: 11;
   background-color: var(--tabla-row-bg, var(--card));
+}
+/**
+ * Separador vertical entre formas de pago (más marcado que `border-border`).
+ * En thead usa tono claro sobre `primary`; en tbody usa `primary`.
+ */
+.tabla-fin-ana-margen-contribucion thead th.tabla-mc-sep-forma {
+  border-left: 2px solid color-mix(in oklab, var(--primary-foreground) 55%, transparent) !important;
+}
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-sep-forma {
+  border-left: 2px solid color-mix(in oklab, var(--primary) 55%, var(--border)) !important;
 }
 .tabla-fin-ana-margen-contribucion tbody td .input-mascara-sufijo {
   width: 100%;

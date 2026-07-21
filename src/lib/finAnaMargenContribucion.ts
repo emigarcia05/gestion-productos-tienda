@@ -41,10 +41,11 @@ export const FIN_ANA_MC_FILAS_DATO = [
 
 export type FilaMargenContribucionDatoId = (typeof FIN_ANA_MC_FILAS_DATO)[number];
 
-/** Tipos de fila en el layout (secciones, subtotales, espacio). */
+/** Tipos de fila en el layout (secciones, subtotales, separador de línea). */
 export type FilaMargenContribucionLayout =
   | { tipo: "dato"; id: FilaMargenContribucionDatoId }
   | { tipo: "subtotal"; id: "SUBTOTAL_COSTOS" }
+  /** Línea primary entre PX VENTA y bloque de costos (misma marca que el subtotal). */
   | { tipo: "espacio"; id: "SEPARACION" };
 
 /** Orden visual de filas con secciones. */

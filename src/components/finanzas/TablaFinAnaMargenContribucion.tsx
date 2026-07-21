@@ -50,12 +50,15 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
   "w-full max-w-full border border-primary rounded-md"
 );
 
-/** Ancho total por forma de pago en modo PRODUCTO ($ 75% + % 25%). */
-const COL_PRODUCTO_PESOS = "w-[7.5rem]";
-const COL_PRODUCTO_PCT = "w-[2.5rem]";
-const COL_PORC_UTILIDAD = "w-[5.5rem]";
+/** Ancho por forma de pago (≈10 % más angosto que el layout previo). */
+const COL_PRODUCTO_PESOS = "w-[6.75rem]";
+const COL_PRODUCTO_PCT = "w-[2.25rem]";
+const COL_PORC_UTILIDAD = "w-[5rem]";
+const COL_CONCEPTO = "w-[9rem]";
 /** Primera columna fija (scroll horizontal). Clase en `globals.css`. */
 const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
+/** Separador vertical entre formas de pago (más marcado). */
+const SEP_FORMA = "tabla-mc-sep-forma";
 
 export type InputsMargenContribucionState = {
   pxListaNorm: string;
@@ -186,35 +189,23 @@ export default function TablaFinAnaMargenContribucion({
   }
 
   function renderInputPxLista() {
-    if (!pxListaEditable || !esEditor) {
-      if (esProducto) {
-        return (
-          <div className="mx-auto grid w-full max-w-[12rem] grid-cols-[75%_25%] items-center gap-0 tabular-nums text-xs">
-            <span className="!text-right pr-1">
-              {fmtPesosMargenContribucion(parsed.pxLista)}
-            </span>
-            <span className="!text-right font-bold">
-              {fmtPctSobrePxListaMargenContribucion(parsed.pxLista, parsed.pxLista)}
-            </span>
-          </div>
-        );
-      }
-      return (
-        <span className="tabular-nums text-foreground">
-          {fmtCeldaUnica(parsed.pxLista > 0 ? parsed.pxLista : null)}
-        </span>
-      );
-    }
-
     return (
       <PxListaEnteroInput
         valueNormalized={inputs.pxListaNorm}
         onValueNormalizedChange={(next) =>
           onInputsChange({ ...inputs, pxListaNorm: next })
         }
-        className={cn(INPUT_FILA_CLASS, "max-w-[12rem] border-primary")}
+        className={cn(INPUT_FILA_CLASS, "max-w-full border-primary")}
         aria-label="Px lista"
       />
+    );
+  }
+
+  function renderValorPxListaSoloLectura() {
+    return (
+      <span className="tabular-nums text-foreground">
+        {fmtCeldaUnica(parsed.pxLista > 0 ? parsed.pxLista : null)}
+      </span>
     );
   }
 
@@ -235,16 +226,63 @@ export default function TablaFinAnaMargenContribucion({
     );
   }
 
+  function renderCeldasPxLista() {
+    const editable = pxListaEditable && esEditor;
+
+    if (esProducto) {
+      return formasPago.flatMap((forma, index) => {
+        const pesos = parsed.pxLista > 0 ? parsed.pxLista : null;
+        if (editable && index === 0) {
+          return [
+            <TableCell
+              key={`PX_LISTA-${forma}-edit`}
+              colSpan={2}
+              className={cn(
+                "celda-datos celda-numero p-1",
+                SEP_FORMA
+              )}
+            >
+              <div className="flex justify-center">{renderInputPxLista()}</div>
+            </TableCell>,
+          ];
+        }
+        return [
+          <TableCell
+            key={`PX_LISTA-${forma}-$`}
+            className={cn(
+              "celda-datos celda-numero tabular-nums !text-right !pr-1.5",
+              SEP_FORMA
+            )}
+          >
+            {fmtPesosMargenContribucion(pesos)}
+          </TableCell>,
+          <TableCell
+            key={`PX_LISTA-${forma}-pct`}
+            className="celda-datos celda-numero tabular-nums !text-right font-bold !pl-0.5"
+          >
+            {fmtPctSobrePxListaMargenContribucion(pesos, parsed.pxLista)}
+          </TableCell>,
+        ];
+      });
+    }
+
+    return formasPago.map((forma, index) => (
+      <TableCell
+        key={`PX_LISTA-${forma}`}
+        className={cn("celda-datos celda-numero tabular-nums", SEP_FORMA)}
+      >
+        {editable && index === 0 ? (
+          <div className="flex justify-center">{renderInputPxLista()}</div>
+        ) : (
+          renderValorPxListaSoloLectura()
+        )}
+      </TableCell>
+    ));
+  }
+
   function renderCeldasDatos(filaId: FilaMargenContribucionDatoId) {
     if (esFilaEditableMargenContribucion(filaId)) {
-      return (
-        <TableCell
-          colSpan={totalColsDatos}
-          className="celda-datos celda-numero border-l border-border"
-        >
-          <div className="flex justify-center">{renderInputPxLista()}</div>
-        </TableCell>
-      );
+      return renderCeldasPxLista();
     }
 
     if (esFilaDescuentoPorFormaPagoMargenContribucion(filaId)) {
@@ -252,7 +290,7 @@ export default function TablaFinAnaMargenContribucion({
         <TableCell
           key={`${filaId}-${forma}`}
           colSpan={colsPorForma}
-          className="celda-datos celda-numero border-l border-border p-1"
+          className={cn("celda-datos celda-numero p-1", SEP_FORMA)}
         >
           <div className="flex justify-center">{renderInputDescuento(forma)}</div>
         </TableCell>
@@ -268,7 +306,8 @@ export default function TablaFinAnaMargenContribucion({
           <TableCell
             key={`${filaId}-${forma}-$`}
             className={cn(
-              "celda-datos celda-numero border-l border-border tabular-nums !text-right !pr-1.5",
+              "celda-datos celda-numero tabular-nums !text-right !pr-1.5",
+              SEP_FORMA,
               emphasizePesos && "font-semibold"
             )}
           >
@@ -289,7 +328,8 @@ export default function TablaFinAnaMargenContribucion({
         <TableCell
           key={`${filaId}-${forma}`}
           className={cn(
-            "celda-datos celda-numero border-l border-border tabular-nums",
+            "celda-datos celda-numero tabular-nums",
+            SEP_FORMA,
             filaId === "MC" && "font-semibold"
           )}
         >
@@ -298,12 +338,12 @@ export default function TablaFinAnaMargenContribucion({
       ));
     }
 
-    return formasPago.map((forma, index) => (
+    return formasPago.map((forma) => (
       <TableCell
         key={`${filaId}-${forma}`}
         className={cn(
           "celda-datos celda-numero tabular-nums",
-          index === 0 && "border-l border-border",
+          SEP_FORMA,
           filaId === "PX_VENTA" && "font-semibold"
         )}
       >
@@ -321,7 +361,7 @@ export default function TablaFinAnaMargenContribucion({
           className="tabla-fin-ana-margen-contribucion min-w-max"
         >
           <colgroup>
-            <col className="w-[10rem]" />
+            <col className={COL_CONCEPTO} />
             {formasPago.flatMap((forma) =>
               esProducto
                 ? [
@@ -340,7 +380,10 @@ export default function TablaFinAnaMargenContribucion({
                 <TableHead
                   key={forma}
                   colSpan={colsPorForma}
-                  className="text-center border-l border-primary-foreground/25 leading-tight"
+                  className={cn(
+                    "text-center leading-tight",
+                    SEP_FORMA
+                  )}
                 >
                   {etiquetaFormaPagoMargenContribucion(
                     forma,
@@ -356,12 +399,12 @@ export default function TablaFinAnaMargenContribucion({
                 return (
                   <TableRow
                     key={fila.id}
-                    className="tabla-fila-mc-espacio hover:bg-transparent"
+                    className="tabla-fila-mc-sep-linea hover:bg-transparent"
                     aria-hidden
                   >
                     <TableCell
                       colSpan={1 + totalColsDatos}
-                      className="!p-0 !h-3"
+                      className="!p-0 !h-0 border-0"
                     />
                   </TableRow>
                 );
@@ -382,7 +425,10 @@ export default function TablaFinAnaMargenContribucion({
                           return [
                             <TableCell
                               key={`${fila.id}-${forma}-$`}
-                              className="celda-datos celda-numero tabular-nums border-l border-border font-semibold text-foreground !text-right !pr-1.5"
+                              className={cn(
+                                "celda-datos celda-numero tabular-nums font-semibold text-foreground !text-right !pr-1.5",
+                                SEP_FORMA
+                              )}
                             >
                               {fmtPesosMargenContribucion(pesos)}
                             </TableCell>,
@@ -400,7 +446,10 @@ export default function TablaFinAnaMargenContribucion({
                       : formasPago.map((forma) => (
                           <TableCell
                             key={`${fila.id}-${forma}`}
-                            className="celda-datos celda-numero tabular-nums border-l border-border font-semibold text-foreground"
+                            className={cn(
+                              "celda-datos celda-numero tabular-nums font-semibold text-foreground",
+                              SEP_FORMA
+                            )}
                           >
                             {fmtCeldaUnica(valorSubtotalPesos(forma))}
                           </TableCell>
