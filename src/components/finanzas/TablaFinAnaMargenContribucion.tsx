@@ -52,13 +52,16 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
 
 /** Ancho por forma de pago (≈10 % más angosto que el layout previo). */
 const COL_PRODUCTO_PESOS = "w-[6.75rem]";
-const COL_PRODUCTO_PCT = "w-[2.25rem]";
+const COL_PRODUCTO_PCT = "w-[2.75rem]";
 const COL_PORC_UTILIDAD = "w-[5rem]";
 const COL_CONCEPTO = "w-[9rem]";
 /** Primera columna fija (scroll horizontal). Clase en `globals.css`. */
 const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
 /** Separador vertical entre formas de pago (más marcado). */
 const SEP_FORMA = "tabla-mc-sep-forma";
+/** Celdas $ / % en modo PRODUCTO (padding simétrico respecto al separador). */
+const CELDA_PESOS = "tabla-mc-celda-pesos";
+const CELDA_PCT = "tabla-mc-celda-pct";
 
 export type InputsMargenContribucionState = {
   pxListaNorm: string;
@@ -250,7 +253,8 @@ export default function TablaFinAnaMargenContribucion({
           <TableCell
             key={`PX_LISTA-${forma}-$`}
             className={cn(
-              "celda-datos celda-numero tabular-nums !text-right !pr-1.5",
+              "celda-datos celda-numero tabular-nums",
+              CELDA_PESOS,
               SEP_FORMA
             )}
           >
@@ -258,7 +262,7 @@ export default function TablaFinAnaMargenContribucion({
           </TableCell>,
           <TableCell
             key={`PX_LISTA-${forma}-pct`}
-            className="celda-datos celda-numero tabular-nums !text-right font-bold !pl-0.5"
+            className={cn("celda-datos celda-numero tabular-nums", CELDA_PCT)}
           >
             {fmtPctSobrePxListaMargenContribucion(pesos, parsed.pxLista)}
           </TableCell>,
@@ -306,7 +310,8 @@ export default function TablaFinAnaMargenContribucion({
           <TableCell
             key={`${filaId}-${forma}-$`}
             className={cn(
-              "celda-datos celda-numero tabular-nums !text-right !pr-1.5",
+              "celda-datos celda-numero tabular-nums",
+              CELDA_PESOS,
               SEP_FORMA,
               emphasizePesos && "font-semibold"
             )}
@@ -315,7 +320,7 @@ export default function TablaFinAnaMargenContribucion({
           </TableCell>,
           <TableCell
             key={`${filaId}-${forma}-pct`}
-            className="celda-datos celda-numero tabular-nums !text-right font-bold !pl-0.5"
+            className={cn("celda-datos celda-numero tabular-nums", CELDA_PCT)}
           >
             {fmtPctSobrePxListaMargenContribucion(pesos, parsed.pxLista)}
           </TableCell>,
@@ -426,7 +431,8 @@ export default function TablaFinAnaMargenContribucion({
                             <TableCell
                               key={`${fila.id}-${forma}-$`}
                               className={cn(
-                                "celda-datos celda-numero tabular-nums font-semibold text-foreground !text-right !pr-1.5",
+                                "celda-datos celda-numero tabular-nums font-semibold text-foreground",
+                                CELDA_PESOS,
                                 SEP_FORMA
                               )}
                             >
@@ -434,7 +440,10 @@ export default function TablaFinAnaMargenContribucion({
                             </TableCell>,
                             <TableCell
                               key={`${fila.id}-${forma}-pct`}
-                              className="celda-datos celda-numero tabular-nums font-bold text-foreground !text-right !pl-0.5"
+                              className={cn(
+                                "celda-datos celda-numero tabular-nums font-bold text-foreground",
+                                CELDA_PCT
+                              )}
                             >
                               {fmtPctSobrePxListaMargenContribucion(
                                 pesos,
