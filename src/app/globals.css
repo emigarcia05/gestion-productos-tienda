@@ -1427,13 +1427,30 @@
  */
 .tabla-fin-ana-margen-contribucion {
   --tabla-mc-seccion-width: 1.75rem;
+  /** Ancho fijo por forma de pago (no absorbe el sobrante de `width: 100%`). */
+  --tabla-mc-forma-width: 8rem;
+  /** Pads exteriores = gap del par $/% (fracción del ancho de la celda dual). */
+  --tabla-mc-dual-pad: 10%;
   /**
-   * Celda dual PRODUCTO (`CeldaSubcolumnasMontoPct`):
-   * pistas `1fr 6.5fr 1fr 3.5fr 1fr` → pads exteriores = gap;
-   * pistas de valor en proporción 65:35 (6.5:3.5) del espacio útil.
+   * Crítico: `.tabla-gestion-compacta` + `Table` usan `width: 100%`.
+   * Con `table-layout: fixed`, el sobrante ensancha las columnas de forma y el
+   * par $/% parece “space-between” (hueco enorme, % pegado a la derecha).
+   * `max-content` ancla el ancho a la suma de `<col>`.
    */
-  --tabla-mc-dual-cols: minmax(0, 1fr) minmax(0, 6.5fr) minmax(0, 1fr) minmax(0, 3.5fr)
-    minmax(0, 1fr);
+  width: max-content !important;
+  min-width: max-content;
+}
+.tabla-fin-ana-margen-contribucion col.tabla-mc-col-forma {
+  width: var(--tabla-mc-forma-width);
+  min-width: var(--tabla-mc-forma-width);
+  max-width: var(--tabla-mc-forma-width);
+}
+.tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-forma,
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-forma {
+  width: var(--tabla-mc-forma-width);
+  min-width: var(--tabla-mc-forma-width);
+  max-width: var(--tabla-mc-forma-width);
+  box-sizing: border-box;
 }
 .tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-seccion,
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-seccion {
@@ -1496,8 +1513,9 @@
 }
 /**
  * Modo PRODUCTO — par $/% en una sola celda (`CeldaSubcolumnasMontoPct`).
- * Grid: pad | $ (65%) | gap | % (35%) | pad — pads exteriores = gap (simetría del grupo).
- * La celda anula el padding horizontal de `.celda-datos` para que el grid use el 100 %.
+ * 5 pistas: pad | $ | gap | % | pad con pads % fijos (no se comprimen como fr).
+ * Resto del ancho: 65fr / 35fr. Valores centrados con flex en su pista.
+ * La celda anula el padding horizontal de `.celda-datos`.
  */
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-dual {
   padding-left: 0 !important;
@@ -1505,25 +1523,39 @@
 }
 .tabla-mc-dual-grid {
   display: grid;
-  grid-template-columns: var(
-    --tabla-mc-dual-cols,
-    minmax(0, 1fr) minmax(0, 6.5fr) minmax(0, 1fr) minmax(0, 3.5fr) minmax(0, 1fr)
-  );
+  grid-template-columns:
+    var(--tabla-mc-dual-pad, 10%)
+    minmax(0, 65fr)
+    var(--tabla-mc-dual-pad, 10%)
+    minmax(0, 35fr)
+    var(--tabla-mc-dual-pad, 10%);
   align-items: center;
   width: 100%;
   min-width: 0;
+  height: 100%;
   box-sizing: border-box;
 }
+.tabla-mc-dual-pad {
+  min-width: 0;
+  pointer-events: none;
+}
+.tabla-mc-dual-pesos,
+.tabla-mc-dual-pct {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  box-sizing: border-box;
+  color: var(--foreground);
+}
 .tabla-mc-dual-pesos {
-  grid-column: 2;
-  justify-self: stretch;
-  text-align: center;
   font-weight: var(--font-weight-normal);
 }
 .tabla-mc-dual-pct {
-  grid-column: 4;
-  justify-self: stretch;
-  text-align: center;
+  font-weight: var(--font-weight-bold);
 }
 .tabla-fin-ana-margen-contribucion tbody td .input-mascara-sufijo {
   width: 100%;

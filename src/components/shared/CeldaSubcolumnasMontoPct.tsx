@@ -1,12 +1,15 @@
-import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
 /**
- * Par $ / % como subcolumnas visuales 65 % / 35 % dentro de una celda de tabla.
- * Ritmo horizontal del grupo: pad | $ | gap | % | pad (pads exteriores = gap).
- * Los valores quedan centrados en su pista; `%` en negrita por defecto.
+ * Par $ / % como subcolumnas visuales dentro de una celda.
+ *
+ * Ritmo del grupo (sobre el 100 % de la celda):
+ *   10% pad | $ (65fr del resto) | 10% gap | % (35fr del resto) | 10% pad
+ * → pads exteriores = gap; pistas de valor en proporción 65:35.
+ *
+ * Los valores se centran con flex en su pista (más fiable que text-align en spans).
  */
 export const celdaSubcolumnasMontoPctVariants = cva(
   "tabla-mc-dual-grid w-full min-w-0 tabular-nums",
@@ -26,23 +29,20 @@ export const celdaSubcolumnasMontoPctVariants = cva(
 );
 
 export const celdaSubcolumnasMontoPctPesosVariants = cva(
-  "tabla-mc-dual-pesos min-w-0 whitespace-nowrap text-center font-normal text-foreground"
+  "tabla-mc-dual-pesos"
 );
 
-export const celdaSubcolumnasMontoPctPctVariants = cva(
-  "tabla-mc-dual-pct min-w-0 whitespace-nowrap text-center text-foreground",
-  {
-    variants: {
-      weight: {
-        bold: "font-bold",
-        normal: "font-normal",
-      },
+export const celdaSubcolumnasMontoPctPctVariants = cva("tabla-mc-dual-pct", {
+  variants: {
+    weight: {
+      bold: "font-bold",
+      normal: "font-normal",
     },
-    defaultVariants: {
-      weight: "bold",
-    },
-  }
-);
+  },
+  defaultVariants: {
+    weight: "bold",
+  },
+});
 
 export type CeldaSubcolumnasMontoPctProps = {
   /** Texto ya formateado del monto (ej. `$12.407`). */
@@ -56,7 +56,7 @@ export type CeldaSubcolumnasMontoPctProps = {
   VariantProps<typeof celdaSubcolumnasMontoPctPctVariants>;
 
 /**
- * Server Component seguro (sin estado). Usar dentro de `TableCell` con el ancho del grupo.
+ * Server Component seguro (sin estado). Usar dentro de `TableCell` con ancho de columna anclado.
  */
 export default function CeldaSubcolumnasMontoPct({
   monto,
@@ -73,6 +73,7 @@ export default function CeldaSubcolumnasMontoPct({
       role="group"
       aria-label={`${monto}, ${pct}`}
     >
+      <span className="tabla-mc-dual-pad" aria-hidden />
       <span
         className={cn(
           celdaSubcolumnasMontoPctPesosVariants(),
@@ -81,6 +82,7 @@ export default function CeldaSubcolumnasMontoPct({
       >
         {monto}
       </span>
+      <span className="tabla-mc-dual-pad" aria-hidden />
       <span
         className={cn(
           celdaSubcolumnasMontoPctPctVariants({ weight }),
@@ -89,6 +91,7 @@ export default function CeldaSubcolumnasMontoPct({
       >
         {pct}
       </span>
+      <span className="tabla-mc-dual-pad" aria-hidden />
     </div>
   );
 }

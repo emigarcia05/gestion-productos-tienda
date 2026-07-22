@@ -52,9 +52,9 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
 
 /**
  * Ancho fijo por forma de pago (mismo en PRODUCTO y PORC. UTILIDAD).
- * PRODUCTO: una columna con `CeldaSubcolumnasMontoPct` (grid 65/35 simétrico).
+ * PRODUCTO: `CeldaSubcolumnasMontoPct` (pads 10% + pistas 65/35). Ancho en globals.
  */
-const COL_FORMA_ANCHO = "w-[6.5rem]";
+const COL_FORMA = "tabla-mc-col-forma";
 const COL_CONCEPTO = "w-[9rem]";
 const COL_SECCION = "w-[1.75rem]";
 /** Columna de sección (etiqueta vertical) + CONCEPTO fijos al scroll. */
@@ -237,6 +237,7 @@ export default function TablaFinAnaMargenContribucion({
             key={`PX_LISTA-${forma}`}
             className={cn(
               "celda-datos celda-numero tabular-nums text-center",
+              COL_FORMA,
               SEP_FORMA,
               editable && index === 0 && "p-1"
             )}
@@ -254,7 +255,11 @@ export default function TablaFinAnaMargenContribucion({
     return formasPago.map((forma, index) => (
       <TableCell
         key={`PX_LISTA-${forma}`}
-        className={cn("celda-datos celda-numero tabular-nums", SEP_FORMA)}
+        className={cn(
+          "celda-datos celda-numero tabular-nums",
+          COL_FORMA,
+          SEP_FORMA
+        )}
       >
         {editable && index === 0 ? (
           <div className="flex justify-center">{renderInputPxLista()}</div>
@@ -274,7 +279,11 @@ export default function TablaFinAnaMargenContribucion({
       return formasPago.map((forma) => (
         <TableCell
           key={`${filaId}-${forma}`}
-          className={cn("celda-datos celda-numero p-1", SEP_FORMA)}
+          className={cn(
+            "celda-datos celda-numero p-1",
+            COL_FORMA,
+            SEP_FORMA
+          )}
         >
           <div className="flex justify-center">{renderInputDescuento(forma)}</div>
         </TableCell>
@@ -292,6 +301,7 @@ export default function TablaFinAnaMargenContribucion({
             className={cn(
               "celda-datos celda-numero tabular-nums",
               CELDA_DUAL,
+              COL_FORMA,
               SEP_FORMA
             )}
           >
@@ -310,6 +320,7 @@ export default function TablaFinAnaMargenContribucion({
           key={`${filaId}-${forma}`}
           className={cn(
             "celda-datos celda-numero tabular-nums",
+            COL_FORMA,
             SEP_FORMA,
             esFilaMargen && "font-bold"
           )}
@@ -322,7 +333,11 @@ export default function TablaFinAnaMargenContribucion({
     return formasPago.map((forma) => (
       <TableCell
         key={`${filaId}-${forma}`}
-        className={cn("celda-datos celda-numero tabular-nums", SEP_FORMA)}
+        className={cn(
+          "celda-datos celda-numero tabular-nums",
+          COL_FORMA,
+          SEP_FORMA
+        )}
       >
         {fmtCeldaUnica(valorPesosFila(filaId, forma))}
       </TableCell>
@@ -334,13 +349,13 @@ export default function TablaFinAnaMargenContribucion({
       <Table
         variant="compact"
         scrollX={false}
-        className="tabla-fin-ana-margen-contribucion min-w-max"
+        className="tabla-fin-ana-margen-contribucion"
       >
           <colgroup>
             <col className={COL_SECCION} />
             <col className={COL_CONCEPTO} />
             {formasPago.map((forma) => (
-              <col key={forma} className={COL_FORMA_ANCHO} />
+              <col key={forma} className={COL_FORMA} />
             ))}
           </colgroup>
           <TableHeader>
@@ -355,7 +370,11 @@ export default function TablaFinAnaMargenContribucion({
               {formasPago.map((forma) => (
                 <TableHead
                   key={forma}
-                  className={cn("text-center leading-tight", SEP_FORMA)}
+                  className={cn(
+                    "text-center leading-tight",
+                    COL_FORMA,
+                    SEP_FORMA
+                  )}
                 >
                   {etiquetaFormaPagoMargenContribucion(
                     forma,
