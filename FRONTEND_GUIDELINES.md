@@ -343,7 +343,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `PaginacionClient` (`@/components/shared/PaginacionClient.tsx`) | Paginación por estado: `paginaActual`, `totalPaginas`, `onPaginaChange`. |
 | `TableEmptyState` + CVA (`@/components/shared/TableEmptyState.tsx`) | Mensajes de lista/tabla vacía; `EmptyTableRow` en `ui/table` reutiliza las mismas variantes. |
 | `ModalMicroLabel` + CVA (`@/components/shared/ModalMicroLabel.tsx`) | Micro-etiquetas MAYÚSCULAS en modales (campos/secciones densas); variantes `align`: `left` \| `center`. |
-| `CeldaSubcolumnasMontoPct` + CVA (`@/components/shared/CeldaSubcolumnasMontoPct.tsx`) | Par **$ / %**: grid 65%\|35% + padding compensado (ritmo grupo 10/5/5/10). Bloque ancho fijo centrado. Props: `monto`, `pct`, `density`, `weight`. |
+| `CeldaSubcolumnasMontoPct` + CVA (`@/components/shared/CeldaSubcolumnasMontoPct.tsx`) | Par **$ / %**: grid 65%\|35% + padding compensado (`%` **sin** `padding-left`). Bloque ancho fijo centrado. Props: `monto`, `pct`, `density`, `weight`. |
 | `--gris-canvas`, `--gris` (`bg-gris`) | Lienzo de app: páginas (`ClassicFilteredTableLayout` tone gray), shell, marco de **`AppModal`** (`#cbd5e1`). |
 | `--gris-inset` (`bg-gris-inset`) | Inset dentro de card blanca: subfilas de tabla (`.tabla-fila-seccion-subencabezado`, `.tabla-fila-detalle-competencia`); valor histórico `#e2e8f0`. |
 | `--border`, `--input` | Alias de **`--gris-inset`** (visibles sobre **`--gris-canvas`**). |
@@ -396,7 +396,7 @@ Par **monto $ / porcentaje %** como subcolumnas visuales dentro de **una** celda
   - **`density`** (CVA): `"table"` (default, `h-full` para fila compacta) \| `"default"`.
   - **`weight`** (CVA, solo `%`): `"bold"` (default) \| `"normal"`.
   - **`className`** / **`montoClassName`** / **`pctClassName`**: overrides puntuales.
-- **Layout (globals)**: grid **65% | 35%** con padding compensado (`pl/pr` en cada pista) → ritmo de grupo `[10%] $ [5%+5%] % [10%]`. Bloque con ancho fijo `--tabla-mc-forma-width` (12rem) centrado en la celda (no usa `width: 100%` del `td`).
+- **Layout (globals)**: grid **65% | 35%** con padding compensado (`$`: pl/pr de grupo; **`%` sin padding izquierdo**, pr ≈10% grupo). Bloque con ancho fijo `--tabla-mc-forma-width` (12rem) centrado en la celda.
 - **Requisito de columna**: tabla MC con **`w-max`** + `width: max-content !important` y **`.tabla-mc-col-forma`**. Si el bloque dual fuera `width: 100%` de una columna estirada, el par vuelve a verse asimétrico.
 - **Celda envoltorio**: `className={cn("celda-datos celda-numero tabular-nums", "tabla-mc-celda-dual", "tabla-mc-col-forma", …)}`.
 - **Accesibilidad**: `role="group"` + `aria-label` con ambos valores.
@@ -1448,6 +1448,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-07-22): **Margen Contribución · asimetría $/%** — causa: `w-full` + `table-layout: fixed` ensanchaba columnas; el par parecía space-between. Fix: tabla `width: max-content`, **`.tabla-mc-col-forma` (8rem)**, grid dual `10%|65fr|10%|35fr|10%`.*
 
 *Última actualización (2026-07-22): **Margen Contribución · dual a prueba de stretch** — bloque `$/%` con ancho fijo **12rem** centrado en la celda; grid **65%|35%** + padding compensado (ritmo 10/5/5/10); tabla **`w-max`**.*
+
+*Última actualización (2026-07-22): **Margen Contribución · % sin pl** — .tabla-mc-dual-pct con --tabla-mc-dual-pl-pct: 0 (sin padding izquierdo).*
 
 *Última actualización (2026-07-16): **Calendario — sin Probar Google Sheets** — se quitó el botón de probe A1 del header; queda **Exportar a Sheets**.*
 

@@ -7,8 +7,7 @@ import { cn } from "@/lib/utils";
  *
  * Modelo (pads relativos al grupo, compensados por subcolumna):
  *   $ (65%): pl 10%·grupo → 15.3846% de la pista; pr 5%·grupo → 7.6923%
- *   % (35%): pl 5%·grupo  → 14.2857% de la pista; pr 10%·grupo → 28.5714%
- * Ritmo visual: [10%] valor$ [5%+5%] valor% [10%]
+ *   % (35%): pl 0; pr 10%·grupo → 28.5714%
  *
  * El grid tiene ancho fijo (`--tabla-mc-forma-width`) y se centra en la celda,
  * para no degradarse si la columna de la tabla se ensancha.

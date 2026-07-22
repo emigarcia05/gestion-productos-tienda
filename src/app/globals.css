@@ -1434,12 +1434,12 @@
   --tabla-mc-forma-width: 12rem;
   /**
    * Pads del grupo (fracción del ancho del bloque dual):
-   * outer L = outer R = mid = 10% → en pista 65%: 15.3846% / 7.6923%;
-   * en pista 35%: 14.2857% / 28.5714%.
+   * $ (65%): pl ≈10% grupo, pr ≈5% grupo.
+   * % (35%): pl 0 (sin aire interno izquierdo), pr ≈10% grupo.
    */
   --tabla-mc-dual-pl-pesos: 15.384615%;
   --tabla-mc-dual-pr-pesos: 7.692308%;
-  --tabla-mc-dual-pl-pct: 14.285714%;
+  --tabla-mc-dual-pl-pct: 0%;
   --tabla-mc-dual-pr-pct: 28.571429%;
   /**
    * Anula `w-full` de `Table` / `.tabla-gestion-compacta` para que las
@@ -1522,7 +1522,7 @@
 }
 /**
  * Modo PRODUCTO — par $/% (`CeldaSubcolumnasMontoPct`).
- * 2 pistas 65%/35% + padding compensado (= 10% | valor | 10% | valor | 10% del bloque).
+ * 2 pistas 65%/35% + padding compensado ($ con pl/pr de grupo; % sin pl, pr ≈10% grupo).
  * Ancho del bloque = `--tabla-mc-forma-width`, centrado en la celda (inmune a stretch).
  */
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-dual {
