@@ -64,7 +64,7 @@ const COL_SECCION_STICKY = "tabla-mc-col-seccion";
 const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
 /** Separador vertical entre formas de pago (más marcado). */
 const SEP_FORMA = "tabla-mc-sep-forma";
-/** Celdas $ / % en modo PRODUCTO (padding simétrico respecto al separador). */
+/** Celdas $ / % en modo PRODUCTO ($ right / % left; padding en globals). */
 const CELDA_PESOS = "tabla-mc-celda-pesos";
 const CELDA_PCT = "tabla-mc-celda-pct !text-left";
 

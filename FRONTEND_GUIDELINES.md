@@ -1409,6 +1409,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-21): **Margen Contribución · anchos** — cada forma de pago fija **5 rem** en ambos modos (PRODUCTO: **60%** $ / **40%** % → 3 + 2; PORC. UTILIDAD: 5). `%` con `text-align: left` y padding izquierdo 0.*
 
+*Última actualización (2026-07-22): **Margen Contribución · padding PRODUCTO** — `$` `text-align: right`, `pl: 0` / `pr: 0.25rem`; `%` `text-align: left`, `pl: 0` / `pr: 0.5rem` (menos hueco izquierdo, más aire al borde derecho).*
+
 *Última actualización (2026-07-16): **Calendario — sin Probar Google Sheets** — se quitó el botón de probe A1 del header; queda **Exportar a Sheets**.*
 
 *Última actualización (2026-07-15): **Marketing · publicaciones multi-red** — una publicación N:M redes (mkt_publi_redes); editar actualiza todas; conteo 1 por red. Ver BACKEND §2.5g-bis.*
