@@ -64,7 +64,7 @@ const COL_SECCION_STICKY = "tabla-mc-col-seccion";
 const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
 /** Separador vertical entre formas de pago (más marcado). */
 const SEP_FORMA = "tabla-mc-sep-forma";
-/** Subcolumnas PRODUCTO: $ 65% / % 35% (padding simétrico en globals). */
+/** Subcolumnas PRODUCTO: $ 65% / % 35%; pads exteriores iguales en rem (globals). */
 const CELDA_PESOS = "tabla-mc-celda-pesos";
 const CELDA_PCT = "tabla-mc-celda-pct";
 

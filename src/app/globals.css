@@ -1488,22 +1488,22 @@
   border-left: 2px solid color-mix(in oklab, var(--primary) 55%, var(--border)) !important;
 }
 /**
- * Modo PRODUCTO — dos subcolumnas fijas (alineación vertical entre filas):
- * - `$` 65% del ancho de forma: padding-left 10% · valor centrado · padding-right 5%
- * - `%` 35%: padding-left 5% · valor centrado · padding-right 10%
- * Ritmo visual: [10%] valor [5%+5%] valor [10%].
+ * Modo PRODUCTO — exteriores iguales en rem (no % del ancho de cada celda):
+ * distancia borde izq. → `$` === distancia `%` → borde der. (0,35 rem).
+ * `$` alineado a la izquierda · `%` a la derecha; gap interno 0,2 + 0,2 rem.
+ * (Centrar dentro de cada subcolumna dejaba mucho aire a la izq. del `$` por ser la col. más ancha.)
  */
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-pesos {
-  text-align: center !important;
+  text-align: left !important;
   font-weight: var(--font-weight-normal);
-  padding-left: 10% !important;
-  padding-right: 5% !important;
+  padding-left: 0.35rem !important;
+  padding-right: 0.2rem !important;
 }
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-pct {
-  text-align: center !important;
+  text-align: right !important;
   font-weight: var(--font-weight-bold);
-  padding-left: 5% !important;
-  padding-right: 10% !important;
+  padding-left: 0.2rem !important;
+  padding-right: 0.35rem !important;
 }
 .tabla-fin-ana-margen-contribucion tbody td .input-mascara-sufijo {
   width: 100%;

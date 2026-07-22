@@ -1415,6 +1415,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-22): **Margen Contribución · subcolumnas PRODUCTO 65/35** — dos `<td>` fijas: `$` **65%** (`3.25rem`) con `pl 10%` / valor centrado / `pr 5%`; `%` **35%** (`1.75rem`) con `pl 5%` / valor centrado / `pr 10%` (ritmo `[10%] valor [5%+5%] valor [10%]`). Alineación vertical entre filas.*
 
+*Última actualización (2026-07-22): **Margen Contribución · pads exteriores iguales** — padding en **rem** (no % por celda): `$` `pl/pr 0,35/0,2` + `text-left`; `%` `pl/pr 0,2/0,35` + `text-right`. Así borde→`$` = `%`→borde (el centrado en col. ancha dejaba aire de más a la izquierda).*
+
 *Última actualización (2026-07-16): **Calendario — sin Probar Google Sheets** — se quitó el botón de probe A1 del header; queda **Exportar a Sheets**.*
 
 *Última actualización (2026-07-15): **Marketing · publicaciones multi-red** — una publicación N:M redes (mkt_publi_redes); editar actualiza todas; conteo 1 por red. Ver BACKEND §2.5g-bis.*
