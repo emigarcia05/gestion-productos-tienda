@@ -3,22 +3,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * Par $ / % como subcolumnas visuales dentro de una celda.
+ * Par $ / % en subcolumnas 65 % / 35 % (una sola celda de tabla).
  *
- * Ritmo del grupo (sobre el 100 % de la celda):
- *   10% pad | $ (65fr del resto) | 10% gap | % (35fr del resto) | 10% pad
- * → pads exteriores = gap; pistas de valor en proporción 65:35.
+ * Modelo (pads relativos al grupo, compensados por subcolumna):
+ *   $ (65%): pl 10%·grupo → 15.3846% de la pista; pr 5%·grupo → 7.6923%
+ *   % (35%): pl 5%·grupo  → 14.2857% de la pista; pr 10%·grupo → 28.5714%
+ * Ritmo visual: [10%] valor$ [5%+5%] valor% [10%]
  *
- * Los valores se centran con flex en su pista (más fiable que text-align en spans).
+ * El grid tiene ancho fijo (`--tabla-mc-forma-width`) y se centra en la celda,
+ * para no degradarse si la columna de la tabla se ensancha.
  */
 export const celdaSubcolumnasMontoPctVariants = cva(
-  "tabla-mc-dual-grid w-full min-w-0 tabular-nums",
+  "tabla-mc-dual-grid tabular-nums",
   {
     variants: {
       density: {
-        /** Alto de fila de `.tabla-gestion-compacta` (Margen Contribución). */
         table: "h-full",
-        /** Uso fuera de tabla compacta. */
         default: "",
       },
     },
@@ -55,9 +55,7 @@ export type CeldaSubcolumnasMontoPctProps = {
 } & VariantProps<typeof celdaSubcolumnasMontoPctVariants> &
   VariantProps<typeof celdaSubcolumnasMontoPctPctVariants>;
 
-/**
- * Server Component seguro (sin estado). Usar dentro de `TableCell` con ancho de columna anclado.
- */
+/** Server Component (sin estado). */
 export default function CeldaSubcolumnasMontoPct({
   monto,
   pct,
@@ -73,7 +71,6 @@ export default function CeldaSubcolumnasMontoPct({
       role="group"
       aria-label={`${monto}, ${pct}`}
     >
-      <span className="tabla-mc-dual-pad" aria-hidden />
       <span
         className={cn(
           celdaSubcolumnasMontoPctPesosVariants(),
@@ -82,7 +79,6 @@ export default function CeldaSubcolumnasMontoPct({
       >
         {monto}
       </span>
-      <span className="tabla-mc-dual-pad" aria-hidden />
       <span
         className={cn(
           celdaSubcolumnasMontoPctPctVariants({ weight }),
@@ -91,7 +87,6 @@ export default function CeldaSubcolumnasMontoPct({
       >
         {pct}
       </span>
-      <span className="tabla-mc-dual-pad" aria-hidden />
     </div>
   );
 }

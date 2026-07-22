@@ -349,7 +349,7 @@ export default function TablaFinAnaMargenContribucion({
       <Table
         variant="compact"
         scrollX={false}
-        className="tabla-fin-ana-margen-contribucion"
+        className="tabla-fin-ana-margen-contribucion w-max"
       >
           <colgroup>
             <col className={COL_SECCION} />
