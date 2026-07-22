@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import CeldaSubcolumnasMontoPct from "@/components/shared/CeldaSubcolumnasMontoPct";
 import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
 import PxListaEnteroInput from "@/components/shared/PxListaEnteroInput";
 import {
@@ -51,12 +52,9 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
 
 /**
  * Ancho fijo por forma de pago (mismo en PRODUCTO y PORC. UTILIDAD).
- * PRODUCTO: 65% $ + 35% % (3.25 + 1.75 rem) con padding simétrico en globals.
+ * PRODUCTO: una columna con `CeldaSubcolumnasMontoPct` (grid 65/35 simétrico).
  */
-const COL_FORMA_ANCHO = "w-[5rem]";
-const COL_PRODUCTO_PESOS = "w-[3.25rem]";
-const COL_PRODUCTO_PCT = "w-[1.75rem]";
-const COL_PORC_UTILIDAD = COL_FORMA_ANCHO;
+const COL_FORMA_ANCHO = "w-[6.5rem]";
 const COL_CONCEPTO = "w-[9rem]";
 const COL_SECCION = "w-[1.75rem]";
 /** Columna de sección (etiqueta vertical) + CONCEPTO fijos al scroll. */
@@ -64,9 +62,8 @@ const COL_SECCION_STICKY = "tabla-mc-col-seccion";
 const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
 /** Separador vertical entre formas de pago (más marcado). */
 const SEP_FORMA = "tabla-mc-sep-forma";
-/** Subcolumnas PRODUCTO: $ 65% / % 35%; pads exteriores iguales en rem (globals). */
-const CELDA_PESOS = "tabla-mc-celda-pesos";
-const CELDA_PCT = "tabla-mc-celda-pct";
+/** Celda dual PRODUCTO ($ + %). */
+const CELDA_DUAL = "tabla-mc-celda-dual";
 
 export type InputsMargenContribucionState = {
   pxListaNorm: string;
@@ -111,8 +108,7 @@ export default function TablaFinAnaMargenContribucion({
   esEditor,
 }: Props) {
   const esProducto = modoEvaluacion === "producto";
-  const colsPorForma = esProducto ? 2 : 1;
-  const totalColsDatos = formasPago.length * colsPorForma;
+  const totalColsDatos = formasPago.length;
 
   const parsed = useMemo(() => {
     const pxLista = parsePxListaEnteroNormalized(inputs.pxListaNorm) ?? 0;
@@ -239,7 +235,6 @@ export default function TablaFinAnaMargenContribucion({
         return (
           <TableCell
             key={`PX_LISTA-${forma}`}
-            colSpan={2}
             className={cn(
               "celda-datos celda-numero tabular-nums text-center",
               SEP_FORMA,
@@ -279,7 +274,6 @@ export default function TablaFinAnaMargenContribucion({
       return formasPago.map((forma) => (
         <TableCell
           key={`${filaId}-${forma}`}
-          colSpan={colsPorForma}
           className={cn("celda-datos celda-numero p-1", SEP_FORMA)}
         >
           <div className="flex justify-center">{renderInputDescuento(forma)}</div>
@@ -290,26 +284,23 @@ export default function TablaFinAnaMargenContribucion({
     const esFilaMargen = filaId === "MC" || filaId === "MC_PONDERADO";
 
     if (esProducto) {
-      return formasPago.flatMap((forma) => {
+      return formasPago.map((forma) => {
         const pesos = valorPesosFila(filaId, forma);
-        return [
+        return (
           <TableCell
-            key={`${filaId}-${forma}-$`}
+            key={`${filaId}-${forma}-dual`}
             className={cn(
               "celda-datos celda-numero tabular-nums",
-              CELDA_PESOS,
+              CELDA_DUAL,
               SEP_FORMA
             )}
           >
-            {fmtPesosMargenContribucion(pesos)}
-          </TableCell>,
-          <TableCell
-            key={`${filaId}-${forma}-pct`}
-            className={cn("celda-datos celda-numero tabular-nums", CELDA_PCT)}
-          >
-            {fmtPctSobrePxListaMargenContribucion(pesos, parsed.pxLista)}
-          </TableCell>,
-        ];
+            <CeldaSubcolumnasMontoPct
+              monto={fmtPesosMargenContribucion(pesos)}
+              pct={fmtPctSobrePxListaMargenContribucion(pesos, parsed.pxLista)}
+            />
+          </TableCell>
+        );
       });
     }
 
@@ -348,14 +339,9 @@ export default function TablaFinAnaMargenContribucion({
           <colgroup>
             <col className={COL_SECCION} />
             <col className={COL_CONCEPTO} />
-            {formasPago.flatMap((forma) =>
-              esProducto
-                ? [
-                    <col key={`${forma}-$`} className={COL_PRODUCTO_PESOS} />,
-                    <col key={`${forma}-pct`} className={COL_PRODUCTO_PCT} />,
-                  ]
-                : [<col key={forma} className={COL_PORC_UTILIDAD} />]
-            )}
+            {formasPago.map((forma) => (
+              <col key={forma} className={COL_FORMA_ANCHO} />
+            ))}
           </colgroup>
           <TableHeader>
             <TableRow>
@@ -369,7 +355,6 @@ export default function TablaFinAnaMargenContribucion({
               {formasPago.map((forma) => (
                 <TableHead
                   key={forma}
-                  colSpan={colsPorForma}
                   className={cn("text-center leading-tight", SEP_FORMA)}
                 >
                   {etiquetaFormaPagoMargenContribucion(
