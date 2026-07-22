@@ -1407,7 +1407,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-21): **Margen Contribución · scroll** — `.contenedor-tabla-gestion--altura-contenido`: scrollbar horizontal justo bajo la última fila.*
 
-*Última actualización (2026-07-21): **Margen Contribución · anchos** — cada forma de pago fija **5 rem** en ambos modos (PRODUCTO: **70%** $ / **30%** % → 3,5 + 1,5; PORC. UTILIDAD: 5).*
+*Última actualización (2026-07-21): **Margen Contribución · anchos** — cada forma de pago fija **5 rem** en ambos modos (PRODUCTO: **60%** $ / **40%** % → 3 + 2; PORC. UTILIDAD: 5). `%` con `text-align: left` y padding izquierdo 0.*
 
 *Última actualización (2026-07-16): **Calendario — sin Probar Google Sheets** — se quitó el botón de probe A1 del header; queda **Exportar a Sheets**.*
 

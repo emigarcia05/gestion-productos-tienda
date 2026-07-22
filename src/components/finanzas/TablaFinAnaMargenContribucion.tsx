@@ -51,11 +51,11 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
 
 /**
  * Ancho fijo por forma de pago (mismo en PRODUCTO y PORC. UTILIDAD).
- * PRODUCTO reparte 70% $ + 30% % sobre ese total.
+ * PRODUCTO reparte 60% $ + 40% % (más espacio al % para alinear a la izquierda).
  */
 const COL_FORMA_ANCHO = "w-[5rem]";
-const COL_PRODUCTO_PESOS = "w-[3.5rem]";
-const COL_PRODUCTO_PCT = "w-[1.5rem]";
+const COL_PRODUCTO_PESOS = "w-[3rem]";
+const COL_PRODUCTO_PCT = "w-[2rem]";
 const COL_PORC_UTILIDAD = COL_FORMA_ANCHO;
 const COL_CONCEPTO = "w-[9rem]";
 const COL_SECCION = "w-[1.75rem]";
