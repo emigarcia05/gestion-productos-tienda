@@ -324,7 +324,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `.celda-datos.celda-datos--flush-left` | Anula **`padding-left`** con **`!important`** (especificidad doble clase) cuando **`!pl-0`** de Tailwind no gana al atajo **`padding`** de **`.celda-datos`**; usar con **`Input`** **`pl-0` `pr-3`** (base **`Input`**: **`pl-3 pr-3`**, no **`px-3`**, para que **`tailwind-merge`** anule bien el lado izquierdo). |
 | `.celda-datos.celda-datos--flush-right` | Anula **`padding-right`** con **`!important`** para campos al ras del borde derecho dentro de celdas `celda-datos` (ej. input de **TOTAL PEDIDO**). |
 | `.celda-datos.celda-datos--accion-relleno-fila` | Anula **`padding`** de **`.celda-datos`** en columnas solo de acción; el aire al borde de fila lo aporta **`TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS`** (**`p-1.5`**). |
-| `.tabla-fin-ana-margen-contribucion`, `.tabla-mc-col-forma` | **Margen Contribución**: tabla **`w-max` / `max-content`**. Columna forma **`--tabla-mc-forma-width`** (5 rem). Celdas en **%** (base PX LISTA = 100). |
+| `.tabla-fin-ana-margen-contribucion`, `.tabla-mc-col-forma` | **Margen Contribución**: tabla **`w-max` / `max-content`**. Columna forma **`--tabla-mc-forma-width`** (**6 rem**). Celdas en **%** (base PX LISTA = 100). |
 | `.tabla-check-toggle` | Checkbox/toggle compacto para columnas de **tilde** en tablas (`.tabla-gestion-compacta`): cuadrado (mismo alto/ancho) con tamaño derivado de `--tabla-body-row-min-height`, sin superar el alto de fila; borde **`#0072BB`**, fondo transparente y solo ícono **Check** en **`#0072BB`** al seleccionar. **Regla global:** toda columna de selección usa encabezado con tilde (`Check`). Reutilizar en tablas actuales y futuras para mantener consistencia visual. |
 | `.celda-destacado` | Celdas “destacadas” sin negrita (font-weight normal) para cumplir el estilo de tablas. |
 | `.celda-sublinea-tabla` | Segunda línea compacta en celdas de tabla (`font-size: 10px`, `line-height: 1`, `color: muted-foreground`); usar con `truncate` y `leading-none` bajo el texto principal sin alterar **`--tabla-body-row-min-height`**. |
@@ -1393,6 +1393,10 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-07-22): **Margen Contribución · PX VENTA** — fórmula corregida `PX LISTA × (1 − descuento % / 100)` (ej. lista 100 y **−10** → venta **110**).*
 
 *Última actualización (2026-07-22): **Margen Contribución · ayuda fórmulas** — en COSTOS/MARGEN, ícono **Info** junto al concepto; click abre tooltip con la fórmula (`ayudaFormulaFilaMargenContribucion`).*
+
+*Última actualización (2026-07-22): **Margen Contribución · Info fórmulas** — botón **`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`** (fondo `#0072BB`, ícono blanco) alineado al alto fijo de fila.*
+
+*Última actualización (2026-07-22): **Margen Contribución · ancho forma** — `--tabla-mc-forma-width` de **5 rem** a **6 rem** (+20 %).*
 
 *Última actualización (2026-07-21): **Margen Contribución · columnas** — orden: **EFECTIVO** · **DÉBITO** · cuotas (catálogo `fin_ana_cos_fina_pagos.orden`).*
 

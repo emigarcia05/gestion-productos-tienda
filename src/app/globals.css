@@ -1427,8 +1427,8 @@
  */
 .tabla-fin-ana-margen-contribucion {
   --tabla-mc-seccion-width: 1.75rem;
-  /** Ancho fijo de cada columna forma de pago. */
-  --tabla-mc-forma-width: 5rem;
+  /** Ancho fijo de cada columna forma de pago (+20 % sobre 5 rem). */
+  --tabla-mc-forma-width: 6rem;
   /**
    * Anula `w-full` de `Table` / `.tabla-gestion-compacta` para que las
    * columnas forma no absorban el sobrante del viewport.
