@@ -9,7 +9,7 @@ import {
   cxTotalConIvaFinAnaCosFina,
   FIN_ANA_COS_FINA_IVA_FACTOR,
 } from "@/lib/finAnaCosFina";
-import { fmtPrecio, roundPorcentaje0a100 } from "@/lib/format";
+import { roundPorcentaje0a100 } from "@/lib/format";
 
 export type { FormaPagoMargenContribucion } from "@/lib/finAnaCosFinaPagos";
 
@@ -58,7 +58,8 @@ export const FIN_ANA_MC_SECCIONES: readonly SeccionMargenContribucion[] = [
   {
     id: "INGRESO",
     etiqueta: "INGRESO",
-    filas: ["PX_LISTA", "DESCUENTO", "PX_VENTA"],
+    /** PX LISTA / PX VENTA se calculan en memoria (base $100) pero no se muestran. */
+    filas: ["DESCUENTO"],
   },
   {
     id: "COSTOS",
@@ -108,10 +109,6 @@ export function etiquetaFilaMargenContribucion(id: FilaMargenContribucionDatoId)
   return ETIQUETAS_FILA[id];
 }
 
-export function esFilaEditableMargenContribucion(id: FilaMargenContribucionDatoId): boolean {
-  return id === "PX_LISTA";
-}
-
 /** Descuento editable por columna (forma de pago). */
 export function esFilaDescuentoPorFormaPagoMargenContribucion(
   id: FilaMargenContribucionDatoId
@@ -133,31 +130,12 @@ export function esFilaPorFormaPagoMargenContribucion(id: FilaMargenContribucionD
   return id === "CX_FINANCIERO" || id === "MC" || id === "MC_PONDERADO";
 }
 
-/** Modo de evaluación del simulador (mutuamente excluyente). */
-export type ModoEvaluacionMargenContribucion = "producto" | "porc_utilidad";
-
-export const FIN_ANA_MC_MODOS_EVALUACION: ModoEvaluacionMargenContribucion[] = [
-  "producto",
-  "porc_utilidad",
-];
-
-/** PX LISTA de referencia en modo **PORC. UTILIDAD** (simulador). */
+/** PX LISTA de referencia del simulador (base 100 → celdas = % sobre lista). */
 export const FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD = 100;
 
 /** Rango del descuento % por forma de pago (entero, puede ser negativo). */
 export const FIN_ANA_MC_DESCUENTO_MIN = -100;
 export const FIN_ANA_MC_DESCUENTO_MAX = 100;
-
-const ETIQUETAS_MODO_EVALUACION: Record<ModoEvaluacionMargenContribucion, string> = {
-  producto: "PRODUCTO",
-  porc_utilidad: "PORC. UTILIDAD",
-};
-
-export function etiquetaModoEvaluacionMargenContribucion(
-  modo: ModoEvaluacionMargenContribucion
-): string {
-  return ETIQUETAS_MODO_EVALUACION[modo];
-}
 
 /** Tipo de comprobante de venta (afecta IVA e IIBB en el simulador). */
 export type TipoComprobanteVentaMargenContribucion =
@@ -205,9 +183,9 @@ export type FilaMargenContribucionId = FilaMargenContribucionDatoId;
 /** @deprecated Usar `FIN_ANA_MC_LAYOUT`. */
 export const FIN_ANA_MC_FILAS = FIN_ANA_MC_FILAS_DATO;
 
-/** Precio neto sin IVA desde precio de venta con IVA incluido. */
-export function netoSinIvaMargenContribucion(precioVenta: number): number {
-  return precioVenta / FIN_ANA_COS_FINA_IVA_FACTOR;
+/** Precio neto sin IVA desde precio con IVA incluido. */
+export function netoSinIvaMargenContribucion(precioConIva: number): number {
+  return precioConIva / FIN_ANA_COS_FINA_IVA_FACTOR;
 }
 
 /** PX VENTA = PX LISTA × (1 + descuento % / 100). Negativo = descuento; positivo = recargo. */
@@ -223,24 +201,28 @@ export function pxVentaMargenContribucion(
 /** @deprecated Usar `pxVentaMargenContribucion`. */
 export const precioVentaMargenContribucion = pxVentaMargenContribucion;
 
-/** IVA = (PRECIO VENTA / 1,21) × 0,21. */
-export function ivaMargenContribucion(precioVenta: number): number {
-  if (!(precioVenta > 0)) return 0;
-  return Math.round(netoSinIvaMargenContribucion(precioVenta) * 0.21);
-}
-
-/** IIBB = (PRECIO VENTA / 1,21) × 0,04. */
-export function iibbMargenContribucion(precioVenta: number): number {
-  if (!(precioVenta > 0)) return 0;
-  return Math.round(netoSinIvaMargenContribucion(precioVenta) * 0.04);
+/**
+ * Ratio IVA sobre PX VENTA: `(PX VTA sin IVA × 0,21) / PX VTA`.
+ * Equivale a `0,21 / 1,21` cuando hay impuestos.
+ */
+export function ivaRatioMargenContribucion(pxVenta: number): number {
+  if (!(pxVenta > 0)) return 0;
+  return (netoSinIvaMargenContribucion(pxVenta) * 0.21) / pxVenta;
 }
 
 /**
- * CX MERCADERÍA en modo **PORC. UTILIDAD**:
- * `(PX LISTA / 1,21) / (1 + porc. utilidad % / 100)`.
- * Misma base de margen sobre costo que Px Listas; no depende de PX VENTA (igual en todas las columnas).
+ * Ratio IIBB sobre PX VENTA: `(PX VTA sin IVA × 0,04) / PX VTA`.
+ * Equivale a `0,04 / 1,21` cuando hay impuestos.
  */
-export function cxMercaderiaDesdePorcUtilidadMargenContribucion(
+export function iibbRatioMargenContribucion(pxVenta: number): number {
+  if (!(pxVenta > 0)) return 0;
+  return (netoSinIvaMargenContribucion(pxVenta) * 0.04) / pxVenta;
+}
+
+/**
+ * CX MERCADERÍA (pesos): `(PX LISTA / 1,21) / (1 + porc. utilidad % / 100)`.
+ */
+export function cxMercaderiaPesosDesdePorcUtilidadMargenContribucion(
   pxLista: number,
   porcUtilidadPct: number
 ): number | null {
@@ -248,12 +230,41 @@ export function cxMercaderiaDesdePorcUtilidadMargenContribucion(
   const netoLista = netoSinIvaMargenContribucion(pxLista);
   const factorUtilidad = 1 + porcUtilidadPct / 100;
   if (!(factorUtilidad > 0)) return null;
-  return Math.round(netoLista / factorUtilidad);
+  return netoLista / factorUtilidad;
 }
 
 /**
- * @deprecated Usar `cxMercaderiaDesdePorcUtilidadMargenContribucion` (base PX LISTA)
- * o `cxMercaderiaFijo` (modo PRODUCTO / `costoCompra` de BD).
+ * Ratio CX MERCADERÍA sobre PX VENTA:
+ * `((PX LISTA sin IVA) / (1 + porc. utilidad % / 100)) / PX VTA`.
+ */
+export function cxMercaderiaRatioMargenContribucion(
+  pxLista: number,
+  porcUtilidadPct: number,
+  pxVenta: number
+): number | null {
+  if (!(pxVenta > 0)) return null;
+  const cxPesos = cxMercaderiaPesosDesdePorcUtilidadMargenContribucion(
+    pxLista,
+    porcUtilidadPct
+  );
+  if (cxPesos == null) return null;
+  return cxPesos / pxVenta;
+}
+
+/** @deprecated Usar `cxMercaderiaPesosDesdePorcUtilidadMargenContribucion`. */
+export function cxMercaderiaDesdePorcUtilidadMargenContribucion(
+  pxLista: number,
+  porcUtilidadPct: number
+): number | null {
+  const pesos = cxMercaderiaPesosDesdePorcUtilidadMargenContribucion(
+    pxLista,
+    porcUtilidadPct
+  );
+  return pesos == null ? null : Math.round(pesos);
+}
+
+/**
+ * @deprecated Usar `cxMercaderiaRatioMargenContribucion`.
  */
 export function cxMercaderiaMargenContribucion(
   precioVenta: number,
@@ -270,14 +281,9 @@ export type InputsMargenContribucion = {
   descuentoPct: number;
   porcUtilidadPct: number;
   tipoComprobante?: TipoComprobanteVentaMargenContribucion;
-  /**
-   * Modo **PRODUCTO**: CX MERCADERÍA = `costoCompra` de BD (fijo por producto).
-   * Si es `undefined`, se calcula por **PORC. UTILIDAD** desde `pxLista` + `porcUtilidadPct`.
-   * Si es `null` o ≤ 0, CX MERCADERÍA queda vacío.
-   */
-  cxMercaderiaFijo?: number | null;
 };
 
+/** Valores calculados: `iva` / `iibb` / `cxMercaderia` son **ratios** sobre PX VENTA (0–1). */
 export type ValoresCalculadosMargenContribucion = {
   precioVenta: number;
   iva: number;
@@ -296,28 +302,25 @@ export function calcularValoresMargenContribucion(
   const { aplicaIva, aplicaIibb } =
     aplicaImpuestosComprobanteMargenContribucion(tipoComprobante);
 
-  let cxMercaderia: number | null;
-  if (inputs.cxMercaderiaFijo !== undefined) {
-    cxMercaderia =
-      inputs.cxMercaderiaFijo != null && inputs.cxMercaderiaFijo > 0
-        ? Math.round(inputs.cxMercaderiaFijo)
-        : null;
-  } else {
-    cxMercaderia = cxMercaderiaDesdePorcUtilidadMargenContribucion(
-      inputs.pxLista,
-      inputs.porcUtilidadPct
-    );
-  }
-
   return {
     precioVenta,
-    iva: aplicaIva ? ivaMargenContribucion(precioVenta) : 0,
-    iibb: aplicaIibb ? iibbMargenContribucion(precioVenta) : 0,
-    cxMercaderia,
+    iva: aplicaIva ? ivaRatioMargenContribucion(precioVenta) : 0,
+    iibb: aplicaIibb ? iibbRatioMargenContribucion(precioVenta) : 0,
+    cxMercaderia: cxMercaderiaRatioMargenContribucion(
+      inputs.pxLista,
+      inputs.porcUtilidadPct,
+      precioVenta
+    ),
   };
 }
 
-/** CX FINANCIERO en pesos desde % sobre PX VENTA. */
+/** CX FINANCIERO (ratio): % de Costos Financieros / 100. */
+export function cxFinancieroRatioMargenContribucion(cxFinPct: number): number {
+  if (!(cxFinPct > 0)) return 0;
+  return cxFinPct / 100;
+}
+
+/** @deprecated Usar `cxFinancieroRatioMargenContribucion` (ya no se expresa en pesos). */
 export function cxFinancieroPesosMargenContribucion(
   pxVenta: number,
   cxFinPct: number
@@ -326,82 +329,59 @@ export function cxFinancieroPesosMargenContribucion(
   return Math.round(pxVenta * (cxFinPct / 100));
 }
 
-/** Monto en pesos para grilla PRODUCTO: `$1.426` (vacío/≤0 → `—`). */
-export function fmtPesosMargenContribucion(
-  valorPesos: number | null | undefined
-): string {
-  if (valorPesos == null || Number.isNaN(valorPesos) || valorPesos <= 0) {
-    return "—";
-  }
-  return `$${fmtPrecio(Math.round(valorPesos))}`;
-}
-
-/** % entero sobre PX LISTA para grilla PRODUCTO: `54%` (vacío/≤0 → `—`). */
-export function fmtPctSobrePxListaMargenContribucion(
-  valorPesos: number | null | undefined,
-  pxLista: number
-): string {
-  if (
-    valorPesos == null ||
-    Number.isNaN(valorPesos) ||
-    valorPesos <= 0 ||
-    !(pxLista > 0)
-  ) {
-    return "—";
-  }
-  const pct = Math.round((valorPesos / pxLista) * 100);
-  return `${pct.toLocaleString("es-AR")}%`;
-}
-
 /**
- * Formato de montos según modo (celda única).
- * - `porc_utilidad` (PX LISTA = 100): `10%`
- * - `producto`: `$1.426 (54%)` (legacy / fallback; la UI PRODUCTO usa columnas $ | %)
- * DESCUENTO sigue siendo % firmado (no usa esta función).
+ * Formato de ratios (0–1 → `N%`). Acepta también montos base-100 (M.C PONDERADO).
+ * `escala`: `"ratio"` (default) multiplica ×100; `"base100"` redondea el valor tal cual.
  */
 export function fmtCeldaMontoMargenContribucion(
-  valorPesos: number | null | undefined,
-  modo: ModoEvaluacionMargenContribucion,
-  pxLista: number
+  valor: number | null | undefined,
+  escala: "ratio" | "base100" = "ratio"
 ): string {
-  if (modo === "porc_utilidad") {
-    if (valorPesos == null || Number.isNaN(valorPesos) || valorPesos <= 0) {
-      return "—";
-    }
-    return `${Math.round(valorPesos).toLocaleString("es-AR")}%`;
-  }
-  const pesos = fmtPesosMargenContribucion(valorPesos);
-  const pct = fmtPctSobrePxListaMargenContribucion(valorPesos, pxLista);
-  if (pesos === "—") return "—";
-  if (pct === "—") return pesos;
-  return `${pesos} (${pct})`;
+  if (valor == null || Number.isNaN(valor)) return "—";
+  const pct = escala === "ratio" ? valor * 100 : valor;
+  return `${Math.round(pct).toLocaleString("es-AR")}%`;
 }
 
-/** Subtotal de costos (IVA + IIBB + CX MERCADERÍA + CX FINANCIERO en $) por forma de pago. */
-export function subtotalCostosMargenContribucionPorFormaPago(
+/** Suma de costos (ratios): IVA + IIBB + CX MERCADERÍA + CX FINANCIERO. */
+export function sumaCostosRatioMargenContribucionPorFormaPago(
   calculados: ValoresCalculadosMargenContribucion,
   cxFinPct: number
 ): number | null {
   if (!(calculados.precioVenta > 0)) return null;
-  const cxFin = cxFinancieroPesosMargenContribucion(
-    calculados.precioVenta,
-    cxFinPct
-  );
-  const cxMerc = calculados.cxMercaderia ?? 0;
-  return calculados.iva + calculados.iibb + cxMerc + cxFin;
+  if (calculados.cxMercaderia == null) return null;
+  const cxFin = cxFinancieroRatioMargenContribucion(cxFinPct);
+  return calculados.iva + calculados.iibb + calculados.cxMercaderia + cxFin;
 }
 
-/** M.C = PX VENTA − subtotal de costos (por forma de pago). */
+/** @deprecated Usar `sumaCostosRatioMargenContribucionPorFormaPago`. */
+export function subtotalCostosMargenContribucionPorFormaPago(
+  calculados: ValoresCalculadosMargenContribucion,
+  cxFinPct: number
+): number | null {
+  return sumaCostosRatioMargenContribucionPorFormaPago(calculados, cxFinPct);
+}
+
+/** M.C (ratio) = 1 − suma de costos. */
 export function mcMargenContribucionPorFormaPago(
   calculados: ValoresCalculadosMargenContribucion,
   cxFinPct: number
 ): number | null {
-  const subtotal = subtotalCostosMargenContribucionPorFormaPago(
+  const suma = sumaCostosRatioMargenContribucionPorFormaPago(
     calculados,
     cxFinPct
   );
-  if (subtotal == null || !(calculados.precioVenta > 0)) return null;
-  return calculados.precioVenta - subtotal;
+  if (suma == null) return null;
+  return 1 - suma;
+}
+
+/** M.C PONDERADO = M.C × PX VENTA (escala base-100 del simulador). */
+export function mcPonderadoMargenContribucionPorFormaPago(
+  calculados: ValoresCalculadosMargenContribucion,
+  cxFinPct: number
+): number | null {
+  const mc = mcMargenContribucionPorFormaPago(calculados, cxFinPct);
+  if (mc == null || !(calculados.precioVenta > 0)) return null;
+  return mc * calculados.precioVenta;
 }
 
 export type CxFinancieroPorFormaPago = Record<FormaPagoMargenContribucion, number>;

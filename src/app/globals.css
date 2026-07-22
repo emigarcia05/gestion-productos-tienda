@@ -1427,20 +1427,8 @@
  */
 .tabla-fin-ana-margen-contribucion {
   --tabla-mc-seccion-width: 1.75rem;
-  /**
-   * Ancho del bloque $/% y de cada columna forma.
-   * Debe caber `$99.999` + `125%` con pads 10%/5% (≈12 rem a text-xs).
-   */
-  --tabla-mc-forma-width: 12rem;
-  /**
-   * Pads del grupo (fracción del ancho del bloque dual):
-   * $ (65%): pl ≈10% grupo, pr ≈5% grupo.
-   * % (35%): pl 0 (sin aire interno izquierdo), pr ≈10% grupo.
-   */
-  --tabla-mc-dual-pl-pesos: 15.384615%;
-  --tabla-mc-dual-pr-pesos: 7.692308%;
-  --tabla-mc-dual-pl-pct: 0%;
-  --tabla-mc-dual-pr-pct: 28.571429%;
+  /** Ancho fijo de cada columna forma de pago. */
+  --tabla-mc-forma-width: 5rem;
   /**
    * Anula `w-full` de `Table` / `.tabla-gestion-compacta` para que las
    * columnas forma no absorban el sobrante del viewport.
@@ -1519,49 +1507,6 @@
 }
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-sep-forma {
   border-left: 2px solid color-mix(in oklab, var(--primary) 55%, var(--border)) !important;
-}
-/**
- * Modo PRODUCTO — par $/% (`CeldaSubcolumnasMontoPct`).
- * 2 pistas 65%/35% + padding compensado ($ con pl/pr de grupo; % sin pl, pr ≈10% grupo).
- * Ancho del bloque = `--tabla-mc-forma-width`, centrado en la celda (inmune a stretch).
- */
-.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-dual {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  text-align: center;
-}
-.tabla-mc-dual-grid {
-  display: grid !important;
-  grid-template-columns: 65% 35%;
-  align-items: center;
-  width: var(--tabla-mc-forma-width, 12rem);
-  max-width: 100%;
-  height: 100%;
-  margin-inline: auto;
-  box-sizing: border-box;
-  min-width: 0;
-}
-.tabla-mc-dual-pesos,
-.tabla-mc-dual-pct {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-  white-space: nowrap;
-  color: var(--foreground);
-  line-height: 1.25;
-}
-.tabla-mc-dual-pesos {
-  padding-left: var(--tabla-mc-dual-pl-pesos, 15.384615%);
-  padding-right: var(--tabla-mc-dual-pr-pesos, 7.692308%);
-  font-weight: var(--font-weight-normal);
-}
-.tabla-mc-dual-pct {
-  padding-left: var(--tabla-mc-dual-pl-pct, 14.285714%);
-  padding-right: var(--tabla-mc-dual-pr-pct, 28.571429%);
-  font-weight: var(--font-weight-bold);
 }
 .tabla-fin-ana-margen-contribucion tbody td .input-mascara-sufijo {
   width: 100%;

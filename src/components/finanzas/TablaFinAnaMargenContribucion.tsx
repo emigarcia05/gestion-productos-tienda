@@ -9,15 +9,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import CeldaSubcolumnasMontoPct from "@/components/shared/CeldaSubcolumnasMontoPct";
 import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
-import PxListaEnteroInput from "@/components/shared/PxListaEnteroInput";
 import {
   calcularValoresMargenContribucion,
   crearDescuentoPctPorFormaPagoVacios,
-  cxFinancieroPesosMargenContribucion,
+  cxFinancieroRatioMargenContribucion,
   esFilaDescuentoPorFormaPagoMargenContribucion,
-  esFilaEditableMargenContribucion,
   esFilaPorFormaPagoMargenContribucion,
   etiquetaFilaMargenContribucion,
   etiquetaFormaPagoMargenContribucion,
@@ -25,12 +22,10 @@ import {
   FIN_ANA_MC_DESCUENTO_MIN,
   FIN_ANA_MC_SECCIONES,
   fmtCeldaMontoMargenContribucion,
-  fmtPesosMargenContribucion,
-  fmtPctSobrePxListaMargenContribucion,
   mcMargenContribucionPorFormaPago,
+  mcPonderadoMargenContribucionPorFormaPago,
   type FilaMargenContribucionDatoId,
   type FormaPagoMargenContribucion,
-  type ModoEvaluacionMargenContribucion,
   type TipoComprobanteVentaMargenContribucion,
   type ValoresCalculadosMargenContribucion,
 } from "@/lib/finAnaMargenContribucion";
@@ -50,10 +45,7 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
   "w-full max-w-full border border-primary rounded-md"
 );
 
-/**
- * Ancho fijo por forma de pago (mismo en PRODUCTO y PORC. UTILIDAD).
- * PRODUCTO: `CeldaSubcolumnasMontoPct` (pads 10% + pistas 65/35). Ancho en globals.
- */
+/** Ancho fijo por forma de pago (`--tabla-mc-forma-width` en globals). */
 const COL_FORMA = "tabla-mc-col-forma";
 const COL_CONCEPTO = "w-[9rem]";
 const COL_SECCION = "w-[1.75rem]";
@@ -62,8 +54,6 @@ const COL_SECCION_STICKY = "tabla-mc-col-seccion";
 const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
 /** Separador vertical entre formas de pago (más marcado). */
 const SEP_FORMA = "tabla-mc-sep-forma";
-/** Celda dual PRODUCTO ($ + %). */
-const CELDA_DUAL = "tabla-mc-celda-dual";
 
 export type InputsMargenContribucionState = {
   pxListaNorm: string;
@@ -76,20 +66,12 @@ interface Props {
   pagosCatalogo: FinAnaCosFinaPagoItem[];
   cxFinancieroPorFormaPago: CxFinancieroPorFormaPago;
   inputs: InputsMargenContribucionState;
-  onInputsChange: (next: InputsMargenContribucionState) => void;
   onDescuentoPorFormaPagoChange: (
     formaPago: FormaPagoMargenContribucion,
     descuentoPct: number
   ) => void | Promise<void>;
   porcUtilidadPct: number;
   tipoComprobante: TipoComprobanteVentaMargenContribucion;
-  modoEvaluacion: ModoEvaluacionMargenContribucion;
-  /**
-   * Modo PRODUCTO: `costoCompra` de BD. `undefined` en PORC. UTILIDAD (se calcula).
-   * `null` si el producto no tiene costo válido.
-   */
-  cxMercaderiaFijo?: number | null;
-  pxListaEditable: boolean;
   esEditor: boolean;
 }
 
@@ -98,16 +80,11 @@ export default function TablaFinAnaMargenContribucion({
   pagosCatalogo,
   cxFinancieroPorFormaPago,
   inputs,
-  onInputsChange,
   onDescuentoPorFormaPagoChange,
   porcUtilidadPct,
   tipoComprobante,
-  modoEvaluacion,
-  cxMercaderiaFijo,
-  pxListaEditable,
   esEditor,
 }: Props) {
-  const esProducto = modoEvaluacion === "producto";
   const totalColsDatos = formasPago.length;
 
   const parsed = useMemo(() => {
@@ -123,19 +100,11 @@ export default function TablaFinAnaMargenContribucion({
         descuentoPct: inputs.descuentoPctPorFormaPago[forma] ?? 0,
         porcUtilidadPct,
         tipoComprobante,
-        ...(esProducto ? { cxMercaderiaFijo: cxMercaderiaFijo ?? null } : {}),
       });
     }
 
     return { pxLista, calculadosPorFormaPago };
-  }, [
-    inputs,
-    formasPago,
-    porcUtilidadPct,
-    tipoComprobante,
-    esProducto,
-    cxMercaderiaFijo,
-  ]);
+  }, [inputs, formasPago, porcUtilidadPct, tipoComprobante]);
 
   function calculadosParaForma(
     formaPago: FormaPagoMargenContribucion
@@ -143,70 +112,68 @@ export default function TablaFinAnaMargenContribucion({
     return parsed.calculadosPorFormaPago[formaPago];
   }
 
-  function valorPesosFila(
+  function valorFila(
     filaId: FilaMargenContribucionDatoId,
     formaPago: FormaPagoMargenContribucion
-  ): number | null {
+  ): { valor: number | null; escala: "ratio" | "base100" } {
     const calculados = calculadosParaForma(formaPago);
     const cxFinPct = cxFinancieroPorFormaPago[formaPago];
 
     switch (filaId) {
       case "PX_LISTA":
-        return parsed.pxLista > 0 ? parsed.pxLista : null;
+        return {
+          valor: parsed.pxLista > 0 ? parsed.pxLista / 100 : null,
+          escala: "ratio",
+        };
       case "PX_VENTA":
-        return calculados.precioVenta > 0 ? calculados.precioVenta : null;
+        return {
+          valor:
+            calculados.precioVenta > 0
+              ? calculados.precioVenta / 100
+              : null,
+          escala: "ratio",
+        };
       case "IVA":
-        return calculados.iva > 0 ? calculados.iva : null;
+        return {
+          valor: calculados.iva > 0 ? calculados.iva : null,
+          escala: "ratio",
+        };
       case "IIBB":
-        return calculados.iibb > 0 ? calculados.iibb : null;
+        return {
+          valor: calculados.iibb > 0 ? calculados.iibb : null,
+          escala: "ratio",
+        };
       case "CX_MERCADERIA":
-        return calculados.cxMercaderia != null && calculados.cxMercaderia > 0
-          ? calculados.cxMercaderia
-          : null;
+        return {
+          valor:
+            calculados.cxMercaderia != null && calculados.cxMercaderia > 0
+              ? calculados.cxMercaderia
+              : null,
+          escala: "ratio",
+        };
       case "CX_FINANCIERO": {
-        const pesos = cxFinancieroPesosMargenContribucion(
-          calculados.precioVenta,
-          cxFinPct
-        );
-        return pesos > 0 ? pesos : null;
+        const ratio = cxFinancieroRatioMargenContribucion(cxFinPct);
+        return {
+          valor: ratio > 0 ? ratio : null,
+          escala: "ratio",
+        };
       }
       case "MC":
-        return mcMargenContribucionPorFormaPago(calculados, cxFinPct);
+        return {
+          valor: mcMargenContribucionPorFormaPago(calculados, cxFinPct),
+          escala: "ratio",
+        };
       case "MC_PONDERADO":
-        /** Fórmula de ponderación pendiente de definir. */
-        return null;
+        return {
+          valor: mcPonderadoMargenContribucionPorFormaPago(
+            calculados,
+            cxFinPct
+          ),
+          escala: "base100",
+        };
       default:
-        return null;
+        return { valor: null, escala: "ratio" };
     }
-  }
-
-  function fmtCeldaUnica(valorPesos: number | null | undefined): string {
-    return fmtCeldaMontoMargenContribucion(
-      valorPesos,
-      modoEvaluacion,
-      parsed.pxLista
-    );
-  }
-
-  function renderInputPxLista() {
-    return (
-      <PxListaEnteroInput
-        valueNormalized={inputs.pxListaNorm}
-        onValueNormalizedChange={(next) =>
-          onInputsChange({ ...inputs, pxListaNorm: next })
-        }
-        className={cn(INPUT_FILA_CLASS, "max-w-full border-primary")}
-        aria-label="Px lista"
-      />
-    );
-  }
-
-  function renderValorPxListaSoloLectura() {
-    return (
-      <span className="tabular-nums text-foreground">
-        {fmtCeldaUnica(parsed.pxLista > 0 ? parsed.pxLista : null)}
-      </span>
-    );
   }
 
   function renderInputDescuento(formaPago: FormaPagoMargenContribucion) {
@@ -222,59 +189,12 @@ export default function TablaFinAnaMargenContribucion({
         }}
         className={INPUT_MARGEN_DESCUENTO_CLASS}
         aria-label={`Descuento ${etiquetaFormaPagoMargenContribucion(formaPago, pagosCatalogo)}`}
+        disabled={!esEditor}
       />
     );
   }
 
-  function renderCeldasPxLista() {
-    const editable = pxListaEditable && esEditor;
-
-    if (esProducto) {
-      return formasPago.map((forma, index) => {
-        const pesos = parsed.pxLista > 0 ? parsed.pxLista : null;
-        return (
-          <TableCell
-            key={`PX_LISTA-${forma}`}
-            className={cn(
-              "celda-datos celda-numero tabular-nums text-center",
-              COL_FORMA,
-              SEP_FORMA,
-              editable && index === 0 && "p-1"
-            )}
-          >
-            {editable && index === 0 ? (
-              <div className="flex justify-center">{renderInputPxLista()}</div>
-            ) : (
-              fmtPesosMargenContribucion(pesos)
-            )}
-          </TableCell>
-        );
-      });
-    }
-
-    return formasPago.map((forma, index) => (
-      <TableCell
-        key={`PX_LISTA-${forma}`}
-        className={cn(
-          "celda-datos celda-numero tabular-nums",
-          COL_FORMA,
-          SEP_FORMA
-        )}
-      >
-        {editable && index === 0 ? (
-          <div className="flex justify-center">{renderInputPxLista()}</div>
-        ) : (
-          renderValorPxListaSoloLectura()
-        )}
-      </TableCell>
-    ));
-  }
-
   function renderCeldasDatos(filaId: FilaMargenContribucionDatoId) {
-    if (esFilaEditableMargenContribucion(filaId)) {
-      return renderCeldasPxLista();
-    }
-
     if (esFilaDescuentoPorFormaPagoMargenContribucion(filaId)) {
       return formasPago.map((forma) => (
         <TableCell
@@ -292,56 +212,40 @@ export default function TablaFinAnaMargenContribucion({
 
     const esFilaMargen = filaId === "MC" || filaId === "MC_PONDERADO";
 
-    if (esProducto) {
+    if (esFilaPorFormaPagoMargenContribucion(filaId)) {
       return formasPago.map((forma) => {
-        const pesos = valorPesosFila(filaId, forma);
+        const { valor, escala } = valorFila(filaId, forma);
         return (
           <TableCell
-            key={`${filaId}-${forma}-dual`}
+            key={`${filaId}-${forma}`}
             className={cn(
               "celda-datos celda-numero tabular-nums",
-              CELDA_DUAL,
               COL_FORMA,
-              SEP_FORMA
+              SEP_FORMA,
+              esFilaMargen && "font-bold"
             )}
           >
-            <CeldaSubcolumnasMontoPct
-              monto={fmtPesosMargenContribucion(pesos)}
-              pct={fmtPctSobrePxListaMargenContribucion(pesos, parsed.pxLista)}
-            />
+            {fmtCeldaMontoMargenContribucion(valor, escala)}
           </TableCell>
         );
       });
     }
 
-    if (esFilaPorFormaPagoMargenContribucion(filaId)) {
-      return formasPago.map((forma) => (
+    return formasPago.map((forma) => {
+      const { valor, escala } = valorFila(filaId, forma);
+      return (
         <TableCell
           key={`${filaId}-${forma}`}
           className={cn(
             "celda-datos celda-numero tabular-nums",
             COL_FORMA,
-            SEP_FORMA,
-            esFilaMargen && "font-bold"
+            SEP_FORMA
           )}
         >
-          {fmtCeldaUnica(valorPesosFila(filaId, forma))}
+          {fmtCeldaMontoMargenContribucion(valor, escala)}
         </TableCell>
-      ));
-    }
-
-    return formasPago.map((forma) => (
-      <TableCell
-        key={`${filaId}-${forma}`}
-        className={cn(
-          "celda-datos celda-numero tabular-nums",
-          COL_FORMA,
-          SEP_FORMA
-        )}
-      >
-        {fmtCeldaUnica(valorPesosFila(filaId, forma))}
-      </TableCell>
-    ));
+      );
+    });
   }
 
   return (
@@ -351,92 +255,91 @@ export default function TablaFinAnaMargenContribucion({
         scrollX={false}
         className="tabla-fin-ana-margen-contribucion w-max"
       >
-          <colgroup>
-            <col className={COL_SECCION} />
-            <col className={COL_CONCEPTO} />
+        <colgroup>
+          <col className={COL_SECCION} />
+          <col className={COL_CONCEPTO} />
+          {formasPago.map((forma) => (
+            <col key={forma} className={COL_FORMA} />
+          ))}
+        </colgroup>
+        <TableHeader>
+          <TableRow>
+            <TableHead
+              className={cn("text-center p-0", COL_SECCION_STICKY)}
+              aria-label="Sección"
+            />
+            <TableHead className={cn("text-center", COL_CONCEPTO_STICKY)}>
+              CONCEPTO
+            </TableHead>
             {formasPago.map((forma) => (
-              <col key={forma} className={COL_FORMA} />
-            ))}
-          </colgroup>
-          <TableHeader>
-            <TableRow>
               <TableHead
-                className={cn("text-center p-0", COL_SECCION_STICKY)}
-                aria-label="Sección"
-              />
-              <TableHead className={cn("text-center", COL_CONCEPTO_STICKY)}>
-                CONCEPTO
+                key={forma}
+                className={cn(
+                  "text-center leading-tight",
+                  COL_FORMA,
+                  SEP_FORMA
+                )}
+              >
+                {etiquetaFormaPagoMargenContribucion(
+                  forma,
+                  pagosCatalogo
+                ).toUpperCase()}
               </TableHead>
-              {formasPago.map((forma) => (
-                <TableHead
-                  key={forma}
-                  className={cn(
-                    "text-center leading-tight",
-                    COL_FORMA,
-                    SEP_FORMA
-                  )}
-                >
-                  {etiquetaFormaPagoMargenContribucion(
-                    forma,
-                    pagosCatalogo
-                  ).toUpperCase()}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {FIN_ANA_MC_SECCIONES.map((seccion, seccionIndex) => {
-              const filas = seccion.filas;
-              const filasJsx = filas.map((filaId, filaIndex) => (
-                <TableRow key={`${seccion.id}-${filaId}`}>
-                  {filaIndex === 0 ? (
-                    <TableCell
-                      rowSpan={filas.length}
-                      className={cn(
-                        "celda-datos tabla-mc-col-seccion-cell",
-                        COL_SECCION_STICKY
-                      )}
-                    >
-                      <span className="tabla-mc-seccion-label">
-                        {seccion.etiqueta}
-                      </span>
-                    </TableCell>
-                  ) : null}
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {FIN_ANA_MC_SECCIONES.map((seccion, seccionIndex) => {
+            const filas = seccion.filas;
+            const filasJsx = filas.map((filaId, filaIndex) => (
+              <TableRow key={`${seccion.id}-${filaId}`}>
+                {filaIndex === 0 ? (
                   <TableCell
+                    rowSpan={filas.length}
                     className={cn(
-                      "celda-datos font-medium",
-                      COL_CONCEPTO_STICKY,
-                      !esProducto &&
-                        (filaId === "MC" || filaId === "MC_PONDERADO") &&
-                        "font-bold"
+                      "celda-datos tabla-mc-col-seccion-cell",
+                      COL_SECCION_STICKY
                     )}
                   >
-                    {etiquetaFilaMargenContribucion(filaId)}
+                    <span className="tabla-mc-seccion-label">
+                      {seccion.etiqueta}
+                    </span>
                   </TableCell>
-                  {renderCeldasDatos(filaId)}
-                </TableRow>
-              ));
-
-              if (seccionIndex >= FIN_ANA_MC_SECCIONES.length - 1) {
-                return filasJsx;
-              }
-
-              return [
-                ...filasJsx,
-                <TableRow
-                  key={`sep-${seccion.id}`}
-                  className="tabla-fila-mc-sep-linea hover:bg-transparent"
-                  aria-hidden
+                ) : null}
+                <TableCell
+                  className={cn(
+                    "celda-datos font-medium",
+                    COL_CONCEPTO_STICKY,
+                    (filaId === "MC" || filaId === "MC_PONDERADO") &&
+                      "font-bold"
+                  )}
                 >
-                  <TableCell
-                    colSpan={2 + totalColsDatos}
-                    className="!p-0 !h-0 border-0"
-                  />
-                </TableRow>,
-              ];
-            })}
-          </TableBody>
-        </Table>
+                  {etiquetaFilaMargenContribucion(filaId)}
+                </TableCell>
+                {renderCeldasDatos(filaId)}
+              </TableRow>
+            ));
+
+            if (seccionIndex >= FIN_ANA_MC_SECCIONES.length - 1) {
+              return filasJsx;
+            }
+
+            return [
+              ...filasJsx,
+              <TableRow
+                key={`sep-${seccion.id}`}
+                className="tabla-fila-mc-sep-linea hover:bg-transparent"
+                aria-hidden
+              >
+                <TableCell
+                  colSpan={2 + totalColsDatos}
+                  className="!p-0 !h-0 border-0"
+                />
+              </TableRow>,
+            ];
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }
