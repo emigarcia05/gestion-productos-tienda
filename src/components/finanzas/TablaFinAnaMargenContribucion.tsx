@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Info } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -9,8 +10,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
 import {
+  ayudaFormulaFilaMargenContribucion,
   calcularValoresMargenContribucion,
   crearDescuentoPctPorFormaPagoVacios,
   cxFinancieroRatioMargenContribucion,
@@ -47,13 +55,79 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
 
 /** Ancho fijo por forma de pago (`--tabla-mc-forma-width` en globals). */
 const COL_FORMA = "tabla-mc-col-forma";
-const COL_CONCEPTO = "w-[9rem]";
+const COL_CONCEPTO = "w-[10.5rem]";
 const COL_SECCION = "w-[1.75rem]";
 /** Columna de sección (etiqueta vertical) + CONCEPTO fijos al scroll. */
 const COL_SECCION_STICKY = "tabla-mc-col-seccion";
 const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
 /** Separador vertical entre formas de pago (más marcado). */
 const SEP_FORMA = "tabla-mc-sep-forma";
+
+function CeldaConceptoMargenContribucion({
+  filaId,
+  esFilaMargen,
+}: {
+  filaId: FilaMargenContribucionDatoId;
+  esFilaMargen: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const etiqueta = etiquetaFilaMargenContribucion(filaId);
+  const formula = ayudaFormulaFilaMargenContribucion(filaId);
+
+  if (!formula) {
+    return (
+      <TableCell
+        className={cn(
+          "celda-datos font-medium",
+          COL_CONCEPTO_STICKY,
+          esFilaMargen && "font-bold"
+        )}
+      >
+        {etiqueta}
+      </TableCell>
+    );
+  }
+
+  return (
+    <TableCell
+      className={cn(
+        "celda-datos font-medium !whitespace-normal",
+        COL_CONCEPTO_STICKY,
+        esFilaMargen && "font-bold"
+      )}
+    >
+      <div className="flex min-w-0 items-center justify-center gap-1">
+        <span className="min-w-0 truncate">{etiqueta}</span>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip open={open} onOpenChange={setOpen}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Ver fórmula de ${etiqueta}`}
+                aria-expanded={open}
+                onClick={(event) => {
+                  event.preventDefault();
+                  setOpen((prev) => !prev);
+                }}
+              >
+                <Info className="size-3.5" aria-hidden />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              align="center"
+              className="max-w-[18rem] whitespace-normal text-left leading-snug"
+            >
+              <p className="font-semibold text-popover-foreground">{etiqueta}</p>
+              <p className="mt-1 text-popover-foreground/90">{formula}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    </TableCell>
+  );
+}
 
 export type InputsMargenContribucionState = {
   pxListaNorm: string;
@@ -306,16 +380,12 @@ export default function TablaFinAnaMargenContribucion({
                     </span>
                   </TableCell>
                 ) : null}
-                <TableCell
-                  className={cn(
-                    "celda-datos font-medium",
-                    COL_CONCEPTO_STICKY,
-                    (filaId === "MC" || filaId === "MC_PONDERADO") &&
-                      "font-bold"
-                  )}
-                >
-                  {etiquetaFilaMargenContribucion(filaId)}
-                </TableCell>
+                <CeldaConceptoMargenContribucion
+                  filaId={filaId}
+                  esFilaMargen={
+                    filaId === "MC" || filaId === "MC_PONDERADO"
+                  }
+                />
                 {renderCeldasDatos(filaId)}
               </TableRow>
             ));

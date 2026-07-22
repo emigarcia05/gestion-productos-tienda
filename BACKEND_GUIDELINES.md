@@ -1004,10 +1004,10 @@ Simulador de márgenes por forma de pago (**solo PORC. UTILIDAD**). **Ruta**: `/
 
 - **Configuración UI** (estado cliente): **TERMINAL** (opcional; promedio si vacío), **TIPO COMPROBANTE** (`FACTURA_A` | `FACTURA_C` | `FACTURA_X`), **PORC. UTILIDAD** (`PorcentajeCentInput`). Tipos en `src/lib/finAnaMargenContribucion.ts` (`TipoComprobanteVentaMargenContribucion`). **Factura C**: IVA e IIBB = 0; **A** y **X**: mismas fórmulas de impuestos.
 - **Descuentos por forma de pago** (`fin_ana_mc_descuento_fp`, Prisma `FinAnaMcDescuentoFp`): una fila por forma de pago con `en_margen_contribucion = true` (`pago_id` FK → `fin_ana_cos_fina_pagos`, único); `descuento_pct` INTEGER **−100…100** (entero). Semilla migración **`20260709130000_fin_ana_mc_descuento_fp`**; FK catálogo: **`20260709140000_fin_ana_cos_fina_pagos_catalog`**. Servicio `src/services/finAnaMcDescuentoFp.service.ts`: `ensureFinAnaMcDescuentoFpSeed`, `listarDescuentosFpMargenContribucion`, `actualizarDescuentoFpMargenContribucion` (input `pagoId`). Action `actualizarDescuentoFpMargenContribucionAction` (`esEditor()` + finanzas). **No** reutilizar `fin_ana_cos_fina` (costos financieros ≠ descuentos de venta).
-- **Base de simulación**: **PX LISTA** fijo en **$100** (`FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD`, no visible); **PX LISTA sin IVA** = `PX LISTA / 1,21`; **PX VENTA** = `PX LISTA × (1 + descuento % / 100)`; **PX VENTA sin IVA** = `PX VENTA / 1,21`.
+- **Base de simulación**: **PX LISTA** fijo en **$100** (`FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD`, no visible); **PX LISTA sin IVA** = `PX LISTA / 1,21`; **PX VENTA** = `PX LISTA × (1 − descuento % / 100)` (ej. **−10** → **110**; **+10** → **90**); **PX VENTA sin IVA** = `PX VENTA / 1,21`.
 - **Columnas** (formas de pago): catálogo dinámico `fin_ana_cos_fina_pagos` filtrado por `en_margen_contribucion` (`idsFormasPagoMargenContribucion` en `src/lib/finAnaMargenContribucion.ts`). Pagos con `en_costos_financieros = false` (p. ej. **EFECTIVO**) tienen CX financiero = 0 %.
 - **Filas / fórmulas** (ratios sobre **PX VENTA**, salvo M.C PONDERADO; `src/lib/finAnaMargenContribucion.ts`):
-  - **DESCUENTO**: % firmado **−100…100** (`fin_ana_mc_descuento_fp`; negativo = descuento; migración signo **`20260721140000`**).
+  - **DESCUENTO**: % firmado **−100…100** (`fin_ana_mc_descuento_fp`; fórmula `1 − %/100`; migración signo histórica **`20260721140000`**).
   - **IVA** = `(PX VENTA sin IVA × 0,21) / PX VENTA` (0 si **FACTURA C**).
   - **IIBB** = `(PX VENTA sin IVA × 0,04) / PX VENTA` (0 si **FACTURA C**).
   - **CX MERCADERÍA** = `((PX LISTA sin IVA) / (1 + porc. utilidad % / 100)) / PX VENTA`.
@@ -1016,7 +1016,7 @@ Simulador de márgenes por forma de pago (**solo PORC. UTILIDAD**). **Ruta**: `/
   - **M.C PONDERADO** = `M.C × PX VENTA` (escala base-100).
 - **Servicio** (`src/services/finAnaMargenContribucion.service.ts`): `getDatosPaginaMargenContribucion`, `mapCxFinancieroPorFormaPago` (helper en lib).
 - **Actions** (`src/actions/finAnaMargenContribucion.ts`): `listarDescuentosFpMargenContribucionAction`, `actualizarDescuentoFpMargenContribucionAction`.
-- **UI**: `FinAnaMargenContribucionPageClient`, `TablaFinAnaMargenContribucion`, **`GestionarPagosFinAnaCosFinaModal`**. Layout (`FIN_ANA_MC_SECCIONES`): **INGRESO** (**solo DESCUENTO**) → **COSTOS** (IVA · IIBB · CX MERCADERÍA · CX FINANCIERO) → **MARGEN** (M.C · M.C PONDERADO). Sticky sección + concepto; separadores primary. Celdas en **`N%`** (ratios ×100; M.C PONDERADO en base-100).
+- **UI**: `FinAnaMargenContribucionPageClient`, `TablaFinAnaMargenContribucion`, **`GestionarPagosFinAnaCosFinaModal`**. Layout (`FIN_ANA_MC_SECCIONES`): **INGRESO** (**solo DESCUENTO**) → **COSTOS** (IVA · IIBB · CX MERCADERÍA · CX FINANCIERO) → **MARGEN** (M.C · M.C PONDERADO). Sticky sección + concepto; separadores primary. Celdas en **`N%`** (ratios ×100; M.C PONDERADO en base-100). En filas de **COSTOS** y **MARGEN**, ícono **Info** junto al concepto muestra la fórmula (`ayudaFormulaFilaMargenContribucion`).
 ### 2.5c Cajas de tesorería (`fin_tesoreria`, Prisma: `CajaTesoreria`)
 
 Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última modificación del saldo.
@@ -1944,6 +1944,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-07-17): **Ideas · drop columnas** — `mkt_publi_ideas_detalle` sin `tipo_contenido_id` / `usada` (`20260717180000`); se conserva `seccion_id`; `usada` se deriva de `mkt_publi.idea_detalle_id`.*
 
 *Última actualización (2026-07-21): **Margen Contribución · signo descuento** — `descuento_pct` negativo = descuento, positivo = recargo; fórmula `1 + %/100`; migración `20260721140000` invierte signos previos.*
+
+*Última actualización (2026-07-22): **Margen Contribución · PX VENTA** — fórmula `PX LISTA × (1 − descuento % / 100)` (lista 100 y **−10** → venta **110**).*
 
 *Última actualización (2026-07-21): **Margen Contribución · orden columnas** — **EFECTIVO** antes de **DÉBITO** (`orden` en `fin_ana_cos_fina_pagos`; migración `20260721150000`).*
 

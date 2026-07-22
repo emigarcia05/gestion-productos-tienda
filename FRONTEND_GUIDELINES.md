@@ -1390,6 +1390,10 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-21): **Margen Contribución · DESCUENTO** — inputs con signo: negativo por defecto (descuento; p. ej. −25 → PX VENTA = 75 si PX LISTA = 100); `+` explícito = recargo. Fórmula `PX LISTA × (1 + % / 100)`. `PorcentajeEnteroMaskInput` prop `defaultNegative`.*
 
+*Última actualización (2026-07-22): **Margen Contribución · PX VENTA** — fórmula corregida `PX LISTA × (1 − descuento % / 100)` (ej. lista 100 y **−10** → venta **110**).*
+
+*Última actualización (2026-07-22): **Margen Contribución · ayuda fórmulas** — en COSTOS/MARGEN, ícono **Info** junto al concepto; click abre tooltip con la fórmula (`ayudaFormulaFilaMargenContribucion`).*
+
 *Última actualización (2026-07-21): **Margen Contribución · columnas** — orden: **EFECTIVO** · **DÉBITO** · cuotas (catálogo `fin_ana_cos_fina_pagos.orden`).*
 
 *Última actualización (2026-07-21): **Margen Contribución · PRODUCTO** — cada forma de pago en **2 columnas** ($ 75% + % 25% negrita, `text-right`); **PORC. UTILIDAD** sigue en una columna con `%`.*

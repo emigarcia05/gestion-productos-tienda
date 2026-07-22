@@ -109,6 +109,23 @@ export function etiquetaFilaMargenContribucion(id: FilaMargenContribucionDatoId)
   return ETIQUETAS_FILA[id];
 }
 
+/** Fórmulas de ayuda (UI) para filas de COSTOS y MARGEN. */
+const AYUDA_FORMULA_FILA: Partial<Record<FilaMargenContribucionDatoId, string>> = {
+  IVA: "(Px. Vta. sin IVA × 0,21) / Px. Vta.",
+  IIBB: "(Px. Vta. sin IVA × 0,04) / Px. Vta.",
+  CX_MERCADERIA:
+    "((Px. Lista sin IVA) / (1 + porc. utilidad % / 100)) / Px. Vta.",
+  CX_FINANCIERO: "CX TOTAL C/ IVA de Costos Financieros (catálogo terminal × pago).",
+  MC: "1 − (IVA + IIBB + CX MERCADERÍA + CX FINANCIERO)",
+  MC_PONDERADO: "M.C × Px. Venta",
+};
+
+export function ayudaFormulaFilaMargenContribucion(
+  id: FilaMargenContribucionDatoId
+): string | null {
+  return AYUDA_FORMULA_FILA[id] ?? null;
+}
+
 /** Descuento editable por columna (forma de pago). */
 export function esFilaDescuentoPorFormaPagoMargenContribucion(
   id: FilaMargenContribucionDatoId
@@ -188,13 +205,13 @@ export function netoSinIvaMargenContribucion(precioConIva: number): number {
   return precioConIva / FIN_ANA_COS_FINA_IVA_FACTOR;
 }
 
-/** PX VENTA = PX LISTA × (1 + descuento % / 100). Negativo = descuento; positivo = recargo. */
+/** PX VENTA = PX LISTA × (1 − descuento % / 100). Ej.: −10 → 110; +10 → 90. */
 export function pxVentaMargenContribucion(
   pxLista: number,
   descuentoPct: number
 ): number {
   if (!(pxLista > 0)) return 0;
-  const factor = 1 + descuentoPct / 100;
+  const factor = 1 - descuentoPct / 100;
   return Math.round(pxLista * Math.max(0, factor));
 }
 
