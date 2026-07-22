@@ -1396,6 +1396,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-22): **Margen Contribución · Info fórmulas** — botón **`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`** (fondo `#0072BB`, ícono blanco) alineado al alto fijo de fila.*
 
+*Última actualización (2026-07-22): **Margen Contribución · concepto** — columna concepto (`tabla-mc-col-concepto`) con etiqueta + **Info** alineados a la **izquierda** (`justify-start` / `text-left`), no centrados.*
+
 *Última actualización (2026-07-22): **Margen Contribución · ancho forma** — `--tabla-mc-forma-width` de **5 rem** a **6 rem** (+20 %).*
 
 *Última actualización (2026-07-21): **Margen Contribución · columnas** — orden: **EFECTIVO** · **DÉBITO** · cuotas (catálogo `fin_ana_cos_fina_pagos.orden`).*

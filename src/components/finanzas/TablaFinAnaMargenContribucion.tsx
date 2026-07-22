@@ -83,7 +83,7 @@ function CeldaConceptoMargenContribucion({
     return (
       <TableCell
         className={cn(
-          "celda-datos font-medium",
+          "celda-datos font-medium !text-left",
           COL_CONCEPTO_STICKY,
           esFilaMargen && "font-bold"
         )}
@@ -96,12 +96,12 @@ function CeldaConceptoMargenContribucion({
   return (
     <TableCell
       className={cn(
-        "celda-datos font-medium !whitespace-normal",
+        "celda-datos font-medium !whitespace-normal !text-left",
         COL_CONCEPTO_STICKY,
         esFilaMargen && "font-bold"
       )}
     >
-      <div className="flex h-full min-h-0 w-full items-center justify-center gap-1 box-border">
+      <div className="flex h-full min-w-0 w-full items-center justify-start gap-1 box-border">
         <span className="min-w-0 truncate">{etiqueta}</span>
         <TooltipProvider delayDuration={0}>
           <Tooltip open={open} onOpenChange={setOpen}>

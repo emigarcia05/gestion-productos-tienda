@@ -248,7 +248,7 @@ export default function FinAnaMargenContribucionPageClient({
                         porcUtilidadNorm: next,
                       }))
                     }
-                    className="input-filtro-unificado h-9 min-h-9 max-h-9 w-full max-w-[9rem] border-primary text-xs"
+                    className="input-filtro-unificado w-full max-w-[9rem] border-primary text-xs"
                     aria-label="Porc. utilidad"
                     title="Porc. utilidad (CX MERCADERÍA)"
                     disabled={!esEditor}
