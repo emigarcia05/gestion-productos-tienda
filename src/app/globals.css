@@ -1488,19 +1488,22 @@
   border-left: 2px solid color-mix(in oklab, var(--primary) 55%, var(--border)) !important;
 }
 /**
- * Modo PRODUCTO: $ a la derecha (menos hueco izquierdo); % a la izquierda con más padding derecho.
+ * Modo PRODUCTO — dos subcolumnas fijas (alineación vertical entre filas):
+ * - `$` 65% del ancho de forma: padding-left 10% · valor centrado · padding-right 5%
+ * - `%` 35%: padding-left 5% · valor centrado · padding-right 10%
+ * Ritmo visual: [10%] valor [5%+5%] valor [10%].
  */
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-pesos {
-  text-align: right !important;
+  text-align: center !important;
   font-weight: var(--font-weight-normal);
-  padding-left: 0 !important;
-  padding-right: 0.25rem !important;
+  padding-left: 10% !important;
+  padding-right: 5% !important;
 }
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-pct {
-  text-align: left !important;
+  text-align: center !important;
   font-weight: var(--font-weight-bold);
-  padding-left: 0 !important;
-  padding-right: 0.5rem !important;
+  padding-left: 5% !important;
+  padding-right: 10% !important;
 }
 .tabla-fin-ana-margen-contribucion tbody td .input-mascara-sufijo {
   width: 100%;

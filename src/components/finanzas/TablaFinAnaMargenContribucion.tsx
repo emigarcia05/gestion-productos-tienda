@@ -51,11 +51,11 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
 
 /**
  * Ancho fijo por forma de pago (mismo en PRODUCTO y PORC. UTILIDAD).
- * PRODUCTO reparte 60% $ + 40% % (más espacio al % para alinear a la izquierda).
+ * PRODUCTO: 65% $ + 35% % (3.25 + 1.75 rem) con padding simétrico en globals.
  */
 const COL_FORMA_ANCHO = "w-[5rem]";
-const COL_PRODUCTO_PESOS = "w-[3rem]";
-const COL_PRODUCTO_PCT = "w-[2rem]";
+const COL_PRODUCTO_PESOS = "w-[3.25rem]";
+const COL_PRODUCTO_PCT = "w-[1.75rem]";
 const COL_PORC_UTILIDAD = COL_FORMA_ANCHO;
 const COL_CONCEPTO = "w-[9rem]";
 const COL_SECCION = "w-[1.75rem]";
@@ -64,9 +64,9 @@ const COL_SECCION_STICKY = "tabla-mc-col-seccion";
 const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
 /** Separador vertical entre formas de pago (más marcado). */
 const SEP_FORMA = "tabla-mc-sep-forma";
-/** Celdas $ / % en modo PRODUCTO ($ right / % left; padding en globals). */
+/** Subcolumnas PRODUCTO: $ 65% / % 35% (padding simétrico en globals). */
 const CELDA_PESOS = "tabla-mc-celda-pesos";
-const CELDA_PCT = "tabla-mc-celda-pct !text-left";
+const CELDA_PCT = "tabla-mc-celda-pct";
 
 export type InputsMargenContribucionState = {
   pxListaNorm: string;
@@ -241,8 +241,7 @@ export default function TablaFinAnaMargenContribucion({
             key={`PX_LISTA-${forma}`}
             colSpan={2}
             className={cn(
-              "celda-datos celda-numero tabular-nums",
-              CELDA_PESOS,
+              "celda-datos celda-numero tabular-nums text-center",
               SEP_FORMA,
               editable && index === 0 && "p-1"
             )}
