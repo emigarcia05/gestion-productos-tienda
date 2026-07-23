@@ -1023,7 +1023,7 @@ Simulador de márgenes por forma de pago (**solo PORC. UTILIDAD**). **Ruta**: `/
 - **Servicio** (`src/services/finAnaMargenContribucion.service.ts`): `getDatosPaginaMargenContribucion`, `mapCxFinancieroPorFormaPago` (helper en lib).
 - **Actions** (`src/actions/finAnaMargenContribucion.ts`): descuentos FP + fórmulas.
 - **UI**: `FinAnaMargenContribucionPageClient`, `TablaFinAnaMargenContribucion`, **`GraficoMcVsPorcUtilidad`** (SVG debajo de la tabla), **`GestionCxYFormulasMargenContribucionModal`**, **`GestionarPagosFinAnaCosFinaModal`**. Layout (`FIN_ANA_MC_SECCIONES`): **INGRESO** (**solo DESCUENTO**) → **COSTOS** (IVA · IIBB · CX MERCADERÍA · CX FINANCIERO) → **MARGEN** (M.C · M.C PONDERADO). Sticky sección + concepto; separadores primary. Celdas en **`N%`** (ratios ×100; M.C PONDERADO en base lista). Parámetros de `fin_ana_mc_formulas` se cargan en servidor; el modal **Gestion Cx. Y Formulas** documenta variables y fórmulas (sin edición en este paso).
-- **Gráfico M.C vs PORC. UTILIDAD**: helpers en `src/lib/finAnaMargenContribucion.ts` — `idFormaPagoTresCuotasMargenContribucion` (resuelve **3 CUOTAS** por nombre/código del catálogo), `serieMcVsPorcUtilidadMargenContribucion` (eje X **20…200** step 5; M.C de esa forma con descuento/CX/tipo/fórmulas actuales), `mcPctEnPorcUtilidadMargenContribucion` (punto de la marca vertical). Sin dependencia de charts externas.
+- **Gráfico M.C vs PORC. UTILIDAD**: helpers en `src/lib/finAnaMargenContribucion.ts` — `idFormaPagoTresCuotasMargenContribucion` (default **3 CUOTAS**), `serieMcVsPorcUtilidadMargenContribucion` / `mcPctEnPorcUtilidadMargenContribucion` con métrica **`MC` | `MC_PONDERADO`** (eje X **20…200** step 5). UI `GraficoMcVsPorcUtilidad`: multi-select formas de pago + select métrica a la izquierda; varias series con `COLORES_SERIE_GRAFICO_MC`. Las series **reaccionan a los filtros de página**: **TERMINAL** y **TIPO COMPROBANTE** (via `mapCxFinancieroPorFormaPago` + impuestos), **PORC. UTILIDAD** (marca vertical), y descuentos de la tabla. Sin dependencia de charts externas.
 ### 2.5c Cajas de tesorería (`fin_tesoreria`, Prisma: `CajaTesoreria`)
 
 Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última modificación del saldo.
@@ -1960,7 +1960,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-23): **Margen Contribución · CX FINANCIERO** — **FACTURA A** = CX TOTAL S/ IVA; **FACTURA C** = CX TOTAL C/ IVA.*
 
-*Última actualización (2026-07-23): **Margen Contribución · gráfico M.C** — serie 20–200 % PORC. UTILIDAD para forma **3 CUOTAS** (`serieMcVsPorcUtilidadMargenContribucion`); marca en PORC. UTILIDAD del filtro.*
+*Última actualización (2026-07-23): **Margen Contribución · gráfico M.C** — serie 20–200 % PORC. UTILIDAD; métrica **MC** | **MC_PONDERADO**; default forma **3 CUOTAS**; multi-serie por formas seleccionadas.*
 
 *Última actualización (2026-07-21): **Margen Contribución · orden columnas** — **EFECTIVO** antes de **DÉBITO** (`orden` en `fin_ana_cos_fina_pagos`; migración `20260721150000`).*
 

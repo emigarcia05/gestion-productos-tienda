@@ -556,12 +556,30 @@ export function idFormaPagoTresCuotasMargenContribucion(
 
 export type PuntoMcVsPorcUtilidad = {
   porcUtilidadPct: number;
-  /** M.C en % (ratio × 100). */
+  /** Valor del eje Y en % de visualización (M.C ratio×100 o M.C PONDERADO base-100). */
   mcPct: number | null;
 };
 
+export type MetricaGraficoMcMargenContribucion = "MC" | "MC_PONDERADO";
+
+function valorYGraficoMcMargenContribucion(
+  calculados: ValoresCalculadosMargenContribucion,
+  cxFinPct: number,
+  metrica: MetricaGraficoMcMargenContribucion
+): number | null {
+  if (metrica === "MC_PONDERADO") {
+    const ponderado = mcPonderadoMargenContribucionPorFormaPago(
+      calculados,
+      cxFinPct
+    );
+    return ponderado;
+  }
+  const mc = mcMargenContribucionPorFormaPago(calculados, cxFinPct);
+  return mc == null ? null : mc * 100;
+}
+
 /**
- * Serie M.C (forma de pago dada) variando PORC. UTILIDAD en [min, max].
+ * Serie M.C o M.C PONDERADO variando PORC. UTILIDAD en [min, max].
  * Usa descuento / CX / tipo / fórmulas actuales.
  */
 export function serieMcVsPorcUtilidadMargenContribucion(params: {
@@ -570,6 +588,7 @@ export function serieMcVsPorcUtilidadMargenContribucion(params: {
   cxFinPct: number;
   tipoComprobante: TipoComprobanteVentaMargenContribucion;
   formulas: ParametrosFormulaMargenContribucion;
+  metrica?: MetricaGraficoMcMargenContribucion;
   porcMin?: number;
   porcMax?: number;
   step?: number;
@@ -577,6 +596,7 @@ export function serieMcVsPorcUtilidadMargenContribucion(params: {
   const porcMin = params.porcMin ?? MC_GRAFICO_PORC_UTILIDAD_MIN;
   const porcMax = params.porcMax ?? MC_GRAFICO_PORC_UTILIDAD_MAX;
   const step = params.step ?? MC_GRAFICO_PORC_UTILIDAD_STEP;
+  const metrica = params.metrica ?? "MC";
   const puntos: PuntoMcVsPorcUtilidad[] = [];
 
   for (let porc = porcMin; porc <= porcMax + 1e-9; porc += step) {
@@ -588,17 +608,20 @@ export function serieMcVsPorcUtilidadMargenContribucion(params: {
       tipoComprobante: params.tipoComprobante,
       formulas: params.formulas,
     });
-    const mc = mcMargenContribucionPorFormaPago(calculados, params.cxFinPct);
     puntos.push({
       porcUtilidadPct,
-      mcPct: mc == null ? null : mc * 100,
+      mcPct: valorYGraficoMcMargenContribucion(
+        calculados,
+        params.cxFinPct,
+        metrica
+      ),
     });
   }
 
   return puntos;
 }
 
-/** M.C (%) en un PORC. UTILIDAD puntual (misma lógica que la serie). */
+/** Valor Y (%) en un PORC. UTILIDAD puntual (misma lógica que la serie). */
 export function mcPctEnPorcUtilidadMargenContribucion(params: {
   pxLista: number;
   descuentoPct: number;
@@ -606,6 +629,7 @@ export function mcPctEnPorcUtilidadMargenContribucion(params: {
   tipoComprobante: TipoComprobanteVentaMargenContribucion;
   formulas: ParametrosFormulaMargenContribucion;
   porcUtilidadPct: number;
+  metrica?: MetricaGraficoMcMargenContribucion;
 }): number | null {
   const calculados = calcularValoresMargenContribucion({
     pxLista: params.pxLista,
@@ -614,6 +638,21 @@ export function mcPctEnPorcUtilidadMargenContribucion(params: {
     tipoComprobante: params.tipoComprobante,
     formulas: params.formulas,
   });
-  const mc = mcMargenContribucionPorFormaPago(calculados, params.cxFinPct);
-  return mc == null ? null : mc * 100;
+  return valorYGraficoMcMargenContribucion(
+    calculados,
+    params.cxFinPct,
+    params.metrica ?? "MC"
+  );
 }
+
+/** Colores de series del gráfico (tokens de marca / mezclas). */
+export const COLORES_SERIE_GRAFICO_MC = [
+  "var(--primary)",
+  "var(--accent2)",
+  "color-mix(in oklab, var(--primary) 65%, black)",
+  "color-mix(in oklab, var(--accent2) 55%, black)",
+  "color-mix(in oklab, var(--primary) 45%, var(--accent2))",
+  "color-mix(in oklab, var(--foreground) 55%, var(--primary))",
+  "var(--accent)",
+  "color-mix(in oklab, var(--destructive) 80%, var(--primary))",
+] as const;

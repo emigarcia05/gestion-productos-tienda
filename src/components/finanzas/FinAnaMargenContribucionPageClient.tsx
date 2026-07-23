@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import {
+  COLORES_SERIE_GRAFICO_MC,
   FIN_ANA_MC_TIPOS_COMPROBANTE,
   crearDescuentoPctPorFormaPagoVacios,
   etiquetaFormaPagoMargenContribucion,
@@ -40,6 +41,7 @@ import {
   MC_GRAFICO_PORC_UTILIDAD_MAX,
   MC_GRAFICO_PORC_UTILIDAD_MIN,
   serieMcVsPorcUtilidadMargenContribucion,
+  type MetricaGraficoMcMargenContribucion,
   type TipoComprobanteVentaMargenContribucion,
 } from "@/lib/finAnaMargenContribucion";
 import {
@@ -150,52 +152,85 @@ export default function FinAnaMargenContribucionPageClient({
     [pagos]
   );
 
+  /** `undefined` = aún no tocó el control → default 3 CUOTAS. */
+  const [formasGraficoIds, setFormasGraficoIds] = useState<string[] | undefined>(
+    undefined
+  );
+  const [metricaGrafico, setMetricaGrafico] =
+    useState<MetricaGraficoMcMargenContribucion>("MC");
+
+  const formasGraficoSeleccionadas = useMemo(() => {
+    if (formasGraficoIds !== undefined) return formasGraficoIds;
+    return formaPagoTresCuotasId ? [formaPagoTresCuotasId] : [];
+  }, [formasGraficoIds, formaPagoTresCuotasId]);
+
+  const opcionesFormaPagoGrafico = useMemo(
+    () =>
+      formasPago.map((id) => ({
+        id,
+        nombre: etiquetaFormaPagoMargenContribucion(id, pagos),
+      })),
+    [formasPago, pagos]
+  );
+
   const graficoMc = useMemo(() => {
-    if (!formaPagoTresCuotasId) {
-      return {
-        puntos: [],
-        porcUtilidadMarca: null as number | null,
-        mcPctMarca: null as number | null,
-        etiqueta: "3 CUOTAS",
-      };
-    }
-    const descuentoPct =
-      inputs.descuentoPctPorFormaPago[formaPagoTresCuotasId] ?? 0;
-    const cxFinPct = cxFinancieroPorFormaPago[formaPagoTresCuotasId] ?? 0;
-    const base = {
-      pxLista: formulaParams.pxListaCIva,
-      descuentoPct,
-      cxFinPct,
-      tipoComprobante: config.tipoComprobante,
-      formulas: formulaParams,
-    };
-    const puntos = serieMcVsPorcUtilidadMargenContribucion(base);
     const marcaEnRango =
       tienePorcUtilidad &&
       porcUtilidadPct >= MC_GRAFICO_PORC_UTILIDAD_MIN &&
       porcUtilidadPct <= MC_GRAFICO_PORC_UTILIDAD_MAX;
-    const mcPctMarca = marcaEnRango
-      ? mcPctEnPorcUtilidadMargenContribucion({
-          ...base,
-          porcUtilidadPct,
-        })
-      : null;
+
+    const series = formasGraficoSeleccionadas.map((formaId, index) => {
+      const descuentoPct = inputs.descuentoPctPorFormaPago[formaId] ?? 0;
+      const cxFinPct = cxFinancieroPorFormaPago[formaId] ?? 0;
+      const base = {
+        pxLista: formulaParams.pxListaCIva,
+        descuentoPct,
+        cxFinPct,
+        tipoComprobante: config.tipoComprobante,
+        formulas: formulaParams,
+        metrica: metricaGrafico,
+      };
+      return {
+        id: formaId,
+        etiqueta: etiquetaFormaPagoMargenContribucion(formaId, pagos),
+        color:
+          COLORES_SERIE_GRAFICO_MC[index % COLORES_SERIE_GRAFICO_MC.length]!,
+        puntos: serieMcVsPorcUtilidadMargenContribucion(base),
+        valorMarca: marcaEnRango
+          ? mcPctEnPorcUtilidadMargenContribucion({
+              ...base,
+              porcUtilidadPct,
+            })
+          : null,
+      };
+    });
 
     return {
-      puntos,
+      series,
       porcUtilidadMarca: marcaEnRango ? porcUtilidadPct : null,
-      mcPctMarca,
-      etiqueta: etiquetaFormaPagoMargenContribucion(
-        formaPagoTresCuotasId,
-        pagos
-      ),
+      /** Remount del área SVG al cambiar filtros de página (no el panel de controles). */
+      revisionFiltros: [
+        config.terminalId || "ALL",
+        config.tipoComprobante,
+        tienePorcUtilidad ? String(porcUtilidadPct) : "SIN_PORC",
+        Object.entries(cxFinancieroPorFormaPago)
+          .map(([id, v]) => `${id}:${v}`)
+          .sort()
+          .join("|"),
+        Object.entries(inputs.descuentoPctPorFormaPago)
+          .map(([id, v]) => `${id}:${v}`)
+          .sort()
+          .join("|"),
+      ].join("::"),
     };
   }, [
-    formaPagoTresCuotasId,
+    formasGraficoSeleccionadas,
     inputs.descuentoPctPorFormaPago,
     cxFinancieroPorFormaPago,
     formulaParams,
+    config.terminalId,
     config.tipoComprobante,
+    metricaGrafico,
     tienePorcUtilidad,
     porcUtilidadPct,
     pagos,
@@ -203,6 +238,8 @@ export default function FinAnaMargenContribucionPageClient({
 
   function limpiarFiltros() {
     setConfig(CONFIG_MARGEN_CONTRIBUCION_VACIA);
+    setFormasGraficoIds(undefined);
+    setMetricaGrafico("MC");
     setInputs(
       inputsMargenContribucionIniciales(
         formasPago,
@@ -393,20 +430,17 @@ export default function FinAnaMargenContribucionPageClient({
               esEditor={esEditor}
             />
           </div>
-          {formaPagoTresCuotasId ? (
-            <GraficoMcVsPorcUtilidad
-              puntos={graficoMc.puntos}
-              porcUtilidadMarca={graficoMc.porcUtilidadMarca}
-              mcPctMarca={graficoMc.mcPctMarca}
-              etiquetaFormaPago={graficoMc.etiqueta}
-              className="shrink-0"
-            />
-          ) : (
-            <div className="flex h-52 shrink-0 items-center justify-center rounded-md border border-border bg-card text-sm text-muted-foreground">
-              No hay forma de pago &quot;3 CUOTAS&quot; habilitada en Margen
-              Contribución
-            </div>
-          )}
+          <GraficoMcVsPorcUtilidad
+            series={graficoMc.series}
+            porcUtilidadMarca={graficoMc.porcUtilidadMarca}
+            revisionFiltros={graficoMc.revisionFiltros}
+            metrica={metricaGrafico}
+            onMetricaChange={setMetricaGrafico}
+            opcionesFormaPago={opcionesFormaPagoGrafico}
+            formasSeleccionadas={formasGraficoSeleccionadas}
+            onFormasSeleccionadasChange={setFormasGraficoIds}
+            className="shrink-0"
+          />
         </div>
       </ClassicFilteredTableLayout>
 
