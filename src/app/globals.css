@@ -1533,17 +1533,44 @@
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-sep-forma {
   border-left: 2px solid color-mix(in oklab, var(--primary) 55%, var(--border)) !important;
 }
+/**
+ * DESCUENTO: mismo alto de fila que IVA (2rem). Sin padding vertical extra;
+ * la máscara ocupa el alto útil de la celda.
+ */
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-descuento {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: hidden;
+}
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-descuento > div {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+}
 .tabla-fin-ana-margen-contribucion tbody td .input-mascara-sufijo {
   width: 100%;
   min-width: 0;
-  max-height: 1.75rem !important;
-  height: 1.75rem !important;
+  height: calc(
+    var(--tabla-body-row-min-height) - (2 * var(--tabla-body-cell-padding-y))
+  ) !important;
+  max-height: calc(
+    var(--tabla-body-row-min-height) - (2 * var(--tabla-body-cell-padding-y))
+  ) !important;
+  min-height: 0 !important;
   box-sizing: border-box;
 }
-.tabla-fin-ana-margen-contribucion tbody td .input-mascara-sufijo input {
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-descuento .input-mascara-sufijo {
+  height: calc(var(--tabla-body-row-min-height) - 2px) !important;
+  max-height: calc(var(--tabla-body-row-min-height) - 2px) !important;
+}
+.tabla-fin-ana-margen-contribucion tbody td .input-mascara-sufijo input,
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-celda-descuento .input-mascara-sufijo input {
   color: #000 !important;
   font-size: 0.75rem !important;
   line-height: 1.25 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
 }
 
 /* Tabla Lista Precios proveedor: 7 columnas 8/51/8/8/2/8/9 % (colgroup en ListaPreciosTablaConFiltros). */

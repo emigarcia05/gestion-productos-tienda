@@ -40,11 +40,11 @@ import type { FinAnaCosFinaPagoItem } from "@/lib/finAnaCosFinaPagos";
 import { cn } from "@/lib/utils";
 
 const INPUT_FILA_CLASS =
-  "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-w-0 max-h-full text-xs tabular-nums";
+  "h-full min-h-0 max-h-full min-w-0 w-full text-xs tabular-nums";
 
 const INPUT_MARGEN_DESCUENTO_CLASS = cn(
   INPUT_FILA_CLASS,
-  "w-full max-w-full border border-primary rounded-md"
+  "border border-primary rounded-md"
 );
 
 /** Ancho fijo por forma de pago (`--tabla-mc-forma-width` en globals). */
@@ -225,12 +225,14 @@ export default function TablaFinAnaMargenContribucion({
         <TableCell
           key={`${filaId}-${forma}`}
           className={cn(
-            "celda-datos celda-numero p-1",
+            "celda-datos celda-numero tabla-mc-celda-descuento",
             COL_FORMA,
             SEP_FORMA
           )}
         >
-          <div className="flex justify-center">{renderInputDescuento(forma)}</div>
+          <div className="flex h-full min-h-0 w-full items-center justify-center">
+            {renderInputDescuento(forma)}
+          </div>
         </TableCell>
       ));
     }

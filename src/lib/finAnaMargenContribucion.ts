@@ -520,3 +520,100 @@ export function mapCxFinancieroPorFormaPago(
 
   return map;
 }
+
+/** Rango del gráfico M.C vs PORC. UTILIDAD (eje X). */
+export const MC_GRAFICO_PORC_UTILIDAD_MIN = 20;
+export const MC_GRAFICO_PORC_UTILIDAD_MAX = 200;
+export const MC_GRAFICO_PORC_UTILIDAD_STEP = 5;
+
+/**
+ * Resuelve la forma de pago **3 Cuotas** por nombre/código del catálogo
+ * (`fin_ana_cos_fina_pagos`), sin hardcodear id.
+ */
+export function idFormaPagoTresCuotasMargenContribucion(
+  pagos: readonly FinAnaCosFinaPagoItem[]
+): FormaPagoMargenContribucion | null {
+  const candidatos = filtrarPagosMargenContribucion([...pagos]);
+  const exacto = candidatos.find((p) => {
+    const nombre = p.nombre.trim().toLocaleUpperCase("es");
+    const codigo = p.codigo.trim().toLocaleUpperCase("es");
+    return (
+      nombre === "3 CUOTAS" ||
+      nombre === "3 CUOTA" ||
+      codigo === "3_CUOTAS" ||
+      codigo === "CUOTAS_3" ||
+      codigo === "CUOTA_3" ||
+      codigo === "3_CUOTA"
+    );
+  });
+  if (exacto) return exacto.id;
+  const aproximado = candidatos.find((p) => {
+    const nombre = p.nombre.toLocaleUpperCase("es");
+    return /\b3\b/.test(nombre) && /CUOTA/.test(nombre);
+  });
+  return aproximado?.id ?? null;
+}
+
+export type PuntoMcVsPorcUtilidad = {
+  porcUtilidadPct: number;
+  /** M.C en % (ratio × 100). */
+  mcPct: number | null;
+};
+
+/**
+ * Serie M.C (forma de pago dada) variando PORC. UTILIDAD en [min, max].
+ * Usa descuento / CX / tipo / fórmulas actuales.
+ */
+export function serieMcVsPorcUtilidadMargenContribucion(params: {
+  pxLista: number;
+  descuentoPct: number;
+  cxFinPct: number;
+  tipoComprobante: TipoComprobanteVentaMargenContribucion;
+  formulas: ParametrosFormulaMargenContribucion;
+  porcMin?: number;
+  porcMax?: number;
+  step?: number;
+}): PuntoMcVsPorcUtilidad[] {
+  const porcMin = params.porcMin ?? MC_GRAFICO_PORC_UTILIDAD_MIN;
+  const porcMax = params.porcMax ?? MC_GRAFICO_PORC_UTILIDAD_MAX;
+  const step = params.step ?? MC_GRAFICO_PORC_UTILIDAD_STEP;
+  const puntos: PuntoMcVsPorcUtilidad[] = [];
+
+  for (let porc = porcMin; porc <= porcMax + 1e-9; porc += step) {
+    const porcUtilidadPct = Math.round(porc * 100) / 100;
+    const calculados = calcularValoresMargenContribucion({
+      pxLista: params.pxLista,
+      descuentoPct: params.descuentoPct,
+      porcUtilidadPct,
+      tipoComprobante: params.tipoComprobante,
+      formulas: params.formulas,
+    });
+    const mc = mcMargenContribucionPorFormaPago(calculados, params.cxFinPct);
+    puntos.push({
+      porcUtilidadPct,
+      mcPct: mc == null ? null : mc * 100,
+    });
+  }
+
+  return puntos;
+}
+
+/** M.C (%) en un PORC. UTILIDAD puntual (misma lógica que la serie). */
+export function mcPctEnPorcUtilidadMargenContribucion(params: {
+  pxLista: number;
+  descuentoPct: number;
+  cxFinPct: number;
+  tipoComprobante: TipoComprobanteVentaMargenContribucion;
+  formulas: ParametrosFormulaMargenContribucion;
+  porcUtilidadPct: number;
+}): number | null {
+  const calculados = calcularValoresMargenContribucion({
+    pxLista: params.pxLista,
+    descuentoPct: params.descuentoPct,
+    porcUtilidadPct: params.porcUtilidadPct,
+    tipoComprobante: params.tipoComprobante,
+    formulas: params.formulas,
+  });
+  const mc = mcMargenContribucionPorFormaPago(calculados, params.cxFinPct);
+  return mc == null ? null : mc * 100;
+}

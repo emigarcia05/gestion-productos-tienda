@@ -7,6 +7,7 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import TablaFinAnaMargenContribucion, {
   inputsMargenContribucionDesdeNumeros,
 } from "@/components/finanzas/TablaFinAnaMargenContribucion";
+import GraficoMcVsPorcUtilidad from "@/components/finanzas/GraficoMcVsPorcUtilidad";
 import GestionarPagosFinAnaCosFinaModal from "@/components/finanzas/GestionarPagosFinAnaCosFinaModal";
 import GestionCxYFormulasMargenContribucionModal from "@/components/finanzas/GestionCxYFormulasMargenContribucionModal";
 import FilterBar, {
@@ -30,9 +31,15 @@ import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import {
   FIN_ANA_MC_TIPOS_COMPROBANTE,
   crearDescuentoPctPorFormaPagoVacios,
+  etiquetaFormaPagoMargenContribucion,
   etiquetaTipoComprobanteVentaMargenContribucion,
+  idFormaPagoTresCuotasMargenContribucion,
   idsFormasPagoMargenContribucion,
   mapCxFinancieroPorFormaPago,
+  mcPctEnPorcUtilidadMargenContribucion,
+  MC_GRAFICO_PORC_UTILIDAD_MAX,
+  MC_GRAFICO_PORC_UTILIDAD_MIN,
+  serieMcVsPorcUtilidadMargenContribucion,
   type TipoComprobanteVentaMargenContribucion,
 } from "@/lib/finAnaMargenContribucion";
 import {
@@ -134,6 +141,65 @@ export default function FinAnaMargenContribucionPageClient({
       config.porcUtilidadNorm,
       MARGEN_PX_LISTA_MAX_CENTS
     ) ?? 0;
+
+  const tienePorcUtilidad =
+    config.porcUtilidadNorm.trim() !== "" && porcUtilidadPct > 0;
+
+  const formaPagoTresCuotasId = useMemo(
+    () => idFormaPagoTresCuotasMargenContribucion(pagos),
+    [pagos]
+  );
+
+  const graficoMc = useMemo(() => {
+    if (!formaPagoTresCuotasId) {
+      return {
+        puntos: [],
+        porcUtilidadMarca: null as number | null,
+        mcPctMarca: null as number | null,
+        etiqueta: "3 CUOTAS",
+      };
+    }
+    const descuentoPct =
+      inputs.descuentoPctPorFormaPago[formaPagoTresCuotasId] ?? 0;
+    const cxFinPct = cxFinancieroPorFormaPago[formaPagoTresCuotasId] ?? 0;
+    const base = {
+      pxLista: formulaParams.pxListaCIva,
+      descuentoPct,
+      cxFinPct,
+      tipoComprobante: config.tipoComprobante,
+      formulas: formulaParams,
+    };
+    const puntos = serieMcVsPorcUtilidadMargenContribucion(base);
+    const marcaEnRango =
+      tienePorcUtilidad &&
+      porcUtilidadPct >= MC_GRAFICO_PORC_UTILIDAD_MIN &&
+      porcUtilidadPct <= MC_GRAFICO_PORC_UTILIDAD_MAX;
+    const mcPctMarca = marcaEnRango
+      ? mcPctEnPorcUtilidadMargenContribucion({
+          ...base,
+          porcUtilidadPct,
+        })
+      : null;
+
+    return {
+      puntos,
+      porcUtilidadMarca: marcaEnRango ? porcUtilidadPct : null,
+      mcPctMarca,
+      etiqueta: etiquetaFormaPagoMargenContribucion(
+        formaPagoTresCuotasId,
+        pagos
+      ),
+    };
+  }, [
+    formaPagoTresCuotasId,
+    inputs.descuentoPctPorFormaPago,
+    cxFinancieroPorFormaPago,
+    formulaParams,
+    config.tipoComprobante,
+    tienePorcUtilidad,
+    porcUtilidadPct,
+    pagos,
+  ]);
 
   function limpiarFiltros() {
     setConfig(CONFIG_MARGEN_CONTRIBUCION_VACIA);
@@ -313,17 +379,35 @@ export default function FinAnaMargenContribucionPageClient({
         }
         filtersAriaLabel="Configuración de margen contribución"
       >
-        <TablaFinAnaMargenContribucion
-          formasPago={formasPago}
-          pagosCatalogo={pagos}
-          cxFinancieroPorFormaPago={cxFinancieroPorFormaPago}
-          inputs={inputs}
-          onDescuentoPorFormaPagoChange={cambiarDescuentoPorFormaPago}
-          porcUtilidadPct={porcUtilidadPct}
-          tipoComprobante={config.tipoComprobante}
-          formulaParams={formulaParams}
-          esEditor={esEditor}
-        />
+        <div className="flex h-full min-h-0 flex-col gap-3">
+          <div className="min-h-0 flex-1 overflow-auto">
+            <TablaFinAnaMargenContribucion
+              formasPago={formasPago}
+              pagosCatalogo={pagos}
+              cxFinancieroPorFormaPago={cxFinancieroPorFormaPago}
+              inputs={inputs}
+              onDescuentoPorFormaPagoChange={cambiarDescuentoPorFormaPago}
+              porcUtilidadPct={porcUtilidadPct}
+              tipoComprobante={config.tipoComprobante}
+              formulaParams={formulaParams}
+              esEditor={esEditor}
+            />
+          </div>
+          {formaPagoTresCuotasId ? (
+            <GraficoMcVsPorcUtilidad
+              puntos={graficoMc.puntos}
+              porcUtilidadMarca={graficoMc.porcUtilidadMarca}
+              mcPctMarca={graficoMc.mcPctMarca}
+              etiquetaFormaPago={graficoMc.etiqueta}
+              className="shrink-0"
+            />
+          ) : (
+            <div className="flex h-52 shrink-0 items-center justify-center rounded-md border border-border bg-card text-sm text-muted-foreground">
+              No hay forma de pago &quot;3 CUOTAS&quot; habilitada en Margen
+              Contribución
+            </div>
+          )}
+        </div>
       </ClassicFilteredTableLayout>
 
       <GestionCxYFormulasMargenContribucionModal
