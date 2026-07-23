@@ -5,7 +5,10 @@ import {
   type FinAnaCosFinaPagoItem,
   type FormaPagoMargenContribucion,
 } from "@/lib/finAnaCosFinaPagos";
-import { cxTotalConIvaFinAnaCosFina } from "@/lib/finAnaCosFina";
+import {
+  cxTotalConIvaFinAnaCosFina,
+  cxTotalSinIvaFinAnaCosFina,
+} from "@/lib/finAnaCosFina";
 import { roundPorcentaje0a100 } from "@/lib/format";
 import {
   FIN_ANA_MC_FORMULA_DEFAULTS,
@@ -140,7 +143,7 @@ export function ayudaFormulaFilaMargenContribucion(
     CX_MERCADERIA:
       "((Px. Lista sin IVA) / (1 + porc. utilidad % / 100)) / Px. Vta. C/ IVA",
     CX_FINANCIERO:
-      "CX TOTAL C/ IVA de Costos Financieros (catálogo terminal × pago).",
+      "FACTURA A → CX TOTAL S/ IVA; FACTURA C → CX TOTAL C/ IVA (catálogo terminal × pago).",
     MC: "1 − (IVA + IIBB + CX MERCADERÍA + CX FINANCIERO)",
     MC_PONDERADO: "M.C × Px. Venta C/ IVA",
   };
@@ -182,13 +185,11 @@ export const FIN_ANA_MC_DESCUENTO_MAX = 100;
 /** Tipo de comprobante de venta (afecta IVA e IIBB en el simulador). */
 export type TipoComprobanteVentaMargenContribucion =
   | "FACTURA_A"
-  | "FACTURA_C"
-  | "FACTURA_X";
+  | "FACTURA_C";
 
 export const FIN_ANA_MC_TIPOS_COMPROBANTE: TipoComprobanteVentaMargenContribucion[] = [
   "FACTURA_A",
   "FACTURA_C",
-  "FACTURA_X",
 ];
 
 const ETIQUETAS_TIPO_COMPROBANTE: Record<
@@ -197,7 +198,6 @@ const ETIQUETAS_TIPO_COMPROBANTE: Record<
 > = {
   FACTURA_A: "FACTURA A",
   FACTURA_C: "FACTURA C",
-  FACTURA_X: "FACTURA X",
 };
 
 export function etiquetaTipoComprobanteVentaMargenContribucion(
@@ -213,7 +213,6 @@ export function aplicaImpuestosComprobanteMargenContribucion(
     case "FACTURA_C":
       return { aplicaIva: false, aplicaIibb: false };
     case "FACTURA_A":
-    case "FACTURA_X":
     default:
       return { aplicaIva: true, aplicaIibb: true };
   }
@@ -468,31 +467,40 @@ export type FilaCostosFinancierosMargenContribucion = {
   costoFinanciero: number;
 };
 
-function promedioCxTotalConIvaMargenContribucion(
-  filas: FilaCostosFinancierosMargenContribucion[]
+function promedioCxTotalMargenContribucion(
+  filas: FilaCostosFinancierosMargenContribucion[],
+  tipoComprobante: TipoComprobanteVentaMargenContribucion
 ): number {
   if (filas.length === 0) return 0;
-  const suma = filas.reduce(
-    (acc, fila) =>
-      acc +
-      cxTotalConIvaFinAnaCosFina(
-        fila.impCheque,
-        fila.arancel,
-        fila.costoFinanciero
-      ),
-    0
-  );
+  const usarSinIva = tipoComprobante === "FACTURA_A";
+  const suma = filas.reduce((acc, fila) => {
+    const cx = usarSinIva
+      ? cxTotalSinIvaFinAnaCosFina(
+          fila.impCheque,
+          fila.arancel,
+          fila.costoFinanciero
+        )
+      : cxTotalConIvaFinAnaCosFina(
+          fila.impCheque,
+          fila.arancel,
+          fila.costoFinanciero
+        );
+    return acc + cx;
+  }, 0);
   return roundPorcentaje0a100(suma / filas.length);
 }
 
 /**
- * CX FINANCIERO por forma de pago: **CX TOTAL C/ IVA** de Costos Financieros.
+ * CX FINANCIERO por forma de pago desde Costos Financieros:
+ * - **FACTURA A** → **CX TOTAL S/ IVA**
+ * - **FACTURA C** → **CX TOTAL C/ IVA**
  * Si `terminalId` está definido, solo filas de esa terminal habilitadas; si no, promedio entre terminales habilitadas.
  */
 export function mapCxFinancieroPorFormaPago(
   filas: FilaCostosFinancierosMargenContribucion[],
   pagosCatalogo: FinAnaCosFinaPagoItem[],
-  terminalId?: string
+  terminalId?: string,
+  tipoComprobante: TipoComprobanteVentaMargenContribucion = "FACTURA_A"
 ): CxFinancieroPorFormaPago {
   const habilitadas = filas.filter(
     (fila) =>
@@ -504,7 +512,7 @@ export function mapCxFinancieroPorFormaPago(
   for (const pago of filtrarPagosMargenContribucion(pagosCatalogo)) {
     if (pago.enCostosFinancieros) {
       const delPago = habilitadas.filter((fila) => fila.pagoId === pago.id);
-      map[pago.id] = promedioCxTotalConIvaMargenContribucion(delPago);
+      map[pago.id] = promedioCxTotalMargenContribucion(delPago, tipoComprobante);
     } else {
       map[pago.id] = 0;
     }

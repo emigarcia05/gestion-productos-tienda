@@ -1008,7 +1008,7 @@ Simulador de márgenes por forma de pago (**solo PORC. UTILIDAD**). **Ruta**: `/
   - **`IIBB_ALICUOTA`** (default **0,04**)
   - Derivados en lib (no persistidos): **`ivaFactor` = 1 + IVA_ALICUOTA**; **PX LISTA S/ IVA** = PX_LISTA_C_IVA / ivaFactor.
   - Servicio `src/services/finAnaMcFormulas.service.ts`: `ensureFinAnaMcFormulasSeed`, `listarFormulasMargenContribucion`, `actualizarFormulaMargenContribucion`. Actions `listarFormulasMargenContribucionAction` / `actualizarFormulaMargenContribucionAction`. Tipos/helpers `src/lib/finAnaMcFormulas.ts`.
-- **Configuración UI** (estado cliente): **TERMINAL** (opcional; promedio si vacío), **TIPO COMPROBANTE** (`FACTURA_A` | `FACTURA_C` | `FACTURA_X`), **PORC. UTILIDAD** (`PorcentajeCentInput`). Tipos en `src/lib/finAnaMargenContribucion.ts` (`TipoComprobanteVentaMargenContribucion`). **Factura C**: IVA e IIBB = 0; **A** y **X**: mismas fórmulas de impuestos.
+- **Configuración UI** (estado cliente): **TERMINAL** (opcional; promedio si vacío), **TIPO COMPROBANTE** (`FACTURA_A` | `FACTURA_C`), **PORC. UTILIDAD** (`PorcentajeCentInput`). Tipos en `src/lib/finAnaMargenContribucion.ts` (`TipoComprobanteVentaMargenContribucion`). **Factura C**: IVA e IIBB = 0; **Factura A**: aplica fórmulas de impuestos.
 - **Descuentos por forma de pago** (`fin_ana_mc_descuento_fp`, Prisma `FinAnaMcDescuentoFp`): una fila por forma de pago con `en_margen_contribucion = true` (`pago_id` FK → `fin_ana_cos_fina_pagos`, único); `descuento_pct` INTEGER **−100…100** (entero). Semilla migración **`20260709130000_fin_ana_mc_descuento_fp`**; FK catálogo: **`20260709140000_fin_ana_cos_fina_pagos_catalog`**. Servicio `src/services/finAnaMcDescuentoFp.service.ts`: `ensureFinAnaMcDescuentoFpSeed`, `listarDescuentosFpMargenContribucion`, `actualizarDescuentoFpMargenContribucion` (input `pagoId`). Action `actualizarDescuentoFpMargenContribucionAction` (`esEditor()` + finanzas). **No** reutilizar `fin_ana_cos_fina` (costos financieros ≠ descuentos de venta).
 - **Base de simulación**: **PX LISTA C/ IVA** desde **`fin_ana_mc_formulas`**; **PX LISTA S/ IVA** = `PX LISTA C/ IVA / ivaFactor`; **PX VENTA C/ IVA** = `PX LISTA C/ IVA × (1 + descuento % / 100)` (signo: **−25** → **75**; **+10** → **110**; input con `defaultNegative`); **PX VENTA S/ IVA** = `PX VENTA C/ IVA / ivaFactor`.
 - **Columnas** (formas de pago): catálogo dinámico `fin_ana_cos_fina_pagos` filtrado por `en_margen_contribucion` (`idsFormasPagoMargenContribucion` en `src/lib/finAnaMargenContribucion.ts`). Pagos con `en_costos_financieros = false` (p. ej. **EFECTIVO**) tienen CX financiero = 0 %.
@@ -1017,7 +1017,7 @@ Simulador de márgenes por forma de pago (**solo PORC. UTILIDAD**). **Ruta**: `/
   - **IVA** = `(PX VENTA S/ IVA × IVA_ALICUOTA) / PX VENTA C/ IVA` (0 si **FACTURA C**).
   - **IIBB** = `(PX VENTA S/ IVA × IIBB_ALICUOTA) / PX VENTA C/ IVA` (0 si **FACTURA C**).
   - **CX MERCADERÍA** = `((PX LISTA S/ IVA) / (1 + porc. utilidad % / 100)) / PX VENTA C/ IVA`.
-  - **CX FINANCIERO** = **`cxTotalConIvaFinAnaCosFina`** (% BD) / 100 (ratio). Terminal opcional: una fila o **promedio** entre terminales habilitadas.
+  - **CX FINANCIERO** = según tipo de comprobante: **FACTURA A** → **`cxTotalSinIvaFinAnaCosFina`** (% BD); **FACTURA C** → **`cxTotalConIvaFinAnaCosFina`** (% BD); luego `/ 100` (ratio). Terminal opcional: una fila o **promedio** entre terminales habilitadas.
   - **M.C** = `1 − (IVA + IIBB + CX MERCADERÍA + CX FINANCIERO)`.
   - **M.C PONDERADO** = `M.C × PX VENTA C/ IVA` (escala base lista).
 - **Servicio** (`src/services/finAnaMargenContribucion.service.ts`): `getDatosPaginaMargenContribucion`, `mapCxFinancieroPorFormaPago` (helper en lib).
@@ -1956,6 +1956,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-07-23): **Margen Contribución · DESCUENTO** — restaurada convención `1 + %/100`: **−25** → venta **75** (descuento); **+10** → **110** (recargo); input `defaultNegative`.*
 
 *Última actualización (2026-07-22): **Margen Contribución · fin_ana_mc_formulas** — parámetros configurables PX LISTA C/IVA, IVA_ALICUOTA, IIBB_ALICUOTA; motor usa `ParametrosFormulaMargenContribucion`.*
+
+*Última actualización (2026-07-23): **Margen Contribución · CX FINANCIERO** — **FACTURA A** = CX TOTAL S/ IVA; **FACTURA C** = CX TOTAL C/ IVA.*
 
 *Última actualización (2026-07-21): **Margen Contribución · orden columnas** — **EFECTIVO** antes de **DÉBITO** (`orden` en `fin_ana_cos_fina_pagos`; migración `20260721150000`).*
 

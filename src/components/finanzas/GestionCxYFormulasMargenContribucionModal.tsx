@@ -109,7 +109,8 @@ export default function GestionCxYFormulasMargenContribucionModal({
               PX VENTA C/ IVA
             </FormulaLinea>
             <FormulaLinea>
-              <strong>CX FINANCIERO EN %</strong> = Se busca en BD
+              <strong>CX FINANCIERO EN %</strong> = FACTURA A → CX TOTAL S/ IVA;
+              FACTURA C → CX TOTAL C/ IVA (BD)
             </FormulaLinea>
             <FormulaLinea>
               <strong>M.C.</strong> = 1 − (IVA EN % + IIBB EN % + CX MERCADERÍA EN % +

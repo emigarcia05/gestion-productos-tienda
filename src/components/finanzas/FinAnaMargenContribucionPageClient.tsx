@@ -118,9 +118,15 @@ export default function FinAnaMargenContribucionPageClient({
       mapCxFinancieroPorFormaPago(
         filasCostosFinancieros,
         pagos,
-        config.terminalId || undefined
+        config.terminalId || undefined,
+        config.tipoComprobante
       ),
-    [filasCostosFinancieros, pagos, config.terminalId]
+    [
+      filasCostosFinancieros,
+      pagos,
+      config.terminalId,
+      config.tipoComprobante,
+    ]
   );
 
   const porcUtilidadPct =
@@ -286,7 +292,7 @@ export default function FinAnaMargenContribucionPageClient({
                     onClear={() =>
                       setConfig((prev) => ({ ...prev, porcUtilidadNorm: "" }))
                     }
-                    className="input-filtro-unificado w-full border-primary text-xs"
+                    className="input-filtro-unificado w-1/2 border-primary text-xs"
                     aria-label="Porc. utilidad"
                     title="Porc. utilidad (CX MERCADERÍA)"
                     disabled={!esEditor}
