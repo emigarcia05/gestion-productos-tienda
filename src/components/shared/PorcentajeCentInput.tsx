@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useRef, type ClipboardEvent, type ComponentProps, type KeyboardEvent } from "react";
+import { Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   PORCENTAJE_CENT_MASK_MAX_CENTS,
@@ -27,6 +29,14 @@ export type PorcentajeCentInputProps = Omit<
    * Tope en centésimas de % (default 99,99 %). Px Listas: {@link MARGEN_PX_LISTA_MAX_CENTS}.
    */
   maxCents?: number;
+  /**
+   * Si es `true`, valor `0` / `0,00` se muestra vacío (útil en filtros con placeholder).
+   */
+  emptyWhenZero?: boolean;
+  /**
+   * Tacho dentro del contenedor, a la derecha del `%`. Solo visible si hay valor mostrado.
+   */
+  onClear?: () => void;
 };
 
 /**
@@ -40,9 +50,12 @@ export default function PorcentajeCentInput({
   onCommit,
   showPctSuffix = true,
   maxCents = PORCENTAJE_CENT_MASK_MAX_CENTS,
+  emptyWhenZero = false,
+  onClear,
   className,
   disabled,
   readOnly,
+  placeholder,
   ...props
 }: PorcentajeCentInputProps) {
   const overwriteOnNextInputRef = useRef(true);
@@ -54,8 +67,12 @@ export default function PorcentajeCentInput({
 
   const displayBody = useMemo(() => {
     if (valueNormalized.trim() === "") return "";
+    if (emptyWhenZero && centsValue === 0) return "";
     return porcentajeCentNormalizedToDisplay(valueNormalized, maxCents);
-  }, [valueNormalized, maxCents]);
+  }, [valueNormalized, maxCents, emptyWhenZero, centsValue]);
+
+  const showPctVisual = showPctSuffix && (displayBody !== "" || !placeholder);
+  const showClear = Boolean(onClear) && displayBody !== "" && !disabled;
 
   function resetEditState() {
     overwriteOnNextInputRef.current = true;
@@ -125,6 +142,7 @@ export default function PorcentajeCentInput({
         disabled={disabled}
         readOnly={readOnly}
         value={displayBody}
+        placeholder={placeholder}
         onFocus={() => {
           resetEditState();
         }}
@@ -147,6 +165,7 @@ export default function PorcentajeCentInput({
     <div
       className={cn(
         "input-mascara-sufijo flex w-full min-w-0 items-center rounded-md border border-primary bg-transparent",
+        showClear && "input-mascara-sufijo--con-clear",
         className
       )}
     >
@@ -158,6 +177,7 @@ export default function PorcentajeCentInput({
         disabled={disabled}
         readOnly={readOnly}
         value={displayBody}
+        placeholder={placeholder}
         onFocus={() => {
           resetEditState();
         }}
@@ -173,9 +193,29 @@ export default function PorcentajeCentInput({
         className={inputClassName}
         {...props}
       />
-      <span className="input-mascara-sufijo__pct tabular-nums" aria-hidden>
+      <span
+        className={cn(
+          "input-mascara-sufijo__pct tabular-nums",
+          !showPctVisual && "invisible"
+        )}
+        aria-hidden
+      >
         %
       </span>
+      {showClear ? (
+        <Button
+          type="button"
+          variant="primaryIcon"
+          size="icon-lg"
+          onClick={() => onClear?.()}
+          className="filtro-individual-clear-btn input-mascara-sufijo__clear"
+          aria-label="Limpiar este filtro"
+          title="Limpiar este filtro"
+          tabIndex={-1}
+        >
+          <Trash2 className="h-4 w-4" aria-hidden />
+        </Button>
+      ) : null}
     </div>
   );
 }

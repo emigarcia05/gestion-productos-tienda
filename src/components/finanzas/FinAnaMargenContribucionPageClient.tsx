@@ -42,7 +42,10 @@ import {
 import type { FinAnaCosFinaPagoItem } from "@/lib/finAnaCosFinaPagos";
 import { actualizarDescuentoFpMargenContribucionAction } from "@/actions/finAnaMargenContribucion";
 import { MARGEN_PX_LISTA_MAX_CENTS } from "@/lib/pxListasPreciosFormat";
-import { parsePorcentajeCentNormalized } from "@/lib/porcentajeCentMask";
+import {
+  parsePorcentajeCentNormalized,
+  porcentajeCentNormalizedStringToCents,
+} from "@/lib/porcentajeCentMask";
 import type { FinAnaCosFinaItem } from "@/services/finAnaCosFina.service";
 import type { FinAnaCosFinaTerminalItem } from "@/lib/finAnaCosFinaTerminales";
 import type { DescuentoFpMargenContribucionMap } from "@/services/finAnaMcDescuentoFp.service";
@@ -264,28 +267,31 @@ export default function FinAnaMargenContribucionPageClient({
                   </Select>
                 </FiltroIndividualContainer>
 
-                <FiltroIndividualContainer
-                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "col-span-1")}
-                  activo={Boolean(config.porcUtilidadNorm.trim())}
-                  onLimpiar={() =>
-                    setConfig((prev) => ({ ...prev, porcUtilidadNorm: "" }))
-                  }
-                >
+                <div className={cn(FILTER_SELECT_WRAPPER_CLASS, "col-span-1")}>
                   <PorcentajeCentInput
                     valueNormalized={config.porcUtilidadNorm}
                     maxCents={MARGEN_PX_LISTA_MAX_CENTS}
-                    onValueNormalizedChange={(next) =>
+                    emptyWhenZero
+                    placeholder="PORC. UTILIDAD"
+                    onValueNormalizedChange={(next) => {
+                      const cents = porcentajeCentNormalizedStringToCents(
+                        next,
+                        MARGEN_PX_LISTA_MAX_CENTS
+                      );
                       setConfig((prev) => ({
                         ...prev,
-                        porcUtilidadNorm: next,
-                      }))
+                        porcUtilidadNorm: cents === 0 ? "" : next,
+                      }));
+                    }}
+                    onClear={() =>
+                      setConfig((prev) => ({ ...prev, porcUtilidadNorm: "" }))
                     }
-                    className="input-filtro-unificado w-full max-w-[9rem] border-primary text-xs"
+                    className="input-filtro-unificado w-full border-primary text-xs"
                     aria-label="Porc. utilidad"
                     title="Porc. utilidad (CX MERCADERÍA)"
                     disabled={!esEditor}
                   />
-                </FiltroIndividualContainer>
+                </div>
 
                 <div
                   className={cn(
