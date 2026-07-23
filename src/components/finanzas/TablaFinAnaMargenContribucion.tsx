@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Info } from "lucide-react";
+import { useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -10,16 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
 import {
-  ayudaFormulaFilaMargenContribucion,
   calcularValoresMargenContribucion,
   crearDescuentoPctPorFormaPagoVacios,
   cxFinancieroRatioMargenContribucion,
@@ -46,10 +37,6 @@ import {
 } from "@/lib/pxListaEnteroMask";
 import type { CxFinancieroPorFormaPago } from "@/lib/finAnaMargenContribucion";
 import type { FinAnaCosFinaPagoItem } from "@/lib/finAnaCosFinaPagos";
-import {
-  TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-} from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
 const INPUT_FILA_CLASS =
@@ -73,71 +60,19 @@ const SEP_FORMA = "tabla-mc-sep-forma";
 function CeldaConceptoMargenContribucion({
   filaId,
   esFilaMargen,
-  formulaParams,
 }: {
   filaId: FilaMargenContribucionDatoId;
   esFilaMargen: boolean;
-  formulaParams: ParametrosFormulaMargenContribucion;
 }) {
-  const [open, setOpen] = useState(false);
-  const etiqueta = etiquetaFilaMargenContribucion(filaId);
-  const formula = ayudaFormulaFilaMargenContribucion(filaId, formulaParams);
-
-  if (!formula) {
-    return (
-      <TableCell
-        className={cn(
-          "celda-datos font-medium",
-          COL_CONCEPTO_STICKY,
-          esFilaMargen && "font-bold"
-        )}
-      >
-        {etiqueta}
-      </TableCell>
-    );
-  }
-
   return (
     <TableCell
       className={cn(
-        "celda-datos font-medium !whitespace-normal",
+        "celda-datos font-medium",
         COL_CONCEPTO_STICKY,
         esFilaMargen && "font-bold"
       )}
     >
-      <div className="relative flex h-full min-h-0 w-full items-center justify-center box-border">
-        <div className="absolute inset-y-0 left-0 z-10 flex items-center">
-          <TooltipProvider delayDuration={0}>
-            <Tooltip open={open} onOpenChange={setOpen}>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                  aria-label={`Ver fórmula de ${etiqueta}`}
-                  aria-expanded={open}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    setOpen((prev) => !prev);
-                  }}
-                >
-                  <Info className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="right"
-                align="center"
-                className="max-w-[18rem] whitespace-normal text-left leading-snug"
-              >
-                <p className="font-semibold text-popover-foreground">{etiqueta}</p>
-                <p className="mt-1 text-popover-foreground/90">{formula}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <span className="min-w-0 max-w-full truncate px-7 text-center">{etiqueta}</span>
-      </div>
+      {etiquetaFilaMargenContribucion(filaId)}
     </TableCell>
   );
 }
@@ -401,7 +336,6 @@ export default function TablaFinAnaMargenContribucion({
                   esFilaMargen={
                     filaId === "MC" || filaId === "MC_PONDERADO"
                   }
-                  formulaParams={formulaParams}
                 />
                 {renderCeldasDatos(filaId)}
               </TableRow>

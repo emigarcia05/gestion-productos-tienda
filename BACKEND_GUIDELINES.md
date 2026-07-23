@@ -1022,7 +1022,7 @@ Simulador de márgenes por forma de pago (**solo PORC. UTILIDAD**). **Ruta**: `/
   - **M.C PONDERADO** = `M.C × PX VENTA C/ IVA` (escala base lista).
 - **Servicio** (`src/services/finAnaMargenContribucion.service.ts`): `getDatosPaginaMargenContribucion`, `mapCxFinancieroPorFormaPago` (helper en lib).
 - **Actions** (`src/actions/finAnaMargenContribucion.ts`): descuentos FP + fórmulas.
-- **UI**: `FinAnaMargenContribucionPageClient`, **`FinAnaMcFormulasPanel`** (recuadro Variables), `TablaFinAnaMargenContribucion`, **`GestionarPagosFinAnaCosFinaModal`**. Layout (`FIN_ANA_MC_SECCIONES`): **INGRESO** (**solo DESCUENTO**) → **COSTOS** (IVA · IIBB · CX MERCADERÍA · CX FINANCIERO) → **MARGEN** (M.C · M.C PONDERADO). Sticky sección + concepto; separadores primary. Celdas en **`N%`** (ratios ×100; M.C PONDERADO en base lista). En filas de **COSTOS** y **MARGEN**, ícono **Info** junto al concepto muestra la fórmula (`ayudaFormulaFilaMargenContribucion`).
+- **UI**: `FinAnaMargenContribucionPageClient`, `TablaFinAnaMargenContribucion`, **`GestionCxYFormulasMargenContribucionModal`**, **`GestionarPagosFinAnaCosFinaModal`**. Layout (`FIN_ANA_MC_SECCIONES`): **INGRESO** (**solo DESCUENTO**) → **COSTOS** (IVA · IIBB · CX MERCADERÍA · CX FINANCIERO) → **MARGEN** (M.C · M.C PONDERADO). Sticky sección + concepto; separadores primary. Celdas en **`N%`** (ratios ×100; M.C PONDERADO en base lista). Parámetros de `fin_ana_mc_formulas` se cargan en servidor; el modal **Gestion Cx. Y Formulas** documenta variables y fórmulas (sin edición en este paso).
 ### 2.5c Cajas de tesorería (`fin_tesoreria`, Prisma: `CajaTesoreria`)
 
 Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última modificación del saldo.

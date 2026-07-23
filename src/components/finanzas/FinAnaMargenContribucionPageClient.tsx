@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings2 } from "lucide-react";
+import { Settings2, Calculator } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaFinAnaMargenContribucion, {
   inputsMargenContribucionDesdeNumeros,
 } from "@/components/finanzas/TablaFinAnaMargenContribucion";
-import FinAnaMcFormulasPanel from "@/components/finanzas/FinAnaMcFormulasPanel";
 import GestionarPagosFinAnaCosFinaModal from "@/components/finanzas/GestionarPagosFinAnaCosFinaModal";
+import GestionCxYFormulasMargenContribucionModal from "@/components/finanzas/GestionCxYFormulasMargenContribucionModal";
 import FilterBar, {
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
@@ -89,14 +89,13 @@ export default function FinAnaMargenContribucionPageClient({
   terminales,
   pagos,
   descuentosPorFormaPago,
-  formulas: formulasIniciales,
+  formulas,
   esEditor,
 }: Props) {
   const router = useRouter();
   const formasPago = useMemo(() => idsFormasPagoMargenContribucion(pagos), [pagos]);
   const [config, setConfig] = useState(CONFIG_MARGEN_CONTRIBUCION_VACIA);
   const [descuentosBase, setDescuentosBase] = useState(descuentosPorFormaPago);
-  const [formulas, setFormulas] = useState(formulasIniciales);
   const formulaParams = useMemo(
     () => resolverParametrosFormulaMargenContribucion(formulas),
     [formulas]
@@ -109,6 +108,7 @@ export default function FinAnaMargenContribucionPageClient({
     )
   );
   const [modalGestionarPagosAbierto, setModalGestionarPagosAbierto] = useState(false);
+  const [modalCxFormulasAbierto, setModalCxFormulasAbierto] = useState(false);
 
   const cxFinancieroPorFormaPago = useMemo(
     () =>
@@ -125,18 +125,6 @@ export default function FinAnaMargenContribucionPageClient({
       config.porcUtilidadNorm,
       MARGEN_PX_LISTA_MAX_CENTS
     ) ?? 0;
-
-  function sincronizarPxListaDesdeFormulas(items: FinAnaMcFormulaItem[]) {
-    setFormulas(items);
-    const nextParams = resolverParametrosFormulaMargenContribucion(items);
-    setInputs((prev) =>
-      inputsMargenContribucionDesdeNumeros({
-        pxLista: nextParams.pxListaCIva,
-        descuentoPctPorFormaPago: prev.descuentoPctPorFormaPago,
-        formasPago,
-      })
-    );
-  }
 
   function limpiarFiltros() {
     setConfig(CONFIG_MARGEN_CONTRIBUCION_VACIA);
@@ -184,14 +172,24 @@ export default function FinAnaMargenContribucionPageClient({
         title="Finanzas"
         subtitle="Margen Contribución"
         actions={
-          <Button
-            type="button"
-            onClick={() => setModalGestionarPagosAbierto(true)}
-            className="h-10 gap-2 px-4"
-          >
-            <Settings2 className="size-4 shrink-0" aria-hidden />
-            Gestionar Pagos
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              onClick={() => setModalCxFormulasAbierto(true)}
+              className="h-10 gap-2 px-4"
+            >
+              <Calculator className="size-4 shrink-0" aria-hidden />
+              Gestion Cx. Y Formulas
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setModalGestionarPagosAbierto(true)}
+              className="h-10 gap-2 px-4"
+            >
+              <Settings2 className="size-4 shrink-0" aria-hidden />
+              Gestionar Pagos
+            </Button>
+          </div>
         }
         filters={
           <FilterBar className="filtros-contenedor-tienda bg-card">
@@ -303,27 +301,24 @@ export default function FinAnaMargenContribucionPageClient({
         }
         filtersAriaLabel="Configuración de margen contribución"
       >
-        <div className="flex h-full min-h-0 w-full flex-col gap-2">
-          <FinAnaMcFormulasPanel
-            formulasIniciales={formulas}
-            esEditor={esEditor}
-            onFormulasChange={sincronizarPxListaDesdeFormulas}
-          />
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <TablaFinAnaMargenContribucion
-              formasPago={formasPago}
-              pagosCatalogo={pagos}
-              cxFinancieroPorFormaPago={cxFinancieroPorFormaPago}
-              inputs={inputs}
-              onDescuentoPorFormaPagoChange={cambiarDescuentoPorFormaPago}
-              porcUtilidadPct={porcUtilidadPct}
-              tipoComprobante={config.tipoComprobante}
-              formulaParams={formulaParams}
-              esEditor={esEditor}
-            />
-          </div>
-        </div>
+        <TablaFinAnaMargenContribucion
+          formasPago={formasPago}
+          pagosCatalogo={pagos}
+          cxFinancieroPorFormaPago={cxFinancieroPorFormaPago}
+          inputs={inputs}
+          onDescuentoPorFormaPagoChange={cambiarDescuentoPorFormaPago}
+          porcUtilidadPct={porcUtilidadPct}
+          tipoComprobante={config.tipoComprobante}
+          formulaParams={formulaParams}
+          esEditor={esEditor}
+        />
       </ClassicFilteredTableLayout>
+
+      <GestionCxYFormulasMargenContribucionModal
+        open={modalCxFormulasAbierto}
+        onOpenChange={setModalCxFormulasAbierto}
+        formulaParams={formulaParams}
+      />
 
       <GestionarPagosFinAnaCosFinaModal
         open={modalGestionarPagosAbierto}
