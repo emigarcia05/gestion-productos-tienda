@@ -37,6 +37,8 @@ import {
   type FormaPagoMargenContribucion,
   type TipoComprobanteVentaMargenContribucion,
   type ValoresCalculadosMargenContribucion,
+  type ParametrosFormulaMargenContribucion,
+  FIN_ANA_MC_FORMULA_PARAMS_DEFAULT,
 } from "@/lib/finAnaMargenContribucion";
 import {
   parsePxListaEnteroNormalized,
@@ -71,19 +73,21 @@ const SEP_FORMA = "tabla-mc-sep-forma";
 function CeldaConceptoMargenContribucion({
   filaId,
   esFilaMargen,
+  formulaParams,
 }: {
   filaId: FilaMargenContribucionDatoId;
   esFilaMargen: boolean;
+  formulaParams: ParametrosFormulaMargenContribucion;
 }) {
   const [open, setOpen] = useState(false);
   const etiqueta = etiquetaFilaMargenContribucion(filaId);
-  const formula = ayudaFormulaFilaMargenContribucion(filaId);
+  const formula = ayudaFormulaFilaMargenContribucion(filaId, formulaParams);
 
   if (!formula) {
     return (
       <TableCell
         className={cn(
-          "celda-datos font-medium !text-left",
+          "celda-datos font-medium",
           COL_CONCEPTO_STICKY,
           esFilaMargen && "font-bold"
         )}
@@ -96,41 +100,43 @@ function CeldaConceptoMargenContribucion({
   return (
     <TableCell
       className={cn(
-        "celda-datos font-medium !whitespace-normal !text-left",
+        "celda-datos font-medium !whitespace-normal",
         COL_CONCEPTO_STICKY,
         esFilaMargen && "font-bold"
       )}
     >
-      <div className="flex h-full min-w-0 w-full items-center justify-start gap-1 box-border">
-        <span className="min-w-0 truncate">{etiqueta}</span>
-        <TooltipProvider delayDuration={0}>
-          <Tooltip open={open} onOpenChange={setOpen}>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                aria-label={`Ver fórmula de ${etiqueta}`}
-                aria-expanded={open}
-                onClick={(event) => {
-                  event.preventDefault();
-                  setOpen((prev) => !prev);
-                }}
+      <div className="relative flex h-full min-h-0 w-full items-center justify-center box-border">
+        <div className="absolute inset-y-0 left-0 z-10 flex items-center">
+          <TooltipProvider delayDuration={0}>
+            <Tooltip open={open} onOpenChange={setOpen}>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                  aria-label={`Ver fórmula de ${etiqueta}`}
+                  aria-expanded={open}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setOpen((prev) => !prev);
+                  }}
+                >
+                  <Info className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                align="center"
+                className="max-w-[18rem] whitespace-normal text-left leading-snug"
               >
-                <Info className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent
-              side="right"
-              align="center"
-              className="max-w-[18rem] whitespace-normal text-left leading-snug"
-            >
-              <p className="font-semibold text-popover-foreground">{etiqueta}</p>
-              <p className="mt-1 text-popover-foreground/90">{formula}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+                <p className="font-semibold text-popover-foreground">{etiqueta}</p>
+                <p className="mt-1 text-popover-foreground/90">{formula}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <span className="min-w-0 max-w-full truncate px-7 text-center">{etiqueta}</span>
       </div>
     </TableCell>
   );
@@ -153,6 +159,7 @@ interface Props {
   ) => void | Promise<void>;
   porcUtilidadPct: number;
   tipoComprobante: TipoComprobanteVentaMargenContribucion;
+  formulaParams?: ParametrosFormulaMargenContribucion;
   esEditor: boolean;
 }
 
@@ -164,6 +171,7 @@ export default function TablaFinAnaMargenContribucion({
   onDescuentoPorFormaPagoChange,
   porcUtilidadPct,
   tipoComprobante,
+  formulaParams = FIN_ANA_MC_FORMULA_PARAMS_DEFAULT,
   esEditor,
 }: Props) {
   const totalColsDatos = formasPago.length;
@@ -181,11 +189,12 @@ export default function TablaFinAnaMargenContribucion({
         descuentoPct: inputs.descuentoPctPorFormaPago[forma] ?? 0,
         porcUtilidadPct,
         tipoComprobante,
+        formulas: formulaParams,
       });
     }
 
     return { pxLista, calculadosPorFormaPago };
-  }, [inputs, formasPago, porcUtilidadPct, tipoComprobante]);
+  }, [inputs, formasPago, porcUtilidadPct, tipoComprobante, formulaParams]);
 
   function calculadosParaForma(
     formaPago: FormaPagoMargenContribucion
@@ -392,6 +401,7 @@ export default function TablaFinAnaMargenContribucion({
                   esFilaMargen={
                     filaId === "MC" || filaId === "MC_PONDERADO"
                   }
+                  formulaParams={formulaParams}
                 />
                 {renderCeldasDatos(filaId)}
               </TableRow>

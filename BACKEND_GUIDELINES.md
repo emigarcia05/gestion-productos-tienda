@@ -285,7 +285,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | Finanzas | `ComprobanteProveedor` | `fin_compras_comprobante` |
 | Finanzas | `FinTesoreriaEntidad`, `FinTesoreriaTipoCaja`, `CajaTesoreria`, `FinTesoreriaCheque` | `fin_tesoreria_entidades`, `fin_tesoreria_tipo_caja`, `fin_tesoreria`, `fin_tesoreria_cheques` |
 | Finanzas balance | `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `FinBalVtas`, `FinBalIvaDebImportLine`, `FinBalPosicionIvaSaldoManual`, `FinBalPosicionIvaComparacionPedido` | `fin_bal_gasto_tipo`, `fin_bal_gasto_rubro`, `fin_bal_cat_gasto`, `fin_bal_gasto_final`, `fin_bal_gasto_mensual`, `fin_bal_vtas`, `fin_bal_iva_deb_import`, `fin_bal_posicion_iva_saldo_manual`, `fin_bal_posicion_iva_comparacion_pedido` |
-| Finanzas análisis M.C. | `FinAnaCosFinaTerminal`, `FinAnaCosFinaPagoCat`, `FinAnaCosFina`, `FinAnaMcDescuentoFp` | `fin_ana_cos_fina_terminales`, `fin_ana_cos_fina_pagos`, `fin_ana_cos_fina`, `fin_ana_mc_descuento_fp` |
+| Finanzas análisis M.C. | `FinAnaCosFinaTerminal`, `FinAnaCosFinaPagoCat`, `FinAnaCosFina`, `FinAnaMcDescuentoFp`, `FinAnaMcFormula` | `fin_ana_cos_fina_terminales`, `fin_ana_cos_fina_pagos`, `fin_ana_cos_fina`, `fin_ana_mc_descuento_fp`, `fin_ana_mc_formulas` |
 | Estadísticas productos | `EstPorProd` | `est_por_prod` |
 | Marketing | `MktPublicacionRed`, `MktPublicacionContenidoTipo`, `MktPublicacion`, `MktPublicacionRedLink`, `MktPublicacionIdeaSeccion`, `MktPublicacionIdeaDetalle`, `MktPublicacionObj`, `MktContenidoUrlDrive`, `MktContenidoDriveTipo`, `MktColoresMarca` | `mkt_publi_tipo_redes`, `mkt_publi_tipo_contenido`, `mkt_publi`, `mkt_publi_redes`, `mkt_publi_ideas_secciones`, `mkt_publi_ideas_detalle`, `mkt_publi_obj`, `mkt_contenido_drive_url`, `mkt_contenido_drive_tipo`, `mkt_colores_marca` |
 | Productos / precios | `ListaPrecioProveedor`, `ComparacionItem`, `CategoriaComparacion`, `SubcategoriaComparacion`, `PresentacionComparacion`, `Marca`, `ProdPrecioRex`, `ProdRubroLista`, `ProdPrecioProveeRegla`, `ProdTiendaListaPrecio`, `ProdTiendaPrecio`, `ProdTiendaPrecioEdicion`, `ProdDepositoDux`, `ProdTiendaStock`, `ProdTienda` | `prod_precios_provee`, `prod_comp_item_comparados`, `prod_comp_item_referencia`, `prod_comp_categorias`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_marcas`, `prod_precios_rex`, `prod_rubros_lista`, `prod_precios_provee_reglas`, `prod_tienda_listas_precios`, `prod_tienda_precios`, `prod_tienda_precios_edicion`, `prod_depositos_dux`, `prod_tienda_stock`, `prod_tienda` |
@@ -998,25 +998,31 @@ Matriz **terminal × forma de pago** para costos financieros de medios de cobro 
 - **Validación** (`@/lib/validations/finAnaCosFina.ts`): `actualizarFinAnaCosFinaSchema` — campos opcionales: `habilitado`, `impCheque`, `diasAcreditacion`, `arancel`, `costoFinanciero`. Terminales: `@/lib/validations/finAnaCosFinaTerminal.ts`. Pagos: `@/lib/validations/finAnaCosFinaPago.ts` (`reordenarFinAnaCosFinaPagosSchema`: `ordenIds[]` completo del catálogo).
 - Tras mutar: **`revalidatePath`** en `/finanzas/analisis-mc/costos-financieros` y `/finanzas/analisis-mc/margen-contribucion` (CRUD terminales/pagos).
 
-### 2.5i Análisis M.C. · Margen contribución (sin tabla propia; lectura de `fin_ana_cos_fina`)
+### 2.5i Análisis M.C. · Margen contribución (sin tabla propia de simulación; lectura de `fin_ana_cos_fina` + parámetros `fin_ana_mc_formulas`)
 
-Simulador de márgenes por forma de pago (**solo PORC. UTILIDAD**). **Ruta**: `/finanzas/analisis-mc/margen-contribucion`. Permiso: **`PERMISOS.finanzas.acceso`**; inputs editables solo **`esEditor()`**. **Sin persistencia** de simulación en BD (descuentos sí en `fin_ana_mc_descuento_fp`).
+Simulador de márgenes por forma de pago (**solo PORC. UTILIDAD**). **Ruta**: `/finanzas/analisis-mc/margen-contribucion`. Permiso: **`PERMISOS.finanzas.acceso`**; inputs editables solo **`esEditor()`**.
 
+- **Parámetros de fórmula** (`fin_ana_mc_formulas`, Prisma `FinAnaMcFormula`): filas clave/valor (`codigo` único, `etiqueta`, `valor` `DECIMAL(14,6)`, `orden`). Semilla migración **`20260722210000_fin_ana_mc_formulas`**:
+  - **`PX_LISTA_C_IVA`** (default **100**)
+  - **`IVA_ALICUOTA`** (default **0,21**)
+  - **`IIBB_ALICUOTA`** (default **0,04**)
+  - Derivados en lib (no persistidos): **`ivaFactor` = 1 + IVA_ALICUOTA**; **PX LISTA S/ IVA** = PX_LISTA_C_IVA / ivaFactor.
+  - Servicio `src/services/finAnaMcFormulas.service.ts`: `ensureFinAnaMcFormulasSeed`, `listarFormulasMargenContribucion`, `actualizarFormulaMargenContribucion`. Actions `listarFormulasMargenContribucionAction` / `actualizarFormulaMargenContribucionAction`. Tipos/helpers `src/lib/finAnaMcFormulas.ts`.
 - **Configuración UI** (estado cliente): **TERMINAL** (opcional; promedio si vacío), **TIPO COMPROBANTE** (`FACTURA_A` | `FACTURA_C` | `FACTURA_X`), **PORC. UTILIDAD** (`PorcentajeCentInput`). Tipos en `src/lib/finAnaMargenContribucion.ts` (`TipoComprobanteVentaMargenContribucion`). **Factura C**: IVA e IIBB = 0; **A** y **X**: mismas fórmulas de impuestos.
 - **Descuentos por forma de pago** (`fin_ana_mc_descuento_fp`, Prisma `FinAnaMcDescuentoFp`): una fila por forma de pago con `en_margen_contribucion = true` (`pago_id` FK → `fin_ana_cos_fina_pagos`, único); `descuento_pct` INTEGER **−100…100** (entero). Semilla migración **`20260709130000_fin_ana_mc_descuento_fp`**; FK catálogo: **`20260709140000_fin_ana_cos_fina_pagos_catalog`**. Servicio `src/services/finAnaMcDescuentoFp.service.ts`: `ensureFinAnaMcDescuentoFpSeed`, `listarDescuentosFpMargenContribucion`, `actualizarDescuentoFpMargenContribucion` (input `pagoId`). Action `actualizarDescuentoFpMargenContribucionAction` (`esEditor()` + finanzas). **No** reutilizar `fin_ana_cos_fina` (costos financieros ≠ descuentos de venta).
-- **Base de simulación**: **PX LISTA** fijo en **$100** (`FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD`, no visible); **PX LISTA sin IVA** = `PX LISTA / 1,21`; **PX VENTA** = `PX LISTA × (1 − descuento % / 100)` (ej. **−10** → **110**; **+10** → **90**); **PX VENTA sin IVA** = `PX VENTA / 1,21`.
+- **Base de simulación**: **PX LISTA C/ IVA** desde **`fin_ana_mc_formulas`**; **PX LISTA S/ IVA** = `PX LISTA C/ IVA / ivaFactor`; **PX VENTA C/ IVA** = `PX LISTA C/ IVA × (1 − descuento % / 100)` (ej. **−10** → **110**; **+10** → **90**); **PX VENTA S/ IVA** = `PX VENTA C/ IVA / ivaFactor`.
 - **Columnas** (formas de pago): catálogo dinámico `fin_ana_cos_fina_pagos` filtrado por `en_margen_contribucion` (`idsFormasPagoMargenContribucion` en `src/lib/finAnaMargenContribucion.ts`). Pagos con `en_costos_financieros = false` (p. ej. **EFECTIVO**) tienen CX financiero = 0 %.
-- **Filas / fórmulas** (ratios sobre **PX VENTA**, salvo M.C PONDERADO; `src/lib/finAnaMargenContribucion.ts`):
+- **Filas / fórmulas** (ratios sobre **PX VENTA C/ IVA**, salvo M.C PONDERADO; `src/lib/finAnaMargenContribucion.ts` + `ParametrosFormulaMargenContribucion`):
   - **DESCUENTO**: % firmado **−100…100** (`fin_ana_mc_descuento_fp`; fórmula `1 − %/100`; migración signo histórica **`20260721140000`**).
-  - **IVA** = `(PX VENTA sin IVA × 0,21) / PX VENTA` (0 si **FACTURA C**).
-  - **IIBB** = `(PX VENTA sin IVA × 0,04) / PX VENTA` (0 si **FACTURA C**).
-  - **CX MERCADERÍA** = `((PX LISTA sin IVA) / (1 + porc. utilidad % / 100)) / PX VENTA`.
+  - **IVA** = `(PX VENTA S/ IVA × IVA_ALICUOTA) / PX VENTA C/ IVA` (0 si **FACTURA C**).
+  - **IIBB** = `(PX VENTA S/ IVA × IIBB_ALICUOTA) / PX VENTA C/ IVA` (0 si **FACTURA C**).
+  - **CX MERCADERÍA** = `((PX LISTA S/ IVA) / (1 + porc. utilidad % / 100)) / PX VENTA C/ IVA`.
   - **CX FINANCIERO** = **`cxTotalConIvaFinAnaCosFina`** (% BD) / 100 (ratio). Terminal opcional: una fila o **promedio** entre terminales habilitadas.
   - **M.C** = `1 − (IVA + IIBB + CX MERCADERÍA + CX FINANCIERO)`.
-  - **M.C PONDERADO** = `M.C × PX VENTA` (escala base-100).
+  - **M.C PONDERADO** = `M.C × PX VENTA C/ IVA` (escala base lista).
 - **Servicio** (`src/services/finAnaMargenContribucion.service.ts`): `getDatosPaginaMargenContribucion`, `mapCxFinancieroPorFormaPago` (helper en lib).
-- **Actions** (`src/actions/finAnaMargenContribucion.ts`): `listarDescuentosFpMargenContribucionAction`, `actualizarDescuentoFpMargenContribucionAction`.
-- **UI**: `FinAnaMargenContribucionPageClient`, `TablaFinAnaMargenContribucion`, **`GestionarPagosFinAnaCosFinaModal`**. Layout (`FIN_ANA_MC_SECCIONES`): **INGRESO** (**solo DESCUENTO**) → **COSTOS** (IVA · IIBB · CX MERCADERÍA · CX FINANCIERO) → **MARGEN** (M.C · M.C PONDERADO). Sticky sección + concepto; separadores primary. Celdas en **`N%`** (ratios ×100; M.C PONDERADO en base-100). En filas de **COSTOS** y **MARGEN**, ícono **Info** junto al concepto muestra la fórmula (`ayudaFormulaFilaMargenContribucion`).
+- **Actions** (`src/actions/finAnaMargenContribucion.ts`): descuentos FP + fórmulas.
+- **UI**: `FinAnaMargenContribucionPageClient`, **`FinAnaMcFormulasPanel`** (recuadro Variables), `TablaFinAnaMargenContribucion`, **`GestionarPagosFinAnaCosFinaModal`**. Layout (`FIN_ANA_MC_SECCIONES`): **INGRESO** (**solo DESCUENTO**) → **COSTOS** (IVA · IIBB · CX MERCADERÍA · CX FINANCIERO) → **MARGEN** (M.C · M.C PONDERADO). Sticky sección + concepto; separadores primary. Celdas en **`N%`** (ratios ×100; M.C PONDERADO en base lista). En filas de **COSTOS** y **MARGEN**, ícono **Info** junto al concepto muestra la fórmula (`ayudaFormulaFilaMargenContribucion`).
 ### 2.5c Cajas de tesorería (`fin_tesoreria`, Prisma: `CajaTesoreria`)
 
 Modelo para persistir saldos de cajas con tipo cerrado y trazabilidad de última modificación del saldo.
@@ -1946,6 +1952,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-07-21): **Margen Contribución · signo descuento** — `descuento_pct` negativo = descuento, positivo = recargo; fórmula `1 + %/100`; migración `20260721140000` invierte signos previos.*
 
 *Última actualización (2026-07-22): **Margen Contribución · PX VENTA** — fórmula `PX LISTA × (1 − descuento % / 100)` (lista 100 y **−10** → venta **110**).*
+
+*Última actualización (2026-07-22): **Margen Contribución · fin_ana_mc_formulas** — parámetros configurables PX LISTA C/IVA, IVA_ALICUOTA, IIBB_ALICUOTA; motor usa `ParametrosFormulaMargenContribucion`.*
 
 *Última actualización (2026-07-21): **Margen Contribución · orden columnas** — **EFECTIVO** antes de **DÉBITO** (`orden` en `fin_ana_cos_fina_pagos`; migración `20260721150000`).*
 

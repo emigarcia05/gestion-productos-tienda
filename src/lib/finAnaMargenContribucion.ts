@@ -5,11 +5,22 @@ import {
   type FinAnaCosFinaPagoItem,
   type FormaPagoMargenContribucion,
 } from "@/lib/finAnaCosFinaPagos";
-import {
-  cxTotalConIvaFinAnaCosFina,
-  FIN_ANA_COS_FINA_IVA_FACTOR,
-} from "@/lib/finAnaCosFina";
+import { cxTotalConIvaFinAnaCosFina } from "@/lib/finAnaCosFina";
 import { roundPorcentaje0a100 } from "@/lib/format";
+import {
+  FIN_ANA_MC_FORMULA_DEFAULTS,
+  type ParametrosFormulaMargenContribucion,
+} from "@/lib/finAnaMcFormulas";
+
+export type { ParametrosFormulaMargenContribucion } from "@/lib/finAnaMcFormulas";
+
+export const FIN_ANA_MC_FORMULA_PARAMS_DEFAULT: ParametrosFormulaMargenContribucion =
+  {
+    pxListaCIva: FIN_ANA_MC_FORMULA_DEFAULTS.PX_LISTA_C_IVA.valor,
+    ivaAlicuota: FIN_ANA_MC_FORMULA_DEFAULTS.IVA_ALICUOTA.valor,
+    iibbAlicuota: FIN_ANA_MC_FORMULA_DEFAULTS.IIBB_ALICUOTA.valor,
+    ivaFactor: 1 + FIN_ANA_MC_FORMULA_DEFAULTS.IVA_ALICUOTA.valor,
+  };
 
 export type { FormaPagoMargenContribucion } from "@/lib/finAnaCosFinaPagos";
 
@@ -109,21 +120,31 @@ export function etiquetaFilaMargenContribucion(id: FilaMargenContribucionDatoId)
   return ETIQUETAS_FILA[id];
 }
 
-/** Fórmulas de ayuda (UI) para filas de COSTOS y MARGEN. */
-const AYUDA_FORMULA_FILA: Partial<Record<FilaMargenContribucionDatoId, string>> = {
-  IVA: "(Px. Vta. sin IVA × 0,21) / Px. Vta.",
-  IIBB: "(Px. Vta. sin IVA × 0,04) / Px. Vta.",
-  CX_MERCADERIA:
-    "((Px. Lista sin IVA) / (1 + porc. utilidad % / 100)) / Px. Vta.",
-  CX_FINANCIERO: "CX TOTAL C/ IVA de Costos Financieros (catálogo terminal × pago).",
-  MC: "1 − (IVA + IIBB + CX MERCADERÍA + CX FINANCIERO)",
-  MC_PONDERADO: "M.C × Px. Venta",
-};
+function fmtAlicuotaAyuda(valor: number): string {
+  return valor.toLocaleString("es-AR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  });
+}
 
+/** Fórmulas de ayuda (UI) para filas de COSTOS y MARGEN. */
 export function ayudaFormulaFilaMargenContribucion(
-  id: FilaMargenContribucionDatoId
+  id: FilaMargenContribucionDatoId,
+  params: ParametrosFormulaMargenContribucion = FIN_ANA_MC_FORMULA_PARAMS_DEFAULT
 ): string | null {
-  return AYUDA_FORMULA_FILA[id] ?? null;
+  const iva = fmtAlicuotaAyuda(params.ivaAlicuota);
+  const iibb = fmtAlicuotaAyuda(params.iibbAlicuota);
+  const mapa: Partial<Record<FilaMargenContribucionDatoId, string>> = {
+    IVA: `(Px. Vta. sin IVA × ${iva}) / Px. Vta. C/ IVA`,
+    IIBB: `(Px. Vta. sin IVA × ${iibb}) / Px. Vta. C/ IVA`,
+    CX_MERCADERIA:
+      "((Px. Lista sin IVA) / (1 + porc. utilidad % / 100)) / Px. Vta. C/ IVA",
+    CX_FINANCIERO:
+      "CX TOTAL C/ IVA de Costos Financieros (catálogo terminal × pago).",
+    MC: "1 − (IVA + IIBB + CX MERCADERÍA + CX FINANCIERO)",
+    MC_PONDERADO: "M.C × Px. Venta C/ IVA",
+  };
+  return mapa[id] ?? null;
 }
 
 /** Descuento editable por columna (forma de pago). */
@@ -147,8 +168,12 @@ export function esFilaPorFormaPagoMargenContribucion(id: FilaMargenContribucionD
   return id === "CX_FINANCIERO" || id === "MC" || id === "MC_PONDERADO";
 }
 
-/** PX LISTA de referencia del simulador (base 100 → celdas = % sobre lista). */
-export const FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD = 100;
+/**
+ * PX LISTA de referencia del simulador (fallback si aún no hay fila en BD).
+ * Preferir `ParametrosFormulaMargenContribucion.pxListaCIva` desde `fin_ana_mc_formulas`.
+ */
+export const FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD =
+  FIN_ANA_MC_FORMULA_DEFAULTS.PX_LISTA_C_IVA.valor;
 
 /** Rango del descuento % por forma de pago (entero, puede ser negativo). */
 export const FIN_ANA_MC_DESCUENTO_MIN = -100;
@@ -201,11 +226,15 @@ export type FilaMargenContribucionId = FilaMargenContribucionDatoId;
 export const FIN_ANA_MC_FILAS = FIN_ANA_MC_FILAS_DATO;
 
 /** Precio neto sin IVA desde precio con IVA incluido. */
-export function netoSinIvaMargenContribucion(precioConIva: number): number {
-  return precioConIva / FIN_ANA_COS_FINA_IVA_FACTOR;
+export function netoSinIvaMargenContribucion(
+  precioConIva: number,
+  ivaFactor: number = FIN_ANA_MC_FORMULA_PARAMS_DEFAULT.ivaFactor
+): number {
+  if (!(ivaFactor > 0)) return 0;
+  return precioConIva / ivaFactor;
 }
 
-/** PX VENTA = PX LISTA × (1 − descuento % / 100). Ej.: −10 → 110; +10 → 90. */
+/** PX VENTA C/ IVA = PX LISTA C/ IVA × (1 − descuento % / 100). Ej.: −10 → 110; +10 → 90. */
 export function pxVentaMargenContribucion(
   pxLista: number,
   descuentoPct: number
@@ -219,50 +248,65 @@ export function pxVentaMargenContribucion(
 export const precioVentaMargenContribucion = pxVentaMargenContribucion;
 
 /**
- * Ratio IVA sobre PX VENTA: `(PX VTA sin IVA × 0,21) / PX VTA`.
- * Equivale a `0,21 / 1,21` cuando hay impuestos.
+ * Ratio IVA sobre PX VENTA C/ IVA: `(PX VTA S/ IVA × alícuota) / PX VTA C/ IVA`.
  */
-export function ivaRatioMargenContribucion(pxVenta: number): number {
+export function ivaRatioMargenContribucion(
+  pxVenta: number,
+  params: ParametrosFormulaMargenContribucion = FIN_ANA_MC_FORMULA_PARAMS_DEFAULT
+): number {
   if (!(pxVenta > 0)) return 0;
-  return (netoSinIvaMargenContribucion(pxVenta) * 0.21) / pxVenta;
+  return (
+    (netoSinIvaMargenContribucion(pxVenta, params.ivaFactor) *
+      params.ivaAlicuota) /
+    pxVenta
+  );
 }
 
 /**
- * Ratio IIBB sobre PX VENTA: `(PX VTA sin IVA × 0,04) / PX VTA`.
- * Equivale a `0,04 / 1,21` cuando hay impuestos.
+ * Ratio IIBB sobre PX VENTA C/ IVA: `(PX VTA S/ IVA × alícuota) / PX VTA C/ IVA`.
  */
-export function iibbRatioMargenContribucion(pxVenta: number): number {
+export function iibbRatioMargenContribucion(
+  pxVenta: number,
+  params: ParametrosFormulaMargenContribucion = FIN_ANA_MC_FORMULA_PARAMS_DEFAULT
+): number {
   if (!(pxVenta > 0)) return 0;
-  return (netoSinIvaMargenContribucion(pxVenta) * 0.04) / pxVenta;
+  return (
+    (netoSinIvaMargenContribucion(pxVenta, params.ivaFactor) *
+      params.iibbAlicuota) /
+    pxVenta
+  );
 }
 
 /**
- * CX MERCADERÍA (pesos): `(PX LISTA / 1,21) / (1 + porc. utilidad % / 100)`.
+ * CX MERCADERÍA (pesos): `(PX LISTA S/ IVA) / (1 + porc. utilidad % / 100)`.
  */
 export function cxMercaderiaPesosDesdePorcUtilidadMargenContribucion(
   pxLista: number,
-  porcUtilidadPct: number
+  porcUtilidadPct: number,
+  params: ParametrosFormulaMargenContribucion = FIN_ANA_MC_FORMULA_PARAMS_DEFAULT
 ): number | null {
   if (!(pxLista > 0) || !(porcUtilidadPct > 0)) return null;
-  const netoLista = netoSinIvaMargenContribucion(pxLista);
+  const netoLista = netoSinIvaMargenContribucion(pxLista, params.ivaFactor);
   const factorUtilidad = 1 + porcUtilidadPct / 100;
   if (!(factorUtilidad > 0)) return null;
   return netoLista / factorUtilidad;
 }
 
 /**
- * Ratio CX MERCADERÍA sobre PX VENTA:
- * `((PX LISTA sin IVA) / (1 + porc. utilidad % / 100)) / PX VTA`.
+ * Ratio CX MERCADERÍA sobre PX VENTA C/ IVA:
+ * `((PX LISTA S/ IVA) / (1 + porc. utilidad % / 100)) / PX VTA C/ IVA`.
  */
 export function cxMercaderiaRatioMargenContribucion(
   pxLista: number,
   porcUtilidadPct: number,
-  pxVenta: number
+  pxVenta: number,
+  params: ParametrosFormulaMargenContribucion = FIN_ANA_MC_FORMULA_PARAMS_DEFAULT
 ): number | null {
   if (!(pxVenta > 0)) return null;
   const cxPesos = cxMercaderiaPesosDesdePorcUtilidadMargenContribucion(
     pxLista,
-    porcUtilidadPct
+    porcUtilidadPct,
+    params
   );
   if (cxPesos == null) return null;
   return cxPesos / pxVenta;
@@ -271,11 +315,13 @@ export function cxMercaderiaRatioMargenContribucion(
 /** @deprecated Usar `cxMercaderiaPesosDesdePorcUtilidadMargenContribucion`. */
 export function cxMercaderiaDesdePorcUtilidadMargenContribucion(
   pxLista: number,
-  porcUtilidadPct: number
+  porcUtilidadPct: number,
+  params: ParametrosFormulaMargenContribucion = FIN_ANA_MC_FORMULA_PARAMS_DEFAULT
 ): number | null {
   const pesos = cxMercaderiaPesosDesdePorcUtilidadMargenContribucion(
     pxLista,
-    porcUtilidadPct
+    porcUtilidadPct,
+    params
   );
   return pesos == null ? null : Math.round(pesos);
 }
@@ -285,11 +331,13 @@ export function cxMercaderiaDesdePorcUtilidadMargenContribucion(
  */
 export function cxMercaderiaMargenContribucion(
   precioVenta: number,
-  porcUtilidadPct: number
+  porcUtilidadPct: number,
+  params: ParametrosFormulaMargenContribucion = FIN_ANA_MC_FORMULA_PARAMS_DEFAULT
 ): number | null {
   return cxMercaderiaDesdePorcUtilidadMargenContribucion(
     precioVenta,
-    porcUtilidadPct
+    porcUtilidadPct,
+    params
   );
 }
 
@@ -298,6 +346,7 @@ export type InputsMargenContribucion = {
   descuentoPct: number;
   porcUtilidadPct: number;
   tipoComprobante?: TipoComprobanteVentaMargenContribucion;
+  formulas?: ParametrosFormulaMargenContribucion;
 };
 
 /** Valores calculados: `iva` / `iibb` / `cxMercaderia` son **ratios** sobre PX VENTA (0–1). */
@@ -311,6 +360,7 @@ export type ValoresCalculadosMargenContribucion = {
 export function calcularValoresMargenContribucion(
   inputs: InputsMargenContribucion
 ): ValoresCalculadosMargenContribucion {
+  const formulas = inputs.formulas ?? FIN_ANA_MC_FORMULA_PARAMS_DEFAULT;
   const precioVenta = pxVentaMargenContribucion(
     inputs.pxLista,
     inputs.descuentoPct
@@ -321,12 +371,13 @@ export function calcularValoresMargenContribucion(
 
   return {
     precioVenta,
-    iva: aplicaIva ? ivaRatioMargenContribucion(precioVenta) : 0,
-    iibb: aplicaIibb ? iibbRatioMargenContribucion(precioVenta) : 0,
+    iva: aplicaIva ? ivaRatioMargenContribucion(precioVenta, formulas) : 0,
+    iibb: aplicaIibb ? iibbRatioMargenContribucion(precioVenta, formulas) : 0,
     cxMercaderia: cxMercaderiaRatioMargenContribucion(
       inputs.pxLista,
       inputs.porcUtilidadPct,
-      precioVenta
+      precioVenta,
+      formulas
     ),
   };
 }

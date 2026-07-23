@@ -10,6 +10,12 @@ import {
 } from "@/services/finAnaMcDescuentoFp.service";
 import { actualizarDescuentoFpMargenContribucionSchema } from "@/lib/validations/finAnaMcDescuentoFp";
 import type { DescuentoFpMargenContribucionMap } from "@/services/finAnaMcDescuentoFp.service";
+import {
+  actualizarFormulaMargenContribucion,
+  listarFormulasMargenContribucion,
+} from "@/services/finAnaMcFormulas.service";
+import { actualizarFormulaMargenContribucionSchema } from "@/lib/validations/finAnaMcFormulas";
+import type { FinAnaMcFormulaItem } from "@/lib/finAnaMcFormulas";
 
 const RUTA_MARGEN_CONTRIBUCION = "/finanzas/analisis-mc/margen-contribucion";
 
@@ -50,6 +56,32 @@ export async function actualizarDescuentoFpMargenContribucionAction(
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
 
   const res = await actualizarDescuentoFpMargenContribucion(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidatePath(RUTA_MARGEN_CONTRIBUCION);
+  return { ok: true, data: res.data };
+}
+
+export async function listarFormulasMargenContribucionAction(): Promise<
+  ActionResult<FinAnaMcFormulaItem[]>
+> {
+  const gate = await requireFinanzasLectura();
+  if (gate) return gate;
+
+  const items = await listarFormulasMargenContribucion();
+  return { ok: true, data: items };
+}
+
+export async function actualizarFormulaMargenContribucionAction(
+  params: unknown
+): Promise<ActionResult<FinAnaMcFormulaItem[]>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = actualizarFormulaMargenContribucionSchema.safeParse(params);
+  if (!parsed.success) return { ok: false, error: "Datos inválidos." };
+
+  const res = await actualizarFormulaMargenContribucion(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
 
   revalidatePath(RUTA_MARGEN_CONTRIBUCION);

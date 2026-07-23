@@ -7,6 +7,7 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import TablaFinAnaMargenContribucion, {
   inputsMargenContribucionDesdeNumeros,
 } from "@/components/finanzas/TablaFinAnaMargenContribucion";
+import FinAnaMcFormulasPanel from "@/components/finanzas/FinAnaMcFormulasPanel";
 import GestionarPagosFinAnaCosFinaModal from "@/components/finanzas/GestionarPagosFinAnaCosFinaModal";
 import FilterBar, {
   FILTER_INLINE_ACTION_SLOT_CLASS,
@@ -27,7 +28,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import {
-  FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD,
   FIN_ANA_MC_TIPOS_COMPROBANTE,
   crearDescuentoPctPorFormaPagoVacios,
   etiquetaTipoComprobanteVentaMargenContribucion,
@@ -35,6 +35,10 @@ import {
   mapCxFinancieroPorFormaPago,
   type TipoComprobanteVentaMargenContribucion,
 } from "@/lib/finAnaMargenContribucion";
+import {
+  resolverParametrosFormulaMargenContribucion,
+  type FinAnaMcFormulaItem,
+} from "@/lib/finAnaMcFormulas";
 import type { FinAnaCosFinaPagoItem } from "@/lib/finAnaCosFinaPagos";
 import { actualizarDescuentoFpMargenContribucionAction } from "@/actions/finAnaMargenContribucion";
 import { MARGEN_PX_LISTA_MAX_CENTS } from "@/lib/pxListasPreciosFormat";
@@ -50,6 +54,7 @@ interface Props {
   terminales: FinAnaCosFinaTerminalItem[];
   pagos: FinAnaCosFinaPagoItem[];
   descuentosPorFormaPago: DescuentoFpMargenContribucionMap;
+  formulas: FinAnaMcFormulaItem[];
   esEditor: boolean;
 }
 
@@ -65,14 +70,15 @@ function etiquetaFiltroMayusculas(texto: string): string {
 
 function inputsMargenContribucionIniciales(
   formasPago: FormaPagoMargenContribucion[],
-  descuentosPorFormaPago: DescuentoFpMargenContribucionMap
+  descuentosPorFormaPago: DescuentoFpMargenContribucionMap,
+  pxLista: number
 ) {
   const descuentos = {
     ...crearDescuentoPctPorFormaPagoVacios(formasPago),
     ...descuentosPorFormaPago,
   };
   return inputsMargenContribucionDesdeNumeros({
-    pxLista: FIN_ANA_MC_PX_LISTA_ESTIMADO_PORC_UTILIDAD,
+    pxLista,
     descuentoPctPorFormaPago: descuentos,
     formasPago,
   });
@@ -83,14 +89,24 @@ export default function FinAnaMargenContribucionPageClient({
   terminales,
   pagos,
   descuentosPorFormaPago,
+  formulas: formulasIniciales,
   esEditor,
 }: Props) {
   const router = useRouter();
   const formasPago = useMemo(() => idsFormasPagoMargenContribucion(pagos), [pagos]);
   const [config, setConfig] = useState(CONFIG_MARGEN_CONTRIBUCION_VACIA);
   const [descuentosBase, setDescuentosBase] = useState(descuentosPorFormaPago);
+  const [formulas, setFormulas] = useState(formulasIniciales);
+  const formulaParams = useMemo(
+    () => resolverParametrosFormulaMargenContribucion(formulas),
+    [formulas]
+  );
   const [inputs, setInputs] = useState(() =>
-    inputsMargenContribucionIniciales(formasPago, descuentosPorFormaPago)
+    inputsMargenContribucionIniciales(
+      formasPago,
+      descuentosPorFormaPago,
+      formulaParams.pxListaCIva
+    )
   );
   const [modalGestionarPagosAbierto, setModalGestionarPagosAbierto] = useState(false);
 
@@ -110,9 +126,27 @@ export default function FinAnaMargenContribucionPageClient({
       MARGEN_PX_LISTA_MAX_CENTS
     ) ?? 0;
 
+  function sincronizarPxListaDesdeFormulas(items: FinAnaMcFormulaItem[]) {
+    setFormulas(items);
+    const nextParams = resolverParametrosFormulaMargenContribucion(items);
+    setInputs((prev) =>
+      inputsMargenContribucionDesdeNumeros({
+        pxLista: nextParams.pxListaCIva,
+        descuentoPctPorFormaPago: prev.descuentoPctPorFormaPago,
+        formasPago,
+      })
+    );
+  }
+
   function limpiarFiltros() {
     setConfig(CONFIG_MARGEN_CONTRIBUCION_VACIA);
-    setInputs(inputsMargenContribucionIniciales(formasPago, descuentosBase));
+    setInputs(
+      inputsMargenContribucionIniciales(
+        formasPago,
+        descuentosBase,
+        formulaParams.pxListaCIva
+      )
+    );
   }
 
   function handleCatalogoPagosChanged() {
@@ -269,16 +303,26 @@ export default function FinAnaMargenContribucionPageClient({
         }
         filtersAriaLabel="Configuración de margen contribución"
       >
-        <TablaFinAnaMargenContribucion
-          formasPago={formasPago}
-          pagosCatalogo={pagos}
-          cxFinancieroPorFormaPago={cxFinancieroPorFormaPago}
-          inputs={inputs}
-          onDescuentoPorFormaPagoChange={cambiarDescuentoPorFormaPago}
-          porcUtilidadPct={porcUtilidadPct}
-          tipoComprobante={config.tipoComprobante}
-          esEditor={esEditor}
-        />
+        <div className="flex h-full min-h-0 w-full flex-col gap-2">
+          <FinAnaMcFormulasPanel
+            formulasIniciales={formulas}
+            esEditor={esEditor}
+            onFormulasChange={sincronizarPxListaDesdeFormulas}
+          />
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <TablaFinAnaMargenContribucion
+              formasPago={formasPago}
+              pagosCatalogo={pagos}
+              cxFinancieroPorFormaPago={cxFinancieroPorFormaPago}
+              inputs={inputs}
+              onDescuentoPorFormaPagoChange={cambiarDescuentoPorFormaPago}
+              porcUtilidadPct={porcUtilidadPct}
+              tipoComprobante={config.tipoComprobante}
+              formulaParams={formulaParams}
+              esEditor={esEditor}
+            />
+          </div>
+        </div>
       </ClassicFilteredTableLayout>
 
       <GestionarPagosFinAnaCosFinaModal

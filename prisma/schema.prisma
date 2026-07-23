@@ -1033,6 +1033,22 @@ model FinAnaMcDescuentoFp {
   @@map("fin_ana_mc_descuento_fp")
 }
 
+/**
+ * Parámetros configurables de fórmulas del simulador Margen Contribución
+ * (clave `codigo` → `valor`). Semilla: PX_LISTA_C_IVA, IVA_ALICUOTA, IIBB_ALICUOTA.
+ */
+model FinAnaMcFormula {
+  id        String   @id @default(cuid())
+  codigo    String   @unique
+  etiqueta  String
+  valor     Decimal  @db.Decimal(14, 6)
+  orden     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("fin_ana_mc_formulas")
+}
+
 // ─── Marketing · Publicaciones (catálogos + hechos) ────────────────────────
 
 /** Catálogo de redes sociales para publicaciones (`red_social_nombre` único). */
