@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
+  ETIQUETA_CORTA_METRICA_GRAFICO_MC,
+  ETIQUETA_METRICA_GRAFICO_MC,
+  FIN_ANA_MC_METRICAS_GRAFICO,
   MC_GRAFICO_PORC_UTILIDAD_MAX,
   MC_GRAFICO_PORC_UTILIDAD_MIN,
   type MetricaGraficoMcMargenContribucion,
@@ -29,7 +32,7 @@ export type FilaFormaPagoGraficoMc = {
   id: string;
   nombre: string;
   color: string;
-  /** M.C o M.C PONDERADO (%) en el PORC. UTILIDAD actual; null si no aplica. */
+  /** Valor de la métrica (%) en el PORC. UTILIDAD actual; null si no aplica. */
   valorPct: number | null;
 };
 
@@ -85,16 +88,14 @@ export default function GraficoMcVsPorcUtilidad({
   className,
 }: Props) {
   const gradId = useId().replace(/:/g, "");
-  const etiquetaEjeY = metrica === "MC_PONDERADO" ? "M.C PONDERADO" : "M.C";
+  const etiquetaEjeY = ETIQUETA_METRICA_GRAFICO_MC[metrica];
+  const etiquetaColumna = ETIQUETA_CORTA_METRICA_GRAFICO_MC[metrica];
   const selectedSet = useMemo(
     () => new Set(formasSeleccionadas),
     [formasSeleccionadas]
   );
 
-  const tituloGrafico =
-    metrica === "MC_PONDERADO"
-      ? 'RELACIÓN "PORC. UTILIDAD / M.C. PONDERADO"'
-      : 'RELACIÓN "PORC. UTILIDAD / M.C."';
+  const tituloGrafico = `RELACIÓN "PORC. UTILIDAD / ${etiquetaEjeY}"`;
 
   function toggleForma(id: string) {
     if (selectedSet.has(id)) {
@@ -195,13 +196,10 @@ export default function GraficoMcVsPorcUtilidad({
   return (
     <div
       className={cn(
-        "flex min-h-[15rem] w-full flex-col overflow-visible rounded-md border border-border bg-card",
+        "flex min-h-[14rem] w-full flex-col overflow-visible rounded-md border border-border bg-card",
         className
       )}
     >
-      <p className="shrink-0 border-b border-border px-3 py-2 text-center text-sm font-bold text-foreground">
-        {tituloGrafico}
-      </p>
       <div className="flex min-h-[14rem] flex-1">
         <div className="flex w-56 shrink-0 flex-col gap-2 border-r border-border p-2">
           <Select
@@ -222,8 +220,11 @@ export default function GraficoMcVsPorcUtilidad({
               align="start"
               className="select-content-filtro"
             >
-              <SelectItem value="MC">M.C</SelectItem>
-              <SelectItem value="MC_PONDERADO">M.C PONDERADO</SelectItem>
+              {FIN_ANA_MC_METRICAS_GRAFICO.map((opcion) => (
+                <SelectItem key={opcion} value={opcion}>
+                  {ETIQUETA_METRICA_GRAFICO_MC[opcion]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -238,7 +239,7 @@ export default function GraficoMcVsPorcUtilidad({
                     FORMA
                   </th>
                   <th className="w-14 px-1.5 py-1.5 text-right font-bold text-foreground">
-                    {metrica === "MC_PONDERADO" ? "M.C POND." : "M.C"}
+                    {etiquetaColumna}
                   </th>
                 </tr>
               </thead>

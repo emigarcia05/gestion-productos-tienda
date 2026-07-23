@@ -560,26 +560,63 @@ export type PuntoMcVsPorcUtilidad = {
   mcPct: number | null;
 };
 
-export type MetricaGraficoMcMargenContribucion = "MC" | "MC_PONDERADO";
+export type MetricaGraficoMcMargenContribucion =
+  | "CX_MERCADERIA"
+  | "CX_FINANCIERO"
+  | "MC"
+  | "MC_PONDERADO";
+
+export const FIN_ANA_MC_METRICAS_GRAFICO = [
+  "CX_MERCADERIA",
+  "CX_FINANCIERO",
+  "MC",
+  "MC_PONDERADO",
+] as const satisfies readonly MetricaGraficoMcMargenContribucion[];
+
+export const ETIQUETA_METRICA_GRAFICO_MC: Record<
+  MetricaGraficoMcMargenContribucion,
+  string
+> = {
+  CX_MERCADERIA: "CX MERCADERÍA",
+  CX_FINANCIERO: "CX FINANCIERO",
+  MC: "M.C",
+  MC_PONDERADO: "M.C PONDERADO",
+};
+
+/** Etiqueta corta para cabecera de columna en checklist del gráfico. */
+export const ETIQUETA_CORTA_METRICA_GRAFICO_MC: Record<
+  MetricaGraficoMcMargenContribucion,
+  string
+> = {
+  CX_MERCADERIA: "CX MERC.",
+  CX_FINANCIERO: "CX FIN.",
+  MC: "M.C",
+  MC_PONDERADO: "M.C POND.",
+};
 
 function valorYGraficoMcMargenContribucion(
   calculados: ValoresCalculadosMargenContribucion,
   cxFinPct: number,
   metrica: MetricaGraficoMcMargenContribucion
 ): number | null {
-  if (metrica === "MC_PONDERADO") {
-    const ponderado = mcPonderadoMargenContribucionPorFormaPago(
-      calculados,
-      cxFinPct
-    );
-    return ponderado;
+  switch (metrica) {
+    case "CX_MERCADERIA":
+      if (calculados.cxMercaderia == null) return null;
+      return calculados.cxMercaderia * 100;
+    case "CX_FINANCIERO":
+      return cxFinancieroRatioMargenContribucion(cxFinPct) * 100;
+    case "MC_PONDERADO":
+      return mcPonderadoMargenContribucionPorFormaPago(calculados, cxFinPct);
+    case "MC":
+    default: {
+      const mc = mcMargenContribucionPorFormaPago(calculados, cxFinPct);
+      return mc == null ? null : mc * 100;
+    }
   }
-  const mc = mcMargenContribucionPorFormaPago(calculados, cxFinPct);
-  return mc == null ? null : mc * 100;
 }
 
 /**
- * Serie M.C o M.C PONDERADO variando PORC. UTILIDAD en [min, max].
+ * Serie de la métrica elegida variando PORC. UTILIDAD en [min, max].
  * Usa descuento / CX / tipo / fórmulas actuales.
  */
 export function serieMcVsPorcUtilidadMargenContribucion(params: {

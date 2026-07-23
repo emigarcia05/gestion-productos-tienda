@@ -181,15 +181,19 @@ export default function FinAnaMargenContribucionPageClient({
         formulas: formulaParams,
         metrica: metricaGrafico,
       };
+      const puedeMostrarValor =
+        metricaGrafico === "CX_FINANCIERO" || tienePorcUtilidad;
       return {
         id: formaId,
         nombre: etiquetaFormaPagoMargenContribucion(formaId, pagos),
         color:
           COLORES_SERIE_GRAFICO_MC[index % COLORES_SERIE_GRAFICO_MC.length]!,
-        valorPct: tienePorcUtilidad
+        valorPct: puedeMostrarValor
           ? mcPctEnPorcUtilidadMargenContribucion({
               ...base,
-              porcUtilidadPct,
+              porcUtilidadPct: tienePorcUtilidad
+                ? porcUtilidadPct
+                : MC_GRAFICO_PORC_UTILIDAD_MIN,
             })
           : null,
       };
