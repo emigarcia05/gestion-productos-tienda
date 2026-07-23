@@ -1010,10 +1010,10 @@ Simulador de márgenes por forma de pago (**solo PORC. UTILIDAD**). **Ruta**: `/
   - Servicio `src/services/finAnaMcFormulas.service.ts`: `ensureFinAnaMcFormulasSeed`, `listarFormulasMargenContribucion`, `actualizarFormulaMargenContribucion`. Actions `listarFormulasMargenContribucionAction` / `actualizarFormulaMargenContribucionAction`. Tipos/helpers `src/lib/finAnaMcFormulas.ts`.
 - **Configuración UI** (estado cliente): **TERMINAL** (opcional; promedio si vacío), **TIPO COMPROBANTE** (`FACTURA_A` | `FACTURA_C` | `FACTURA_X`), **PORC. UTILIDAD** (`PorcentajeCentInput`). Tipos en `src/lib/finAnaMargenContribucion.ts` (`TipoComprobanteVentaMargenContribucion`). **Factura C**: IVA e IIBB = 0; **A** y **X**: mismas fórmulas de impuestos.
 - **Descuentos por forma de pago** (`fin_ana_mc_descuento_fp`, Prisma `FinAnaMcDescuentoFp`): una fila por forma de pago con `en_margen_contribucion = true` (`pago_id` FK → `fin_ana_cos_fina_pagos`, único); `descuento_pct` INTEGER **−100…100** (entero). Semilla migración **`20260709130000_fin_ana_mc_descuento_fp`**; FK catálogo: **`20260709140000_fin_ana_cos_fina_pagos_catalog`**. Servicio `src/services/finAnaMcDescuentoFp.service.ts`: `ensureFinAnaMcDescuentoFpSeed`, `listarDescuentosFpMargenContribucion`, `actualizarDescuentoFpMargenContribucion` (input `pagoId`). Action `actualizarDescuentoFpMargenContribucionAction` (`esEditor()` + finanzas). **No** reutilizar `fin_ana_cos_fina` (costos financieros ≠ descuentos de venta).
-- **Base de simulación**: **PX LISTA C/ IVA** desde **`fin_ana_mc_formulas`**; **PX LISTA S/ IVA** = `PX LISTA C/ IVA / ivaFactor`; **PX VENTA C/ IVA** = `PX LISTA C/ IVA × (1 − descuento % / 100)` (ej. **−10** → **110**; **+10** → **90**); **PX VENTA S/ IVA** = `PX VENTA C/ IVA / ivaFactor`.
+- **Base de simulación**: **PX LISTA C/ IVA** desde **`fin_ana_mc_formulas`**; **PX LISTA S/ IVA** = `PX LISTA C/ IVA / ivaFactor`; **PX VENTA C/ IVA** = `PX LISTA C/ IVA × (1 + descuento % / 100)` (signo: **−25** → **75**; **+10** → **110**; input con `defaultNegative`); **PX VENTA S/ IVA** = `PX VENTA C/ IVA / ivaFactor`.
 - **Columnas** (formas de pago): catálogo dinámico `fin_ana_cos_fina_pagos` filtrado por `en_margen_contribucion` (`idsFormasPagoMargenContribucion` en `src/lib/finAnaMargenContribucion.ts`). Pagos con `en_costos_financieros = false` (p. ej. **EFECTIVO**) tienen CX financiero = 0 %.
 - **Filas / fórmulas** (ratios sobre **PX VENTA C/ IVA**, salvo M.C PONDERADO; `src/lib/finAnaMargenContribucion.ts` + `ParametrosFormulaMargenContribucion`):
-  - **DESCUENTO**: % firmado **−100…100** (`fin_ana_mc_descuento_fp`; fórmula `1 − %/100`; migración signo histórica **`20260721140000`**).
+  - **DESCUENTO**: % firmado **−100…100** (`fin_ana_mc_descuento_fp`; fórmula `1 + %/100`; negativo = descuento, positivo = recargo; migración signo **`20260721140000`**).
   - **IVA** = `(PX VENTA S/ IVA × IVA_ALICUOTA) / PX VENTA C/ IVA` (0 si **FACTURA C**).
   - **IIBB** = `(PX VENTA S/ IVA × IIBB_ALICUOTA) / PX VENTA C/ IVA` (0 si **FACTURA C**).
   - **CX MERCADERÍA** = `((PX LISTA S/ IVA) / (1 + porc. utilidad % / 100)) / PX VENTA C/ IVA`.
@@ -1952,6 +1952,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-07-21): **Margen Contribución · signo descuento** — `descuento_pct` negativo = descuento, positivo = recargo; fórmula `1 + %/100`; migración `20260721140000` invierte signos previos.*
 
 *Última actualización (2026-07-22): **Margen Contribución · PX VENTA** — fórmula `PX LISTA × (1 − descuento % / 100)` (lista 100 y **−10** → venta **110**).*
+
+*Última actualización (2026-07-23): **Margen Contribución · DESCUENTO** — restaurada convención `1 + %/100`: **−25** → venta **75** (descuento); **+10** → **110** (recargo); input `defaultNegative`.*
 
 *Última actualización (2026-07-22): **Margen Contribución · fin_ana_mc_formulas** — parámetros configurables PX LISTA C/IVA, IVA_ALICUOTA, IIBB_ALICUOTA; motor usa `ParametrosFormulaMargenContribucion`.*
 

@@ -1392,6 +1392,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-22): **Margen Contribución · PX VENTA** — fórmula corregida `PX LISTA × (1 − descuento % / 100)` (ej. lista 100 y **−10** → venta **110**).*
 
+*Última actualización (2026-07-23): **Margen Contribución · DESCUENTO** — fórmula `PX LISTA × (1 + % / 100)`: por defecto **−** (descuento; −25 → 75); **+** manual = recargo (+10 → 110). Modal Gestion Cx. actualizado.*
+
 *Última actualización (2026-07-22): **Margen Contribución · ayuda fórmulas** — en COSTOS/MARGEN, ícono **Info** junto al concepto; click abre tooltip con la fórmula (`ayudaFormulaFilaMargenContribucion`).*
 
 *Última actualización (2026-07-22): **Margen Contribución · Info fórmulas** — botón **`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`** (fondo `#0072BB`, ícono blanco) alineado al alto fijo de fila.*

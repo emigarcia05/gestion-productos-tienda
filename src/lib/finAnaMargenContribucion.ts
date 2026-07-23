@@ -234,13 +234,17 @@ export function netoSinIvaMargenContribucion(
   return precioConIva / ivaFactor;
 }
 
-/** PX VENTA C/ IVA = PX LISTA C/ IVA × (1 − descuento % / 100). Ej.: −10 → 110; +10 → 90. */
+/**
+ * PX VENTA C/ IVA = PX LISTA C/ IVA × (1 + descuento % / 100).
+ * Signo: negativo = descuento (p. ej. −25 → 75); positivo = recargo (p. ej. +10 → 110).
+ * El input usa `defaultNegative` (siempre arranca en −).
+ */
 export function pxVentaMargenContribucion(
   pxLista: number,
   descuentoPct: number
 ): number {
   if (!(pxLista > 0)) return 0;
-  const factor = 1 - descuentoPct / 100;
+  const factor = 1 + descuentoPct / 100;
   return Math.round(pxLista * Math.max(0, factor));
 }
 

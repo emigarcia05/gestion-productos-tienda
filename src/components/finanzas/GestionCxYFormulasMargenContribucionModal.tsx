@@ -89,7 +89,11 @@ export default function GestionCxYFormulasMargenContribucionModal({
               <strong>PX LISTA S/ IVA</strong> = PX LISTA / (1 + IVA)
             </FormulaLinea>
             <FormulaLinea>
-              <strong>PX VENTA C/ IVA</strong> = PX LISTA × (1 − DESCUENTO)
+              <strong>PX VENTA C/ IVA</strong> = PX LISTA × (1 + DESCUENTO)
+            </FormulaLinea>
+            <FormulaLinea className="text-xs text-muted-foreground">
+              DESCUENTO con signo: − = descuento (p. ej. −25% → 75); + = recargo (p. ej. +10% →
+              110). Por defecto el input arranca en −.
             </FormulaLinea>
             <FormulaLinea>
               <strong>PX VENTA S/ IVA</strong> = PX VENTA C/ IVA / (1 + IVA)
