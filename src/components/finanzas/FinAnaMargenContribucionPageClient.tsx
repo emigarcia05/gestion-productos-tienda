@@ -164,22 +164,42 @@ export default function FinAnaMargenContribucionPageClient({
     return formaPagoTresCuotasId ? [formaPagoTresCuotasId] : [];
   }, [formasGraficoIds, formaPagoTresCuotasId]);
 
-  const opcionesFormaPagoGrafico = useMemo(
-    () =>
-      formasPago.map((id) => ({
-        id,
-        nombre: etiquetaFormaPagoMargenContribucion(id, pagos),
-      })),
-    [formasPago, pagos]
-  );
-
   const graficoMc = useMemo(() => {
     const marcaEnRango =
       tienePorcUtilidad &&
       porcUtilidadPct >= MC_GRAFICO_PORC_UTILIDAD_MIN &&
       porcUtilidadPct <= MC_GRAFICO_PORC_UTILIDAD_MAX;
 
-    const series = formasGraficoSeleccionadas.map((formaId, index) => {
+    const filasFormaPago = formasPago.map((formaId, index) => {
+      const descuentoPct = inputs.descuentoPctPorFormaPago[formaId] ?? 0;
+      const cxFinPct = cxFinancieroPorFormaPago[formaId] ?? 0;
+      const base = {
+        pxLista: formulaParams.pxListaCIva,
+        descuentoPct,
+        cxFinPct,
+        tipoComprobante: config.tipoComprobante,
+        formulas: formulaParams,
+        metrica: metricaGrafico,
+      };
+      return {
+        id: formaId,
+        nombre: etiquetaFormaPagoMargenContribucion(formaId, pagos),
+        color:
+          COLORES_SERIE_GRAFICO_MC[index % COLORES_SERIE_GRAFICO_MC.length]!,
+        valorPct: tienePorcUtilidad
+          ? mcPctEnPorcUtilidadMargenContribucion({
+              ...base,
+              porcUtilidadPct,
+            })
+          : null,
+      };
+    });
+
+    const colorPorId = new Map(
+      filasFormaPago.map((fila) => [fila.id, fila.color] as const)
+    );
+
+    const series = formasGraficoSeleccionadas.map((formaId) => {
       const descuentoPct = inputs.descuentoPctPorFormaPago[formaId] ?? 0;
       const cxFinPct = cxFinancieroPorFormaPago[formaId] ?? 0;
       const base = {
@@ -193,8 +213,7 @@ export default function FinAnaMargenContribucionPageClient({
       return {
         id: formaId,
         etiqueta: etiquetaFormaPagoMargenContribucion(formaId, pagos),
-        color:
-          COLORES_SERIE_GRAFICO_MC[index % COLORES_SERIE_GRAFICO_MC.length]!,
+        color: colorPorId.get(formaId) ?? COLORES_SERIE_GRAFICO_MC[0]!,
         puntos: serieMcVsPorcUtilidadMargenContribucion(base),
         valorMarca: marcaEnRango
           ? mcPctEnPorcUtilidadMargenContribucion({
@@ -207,8 +226,8 @@ export default function FinAnaMargenContribucionPageClient({
 
     return {
       series,
+      filasFormaPago,
       porcUtilidadMarca: marcaEnRango ? porcUtilidadPct : null,
-      /** Remount del área SVG al cambiar filtros de página (no el panel de controles). */
       revisionFiltros: [
         config.terminalId || "ALL",
         config.tipoComprobante,
@@ -224,6 +243,7 @@ export default function FinAnaMargenContribucionPageClient({
       ].join("::"),
     };
   }, [
+    formasPago,
     formasGraficoSeleccionadas,
     inputs.descuentoPctPorFormaPago,
     cxFinancieroPorFormaPago,
@@ -436,7 +456,7 @@ export default function FinAnaMargenContribucionPageClient({
             revisionFiltros={graficoMc.revisionFiltros}
             metrica={metricaGrafico}
             onMetricaChange={setMetricaGrafico}
-            opcionesFormaPago={opcionesFormaPagoGrafico}
+            filasFormaPago={graficoMc.filasFormaPago}
             formasSeleccionadas={formasGraficoSeleccionadas}
             onFormasSeleccionadasChange={setFormasGraficoIds}
             className="shrink-0"
