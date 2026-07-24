@@ -1,10 +1,10 @@
-/** Categoría de M.C. por rango % (tabla `fin_ana_mc_categorias`). */
+/** Categoría por rango sobre **M.C. PONDERADO** (tabla `fin_ana_mc_categorias`, escala 0…100). */
 export type FinAnaMcCategoriaItem = {
   id: string;
   categoria: string;
-  /** Límite inferior inclusivo (0…99). */
+  /** Límite inferior inclusivo en M.C. PONDERADO (0…99). */
   desdePct: number;
-  /** Límite superior exclusivo salvo la última (hasta 100 inclusivo). */
+  /** Límite superior exclusivo en M.C. PONDERADO (salvo última: 100 inclusivo). */
   hastaPct: number;
   orden: number;
 };
@@ -73,21 +73,23 @@ export function validarContinuidadRangosMcCategorias(
 }
 
 /**
- * Resuelve la categoría para un M.C. %.
+ * Resuelve la categoría para un valor de **M.C. PONDERADO**.
  * Regla: `[desde, hasta)` y la última (`hasta === 100`) incluye 100.
  */
 export function resolverCategoriaMcPorPct(
-  mcPct: number,
+  mcPonderado: number,
   categorias: FinAnaMcCategoriaItem[]
 ): FinAnaMcCategoriaItem | null {
-  if (!Number.isFinite(mcPct) || categorias.length === 0) return null;
+  if (!Number.isFinite(mcPonderado) || categorias.length === 0) return null;
   const sorted = [...categorias].sort((a, b) => a.desdePct - b.desdePct);
   for (let i = 0; i < sorted.length; i++) {
     const cat = sorted[i]!;
     const esUltima = i === sorted.length - 1;
     const dentro =
-      mcPct >= cat.desdePct &&
-      (esUltima ? mcPct <= cat.hastaPct : mcPct < cat.hastaPct);
+      mcPonderado >= cat.desdePct &&
+      (esUltima
+        ? mcPonderado <= cat.hastaPct
+        : mcPonderado < cat.hastaPct);
     if (dentro) return cat;
   }
   return null;

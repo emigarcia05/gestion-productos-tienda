@@ -1050,8 +1050,8 @@ model FinAnaMcFormula {
 }
 
 /**
- * Categorías de M.C. por rango % continuo [desde, hasta) sobre 0…100
- * (la última incluye 100). Continuidad: el `desde` de una fila debe ser
+ * Categorías por rango continuo [desde, hasta) sobre **M.C. PONDERADO** (0…100;
+ * la última incluye 100). Continuidad: el `desde` de una fila debe ser
  * igual al `hasta` de la anterior (sin huecos ni solapes).
  */
 model FinAnaMcCategoria {

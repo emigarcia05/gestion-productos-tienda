@@ -233,8 +233,30 @@ export default function FinAnaMargenContribucionPageClient({
       };
     });
 
+    /** Serie en escala M.C. PONDERADO para umbrales de Cat. M.C. (también con métrica M.C.). */
+    const seriesMcPonderado = formasGraficoSeleccionadas.map((formaId) => {
+      const descuentoPct = inputs.descuentoPctPorFormaPago[formaId] ?? 0;
+      const cxFinPct = cxFinancieroPorFormaPago[formaId] ?? 0;
+      const base = {
+        pxLista: formulaParams.pxListaCIva,
+        descuentoPct,
+        cxFinPct,
+        tipoComprobante: config.tipoComprobante,
+        formulas: formulaParams,
+        metrica: "MC_PONDERADO" as const,
+      };
+      return {
+        id: formaId,
+        etiqueta: etiquetaFormaPagoMargenContribucion(formaId, pagos),
+        color: colorPorId.get(formaId) ?? COLORES_SERIE_GRAFICO_MC[0]!,
+        puntos: serieMcVsPorcUtilidadMargenContribucion(base),
+        valorMarca: null,
+      };
+    });
+
     return {
       series,
+      seriesMcPonderado,
       filasFormaPago,
       porcUtilidadMarca: marcaEnRango ? porcUtilidadPct : null,
       revisionFiltros: [
@@ -467,6 +489,7 @@ export default function FinAnaMargenContribucionPageClient({
           />
           <GraficoMcVsPorcUtilidad
             series={graficoMc.series}
+            seriesMcPonderado={graficoMc.seriesMcPonderado}
             porcUtilidadMarca={graficoMc.porcUtilidadMarca}
             revisionFiltros={graficoMc.revisionFiltros}
             metrica={metricaGrafico}

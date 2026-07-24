@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,7 @@ import {
   FIN_ANA_MC_METRICAS_GRAFICO,
   MC_GRAFICO_PORC_UTILIDAD_MAX,
   MC_GRAFICO_PORC_UTILIDAD_MIN,
+  metricaGraficoSoportaCategoriasMc,
   type MetricaGraficoMcMargenContribucion,
   type PuntoMcVsPorcUtilidad,
 } from "@/lib/finAnaMargenContribucion";
@@ -42,6 +43,11 @@ export type FilaFormaPagoGraficoMc = {
 
 interface Props {
   series: SerieGraficoMcVsPorcUtilidad[];
+  /**
+   * Series en escala **M.C. PONDERADO** (mismas formas que `series`).
+   * Sirve para ubicar umbrales de Cat. M.C. también cuando la métrica visible es **M.C**.
+   */
+  seriesMcPonderado?: SerieGraficoMcVsPorcUtilidad[];
   /** PORC. UTILIDAD actual del filtro; si null, no se dibuja la marca vertical. */
   porcUtilidadMarca: number | null;
   /** Cambia con TERMINAL / TIPO COMPROBANTE / PORC. UTILIDAD / CX / descuentos. */
@@ -51,7 +57,7 @@ interface Props {
   filasFormaPago: FilaFormaPagoGraficoMc[];
   formasSeleccionadas: string[];
   onFormasSeleccionadasChange: (ids: string[]) => void;
-  /** Rangos de catálogo M.C.; overlay = líneas verticales en PORC. UTILIDAD de entrada a cada categoría. */
+  /** Rangos de catálogo (escala M.C. PONDERADO); overlay en métricas MC / MC_PONDERADO. */
   categoriasMc?: FinAnaMcCategoriaItem[];
   className?: string;
 }
@@ -73,12 +79,12 @@ function fmtPct(n: number): string {
 }
 
 /**
- * Primer PORC. UTILIDAD (eje X) donde la serie alcanza el umbral de M.C. %.
- * Interpolación lineal entre puntos consecutivos ordenados por utilidad.
+ * Primer PORC. UTILIDAD (eje X) donde la serie Y alcanza el umbral.
+ * Para Cat. M.C. el umbral y la serie de búsqueda están en escala **M.C. PONDERADO**.
  */
-function porcUtilidadDondeMcAlcanza(
+function porcUtilidadDondeValorAlcanza(
   puntos: PuntoMcVsPorcUtilidad[],
-  mcTarget: number
+  umbralY: number
 ): number | null {
   const validos = puntos
     .filter(
@@ -88,22 +94,22 @@ function porcUtilidadDondeMcAlcanza(
     .slice()
     .sort((a, b) => a.porcUtilidadPct - b.porcUtilidadPct);
 
-  if (validos.length === 0 || !Number.isFinite(mcTarget)) return null;
+  if (validos.length === 0 || !Number.isFinite(umbralY)) return null;
 
   const primero = validos[0]!;
-  if (primero.mcPct >= mcTarget) return primero.porcUtilidadPct;
+  if (primero.mcPct >= umbralY) return primero.porcUtilidadPct;
 
   for (let i = 1; i < validos.length; i++) {
     const prev = validos[i - 1]!;
     const curr = validos[i]!;
     const cruzaSubiendo =
-      prev.mcPct < mcTarget && curr.mcPct >= mcTarget;
+      prev.mcPct < umbralY && curr.mcPct >= umbralY;
     const cruzaBajando =
-      prev.mcPct > mcTarget && curr.mcPct <= mcTarget;
+      prev.mcPct > umbralY && curr.mcPct <= umbralY;
     if (!cruzaSubiendo && !cruzaBajando) continue;
     const span = curr.mcPct - prev.mcPct;
     if (span === 0) return curr.porcUtilidadPct;
-    const t = (mcTarget - prev.mcPct) / span;
+    const t = (umbralY - prev.mcPct) / span;
     return (
       prev.porcUtilidadPct + t * (curr.porcUtilidadPct - prev.porcUtilidadPct)
     );
@@ -131,6 +137,7 @@ function pathFromPuntos(
 
 export default function GraficoMcVsPorcUtilidad({
   series,
+  seriesMcPonderado = [],
   porcUtilidadMarca,
   revisionFiltros,
   metrica,
@@ -143,6 +150,7 @@ export default function GraficoMcVsPorcUtilidad({
 }: Props) {
   const gradId = useId().replace(/:/g, "");
   const [mostrarCategoriasMc, setMostrarCategoriasMc] = useState(false);
+  const categoriasDisponibles = metricaGraficoSoportaCategoriasMc(metrica);
   const etiquetaEjeY = ETIQUETA_METRICA_GRAFICO_MC[metrica];
   const etiquetaColumna = ETIQUETA_CORTA_METRICA_GRAFICO_MC[metrica];
   const selectedSet = useMemo(
@@ -162,6 +170,10 @@ export default function GraficoMcVsPorcUtilidad({
     () => [...categoriasMc].sort((a, b) => a.desdePct - b.desdePct),
     [categoriasMc]
   );
+
+  useEffect(() => {
+    if (!categoriasDisponibles) setMostrarCategoriasMc(false);
+  }, [categoriasDisponibles]);
 
   const tituloGrafico = `RELACIÓN "PORC. UTILIDAD / ${etiquetaEjeY}"`;
 
@@ -266,7 +278,7 @@ export default function GraficoMcVsPorcUtilidad({
           ? Math.min(...marcasLocal.map((m) => m.y))
           : null;
 
-      /** Umbral de entrada a cada categoría (desdePct > 0) → X = PORC. UTILIDAD. */
+      /** Umbrales Cat. M.C. (escala M.C. PONDERADO) → X = PORC. UTILIDAD. */
       const lineasLocal: {
         id: string;
         etiqueta: string;
@@ -276,15 +288,23 @@ export default function GraficoMcVsPorcUtilidad({
         visible: boolean;
       }[] = [];
 
+      const seriesUmbral =
+        seriesMcPonderado.length > 0
+          ? seriesMcPonderado
+          : metrica === "MC_PONDERADO"
+            ? series
+            : [];
+
       if (
         mostrarCategoriasMc &&
-        metrica === "MC" &&
-        categoriasOrdenadas.length > 0
+        categoriasDisponibles &&
+        categoriasOrdenadas.length > 0 &&
+        seriesUmbral.length > 0
       ) {
         for (const cat of categoriasOrdenadas) {
           if (cat.desdePct <= 0) continue;
-          for (const serie of series) {
-            const porc = porcUtilidadDondeMcAlcanza(
+          for (const serie of seriesUmbral) {
+            const porc = porcUtilidadDondeValorAlcanza(
               serie.puntos,
               cat.desdePct
             );
@@ -315,9 +335,11 @@ export default function GraficoMcVsPorcUtilidad({
       };
     }, [
       series,
+      seriesMcPonderado,
       porcUtilidadMarca,
       mostrarCategoriasMc,
       categoriasOrdenadas,
+      categoriasDisponibles,
       metrica,
     ]);
 
@@ -461,7 +483,7 @@ export default function GraficoMcVsPorcUtilidad({
         </div>
 
         <div className="relative min-w-0 flex-1 px-2 py-1" key={revisionFiltros}>
-          {categoriasOrdenadas.length > 0 ? (
+          {categoriasDisponibles && categoriasOrdenadas.length > 0 ? (
             <div className="absolute right-3 top-2 z-10">
               <Button
                 type="button"
@@ -475,8 +497,8 @@ export default function GraficoMcVsPorcUtilidad({
                 aria-pressed={mostrarCategoriasMc}
                 aria-label={
                   mostrarCategoriasMc
-                    ? "Ocultar categorías de M.C. en el gráfico"
-                    : "Mostrar categorías de M.C. en el gráfico"
+                    ? "Ocultar categorías de M.C. Ponderado en el gráfico"
+                    : "Mostrar categorías de M.C. Ponderado en el gráfico"
                 }
                 title={
                   mostrarCategoriasMc

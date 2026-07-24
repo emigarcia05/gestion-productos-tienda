@@ -594,6 +594,13 @@ export const ETIQUETA_CORTA_METRICA_GRAFICO_MC: Record<
   MC_PONDERADO: "M.C POND.",
 };
 
+/** Métricas del gráfico que admiten overlay de Cat. M.C. (umbrales en M.C. PONDERADO). */
+export function metricaGraficoSoportaCategoriasMc(
+  metrica: MetricaGraficoMcMargenContribucion
+): boolean {
+  return metrica === "MC" || metrica === "MC_PONDERADO";
+}
+
 function valorYGraficoMcMargenContribucion(
   calculados: ValoresCalculadosMargenContribucion,
   cxFinPct: number,
