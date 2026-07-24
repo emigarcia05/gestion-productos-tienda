@@ -440,20 +440,18 @@ export default function FinAnaMargenContribucionPageClient({
         }
         filtersAriaLabel="Configuración de margen contribución"
       >
-        <div className="flex h-full min-h-0 flex-col gap-3">
-          <div className="min-h-0 flex-1 overflow-auto">
-            <TablaFinAnaMargenContribucion
-              formasPago={formasPago}
-              pagosCatalogo={pagos}
-              cxFinancieroPorFormaPago={cxFinancieroPorFormaPago}
-              inputs={inputs}
-              onDescuentoPorFormaPagoChange={cambiarDescuentoPorFormaPago}
-              porcUtilidadPct={porcUtilidadPct}
-              tipoComprobante={config.tipoComprobante}
-              formulaParams={formulaParams}
-              esEditor={esEditor}
-            />
-          </div>
+        <div className="relative flex h-full min-h-0 flex-col gap-3">
+          <TablaFinAnaMargenContribucion
+            formasPago={formasPago}
+            pagosCatalogo={pagos}
+            cxFinancieroPorFormaPago={cxFinancieroPorFormaPago}
+            inputs={inputs}
+            onDescuentoPorFormaPagoChange={cambiarDescuentoPorFormaPago}
+            porcUtilidadPct={porcUtilidadPct}
+            tipoComprobante={config.tipoComprobante}
+            formulaParams={formulaParams}
+            esEditor={esEditor}
+          />
           <GraficoMcVsPorcUtilidad
             series={graficoMc.series}
             porcUtilidadMarca={graficoMc.porcUtilidadMarca}
@@ -463,7 +461,7 @@ export default function FinAnaMargenContribucionPageClient({
             filasFormaPago={graficoMc.filasFormaPago}
             formasSeleccionadas={formasGraficoSeleccionadas}
             onFormasSeleccionadasChange={setFormasGraficoIds}
-            className="shrink-0"
+            className="relative z-0 shrink-0"
           />
         </div>
       </ClassicFilteredTableLayout>

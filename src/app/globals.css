@@ -321,6 +321,18 @@
   }
 
   /**
+   * Margen Contribución: altura al contenido, solo scroll horizontal.
+   * Al expandir COSTOS la tabla se superpone al gráfico (sin scroll vertical).
+   */
+  .contenedor-tabla-gestion.contenedor-tabla-gestion--mc-overlay {
+    flex: 0 0 auto;
+    height: auto;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  /**
    * Tabla con pie de totales siempre visible: el scroll vertical solo afecta a encabezado + cuerpo.
    * Estructura (misma tarjeta / borde que `.contenedor-tabla-gestion`):
    * `.contenedor-tabla-gestion.contenedor-tabla-gestion--pie-fijo` (flex column, overflow hidden)

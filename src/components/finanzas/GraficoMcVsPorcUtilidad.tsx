@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, useMemo } from "react";
+import { Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -8,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TABLE_ROW_ACTION_ICON_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 import {
   ETIQUETA_CORTA_METRICA_GRAFICO_MC,
@@ -95,6 +98,14 @@ export default function GraficoMcVsPorcUtilidad({
     [formasSeleccionadas]
   );
 
+  const idsFormas = useMemo(
+    () => filasFormaPago.map((fila) => fila.id),
+    [filasFormaPago]
+  );
+
+  const todasSeleccionadas =
+    idsFormas.length > 0 && idsFormas.every((id) => selectedSet.has(id));
+
   const tituloGrafico = `RELACIÓN "PORC. UTILIDAD / ${etiquetaEjeY}"`;
 
   function toggleForma(id: string) {
@@ -103,6 +114,14 @@ export default function GraficoMcVsPorcUtilidad({
       return;
     }
     onFormasSeleccionadasChange([...formasSeleccionadas, id]);
+  }
+
+  function toggleTodasFormas() {
+    if (todasSeleccionadas) {
+      onFormasSeleccionadasChange([]);
+      return;
+    }
+    onFormasSeleccionadasChange(idsFormas);
   }
 
   const { paths, xToPx, yToPx, ticksX, ticksY, marcas, yBottom, marcaVerticalY } =
@@ -234,6 +253,37 @@ export default function GraficoMcVsPorcUtilidad({
                 <tr className="border-b border-border bg-muted/60">
                   <th className="w-8 px-1 py-1.5 text-center font-bold text-foreground">
                     <span className="sr-only">GRAFICAR</span>
+                    <div className="flex items-center justify-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={idsFormas.length === 0}
+                        onClick={toggleTodasFormas}
+                        className={cn(
+                          "tabla-check-toggle tabla-check-toggle--alto-fila shrink-0 !bg-background",
+                          todasSeleccionadas && "[&_svg]:!text-[#0072bb]"
+                        )}
+                        aria-pressed={todasSeleccionadas}
+                        aria-label={
+                          todasSeleccionadas
+                            ? "Deseleccionar todas las formas de pago"
+                            : "Seleccionar todas las formas de pago"
+                        }
+                        title={
+                          todasSeleccionadas
+                            ? "Deseleccionar todas"
+                            : "Seleccionar todas"
+                        }
+                      >
+                        {todasSeleccionadas ? (
+                          <Check
+                            className={TABLE_ROW_ACTION_ICON_CLASS}
+                            aria-hidden
+                          />
+                        ) : null}
+                      </Button>
+                    </div>
                   </th>
                   <th className="px-1.5 py-1.5 text-left font-bold text-foreground">
                     FORMA

@@ -1049,6 +1049,24 @@ model FinAnaMcFormula {
   @@map("fin_ana_mc_formulas")
 }
 
+/**
+ * Categorías de M.C. por rango % continuo [desde, hasta) sobre 0…100
+ * (la última incluye 100). Continuidad: el `desde` de una fila debe ser
+ * igual al `hasta` de la anterior (sin huecos ni solapes).
+ */
+model FinAnaMcCategoria {
+  id        String   @id @default(cuid())
+  categoria String   @unique
+  desdePct  Int      @map("desde_pct")
+  hastaPct  Int      @map("hasta_pct")
+  orden     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([desdePct], map: "fin_ana_mc_categorias_desde_pct_idx")
+  @@map("fin_ana_mc_categorias")
+}
+
 // ─── Marketing · Publicaciones (catálogos + hechos) ────────────────────────
 
 /** Catálogo de redes sociales para publicaciones (`red_social_nombre` único). */
