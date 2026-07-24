@@ -59,6 +59,8 @@ interface Props {
 const PAD = { top: 20, right: 16, bottom: 36, left: 48 };
 const VIEW_W = 720;
 const VIEW_H = 220;
+/** Debajo de etiqueta + % de Cat. M.C. (evita que la punteada cruce el texto). */
+const CAT_LINEA_Y_INICIO = PAD.top + 32;
 
 /** Mismo lado que `tabla-row-btn-filled-brand` en fila compacta (`2rem − 0.75rem` → `size-5`). */
 const CHECK_CAT_CLASS = cn(
@@ -599,7 +601,7 @@ export default function GraficoMcVsPorcUtilidad({
                   <g key={linea.id}>
                     <line
                       x1={linea.x}
-                      y1={PAD.top}
+                      y1={CAT_LINEA_Y_INICIO}
                       x2={linea.x}
                       y2={yBottom}
                       stroke={linea.color}

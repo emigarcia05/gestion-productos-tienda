@@ -1486,7 +1486,7 @@
   max-width: var(--tabla-mc-forma-width) !important;
   box-sizing: border-box;
 }
-/** Columna final vacía (~5 %) para el botón expandir COSTOS (última fila). */
+/** Columna final (~5 %) para el botón expandir COSTOS: fuera visualmente de la tabla de datos. */
 .tabla-fin-ana-margen-contribucion col.tabla-mc-col-expandir,
 .tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-expandir,
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-expandir {
@@ -1494,6 +1494,25 @@
   min-width: 2.25rem !important;
   max-width: 3rem !important;
   box-sizing: border-box;
+}
+/**
+ * Fondo unificado (sin cebra ni hover de fila): parece un riel externo al grid de datos.
+ * Anula bordes horizontales / separadores primary de filas sep y subtotal.
+ */
+.tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-expandir,
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-expandir,
+.tabla-fin-ana-margen-contribucion tbody tr:nth-child(odd) td.tabla-mc-col-expandir,
+.tabla-fin-ana-margen-contribucion tbody tr:nth-child(even) td.tabla-mc-col-expandir,
+.tabla-fin-ana-margen-contribucion tbody tr:hover td.tabla-mc-col-expandir,
+.tabla-fin-ana-margen-contribucion tbody tr.tabla-fila-mc-sep-linea td.tabla-mc-col-expandir,
+.tabla-fin-ana-margen-contribucion tbody tr.tabla-fila-mc-subtotal td.tabla-mc-col-expandir {
+  --tabla-row-bg: var(--background);
+  background-color: var(--background) !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
 }
 .tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-seccion,
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-seccion {
