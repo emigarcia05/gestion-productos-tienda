@@ -51,7 +51,7 @@ interface Props {
   filasFormaPago: FilaFormaPagoGraficoMc[];
   formasSeleccionadas: string[];
   onFormasSeleccionadasChange: (ids: string[]) => void;
-  /** Rangos de catálogo M.C. para overlay de umbrales. */
+  /** Rangos de catálogo M.C.; overlay = líneas verticales en PORC. UTILIDAD de entrada a cada categoría. */
   categoriasMc?: FinAnaMcCategoriaItem[];
   className?: string;
 }
@@ -60,13 +60,53 @@ const PAD = { top: 20, right: 16, bottom: 36, left: 48 };
 const VIEW_W = 720;
 const VIEW_H = 220;
 
+/** Mismo lado que `tabla-row-btn-filled-brand` en fila compacta (`2rem − 0.75rem` → `size-5`). */
 const CHECK_CAT_CLASS = cn(
-  "tabla-check-toggle !size-4 shrink-0 rounded-[2px] border border-[#0072bb] !bg-white p-0",
+  "tabla-check-toggle !size-5 shrink-0 rounded-[2px] border border-[#0072bb] !bg-white p-0",
   "text-[#0072bb] hover:!bg-white hover:text-[#0072bb]"
 );
 
 function fmtPct(n: number): string {
   return `${Math.round(n).toLocaleString("es-AR")}%`;
+}
+
+/**
+ * Primer PORC. UTILIDAD (eje X) donde la serie alcanza el umbral de M.C. %.
+ * Interpolación lineal entre puntos consecutivos ordenados por utilidad.
+ */
+function porcUtilidadDondeMcAlcanza(
+  puntos: PuntoMcVsPorcUtilidad[],
+  mcTarget: number
+): number | null {
+  const validos = puntos
+    .filter(
+      (p): p is PuntoMcVsPorcUtilidad & { mcPct: number } =>
+        p.mcPct != null && Number.isFinite(p.mcPct)
+    )
+    .slice()
+    .sort((a, b) => a.porcUtilidadPct - b.porcUtilidadPct);
+
+  if (validos.length === 0 || !Number.isFinite(mcTarget)) return null;
+
+  const primero = validos[0]!;
+  if (primero.mcPct >= mcTarget) return primero.porcUtilidadPct;
+
+  for (let i = 1; i < validos.length; i++) {
+    const prev = validos[i - 1]!;
+    const curr = validos[i]!;
+    const cruzaSubiendo =
+      prev.mcPct < mcTarget && curr.mcPct >= mcTarget;
+    const cruzaBajando =
+      prev.mcPct > mcTarget && curr.mcPct <= mcTarget;
+    if (!cruzaSubiendo && !cruzaBajando) continue;
+    const span = curr.mcPct - prev.mcPct;
+    if (span === 0) return curr.porcUtilidadPct;
+    const t = (mcTarget - prev.mcPct) / span;
+    return (
+      prev.porcUtilidadPct + t * (curr.porcUtilidadPct - prev.porcUtilidadPct)
+    );
+  }
+  return null;
 }
 
 function pathFromPuntos(
@@ -148,7 +188,7 @@ export default function GraficoMcVsPorcUtilidad({
     marcas,
     yBottom,
     marcaVerticalY,
-    bandasCategorias,
+    lineasCategorias,
   } = useMemo(() => {
       const plotW = VIEW_W - PAD.left - PAD.right;
       const plotH = VIEW_H - PAD.top - PAD.bottom;
@@ -162,12 +202,6 @@ export default function GraficoMcVsPorcUtilidad({
         }
         if (serie.valorMarca != null && Number.isFinite(serie.valorMarca)) {
           yValues.push(serie.valorMarca);
-        }
-      }
-
-      if (mostrarCategoriasMc && metrica === "MC") {
-        for (const cat of categoriasOrdenadas) {
-          yValues.push(cat.desdePct, cat.hastaPct);
         }
       }
 
@@ -230,25 +264,41 @@ export default function GraficoMcVsPorcUtilidad({
           ? Math.min(...marcasLocal.map((m) => m.y))
           : null;
 
-      const bandasLocal =
-        mostrarCategoriasMc && categoriasOrdenadas.length > 0
-          ? categoriasOrdenadas.map((cat) => {
-              const yDesde = yPx(cat.desdePct);
-              const yHasta = yPx(cat.hastaPct);
-              return {
-                id: cat.id,
-                etiqueta: cat.categoria,
-                yLineaDesde: yDesde,
-                yLineaHasta: yHasta,
-                yLabel: (yDesde + yHasta) / 2,
-                visible:
-                  cat.hastaPct >= yLo &&
-                  cat.desdePct <= yHi &&
-                  Number.isFinite(yDesde) &&
-                  Number.isFinite(yHasta),
-              };
-            })
-          : [];
+      /** Umbral de entrada a cada categoría (desdePct > 0) → X = PORC. UTILIDAD. */
+      const lineasLocal: {
+        id: string;
+        etiqueta: string;
+        color: string;
+        x: number;
+        porcUtilidad: number;
+        visible: boolean;
+      }[] = [];
+
+      if (
+        mostrarCategoriasMc &&
+        metrica === "MC" &&
+        categoriasOrdenadas.length > 0
+      ) {
+        for (const cat of categoriasOrdenadas) {
+          if (cat.desdePct <= 0) continue;
+          for (const serie of series) {
+            const porc = porcUtilidadDondeMcAlcanza(
+              serie.puntos,
+              cat.desdePct
+            );
+            if (porc == null || !Number.isFinite(porc)) continue;
+            if (porc < xMin || porc > xMax) continue;
+            lineasLocal.push({
+              id: `${serie.id}-${cat.id}`,
+              etiqueta: cat.categoria,
+              color: serie.color,
+              x: xPx(porc),
+              porcUtilidad: porc,
+              visible: true,
+            });
+          }
+        }
+      }
 
       return {
         paths: pathsLocal,
@@ -259,7 +309,7 @@ export default function GraficoMcVsPorcUtilidad({
         marcas: marcasLocal,
         yBottom: yBottomLocal,
         marcaVerticalY: marcaVerticalYLocal,
-        bandasCategorias: bandasLocal,
+        lineasCategorias: lineasLocal,
       };
     }, [
       series,
@@ -544,40 +594,41 @@ export default function GraficoMcVsPorcUtilidad({
                 {etiquetaEjeY}
               </text>
 
-              {bandasCategorias.map((banda) =>
-                banda.visible ? (
-                  <g key={banda.id}>
+              {lineasCategorias.map((linea) =>
+                linea.visible ? (
+                  <g key={linea.id}>
                     <line
-                      x1={PAD.left}
-                      y1={banda.yLineaDesde}
-                      x2={VIEW_W - PAD.right}
-                      y2={banda.yLineaDesde}
-                      stroke="var(--primary)"
+                      x1={linea.x}
+                      y1={PAD.top}
+                      x2={linea.x}
+                      y2={yBottom}
+                      stroke={linea.color}
                       strokeWidth={1.25}
-                      strokeOpacity={0.55}
-                      strokeDasharray="6 4"
-                    />
-                    <line
-                      x1={PAD.left}
-                      y1={banda.yLineaHasta}
-                      x2={VIEW_W - PAD.right}
-                      y2={banda.yLineaHasta}
-                      stroke="var(--primary)"
-                      strokeWidth={1.25}
-                      strokeOpacity={0.55}
+                      strokeOpacity={0.65}
                       strokeDasharray="6 4"
                     />
                     <text
-                      x={VIEW_W - PAD.right - 4}
-                      y={banda.yLabel}
-                      textAnchor="end"
-                      dominantBaseline="middle"
+                      x={linea.x}
+                      y={PAD.top + 9}
+                      textAnchor="middle"
+                      dominantBaseline="hanging"
                       className="fill-foreground"
-                      fontSize={9}
+                      fontSize={8}
                       fontWeight={600}
-                      opacity={0.85}
+                      opacity={0.9}
                     >
-                      {banda.etiqueta}
+                      {linea.etiqueta}
+                    </text>
+                    <text
+                      x={linea.x}
+                      y={PAD.top + 20}
+                      textAnchor="middle"
+                      dominantBaseline="hanging"
+                      className="fill-foreground"
+                      fontSize={8}
+                      opacity={0.75}
+                    >
+                      {fmtPct(linea.porcUtilidad)}
                     </text>
                   </g>
                 ) : null

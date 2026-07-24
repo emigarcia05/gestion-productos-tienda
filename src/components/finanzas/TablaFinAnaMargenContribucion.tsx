@@ -54,6 +54,8 @@ const INPUT_MARGEN_DESCUENTO_CLASS = cn(
 const COL_FORMA = "tabla-mc-col-forma";
 const COL_CONCEPTO = "w-[10.5rem]";
 const COL_SECCION = "w-[1.75rem]";
+/** Columna vacía de acción (expandir COSTOS), ~5 % / ancho botón. */
+const COL_EXPANDIR = "tabla-mc-col-expandir";
 /** Columna de sección (etiqueta vertical) + CONCEPTO fijos al scroll. */
 const COL_SECCION_STICKY = "tabla-mc-col-seccion";
 const COL_CONCEPTO_STICKY = "tabla-mc-col-concepto";
@@ -113,6 +115,7 @@ export default function TablaFinAnaMargenContribucion({
   esEditor,
 }: Props) {
   const totalColsDatos = formasPago.length;
+  const totalCols = 2 + totalColsDatos + 1;
   const [tablaExpandida, setTablaExpandida] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [alturaColapsadaPx, setAlturaColapsadaPx] = useState(0);
@@ -123,6 +126,33 @@ export default function TablaFinAnaMargenContribucion({
         ? FIN_ANA_MC_SECCIONES
         : FIN_ANA_MC_SECCIONES.filter((seccion) => seccion.id !== "COSTOS"),
     [tablaExpandida]
+  );
+
+  const botonExpandir = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+      aria-expanded={tablaExpandida}
+      aria-label={
+        tablaExpandida
+          ? "Ocultar filas de costos"
+          : "Mostrar filas de costos"
+      }
+      title={
+        tablaExpandida
+          ? "Ocultar filas de costos"
+          : "Mostrar filas de costos"
+      }
+      onClick={() => setTablaExpandida((prev) => !prev)}
+    >
+      {tablaExpandida ? (
+        <ChevronUp className="size-4" aria-hidden />
+      ) : (
+        <ChevronDown className="size-4" aria-hidden />
+      )}
+    </Button>
   );
 
   useLayoutEffect(() => {
@@ -325,6 +355,7 @@ export default function TablaFinAnaMargenContribucion({
               {formasPago.map((forma) => (
                 <col key={forma} className={COL_FORMA} />
               ))}
+              <col className={COL_EXPANDIR} />
             </colgroup>
             <TableHeader>
               <TableRow>
@@ -350,37 +381,59 @@ export default function TablaFinAnaMargenContribucion({
                     ).toUpperCase()}
                   </TableHead>
                 ))}
+                <TableHead
+                  className={cn("text-center p-0", COL_EXPANDIR)}
+                  aria-label="Expandir"
+                />
               </TableRow>
             </TableHeader>
             <TableBody>
               {seccionesVisibles.map((seccion, seccionIndex) => {
                 const filas = seccion.filas;
-                const filasJsx = filas.map((filaId, filaIndex) => (
-                  <TableRow key={`${seccion.id}-${filaId}`}>
-                    {filaIndex === 0 ? (
+                const esUltimaSeccion =
+                  seccionIndex === seccionesVisibles.length - 1;
+                const filasJsx = filas.map((filaId, filaIndex) => {
+                  const esUltimaFila =
+                    esUltimaSeccion && filaIndex === filas.length - 1;
+                  return (
+                    <TableRow key={`${seccion.id}-${filaId}`}>
+                      {filaIndex === 0 ? (
+                        <TableCell
+                          rowSpan={filas.length}
+                          className={cn(
+                            "celda-datos tabla-mc-col-seccion-cell",
+                            COL_SECCION_STICKY
+                          )}
+                        >
+                          <span className="tabla-mc-seccion-label">
+                            {seccion.etiqueta}
+                          </span>
+                        </TableCell>
+                      ) : null}
+                      <CeldaConceptoMargenContribucion
+                        filaId={filaId}
+                        esFilaMargen={
+                          filaId === "MC" || filaId === "MC_PONDERADO"
+                        }
+                      />
+                      {renderCeldasDatos(filaId)}
                       <TableCell
-                        rowSpan={filas.length}
                         className={cn(
-                          "celda-datos tabla-mc-col-seccion-cell",
-                          COL_SECCION_STICKY
+                          "celda-datos celda-datos--accion-relleno-fila p-0",
+                          COL_EXPANDIR
                         )}
                       >
-                        <span className="tabla-mc-seccion-label">
-                          {seccion.etiqueta}
-                        </span>
+                        {esUltimaFila ? (
+                          <div className="flex h-full min-h-0 w-full items-center justify-center p-1.5">
+                            {botonExpandir}
+                          </div>
+                        ) : null}
                       </TableCell>
-                    ) : null}
-                    <CeldaConceptoMargenContribucion
-                      filaId={filaId}
-                      esFilaMargen={
-                        filaId === "MC" || filaId === "MC_PONDERADO"
-                      }
-                    />
-                    {renderCeldasDatos(filaId)}
-                  </TableRow>
-                ));
+                    </TableRow>
+                  );
+                });
 
-                if (seccionIndex >= seccionesVisibles.length - 1) {
+                if (esUltimaSeccion) {
                   return filasJsx;
                 }
 
@@ -392,7 +445,7 @@ export default function TablaFinAnaMargenContribucion({
                     aria-hidden
                   >
                     <TableCell
-                      colSpan={2 + totalColsDatos}
+                      colSpan={totalCols}
                       className="!p-0 !h-0 border-0"
                     />
                   </TableRow>,
@@ -400,32 +453,6 @@ export default function TablaFinAnaMargenContribucion({
               })}
             </TableBody>
           </Table>
-        </div>
-        <div className="flex w-full justify-end pr-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-            aria-expanded={tablaExpandida}
-            aria-label={
-              tablaExpandida
-                ? "Ocultar filas de costos"
-                : "Mostrar filas de costos"
-            }
-            title={
-              tablaExpandida
-                ? "Ocultar filas de costos"
-                : "Mostrar filas de costos"
-            }
-            onClick={() => setTablaExpandida((prev) => !prev)}
-          >
-            {tablaExpandida ? (
-              <ChevronUp className="size-4" aria-hidden />
-            ) : (
-              <ChevronDown className="size-4" aria-hidden />
-            )}
-          </Button>
         </div>
       </div>
     </>

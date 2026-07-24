@@ -1486,6 +1486,15 @@
   max-width: var(--tabla-mc-forma-width) !important;
   box-sizing: border-box;
 }
+/** Columna final vacía (~5 %) para el botón expandir COSTOS (última fila). */
+.tabla-fin-ana-margen-contribucion col.tabla-mc-col-expandir,
+.tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-expandir,
+.tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-expandir {
+  width: 5% !important;
+  min-width: 2.25rem !important;
+  max-width: 3rem !important;
+  box-sizing: border-box;
+}
 .tabla-fin-ana-margen-contribucion thead th.tabla-mc-col-seccion,
 .tabla-fin-ana-margen-contribucion tbody td.tabla-mc-col-seccion {
   position: sticky !important;
