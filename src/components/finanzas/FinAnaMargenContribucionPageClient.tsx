@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings2, Calculator } from "lucide-react";
+import { Settings2, Calculator, Tags } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import TablaFinAnaMargenContribucion, {
   inputsMargenContribucionDesdeNumeros,
@@ -10,6 +10,7 @@ import TablaFinAnaMargenContribucion, {
 import GraficoMcVsPorcUtilidad from "@/components/finanzas/GraficoMcVsPorcUtilidad";
 import GestionarPagosFinAnaCosFinaModal from "@/components/finanzas/GestionarPagosFinAnaCosFinaModal";
 import GestionCxYFormulasMargenContribucionModal from "@/components/finanzas/GestionCxYFormulasMargenContribucionModal";
+import GestionarCategoriasMargenContribucionModal from "@/components/finanzas/GestionarCategoriasMargenContribucionModal";
 import FilterBar, {
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
@@ -121,6 +122,7 @@ export default function FinAnaMargenContribucionPageClient({
   );
   const [modalGestionarPagosAbierto, setModalGestionarPagosAbierto] = useState(false);
   const [modalCxFormulasAbierto, setModalCxFormulasAbierto] = useState(false);
+  const [modalCategoriasAbierto, setModalCategoriasAbierto] = useState(false);
 
   const cxFinancieroPorFormaPago = useMemo(
     () =>
@@ -311,6 +313,14 @@ export default function FinAnaMargenContribucionPageClient({
           <div className="flex items-center gap-2">
             <Button
               type="button"
+              onClick={() => setModalCategoriasAbierto(true)}
+              className="h-10 gap-2 px-4"
+            >
+              <Tags className="size-4 shrink-0" aria-hidden />
+              Gestionar Cat. M.C.
+            </Button>
+            <Button
+              type="button"
               onClick={() => setModalCxFormulasAbierto(true)}
               className="h-10 gap-2 px-4"
             >
@@ -478,6 +488,12 @@ export default function FinAnaMargenContribucionPageClient({
         pagosIniciales={pagos}
         esEditor={esEditor}
         onCatalogoChanged={handleCatalogoPagosChanged}
+      />
+
+      <GestionarCategoriasMargenContribucionModal
+        open={modalCategoriasAbierto}
+        onOpenChange={setModalCategoriasAbierto}
+        esEditor={esEditor}
       />
     </>
   );

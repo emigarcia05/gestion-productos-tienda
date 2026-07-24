@@ -8,6 +8,7 @@ import type {
   CrearFinAnaMcCategoriaInput,
   EditarFinAnaMcCategoriaInput,
   EliminarFinAnaMcCategoriaInput,
+  ReemplazarFinAnaMcCategoriasInput,
 } from "@/lib/validations/finAnaMcCategorias";
 import type { ServiceResult } from "@/types";
 
@@ -210,6 +211,49 @@ export async function eliminarFinAnaMcCategoria(
     return {
       success: false,
       error: mapDbError(e, "Error al eliminar categoría."),
+    };
+  }
+}
+
+/** Reemplaza el catálogo completo (transacción) con rangos continuos 0…100. */
+export async function reemplazarFinAnaMcCategorias(
+  input: ReemplazarFinAnaMcCategoriasInput
+): Promise<ServiceResult<FinAnaMcCategoriaItem[]>> {
+  const normalizadas = input.categorias.map((row, index) => ({
+    categoria: normalizarNombreCategoriaMc(row.categoria),
+    desdePct: row.desdePct,
+    hastaPct: row.hastaPct,
+    orden: (index + 1) * 10,
+  }));
+
+  for (const row of normalizadas) {
+    if (!row.categoria) {
+      return { success: false, error: "El nombre no puede quedar vacío." };
+    }
+  }
+
+  const nombres = normalizadas.map((row) => row.categoria);
+  if (new Set(nombres).size !== nombres.length) {
+    return { success: false, error: "Hay nombres de categoría duplicados." };
+  }
+
+  const errorContinuidad = validarContinuidadRangosMcCategorias(normalizadas);
+  if (errorContinuidad) {
+    return { success: false, error: errorContinuidad };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.finAnaMcCategoria.deleteMany({});
+      await tx.finAnaMcCategoria.createMany({
+        data: normalizadas,
+      });
+    });
+    return { success: true, data: await listarFinAnaMcCategorias() };
+  } catch (e) {
+    return {
+      success: false,
+      error: mapDbError(e, "Error al guardar categorías."),
     };
   }
 }

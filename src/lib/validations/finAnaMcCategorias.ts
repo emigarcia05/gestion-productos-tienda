@@ -44,6 +44,23 @@ export const eliminarFinAnaMcCategoriaSchema = z.object({
   id: prismaCuidOrUuidSchema,
 });
 
+export const reemplazarFinAnaMcCategoriasSchema = z.object({
+  categorias: z
+    .array(
+      z
+        .object({
+          categoria: nombreCategoriaMcSchema,
+          desdePct: pctEnteroSchema,
+          hastaPct: pctEnteroSchema,
+        })
+        .refine((v) => v.desdePct < v.hastaPct, {
+          message: "El límite inferior debe ser menor que el superior.",
+          path: ["hastaPct"],
+        })
+    )
+    .min(1, "Ingresá al menos una categoría."),
+});
+
 export type CrearFinAnaMcCategoriaInput = z.infer<
   typeof crearFinAnaMcCategoriaSchema
 >;
@@ -52,4 +69,7 @@ export type EditarFinAnaMcCategoriaInput = z.infer<
 >;
 export type EliminarFinAnaMcCategoriaInput = z.infer<
   typeof eliminarFinAnaMcCategoriaSchema
+>;
+export type ReemplazarFinAnaMcCategoriasInput = z.infer<
+  typeof reemplazarFinAnaMcCategoriasSchema
 >;

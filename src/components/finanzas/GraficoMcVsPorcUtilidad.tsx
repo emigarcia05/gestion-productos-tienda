@@ -261,7 +261,7 @@ export default function GraficoMcVsPorcUtilidad({
                         disabled={idsFormas.length === 0}
                         onClick={toggleTodasFormas}
                         className={cn(
-                          "tabla-check-toggle tabla-check-toggle--alto-fila shrink-0 !bg-background",
+                          "tabla-check-toggle !size-4 shrink-0 rounded-[2px] border border-[#0072bb] !bg-white p-0 text-[#0072bb] hover:!bg-white hover:text-[#0072bb]",
                           todasSeleccionadas && "[&_svg]:!text-[#0072bb]"
                         )}
                         aria-pressed={todasSeleccionadas}

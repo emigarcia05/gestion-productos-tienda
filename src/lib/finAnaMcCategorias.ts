@@ -96,3 +96,111 @@ export function resolverCategoriaMcPorPct(
 export function normalizarNombreCategoriaMc(nombre: string): string {
   return nombre.trim().replace(/\s+/g, " ").toLocaleUpperCase("es-AR");
 }
+
+/** Fila editable en el modal Gestionar Cat. M.C. */
+export type BorradorCategoriaMc = {
+  key: string;
+  id?: string;
+  categoria: string;
+  desdePct: number;
+  hastaPct: number;
+};
+
+export function borradoresDesdeCategoriasMc(
+  items: FinAnaMcCategoriaItem[]
+): BorradorCategoriaMc[] {
+  if (items.length === 0) {
+    return [
+      {
+        key: "nuevo-0",
+        categoria: "",
+        desdePct: FIN_ANA_MC_CATEGORIA_PCT_MIN,
+        hastaPct: FIN_ANA_MC_CATEGORIA_PCT_MAX,
+      },
+    ];
+  }
+  return [...items]
+    .sort((a, b) => a.desdePct - b.desdePct)
+    .map((item, index) => ({
+      key: item.id || `row-${index}`,
+      id: item.id,
+      categoria: item.categoria,
+      desdePct: item.desdePct,
+      hastaPct: item.hastaPct,
+    }));
+}
+
+/** Recalcula `desde` en cadena: cada mínimo = máximo de la fila anterior. */
+export function sincronizarMinimosCategoriasMc(
+  filas: BorradorCategoriaMc[]
+): BorradorCategoriaMc[] {
+  if (filas.length === 0) return filas;
+  const next: BorradorCategoriaMc[] = [];
+  for (let i = 0; i < filas.length; i++) {
+    const prevHasta =
+      i === 0 ? FIN_ANA_MC_CATEGORIA_PCT_MIN : next[i - 1]!.hastaPct;
+    if (prevHasta >= FIN_ANA_MC_CATEGORIA_PCT_MAX) break;
+    let desdePct = prevHasta;
+    let hastaPct = filas[i]!.hastaPct;
+    if (hastaPct <= desdePct) {
+      hastaPct = Math.min(FIN_ANA_MC_CATEGORIA_PCT_MAX, desdePct + 1);
+    }
+    if (hastaPct > FIN_ANA_MC_CATEGORIA_PCT_MAX) {
+      hastaPct = FIN_ANA_MC_CATEGORIA_PCT_MAX;
+    }
+    next.push({
+      ...filas[i]!,
+      desdePct,
+      hastaPct,
+    });
+  }
+  return next;
+}
+
+export function actualizarMaxCategoriaMc(
+  filas: BorradorCategoriaMc[],
+  index: number,
+  hastaPctRaw: number
+): BorradorCategoriaMc[] {
+  if (index < 0 || index >= filas.length) return filas;
+  const copia = filas.map((f) => ({ ...f }));
+  const desde = copia[index]!.desdePct;
+  const hastaPct = Math.max(
+    desde + 1,
+    Math.min(FIN_ANA_MC_CATEGORIA_PCT_MAX, Math.trunc(hastaPctRaw))
+  );
+  copia[index] = { ...copia[index]!, hastaPct };
+  return sincronizarMinimosCategoriasMc(copia);
+}
+
+export function puedeAgregarCategoriaMc(filas: BorradorCategoriaMc[]): boolean {
+  if (filas.length === 0) return true;
+  const last = filas[filas.length - 1]!;
+  return last.hastaPct < FIN_ANA_MC_CATEGORIA_PCT_MAX;
+}
+
+export function agregarCategoriaMc(
+  filas: BorradorCategoriaMc[]
+): BorradorCategoriaMc[] {
+  if (!puedeAgregarCategoriaMc(filas)) return filas;
+  const lastHasta =
+    filas.length === 0
+      ? FIN_ANA_MC_CATEGORIA_PCT_MIN
+      : filas[filas.length - 1]!.hastaPct;
+  return [
+    ...filas,
+    {
+      key: `nuevo-${Date.now()}-${filas.length}`,
+      categoria: "",
+      desdePct: lastHasta,
+      hastaPct: FIN_ANA_MC_CATEGORIA_PCT_MAX,
+    },
+  ];
+}
+
+export function quitarUltimaCategoriaMc(
+  filas: BorradorCategoriaMc[]
+): BorradorCategoriaMc[] {
+  if (filas.length <= 1) return filas;
+  return filas.slice(0, -1);
+}

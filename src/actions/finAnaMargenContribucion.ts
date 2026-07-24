@@ -21,11 +21,13 @@ import {
   editarFinAnaMcCategoria,
   eliminarFinAnaMcCategoria,
   listarFinAnaMcCategorias,
+  reemplazarFinAnaMcCategorias,
 } from "@/services/finAnaMcCategorias.service";
 import {
   crearFinAnaMcCategoriaSchema,
   editarFinAnaMcCategoriaSchema,
   eliminarFinAnaMcCategoriaSchema,
+  reemplazarFinAnaMcCategoriasSchema,
 } from "@/lib/validations/finAnaMcCategorias";
 import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
 
@@ -152,6 +154,22 @@ export async function eliminarFinAnaMcCategoriaAction(
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
 
   const res = await eliminarFinAnaMcCategoria(parsed.data);
+  if (!res.success) return { ok: false, error: res.error };
+
+  revalidatePath(RUTA_MARGEN_CONTRIBUCION);
+  return { ok: true, data: res.data };
+}
+
+export async function reemplazarFinAnaMcCategoriasAction(
+  params: unknown
+): Promise<ActionResult<FinAnaMcCategoriaItem[]>> {
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
+
+  const parsed = reemplazarFinAnaMcCategoriasSchema.safeParse(params);
+  if (!parsed.success) return { ok: false, error: "Datos inválidos." };
+
+  const res = await reemplazarFinAnaMcCategorias(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
 
   revalidatePath(RUTA_MARGEN_CONTRIBUCION);
