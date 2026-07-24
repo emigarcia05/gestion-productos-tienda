@@ -974,7 +974,8 @@ model FinAnaCosFinaTerminal {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  filas FinAnaCosFina[]
+  filas    FinAnaCosFina[]
+  mcConfig FinAnaMcConfig[]
 
   @@index([orden], map: "fin_ana_cos_fina_terminales_orden_idx")
   @@map("fin_ana_cos_fina_terminales")
@@ -1050,21 +1051,37 @@ model FinAnaMcFormula {
 }
 
 /**
- * Categorías por rango continuo [desde, hasta) sobre **M.C. PONDERADO** (0…100;
- * la última incluye 100). Continuidad: el `desde` de una fila debe ser
- * igual al `hasta` de la anterior (sin huecos ni solapes).
+ * Categorías por rango continuo [desde, hasta) sobre la VARIABLE OBJETIVO
+ * de `fin_ana_mc_cat_config` (**M.C** o **M.C. PONDERADO**, 0…100; la última incluye 100).
+ * Continuidad: el `desde` de una fila debe ser igual al `hasta` de la anterior.
  */
 model FinAnaMcCategoria {
   id        String   @id @default(cuid())
-  categoria String   @unique
+  categoria String   @unique(map: "fin_ana_mc_cat_categoria_key")
   desdePct  Int      @map("desde_pct")
   hastaPct  Int      @map("hasta_pct")
   orden     Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@index([desdePct], map: "fin_ana_mc_categorias_desde_pct_idx")
-  @@map("fin_ana_mc_categorias")
+  @@index([desdePct], map: "fin_ana_mc_cat_desde_pct_idx")
+  @@map("fin_ana_mc_cat")
+}
+
+/**
+ * Singleton de defaults del módulo Margen Contribución / Cat. M.C.
+ * `id` fijo `DEFAULT`. Condiciones de cálculo (TERMINAL, FACTURA, VARIABLE OBJETIVO).
+ */
+model FinAnaMcConfig {
+  id               String   @id
+  terminalId       String?  @map("terminal_id")
+  tipoComprobante  String   @map("tipo_comprobante")
+  variableObjetivo String   @map("variable_objetivo")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  terminal FinAnaCosFinaTerminal? @relation(fields: [terminalId], references: [id], onDelete: SetNull)
+
+  @@map("fin_ana_mc_cat_config")
 }
 
 // ─── Marketing · Publicaciones (catálogos + hechos) ────────────────────────

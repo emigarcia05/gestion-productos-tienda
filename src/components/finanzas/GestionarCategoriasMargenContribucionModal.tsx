@@ -9,6 +9,15 @@ import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  getFinAnaMcConfigAction,
+  guardarFinAnaMcConfigAction,
   listarFinAnaMcCategoriasAction,
   reemplazarFinAnaMcCategoriasAction,
 } from "@/actions/finAnaMargenContribucion";
@@ -24,6 +33,19 @@ import {
   type FinAnaMcCategoriaItem,
 } from "@/lib/finAnaMcCategorias";
 import {
+  ETIQUETA_VARIABLE_OBJETIVO_MC,
+  FIN_ANA_MC_CONFIG_DEFAULT,
+  FIN_ANA_MC_VARIABLES_OBJETIVO,
+  type FinAnaMcConfigItem,
+  type VariableObjetivoMargenContribucion,
+} from "@/lib/finAnaMcConfig";
+import {
+  FIN_ANA_MC_TIPOS_COMPROBANTE,
+  etiquetaTipoComprobanteVentaMargenContribucion,
+  type TipoComprobanteVentaMargenContribucion,
+} from "@/lib/finAnaMargenContribucion";
+import type { FinAnaCosFinaTerminalItem } from "@/lib/finAnaCosFinaTerminales";
+import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
@@ -33,8 +55,15 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   esEditor: boolean;
-  onGuardado?: () => void;
+  terminales: FinAnaCosFinaTerminalItem[];
+  configInicial: FinAnaMcConfigItem;
+  onGuardado?: (payload: {
+    config: FinAnaMcConfigItem;
+    categorias: FinAnaMcCategoriaItem[];
+  }) => void;
 }
+
+const TERMINAL_TODAS_VALUE = "__ALL__";
 
 const BOTON_ICONO_CLASS = cn(
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
@@ -54,6 +83,9 @@ const INPUT_PCT_CLASS = cn(
 
 const SUFIJO_PCT_CLASS =
   "input-mascara-sufijo__pct pointer-events-none select-none px-1.5 text-xs text-muted-foreground tabular-nums";
+
+const SELECT_TRIGGER_CLASS =
+  "input-filtro-unificado h-9 w-full text-xs font-semibold";
 
 function PctEnteroSoloLectura({
   value,
@@ -82,7 +114,6 @@ function PctEnteroSoloLectura({
 
 /**
  * Entero con `%` fijo. Permite tipear cualquier dígito; al blur clampea a [min, max].
- * (No usa máscara POS: con min>0 impediría valores intermedios como 20.)
  */
 function PctEnteroEditable({
   value,
@@ -99,19 +130,26 @@ function PctEnteroEditable({
   disabled?: boolean;
   ariaLabel: string;
 }) {
-  const [draft, setDraft] = useState(String(value));
+  const [texto, setTexto] = useState(String(value));
 
   useEffect(() => {
-    setDraft(String(value));
+    setTexto(String(value));
   }, [value]);
 
-  function commitDraft(raw: string) {
-    const digits = raw.replace(/\D/g, "");
-    const parsed = digits === "" ? min : Number(digits);
-    const entero = Number.isFinite(parsed) ? Math.trunc(parsed) : min;
-    const clamped = Math.min(max, Math.max(min, entero));
-    setDraft(String(clamped));
-    if (clamped !== value) onValueChange(clamped);
+  function commit() {
+    const soloDigitos = texto.replace(/\D/g, "");
+    if (soloDigitos === "") {
+      setTexto(String(value));
+      return;
+    }
+    const n = Number.parseInt(soloDigitos, 10);
+    if (!Number.isFinite(n)) {
+      setTexto(String(value));
+      return;
+    }
+    const clamped = Math.min(max, Math.max(min, n));
+    onValueChange(clamped);
+    setTexto(String(clamped));
   }
 
   return (
@@ -121,21 +159,18 @@ function PctEnteroEditable({
         data-slot="input"
         inputMode="numeric"
         autoComplete="off"
+        value={texto}
         disabled={disabled}
-        value={draft}
         aria-label={ariaLabel}
-        onChange={(e) => {
-          const digits = e.target.value.replace(/\D/g, "");
-          setDraft(digits);
-        }}
-        onBlur={() => commitDraft(draft)}
+        className={INPUT_PCT_CLASS}
+        onChange={(e) => setTexto(e.target.value.replace(/[^\d]/g, ""))}
+        onBlur={commit}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className={cn(INPUT_PCT_CLASS, disabled && "cursor-not-allowed opacity-50")}
       />
       <span className={SUFIJO_PCT_CLASS} aria-hidden>
         %
@@ -148,26 +183,46 @@ export default function GestionarCategoriasMargenContribucionModal({
   open,
   onOpenChange,
   esEditor,
+  terminales,
+  configInicial,
   onGuardado,
 }: Props) {
   const [filas, setFilas] = useState<BorradorCategoriaMc[]>([]);
+  const [terminalId, setTerminalId] = useState<string | null>(
+    configInicial.terminalId
+  );
+  const [tipoComprobante, setTipoComprobante] =
+    useState<TipoComprobanteVentaMargenContribucion>(
+      configInicial.tipoComprobante
+    );
+  const [variableObjetivo, setVariableObjetivo] =
+    useState<VariableObjetivoMargenContribucion>(
+      configInicial.variableObjetivo
+    );
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
-      const res = await listarFinAnaMcCategoriasAction();
-      if (!res.ok) {
-        toast.error(res.error ?? "No se pudieron cargar las categorías.");
+      const [resCat, resCfg] = await Promise.all([
+        listarFinAnaMcCategoriasAction(),
+        getFinAnaMcConfigAction(),
+      ]);
+      if (!resCat.ok) {
+        toast.error(resCat.error ?? "No se pudieron cargar las categorías.");
         setFilas(borradoresDesdeCategoriasMc([]));
-        return;
+      } else {
+        setFilas(borradoresDesdeCategoriasMc(resCat.data));
       }
-      setFilas(borradoresDesdeCategoriasMc(res.data));
+      const cfg = resCfg.ok ? resCfg.data : configInicial;
+      setTerminalId(cfg.terminalId);
+      setTipoComprobante(cfg.tipoComprobante);
+      setVariableObjetivo(cfg.variableObjetivo);
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [configInicial]);
 
   useEffect(() => {
     if (!open) return;
@@ -176,6 +231,9 @@ export default function GestionarCategoriasMargenContribucionModal({
 
   const puedeAgregar = useMemo(() => puedeAgregarCategoriaMc(filas), [filas]);
   const bloqueado = cargando || guardando;
+  const etiquetaVariable =
+    ETIQUETA_VARIABLE_OBJETIVO_MC[variableObjetivo] ??
+    ETIQUETA_VARIABLE_OBJETIVO_MC[FIN_ANA_MC_CONFIG_DEFAULT.variableObjetivo];
 
   function cambiarNombre(key: string, categoria: string) {
     setFilas((prev) =>
@@ -215,16 +273,28 @@ export default function GestionarCategoriasMargenContribucionModal({
 
     setGuardando(true);
     try {
-      const res = await reemplazarFinAnaMcCategoriasAction({
-        categorias: payload,
+      const resCfg = await guardarFinAnaMcConfigAction({
+        terminalId,
+        tipoComprobante,
+        variableObjetivo,
       });
-      if (!res.ok) {
-        toast.error(res.error ?? "No se pudieron guardar las categorías.");
+      if (!resCfg.ok) {
+        toast.error(resCfg.error ?? "No se pudo guardar la configuración.");
         return;
       }
-      toast.success("Categorías de M.C. guardadas.");
-      setFilas(borradoresDesdeCategoriasMc(res.data as FinAnaMcCategoriaItem[]));
-      onGuardado?.();
+
+      const resCat = await reemplazarFinAnaMcCategoriasAction({
+        categorias: payload,
+      });
+      if (!resCat.ok) {
+        toast.error(resCat.error ?? "No se pudieron guardar las categorías.");
+        return;
+      }
+
+      toast.success("Configuración y categorías de M.C. guardadas.");
+      const categorias = resCat.data as FinAnaMcCategoriaItem[];
+      setFilas(borradoresDesdeCategoriasMc(categorias));
+      onGuardado?.({ config: resCfg.data, categorias });
       onOpenChange(false);
     } finally {
       setGuardando(false);
@@ -259,11 +329,114 @@ export default function GestionarCategoriasMargenContribucionModal({
         }
       >
         <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="flex min-w-0 flex-col gap-1">
+              <ModalMicroLabel>TERMINAL</ModalMicroLabel>
+              <Select
+                value={terminalId ?? TERMINAL_TODAS_VALUE}
+                onValueChange={(value) =>
+                  setTerminalId(
+                    value === TERMINAL_TODAS_VALUE ? null : value
+                  )
+                }
+                disabled={!esEditor || bloqueado}
+              >
+                <SelectTrigger
+                  className={SELECT_TRIGGER_CLASS}
+                  aria-label="Terminal"
+                >
+                  <SelectValue placeholder="TERMINAL" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value={TERMINAL_TODAS_VALUE}>TODAS</SelectItem>
+                  {terminales.map((terminal) => (
+                    <SelectItem key={terminal.id} value={terminal.id}>
+                      {terminal.nombre.toLocaleUpperCase("es-AR")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-1">
+              <ModalMicroLabel>FACTURA</ModalMicroLabel>
+              <Select
+                value={tipoComprobante}
+                onValueChange={(value) =>
+                  setTipoComprobante(
+                    value as TipoComprobanteVentaMargenContribucion
+                  )
+                }
+                disabled={!esEditor || bloqueado}
+              >
+                <SelectTrigger
+                  className={SELECT_TRIGGER_CLASS}
+                  aria-label="Factura"
+                >
+                  <SelectValue placeholder="FACTURA" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {FIN_ANA_MC_TIPOS_COMPROBANTE.map((tipo) => (
+                    <SelectItem key={tipo} value={tipo}>
+                      {etiquetaTipoComprobanteVentaMargenContribucion(tipo)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-1">
+              <ModalMicroLabel>VARIABLE OBJETIVO</ModalMicroLabel>
+              <Select
+                value={variableObjetivo}
+                onValueChange={(value) =>
+                  setVariableObjetivo(
+                    value as VariableObjetivoMargenContribucion
+                  )
+                }
+                disabled={!esEditor || bloqueado}
+              >
+                <SelectTrigger
+                  className={SELECT_TRIGGER_CLASS}
+                  aria-label="Variable objetivo"
+                >
+                  <SelectValue placeholder="VARIABLE OBJETIVO" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {FIN_ANA_MC_VARIABLES_OBJETIVO.map((variable) => (
+                    <SelectItem key={variable} value={variable}>
+                      {ETIQUETA_VARIABLE_OBJETIVO_MC[variable]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <p className="text-xs text-muted-foreground">
             Límites inferior y superior en escala de{" "}
-            <span className="font-semibold text-foreground">M.C. PONDERADO</span>{" "}
-            (0…100).
+            <span className="font-semibold text-foreground">
+              {etiquetaVariable}
+            </span>{" "}
+            (0…100). TERMINAL, FACTURA y VARIABLE OBJETIVO son los defaults del
+            módulo Margen Contribución.
           </p>
+
           <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem_2.5rem] items-end gap-2 px-0.5">
             <ModalMicroLabel>CATEGORÍA</ModalMicroLabel>
             <ModalMicroLabel align="center">MÍN.</ModalMicroLabel>

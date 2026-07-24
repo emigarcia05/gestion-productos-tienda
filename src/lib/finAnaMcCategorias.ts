@@ -1,4 +1,4 @@
-/** Categoría por rango sobre **M.C. PONDERADO** (tabla `fin_ana_mc_categorias`, escala 0…100). */
+/** Categoría por rango sobre la VARIABLE OBJETIVO de `fin_ana_mc_cat_config` (tabla `fin_ana_mc_cat`, escala 0…100). */
 export type FinAnaMcCategoriaItem = {
   id: string;
   categoria: string;
@@ -73,7 +73,7 @@ export function validarContinuidadRangosMcCategorias(
 }
 
 /**
- * Resuelve la categoría para un valor de **M.C. PONDERADO**.
+ * Resuelve la categoría para un valor de la VARIABLE OBJETIVO (M.C o M.C. PONDERADO).
  * Regla: `[desde, hasta)` y la última (`hasta === 100`) incluye 100.
  */
 export function resolverCategoriaMcPorPct(

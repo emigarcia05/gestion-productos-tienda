@@ -338,7 +338,7 @@ export default function TablaFinAnaMargenContribucion({
       <div
         ref={wrapRef}
         className={cn(
-          "flex min-w-0 w-full flex-col gap-1 rounded-md border border-border bg-card p-1 shadow-md",
+          "flex min-w-0 w-full flex-col gap-1 rounded-md border border-border bg-card p-0 shadow-md",
           tablaExpandida && "absolute inset-x-0 top-0 z-30"
         )}
       >

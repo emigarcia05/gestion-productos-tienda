@@ -43,9 +43,11 @@ export type FilaFormaPagoGraficoMc = {
 
 interface Props {
   series: SerieGraficoMcVsPorcUtilidad[];
+  /** Series en escala **M.C** (ratio×100) para umbrales si VARIABLE OBJETIVO = M.C. */
+  seriesMc?: SerieGraficoMcVsPorcUtilidad[];
   /**
-   * Series en escala **M.C. PONDERADO** (mismas formas que `series`).
-   * Sirve para ubicar umbrales de Cat. M.C. también cuando la métrica visible es **M.C**.
+   * Series en escala **M.C. PONDERADO**.
+   * Umbrales Cat. M.C. cuando VARIABLE OBJETIVO = M.C. PONDERADO.
    */
   seriesMcPonderado?: SerieGraficoMcVsPorcUtilidad[];
   /** PORC. UTILIDAD actual del filtro; si null, no se dibuja la marca vertical. */
@@ -57,8 +59,10 @@ interface Props {
   filasFormaPago: FilaFormaPagoGraficoMc[];
   formasSeleccionadas: string[];
   onFormasSeleccionadasChange: (ids: string[]) => void;
-  /** Rangos de catálogo (escala M.C. PONDERADO); overlay en métricas MC / MC_PONDERADO. */
+  /** Rangos de catálogo; overlay en métricas MC / MC_PONDERADO. */
   categoriasMc?: FinAnaMcCategoriaItem[];
+  /** Escala de umbrales guardada en `fin_ana_mc_cat_config`. */
+  variableObjetivo?: "MC" | "MC_PONDERADO";
   className?: string;
 }
 
@@ -137,6 +141,7 @@ function pathFromPuntos(
 
 export default function GraficoMcVsPorcUtilidad({
   series,
+  seriesMc = [],
   seriesMcPonderado = [],
   porcUtilidadMarca,
   revisionFiltros,
@@ -146,6 +151,7 @@ export default function GraficoMcVsPorcUtilidad({
   formasSeleccionadas,
   onFormasSeleccionadasChange,
   categoriasMc = [],
+  variableObjetivo = "MC_PONDERADO",
   className,
 }: Props) {
   const gradId = useId().replace(/:/g, "");
@@ -289,11 +295,17 @@ export default function GraficoMcVsPorcUtilidad({
       }[] = [];
 
       const seriesUmbral =
-        seriesMcPonderado.length > 0
-          ? seriesMcPonderado
-          : metrica === "MC_PONDERADO"
-            ? series
-            : [];
+        variableObjetivo === "MC"
+          ? seriesMc.length > 0
+            ? seriesMc
+            : metrica === "MC"
+              ? series
+              : []
+          : seriesMcPonderado.length > 0
+            ? seriesMcPonderado
+            : metrica === "MC_PONDERADO"
+              ? series
+              : [];
 
       if (
         mostrarCategoriasMc &&
@@ -335,11 +347,13 @@ export default function GraficoMcVsPorcUtilidad({
       };
     }, [
       series,
+      seriesMc,
       seriesMcPonderado,
       porcUtilidadMarca,
       mostrarCategoriasMc,
       categoriasOrdenadas,
       categoriasDisponibles,
+      variableObjetivo,
       metrica,
     ]);
 

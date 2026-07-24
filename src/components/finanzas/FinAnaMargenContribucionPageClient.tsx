@@ -50,6 +50,10 @@ import {
   type FinAnaMcFormulaItem,
 } from "@/lib/finAnaMcFormulas";
 import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
+import {
+  metricaDesdeVariableObjetivo,
+  type FinAnaMcConfigItem,
+} from "@/lib/finAnaMcConfig";
 import type { FinAnaCosFinaPagoItem } from "@/lib/finAnaCosFinaPagos";
 import { actualizarDescuentoFpMargenContribucionAction } from "@/actions/finAnaMargenContribucion";
 import { MARGEN_PX_LISTA_MAX_CENTS } from "@/lib/pxListasPreciosFormat";
@@ -70,14 +74,17 @@ interface Props {
   descuentosPorFormaPago: DescuentoFpMargenContribucionMap;
   formulas: FinAnaMcFormulaItem[];
   categoriasMc: FinAnaMcCategoriaItem[];
+  configMc: FinAnaMcConfigItem;
   esEditor: boolean;
 }
 
-const CONFIG_MARGEN_CONTRIBUCION_VACIA = {
-  terminalId: "",
-  tipoComprobante: "FACTURA_A" as TipoComprobanteVentaMargenContribucion,
-  porcUtilidadNorm: "",
-};
+function configUiDesdeMcConfig(configMc: FinAnaMcConfigItem) {
+  return {
+    terminalId: configMc.terminalId ?? "",
+    tipoComprobante: configMc.tipoComprobante,
+    porcUtilidadNorm: "",
+  };
+}
 
 function etiquetaFiltroMayusculas(texto: string): string {
   return texto.toLocaleUpperCase("es");
@@ -106,11 +113,13 @@ export default function FinAnaMargenContribucionPageClient({
   descuentosPorFormaPago,
   formulas,
   categoriasMc,
+  configMc,
   esEditor,
 }: Props) {
   const router = useRouter();
   const formasPago = useMemo(() => idsFormasPagoMargenContribucion(pagos), [pagos]);
-  const [config, setConfig] = useState(CONFIG_MARGEN_CONTRIBUCION_VACIA);
+  const [defaultsMc, setDefaultsMc] = useState(configMc);
+  const [config, setConfig] = useState(() => configUiDesdeMcConfig(configMc));
   const [descuentosBase, setDescuentosBase] = useState(descuentosPorFormaPago);
   const formulaParams = useMemo(
     () => resolverParametrosFormulaMargenContribucion(formulas),
@@ -162,7 +171,9 @@ export default function FinAnaMargenContribucionPageClient({
     undefined
   );
   const [metricaGrafico, setMetricaGrafico] =
-    useState<MetricaGraficoMcMargenContribucion>("MC");
+    useState<MetricaGraficoMcMargenContribucion>(() =>
+      metricaDesdeVariableObjetivo(configMc.variableObjetivo)
+    );
 
   const formasGraficoSeleccionadas = useMemo(() => {
     if (formasGraficoIds !== undefined) return formasGraficoIds;
@@ -233,7 +244,28 @@ export default function FinAnaMargenContribucionPageClient({
       };
     });
 
-    /** Serie en escala M.C. PONDERADO para umbrales de Cat. M.C. (también con métrica M.C.). */
+    /** Serie en escala M.C. (ratio×100) para umbrales cuando VARIABLE OBJETIVO = M.C. */
+    const seriesMc = formasGraficoSeleccionadas.map((formaId) => {
+      const descuentoPct = inputs.descuentoPctPorFormaPago[formaId] ?? 0;
+      const cxFinPct = cxFinancieroPorFormaPago[formaId] ?? 0;
+      const base = {
+        pxLista: formulaParams.pxListaCIva,
+        descuentoPct,
+        cxFinPct,
+        tipoComprobante: config.tipoComprobante,
+        formulas: formulaParams,
+        metrica: "MC" as const,
+      };
+      return {
+        id: formaId,
+        etiqueta: etiquetaFormaPagoMargenContribucion(formaId, pagos),
+        color: colorPorId.get(formaId) ?? COLORES_SERIE_GRAFICO_MC[0]!,
+        puntos: serieMcVsPorcUtilidadMargenContribucion(base),
+        valorMarca: null,
+      };
+    });
+
+    /** Serie en escala M.C. PONDERADO para umbrales de Cat. M.C. */
     const seriesMcPonderado = formasGraficoSeleccionadas.map((formaId) => {
       const descuentoPct = inputs.descuentoPctPorFormaPago[formaId] ?? 0;
       const cxFinPct = cxFinancieroPorFormaPago[formaId] ?? 0;
@@ -256,6 +288,7 @@ export default function FinAnaMargenContribucionPageClient({
 
     return {
       series,
+      seriesMc,
       seriesMcPonderado,
       filasFormaPago,
       porcUtilidadMarca: marcaEnRango ? porcUtilidadPct : null,
@@ -288,9 +321,9 @@ export default function FinAnaMargenContribucionPageClient({
   ]);
 
   function limpiarFiltros() {
-    setConfig(CONFIG_MARGEN_CONTRIBUCION_VACIA);
+    setConfig(configUiDesdeMcConfig(defaultsMc));
     setFormasGraficoIds(undefined);
-    setMetricaGrafico("MC");
+    setMetricaGrafico(metricaDesdeVariableObjetivo(defaultsMc.variableObjetivo));
     setInputs(
       inputsMargenContribucionIniciales(
         formasPago,
@@ -368,9 +401,14 @@ export default function FinAnaMargenContribucionPageClient({
               <FilaFiltrosDesplegables columnas={4}>
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={Boolean(config.terminalId)}
+                  activo={
+                    (config.terminalId || "") !== (defaultsMc.terminalId ?? "")
+                  }
                   onLimpiar={() =>
-                    setConfig((prev) => ({ ...prev, terminalId: "" }))
+                    setConfig((prev) => ({
+                      ...prev,
+                      terminalId: defaultsMc.terminalId ?? "",
+                    }))
                   }
                 >
                   <Select
@@ -399,11 +437,13 @@ export default function FinAnaMargenContribucionPageClient({
 
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={config.tipoComprobante !== "FACTURA_A"}
+                  activo={
+                    config.tipoComprobante !== defaultsMc.tipoComprobante
+                  }
                   onLimpiar={() =>
                     setConfig((prev) => ({
                       ...prev,
-                      tipoComprobante: "FACTURA_A",
+                      tipoComprobante: defaultsMc.tipoComprobante,
                     }))
                   }
                 >
@@ -489,6 +529,7 @@ export default function FinAnaMargenContribucionPageClient({
           />
           <GraficoMcVsPorcUtilidad
             series={graficoMc.series}
+            seriesMc={graficoMc.seriesMc}
             seriesMcPonderado={graficoMc.seriesMcPonderado}
             porcUtilidadMarca={graficoMc.porcUtilidadMarca}
             revisionFiltros={graficoMc.revisionFiltros}
@@ -498,6 +539,7 @@ export default function FinAnaMargenContribucionPageClient({
             formasSeleccionadas={formasGraficoSeleccionadas}
             onFormasSeleccionadasChange={setFormasGraficoIds}
             categoriasMc={categoriasMc}
+            variableObjetivo={defaultsMc.variableObjetivo}
             className="relative z-0 shrink-0"
           />
         </div>
@@ -521,7 +563,17 @@ export default function FinAnaMargenContribucionPageClient({
         open={modalCategoriasAbierto}
         onOpenChange={setModalCategoriasAbierto}
         esEditor={esEditor}
-        onGuardado={() => router.refresh()}
+        terminales={terminales}
+        configInicial={defaultsMc}
+        onGuardado={({ config: cfg }) => {
+          setDefaultsMc(cfg);
+          setConfig((prev) => ({
+            ...configUiDesdeMcConfig(cfg),
+            porcUtilidadNorm: prev.porcUtilidadNorm,
+          }));
+          setMetricaGrafico(metricaDesdeVariableObjetivo(cfg.variableObjetivo));
+          router.refresh();
+        }}
       />
     </>
   );

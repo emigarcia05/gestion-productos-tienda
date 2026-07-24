@@ -326,7 +326,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `.celda-datos.celda-datos--accion-relleno-fila` | Anula **`padding`** de **`.celda-datos`** en columnas solo de acción; el aire al borde de fila lo aporta **`TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS`** (**`p-1.5`**). |
 | `.tabla-fin-ana-margen-contribucion`, `.tabla-mc-col-forma`, `.tabla-mc-celda-descuento` | **Margen Contribución**: tabla **`w-max` / `max-content`**. Columna forma fija **`--tabla-mc-forma-width`** (**7,5 rem**). Celdas en **%** (base PX LISTA = 100). **DESCUENTO**: `.tabla-mc-celda-descuento` sin padding vertical; máscara al alto de fila (igual que IVA). |
 | `.tabla-mc-col-expandir` | **Margen Contribución**: última columna (~**5 %**, `min-width` 2,25 rem); fondo unificado `var(--background)` **sin cebra ni hover** (parece fuera de la tabla); botón expandir COSTOS en la **última fila**. |
-| `.contenedor-tabla-gestion--mc-overlay` | **Margen Contribución**: alto al contenido; **solo** `overflow-x: auto` (sin scroll vertical). Contorno de tarjeta (`rounded-md border p-1 shadow-md`) **siempre** (colapsada o expandida); al expandir COSTOS además overlay (`absolute` + `z-30`) sobre el gráfico; spacer con altura colapsada. |
+| `.contenedor-tabla-gestion--mc-overlay` | **Margen Contribución**: alto al contenido; **solo** `overflow-x: auto` (sin scroll vertical). Contorno de tarjeta (`rounded-md border p-0 shadow-md`) **siempre** (colapsada o expandida); al expandir COSTOS además overlay (`absolute` + `z-30`) sobre el gráfico; spacer con altura colapsada. |
 | `.tabla-check-toggle` | Checkbox/toggle compacto para columnas de **tilde** en tablas (`.tabla-gestion-compacta`): cuadrado (mismo alto/ancho) con tamaño derivado de `--tabla-body-row-min-height`, sin superar el alto de fila; borde **`#0072BB`**, fondo transparente y solo ícono **Check** en **`#0072BB`** al seleccionar. **Regla global:** toda columna de selección usa encabezado con tilde (`Check`). Reutilizar en tablas actuales y futuras para mantener consistencia visual. |
 | `.celda-destacado` | Celdas “destacadas” sin negrita (font-weight normal) para cumplir el estilo de tablas. |
 | `.celda-sublinea-tabla` | Segunda línea compacta en celdas de tabla (`font-size: 10px`, `line-height: 1`, `color: muted-foreground`); usar con `truncate` y `leading-none` bajo el texto principal sin alterar **`--tabla-body-row-min-height`**. |
@@ -1422,11 +1422,13 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-24): **Margen Contribución · check GRAFICAR** — encabezado con fondo blanco, borde `#0072BB` y tilde azul (visible fuera de `.tabla-gestion-compacta`).*
 
-*Última actualización (2026-07-24): **Margen Contribución · Gestionar Cat. M.C.** — botón en header; modal con filas categoría / mín. / máx. sobre **M.C. PONDERADO**; **+** solo si máx. &lt; 100; mín. = máx. de la fila anterior.*
+*Última actualización (2026-07-24): **Margen Contribución · Gestionar Cat. M.C.** — modal: TERMINAL / FACTURA / VARIABLE OBJETIVO (defaults persistidos en `fin_ana_mc_cat_config`) + filas categoría / mín. / máx.; **+** solo si máx. &lt; 100; mín. = máx. de la fila anterior.*
 
 *Última actualización (2026-07-24): **Margen Contribución · Cat. M.C. %** — inputs mín./máx. con máscara `%` fija; enteros; máx. ≥ mín. + 1.*
 
-*Última actualización (2026-07-24): **Margen Contribución · overlay Cat. M.C.** — checklist solo si métrica es **M.C** o **M.C PONDERADO**; umbrales de `fin_ana_mc_categorias` (escala ponderada) → líneas verticales en PORC. UTILIDAD.*
+*Última actualización (2026-07-24): **Margen Contribución · overlay Cat. M.C.** — checklist solo si métrica es **M.C** o **M.C PONDERADO**; umbrales de `fin_ana_mc_cat` → líneas verticales en PORC. UTILIDAD.*
+
+*Última actualización (2026-07-24): **Margen Contribución · rename tablas Cat. M.C.** — `fin_ana_mc_categorias`→`fin_ana_mc_cat`; `fin_ana_mc_config`→`fin_ana_mc_cat_config`.*
 
 *Última actualización (2026-07-24): **Margen Contribución · botón expandir** — columna final `.tabla-mc-col-expandir` (~5 %); chevron COSTOS en la última fila; fondo unificado sin cebra (riel externo).*
 
