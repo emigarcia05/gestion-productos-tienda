@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
+import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +17,7 @@ import {
   agregarCategoriaMc,
   actualizarMaxCategoriaMc,
   borradoresDesdeCategoriasMc,
+  FIN_ANA_MC_CATEGORIA_PCT_MAX,
   puedeAgregarCategoriaMc,
   quitarUltimaCategoriaMc,
   validarContinuidadRangosMcCategorias,
@@ -38,6 +40,41 @@ const BOTON_ICONO_CLASS = cn(
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
   "!size-8 max-h-8 min-h-8 min-w-8 shrink-0 !p-0"
 );
+
+const MASCARA_PCT_CLASS =
+  "input-mascara-sufijo flex h-9 w-full min-w-0 items-center rounded-md border border-primary bg-transparent";
+
+function PctEnteroSoloLectura({
+  value,
+  ariaLabel,
+}: {
+  value: number;
+  ariaLabel: string;
+}) {
+  return (
+    <div className={MASCARA_PCT_CLASS}>
+      <input
+        type="text"
+        data-slot="input"
+        readOnly
+        tabIndex={-1}
+        value={String(value)}
+        aria-label={ariaLabel}
+        className={cn(
+          "min-h-0 min-w-0 flex-1 cursor-default border-0 bg-transparent px-1 py-0",
+          "text-center text-sm tabular-nums shadow-none outline-none",
+          "focus-visible:ring-0 focus-visible:outline-none"
+        )}
+      />
+      <span
+        className="input-mascara-sufijo__pct pointer-events-none select-none px-1.5 text-xs text-muted-foreground tabular-nums"
+        aria-hidden
+      >
+        %
+      </span>
+    </div>
+  );
+}
 
 export default function GestionarCategoriasMargenContribucionModal({
   open,
@@ -77,12 +114,10 @@ export default function GestionarCategoriasMargenContribucionModal({
     );
   }
 
-  function cambiarMax(index: number, raw: string) {
-    const digits = raw.replace(/\D/g, "");
-    if (digits === "") return;
-    const n = Number(digits);
-    if (!Number.isFinite(n)) return;
-    setFilas((prev) => actualizarMaxCategoriaMc(prev, index, n));
+  function cambiarMax(index: number, next: number) {
+    const entero = Math.trunc(next);
+    if (!Number.isFinite(entero)) return;
+    setFilas((prev) => actualizarMaxCategoriaMc(prev, index, entero));
   }
 
   function handleAgregar() {
@@ -154,13 +189,7 @@ export default function GestionarCategoriasMargenContribucionModal({
         }
       >
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-muted-foreground">
-            Definí rangos continuos de M.C. de 0 a 100. El mínimo de cada fila
-            es el máximo de la anterior. Con máximo en 100 no se pueden agregar
-            más categorías.
-          </p>
-
-          <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_4.5rem_2.5rem] items-end gap-2 px-0.5">
+          <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem_2.5rem] items-end gap-2 px-0.5">
             <ModalMicroLabel>CATEGORÍA</ModalMicroLabel>
             <ModalMicroLabel align="center">MÍN.</ModalMicroLabel>
             <ModalMicroLabel align="center">MÁX.</ModalMicroLabel>
@@ -168,52 +197,62 @@ export default function GestionarCategoriasMargenContribucionModal({
           </div>
 
           <div className="flex flex-col gap-2">
-            {filas.map((fila, index) => (
-              <div
-                key={fila.key}
-                className="grid grid-cols-[minmax(0,1fr)_4.5rem_4.5rem_2.5rem] items-center gap-2"
-              >
-                <Input
-                  value={fila.categoria}
-                  onChange={(e) => cambiarNombre(fila.key, e.target.value)}
-                  placeholder="CATEGORÍA"
-                  disabled={!esEditor || bloqueado}
-                  className="h-9 uppercase"
-                  aria-label={`Categoría fila ${index + 1}`}
-                />
-                <Input
-                  value={String(fila.desdePct)}
-                  readOnly
-                  tabIndex={-1}
-                  className="h-9 text-center tabular-nums"
-                  aria-label={`Mínimo fila ${index + 1}`}
-                />
-                <Input
-                  value={String(fila.hastaPct)}
-                  onChange={(e) => cambiarMax(index, e.target.value)}
-                  disabled={!esEditor || bloqueado}
-                  inputMode="numeric"
-                  className="h-9 text-center tabular-nums"
-                  aria-label={`Máximo fila ${index + 1}`}
-                />
-                <div className="flex items-center justify-center">
-                  {esEditor && index === filas.length - 1 && filas.length > 1 ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className={BOTON_ICONO_CLASS}
-                      disabled={bloqueado}
-                      onClick={handleQuitarUltima}
-                      aria-label="Quitar última categoría"
-                      title="Quitar última"
-                    >
-                      <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                    </Button>
-                  ) : null}
+            {filas.map((fila, index) => {
+              const maxMinimo = fila.desdePct + 1;
+              return (
+                <div
+                  key={fila.key}
+                  className="grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem_2.5rem] items-center gap-2"
+                >
+                  <Input
+                    value={fila.categoria}
+                    onChange={(e) => cambiarNombre(fila.key, e.target.value)}
+                    placeholder="CATEGORÍA"
+                    disabled={!esEditor || bloqueado}
+                    className="h-9 uppercase"
+                    aria-label={`Categoría fila ${index + 1}`}
+                  />
+                  <PctEnteroSoloLectura
+                    value={fila.desdePct}
+                    ariaLabel={`Mínimo fila ${index + 1}`}
+                  />
+                  <PorcentajeEnteroMaskInput
+                    value={fila.hastaPct}
+                    onValueChange={(next) => cambiarMax(index, next)}
+                    min={maxMinimo}
+                    max={FIN_ANA_MC_CATEGORIA_PCT_MAX}
+                    disabled={
+                      !esEditor ||
+                      bloqueado ||
+                      maxMinimo > FIN_ANA_MC_CATEGORIA_PCT_MAX
+                    }
+                    aria-label={`Máximo fila ${index + 1}`}
+                    className={MASCARA_PCT_CLASS}
+                  />
+                  <div className="flex items-center justify-center">
+                    {esEditor &&
+                    index === filas.length - 1 &&
+                    filas.length > 1 ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={BOTON_ICONO_CLASS}
+                        disabled={bloqueado}
+                        onClick={handleQuitarUltima}
+                        aria-label="Quitar última categoría"
+                        title="Quitar última"
+                      >
+                        <Trash2
+                          className={TABLE_ROW_ACTION_ICON_CLASS}
+                          aria-hidden
+                        />
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {esEditor ? (

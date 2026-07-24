@@ -140,8 +140,8 @@ export function sincronizarMinimosCategoriasMc(
     const prevHasta =
       i === 0 ? FIN_ANA_MC_CATEGORIA_PCT_MIN : next[i - 1]!.hastaPct;
     if (prevHasta >= FIN_ANA_MC_CATEGORIA_PCT_MAX) break;
-    let desdePct = prevHasta;
-    let hastaPct = filas[i]!.hastaPct;
+    const desdePct = prevHasta;
+    let hastaPct = Math.trunc(filas[i]!.hastaPct);
     if (hastaPct <= desdePct) {
       hastaPct = Math.min(FIN_ANA_MC_CATEGORIA_PCT_MAX, desdePct + 1);
     }
@@ -157,6 +157,10 @@ export function sincronizarMinimosCategoriasMc(
   return next;
 }
 
+/**
+ * Actualiza el máximo de una fila (entero).
+ * El máximo debe ser al menos `mínimo + 1` (ej. mín. 15 → máx. ≥ 16).
+ */
 export function actualizarMaxCategoriaMc(
   filas: BorradorCategoriaMc[],
   index: number,
