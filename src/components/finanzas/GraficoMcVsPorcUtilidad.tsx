@@ -83,6 +83,66 @@ function fmtPct(n: number): string {
 }
 
 /**
+ * Dominio y ticks en múltiplos de 5, con preferencia de 9–10 etiquetas.
+ * Amplía el rango a extremos “redondos” que cubran [minVal, maxVal].
+ */
+function ejeTicksMultiplo5(
+  minVal: number,
+  maxVal: number,
+  ticksMin = 9,
+  ticksMax = 10
+): { lo: number; hi: number; ticks: number[] } {
+  let min = Number.isFinite(minVal) ? minVal : 0;
+  let max = Number.isFinite(maxVal) ? maxVal : 100;
+  if (max <= min) {
+    min -= 5;
+    max += 5;
+  }
+
+  const steps = [
+    5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 150, 200, 250, 500, 1000,
+  ];
+
+  type Cand = { lo: number; hi: number; ticks: number[]; pad: number; dist: number };
+  const perfectos: Cand[] = [];
+  const otros: Cand[] = [];
+
+  for (const step of steps) {
+    const lo = Math.floor(min / step) * step;
+    let hi = Math.ceil(max / step) * step;
+    if (hi <= lo) hi = lo + step;
+    const ticks: number[] = [];
+    for (let v = lo; v <= hi + step * 1e-6; v += step) {
+      ticks.push(v);
+    }
+    const pad = hi - max + (min - lo);
+    const dist = Math.min(
+      Math.abs(ticks.length - ticksMin),
+      Math.abs(ticks.length - ticksMax)
+    );
+    const cand: Cand = { lo, hi, ticks, pad, dist };
+    if (ticks.length >= ticksMin && ticks.length <= ticksMax) {
+      perfectos.push(cand);
+    } else {
+      otros.push(cand);
+    }
+  }
+
+  const elegir = (lista: Cand[]) => {
+    lista.sort((a, b) => a.dist - b.dist || a.pad - b.pad || a.ticks.length - b.ticks.length);
+    return lista[0]!;
+  };
+
+  const best = perfectos.length > 0 ? elegir(perfectos) : elegir(otros);
+  return { lo: best.lo, hi: best.hi, ticks: best.ticks };
+}
+
+/** Eje X fijo 20…200: 10 etiquetas, múltiplos de 5 (paso 20). */
+const TICKS_X_PORC_UTILIDAD = [
+  20, 40, 60, 80, 100, 120, 140, 160, 180, 200,
+] as const;
+
+/**
  * Primer PORC. UTILIDAD (eje X) donde la serie Y alcanza el umbral.
  * Para Cat. M.C. el umbral y la serie de búsqueda están en escala **M.C. PONDERADO**.
  */
@@ -235,6 +295,10 @@ export default function GraficoMcVsPorcUtilidad({
       yLo -= padY;
       yHi += padY;
 
+      const ejeY = ejeTicksMultiplo5(yLo, yHi);
+      yLo = ejeY.lo;
+      yHi = ejeY.hi;
+
       const xPx = (x: number) =>
         PAD.left + ((x - xMin) / (xMax - xMin)) * plotW;
       const yPx = (y: number) =>
@@ -246,16 +310,14 @@ export default function GraficoMcVsPorcUtilidad({
         d: pathFromPuntos(serie.puntos, xPx, yPx),
       }));
 
-      const ticksXLocal = [20, 50, 100, 150, 200];
-      const ySpan = yHi - yLo;
-      const ticksYLocal = [0, 0.25, 0.5, 0.75, 1].map((t) => yLo + ySpan * t);
+      const ticksXLocal = [...TICKS_X_PORC_UTILIDAD];
+      const ticksYLocal = ejeY.ticks;
 
       const marcasLocal: {
         id: string;
         color: string;
         x: number;
         y: number;
-        label: string;
       }[] = [];
 
       if (
@@ -273,7 +335,6 @@ export default function GraficoMcVsPorcUtilidad({
             color: serie.color,
             x,
             y: yPx(serie.valorMarca),
-            label: fmtPct(serie.valorMarca),
           });
         }
       }
@@ -284,12 +345,14 @@ export default function GraficoMcVsPorcUtilidad({
           ? Math.min(...marcasLocal.map((m) => m.y))
           : null;
 
-      /** Umbrales Cat. M.C. (escala M.C. PONDERADO) → X = PORC. UTILIDAD. */
+      /** Umbrales Cat. M.C. → línea en `desde`; etiqueta centrada en el tramo [desde, hasta). */
       const lineasLocal: {
         id: string;
         etiqueta: string;
         color: string;
-        x: number;
+        /** null = sin línea (p. ej. primera categoría desde 0). */
+        xLinea: number | null;
+        xLabel: number;
         porcUtilidad: number;
         visible: boolean;
       }[] = [];
@@ -314,20 +377,45 @@ export default function GraficoMcVsPorcUtilidad({
         seriesUmbral.length > 0
       ) {
         for (const cat of categoriasOrdenadas) {
-          if (cat.desdePct <= 0) continue;
           for (const serie of seriesUmbral) {
-            const porc = porcUtilidadDondeValorAlcanza(
+            const porcDesde =
+              cat.desdePct <= 0
+                ? xMin
+                : porcUtilidadDondeValorAlcanza(serie.puntos, cat.desdePct);
+            if (porcDesde == null || !Number.isFinite(porcDesde)) continue;
+
+            let porcHasta = porcUtilidadDondeValorAlcanza(
               serie.puntos,
-              cat.desdePct
+              cat.hastaPct
             );
-            if (porc == null || !Number.isFinite(porc)) continue;
-            if (porc < xMin || porc > xMax) continue;
+            if (porcHasta == null || !Number.isFinite(porcHasta)) {
+              const validos = serie.puntos.filter(
+                (p) => p.mcPct != null && Number.isFinite(p.mcPct)
+              );
+              const ultimo = validos[validos.length - 1];
+              if (
+                ultimo?.mcPct != null &&
+                ultimo.mcPct >= cat.desdePct &&
+                (cat.hastaPct >= 100 || ultimo.mcPct < cat.hastaPct)
+              ) {
+                porcHasta = xMax;
+              } else {
+                continue;
+              }
+            }
+
+            const desdeClamped = Math.min(xMax, Math.max(xMin, porcDesde));
+            const hastaClamped = Math.min(xMax, Math.max(xMin, porcHasta));
+            if (hastaClamped <= desdeClamped + 1e-6) continue;
+
+            const porcCentro = (desdeClamped + hastaClamped) / 2;
             lineasLocal.push({
               id: `${serie.id}-${cat.id}`,
               etiqueta: cat.categoria,
               color: serie.color,
-              x: xPx(porc),
-              porcUtilidad: porc,
+              xLinea: cat.desdePct > 0 ? xPx(desdeClamped) : null,
+              xLabel: (xPx(desdeClamped) + xPx(hastaClamped)) / 2,
+              porcUtilidad: porcCentro,
               visible: true,
             });
           }
@@ -635,18 +723,20 @@ export default function GraficoMcVsPorcUtilidad({
               {lineasCategorias.map((linea) =>
                 linea.visible ? (
                   <g key={linea.id}>
-                    <line
-                      x1={linea.x}
-                      y1={CAT_LINEA_Y_INICIO}
-                      x2={linea.x}
-                      y2={yBottom}
-                      stroke={linea.color}
-                      strokeWidth={1.25}
-                      strokeOpacity={0.65}
-                      strokeDasharray="6 4"
-                    />
+                    {linea.xLinea != null ? (
+                      <line
+                        x1={linea.xLinea}
+                        y1={CAT_LINEA_Y_INICIO}
+                        x2={linea.xLinea}
+                        y2={yBottom}
+                        stroke={linea.color}
+                        strokeWidth={1.25}
+                        strokeOpacity={0.65}
+                        strokeDasharray="6 4"
+                      />
+                    ) : null}
                     <text
-                      x={linea.x}
+                      x={linea.xLabel}
                       y={PAD.top + 9}
                       textAnchor="middle"
                       dominantBaseline="hanging"
@@ -658,7 +748,7 @@ export default function GraficoMcVsPorcUtilidad({
                       {linea.etiqueta}
                     </text>
                     <text
-                      x={linea.x}
+                      x={linea.xLabel}
                       y={PAD.top + 20}
                       textAnchor="middle"
                       dominantBaseline="hanging"
@@ -704,27 +794,16 @@ export default function GraficoMcVsPorcUtilidad({
                     strokeWidth={1.75}
                     strokeDasharray="5 4"
                   />
-                  {marcas.map((marca, index) => (
-                    <g key={marca.id}>
-                      <circle
-                        cx={marca.x}
-                        cy={marca.y}
-                        r={4.5}
-                        fill={marca.color}
-                        stroke="var(--card)"
-                        strokeWidth={1.5}
-                      />
-                      <text
-                        x={marca.x}
-                        y={marca.y - 10 - index * 12}
-                        textAnchor="middle"
-                        className="fill-foreground"
-                        fontSize={11}
-                        fontWeight={600}
-                      >
-                        {marca.label}
-                      </text>
-                    </g>
+                  {marcas.map((marca) => (
+                    <circle
+                      key={marca.id}
+                      cx={marca.x}
+                      cy={marca.y}
+                      r={4.5}
+                      fill={marca.color}
+                      stroke="var(--card)"
+                      strokeWidth={1.5}
+                    />
                   ))}
                 </g>
               ) : null}
