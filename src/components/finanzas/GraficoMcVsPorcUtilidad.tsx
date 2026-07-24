@@ -345,15 +345,15 @@ export default function GraficoMcVsPorcUtilidad({
           ? Math.min(...marcasLocal.map((m) => m.y))
           : null;
 
-      /** Umbrales Cat. M.C. → línea en `desde`; etiqueta centrada en el tramo [desde, hasta). */
+      /** Umbrales Cat. M.C. → línea+% en límite superior; nombre centrado en el tramo. */
       const lineasLocal: {
         id: string;
         etiqueta: string;
         color: string;
-        /** null = sin línea (p. ej. primera categoría desde 0). */
-        xLinea: number | null;
+        xLinea: number;
         xLabel: number;
-        porcUtilidad: number;
+        xLimiteSuperior: number;
+        porcLimiteSuperior: number;
         visible: boolean;
       }[] = [];
 
@@ -408,14 +408,15 @@ export default function GraficoMcVsPorcUtilidad({
             const hastaClamped = Math.min(xMax, Math.max(xMin, porcHasta));
             if (hastaClamped <= desdeClamped + 1e-6) continue;
 
-            const porcCentro = (desdeClamped + hastaClamped) / 2;
             lineasLocal.push({
               id: `${serie.id}-${cat.id}`,
               etiqueta: cat.categoria,
               color: serie.color,
-              xLinea: cat.desdePct > 0 ? xPx(desdeClamped) : null,
+              /** Línea + % en el límite superior (hasta). */
+              xLinea: xPx(hastaClamped),
               xLabel: (xPx(desdeClamped) + xPx(hastaClamped)) / 2,
-              porcUtilidad: porcCentro,
+              xLimiteSuperior: xPx(hastaClamped),
+              porcLimiteSuperior: hastaClamped,
               visible: true,
             });
           }
@@ -594,7 +595,8 @@ export default function GraficoMcVsPorcUtilidad({
                 onClick={() => setMostrarCategoriasMc((prev) => !prev)}
                 className={cn(
                   CHECK_CAT_CLASS,
-                  mostrarCategoriasMc && "[&_svg]:!text-[#0072bb]"
+                  mostrarCategoriasMc &&
+                    "!bg-[#0072bb] hover:!bg-[#0072bb] border-[#0072bb] [&_svg]:!text-white"
                 )}
                 aria-pressed={mostrarCategoriasMc}
                 aria-label={
@@ -723,18 +725,16 @@ export default function GraficoMcVsPorcUtilidad({
               {lineasCategorias.map((linea) =>
                 linea.visible ? (
                   <g key={linea.id}>
-                    {linea.xLinea != null ? (
-                      <line
-                        x1={linea.xLinea}
-                        y1={CAT_LINEA_Y_INICIO}
-                        x2={linea.xLinea}
-                        y2={yBottom}
-                        stroke={linea.color}
-                        strokeWidth={1.25}
-                        strokeOpacity={0.65}
-                        strokeDasharray="6 4"
-                      />
-                    ) : null}
+                    <line
+                      x1={linea.xLinea}
+                      y1={CAT_LINEA_Y_INICIO}
+                      x2={linea.xLinea}
+                      y2={yBottom}
+                      stroke={linea.color}
+                      strokeWidth={1.25}
+                      strokeOpacity={0.65}
+                      strokeDasharray="6 4"
+                    />
                     <text
                       x={linea.xLabel}
                       y={PAD.top + 9}
@@ -748,7 +748,7 @@ export default function GraficoMcVsPorcUtilidad({
                       {linea.etiqueta}
                     </text>
                     <text
-                      x={linea.xLabel}
+                      x={linea.xLimiteSuperior}
                       y={PAD.top + 20}
                       textAnchor="middle"
                       dominantBaseline="hanging"
@@ -756,7 +756,7 @@ export default function GraficoMcVsPorcUtilidad({
                       fontSize={8}
                       opacity={0.75}
                     >
-                      {fmtPct(linea.porcUtilidad)}
+                      {fmtPct(linea.porcLimiteSuperior)}
                     </text>
                   </g>
                 ) : null

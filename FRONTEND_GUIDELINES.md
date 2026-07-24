@@ -1418,7 +1418,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-24): **Margen Contribución · ejes gráfico** — X/Y con **9–10** etiquetas en **múltiplos de 5** (X fijo 20…200 paso 20).*
 
-*Última actualización (2026-07-24): **Margen Contribución · etiqueta Cat. M.C.** — nombre centrado en el tramo [desde, hasta) del eje X; la línea punteada sigue en el umbral de entrada.*
+*Última actualización (2026-07-24): **Margen Contribución · etiqueta Cat. M.C.** — nombre centrado en el tramo; `%` del PORC. UTILIDAD alineado a la línea del **límite superior**.*
 
 *Última actualización (2026-07-23): **Margen Contribución · tabla colapsable** — vista fija DESCUENTO + M.C / M.C PONDERADO; flecha inferior derecha expande COSTOS (IVA · IIBB · CX MERCADERÍA · CX FINANCIERO).*
 
