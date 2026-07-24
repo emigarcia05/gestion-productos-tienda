@@ -68,6 +68,16 @@ export function formatFechaHoraCompletaArgentina(d: Date): string {
     .trim();
 }
 
+/** Solo fecha (`dd/mm/aaaa`) en zona Argentina. */
+export function formatFechaCortaArgentina(d: Date): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    timeZone: TIMEZONE_ARGENTINA,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(d);
+}
+
 /** Sello PDF resumen aumentos Px: `02-06 14-30` (día-mes y hora-minuto, sin año). */
 export function formatDdMmHhMmResumenAumentosArgentina(d: Date): string {
   const m = toPartMap(d, {

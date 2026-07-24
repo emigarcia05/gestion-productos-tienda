@@ -34,7 +34,6 @@ import {
 } from "@/lib/finAnaMcCategorias";
 import {
   ETIQUETA_VARIABLE_OBJETIVO_MC,
-  FIN_ANA_MC_CONFIG_DEFAULT,
   FIN_ANA_MC_VARIABLES_OBJETIVO,
   type FinAnaMcConfigItem,
   type VariableObjetivoMargenContribucion,
@@ -231,9 +230,6 @@ export default function GestionarCategoriasMargenContribucionModal({
 
   const puedeAgregar = useMemo(() => puedeAgregarCategoriaMc(filas), [filas]);
   const bloqueado = cargando || guardando;
-  const etiquetaVariable =
-    ETIQUETA_VARIABLE_OBJETIVO_MC[variableObjetivo] ??
-    ETIQUETA_VARIABLE_OBJETIVO_MC[FIN_ANA_MC_CONFIG_DEFAULT.variableObjetivo];
 
   function cambiarNombre(key: string, categoria: string) {
     setFilas((prev) =>
@@ -427,15 +423,6 @@ export default function GestionarCategoriasMargenContribucionModal({
               </Select>
             </div>
           </div>
-
-          <p className="text-xs text-muted-foreground">
-            Límites inferior y superior en escala de{" "}
-            <span className="font-semibold text-foreground">
-              {etiquetaVariable}
-            </span>{" "}
-            (0…100). TERMINAL, FACTURA y VARIABLE OBJETIVO son los defaults del
-            módulo Margen Contribución.
-          </p>
 
           <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem_2.5rem] items-end gap-2 px-0.5">
             <ModalMicroLabel>CATEGORÍA</ModalMicroLabel>

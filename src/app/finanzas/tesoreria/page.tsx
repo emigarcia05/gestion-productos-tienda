@@ -4,7 +4,7 @@ import FinanzasTesoreriaPageClient from "@/components/finanzas/FinanzasTesoreria
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { listarCajasTesoreria } from "@/services/cajasTesoreria.service";
-import { formatFechaHoraCompletaArgentina } from "@/lib/fechaArgentina";
+import { formatFechaCortaArgentina } from "@/lib/fechaArgentina";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ export default async function FinanzasTesoreriaPage() {
     monto: c.monto,
     montoDisponible: c.montoDisponible,
     montoChequesDiferidos: c.montoChequesDiferidos,
-    ultActualizacion: formatFechaHoraCompletaArgentina(c.ultActualizacion),
+    ultActualizacion: formatFechaCortaArgentina(c.ultActualizacion),
     ultActualizacionIso: c.ultActualizacion.toISOString(),
   }));
 

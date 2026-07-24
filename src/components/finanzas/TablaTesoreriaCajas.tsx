@@ -62,6 +62,8 @@ const TH_NUM = "text-right whitespace-nowrap";
 const TD_NUM = "celda-datos text-right tabular-nums";
 const CELL_MIN = "min-w-0";
 const MS_POR_DIA = 1000 * 60 * 60 * 24;
+/** Umbral de alerta: más de N días sin actualizar → ícono + monto visible 0 en grilla/resumen. */
+const DIAS_ALERTA_DESACTUALIZACION = 5;
 
 function getDiasSinActualizar(ultActualizacionIso: string): number | null {
   const timestamp = Date.parse(ultActualizacionIso);
@@ -69,6 +71,11 @@ function getDiasSinActualizar(ultActualizacionIso: string): number | null {
   const diffMs = Date.now() - timestamp;
   if (diffMs < 0) return 0;
   return Math.floor(diffMs / MS_POR_DIA);
+}
+
+function estaCajaDesactualizada(ultActualizacionIso: string): boolean {
+  const dias = getDiasSinActualizar(ultActualizacionIso);
+  return dias !== null && dias > DIAS_ALERTA_DESACTUALIZACION;
 }
 
 function ColgroupAnchos({ anchos }: { anchos: readonly number[] }) {
@@ -102,8 +109,9 @@ function totalesPieResumenTesoreria(filas: TesoreriaCajaFila[]): {
   let diferido = 0;
 
   for (const f of filas) {
-    const m = f.montoDisponible;
-    const cheqDif = f.montoChequesDiferidos;
+    const desactualizada = estaCajaDesactualizada(f.ultActualizacionIso);
+    const m = desactualizada ? 0 : f.montoDisponible;
+    const cheqDif = desactualizada ? 0 : f.montoChequesDiferidos;
 
     if (f.tipoValor === "EFECTIVO") efectivoTipoValor += m;
     else if (f.tipoValor === "DIGITAL") digitalTipoValor += m;
@@ -187,7 +195,7 @@ export default function TablaTesoreriaCajas({
             <ColgroupAnchos anchos={anchosColPct} />
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className={CELL_MIN}>ÚLT. ACTUALIZACIÓN</TableHead>
+                <TableHead className={CELL_MIN}>ÚLT. ACT.</TableHead>
                 <TableHead className={CELL_MIN}>TIPO CAJA</TableHead>
                 <TableHead className={CELL_MIN}>ENTIDAD</TableHead>
                 <TableHead className={CELL_MIN}>TITULAR</TableHead>
@@ -206,7 +214,8 @@ export default function TablaTesoreriaCajas({
                 filas.map((f) => (
                   (() => {
                     const diasSinActualizar = getDiasSinActualizar(f.ultActualizacionIso);
-                    const estaDesactualizada = diasSinActualizar !== null && diasSinActualizar > 5;
+                    const estaDesactualizada = estaCajaDesactualizada(f.ultActualizacionIso);
+                    const montoVisible = estaDesactualizada ? 0 : f.montoDisponible;
 
                     return (
                       <TableRow
@@ -270,7 +279,7 @@ export default function TablaTesoreriaCajas({
                           <span className="block truncate">{f.titular}</span>
                         </TableCell>
                         <TableCell className={cn(TD_NUM, "celda-destacado", CELL_MIN)}>
-                          ${fmtPrecio(f.montoDisponible)}
+                          ${fmtPrecio(montoVisible)}
                         </TableCell>
                         {esEditor ? (
                           <TableCell

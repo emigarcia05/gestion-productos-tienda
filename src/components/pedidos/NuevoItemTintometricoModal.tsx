@@ -198,70 +198,70 @@ export default function NuevoItemTintometricoModal({
         }
       >
         <div className="grid grid-cols-1 gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <span className="text-xs text-foreground">Sucursal</span>
-              <Select
-                value={sucursal}
-                onValueChange={(value) =>
-                  setSucursal((value === "" ? "" : (value as "guaymallen" | "maipu")))
-                }
-              >
-                <SelectTrigger className="h-10 w-full">
-                  <SelectValue placeholder="SELECCIONAR SUCURSAL" />
-                </SelectTrigger>
-                <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                {sucursales.map((s) => (
-                  <SelectItem key={s.id} value={s.codigo as "guaymallen" | "maipu"}>
-                      {s.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Select
+            value={sucursal}
+            onValueChange={(value) =>
+              setSucursal(value === "" ? "" : (value as "guaymallen" | "maipu"))
+            }
+          >
+            <SelectTrigger className="h-10 w-full" aria-label="Sucursal">
+              <SelectValue placeholder="SUCURSAL" />
+            </SelectTrigger>
+            <SelectContent
+              className="select-content-filtro"
+              position="popper"
+              side="bottom"
+              align="start"
+            >
+              {sucursales.map((s) => (
+                <SelectItem key={s.id} value={s.codigo as "guaymallen" | "maipu"}>
+                  {s.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <div className="flex flex-col gap-2">
-              <span className="text-xs text-foreground">Proveedor</span>
-              <Select value={proveedorId} onValueChange={setProveedorId}>
-                <SelectTrigger className="h-10 w-full">
-                  <SelectValue placeholder="SELECCIONAR PROVEEDOR" />
-                </SelectTrigger>
-                <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                  {proveedores.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {`${p.prefijo} - ${p.nombre}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <Select value={proveedorId} onValueChange={setProveedorId}>
+            <SelectTrigger className="h-10 w-full" aria-label="Proveedor">
+              <SelectValue placeholder="PROVEEDOR" />
+            </SelectTrigger>
+            <SelectContent
+              className="select-content-filtro"
+              position="popper"
+              side="bottom"
+              align="start"
+            >
+              {proveedores.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {`${p.prefijo} - ${p.nombre}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <div className="flex flex-col gap-2">
-            <span className="text-xs text-foreground">Cod. Tintométricos</span>
-            <div className="flex items-center gap-2">
-              <Input
-                value={codTintometrico}
-                onChange={(e) => setCodTintometrico(e.target.value)}
-                disabled={!proveedorSeleccionado}
-                className="h-10"
-                placeholder="INGRESAR CÓDIGO..."
-              />
-              <Button
-                type="button"
-                variant="primaryIcon"
-                size="icon-lg"
-                onClick={() => {
-                  if (!proveedorSeleccionado || !codValido) return;
-                  setBaseModalOpen(true);
-                }}
-                aria-label="Seleccionar Base"
-                title="Seleccionar Base"
-                className="h-10 min-h-10 shrink-0"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="flex items-center gap-2">
+            <Input
+              value={codTintometrico}
+              onChange={(e) => setCodTintometrico(e.target.value)}
+              disabled={!proveedorSeleccionado}
+              className="h-10"
+              placeholder="COD. TINTOMÉTRICO"
+              aria-label="Cod. Tintométrico"
+            />
+            <Button
+              type="button"
+              variant="primaryIcon"
+              size="icon-lg"
+              onClick={() => {
+                if (!proveedorSeleccionado || !codValido) return;
+                setBaseModalOpen(true);
+              }}
+              aria-label="Seleccionar Base"
+              title="Seleccionar Base"
+              className="h-10 min-h-10 shrink-0"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
 
           {bases.length > 0 && codValido && (

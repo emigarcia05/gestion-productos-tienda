@@ -62,12 +62,23 @@ export default function FinanzasTesoreriaPageClient({
 
   const filasFiltradas = useMemo(
     () =>
-      filas.filter((fila) => {
-        if (filtroEntidad && fila.entidadNombre !== filtroEntidad) return false;
-        if (filtroTitular && fila.titular !== filtroTitular) return false;
-        if (filtroTipoCaja && fila.tipoCaja !== filtroTipoCaja) return false;
-        return true;
-      }),
+      filas
+        .filter((fila) => {
+          if (filtroEntidad && fila.entidadNombre !== filtroEntidad) return false;
+          if (filtroTitular && fila.titular !== filtroTitular) return false;
+          if (filtroTipoCaja && fila.tipoCaja !== filtroTipoCaja) return false;
+          return true;
+        })
+        .sort((a, b) => {
+          const ta = Date.parse(a.ultActualizacionIso);
+          const tb = Date.parse(b.ultActualizacionIso);
+          const aOk = !Number.isNaN(ta);
+          const bOk = !Number.isNaN(tb);
+          if (!aOk && !bOk) return 0;
+          if (!aOk) return 1;
+          if (!bOk) return -1;
+          return ta - tb;
+        }),
     [filas, filtroEntidad, filtroTitular, filtroTipoCaja]
   );
 
