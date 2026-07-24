@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
-import PorcentajeEnteroMaskInput from "@/components/shared/PorcentajeEnteroMaskInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +33,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   esEditor: boolean;
+  onGuardado?: () => void;
 }
 
 const BOTON_ICONO_CLASS = cn(
@@ -41,8 +41,19 @@ const BOTON_ICONO_CLASS = cn(
   "!size-8 max-h-8 min-h-8 min-w-8 shrink-0 !p-0"
 );
 
-const MASCARA_PCT_CLASS =
-  "input-mascara-sufijo flex h-9 w-full min-w-0 items-center rounded-md border border-primary bg-transparent";
+const MASCARA_PCT_CLASS = cn(
+  "input-mascara-sufijo",
+  "flex h-9 w-full min-w-0 items-center rounded-md border border-primary bg-transparent"
+);
+
+const INPUT_PCT_CLASS = cn(
+  "min-h-0 min-w-0 flex-1 border-0 bg-transparent px-1 py-0",
+  "text-center text-sm tabular-nums shadow-none outline-none",
+  "focus-visible:ring-0 focus-visible:outline-none"
+);
+
+const SUFIJO_PCT_CLASS =
+  "input-mascara-sufijo__pct pointer-events-none select-none px-1.5 text-xs text-muted-foreground tabular-nums";
 
 function PctEnteroSoloLectura({
   value,
@@ -60,16 +71,73 @@ function PctEnteroSoloLectura({
         tabIndex={-1}
         value={String(value)}
         aria-label={ariaLabel}
-        className={cn(
-          "min-h-0 min-w-0 flex-1 cursor-default border-0 bg-transparent px-1 py-0",
-          "text-center text-sm tabular-nums shadow-none outline-none",
-          "focus-visible:ring-0 focus-visible:outline-none"
-        )}
+        className={cn(INPUT_PCT_CLASS, "cursor-default")}
       />
-      <span
-        className="input-mascara-sufijo__pct pointer-events-none select-none px-1.5 text-xs text-muted-foreground tabular-nums"
-        aria-hidden
-      >
+      <span className={SUFIJO_PCT_CLASS} aria-hidden>
+        %
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Entero con `%` fijo. Permite tipear cualquier dígito; al blur clampea a [min, max].
+ * (No usa máscara POS: con min>0 impediría valores intermedios como 20.)
+ */
+function PctEnteroEditable({
+  value,
+  min,
+  max,
+  onValueChange,
+  disabled,
+  ariaLabel,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onValueChange: (next: number) => void;
+  disabled?: boolean;
+  ariaLabel: string;
+}) {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  function commitDraft(raw: string) {
+    const digits = raw.replace(/\D/g, "");
+    const parsed = digits === "" ? min : Number(digits);
+    const entero = Number.isFinite(parsed) ? Math.trunc(parsed) : min;
+    const clamped = Math.min(max, Math.max(min, entero));
+    setDraft(String(clamped));
+    if (clamped !== value) onValueChange(clamped);
+  }
+
+  return (
+    <div className={MASCARA_PCT_CLASS}>
+      <input
+        type="text"
+        data-slot="input"
+        inputMode="numeric"
+        autoComplete="off"
+        disabled={disabled}
+        value={draft}
+        aria-label={ariaLabel}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/\D/g, "");
+          setDraft(digits);
+        }}
+        onBlur={() => commitDraft(draft)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        className={cn(INPUT_PCT_CLASS, disabled && "cursor-not-allowed opacity-50")}
+      />
+      <span className={SUFIJO_PCT_CLASS} aria-hidden>
         %
       </span>
     </div>
@@ -80,6 +148,7 @@ export default function GestionarCategoriasMargenContribucionModal({
   open,
   onOpenChange,
   esEditor,
+  onGuardado,
 }: Props) {
   const [filas, setFilas] = useState<BorradorCategoriaMc[]>([]);
   const [cargando, setCargando] = useState(false);
@@ -155,6 +224,7 @@ export default function GestionarCategoriasMargenContribucionModal({
       }
       toast.success("Categorías de M.C. guardadas.");
       setFilas(borradoresDesdeCategoriasMc(res.data as FinAnaMcCategoriaItem[]));
+      onGuardado?.();
       onOpenChange(false);
     } finally {
       setGuardando(false);
@@ -216,18 +286,17 @@ export default function GestionarCategoriasMargenContribucionModal({
                     value={fila.desdePct}
                     ariaLabel={`Mínimo fila ${index + 1}`}
                   />
-                  <PorcentajeEnteroMaskInput
+                  <PctEnteroEditable
                     value={fila.hastaPct}
-                    onValueChange={(next) => cambiarMax(index, next)}
                     min={maxMinimo}
                     max={FIN_ANA_MC_CATEGORIA_PCT_MAX}
+                    onValueChange={(next) => cambiarMax(index, next)}
                     disabled={
                       !esEditor ||
                       bloqueado ||
                       maxMinimo > FIN_ANA_MC_CATEGORIA_PCT_MAX
                     }
-                    aria-label={`Máximo fila ${index + 1}`}
-                    className={MASCARA_PCT_CLASS}
+                    ariaLabel={`Máximo fila ${index + 1}`}
                   />
                   <div className="flex items-center justify-center">
                     {esEditor &&

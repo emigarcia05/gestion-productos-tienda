@@ -1425,6 +1425,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-24): **Margen Contribución · Cat. M.C. %** — inputs mín./máx. con máscara `%` fija; enteros; máx. ≥ mín. + 1.*
 
+*Última actualización (2026-07-24): **Margen Contribución · overlay Cat. M.C.** — checklist en esquina del gráfico; al activar, umbrales de `fin_ana_mc_categorias` sobre el plot (líneas + etiqueta).*
+
 *Última actualización (2026-07-22): **Margen Contribución · ancho forma** — `--tabla-mc-forma-width` de **5 rem** a **6 rem** (+20 %).*
 
 *Última actualización (2026-07-23): **Margen Contribución · ancho forma** — `--tabla-mc-forma-width` de **6 rem** a **7,5 rem** (+25 %); columnas forma siguen fijas.*

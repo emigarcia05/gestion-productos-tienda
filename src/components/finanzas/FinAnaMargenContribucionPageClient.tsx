@@ -49,6 +49,7 @@ import {
   resolverParametrosFormulaMargenContribucion,
   type FinAnaMcFormulaItem,
 } from "@/lib/finAnaMcFormulas";
+import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
 import type { FinAnaCosFinaPagoItem } from "@/lib/finAnaCosFinaPagos";
 import { actualizarDescuentoFpMargenContribucionAction } from "@/actions/finAnaMargenContribucion";
 import { MARGEN_PX_LISTA_MAX_CENTS } from "@/lib/pxListasPreciosFormat";
@@ -68,6 +69,7 @@ interface Props {
   pagos: FinAnaCosFinaPagoItem[];
   descuentosPorFormaPago: DescuentoFpMargenContribucionMap;
   formulas: FinAnaMcFormulaItem[];
+  categoriasMc: FinAnaMcCategoriaItem[];
   esEditor: boolean;
 }
 
@@ -103,6 +105,7 @@ export default function FinAnaMargenContribucionPageClient({
   pagos,
   descuentosPorFormaPago,
   formulas,
+  categoriasMc,
   esEditor,
 }: Props) {
   const router = useRouter();
@@ -471,6 +474,7 @@ export default function FinAnaMargenContribucionPageClient({
             filasFormaPago={graficoMc.filasFormaPago}
             formasSeleccionadas={formasGraficoSeleccionadas}
             onFormasSeleccionadasChange={setFormasGraficoIds}
+            categoriasMc={categoriasMc}
             className="relative z-0 shrink-0"
           />
         </div>
@@ -494,6 +498,7 @@ export default function FinAnaMargenContribucionPageClient({
         open={modalCategoriasAbierto}
         onOpenChange={setModalCategoriasAbierto}
         esEditor={esEditor}
+        onGuardado={() => router.refresh()}
       />
     </>
   );

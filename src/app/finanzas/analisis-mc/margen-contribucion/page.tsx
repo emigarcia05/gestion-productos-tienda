@@ -20,6 +20,7 @@ export default async function FinAnaMargenContribucionPage() {
     pagos,
     descuentosPorFormaPago,
     formulas,
+    categoriasMc,
   } = await getDatosPaginaMargenContribucion();
 
   return (
@@ -30,6 +31,7 @@ export default async function FinAnaMargenContribucionPage() {
       pagos={pagos}
       descuentosPorFormaPago={descuentosPorFormaPago}
       formulas={formulas}
+      categoriasMc={categoriasMc}
       esEditor={esEditor}
     />
   );

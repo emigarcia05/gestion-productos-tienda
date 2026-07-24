@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,7 @@ import {
   type MetricaGraficoMcMargenContribucion,
   type PuntoMcVsPorcUtilidad,
 } from "@/lib/finAnaMargenContribucion";
+import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
 
 export type SerieGraficoMcVsPorcUtilidad = {
   id: string;
@@ -50,12 +51,19 @@ interface Props {
   filasFormaPago: FilaFormaPagoGraficoMc[];
   formasSeleccionadas: string[];
   onFormasSeleccionadasChange: (ids: string[]) => void;
+  /** Rangos de catálogo M.C. para overlay de umbrales. */
+  categoriasMc?: FinAnaMcCategoriaItem[];
   className?: string;
 }
 
 const PAD = { top: 20, right: 16, bottom: 36, left: 48 };
 const VIEW_W = 720;
 const VIEW_H = 220;
+
+const CHECK_CAT_CLASS = cn(
+  "tabla-check-toggle !size-4 shrink-0 rounded-[2px] border border-[#0072bb] !bg-white p-0",
+  "text-[#0072bb] hover:!bg-white hover:text-[#0072bb]"
+);
 
 function fmtPct(n: number): string {
   return `${Math.round(n).toLocaleString("es-AR")}%`;
@@ -88,9 +96,11 @@ export default function GraficoMcVsPorcUtilidad({
   filasFormaPago,
   formasSeleccionadas,
   onFormasSeleccionadasChange,
+  categoriasMc = [],
   className,
 }: Props) {
   const gradId = useId().replace(/:/g, "");
+  const [mostrarCategoriasMc, setMostrarCategoriasMc] = useState(false);
   const etiquetaEjeY = ETIQUETA_METRICA_GRAFICO_MC[metrica];
   const etiquetaColumna = ETIQUETA_CORTA_METRICA_GRAFICO_MC[metrica];
   const selectedSet = useMemo(
@@ -105,6 +115,11 @@ export default function GraficoMcVsPorcUtilidad({
 
   const todasSeleccionadas =
     idsFormas.length > 0 && idsFormas.every((id) => selectedSet.has(id));
+
+  const categoriasOrdenadas = useMemo(
+    () => [...categoriasMc].sort((a, b) => a.desdePct - b.desdePct),
+    [categoriasMc]
+  );
 
   const tituloGrafico = `RELACIÓN "PORC. UTILIDAD / ${etiquetaEjeY}"`;
 
@@ -124,8 +139,17 @@ export default function GraficoMcVsPorcUtilidad({
     onFormasSeleccionadasChange(idsFormas);
   }
 
-  const { paths, xToPx, yToPx, ticksX, ticksY, marcas, yBottom, marcaVerticalY } =
-    useMemo(() => {
+  const {
+    paths,
+    xToPx,
+    yToPx,
+    ticksX,
+    ticksY,
+    marcas,
+    yBottom,
+    marcaVerticalY,
+    bandasCategorias,
+  } = useMemo(() => {
       const plotW = VIEW_W - PAD.left - PAD.right;
       const plotH = VIEW_H - PAD.top - PAD.bottom;
       const xMin = MC_GRAFICO_PORC_UTILIDAD_MIN;
@@ -138,6 +162,12 @@ export default function GraficoMcVsPorcUtilidad({
         }
         if (serie.valorMarca != null && Number.isFinite(serie.valorMarca)) {
           yValues.push(serie.valorMarca);
+        }
+      }
+
+      if (mostrarCategoriasMc && metrica === "MC") {
+        for (const cat of categoriasOrdenadas) {
+          yValues.push(cat.desdePct, cat.hastaPct);
         }
       }
 
@@ -200,6 +230,26 @@ export default function GraficoMcVsPorcUtilidad({
           ? Math.min(...marcasLocal.map((m) => m.y))
           : null;
 
+      const bandasLocal =
+        mostrarCategoriasMc && categoriasOrdenadas.length > 0
+          ? categoriasOrdenadas.map((cat) => {
+              const yDesde = yPx(cat.desdePct);
+              const yHasta = yPx(cat.hastaPct);
+              return {
+                id: cat.id,
+                etiqueta: cat.categoria,
+                yLineaDesde: yDesde,
+                yLineaHasta: yHasta,
+                yLabel: (yDesde + yHasta) / 2,
+                visible:
+                  cat.hastaPct >= yLo &&
+                  cat.desdePct <= yHi &&
+                  Number.isFinite(yDesde) &&
+                  Number.isFinite(yHasta),
+              };
+            })
+          : [];
+
       return {
         paths: pathsLocal,
         xToPx: xPx,
@@ -209,8 +259,15 @@ export default function GraficoMcVsPorcUtilidad({
         marcas: marcasLocal,
         yBottom: yBottomLocal,
         marcaVerticalY: marcaVerticalYLocal,
+        bandasCategorias: bandasLocal,
       };
-    }, [series, porcUtilidadMarca]);
+    }, [
+      series,
+      porcUtilidadMarca,
+      mostrarCategoriasMc,
+      categoriasOrdenadas,
+      metrica,
+    ]);
 
   return (
     <div
@@ -351,7 +408,36 @@ export default function GraficoMcVsPorcUtilidad({
           </div>
         </div>
 
-        <div className="min-w-0 flex-1 px-2 py-1" key={revisionFiltros}>
+        <div className="relative min-w-0 flex-1 px-2 py-1" key={revisionFiltros}>
+          {categoriasOrdenadas.length > 0 ? (
+            <div className="absolute right-3 top-2 z-10">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setMostrarCategoriasMc((prev) => !prev)}
+                className={cn(
+                  CHECK_CAT_CLASS,
+                  mostrarCategoriasMc && "[&_svg]:!text-[#0072bb]"
+                )}
+                aria-pressed={mostrarCategoriasMc}
+                aria-label={
+                  mostrarCategoriasMc
+                    ? "Ocultar categorías de M.C. en el gráfico"
+                    : "Mostrar categorías de M.C. en el gráfico"
+                }
+                title={
+                  mostrarCategoriasMc
+                    ? "Ocultar Cat. M.C."
+                    : "Mostrar Cat. M.C."
+                }
+              >
+                {mostrarCategoriasMc ? (
+                  <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                ) : null}
+              </Button>
+            </div>
+          ) : null}
           {series.length === 0 ? (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               Seleccioná al menos una forma de pago
@@ -457,6 +543,45 @@ export default function GraficoMcVsPorcUtilidad({
               >
                 {etiquetaEjeY}
               </text>
+
+              {bandasCategorias.map((banda) =>
+                banda.visible ? (
+                  <g key={banda.id}>
+                    <line
+                      x1={PAD.left}
+                      y1={banda.yLineaDesde}
+                      x2={VIEW_W - PAD.right}
+                      y2={banda.yLineaDesde}
+                      stroke="var(--primary)"
+                      strokeWidth={1.25}
+                      strokeOpacity={0.55}
+                      strokeDasharray="6 4"
+                    />
+                    <line
+                      x1={PAD.left}
+                      y1={banda.yLineaHasta}
+                      x2={VIEW_W - PAD.right}
+                      y2={banda.yLineaHasta}
+                      stroke="var(--primary)"
+                      strokeWidth={1.25}
+                      strokeOpacity={0.55}
+                      strokeDasharray="6 4"
+                    />
+                    <text
+                      x={VIEW_W - PAD.right - 4}
+                      y={banda.yLabel}
+                      textAnchor="end"
+                      dominantBaseline="middle"
+                      className="fill-foreground"
+                      fontSize={9}
+                      fontWeight={600}
+                      opacity={0.85}
+                    >
+                      {banda.etiqueta}
+                    </text>
+                  </g>
+                ) : null
+              )}
 
               {series.length === 1 && paths[0]?.d ? (
                 <path

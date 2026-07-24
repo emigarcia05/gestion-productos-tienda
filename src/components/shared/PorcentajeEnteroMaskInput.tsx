@@ -236,7 +236,10 @@ export default function PorcentajeEnteroMaskInput({
         )}
         {...props}
       />
-      <span className="input-mascara-sufijo__pct tabular-nums" aria-hidden>
+      <span
+        className="input-mascara-sufijo__pct pointer-events-none select-none px-1.5 text-xs text-muted-foreground tabular-nums"
+        aria-hidden
+      >
         %
       </span>
     </div>

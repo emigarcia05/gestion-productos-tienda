@@ -15,6 +15,8 @@ import { listarDescuentosFpMargenContribucion } from "@/services/finAnaMcDescuen
 import type { DescuentoFpMargenContribucionMap } from "@/services/finAnaMcDescuentoFp.service";
 import { listarFormulasMargenContribucion } from "@/services/finAnaMcFormulas.service";
 import type { FinAnaMcFormulaItem } from "@/lib/finAnaMcFormulas";
+import { listarFinAnaMcCategorias } from "@/services/finAnaMcCategorias.service";
+import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
 
 export type { CxFinancieroPorFormaPago };
 
@@ -25,6 +27,7 @@ export type DatosPaginaMargenContribucion = {
   cxFinancieroPorFormaPago: CxFinancieroPorFormaPago;
   descuentosPorFormaPago: DescuentoFpMargenContribucionMap;
   formulas: FinAnaMcFormulaItem[];
+  categoriasMc: FinAnaMcCategoriaItem[];
 };
 
 export async function getDatosPaginaMargenContribucion(): Promise<DatosPaginaMargenContribucion> {
@@ -35,12 +38,14 @@ export async function getDatosPaginaMargenContribucion(): Promise<DatosPaginaMar
     pagos,
     descuentosPorFormaPago,
     formulas,
+    categoriasMc,
   ] = await Promise.all([
     listarFinAnaCosFina(),
     listarFinAnaCosFinaTerminales(),
     listarFinAnaCosFinaPagos(),
     listarDescuentosFpMargenContribucion(),
     listarFormulasMargenContribucion(),
+    listarFinAnaMcCategorias(),
   ]);
 
   return {
@@ -50,5 +55,6 @@ export async function getDatosPaginaMargenContribucion(): Promise<DatosPaginaMar
     cxFinancieroPorFormaPago: mapCxFinancieroPorFormaPago(filasCostosFinancieros, pagos),
     descuentosPorFormaPago,
     formulas,
+    categoriasMc,
   };
 }
