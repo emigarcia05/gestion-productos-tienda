@@ -7,6 +7,7 @@ import FiltrosPxListasPrecios from "@/components/px-listas-precios/FiltrosPxList
 import TablaPxListasPrecios from "@/components/px-listas-precios/TablaPxListasPrecios";
 import ActPxListasButton from "@/components/px-listas-precios/ActPxListasButton";
 import { PAGE_SIZE } from "@/lib/pagination";
+import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
 import type { ItemPxListasPreciosTabla, ListaPrecioPxListasColumna } from "@/lib/pxListasPrecios";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
@@ -17,6 +18,8 @@ interface Props {
   total: number;
   totalPaginas: number;
   listas: ListaPrecioPxListasColumna[];
+  categoriasMc: FinAnaMcCategoriaItem[];
+  idListaGeneral: number | null;
   marcas: Array<{ marca: string }>;
   rubros: Array<{ rubro: string }>;
   subRubros: Array<{ subRubro: string }>;
@@ -34,6 +37,8 @@ export default function PxListasPreciosPageClient({
   total,
   totalPaginas,
   listas,
+  categoriasMc,
+  idListaGeneral,
   marcas,
   rubros,
   subRubros,
@@ -78,6 +83,8 @@ export default function PxListasPreciosPageClient({
               items={items}
               listas={listas}
               puedeEditar={puedeEditar}
+              categoriasMc={categoriasMc}
+              idListaGeneral={idListaGeneral}
             />
           </div>
           {totalPaginas > 1 ? (

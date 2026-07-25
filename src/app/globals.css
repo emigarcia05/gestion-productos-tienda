@@ -1376,6 +1376,37 @@
   min-width: 100%;
 }
 
+/* Columnas fijas (DESCRIPCIÓN + CATEGORÍA MARGEN) al hacer scroll horizontal. */
+.tabla-px-listas-precios th.celda-px-listas-col-fija,
+.tabla-px-listas-precios td.celda-px-listas-col-fija {
+  position: sticky;
+  background-color: var(--tabla-row-bg, var(--card));
+}
+.tabla-px-listas-precios thead th.celda-px-listas-col-fija {
+  z-index: 30;
+  background-color: var(--primary) !important;
+}
+.tabla-px-listas-precios tbody td.celda-px-listas-col-fija {
+  z-index: 11;
+}
+.tabla-px-listas-precios .celda-px-listas-col-fija-desc {
+  left: 0;
+  min-width: 22rem;
+  max-width: 22rem;
+  width: 22rem;
+  box-shadow: 1px 0 0 0 var(--border);
+}
+.tabla-px-listas-precios .celda-px-listas-col-fija-cat {
+  left: 22rem;
+  min-width: 9rem;
+  max-width: 9rem;
+  width: 9rem;
+  box-shadow: 2px 0 0 0 var(--border);
+}
+.tabla-px-listas-precios tbody td.celda-px-listas-col-fija.celda-px-listas-actualizar {
+  background-color: color-mix(in srgb, var(--accent2) 22%, var(--tabla-row-bg, var(--card)));
+}
+
 /*
  * Px Listas (precios multi-lista): filas 2rem + inputs directos en celda (patrón global .tabla-gestion-compacta).
  * Fondo transparente, borde #0072BB y texto negro vienen de la regla global tbody td input.

@@ -1,10 +1,12 @@
 import type { Prisma } from "@prisma/client";
 import { filtroTexto } from "@/lib/busqueda";
+import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type {
   ItemPxListasPreciosTabla,
   ListaPrecioPxListasColumna,
 } from "@/lib/pxListasPrecios";
+import { encontrarIdListaGeneralPxListas } from "@/lib/pxListasPreciosCategoria";
 import {
   armarCeldaPrecioPxListas,
   filtrarItemPorActualizar,
@@ -16,7 +18,21 @@ import {
 } from "@/lib/pxListasPreciosFiltros";
 import { prisma } from "@/lib/prisma";
 import { getPxListasPreciosPageParamsSchema } from "@/lib/validations/pxListasPrecios";
+import { listarFinAnaMcCategorias } from "@/services/finAnaMcCategorias.service";
 
+export type PxListasPreciosPageData = {
+  items: ItemPxListasPreciosTabla[];
+  total: number;
+  totalPaginas: number;
+  listas: ListaPrecioPxListasColumna[];
+  marcas: Array<{ marca: string }>;
+  rubros: Array<{ rubro: string }>;
+  subRubros: Array<{ subRubro: string }>;
+  /** Rangos `fin_ana_mc_cat` para CATEGORÍA MARGEN (PORC. UTILIDAD de 1 - GENERAL). */
+  categoriasMc: FinAnaMcCategoriaItem[];
+  /** `idLista` de **1 - GENERAL**; `null` si no existe en el catálogo. */
+  idListaGeneral: number | null;
+};
 function buildWhere(params: {
   q: string;
   rubro: string;
@@ -115,8 +131,11 @@ function buildItemDesdeFila(
   };
 }
 
-async function getEmptyPage(q: string) {
-  const listas = await listarColumnasListas();
+async function getEmptyPage(q: string): Promise<PxListasPreciosPageData> {
+  const [listas, categoriasMc] = await Promise.all([
+    listarColumnasListas(),
+    listarFinAnaMcCategorias(),
+  ]);
   const [marcasDistinct, rubrosDistinct, subRubrosDistinct] = await Promise.all([
     prisma.prodTienda.findMany({
       select: { marca: true },
@@ -139,7 +158,7 @@ async function getEmptyPage(q: string) {
   ]);
 
   return {
-    items: [] as ItemPxListasPreciosTabla[],
+    items: [],
     total: 0,
     totalPaginas: 1,
     listas,
@@ -152,6 +171,8 @@ async function getEmptyPage(q: string) {
     subRubros: subRubrosDistinct
       .filter((s) => s.subRubro != null)
       .map((s) => ({ subRubro: s.subRubro! })),
+    categoriasMc,
+    idListaGeneral: encontrarIdListaGeneralPxListas(listas),
   };
 }
 
@@ -204,7 +225,7 @@ export async function getPxListasPreciosPageDataFromDb(params: {
   subRubro?: string;
   actualizar?: string;
   pagina?: string;
-}) {
+}): Promise<PxListasPreciosPageData> {
   const parsed = getPxListasPreciosPageParamsSchema.safeParse(params);
   if (!parsed.success) {
     return getEmptyPage("");
@@ -229,8 +250,12 @@ export async function getPxListasPreciosPageDataFromDb(params: {
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const postProceso = requierePostProcesoActualizarPxListas({ actualizar });
 
-  const listas = await listarColumnasListas();
+  const [listas, categoriasMc] = await Promise.all([
+    listarColumnasListas(),
+    listarFinAnaMcCategorias(),
+  ]);
   const idListas = listas.map((l) => l.idLista);
+  const idListaGeneral = encontrarIdListaGeneralPxListas(listas);
 
   const [marcasDistinct, rubrosDistinct, subRubrosDistinct] = await Promise.all([
     prisma.prodTienda.findMany({
@@ -273,6 +298,8 @@ export async function getPxListasPreciosPageDataFromDb(params: {
       subRubros: subRubrosDistinct
         .filter((s) => s.subRubro != null)
         .map((s) => ({ subRubro: s.subRubro! })),
+      categoriasMc,
+      idListaGeneral,
     };
   }
 
@@ -319,5 +346,7 @@ export async function getPxListasPreciosPageDataFromDb(params: {
     subRubros: subRubrosDistinct
       .filter((s) => s.subRubro != null)
       .map((s) => ({ subRubro: s.subRubro! })),
+    categoriasMc,
+    idListaGeneral,
   };
 }

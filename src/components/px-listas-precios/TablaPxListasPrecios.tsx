@@ -46,12 +46,16 @@ import type {
   ListaPrecioPxListasColumna,
   PrecioListaPxListasCelda,
 } from "@/lib/pxListasPrecios";
+import { resolverCategoriaMargenPxListas } from "@/lib/pxListasPreciosCategoria";
+import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
 import { cn } from "@/lib/utils";
 
 interface Props {
   items: ItemPxListasPreciosTabla[];
   listas: ListaPrecioPxListasColumna[];
   puedeEditar: boolean;
+  categoriasMc: FinAnaMcCategoriaItem[];
+  idListaGeneral: number | null;
 }
 
 type DraftCeldaPxListas = {
@@ -416,8 +420,8 @@ function CeldaMargenLista({
         "w-full border-primary",
         tieneEdicion && "px-lista-input--edicion"
       )}
-      aria-label="Margen manual"
-      title="Editar margen manual"
+      aria-label="Porc. utilidad"
+      title="Editar porc. utilidad"
     />
   );
 }
@@ -426,10 +430,14 @@ function FilaPxListasPrecios({
   item,
   puedeEditar,
   onItemChange,
+  categoriasMc,
+  idListaGeneral,
 }: {
   item: ItemPxListasPreciosTabla;
   puedeEditar: boolean;
   onItemChange: (item: ItemPxListasPreciosTabla) => void;
+  categoriasMc: FinAnaMcCategoriaItem[];
+  idListaGeneral: number | null;
 }) {
   const [draftPorLista, setDraftPorLista] = useState<
     Record<number, DraftCeldaPxListas>
@@ -441,6 +449,7 @@ function FilaPxListasPrecios({
 
   const limpiarDraft = (idLista: number) => {
     setDraftPorLista((prev) => {
+      if (!(idLista in prev)) return prev;
       const next = { ...prev };
       delete next[idLista];
       return next;
@@ -479,17 +488,40 @@ function FilaPxListasPrecios({
     onItemChange(actualizarCeldaEnItem(item, idLista, patch));
   };
 
+  const celdaGeneral =
+    idListaGeneral == null
+      ? null
+      : item.preciosPorLista.find((c) => c.idLista === idListaGeneral) ?? null;
+  const draftGeneral =
+    idListaGeneral == null ? undefined : draftPorLista[idListaGeneral];
+  const porcUtilidadGeneral = celdaGeneral
+    ? aplicarDraftCelda(celdaGeneral, draftGeneral).margenPct
+    : null;
+  const categoriaMargen = resolverCategoriaMargenPxListas(
+    porcUtilidadGeneral,
+    categoriasMc
+  );
+
   return (
     <TableRow>
       <TableCell
         className={cn(
-          "celda-datos max-w-[22rem]",
+          "celda-datos max-w-[22rem] celda-px-listas-col-fija celda-px-listas-col-fija-desc",
           descripcionRequiereActualizar && "celda-px-listas-actualizar"
         )}
       >
         <span className="block truncate" title={item.descripcion}>
           {item.descripcion}
         </span>
+      </TableCell>
+      <TableCell
+        className={cn(
+          "celda-datos whitespace-nowrap celda-px-listas-col-fija celda-px-listas-col-fija-cat",
+          descripcionRequiereActualizar && "celda-px-listas-actualizar"
+        )}
+        title={categoriaMargen || undefined}
+      >
+        <span className="block truncate">{categoriaMargen}</span>
       </TableCell>
       {item.preciosPorLista.flatMap((celda) => {
         const draft = draftPorLista[celda.idLista];
@@ -543,6 +575,8 @@ export default function TablaPxListasPrecios({
   items: inicial,
   listas,
   puedeEditar,
+  categoriasMc,
+  idListaGeneral,
 }: Props) {
   const [items, setItems] = useState(inicial);
 
@@ -558,7 +592,7 @@ export default function TablaPxListasPrecios({
     );
   }, []);
 
-  const colCount = 1 + listas.length * 2;
+  const colCount = 2 + listas.length * 2;
 
   return (
     <Table
@@ -568,6 +602,7 @@ export default function TablaPxListasPrecios({
     >
       <colgroup>
         <col className="w-[22rem]" />
+        <col className="w-[9rem]" />
         {listas.flatMap((lista) => [
           <col key={`${lista.idLista}-px`} className="w-[6.5rem]" />,
           <col key={`${lista.idLista}-mg`} className="w-[5.5rem]" />,
@@ -575,8 +610,17 @@ export default function TablaPxListasPrecios({
       </colgroup>
       <TableHeader>
         <TableRow>
-          <TableHead rowSpan={2} className="align-middle">
+          <TableHead
+            rowSpan={2}
+            className="align-middle celda-px-listas-col-fija celda-px-listas-col-fija-desc"
+          >
             DESCRIPCIÓN
+          </TableHead>
+          <TableHead
+            rowSpan={2}
+            className="align-middle celda-px-listas-col-fija celda-px-listas-col-fija-cat"
+          >
+            CATEGORÍA MARGEN
           </TableHead>
           {listas.map((lista) => (
             <TableHead
@@ -594,10 +638,10 @@ export default function TablaPxListasPrecios({
               key={`${lista.idLista}-px-h`}
               className="text-center border-l border-primary-foreground/25"
             >
-              PX. CALC.
+              PX.
             </TableHead>,
             <TableHead key={`${lista.idLista}-mg-h`} className="text-center">
-              MARG. MAN.
+              PORC. UTILIDAD
             </TableHead>,
           ])}
         </TableRow>
@@ -612,6 +656,8 @@ export default function TablaPxListasPrecios({
               item={item}
               puedeEditar={puedeEditar}
               onItemChange={handleItemChange}
+              categoriasMc={categoriasMc}
+              idListaGeneral={idListaGeneral}
             />
           ))
         )}

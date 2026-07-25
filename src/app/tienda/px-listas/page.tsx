@@ -39,6 +39,8 @@ export default async function PxListasPreciosPage({ searchParams }: Props) {
     total,
     totalPaginas,
     listas,
+    categoriasMc,
+    idListaGeneral,
     marcas,
     rubros,
     subRubros,
@@ -59,6 +61,8 @@ export default async function PxListasPreciosPage({ searchParams }: Props) {
       total={total}
       totalPaginas={totalPaginas}
       listas={listas}
+      categoriasMc={categoriasMc}
+      idListaGeneral={idListaGeneral}
       marcas={marcas}
       rubros={rubros}
       subRubros={subRubros}
