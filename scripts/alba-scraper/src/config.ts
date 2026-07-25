@@ -36,6 +36,14 @@ export const ALBA_CONFIG = {
   requestTimeoutMs: 90_000,
 } as const;
 
+/** Nombres de salida (estricto / escalable: dominio_fuente[_sufijo]). */
+export const OUTPUT_FILES = {
+  colores: "colores_alba.csv",
+  /** Tips de diseño derivados de HEX/RGB + metadatos oficiales. */
+  tipDiseno: "colores_alba_tip_diseno.csv",
+  report: "scraper-report.json",
+} as const;
+
 export const COLOR_POPUP_URL = `${ALBA_CONFIG.baseUrl}/bin/api/colorPopUp?page=${ALBA_CONFIG.aemPagePath}`;
 export const PALETTE_PAGE_URL = `${ALBA_CONFIG.baseUrl}${ALBA_CONFIG.pagePath}`;
 

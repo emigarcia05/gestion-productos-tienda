@@ -7,7 +7,7 @@ Enriquecimiento: JSON embebido en <script class="js-carousel-data"> (href + id d
 
 Uso:
   python scripts/scrape_alba_colores.py
-  python scripts/scrape_alba_colores.py --out data/alba_colores.csv
+  python scripts/scrape_alba_colores.py --out data/colores_alba.csv
 """
 
 from __future__ import annotations
@@ -274,8 +274,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Scraper de colores Alba")
     parser.add_argument(
         "--out",
-        default="scripts/alba_colores.csv",
-        help="Ruta del CSV de salida (default: scripts/alba_colores.csv)",
+        default="scripts/colores_alba.csv",
+        help="Ruta del CSV de salida (default: scripts/colores_alba.csv)",
     )
     args = parser.parse_args()
     out_path = Path(args.out)

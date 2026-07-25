@@ -10,7 +10,7 @@ Ver `scripts/alba-scraper/README.md`. Desde la raíz:
 npm run scrape:alba
 ```
 
-Genera `scripts/alba-scraper/output/alba_colores.csv`, `alba_conocimiento.csv` e `imagenes/`.
+Genera `scripts/alba-scraper/output/colores_alba.csv`, `colores_alba_tip_diseno.csv` e `imagenes/`.
 
 ## Comandos npm
 

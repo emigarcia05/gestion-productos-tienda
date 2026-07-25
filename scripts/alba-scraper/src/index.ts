@@ -6,6 +6,11 @@
  * 2) JSON SSR embebido (script.js-carousel-data)
  * 3) Playwright Chromium solo con --verify-dom
  *
+ * Salida (carpeta output/):
+ * - colores_alba.csv
+ * - colores_alba_tip_diseno.csv
+ * - imagenes/CODIGO.jpg
+ *
  * Flags:
  *   --out-dir <ruta>   Carpeta de salida (default: ../output)
  *   --verify-dom       Abre Chromium y valida el wall en DOM
@@ -22,6 +27,7 @@ import {
   ALBA_COLORES_COLUMNS,
   ALBA_CONOCIMIENTO_COLUMNS,
   ALBA_CONFIG,
+  OUTPUT_FILES,
   PALETTE_PAGE_URL,
 } from "./config";
 import {
@@ -158,18 +164,18 @@ async function main(): Promise<void> {
   const catalog = mergeCatalog(apiRows, wall);
   console.log(`4) Catalogo unificado: ${catalog.length} colores unicos`);
 
-  console.log("5) Escribiendo alba_colores.csv…");
+  console.log(`5) Escribiendo ${OUTPUT_FILES.colores}…`);
   const colorRows = catalog.map(toColoresRow);
   await writeCsv(
-    path.join(outDir, "alba_colores.csv"),
+    path.join(outDir, OUTPUT_FILES.colores),
     ALBA_COLORES_COLUMNS,
     colorRows,
   );
 
-  console.log("6) Escribiendo alba_conocimiento.csv…");
+  console.log(`6) Escribiendo ${OUTPUT_FILES.tipDiseno}…`);
   const conocimientoRows = catalog.map((c) => buildConocimientoRow(c));
   await writeCsv(
-    path.join(outDir, "alba_conocimiento.csv"),
+    path.join(outDir, OUTPUT_FILES.tipDiseno),
     ALBA_CONOCIMIENTO_COLUMNS,
     conocimientoRows,
   );
@@ -195,7 +201,7 @@ async function main(): Promise<void> {
   };
 
   await fs.writeFile(
-    path.join(outDir, "scraper-report.json"),
+    path.join(outDir, OUTPUT_FILES.report),
     JSON.stringify(stats, null, 2),
     "utf8",
   );

@@ -18,8 +18,8 @@ Campos oficiales que **hoy Alba no publica** en API/JSON/ficha (`descripcion_alb
 
 ```
 scripts/alba-scraper/output/
-  alba_colores.csv
-  alba_conocimiento.csv
+  colores_alba.csv
+  colores_alba_tip_diseno.csv
   imagenes/
     14RR12349.jpg
   scraper-report.json
