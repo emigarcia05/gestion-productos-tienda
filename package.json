@@ -32,7 +32,8 @@
     "db:purge-huerfanos-prod-tienda": "tsx scripts/purge-huerfanos-prod-tienda.ts",
     "db:audit-schema": "node scripts/audit-schema-usage.mjs",
     "db:audit-schema-columns": "node scripts/audit-schema-columns.mjs",
-    "test:aplanar-pdf-matriz": "tsx scripts/test-aplanar-pdf-matriz.ts"
+    "test:aplanar-pdf-matriz": "tsx scripts/test-aplanar-pdf-matriz.ts",
+    "scrape:alba": "npm --prefix scripts/alba-scraper run scrape"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.1",

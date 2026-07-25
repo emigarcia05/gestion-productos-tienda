@@ -2,6 +2,16 @@
 
 Todos los scripts se ejecutan **desde la terminal** en la raíz del proyecto. Solo usá el dashboard de Neon para revisar datos o estructura.
 
+## Scraper Alba (carta de colores)
+
+Ver `scripts/alba-scraper/README.md`. Desde la raíz:
+
+```bash
+npm run scrape:alba
+```
+
+Genera `scripts/alba-scraper/output/alba_colores.csv`, `alba_conocimiento.csv` e `imagenes/`.
+
 ## Comandos npm
 
 | Comando | Descripción |
