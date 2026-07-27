@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardCopy, ScanSearch, Settings2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import CuentagotasImagenMuestra from "@/components/asistente-ia/CuentagotasImagenMuestra";
 import GestionarProdIaDisenoPrompModal from "@/components/asistente-ia/GestionarProdIaDisenoPrompModal";
@@ -29,24 +29,14 @@ export default function AsistenteIaBuscarColorImagenPageClient({
   esEditor,
 }: Props) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
   const [gestionarOpen, setGestionarOpen] = useState(false);
   const [colorMuestra, setColorMuestra] = useState<RgbColor | null>(null);
+  const [ultimoPrompt, setUltimoPrompt] = useState("");
 
   const url = config.urlRedireccion;
   const plantilla = config.promp;
-  const prompt =
-    colorMuestra != null
-      ? aplicarRgbAlPromptBuscarColor(plantilla, colorMuestra)
-      : "";
 
-  async function handleBuscarColorDesdeImagen() {
-    if (!colorMuestra) {
-      toast.error("Falta Color Muestra", {
-        description: "Abrí una imagen y seleccioná la zona del color.",
-      });
-      return;
-    }
+  async function handleColorPicked(color: RgbColor) {
     if (!plantilla.trim()) {
       toast.error("Falta Prompt", {
         description: "Configuralo en Gestionar Promo Y Url.",
@@ -59,7 +49,10 @@ export default function AsistenteIaBuscarColorImagenPageClient({
       });
       return;
     }
-    setBusy(true);
+
+    const prompt = aplicarRgbAlPromptBuscarColor(plantilla, color);
+    setUltimoPrompt(prompt);
+
     try {
       await navigator.clipboard.writeText(prompt);
       window.open(url, "_blank", "noopener,noreferrer");
@@ -68,10 +61,9 @@ export default function AsistenteIaBuscarColorImagenPageClient({
       });
     } catch {
       toast.error("No Se Pudo Copiar El Prompt", {
-        description: "Copiá el texto de la pantalla y abrí ChatGPT manualmente.",
+        description:
+          "El prompt está abajo: copialo manualmente y abrí la URL configurada.",
       });
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -96,68 +88,36 @@ export default function AsistenteIaBuscarColorImagenPageClient({
       >
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-6 pt-2">
           <p className={cn(CALLOUT_WARNING_CLASS, "shrink-0")}>
-            Abrí una imagen muestra, seleccioná la zona del color y usá{" "}
-            <span className="font-semibold">Buscar Color Desde Imagen</span>. Se
-            usa el prompt del módulo (
-            <span className="font-semibold">prod_ia_diseno_promp</span>) y se
-            reemplaza <span className="font-semibold">(R,G,B)</span> por el color
-            del cuentagotas. La imagen no se guarda en el servidor.
+            Abrí una imagen muestra y hacé clic en el color. Se reemplaza{" "}
+            <span className="font-semibold">(R,G,B)</span> en el prompt del
+            módulo, se copia al portapapeles y se abre la URL configurada. La
+            imagen no se guarda en el servidor.
           </p>
 
           <CuentagotasImagenMuestra
             color={colorMuestra}
             onColorChange={setColorMuestra}
+            onColorPicked={(c) => void handleColorPicked(c)}
           />
 
-          <div className="flex shrink-0 flex-col gap-3 rounded-lg border border-border bg-card p-4">
-            <p className="text-sm font-medium text-foreground">
-              Prompt Con Rgb Del Cuentagotas
-            </p>
-            <pre
-              className={cn(
-                "whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3",
-                "text-sm text-foreground",
-              )}
-            >
-              {prompt ||
-                (plantilla.trim()
-                  ? "Seleccioná un color en la imagen: se reemplazará (R,G,B) en el prompt del módulo."
-                  : "Sin prompt configurado. Usá Gestionar Promo Y Url.")}
-            </pre>
-            <p className="text-xs text-muted-foreground">
-              URL: {url || "Sin URL configurada."}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                className="h-10 px-4"
-                disabled={
-                  busy || !colorMuestra || !plantilla.trim() || !url.trim()
-                }
-                onClick={() => void handleBuscarColorDesdeImagen()}
+          {ultimoPrompt ? (
+            <div className="flex shrink-0 flex-col gap-3 rounded-lg border border-border bg-card p-4">
+              <p className="text-sm font-medium text-foreground">
+                Último Prompt Copiado
+              </p>
+              <pre
+                className={cn(
+                  "whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3",
+                  "text-sm text-foreground",
+                )}
               >
-                <ScanSearch className="h-4 w-4" aria-hidden />
-                Buscar Color Desde Imagen
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 px-4"
-                disabled={busy || !prompt}
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(prompt);
-                    toast.success("Prompt Copiado");
-                  } catch {
-                    toast.error("No Se Pudo Copiar El Prompt");
-                  }
-                }}
-              >
-                <ClipboardCopy className="h-4 w-4" aria-hidden />
-                Solo Copiar Prompt
-              </Button>
+                {ultimoPrompt}
+              </pre>
+              <p className="text-xs text-muted-foreground">
+                URL: {url || "Sin URL configurada."}
+              </p>
             </div>
-          </div>
+          ) : null}
         </div>
       </ClassicFilteredTableLayout>
 

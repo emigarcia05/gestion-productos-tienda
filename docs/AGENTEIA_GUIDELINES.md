@@ -51,7 +51,7 @@ npm run ia-diseno:pipeline   # ambos
 
 - Sidebar **ASISTENTE IA** → **Buscar Color Desde Imagen** (`PERMISOS.asistenteIa.acceso`, solo editor).
 - Prompt/URL en tabla **`prod_ia_diseno_promp`** (CRUD: **Gestionar Promo Y Url**); la **URL** se usa al buscar.
-- **Cuentagotas (cliente):** **Abrir Imagen Muestra** → selección de zona en canvas → RGB; imagen **no** se persiste. El prompt sale de **`prod_ia_diseno_promp.promp`**; `aplicarRgbAlPromptBuscarColor` reemplaza el placeholder **`(R,G,B)`** (p. ej. `RGB: "(R,G,B)"` → `RGB: "(128,64,32)"`).
+- **Cuentagotas (cliente):** **Abrir Imagen Muestra** → preview `<img>` + muestreo en canvas offscreen → **clic** en el color → RGB; imagen **no** se persiste. El prompt sale de **`prod_ia_diseno_promp.promp`**; `aplicarRgbAlPromptBuscarColor` reemplaza **`(R,G,B)`**; al clic se copia al portapapeles y se abre **`url_redireccion`**.
 - FE: `docs/FRONTEND_GUIDELINES.md`. BE: `docs/BACKEND_GUIDELINES.md`. Reglas del asesor: `REGLAS_NEGOCIO.md` (no mezclar en FE/BE).
 
 ---
