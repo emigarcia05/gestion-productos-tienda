@@ -202,13 +202,11 @@ Informe claro de hallazgos + correcciones aplicadas (si se pidió) + guías y RE
 
 ## Uso rápido
 
-| Agente | Pegar el bloque | Enfoque |
-|--------|-----------------|---------|
-| FullStack | §1 | Feature E2E + docs FE y BE |
-| Front | §2 | UI/patrones + `FRONTEND_GUIDELINES` |
-| Back | §3 | Actions/servicios/Prisma + `BACKEND_GUIDELINES` |
-| Auditoría | §4 | Revisión contra guías + cierre documental |
+Abrí el archivo del agente → **Ctrl+A** → **Ctrl+C** → pegá en un chat nuevo (Agent) → completá `Módulo/ruta` y `Objetivo`.
 
-Al iniciar un chat Custom Mode / Agent, pegá el prompt del agente y añadí: *“Módulo/ruta: … Objetivo: …”*.
-
-**Atajo diario:** bloques listos para copiar/pegar en [`.cursor/agentes_promp.md`](./agentes_promp.md).
+| Agente | Archivo | Enfoque |
+|--------|---------|---------|
+| FullStack | [`fullstack_promp.md`](./fullstack_promp.md) | Feature E2E + docs FE y BE |
+| Front | [`front_promp.md`](./front_promp.md) | UI/patrones + `FRONTEND_GUIDELINES` |
+| Back | [`back_promp.md`](./back_promp.md) | Actions/servicios/Prisma + `BACKEND_GUIDELINES` |
+| Auditoría | [`auditoria_promp.md`](./auditoria_promp.md) | Revisión contra guías + cierre documental |
