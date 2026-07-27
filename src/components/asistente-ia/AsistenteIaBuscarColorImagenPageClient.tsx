@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardCopy, ImageSearch, Settings2 } from "lucide-react";
+import { ClipboardCopy, ScanSearch, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import GestionarProdIaDisenoPrompModal from "@/components/asistente-ia/GestionarProdIaDisenoPrompModal";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -102,7 +102,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
                 disabled={busy || !prompt.trim() || !url.trim()}
                 onClick={() => void handleBuscarColorDesdeImagen()}
               >
-                <ImageSearch className="h-4 w-4" aria-hidden />
+                <ScanSearch className="h-4 w-4" aria-hidden />
                 Buscar Color Desde Imagen
               </Button>
               <Button

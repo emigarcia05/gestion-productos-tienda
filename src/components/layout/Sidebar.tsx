@@ -41,7 +41,7 @@ import {
   Images,
   Palette,
   Sparkles,
-  ImageSearch,
+  ScanSearch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -250,7 +250,7 @@ const MODULES: NavModule[] = [
       {
         href: GP_ROUTES.asistenteIa.buscarColorImagen,
         label: "Buscar Color Desde Imagen",
-        icon: <ImageSearch className="h-4 w-4 shrink-0" />,
+        icon: <ScanSearch className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.asistenteIa.acceso,
       },
     ],
