@@ -1369,14 +1369,26 @@
   width: 100%;
 }
 
-/* Px Listas multi-lista: columnas dinámicas; scroll horizontal en contenedor-tabla-gestion. */
+/* Px Listas multi-lista: fijas 42 % + 8 % (50 % viewport); listas con scroll horizontal. */
+.contenedor-tabla-gestion:has(.tabla-px-listas-precios) {
+  container-type: inline-size;
+  container-name: px-listas-tabla;
+}
+
 .tabla-px-listas-precios {
-  table-layout: auto;
-  width: max-content;
+  table-layout: fixed;
+  width: 100%;
   min-width: 100%;
 }
 
-/* Columnas fijas (DESCRIPCIÓN + CATEGORÍA MARGEN) al hacer scroll horizontal. */
+.tabla-px-listas-precios .col-px-listas-desc {
+  width: 42cqw;
+}
+.tabla-px-listas-precios .col-px-listas-cat {
+  width: 8cqw;
+}
+
+/* Columnas fijas (DESCRIPCIÓN 42 % + CATEGORÍA M.C 8 %) al hacer scroll horizontal. */
 .tabla-px-listas-precios th.celda-px-listas-col-fija,
 .tabla-px-listas-precios td.celda-px-listas-col-fija {
   position: sticky;
@@ -1391,20 +1403,27 @@
 }
 .tabla-px-listas-precios .celda-px-listas-col-fija-desc {
   left: 0;
-  min-width: 22rem;
-  max-width: 22rem;
-  width: 22rem;
+  width: 42cqw;
+  min-width: 42cqw;
+  max-width: 42cqw;
   box-shadow: 1px 0 0 0 var(--border);
 }
 .tabla-px-listas-precios .celda-px-listas-col-fija-cat {
-  left: 22rem;
-  min-width: 9rem;
-  max-width: 9rem;
-  width: 9rem;
+  left: 42cqw;
+  width: 8cqw;
+  min-width: 8cqw;
+  max-width: 8cqw;
   box-shadow: 2px 0 0 0 var(--border);
 }
 .tabla-px-listas-precios tbody td.celda-px-listas-col-fija.celda-px-listas-actualizar {
   background-color: color-mix(in srgb, var(--accent2) 22%, var(--tabla-row-bg, var(--card)));
+}
+
+/* Bloque desplazable: PX + PORC. UTILIDAD por lista. */
+.tabla-px-listas-precios tbody td.celda-px-lista-col,
+.tabla-px-listas-precios tbody td.celda-marcacion-col,
+.tabla-px-listas-precios thead th.tabla-px-listas-col-lista {
+  min-width: 2.75rem;
 }
 
 /*

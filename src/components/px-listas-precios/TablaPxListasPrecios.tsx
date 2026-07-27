@@ -63,6 +63,13 @@ type DraftCeldaPxListas = {
   margen: number | null;
 };
 
+const PX_LISTAS_PCT_DESCRIPCION = 42;
+const PX_LISTAS_PCT_CATEGORIA_MC = 8;
+/** Resto de la grilla (listas PX + PORC. UTILIDAD); 40 % indicado en UX (42 + 8 + 40 = 90 %; el 10 % restante lo reparte el navegador). */
+const PX_LISTAS_PCT_LISTAS = 40;
+/** Ancho mínimo por par PX / PORC. cuando hay muchas listas (scroll horizontal). */
+const PX_LISTAS_MIN_ANCHO_PAR_LISTA_REM = 5;
+
 function actualizarCeldaEnItem(
   item: ItemPxListasPreciosTabla,
   idLista: number,
@@ -506,7 +513,7 @@ function FilaPxListasPrecios({
     <TableRow>
       <TableCell
         className={cn(
-          "celda-datos max-w-[22rem] celda-px-listas-col-fija celda-px-listas-col-fija-desc",
+          "celda-datos celda-px-listas-col-fija celda-px-listas-col-fija-desc",
           descripcionRequiereActualizar && "celda-px-listas-actualizar"
         )}
       >
@@ -593,19 +600,27 @@ export default function TablaPxListasPrecios({
   }, []);
 
   const colCount = 2 + listas.length * 2;
+  const pctSubcolLista =
+    listas.length > 0 ? PX_LISTAS_PCT_LISTAS / (listas.length * 2) : 0;
+  const tablasListasMinWidthRem = listas.length * PX_LISTAS_MIN_ANCHO_PAR_LISTA_REM;
 
   return (
     <Table
       variant="compact"
       scrollX
-      className="tabla-px-listas-listado tabla-px-listas-precios min-w-max"
+      className="tabla-px-listas-listado tabla-px-listas-precios"
+      style={{
+        ["--px-listas-num-listas" as string]: String(listas.length),
+        minWidth: `max(100cqw, calc(${PX_LISTAS_PCT_DESCRIPCION}cqw + ${PX_LISTAS_PCT_CATEGORIA_MC}cqw + max(${PX_LISTAS_PCT_LISTAS}cqw, ${tablasListasMinWidthRem}rem)))`,
+        width: `max(100cqw, calc(${PX_LISTAS_PCT_DESCRIPCION}cqw + ${PX_LISTAS_PCT_CATEGORIA_MC}cqw + max(${PX_LISTAS_PCT_LISTAS}cqw, ${tablasListasMinWidthRem}rem)))`,
+      }}
     >
       <colgroup>
-        <col className="w-[22rem]" />
-        <col className="w-[9rem]" />
+        <col className="col-px-listas-desc" />
+        <col className="col-px-listas-cat" />
         {listas.flatMap((lista) => [
-          <col key={`${lista.idLista}-px`} className="w-[6.5rem]" />,
-          <col key={`${lista.idLista}-mg`} className="w-[5.5rem]" />,
+          <col key={`${lista.idLista}-px`} className="col-px-listas-lista" style={{ width: `${pctSubcolLista}%` }} />,
+          <col key={`${lista.idLista}-mg`} className="col-px-listas-lista" style={{ width: `${pctSubcolLista}%` }} />,
         ])}
       </colgroup>
       <TableHeader>
@@ -620,13 +635,13 @@ export default function TablaPxListasPrecios({
             rowSpan={2}
             className="align-middle celda-px-listas-col-fija celda-px-listas-col-fija-cat"
           >
-            CATEGORÍA MARGEN
+            CATEGORÍA M.C
           </TableHead>
           {listas.map((lista) => (
             <TableHead
               key={lista.idLista}
               colSpan={2}
-              className="text-center border-l border-primary-foreground/25"
+              className="text-center border-l border-primary-foreground/25 tabla-px-listas-col-lista"
             >
               {lista.nombreLista.toUpperCase()}
             </TableHead>
@@ -636,11 +651,14 @@ export default function TablaPxListasPrecios({
           {listas.flatMap((lista) => [
             <TableHead
               key={`${lista.idLista}-px-h`}
-              className="text-center border-l border-primary-foreground/25"
+              className="text-center border-l border-primary-foreground/25 tabla-px-listas-col-lista"
             >
-              PX.
+              PX
             </TableHead>,
-            <TableHead key={`${lista.idLista}-mg-h`} className="text-center">
+            <TableHead
+              key={`${lista.idLista}-mg-h`}
+              className="text-center tabla-px-listas-col-lista"
+            >
               PORC. UTILIDAD
             </TableHead>,
           ])}
