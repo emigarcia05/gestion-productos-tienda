@@ -1,7 +1,7 @@
 /**
  * Constantes y tipos del módulo Asistente IA (Gestión Productos / IA_DISEÑO).
- * Prompt y URL viven en `prod_ia_diseno_promp`. El cuentagotas solo reemplaza
- * el placeholder `(R,G,B)` en la plantilla (la imagen no se persiste).
+ * Prompt y URL viven en `prod_ia_diseno_promp`.
+ * Variables del prompt: sintaxis `{{CLAVE}}` (p. ej. `{{RGB}}` del cuentagotas).
  */
 
 import type { RgbColor } from "@/lib/colorMuestraImagen";
@@ -17,11 +17,44 @@ export const ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN =
 export const ASISTENTE_IA_CHATGPT_BUSCAR_COLOR_URL_DEFAULT =
   "https://chatgpt.com/c/6a6770f3-1a34-83e9-b9a6-a24c979961b0" as const;
 
-/** Placeholder que el cuentagotas sustituye por el RGB real, p. ej. `(128,64,32)`. */
-export const ASISTENTE_IA_RGB_PLACEHOLDER = "(R,G,B)" as const;
+/** Clave canónica de la variable RGB (cuentagotas). */
+export const ASISTENTE_IA_VAR_RGB = "RGB" as const;
+
+/** Token insertable en plantillas: `{{RGB}}`. */
+export function tokenVariablePrompt(clave: string): string {
+  return `{{${clave}}}`;
+}
+
+export const ASISTENTE_IA_RGB_TOKEN = tokenVariablePrompt(
+  ASISTENTE_IA_VAR_RGB,
+) as "{{RGB}}";
 
 /**
- * Plantilla seed/fallback del submódulo (debe incluir `(R,G,B)`).
+ * Alias legacy en plantillas antiguas (antes de `{{RGB}}`).
+ * Se sigue reemplazando por compatibilidad con filas ya guardadas.
+ */
+export const ASISTENTE_IA_RGB_PLACEHOLDER_LEGACY = "(R,G,B)" as const;
+
+export interface AsistenteIaVariablePrompt {
+  clave: string;
+  token: string;
+  etiqueta: string;
+  descripcion: string;
+}
+
+/** Catálogo de variables insertables en GESTION PROMP & URL. */
+export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[] =
+  [
+    {
+      clave: ASISTENTE_IA_VAR_RGB,
+      token: ASISTENTE_IA_RGB_TOKEN,
+      etiqueta: "RGB",
+      descripcion: "Color tomado con el cuentagotas, p. ej. (128,64,32).",
+    },
+  ] as const;
+
+/**
+ * Plantilla seed/fallback del submódulo (debe incluir `{{RGB}}`).
  * La fuente de verdad en runtime es `prod_ia_diseno_promp.promp`.
  */
 export function buildPromptBuscarColorDesdeImagenDefault(): string {
@@ -40,22 +73,40 @@ export function buildPromptBuscarColorDesdeImagenDefault(): string {
     "",
     "No escribas ningún texto adicional.",
     "",
-    `RGB: "${ASISTENTE_IA_RGB_PLACEHOLDER}"`,
+    `RGB: "${ASISTENTE_IA_RGB_TOKEN}"`,
   ].join("\n");
 }
 
 /**
+ * Sustituye `{{CLAVE}}` por valores. Claves sin valor se dejan intactas.
+ */
+export function aplicarVariablesAlPrompt(
+  plantilla: string,
+  valores: Record<string, string>,
+): string {
+  return plantilla.replace(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g, (match, clave: string) => {
+    const key = clave.toUpperCase();
+    const found = Object.entries(valores).find(([k]) => k.toUpperCase() === key);
+    return found ? found[1] : match;
+  });
+}
+
+/**
  * Inserta el RGB del cuentagotas en la plantilla del módulo.
- * Reemplaza todas las ocurrencias de `(R,G,B)` (sirve con o sin comillas alrededor).
- * Si la plantilla no trae el placeholder, agrega `RGB: "(r,g,b)"` al final.
+ * Prioridad: `{{RGB}}` → legacy `(R,G,B)` → append al final.
  */
 export function aplicarRgbAlPromptBuscarColor(
   plantilla: string,
   color: RgbColor,
 ): string {
   const tuple = formatRgbTuple(color);
-  if (plantilla.includes(ASISTENTE_IA_RGB_PLACEHOLDER)) {
-    return plantilla.split(ASISTENTE_IA_RGB_PLACEHOLDER).join(tuple);
+  if (plantilla.includes(ASISTENTE_IA_RGB_TOKEN) || /\{\{\s*RGB\s*\}\}/i.test(plantilla)) {
+    return aplicarVariablesAlPrompt(plantilla, { [ASISTENTE_IA_VAR_RGB]: tuple });
+  }
+  if (plantilla.includes(ASISTENTE_IA_RGB_PLACEHOLDER_LEGACY)) {
+    return plantilla
+      .split(ASISTENTE_IA_RGB_PLACEHOLDER_LEGACY)
+      .join(tuple);
   }
   const base = plantilla.trimEnd();
   return `${base}\n\nRGB: "${tuple}"`;

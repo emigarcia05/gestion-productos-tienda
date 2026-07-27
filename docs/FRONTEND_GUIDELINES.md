@@ -1509,7 +1509,11 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-27): **Asistente IA · cuentagotas** — en **Buscar Color Desde Imagen**: **Abrir Imagen Muestra** muestra preview con `<img>` + canvas offscreen (fix: el canvas no existía en el DOM al cargar). Clic en la imagen → RGB → `aplicarRgbAlPromptBuscarColor` sobre `prod_ia_diseno_promp` → copiar al portapapeles + abrir `url_redireccion`. Excepción de estilo: `style` dinámico para tamaño del preview y `backgroundColor` del swatch.*
 
-*Última actualización (2026-07-27): **Asistente IA** — módulo sidebar **ASISTENTE IA** (solo `editor`) en Gestión Productos; submódulo **Buscar Color Desde Imagen** (`/gestion-productos/asistente-ia/buscar-color-imagen` → rewrite `/asistente-ia/buscar-color-imagen`). Header: **Gestionar Promo Y Url** → CRUD `prod_ia_diseno_promp` (prompt + URL por submódulo). CTA copia prompt desde BD y abre `url_redireccion`. Permiso `PERMISOS.asistenteIa.acceso`. Layout: `ClassicFilteredTableLayout` título **Asistente IA**, subtítulo **Buscar Color Desde Imagen**.*
+*Última actualización (2026-07-27): **GESTION PROMP & URL · variables** — en editar/crear prompt: chips **Insertar Variable** (`{{RGB}}` desde `ASISTENTE_IA_VARIABLES_PROMPT`). El cuentagotas completa `{{RGB}}` (legacy `(R,G,B)` sigue funcionando).*
+
+*Última actualización (2026-07-27): **GESTION PROMP & URL** — listado del modal solo muestra el **título del submódulo** + acciones editar/eliminar (sin preview de prompt ni URL en la fila).*
+
+*Última actualización (2026-07-27): **Asistente IA** — módulo sidebar **ASISTENTE IA** (solo `editor`); submódulo **Buscar Color Desde Imagen**; header/modal **GESTION PROMP & URL** → CRUD `prod_ia_diseno_promp`. Permiso `PERMISOS.asistenteIa.acceso`.*
 
 ---
 

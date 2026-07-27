@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
@@ -14,7 +14,11 @@ import {
   eliminarProdIaDisenoPrompAction,
   listarProdIaDisenoPrompsAction,
 } from "@/actions/prodIaDisenoPromp";
-import type { ProdIaDisenoPrompItem } from "@/lib/asistenteIa";
+import {
+  ASISTENTE_IA_VARIABLES_PROMPT,
+  type AsistenteIaVariablePrompt,
+  type ProdIaDisenoPrompItem,
+} from "@/lib/asistenteIa";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import type { ActionResult } from "@/lib/types";
 import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
@@ -44,13 +48,18 @@ export default function GestionarProdIaDisenoPrompModal({
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [formOpen, setFormOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<ProdIaDisenoPrompItem | null>(null);
+  const [editingItem, setEditingItem] = useState<ProdIaDisenoPrompItem | null>(
+    null,
+  );
   const [formSubmodulo, setFormSubmodulo] = useState("");
   const [formPromp, setFormPromp] = useState("");
   const [formUrl, setFormUrl] = useState("");
   const [pending, setPending] = useState(false);
-  const [borrarTarget, setBorrarTarget] = useState<ProdIaDisenoPrompItem | null>(null);
+  const [borrarTarget, setBorrarTarget] = useState<ProdIaDisenoPrompItem | null>(
+    null,
+  );
   const [borrando, setBorrando] = useState(false);
+  const prompTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -105,6 +114,24 @@ export default function GestionarProdIaDisenoPrompModal({
     setFormPromp(item.promp);
     setFormUrl(item.urlRedireccion);
     setFormOpen(true);
+  }
+
+  function insertarVariable(variable: AsistenteIaVariablePrompt) {
+    const el = prompTextareaRef.current;
+    const token = variable.token;
+    if (!el) {
+      setFormPromp((prev) => `${prev}${token}`);
+      return;
+    }
+    const start = el.selectionStart ?? formPromp.length;
+    const end = el.selectionEnd ?? formPromp.length;
+    const next = `${formPromp.slice(0, start)}${token}${formPromp.slice(end)}`;
+    setFormPromp(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const caret = start + token.length;
+      el.setSelectionRange(caret, caret);
+    });
   }
 
   async function handleGuardarForm() {
@@ -164,9 +191,12 @@ export default function GestionarProdIaDisenoPrompModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(next) => !pending && !borrando && onOpenChange(next)}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => !pending && !borrando && onOpenChange(next)}
+      >
         <AppModal
-          title="Gestionar Promo Y Url"
+          title="GESTION PROMP & URL"
           size="lg"
           className="max-w-3xl"
           scrollBody
@@ -223,12 +253,12 @@ export default function GestionarProdIaDisenoPrompModal({
                   {listaFiltrada.map((item) => (
                     <li
                       key={item.id}
-                      className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3"
+                      className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-3"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-foreground">{item.submodulo}</p>
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.promp}</p>
-                        <p className="mt-1 truncate text-xs text-primary">{item.urlRedireccion}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {item.submodulo}
+                        </p>
                       </div>
                       {esEditor ? (
                         <div className="flex shrink-0 gap-1">
@@ -316,10 +346,36 @@ export default function GestionarProdIaDisenoPrompModal({
             </div>
             <div className="flex flex-col gap-1">
               <ModalMicroLabel>Prompt</ModalMicroLabel>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  Insertar Variable:
+                </span>
+                {ASISTENTE_IA_VARIABLES_PROMPT.map((variable) => (
+                  <Button
+                    key={variable.clave}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2 font-mono text-xs"
+                    disabled={pending}
+                    title={variable.descripcion}
+                    onClick={() => insertarVariable(variable)}
+                  >
+                    {variable.token}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Las variables usan la forma{" "}
+                <span className="font-mono text-foreground">{"{{RGB}}"}</span> y
+                se completan al usar el cuentagotas. No confundir con ejemplos
+                de respuesta como [Nombre] o [Código].
+              </p>
               <textarea
+                ref={prompTextareaRef}
                 value={formPromp}
                 onChange={(e) => setFormPromp(e.target.value)}
-                rows={6}
+                rows={8}
                 disabled={pending}
                 className={cn(
                   "border-input min-h-[8rem] w-full rounded-md border bg-transparent px-3 py-2 text-sm",

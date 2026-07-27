@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.5.0 — 2026-07-27
+
+**Descripción:** Variables de prompt con sintaxis `{{CLAVE}}` (p. ej. `{{RGB}}`); chips **Insertar Variable** en GESTION PROMP & URL; el cuentagotas completa `{{RGB}}` (compat `(R,G,B)`).
+
+**Motivo:** Marcar explícitamente qué partes del prompt se rellenan en runtime.
+
 ## 0.4.0 — 2026-07-27
 
 **Descripción:** UI **Buscar Color Desde Imagen** — cuentagotas local (**Abrir Imagen Muestra**, selección de zona, RGB). El prompt es el de `prod_ia_diseno_promp`; se reemplaza el placeholder `(R,G,B)` con el color muestado. La imagen no se guarda en servidor.

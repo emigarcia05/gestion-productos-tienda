@@ -39,13 +39,13 @@ export default function AsistenteIaBuscarColorImagenPageClient({
   async function handleColorPicked(color: RgbColor) {
     if (!plantilla.trim()) {
       toast.error("Falta Prompt", {
-        description: "Configuralo en Gestionar Promo Y Url.",
+        description: "Configuralo en GESTION PROMP & URL.",
       });
       return;
     }
     if (!url.trim()) {
       toast.error("Falta Url", {
-        description: "Configurala en Gestionar Promo Y Url.",
+        description: "Configurala en GESTION PROMP & URL.",
       });
       return;
     }
@@ -81,7 +81,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
               onClick={() => setGestionarOpen(true)}
             >
               <Settings2 className="h-4 w-4" aria-hidden />
-              Gestionar Promo Y Url
+              GESTION PROMP & URL
             </Button>
           ) : null
         }
@@ -89,9 +89,9 @@ export default function AsistenteIaBuscarColorImagenPageClient({
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-6 pt-2">
           <p className={cn(CALLOUT_WARNING_CLASS, "shrink-0")}>
             Abrí una imagen muestra y hacé clic en el color. Se reemplaza{" "}
-            <span className="font-semibold">(R,G,B)</span> en el prompt del
-            módulo, se copia al portapapeles y se abre la URL configurada. La
-            imagen no se guarda en el servidor.
+            <span className="font-semibold font-mono">{"{{RGB}}"}</span> en el
+            prompt del módulo, se copia al portapapeles y se abre la URL
+            configurada. La imagen no se guarda en el servidor.
           </p>
 
           <CuentagotasImagenMuestra

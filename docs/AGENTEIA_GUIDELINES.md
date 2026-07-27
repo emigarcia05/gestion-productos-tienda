@@ -50,8 +50,9 @@ npm run ia-diseno:pipeline   # ambos
 ## UI monorepo (capa 5 v1)
 
 - Sidebar **ASISTENTE IA** → **Buscar Color Desde Imagen** (`PERMISOS.asistenteIa.acceso`, solo editor).
-- Prompt/URL en tabla **`prod_ia_diseno_promp`** (CRUD: **Gestionar Promo Y Url**); la **URL** se usa al buscar.
-- **Cuentagotas (cliente):** **Abrir Imagen Muestra** → preview `<img>` + muestreo en canvas offscreen → **clic** en el color → RGB; imagen **no** se persiste. El prompt sale de **`prod_ia_diseno_promp.promp`**; `aplicarRgbAlPromptBuscarColor` reemplaza **`(R,G,B)`**; al clic se copia al portapapeles y se abre **`url_redireccion`**.
+- Prompt/URL en tabla **`prod_ia_diseno_promp`** (CRUD: **GESTION PROMP & URL**); la **URL** se usa al buscar.
+- **Variables de prompt:** sintaxis **`{{CLAVE}}`** (catálogo `ASISTENTE_IA_VARIABLES_PROMPT`). Hoy: **`{{RGB}}`** (cuentagotas). En el editor, chips **Insertar Variable**. Compat: plantillas viejas con `(R,G,B)`.
+- **Cuentagotas (cliente):** **Abrir Imagen Muestra** → preview `<img>` + muestreo en canvas offscreen → **clic** en el color → RGB; imagen **no** se persiste. `aplicarRgbAlPromptBuscarColor` sustituye `{{RGB}}` (o legacy); al clic se copia al portapapeles y se abre **`url_redireccion`**.
 - FE: `docs/FRONTEND_GUIDELINES.md`. BE: `docs/BACKEND_GUIDELINES.md`. Reglas del asesor: `REGLAS_NEGOCIO.md` (no mezclar en FE/BE).
 
 ---
