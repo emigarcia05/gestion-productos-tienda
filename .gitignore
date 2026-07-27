@@ -43,3 +43,7 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# IA_COLORES — muestras JPG (regenerar con npm run scrape:alba)
+/IA_COLORES/imagenes/
+/scripts/alba-scraper/output/imagenes/

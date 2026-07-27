@@ -42,7 +42,8 @@ import type { AlbaColorCsvRow, CatalogColor, ScraperStats } from "./types";
 import { hexToRgbString, imagenCsvPath, joinList } from "./utils";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_OUT_DIR = path.resolve(__dirname, "..", "output");
+/** Salida canónica: IA_COLORES/ (ADR-003). Override con --out-dir. */
+const DEFAULT_OUT_DIR = path.resolve(__dirname, "..", "..", "..", "IA_COLORES");
 
 function parseArgs(argv: string[]): { outDir: string; verifyDom: boolean } {
   let outDir = DEFAULT_OUT_DIR;

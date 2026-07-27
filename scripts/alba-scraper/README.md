@@ -14,15 +14,31 @@ Campos oficiales que **hoy Alba no publica** en API/JSON/ficha (`descripcion_alb
 
 `ambientes` se completa solo cuando existe `colorId` (set oficial de habitaciones del CDN de imágenes inspiracionales).
 
-## Salida
+## Salida (canónica)
+
+Por defecto escribe en **`IA_COLORES/`** en la raíz del monorepo (ADR-003):
 
 ```
-scripts/alba-scraper/output/
+IA_COLORES/
   colores_alba.csv
   colores_alba_tip_diseno.csv
   imagenes/
     14RR12349.jpg
   scraper-report.json
+```
+
+Override: `npx tsx src/index.ts --out-dir ./output`
+
+Tras el scrape, regenerar capa 3:
+
+```bash
+npm run build:colores-ia
+```
+
+O pipeline completo desde la raíz:
+
+```bash
+npm run ia-colores:pipeline
 ```
 
 ## Uso
