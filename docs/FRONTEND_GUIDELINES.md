@@ -8,10 +8,10 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 
 ## Guía para IA (crear o modificar código frontend)
 
-**Cuando crees o modifiques cualquier código frontend en este proyecto, usa este documento como única referencia.** Antes de proponer o escribir código:
+**Cuando crees o modifiques cualquier código frontend en este proyecto, usa este documento como referencia.** No lo leas entero: localizá la sección del patrón o módulo que estás tocando (Guía para IA §1–4, catálogo de clases, o la subsección del área en § layouts/páginas). Antes de proponer o escribir código:
 
-1. **Consultar esta guía**  
-   Revisa las secciones 1 (Patrones), 2 (Clases globales), 3 (Reglas técnicas) y 4 (Checklist PR). Aplica los patrones existentes; no inventes estilos ni estructuras nuevas que rompan la convención.
+1. **Consultar esta guía (sección relevante)**  
+   Aplica los patrones existentes; no inventes estilos ni estructuras nuevas que rompan la convención.
 
 2. **Estilos**  
    - **Nunca** uses `bg-white`, `text-slate-*`, `bg-slate-*`, `border-slate-*`. Usa **siempre** tokens: `bg-card`, `text-foreground`, `text-muted-foreground`, `bg-muted`, `border-border`, `bg-primary`, etc.  

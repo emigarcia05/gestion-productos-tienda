@@ -1,6 +1,8 @@
 # Guía Backend — Next.js 16 App Router
 
-Documento de referencia para desarrolladores y **asistentes IA** que crean o modifican Server Actions, servicios y validaciones. Sigue estas reglas para mantener seguridad, integridad de datos y arquitectura limpia.
+Documento de referencia para desarrolladores y **asistentes IA** que crean o modifican Server Actions, servicios y validaciones. **No leer el archivo completo:** buscar el § del dominio o principio que aplica (sesión, Zod, modelo Prisma, etc.).
+
+Sigue estas reglas para mantener seguridad, integridad de datos y arquitectura limpia.
 
 ---
 

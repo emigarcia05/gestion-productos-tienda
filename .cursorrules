@@ -3,7 +3,7 @@
 ## Uso obligatorio para IA
 
 Al **crear o modificar código frontend** (componentes, páginas, estilos):
-1. **Lee y aplica** el archivo **`docs/FRONTEND_GUIDELINES.md`**.
+1. **Lee y aplica** las **secciones relevantes** de **`docs/FRONTEND_GUIDELINES.md`** (no el archivo completo).
 2. Usa la sección "Guía para IA" como checklist: estilos con tokens y `cn()`, filtros con `useFiltrosConBusqueda` + `FiltroBusquedaInput`, tablas con `Table` de `@/components/ui/table`, etc.
 3. Antes de dar por terminada una tarea, verifica el **Checklist de PR** en `docs/FRONTEND_GUIDELINES.md` (sección 4) y actualiza la guía si introduces nuevas clases globales o patrones.
 

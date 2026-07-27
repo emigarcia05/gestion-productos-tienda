@@ -12,4 +12,4 @@ alwaysApply: true
 5. Cerrar con retroalimentación:
    - actualizar `docs/FRONTEND_GUIDELINES.md` si se creó/ajustó patrón frontend;
    - actualizar `docs/BACKEND_GUIDELINES.md` si se creó/ajustó regla backend;
-   - actualizar `docs/AGENTEIA_GUIDELINES.md` / `docs/IA_DISEÑO/` si se tocó IA Diseño.
+   - actualizar `docs/AGENTEIA_GUIDELINES.md` / `docs/IA_DISEÑO/CHANGELOG.md` (o ADR nuevo) si se tocó IA Diseño.

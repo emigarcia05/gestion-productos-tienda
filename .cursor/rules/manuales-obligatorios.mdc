@@ -5,8 +5,8 @@ alwaysApply: true
 
 # Manuales obligatorios antes de codificar
 
-- Antes de crear o modificar código, leer `docs/FRONTEND_GUIDELINES.md` y `docs/BACKEND_GUIDELINES.md`.
-- Antes de crear o modificar **IA o datos de colores** (`docs/IA_DISEÑO/`, scraper Alba, agente), leer `docs/AGENTEIA_GUIDELINES.md` y la documentación en `docs/IA_DISEÑO/README_PROYECTO_IA_DISENO.md`.
-- No proponer convenciones nuevas que contradigan esos documentos.
-- Si hay conflicto, priorizar la guía específica del área (frontend, backend o agente IA).
-- La tarea no se considera cerrada hasta documentar cambios relevantes en los manuales.
+- Frontend → `docs/FRONTEND_GUIDELINES.md` (**sección del módulo tocado**, no el archivo completo).
+- Backend → `docs/BACKEND_GUIDELINES.md` (**§ del dominio**, no el archivo completo).
+- IA Diseño / colores / scraper / Asistente IA → `docs/AGENTEIA_GUIDELINES.md`; si afecta el asesor → también `docs/IA_DISEÑO/REGLAS_NEGOCIO.md`.
+- No inventar convenciones que contradigan esas guías. Priorizar la guía del área.
+- Cerrar la tarea documentando cambios relevantes (guía del área, `CHANGELOG` IA Diseño o ADR nuevo si aplica).

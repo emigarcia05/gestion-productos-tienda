@@ -1,26 +1,20 @@
-# Documentación del proyecto (retroalimentación IA)
+# Documentación (retroalimentación IA)
 
-Carpeta canónica de guías y conocimiento para humanos y asistentes IA.
+| Documento | Cuándo leerlo |
+|-----------|---------------|
+| [FRONTEND_GUIDELINES.md](./FRONTEND_GUIDELINES.md) | UI / componentes / estilos — **solo la sección del módulo tocado**, no el archivo entero |
+| [BACKEND_GUIDELINES.md](./BACKEND_GUIDELINES.md) | Actions / servicios / Prisma — **buscar el § del dominio** |
+| [AGENTEIA_GUIDELINES.md](./AGENTEIA_GUIDELINES.md) | IA Diseño: capas, CSV, scraper, UI Asistente IA |
+| [IA_DISEÑO/](./IA_DISEÑO/) | Índice del módulo, reglas, prompt GPT, ADRs, CSVs |
 
-| Documento / carpeta | Cuándo leerlo |
-|---------------------|---------------|
-| [FRONTEND_GUIDELINES.md](./FRONTEND_GUIDELINES.md) | Crear o modificar UI, componentes, estilos |
-| [BACKEND_GUIDELINES.md](./BACKEND_GUIDELINES.md) | Server Actions, servicios, Prisma, validaciones |
-| [AGENTEIA_GUIDELINES.md](./AGENTEIA_GUIDELINES.md) | Agente IA, pipeline de colores, reglas de arquitectura IA |
-| [IA_DISEÑO/](./IA_DISEÑO/) | Módulo Asesor de Diseño y Colores (datos, ADRs, prompt, scripts) |
+## IA Diseño — lectura mínima
 
-## Orden de lectura — IA Diseño
+1. [AGENTEIA_GUIDELINES.md](./AGENTEIA_GUIDELINES.md)
+2. [REGLAS_NEGOCIO.md](./IA_DISEÑO/REGLAS_NEGOCIO.md) si cambia el comportamiento del asesor
+3. ADRs `001` / `002` / `004` / `005` si cambia arquitectura
 
-1. [IA_DISEÑO/README_PROYECTO_IA_DISENO.md](./IA_DISEÑO/README_PROYECTO_IA_DISENO.md)
-2. [AGENTEIA_GUIDELINES.md](./AGENTEIA_GUIDELINES.md)
-3. [IA_DISEÑO/REGLAS_NEGOCIO.md](./IA_DISEÑO/REGLAS_NEGOCIO.md)
-4. [IA_DISEÑO/PROMPT_GPT_ASESOR_DISENO_COLORES.md](./IA_DISEÑO/PROMPT_GPT_ASESOR_DISENO_COLORES.md)
-5. ADRs en [IA_DISEÑO/ADR/](./IA_DISEÑO/ADR/)
-
-## Comandos útiles
+CSV para cargar a un GPT: **`IA_DISEÑO/colores_alba_ia.csv`**.
 
 ```bash
-npm run scrape:alba          # capas 1–2 → docs/IA_DISEÑO/
-npm run build:colores-ia     # capa 3
-npm run ia-diseno:pipeline   # scrape + build
+npm run ia-diseno:pipeline
 ```
