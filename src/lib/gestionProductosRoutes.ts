@@ -43,6 +43,9 @@ export const GP_ROUTES = {
       categorias: `${GP}/analisis-precios/comp-categorias/categorias`,
     },
   },
+  asistenteIa: {
+    buscarColorImagen: `${GP}/asistente-ia/buscar-color-imagen`,
+  },
 } as const;
 
 /** Destinos internos en `src/app/` (rewrites). */
@@ -81,6 +84,9 @@ export const GP_INTERNAL = {
       comparacion: "/proveedores/comparacion-categorias",
       categorias: "/proveedores/comparacion-categorias/categorias",
     },
+  },
+  asistenteIa: {
+    buscarColorImagen: "/asistente-ia/buscar-color-imagen",
   },
   /** Legacy: grilla productos por proveedor (sin entrada en sidebar). */
   proveedoresLegacy: "/proveedores",
@@ -162,6 +168,9 @@ const GP_ROUTE_ALIASES: Record<string, readonly string[]> = {
     "/gestion-productos/proveedores/comparacion-categorias/categorias",
     "/proveedores/comparacion-categorias/categorias",
   ],
+  [GP_ROUTES.asistenteIa.buscarColorImagen]: [
+    "/asistente-ia/buscar-color-imagen",
+  ],
 };
 
 const PEDIDO_MERCADERIA_PREFIXES = [
@@ -212,6 +221,12 @@ const ANALISIS_PRECIOS_PREFIXES = [
   "/proveedores",
 ] as const;
 
+const ASISTENTE_IA_PREFIXES = [
+  `${GP}/asistente-ia`,
+  GP_ROUTES.asistenteIa.buscarColorImagen,
+  "/asistente-ia",
+] as const;
+
 function pathnameMatchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
@@ -242,7 +257,11 @@ export function isGpRouteActive(pathname: string, canonicalHref: string): boolea
   return aliases.some((alias) => pathname === alias || pathname.startsWith(`${alias}/`));
 }
 
-export type GpSidebarModuleId = "pedidos" | "ayuda-vendedor" | "analisis-precios";
+export type GpSidebarModuleId =
+  | "pedidos"
+  | "ayuda-vendedor"
+  | "analisis-precios"
+  | "asistente-ia";
 
 export function getGpSidebarModule(pathname: string): GpSidebarModuleId {
   if (PEDIDO_MERCADERIA_PREFIXES.some((p) => pathnameMatchesPrefix(pathname, p))) {
@@ -253,6 +272,9 @@ export function getGpSidebarModule(pathname: string): GpSidebarModuleId {
   }
   if (ANALISIS_PRECIOS_PREFIXES.some((p) => pathnameMatchesPrefix(pathname, p))) {
     return "analisis-precios";
+  }
+  if (ASISTENTE_IA_PREFIXES.some((p) => pathnameMatchesPrefix(pathname, p))) {
+    return "asistente-ia";
   }
   return "pedidos";
 }

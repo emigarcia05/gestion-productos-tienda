@@ -1261,6 +1261,25 @@ model MktContenidoUrlDrive {
   @@map("mkt_contenido_drive_url")
 }
 
+/**
+ * Prompt + URL de redirección por submódulo del Asistente IA (Gestión Productos).
+ * Una fila por opción del sidebar (ej. Buscar Color Desde Imagen).
+ * Tabla SQL: `prod_ia_diseno_promp` (ASCII; sección producto IA_DISEÑO).
+ */
+model ProdIaDisenoPromp {
+  id             String   @id @default(cuid())
+  /** Nombre visible del submódulo (único). */
+  submodulo      String   @unique(map: "prod_ia_diseno_promp_submodulo_key") @map("submodulo")
+  /** Texto del prompt a copiar al portapapeles. */
+  promp          String   @map("promp") @db.Text
+  /** URL a abrir en pestaña nueva (ChatGPT u otro destino). */
+  urlRedireccion String   @map("url_redireccion") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("prod_ia_diseno_promp")
+}
+
 /** Paleta de colores de marca (nombre + descripción + códigos hex). */
 model MktColoresMarca {
   id               String   @id @default(cuid())

@@ -2,22 +2,22 @@
  * Capa 3: une colores_alba.csv + colores_alba_tip_diseno.csv → colores_alba_ia.csv
  *
  * Uso:
- *   npx tsx IA_COLORES/scripts/build-colores-ia.ts
+ *   npx tsx docs/IA_DISEÑO/scripts/build-colores-ia.ts
  *   npm run build:colores-ia
  */
 import path from "node:path";
-import { readCsvFile, writeCsvFile } from "../../scripts/alba-scraper/src/csvIo.js";
-import { FILES, IA_COLORES_COLS, IA_COLORES_ROOT } from "./config.js";
+import { readCsvFile, writeCsvFile } from "../../../scripts/alba-scraper/src/csvIo.js";
+import { FILES, IA_DISENO_COLS, IA_DISENO_ROOT } from "./config.js";
 import { buildTextoConocimiento } from "./textoConocimiento.js";
 
 function emptyRow(): Record<string, string> {
-  return Object.fromEntries(IA_COLORES_COLS.map((c) => [c, ""]));
+  return Object.fromEntries(IA_DISENO_COLS.map((c) => [c, ""]));
 }
 
 async function main(): Promise<void> {
-  const coloresPath = path.join(IA_COLORES_ROOT, FILES.colores);
-  const tipPath = path.join(IA_COLORES_ROOT, FILES.tipDiseno);
-  const outPath = path.join(IA_COLORES_ROOT, FILES.ia);
+  const coloresPath = path.join(IA_DISENO_ROOT, FILES.colores);
+  const tipPath = path.join(IA_DISENO_ROOT, FILES.tipDiseno);
+  const outPath = path.join(IA_DISENO_ROOT, FILES.ia);
 
   console.log("build-colores-ia — capa 3");
   console.log(`  Origen 1: ${coloresPath}`);
@@ -90,7 +90,7 @@ async function main(): Promise<void> {
     outRows.push(row);
   }
 
-  await writeCsvFile(outPath, IA_COLORES_COLS, outRows);
+  await writeCsvFile(outPath, IA_DISENO_COLS, outRows);
 
   console.log(`  Filas escritas: ${outRows.length}`);
   if (sinTip > 0) {

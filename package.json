@@ -34,8 +34,8 @@
     "db:audit-schema-columns": "node scripts/audit-schema-columns.mjs",
     "test:aplanar-pdf-matriz": "tsx scripts/test-aplanar-pdf-matriz.ts",
     "scrape:alba": "npm --prefix scripts/alba-scraper run scrape",
-    "build:colores-ia": "tsx IA_COLORES/scripts/build-colores-ia.ts",
-    "ia-colores:pipeline": "npm run scrape:alba && npm run build:colores-ia"
+    "build:colores-ia": "tsx docs/IA_DISEÑO/scripts/build-colores-ia.ts",
+    "ia-diseno:pipeline": "npm run scrape:alba && npm run build:colores-ia"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.1",

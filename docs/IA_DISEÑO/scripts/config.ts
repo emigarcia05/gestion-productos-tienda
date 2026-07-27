@@ -1,13 +1,13 @@
 /**
- * Rutas y columnas del módulo IA_COLORES (capa 3).
+ * Rutas y columnas del módulo IA_DISEÑO (capa 3).
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/** Carpeta canónica IA_COLORES (padre de scripts/). */
-export const IA_COLORES_ROOT = path.resolve(__dirname, "..");
+/** Carpeta canónica docs/IA_DISEÑO (padre de scripts/). */
+export const IA_DISENO_ROOT = path.resolve(__dirname, "..");
 
 export const FILES = {
   colores: "colores_alba.csv",
@@ -16,7 +16,7 @@ export const FILES = {
 } as const;
 
 /** Columnas del CSV unificado para IA (capa 3). */
-export const IA_COLORES_COLS = [
+export const IA_DISENO_COLS = [
   "codigo",
   "nombre",
   "hex",
@@ -43,4 +43,4 @@ export const IA_COLORES_COLS = [
   "texto_conocimiento",
 ] as const;
 
-export type IaColoresRow = Record<(typeof IA_COLORES_COLS)[number], string>;
+export type IaDisenoRow = Record<(typeof IA_DISENO_COLS)[number], string>;

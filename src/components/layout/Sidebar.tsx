@@ -40,6 +40,8 @@ import {
   Target,
   Images,
   Palette,
+  Sparkles,
+  ImageSearch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -59,7 +61,7 @@ import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 
 const iconClass = "h-5 w-5 shrink-0";
 
-type ModuleId = "pedidos" | "ayuda-vendedor" | "analisis-precios";
+type ModuleId = "pedidos" | "ayuda-vendedor" | "analisis-precios" | "asistente-ia";
 type FinanzasModuleId = "balance" | "finanzas-main" | "analisis-mc";
 type MarketingModuleId = "publicaciones" | "base-multimedia";
 type SidebarModuleId = ModuleId | FinanzasModuleId | MarketingModuleId;
@@ -237,6 +239,19 @@ const MODULES: NavModule[] = [
             permiso: PERMISOS.comparacionCategorias.acceso,
           },
         ],
+      },
+    ],
+  },
+  {
+    id: "asistente-ia",
+    label: "ASISTENTE IA",
+    icon: <Sparkles className={iconClass} />,
+    submodules: [
+      {
+        href: GP_ROUTES.asistenteIa.buscarColorImagen,
+        label: "Buscar Color Desde Imagen",
+        icon: <ImageSearch className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.asistenteIa.acceso,
       },
     ],
   },

@@ -1,6 +1,8 @@
-# Asesor Inteligente de Diseño y Colores — Documentación oficial
+# Asesor Inteligente de Diseño y Colores — Documentación oficial (IA_DISEÑO)
 
 Plataforma de conocimiento reutilizable para asesoría en pintura y diseño de interiores, centrada en la carta oficial **Alba**.
+
+Sección de producto: **IA_DISEÑO**. Ubicación: `docs/IA_DISEÑO/`.
 
 ---
 
@@ -28,7 +30,7 @@ CAPA 4  Agente IA                PROMPT_GPT_ASESOR_DISENO_COLORES.md
 CAPA 5  Aplicación negocio       (futuro: UI, APIs, canales)
 ```
 
-Detalle técnico: `AGENTEIA_GUIDELINES.md` (raíz del monorepo).
+Detalle técnico: [`docs/AGENTEIA_GUIDELINES.md`](../AGENTEIA_GUIDELINES.md). Índice: [`docs/README.md`](../README.md).
 
 ---
 
@@ -40,7 +42,7 @@ Detalle técnico: `AGENTEIA_GUIDELINES.md` (raíz del monorepo).
 npm run scrape:alba
 ```
 
-Origen: `scripts/alba-scraper`. Salida: esta carpeta (`IA_COLORES/`).
+Origen: `scripts/alba-scraper`. Salida: esta carpeta (`docs/IA_DISEÑO/`).
 
 Genera:
 
@@ -60,8 +62,7 @@ Lee capas 1 y 2; escribe `colores_alba_ia.csv`. **No editar ese archivo a mano.*
 ### Flujo completo recomendado
 
 ```bash
-npm run scrape:alba
-npm run build:colores-ia
+npm run ia-diseno:pipeline
 ```
 
 ---
@@ -76,7 +77,7 @@ npm run build:colores-ia
 | `imagenes/` | 1 | Solo scraper |
 | `scripts/` | — | Código de build y utilidades |
 | `ADR/` | — | Decisiones arquitectónicas |
-| `README_PROYECTO_IA_COLORES_DISENO.md` | — | Este documento |
+| `README_PROYECTO_IA_DISENO.md` | — | Este documento |
 | `PROMPT_GPT_ASESOR_DISENO_COLORES.md` | 4 | Prompt del agente |
 | `REGLAS_NEGOCIO.md` | — | Reglas funcionales |
 | `VISION_PROYECTO.md` | — | Visión y fases |
@@ -89,8 +90,8 @@ npm run build:colores-ia
 - **Código de color:** formato Alba (ej. `50YY 83/200`). Clave primaria lógica en todos los CSV.
 - **Listas en CSV:** separador `;` (ambientes, estilos, etc.).
 - **Imágenes:** `imagenes/{codigo_sin_espacios}.jpg` (ej. `50YY83200.jpg`).
-- **Documentación IA:** leer `AGENTEIA_GUIDELINES.md` antes de modificar scripts o datos.
-- **Frontend/Backend del monorepo:** `FRONTEND_GUIDELINES.md` y `BACKEND_GUIDELINES.md` cuando se integre capa 5.
+- **Documentación IA:** leer `docs/AGENTEIA_GUIDELINES.md` antes de modificar scripts o datos.
+- **Frontend/Backend del monorepo:** `docs/FRONTEND_GUIDELINES.md` y `docs/BACKEND_GUIDELINES.md` cuando se integre capa 5.
 
 ---
 
@@ -117,7 +118,7 @@ npm run build:colores-ia
 
 ## Actualizaciones
 
-Ver `CHANGELOG.md`. Versión semántica del módulo IA_COLORES documentada allí.
+Ver `CHANGELOG.md`. Versión semántica del módulo **IA_DISEÑO** documentada allí.
 
 ---
 
@@ -136,7 +137,7 @@ Detalle: `VISION_PROYECTO.md`.
 
 ## Referencias rápidas
 
-- Guía agente IA: `../AGENTEIA_GUIDELINES.md`
-- Scraper: `../scripts/alba-scraper/README.md`
+- Guía agente IA: [`../AGENTEIA_GUIDELINES.md`](../AGENTEIA_GUIDELINES.md)
+- Scraper: [`../../scripts/alba-scraper/README.md`](../../scripts/alba-scraper/README.md)
 - Reglas negocio: `REGLAS_NEGOCIO.md`
 - Prompt asesor: `PROMPT_GPT_ASESOR_DISENO_COLORES.md`

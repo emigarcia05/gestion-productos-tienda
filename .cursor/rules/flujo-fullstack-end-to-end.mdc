@@ -10,5 +10,6 @@ alwaysApply: true
 3. Ajustar iterativamente hasta dejar el código estable y consistente con el proyecto.
 4. Verificar regresiones básicas del flujo tocado.
 5. Cerrar con retroalimentación:
-   - actualizar `FRONTEND_GUIDELINES.md` si se creó/ajustó patrón frontend;
-   - actualizar `BACKEND_GUIDELINES.md` si se creó/ajustó regla backend.
+   - actualizar `docs/FRONTEND_GUIDELINES.md` si se creó/ajustó patrón frontend;
+   - actualizar `docs/BACKEND_GUIDELINES.md` si se creó/ajustó regla backend;
+   - actualizar `docs/AGENTEIA_GUIDELINES.md` / `docs/IA_DISEÑO/` si se tocó IA Diseño.

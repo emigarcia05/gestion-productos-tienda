@@ -3,11 +3,11 @@
 ## Uso obligatorio para IA
 
 Al **crear o modificar código frontend** (componentes, páginas, estilos):
-1. **Lee y aplica** el archivo **FRONTEND_GUIDELINES.md** de la raíz del proyecto.
+1. **Lee y aplica** el archivo **`docs/FRONTEND_GUIDELINES.md`**.
 2. Usa la sección "Guía para IA" como checklist: estilos con tokens y `cn()`, filtros con `useFiltrosConBusqueda` + `FiltroBusquedaInput`, tablas con `Table` de `@/components/ui/table`, etc.
-3. Antes de dar por terminada una tarea, verifica el **Checklist de PR** en FRONTEND_GUIDELINES.md (sección 4) y actualiza la guía si introduces nuevas clases globales o patrones.
+3. Antes de dar por terminada una tarea, verifica el **Checklist de PR** en `docs/FRONTEND_GUIDELINES.md` (sección 4) y actualiza la guía si introduces nuevas clases globales o patrones.
 
-No inventes convenciones de estilos ni estructuras que no estén documentadas en FRONTEND_GUIDELINES.md.
+No inventes convenciones de estilos ni estructuras que no estén documentadas en `docs/FRONTEND_GUIDELINES.md`.
 
 ---
 
@@ -44,9 +44,10 @@ No inventes convenciones de estilos ni estructuras que no estén documentadas en
 
 ## 3. Documentación y Guía (Knowledge Base)
 
-- Mantener actualizado **FRONTEND_GUIDELINES.md** en la raíz.
+- Mantener actualizado **`docs/FRONTEND_GUIDELINES.md`**.
 - Incluir: patrones de diseño, catálogo de clases globales, checklist de PR.
 - Cada corrección o patrón detectado debe reflejarse en la documentación.
+- Guías centralizadas en **`docs/`** (frontend, backend, agente IA, módulo `IA_DISEÑO`).
 
 ---
 
@@ -55,7 +56,7 @@ No inventes convenciones de estilos ni estructuras que no estén documentadas en
 1. **Al revisar una carpeta o archivo:** listar inconsistencias, proponer código corregido.
 2. **Cambios estructurales grandes:** preguntar antes de aplicar.
 3. **Tras correcciones:** confirmar actualización de la documentación técnica.
-4. **`npm run lint`** debe pasar sin errores ni advertencias (configuración local: `npx eslint src --max-warnings 0`). Si se introducen props reservadas no usadas, prefijo `_` según `FRONTEND_GUIDELINES.md`.
+4. **`npm run lint`** debe pasar sin errores ni advertencias (configuración local: `npx eslint src --max-warnings 0`). Si se introducen props reservadas no usadas, prefijo `_` según `docs/FRONTEND_GUIDELINES.md`.
 
 ---
 
@@ -83,6 +84,6 @@ No inventes convenciones de estilos ni estructuras que no estén documentadas en
 
 ### Documentacion como Retroalimentacion
 
-- Es obligatorio actualizar `BACKEND_GUIDELINES.md` tras cada cambio en el esquema o creacion de un nuevo servicio.
+- Es obligatorio actualizar `docs/BACKEND_GUIDELINES.md` tras cada cambio en el esquema o creacion de un nuevo servicio.
 - Debes documentar los modelos de datos, las relaciones y las funciones del servicio para que cualquier IA pueda realizar consultas o modificaciones sin romper la integridad referencial.
-- **Balance mensual** (`/finanzas/balance/mensual`) y **`fin_bal_vtas`**: fuente de verdad en **`BACKEND_GUIDELINES.md` §2.5f**; UI, colores de informe y grid en **`FRONTEND_GUIDELINES.md`** (subsección **Balance mensual** bajo `ClassicFilteredTableLayout`).
+- **Balance mensual** (`/finanzas/balance/mensual`) y **`fin_bal_vtas`**: fuente de verdad en **`docs/BACKEND_GUIDELINES.md` §2.5f**; UI, colores de informe y grid en **`docs/FRONTEND_GUIDELINES.md`** (subsección **Balance mensual** bajo `ClassicFilteredTableLayout`).

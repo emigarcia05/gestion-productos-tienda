@@ -3,6 +3,8 @@
 Repositorio: `gestion-productos-tienda`  
 Stack objetivo: Next.js 16 + React 19
 
+**Documentación centralizada:** carpeta `docs/` (ver `docs/README.md`).
+
 ## 1) Prompt maestro (usar al iniciar una tarea)
 
 ```md
@@ -10,7 +12,7 @@ Rol: Desarrollador Full Stack Senior (Next.js 16, React 19).
 Objetivo: Desarrollar código funcional de punta a punta guiado por manuales.
 
 Instrucciones:
-1. Consulta obligatoria: lee `FRONTEND_GUIDELINES.md` y `BACKEND_GUIDELINES.md` antes de empezar.
+1. Consulta obligatoria: lee `docs/FRONTEND_GUIDELINES.md` y `docs/BACKEND_GUIDELINES.md` antes de empezar.
 2. Ciclo de trabajo: implementa y ajusta hasta que el código sea óptimo.
 3. Retroalimentación obligatoria: al finalizar, actualiza ambos manuales con cualquier nueva regla, patrón o componente creado.
 4. Verificación: valida que no se rompa el flujo existente y deja un resumen breve de cambios.
@@ -19,21 +21,21 @@ Instrucciones:
 ## 2) Prompt para tareas frontend
 
 ```md
-Aplica estrictamente `FRONTEND_GUIDELINES.md`.
+Aplica estrictamente `docs/FRONTEND_GUIDELINES.md`.
 - Usa tokens de diseño y `cn()`.
 - Sigue patrones de filtros, tablas y modales definidos.
 - Evita nuevas convenciones no documentadas.
-- Si agregas una clase global o patrón nuevo, documentarlo al final en `FRONTEND_GUIDELINES.md`.
+- Si agregas una clase global o patrón nuevo, documentarlo al final en `docs/FRONTEND_GUIDELINES.md`.
 ```
 
 ## 3) Prompt para tareas backend
 
 ```md
-Aplica estrictamente `BACKEND_GUIDELINES.md`.
+Aplica estrictamente `docs/BACKEND_GUIDELINES.md`.
 - Server Actions: sesión/rol al inicio, validación con Zod, `ActionResult`.
 - Lógica de negocio y acceso a datos en `src/services/`.
 - Sin `any`, sin throws al cliente.
-- Si agregas validaciones, servicios o reglas nuevas, documentarlo al final en `BACKEND_GUIDELINES.md`.
+- Si agregas validaciones, servicios o reglas nuevas, documentarlo al final en `docs/BACKEND_GUIDELINES.md`.
 ```
 
 ## 4) Prompt de cierre de tarea
@@ -60,7 +62,7 @@ Instrucciones:
 - Ciclo de entrega: no detenerse hasta garantizar consistencia de flujo de datos, consultas óptimas y tipado TypeScript estricto.
 
 Retroalimentación documental (obligatoria):
-- Actualizar `BACKEND_GUIDELINES.md` tras cambios de esquema o creación de servicios.
+- Actualizar `docs/BACKEND_GUIDELINES.md` tras cambios de esquema o creación de servicios.
 - Documentar modelos, relaciones y contratos de servicios para evitar romper integridad referencial.
 ```
 
@@ -75,7 +77,7 @@ Instrucciones:
 - Ciclo de entrega: cerrar solo cuando el componente sea accesible, consistente y sin estilos duplicados.
 
 Retroalimentación documental (obligatoria):
-- Actualizar `FRONTEND_GUIDELINES.md` con nuevos componentes, variantes y props reutilizables.
+- Actualizar `docs/FRONTEND_GUIDELINES.md` con nuevos componentes, variantes y props reutilizables.
 ```
 
 ### 5.3 Auditor de Frontend (Especialista en Refactorización)
@@ -90,7 +92,7 @@ Instrucciones:
 - Cerrar auditoría solo con cero inconsistencias detectadas.
 
 Retroalimentación documental (obligatoria):
-- Actualizar `FRONTEND_GUIDELINES.md` con reglas para evitar reincidencias.
+- Actualizar `docs/FRONTEND_GUIDELINES.md` con reglas para evitar reincidencias.
 ```
 
 ### 5.4 Auditor de Backend (Especialista en Seguridad)
@@ -104,14 +106,15 @@ Instrucciones:
 - Repetir ciclo de auditoría hasta dejar backend 100% seguro bajo reglas del proyecto.
 
 Retroalimentación documental (obligatoria):
-- Actualizar `BACKEND_GUIDELINES.md` con nuevos patrones de seguridad aprobados.
+- Actualizar `docs/BACKEND_GUIDELINES.md` con nuevos patrones de seguridad aprobados.
 ```
 
 ### 5.5 Operativa común para los 5 agentes
 
 ```md
 Regla transversal:
-- Antes de codificar: leer `FRONTEND_GUIDELINES.md` y `BACKEND_GUIDELINES.md`.
+- Antes de codificar: leer `docs/FRONTEND_GUIDELINES.md` y `docs/BACKEND_GUIDELINES.md`.
 - Al finalizar: actualizar el manual correspondiente del área afectada.
 - Si una tarea toca frontend y backend, documentar en ambos manuales.
+- Si toca IA Diseño: leer `docs/AGENTEIA_GUIDELINES.md` y `docs/IA_DISEÑO/README_PROYECTO_IA_DISENO.md`.
 ```

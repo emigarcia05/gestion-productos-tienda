@@ -16,10 +16,10 @@ Campos oficiales que **hoy Alba no publica** en API/JSON/ficha (`descripcion_alb
 
 ## Salida (canónica)
 
-Por defecto escribe en **`IA_COLORES/`** en la raíz del monorepo (ADR-003):
+Por defecto escribe en **`docs/IA_DISEÑO/`** (ADR-004):
 
 ```
-IA_COLORES/
+docs/IA_DISEÑO/
   colores_alba.csv
   colores_alba_tip_diseno.csv
   imagenes/
@@ -38,7 +38,7 @@ npm run build:colores-ia
 O pipeline completo desde la raíz:
 
 ```bash
-npm run ia-colores:pipeline
+npm run ia-diseno:pipeline
 ```
 
 ## Uso

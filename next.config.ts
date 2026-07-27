@@ -79,6 +79,10 @@ function canonicalGestionProductosRewrites(): { source: string; destination: str
       source: R.analisisPrecios.compCategorias.comparacion,
       destination: I.analisisPrecios.compCategorias.comparacion,
     },
+    {
+      source: R.asistenteIa.buscarColorImagen,
+      destination: I.asistenteIa.buscarColorImagen,
+    },
   ];
 }
 

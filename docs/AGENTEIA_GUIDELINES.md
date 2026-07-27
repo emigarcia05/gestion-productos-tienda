@@ -1,14 +1,16 @@
-# Guía del Agente IA — Asesor de Diseño y Colores
+# Guía del Agente IA — Asesor de Diseño y Colores (IA_DISEÑO)
 
-Documento de referencia para desarrolladores y **asistentes IA** que crean, modifican o consumen la plataforma de conocimiento de colores Alba. Complementa `FRONTEND_GUIDELINES.md` y `BACKEND_GUIDELINES.md`.
+Documento de referencia para desarrolladores y **asistentes IA** que crean, modifican o consumen la plataforma de conocimiento de colores Alba. Complementa `docs/FRONTEND_GUIDELINES.md` y `docs/BACKEND_GUIDELINES.md`.
 
-**Antes de cualquier cambio en IA o datos de colores**, leer en este orden:
+Índice de documentación: [`docs/README.md`](./README.md).
 
-1. `IA_COLORES/README_PROYECTO_IA_COLORES_DISENO.md`
-2. Este documento (`AGENTEIA_GUIDELINES.md`)
-3. `IA_COLORES/REGLAS_NEGOCIO.md`
-4. `IA_COLORES/PROMPT_GPT_ASESOR_DISENO_COLORES.md`
-5. ADRs en `IA_COLORES/ADR/`
+**Antes de cualquier cambio en IA Diseño o datos de colores**, leer en este orden:
+
+1. `docs/IA_DISEÑO/README_PROYECTO_IA_DISENO.md`
+2. Este documento (`docs/AGENTEIA_GUIDELINES.md`)
+3. `docs/IA_DISEÑO/REGLAS_NEGOCIO.md`
+4. `docs/IA_DISEÑO/PROMPT_GPT_ASESOR_DISENO_COLORES.md`
+5. ADRs en `docs/IA_DISEÑO/ADR/`
 
 ---
 
@@ -24,6 +26,8 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean, modi
 
 **Principio rector:** el conocimiento pertenece al negocio, no al proveedor de IA (OpenAI, Gemini, etc.).
 
+Ubicación canónica del módulo: **`docs/IA_DISEÑO/`** (ADR-004).
+
 ---
 
 ## 2. Flujo de datos
@@ -32,7 +36,7 @@ Documento de referencia para desarrolladores y **asistentes IA** que crean, modi
 scraper Alba (scripts/alba-scraper)
         │
         ▼
-  colores_alba.csv  +  imagenes/
+  docs/IA_DISEÑO/colores_alba.csv  +  imagenes/
         │
         ▼  (colorScience — determinista)
   colores_alba_tip_diseno.csv
@@ -52,6 +56,9 @@ npm run scrape:alba
 
 # Capa 3
 npm run build:colores-ia
+
+# Pipeline completo
+npm run ia-diseno:pipeline
 ```
 
 ---
@@ -60,7 +67,7 @@ npm run build:colores-ia
 
 | Regla | Detalle |
 |-------|---------|
-| Modularidad | Scripts en `IA_COLORES/scripts/`; lógica reutilizable, sin duplicar. |
+| Modularidad | Scripts en `docs/IA_DISEÑO/scripts/`; lógica reutilizable, sin duplicar. |
 | Tipado | TypeScript estricto en scripts Node. |
 | Sin hardcode | URLs, columnas y rutas en módulos `config`. |
 | Sin invención | No inventar códigos, nombres ni atributos que Alba no publique. |
@@ -72,9 +79,9 @@ npm run build:colores-ia
 
 ## 4. Esquema `colores_alba_ia.csv`
 
-Generado por `IA_COLORES/scripts/build-colores-ia.ts`. Une capas 1 y 2 por `codigo` y añade `texto_conocimiento` (bloque legible para RAG, embeddings y prompts).
+Generado por `docs/IA_DISEÑO/scripts/build-colores-ia.ts`. Une capas 1 y 2 por `codigo` y añade `texto_conocimiento` (bloque legible para RAG, embeddings y prompts).
 
-Columnas: ver `IA_COLORES_COLS` en el script. **No editar el CSV a mano.**
+Columnas: ver `IA_DISENO_COLS` en el script. **No editar el CSV a mano.**
 
 ---
 
@@ -108,12 +115,12 @@ Si alguna respuesta es **no**, proponer alternativa antes de implementar.
 - **Alternativas:** Enriquecimiento 100 % con LLM.
 - **Consecuencias:** Fase futura puede añadir enriquecimiento IA **adicional** en columnas nuevas, sin sustituir datos oficiales.
 
-### 6.3 Scraper en `scripts/alba-scraper`, salida en `IA_COLORES/`
+### 6.3 Scraper en `scripts/alba-scraper`, salida en `docs/IA_DISEÑO/`
 
-- **Qué:** El scraper vive en el monorepo; escribe directamente en `IA_COLORES/`.
-- **Por qué:** Reutiliza tooling npm del repo; datos centralizados en la carpeta del dominio.
-- **Alternativas:** Mover scraper dentro de `IA_COLORES/scripts/`.
-- **Consecuencias:** `npm run scrape:alba` actualiza la capa 1 en su ubicación canónica.
+- **Qué:** El scraper vive en el monorepo; escribe en `docs/IA_DISEÑO/` (ADR-004; supersede ubicación `IA_COLORES/` de ADR-003).
+- **Por qué:** Reutiliza tooling npm; datos y docs del dominio en un solo árbol bajo `docs/`.
+- **Alternativas:** Mover scraper dentro de `docs/IA_DISEÑO/scripts/`.
+- **Consecuencias:** `npm run scrape:alba` actualiza la capa 1 en la ubicación canónica vigente.
 
 ### 6.4 `texto_conocimiento` en capa 3
 
@@ -122,13 +129,21 @@ Si alguna respuesta es **no**, proponer alternativa antes de implementar.
 - **Alternativas:** Solo columnas tabulares; JSON embebido.
 - **Consecuencias:** Un solo campo optimizado para búsqueda semántica; columnas estructuradas se conservan.
 
+### 6.5 Centralización documental en `docs/` + renombre `IA_DISEÑO`
+
+- **Qué:** Guías FE/BE/Agente y módulo de colores bajo `docs/`; sección de producto = **IA_DISEÑO**.
+- **Por qué:** Orden, control y un punto de entrada (`docs/README.md`).
+- **Alternativas:** Guías en raíz; carpeta `DOCUMENTACION/`.
+- **Consecuencias:** Ver ADR-004; actualizar reglas Cursor y scripts.
+
 ---
 
 ## 7. Integración con el monorepo
 
-- **Frontend:** futuras pantallas de asesoría deben seguir `FRONTEND_GUIDELINES.md`.
-- **Backend:** servicios que expongan colores deben seguir `BACKEND_GUIDELINES.md` (Zod, `src/services/`, permisos).
-- **Este módulo:** no mezclar reglas de negocio del asesor en guías frontend/backend; usar `REGLAS_NEGOCIO.md`.
+- **Frontend:** futuras pantallas de asesoría deben seguir `docs/FRONTEND_GUIDELINES.md`.
+- **Backend:** servicios que expongan colores deben seguir `docs/BACKEND_GUIDELINES.md` (Zod, `src/services/`, permisos).
+- **Este módulo:** no mezclar reglas de negocio del asesor en guías frontend/backend; usar `docs/IA_DISEÑO/REGLAS_NEGOCIO.md`.
+- **UI v1 (Gestión Productos):** módulo sidebar **ASISTENTE IA** → **Buscar Color Desde Imagen**. Prompt y URL se gestionan en **`prod_ia_diseno_promp`** (una fila por submódulo). Botón **Gestionar Promo Y Url** en el header. La acción de búsqueda copia `promp` y abre `url_redireccion`.
 
 ---
 
@@ -136,7 +151,7 @@ Si alguna respuesta es **no**, proponer alternativa antes de implementar.
 
 | Fase | Objetivo |
 |------|----------|
-| Actual | Pipeline CSV + documentación + prompt GPT |
+| Actual | Pipeline CSV + documentación + prompt GPT + UI puente ChatGPT |
 | Siguiente | API interna de consulta sobre `colores_alba_ia.csv` |
 | Futuro | Embeddings / búsqueda semántica; WhatsApp; app clientes |
 
