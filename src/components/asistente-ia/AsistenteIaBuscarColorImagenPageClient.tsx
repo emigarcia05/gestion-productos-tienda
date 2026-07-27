@@ -4,13 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ClipboardCopy, ScanSearch, Settings2 } from "lucide-react";
 import { toast } from "sonner";
+import CuentagotasImagenMuestra from "@/components/asistente-ia/CuentagotasImagenMuestra";
 import GestionarProdIaDisenoPrompModal from "@/components/asistente-ia/GestionarProdIaDisenoPrompModal";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import { Button } from "@/components/ui/button";
+import { aplicarRgbAlPromptBuscarColor } from "@/lib/asistenteIa";
 import type {
   AsistenteIaConfigSubmodulo,
   ProdIaDisenoPrompItem,
 } from "@/lib/asistenteIa";
+import type { RgbColor } from "@/lib/colorMuestraImagen";
 import { CALLOUT_WARNING_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
@@ -28,14 +31,31 @@ export default function AsistenteIaBuscarColorImagenPageClient({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [gestionarOpen, setGestionarOpen] = useState(false);
+  const [colorMuestra, setColorMuestra] = useState<RgbColor | null>(null);
 
-  const prompt = config.promp;
   const url = config.urlRedireccion;
+  const plantilla = config.promp;
+  const prompt =
+    colorMuestra != null
+      ? aplicarRgbAlPromptBuscarColor(plantilla, colorMuestra)
+      : "";
 
   async function handleBuscarColorDesdeImagen() {
-    if (!prompt.trim() || !url.trim()) {
-      toast.error("Falta Prompt O Url", {
-        description: "Configuralos en Gestionar Promo Y Url.",
+    if (!colorMuestra) {
+      toast.error("Falta Color Muestra", {
+        description: "Abrí una imagen y seleccioná la zona del color.",
+      });
+      return;
+    }
+    if (!plantilla.trim()) {
+      toast.error("Falta Prompt", {
+        description: "Configuralo en Gestionar Promo Y Url.",
+      });
+      return;
+    }
+    if (!url.trim()) {
+      toast.error("Falta Url", {
+        description: "Configurala en Gestionar Promo Y Url.",
       });
       return;
     }
@@ -44,7 +64,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
       await navigator.clipboard.writeText(prompt);
       window.open(url, "_blank", "noopener,noreferrer");
       toast.success("Prompt Copiado", {
-        description: "Pegalo en ChatGPT junto con la imagen del color.",
+        description: "Pegalo en ChatGPT (Ctrl+V).",
       });
     } catch {
       toast.error("No Se Pudo Copiar El Prompt", {
@@ -76,21 +96,33 @@ export default function AsistenteIaBuscarColorImagenPageClient({
       >
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-6 pt-2">
           <p className={cn(CALLOUT_WARNING_CLASS, "shrink-0")}>
-            Se copia el prompt configurado en{" "}
-            <span className="font-semibold">prod_ia_diseno_promp</span> y se abre
-            la URL de redirección. Adjuntá la imagen en ChatGPT y pegá el prompt
-            (Ctrl+V).
+            Abrí una imagen muestra, seleccioná la zona del color y usá{" "}
+            <span className="font-semibold">Buscar Color Desde Imagen</span>. Se
+            usa el prompt del módulo (
+            <span className="font-semibold">prod_ia_diseno_promp</span>) y se
+            reemplaza <span className="font-semibold">(R,G,B)</span> por el color
+            del cuentagotas. La imagen no se guarda en el servidor.
           </p>
 
+          <CuentagotasImagenMuestra
+            color={colorMuestra}
+            onColorChange={setColorMuestra}
+          />
+
           <div className="flex shrink-0 flex-col gap-3 rounded-lg border border-border bg-card p-4">
-            <p className="text-sm font-medium text-foreground">Prompt Actual</p>
+            <p className="text-sm font-medium text-foreground">
+              Prompt Con Rgb Del Cuentagotas
+            </p>
             <pre
               className={cn(
                 "whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3",
                 "text-sm text-foreground",
               )}
             >
-              {prompt || "Sin prompt configurado."}
+              {prompt ||
+                (plantilla.trim()
+                  ? "Seleccioná un color en la imagen: se reemplazará (R,G,B) en el prompt del módulo."
+                  : "Sin prompt configurado. Usá Gestionar Promo Y Url.")}
             </pre>
             <p className="text-xs text-muted-foreground">
               URL: {url || "Sin URL configurada."}
@@ -99,7 +131,9 @@ export default function AsistenteIaBuscarColorImagenPageClient({
               <Button
                 type="button"
                 className="h-10 px-4"
-                disabled={busy || !prompt.trim() || !url.trim()}
+                disabled={
+                  busy || !colorMuestra || !plantilla.trim() || !url.trim()
+                }
                 onClick={() => void handleBuscarColorDesdeImagen()}
               >
                 <ScanSearch className="h-4 w-4" aria-hidden />
@@ -109,7 +143,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
                 type="button"
                 variant="outline"
                 className="h-10 px-4"
-                disabled={busy || !prompt.trim()}
+                disabled={busy || !prompt}
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(prompt);
