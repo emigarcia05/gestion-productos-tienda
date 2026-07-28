@@ -10,6 +10,16 @@ const PRIMARY = { r: 0, g: 114, b: 187 }; // #0072BB
 const TITLE =
   "Aproximación de código desde una imagen digital" as const;
 
+/** Aviso legal / comercial bajo las coincidencias (pie del informe). */
+export const DISCLAIMER_APROXIMACION_CODIGO =
+  "La elección es una comparación digital de colores con el taco digital de Alba. Debe tomarse como una aproximación y referencia del color. El color final en pintura puede variar. Para una mayor aproximación es recomendable acercarse a alguno de nuestros locales para ver el taco en persona.";
+
+export interface LogoTiendaColorPdf {
+  dataUrl: string;
+  naturalW: number;
+  naturalH: number;
+}
+
 export interface MuestraColorPdf {
   color: RgbColor;
   /** Coordenadas en píxeles del bitmap original. */
@@ -36,22 +46,42 @@ function hexToRgb(hex: string): RgbColor {
 }
 
 /**
- * Compone la imagen con recuadro de muestra, flecha y swatch RGB a la derecha.
+ * Compone la imagen (a la izquierda) con recuadro de muestra, flecha y
+ * swatch grande (~30% del lado menor de la foto) + RGB/HEX legibles.
  * Solo navegador (canvas).
  */
+export interface ImagenAnotadaPdf {
+  dataUrl: string;
+  width: number;
+  height: number;
+}
+
 export function componerImagenConMuestra(
   imagenDataUrl: string,
   naturalW: number,
   naturalH: number,
   muestra: MuestraColorPdf,
-): Promise<string> {
+): Promise<ImagenAnotadaPdf> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const padRight = Math.max(160, Math.round(naturalW * 0.28));
+      const ladoMenor = Math.min(naturalW, naturalH);
+      const swatch = Math.max(96, Math.round(ladoMenor * 0.3));
+      const gapFlecha = Math.max(28, Math.round(swatch * 0.2));
+      const panelPadX = Math.max(16, Math.round(swatch * 0.12));
+      const fontSize = Math.max(18, Math.round(swatch * 0.2));
+      const lineGap = Math.round(fontSize * 1.35);
+      const textBlockH = lineGap * 2 + Math.round(fontSize * 0.6);
+      const panelPadBottom = Math.max(12, Math.round(swatch * 0.08));
+
+      const padRight = gapFlecha + swatch + panelPadX * 2;
+      const canvasW = naturalW + padRight;
+      const minHForSwatch = panelPadBottom + swatch + textBlockH + panelPadBottom;
+      const canvasH = Math.max(naturalH, minHForSwatch);
+
       const canvas = document.createElement("canvas");
-      canvas.width = naturalW + padRight;
-      canvas.height = naturalH;
+      canvas.width = canvasW;
+      canvas.height = canvasH;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         reject(new Error("No se pudo crear el canvas del PDF."));
@@ -59,36 +89,44 @@ export function componerImagenConMuestra(
       }
 
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, naturalW, naturalH);
+      ctx.fillRect(0, 0, canvasW, canvasH);
 
-      const box = Math.max(12, Math.round(Math.min(naturalW, naturalH) * 0.04));
+      // Foto pegada a la izquierda (sin margen).
+      const imgY = Math.round((canvasH - naturalH) / 2);
+      ctx.drawImage(img, 0, imgY, naturalW, naturalH);
+
+      const box = Math.max(14, Math.round(ladoMenor * 0.035));
       const bx = Math.max(0, Math.min(naturalW - box, muestra.x - box / 2));
-      const by = Math.max(0, Math.min(naturalH - box, muestra.y - box / 2));
+      const by = Math.max(
+        0,
+        Math.min(naturalH - box, muestra.y - box / 2),
+      );
 
       ctx.strokeStyle = "#0072BB";
-      ctx.lineWidth = Math.max(2, Math.round(box / 8));
-      ctx.strokeRect(bx, by, box, box);
+      ctx.lineWidth = Math.max(2, Math.round(box / 7));
+      ctx.strokeRect(bx, by + imgY, box, box);
 
-      const swatch = Math.max(56, Math.round(Math.min(naturalW, naturalH) * 0.12));
-      const sx = naturalW + Math.round((padRight - swatch) / 2);
-      const sy = Math.max(8, Math.min(naturalH - swatch - 40, muestra.y - swatch / 2));
+      const sx = naturalW + gapFlecha;
+      const syMax = canvasH - swatch - textBlockH - panelPadBottom;
+      const sy = Math.max(
+        panelPadBottom,
+        Math.min(syMax, imgY + muestra.y - swatch / 2),
+      );
 
       const fromX = bx + box;
-      const fromY = by + box / 2;
+      const fromY = by + imgY + box / 2;
       const toX = sx;
       const toY = sy + swatch / 2;
 
       ctx.strokeStyle = "#0072BB";
-      ctx.lineWidth = Math.max(2, Math.round(box / 10));
+      ctx.lineWidth = Math.max(3, Math.round(swatch * 0.025));
       ctx.beginPath();
       ctx.moveTo(fromX, fromY);
       ctx.lineTo(toX, toY);
       ctx.stroke();
 
-      // Flecha simple
       const angle = Math.atan2(toY - fromY, toX - fromX);
-      const ah = Math.max(8, box * 0.6);
+      const ah = Math.max(12, Math.round(swatch * 0.12));
       ctx.beginPath();
       ctx.moveTo(toX, toY);
       ctx.lineTo(
@@ -106,29 +144,39 @@ export function componerImagenConMuestra(
       const hex = rgbToHex(muestra.color);
       ctx.fillStyle = hex;
       ctx.fillRect(sx, sy, swatch, swatch);
-      ctx.strokeStyle = "#334155";
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = Math.max(2, Math.round(swatch * 0.02));
       ctx.strokeRect(sx, sy, swatch, swatch);
 
       ctx.fillStyle = "#0f172a";
-      ctx.font = `${Math.max(11, Math.round(swatch * 0.22))}px sans-serif`;
+      ctx.font = `bold ${fontSize}px Helvetica, Arial, sans-serif`;
       ctx.textAlign = "center";
-      ctx.fillText(formatRgbTuple(muestra.color), sx + swatch / 2, sy + swatch + 18);
-      ctx.fillText(hex, sx + swatch / 2, sy + swatch + 34);
+      ctx.textBaseline = "top";
+      const textX = sx + swatch / 2;
+      const textY = sy + swatch + Math.round(fontSize * 0.35);
+      ctx.fillText(formatRgbTuple(muestra.color), textX, textY);
+      ctx.fillText(hex, textX, textY + lineGap);
 
-      resolve(canvas.toDataURL("image/jpeg", 0.92));
+      resolve({
+        dataUrl: canvas.toDataURL("image/jpeg", 0.92),
+        width: canvasW,
+        height: canvasH,
+      });
     };
-    img.onerror = () => reject(new Error("No se pudo cargar la imagen para el PDF."));
+    img.onerror = () =>
+      reject(new Error("No se pudo cargar la imagen para el PDF."));
     img.src = imagenDataUrl;
   });
 }
 
 export function generarPdfAproximacionCodigoImagen(
   informe: InformeAproximacionCodigoImagen,
-  imagenAnotadaDataUrl: string,
+  imagenAnotada: ImagenAnotadaPdf,
+  logo?: LogoTiendaColorPdf | null,
 ): Uint8Array {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const margin = 14;
   let y = 16;
 
@@ -140,15 +188,16 @@ export function generarPdfAproximacionCodigoImagen(
   y += titleLines.length * 7 + 6;
 
   const maxImgW = pageW - margin * 2;
-  const maxImgH = 110;
-  const natW = informe.imagenNaturalW + Math.max(160, Math.round(informe.imagenNaturalW * 0.28));
-  const natH = informe.imagenNaturalH;
-  const scale = Math.min(maxImgW / natW, maxImgH / natH);
-  const drawW = natW * scale;
-  const drawH = natH * scale;
-  const imgX = margin + (maxImgW - drawW) / 2;
+  const maxImgH = 125;
+  const scale = Math.min(
+    maxImgW / imagenAnotada.width,
+    maxImgH / imagenAnotada.height,
+  );
+  const drawW = imagenAnotada.width * scale;
+  const drawH = imagenAnotada.height * scale;
+  const imgX = margin;
 
-  doc.addImage(imagenAnotadaDataUrl, "JPEG", imgX, y, drawW, drawH);
+  doc.addImage(imagenAnotada.dataUrl, "JPEG", imgX, y, drawW, drawH);
   y += drawH + 10;
 
   doc.setFont("helvetica", "bold");
@@ -179,17 +228,18 @@ export function generarPdfAproximacionCodigoImagen(
 
   const filas = [...informe.coincidencias];
   while (filas.length < 5) {
-    filas.push({ nombre: "—", codigo: "—", similitud: "—", hex: null });
+    filas.push({ nombre: "—", codigo: "—", similitud: "—", rgb: null, hex: null });
   }
 
   for (let i = 0; i < 5; i += 1) {
     const row = filas[i]!;
-    if (y + rowH > doc.internal.pageSize.getHeight() - 14) {
+    if (y + rowH > pageH - 14) {
       doc.addPage();
       y = 16;
     }
 
-    const fill = row.hex ? hexToRgb(row.hex) : null;
+    const fill =
+      row.rgb ?? (row.hex ? hexToRgb(row.hex) : null);
     if (fill) {
       doc.setFillColor(fill.r, fill.g, fill.b);
       doc.rect(colSwatch, y - 3, sw, sw, "F");
@@ -209,6 +259,40 @@ export function generarPdfAproximacionCodigoImagen(
     doc.text(row.similitud, colSim, y + 2);
 
     y += Math.max(rowH, nombreLines.length * 4 + 6);
+  }
+
+  y += 8;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(71, 85, 105);
+  const disclaimerLines = doc.splitTextToSize(
+    DISCLAIMER_APROXIMACION_CODIGO,
+    pageW - margin * 2,
+  );
+  const disclaimerH = disclaimerLines.length * 4.2;
+  const logoMaxW = 48;
+  const logoH =
+    logo && logo.naturalW > 0
+      ? (logoMaxW * logo.naturalH) / logo.naturalW
+      : 0;
+  const footerBlockH = disclaimerH + (logo ? 10 + logoH : 0);
+
+  if (y + footerBlockH > pageH - margin) {
+    doc.addPage();
+    y = 16;
+  }
+
+  doc.text(disclaimerLines, margin, y);
+  y += disclaimerH + 8;
+
+  if (logo?.dataUrl && logo.naturalW > 0) {
+    const logoW = logoMaxW;
+    const drawnLogoH = (logoW * logo.naturalH) / logo.naturalW;
+    const bottomLogoY = pageH - margin - drawnLogoH;
+    const logoY = Math.max(y, bottomLogoY);
+    const logoX = (pageW - logoW) / 2;
+    const format = logo.dataUrl.includes("image/jpeg") ? "JPEG" : "PNG";
+    doc.addImage(logo.dataUrl, format, logoX, logoY, logoW, drawnLogoH);
   }
 
   return new Uint8Array(doc.output("arraybuffer"));

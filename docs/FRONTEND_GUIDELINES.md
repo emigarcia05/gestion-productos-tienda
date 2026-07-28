@@ -1509,6 +1509,10 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-27): **Asistente IA · cuentagotas** — en **Buscar Color Desde Imagen**: **Abrir Imagen Muestra** muestra preview con `<img>` + canvas offscreen (fix: el canvas no existía en el DOM al cargar). Clic en la imagen → RGB → `aplicarRgbAlPromptBuscarColor` sobre `prod_ia_diseno_promp` → copiar al portapapeles + abrir `url_redireccion`. Excepción de estilo: `style` dinámico para tamaño del preview y `backgroundColor` del swatch.*
 
+*Última actualización (2026-07-28): **PDF aproximación · pie** — debajo de las coincidencias: texto de aviso (comparación digital / aproximación / variar / ver taco en local) + logo **`/logo_tiendacolor.png`** centrado al pie.*
+
+*Última actualización (2026-07-28): **PDF aproximación · layout muestra** — foto a la izquierda; swatch ~**30%** del lado menor; RGB/HEX bajo el swatch con tipografía proporcional y legible; bloque anotado alineado a la izquierda en el PDF.*
+
 *Última actualización (2026-07-28): **Buscar Código Desde Imagen · PDF** — al confirmar respuesta IA se genera PDF cliente (`exportAproximacionCodigoPdfClient` / `generarPdfAproximacionCodigoImagen`): título **Aproximación de código desde una imagen digital**, imagen con recuadro de muestra + flecha + swatch RGB, y hasta 5 filas (color / nombre / código / aproximación). Parser `parseRespuestaIaCoincidencias`.*
 
 *Última actualización (2026-07-28): **Buscar Código Desde Imagen · proceso** — pasos secuenciales (`AsistenteIaProcesoPaso`): (1) cargar imagen y seleccionar color → copia prompt + abre URL; (2) pegar respuesta de IA (se habilita al completar el 1).*

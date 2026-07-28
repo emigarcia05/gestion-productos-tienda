@@ -54,7 +54,7 @@ npm run ia-diseno:pipeline   # ambos
 - Prompt/URL en tabla **`prod_ia_diseno_promp`** (CRUD: **GESTION PROMP & URL**); la **URL** se usa al buscar. Lookup de prompt: nombre nuevo + legacy **Buscar Color Desde Imagen**.
 - **Variables de prompt:** sintaxis **`{{CLAVE}}`** (catálogo `ASISTENTE_IA_VARIABLES_PROMPT`). Hoy: **`{{RGB}}`** (cuentagotas). En el editor, chips **Insertar Variable**. Compat: plantillas viejas con `(R,G,B)`.
 - **Cuentagotas (cliente):** proceso en pasos — (1) imagen + clic RGB → `aplicarRgbAlPromptBuscarColor` + clipboard + `url_redireccion`; (2) pegar respuesta IA → **Generar Pdf** (`generarPdfAproximacionCodigoImagen`: título, imagen con marcador/flecha/swatch RGB, 5 filas color–nombre–código–aproximación). Imagen **no** se persiste en servidor.
-- Prompt seed incluye columna **HEX** para poder pintar swatches de coincidencias en el PDF (parser soporta 3 o 4 columnas).
+- Prompt seed con columna **RGB** `(R,G,B)` por coincidencia; el PDF rellena el swatch con ese RGB (sin escribir el código en el recuadro). Parser acepta RGB o HEX.
 - FE: `docs/FRONTEND_GUIDELINES.md`. BE: `docs/BACKEND_GUIDELINES.md`. Reglas del asesor: `REGLAS_NEGOCIO.md` (no mezclar en FE/BE).
 
 ---
