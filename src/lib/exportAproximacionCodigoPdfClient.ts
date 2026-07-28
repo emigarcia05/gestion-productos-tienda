@@ -1,8 +1,10 @@
 import { formatDdMmHhMmGuionesBajosArchivoArgentina } from "@/lib/fechaArgentina";
 import { descargarPdfBytes } from "@/lib/descargarPdfBase64";
-import type {
-  InformeAproximacionCodigoImagen,
-  LogoTiendaColorPdf,
+import {
+  componerImagenConMuestra,
+  generarPdfAproximacionCodigoImagen,
+  type InformeAproximacionCodigoImagen,
+  type LogoTiendaColorPdf,
 } from "@/lib/generarPdfAproximacionCodigoImagen";
 
 async function cargarLogoTiendaColor(): Promise<LogoTiendaColorPdf | null> {
@@ -37,11 +39,6 @@ async function cargarLogoTiendaColor(): Promise<LogoTiendaColorPdf | null> {
 export async function descargarPdfAproximacionCodigoImagen(
   informe: InformeAproximacionCodigoImagen,
 ): Promise<void> {
-  const {
-    componerImagenConMuestra,
-    generarPdfAproximacionCodigoImagen,
-  } = await import("@/lib/generarPdfAproximacionCodigoImagen");
-
   const [anotada, logo] = await Promise.all([
     componerImagenConMuestra(
       informe.imagenDataUrl,

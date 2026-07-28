@@ -21,6 +21,7 @@ import type {
   ProdIaDisenoPrompItem,
 } from "@/lib/asistenteIa";
 import type { RgbColor } from "@/lib/colorMuestraImagen";
+import { descargarPdfAproximacionCodigoImagen } from "@/lib/exportAproximacionCodigoPdfClient";
 import { parseRespuestaIaCoincidencias } from "@/lib/parseRespuestaIaCoincidencias";
 import { cn } from "@/lib/utils";
 
@@ -131,9 +132,6 @@ export default function AsistenteIaBuscarColorImagenPageClient({
 
     setGenerandoPdf(true);
     try {
-      const { descargarPdfAproximacionCodigoImagen } = await import(
-        "@/lib/exportAproximacionCodigoPdfClient"
-      );
       await descargarPdfAproximacionCodigoImagen({
         imagenDataUrl: metaMuestra.imagenDataUrl,
         imagenNaturalW: metaMuestra.imagenNaturalW,

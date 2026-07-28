@@ -1509,6 +1509,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-27): **Asistente IA · cuentagotas** — en **Buscar Color Desde Imagen**: **Abrir Imagen Muestra** muestra preview con `<img>` + canvas offscreen (fix: el canvas no existía en el DOM al cargar). Clic en la imagen → RGB → `aplicarRgbAlPromptBuscarColor` sobre `prod_ia_diseno_promp` → copiar al portapapeles + abrir `url_redireccion`. Excepción de estilo: `style` dinámico para tamaño del preview y `backgroundColor` del swatch.*
 
+*Última actualización (2026-07-28): **PDF aproximación · import** — generación con import estático de `exportAproximacionCodigoPdfClient` (evita `Failed to load chunk` del import dinámico + jspdf).*
+
 *Última actualización (2026-07-28): **PDF aproximación · títulos** — **APROXIMACIÓN DE CÓDIGO…** y **COINCIDENCIAS MÁS CERCANAS** en mayúsculas y color **`#0072BB`**.*
 
 *Última actualización (2026-07-28): **PDF aproximación · una hoja A4** — layout en bandas: título **5%**, imagen muestra **30%**, colores referencia **30%**, texto **15%**, logo **20%** (sin segunda página).*
