@@ -11,8 +11,16 @@ import { formatRgbTuple } from "@/lib/colorMuestraImagen";
 export const ASISTENTE_IA_BASE_COLORES = "colores_alba_ia" as const;
 
 /** Nombre canónico del submódulo (columna `submodulo`, único). */
-export const ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN =
+export const ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN =
+  "Buscar Código Desde Imagen" as const;
+
+/** Nombre legacy en filas ya sembradas (antes del rename). */
+export const ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY =
   "Buscar Color Desde Imagen" as const;
+
+/** @deprecated Preferir ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN. */
+export const ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN =
+  ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN;
 
 export const ASISTENTE_IA_CHATGPT_BUSCAR_COLOR_URL_DEFAULT =
   "https://chatgpt.com/c/6a6770f3-1a34-83e9-b9a6-a24c979961b0" as const;
@@ -128,7 +136,7 @@ export interface AsistenteIaConfigSubmodulo {
 /** Fallback si aún no hay fila en BD. */
 export function getDefaultConfigBuscarColorImagen(): AsistenteIaConfigSubmodulo {
   return {
-    submodulo: ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN,
+    submodulo: ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
     promp: buildPromptBuscarColorDesdeImagenDefault(),
     urlRedireccion: ASISTENTE_IA_CHATGPT_BUSCAR_COLOR_URL_DEFAULT,
   };

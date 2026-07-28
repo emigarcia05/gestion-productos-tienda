@@ -339,7 +339,7 @@ export default function GestionarProdIaDisenoPrompModal({
               <Input
                 value={formSubmodulo}
                 onChange={(e) => setFormSubmodulo(e.target.value)}
-                placeholder="Ej. Buscar Color Desde Imagen"
+                placeholder="Ej. Buscar Código Desde Imagen"
                 className="h-10"
                 disabled={pending}
               />

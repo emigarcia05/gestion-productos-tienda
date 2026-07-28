@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import AsistenteIaBuscarColorImagenPageClient from "@/components/asistente-ia/AsistenteIaBuscarColorImagenPageClient";
 import {
-  ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN,
+  ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
+  ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY,
   getDefaultConfigBuscarColorImagen,
 } from "@/lib/asistenteIa";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
@@ -20,11 +21,15 @@ export default async function AsistenteIaBuscarColorImagenPage() {
     redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
   }
 
-  const [row, catalogo] = await Promise.all([
-    getProdIaDisenoPrompPorSubmodulo(ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN),
+  const [rowNuevo, rowLegacy, catalogo] = await Promise.all([
+    getProdIaDisenoPrompPorSubmodulo(ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN),
+    getProdIaDisenoPrompPorSubmodulo(
+      ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY,
+    ),
     listarProdIaDisenoPromps(),
   ]);
 
+  const row = rowNuevo ?? rowLegacy;
   const defaults = getDefaultConfigBuscarColorImagen();
   const config = row
     ? {

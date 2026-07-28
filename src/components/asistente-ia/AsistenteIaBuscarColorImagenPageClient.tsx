@@ -2,20 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings2 } from "lucide-react";
+import { ArrowLeft, ClipboardPaste, ScanSearch, Settings2 } from "lucide-react";
 import { toast } from "sonner";
+import AsistenteIaFuncionTile from "@/components/asistente-ia/AsistenteIaFuncionTile";
+import AsistenteIaProcesoPaso from "@/components/asistente-ia/AsistenteIaProcesoPaso";
 import CuentagotasImagenMuestra from "@/components/asistente-ia/CuentagotasImagenMuestra";
 import GestionarProdIaDisenoPrompModal from "@/components/asistente-ia/GestionarProdIaDisenoPrompModal";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import { Button } from "@/components/ui/button";
-import { aplicarRgbAlPromptBuscarColor } from "@/lib/asistenteIa";
+import {
+  ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
+  aplicarRgbAlPromptBuscarColor,
+} from "@/lib/asistenteIa";
 import type {
   AsistenteIaConfigSubmodulo,
   ProdIaDisenoPrompItem,
 } from "@/lib/asistenteIa";
 import type { RgbColor } from "@/lib/colorMuestraImagen";
-import { CALLOUT_WARNING_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
+
+type VistaActiva = "hub" | "buscar-codigo";
 
 interface Props {
   config: AsistenteIaConfigSubmodulo;
@@ -29,12 +35,16 @@ export default function AsistenteIaBuscarColorImagenPageClient({
   esEditor,
 }: Props) {
   const router = useRouter();
+  const [vista, setVista] = useState<VistaActiva>("hub");
   const [gestionarOpen, setGestionarOpen] = useState(false);
   const [colorMuestra, setColorMuestra] = useState<RgbColor | null>(null);
-  const [ultimoPrompt, setUltimoPrompt] = useState("");
+  const [paso1Completo, setPaso1Completo] = useState(false);
+  const [respuestaIa, setRespuestaIa] = useState("");
+  const [resetCuentagotas, setResetCuentagotas] = useState(0);
 
   const url = config.urlRedireccion;
   const plantilla = config.promp;
+  const tituloModulo = ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN;
 
   async function handleColorPicked(color: RgbColor) {
     if (!plantilla.trim()) {
@@ -51,73 +61,140 @@ export default function AsistenteIaBuscarColorImagenPageClient({
     }
 
     const prompt = aplicarRgbAlPromptBuscarColor(plantilla, color);
-    setUltimoPrompt(prompt);
 
     try {
       await navigator.clipboard.writeText(prompt);
       window.open(url, "_blank", "noopener,noreferrer");
+      setPaso1Completo(true);
       toast.success("Prompt Copiado", {
-        description: "Pegalo en ChatGPT (Ctrl+V).",
+        description: "Pegalo en ChatGPT (Ctrl+V). Luego pegá la respuesta abajo.",
       });
     } catch {
+      setPaso1Completo(true);
       toast.error("No Se Pudo Copiar El Prompt", {
         description:
-          "El prompt está abajo: copialo manualmente y abrí la URL configurada.",
+          "Abrí la URL configurada y pegá la respuesta de la IA en el paso 2.",
       });
     }
+  }
+
+  function handleColorChange(color: RgbColor | null) {
+    setColorMuestra(color);
+    if (color == null) {
+      setPaso1Completo(false);
+      setRespuestaIa("");
+    }
+  }
+
+  function volverAlHub() {
+    setVista("hub");
+    setColorMuestra(null);
+    setPaso1Completo(false);
+    setRespuestaIa("");
+    setResetCuentagotas((n) => n + 1);
+  }
+
+  function handleConfirmarRespuesta() {
+    const texto = respuestaIa.trim();
+    if (!texto) {
+      toast.error("Falta Respuesta", {
+        description: "Pegá la respuesta de la IA en el campo.",
+      });
+      return;
+    }
+    toast.success("Respuesta Registrada", {
+      description: "La respuesta quedó cargada en el proceso.",
+    });
   }
 
   return (
     <>
       <ClassicFilteredTableLayout
         title="Asistente IA"
-        subtitle="Buscar Color Desde Imagen"
+        subtitle={tituloModulo}
         contentWidth="default"
         actions={
-          esEditor ? (
+          vista !== "hub" ? (
             <Button
               type="button"
+              variant="outline"
               className="h-10 px-4"
-              onClick={() => setGestionarOpen(true)}
+              onClick={volverAlHub}
             >
-              <Settings2 className="h-4 w-4" aria-hidden />
-              GESTION PROMP & URL
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+              Volver
             </Button>
           ) : null
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-6 pt-2">
-          <p className={cn(CALLOUT_WARNING_CLASS, "shrink-0")}>
-            Abrí una imagen muestra y hacé clic en el color. Se reemplaza{" "}
-            <span className="font-semibold font-mono">{"{{RGB}}"}</span> en el
-            prompt del módulo, se copia al portapapeles y se abre la URL
-            configurada. La imagen no se guarda en el servidor.
-          </p>
-
-          <CuentagotasImagenMuestra
-            color={colorMuestra}
-            onColorChange={setColorMuestra}
-            onColorPicked={(c) => void handleColorPicked(c)}
-          />
-
-          {ultimoPrompt ? (
-            <div className="flex shrink-0 flex-col gap-3 rounded-lg border border-border bg-card p-4">
-              <p className="text-sm font-medium text-foreground">
-                Último Prompt Copiado
-              </p>
-              <pre
-                className={cn(
-                  "whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3",
-                  "text-sm text-foreground",
-                )}
-              >
-                {ultimoPrompt}
-              </pre>
-              <p className="text-xs text-muted-foreground">
-                URL: {url || "Sin URL configurada."}
-              </p>
+          {vista === "hub" ? (
+            <div className="flex flex-wrap items-start gap-4">
+              <AsistenteIaFuncionTile
+                label="Buscar Código Desde Imagen"
+                icon={<ScanSearch aria-hidden />}
+                onClick={() => setVista("buscar-codigo")}
+              />
+              {esEditor ? (
+                <AsistenteIaFuncionTile
+                  label="Gestion Promp & Url"
+                  icon={<Settings2 aria-hidden />}
+                  onClick={() => setGestionarOpen(true)}
+                />
+              ) : null}
             </div>
-          ) : null}
+          ) : (
+            <>
+              <AsistenteIaProcesoPaso
+                numero={1}
+                titulo="Cargar La Imagen Y Seleccionar"
+                activo
+              >
+                <CuentagotasImagenMuestra
+                  key={resetCuentagotas}
+                  color={colorMuestra}
+                  onColorChange={handleColorChange}
+                  onColorPicked={(c) => void handleColorPicked(c)}
+                />
+              </AsistenteIaProcesoPaso>
+
+              <AsistenteIaProcesoPaso
+                numero={2}
+                titulo="Pegar La Respuesta De Ia"
+                activo={paso1Completo}
+              >
+                <textarea
+                  value={respuestaIa}
+                  onChange={(e) => setRespuestaIa(e.target.value)}
+                  rows={8}
+                  disabled={!paso1Completo}
+                  placeholder={
+                    paso1Completo
+                      ? "Pegá aquí la respuesta de ChatGPT..."
+                      : "Completá el paso 1 para habilitar este campo."
+                  }
+                  className={cn(
+                    "border-input min-h-[8rem] w-full rounded-md border bg-transparent px-3 py-2 text-sm",
+                    "text-foreground shadow-xs outline-none",
+                    "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                    "disabled:cursor-not-allowed disabled:opacity-50",
+                  )}
+                  aria-label="Respuesta de IA"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    className="h-10 px-4"
+                    disabled={!paso1Completo || !respuestaIa.trim()}
+                    onClick={handleConfirmarRespuesta}
+                  >
+                    <ClipboardPaste className="h-4 w-4" aria-hidden />
+                    Confirmar Respuesta
+                  </Button>
+                </div>
+              </AsistenteIaProcesoPaso>
+            </>
+          )}
         </div>
       </ClassicFilteredTableLayout>
 

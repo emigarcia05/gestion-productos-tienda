@@ -49,10 +49,11 @@ npm run ia-diseno:pipeline   # ambos
 
 ## UI monorepo (capa 5 v1)
 
-- Sidebar **ASISTENTE IA** → **Buscar Color Desde Imagen** (`PERMISOS.asistenteIa.acceso`, solo editor).
-- Prompt/URL en tabla **`prod_ia_diseno_promp`** (CRUD: **GESTION PROMP & URL**); la **URL** se usa al buscar.
+- Sidebar **ASISTENTE IA** → **Buscar Código Desde Imagen** (`PERMISOS.asistenteIa.acceso`, solo editor). Ruta URL legacy `buscar-color-imagen` (sin rename de path).
+- Hub de funciones: tiles **`AsistenteIaFuncionTile`** proporción **2:1** (alto:ancho = `aspect-[1/2]`), ícono arriba + label en **MAYÚSCULAS**. Funciones: **BUSCAR CÓDIGO DESDE IMAGEN**, **GESTION PROMP & URL** (editor).
+- Prompt/URL en tabla **`prod_ia_diseno_promp`** (CRUD: **GESTION PROMP & URL**); la **URL** se usa al buscar. Lookup de prompt: nombre nuevo + legacy **Buscar Color Desde Imagen**.
 - **Variables de prompt:** sintaxis **`{{CLAVE}}`** (catálogo `ASISTENTE_IA_VARIABLES_PROMPT`). Hoy: **`{{RGB}}`** (cuentagotas). En el editor, chips **Insertar Variable**. Compat: plantillas viejas con `(R,G,B)`.
-- **Cuentagotas (cliente):** **Abrir Imagen Muestra** → preview `<img>` + muestreo en canvas offscreen → **clic** en el color → RGB; imagen **no** se persiste. `aplicarRgbAlPromptBuscarColor` sustituye `{{RGB}}` (o legacy); al clic se copia al portapapeles y se abre **`url_redireccion`**.
+- **Cuentagotas (cliente):** proceso en pasos — (1) imagen + clic RGB → `aplicarRgbAlPromptBuscarColor` + clipboard + `url_redireccion`; (2) pegar respuesta IA (habilitado tras el paso 1). Imagen **no** se persiste.
 - FE: `docs/FRONTEND_GUIDELINES.md`. BE: `docs/BACKEND_GUIDELINES.md`. Reglas del asesor: `REGLAS_NEGOCIO.md` (no mezclar en FE/BE).
 
 ---

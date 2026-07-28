@@ -1509,6 +1509,10 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-27): **Asistente IA · cuentagotas** — en **Buscar Color Desde Imagen**: **Abrir Imagen Muestra** muestra preview con `<img>` + canvas offscreen (fix: el canvas no existía en el DOM al cargar). Clic en la imagen → RGB → `aplicarRgbAlPromptBuscarColor` sobre `prod_ia_diseno_promp` → copiar al portapapeles + abrir `url_redireccion`. Excepción de estilo: `style` dinámico para tamaño del preview y `backgroundColor` del swatch.*
 
+*Última actualización (2026-07-28): **Buscar Código Desde Imagen · proceso** — pasos secuenciales (`AsistenteIaProcesoPaso`): (1) cargar imagen y seleccionar color → copia prompt + abre URL; (2) pegar respuesta de IA (se habilita al completar el 1).*
+
+*Última actualización (2026-07-28): **Asistente IA · hub tiles** — submódulo renombrado a **Buscar Código Desde Imagen**; hub con **`AsistenteIaFuncionTile`** (`aspect-[1/2]`, ícono + label MAYÚSCULAS): **BUSCAR CÓDIGO DESDE IMAGEN** y **GESTION PROMP & URL**. Lookup de prompt: nombre nuevo + legacy.*
+
 *Última actualización (2026-07-27): **GESTION PROMP & URL · variables** — en editar/crear prompt: chips **Insertar Variable** (`{{RGB}}` desde `ASISTENTE_IA_VARIABLES_PROMPT`). El cuentagotas completa `{{RGB}}` (legacy `(R,G,B)` sigue funcionando).*
 
 *Última actualización (2026-07-27): **GESTION PROMP & URL** — listado del modal solo muestra el **título del submódulo** + acciones editar/eliminar (sin preview de prompt ni URL en la fila).*

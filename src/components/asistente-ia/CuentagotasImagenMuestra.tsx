@@ -17,8 +17,6 @@ import {
   rgbToHex,
   type RgbColor,
 } from "@/lib/colorMuestraImagen";
-import { CALLOUT_WARNING_CLASS } from "@/lib/ui-classes";
-import { cn } from "@/lib/utils";
 
 const MAX_PREVIEW = 640;
 const RADIO_MUESTRA = 8;
@@ -177,7 +175,7 @@ export default function CuentagotasImagenMuestra({
   const tieneImagen = previewUrl != null;
 
   return (
-    <div className="flex shrink-0 flex-col gap-3 rounded-lg border border-border bg-card p-4">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <input
           ref={fileInputRef}
@@ -208,17 +206,11 @@ export default function CuentagotasImagenMuestra({
         ) : null}
       </div>
 
-      {!tieneImagen ? (
-        <p className="text-sm text-muted-foreground">
-          La imagen se usa solo en el navegador para tomar el color; no se
-          guarda en el servidor.
-        </p>
-      ) : (
+      {tieneImagen ? (
         <>
-          <p className={cn(CALLOUT_WARNING_CLASS, "shrink-0")}>
+          <p className="text-sm text-muted-foreground">
             <Pipette className="mr-1 inline h-4 w-4 align-text-bottom" aria-hidden />
-            Hacé clic en la parte de la imagen donde deseás buscar el color. Se
-            copiará el prompt y se abrirá la URL configurada.
+            Hacé clic en la parte de la imagen donde deseás buscar el color.
           </p>
 
           <div className="flex flex-wrap items-start gap-4">
@@ -267,7 +259,7 @@ export default function CuentagotasImagenMuestra({
             </div>
           </div>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

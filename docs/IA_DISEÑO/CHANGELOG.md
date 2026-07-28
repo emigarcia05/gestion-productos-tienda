@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.6.0 — 2026-07-28
+
+**Descripción:** Rename UI **Buscar Código Desde Imagen**; hub con tiles 2:1 (`AsistenteIaFuncionTile`). Lookup de prompt compatible con nombre legacy.
+
+**Motivo:** Acceso por función (ícono + nombre en mayúsculas) y alinear el nombre del módulo al objetivo (código Alba).
+
 ## 0.5.0 — 2026-07-27
 
 **Descripción:** Variables de prompt con sintaxis `{{CLAVE}}` (p. ej. `{{RGB}}`); chips **Insertar Variable** en GESTION PROMP & URL; el cuentagotas completa `{{RGB}}` (compat `(R,G,B)`).

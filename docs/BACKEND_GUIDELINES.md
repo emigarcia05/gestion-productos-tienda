@@ -1983,6 +1983,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-03): **Comp. Categorias — búsqueda referencia competencia (todos los competidores)** — con `q` no vacío, `buscarOpcionesReferenciaCompetencia` resuelve `cod_tienda` en `prod_tienda` y expande **todos** los competidores del ítem; **`listarCompetenciasConPxSugeridoPorCodTiendas`** (misma lógica que `/cx-px-tienda`, sin exigir fila previa en `prod_precios_competencia` ni join `prod_tienda.comparar_competencia` en lista); resuelve `pxMostrar` con fallback directo desde lista + `buildMapPxVtaSugerido`; devuelve solo filas asignables (`pxMostrar > 0`) tras resolver precios.*
 
+*Última actualización (2026-07-28): **Asistente IA · rename** — submódulo canónico **Buscar Código Desde Imagen** (`ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN`); lookup también por legacy **Buscar Color Desde Imagen**.*
+
 *Última actualización (2026-07-27): **Asistente IA · variables de prompt** — plantillas usan `{{RGB}}` (`aplicarVariablesAlPrompt` / `aplicarRgbAlPromptBuscarColor` en `@/lib/asistenteIa`). Compatibilidad con `(R,G,B)`. Catálogo: `ASISTENTE_IA_VARIABLES_PROMPT`.*
 
 *Última actualización (2026-07-27): **Asistente IA · cuentagotas** — el muestreo RGB es **solo cliente** (`colorMuestraImagen.ts` + canvas); no hay action ni persistencia de imagen. El prompt viene de **`prod_ia_diseno_promp.promp`**; en cliente `aplicarRgbAlPromptBuscarColor` reemplaza **`{{RGB}}`**. `url_redireccion` sigue en la misma tabla.*

@@ -249,7 +249,7 @@ const MODULES: NavModule[] = [
     submodules: [
       {
         href: GP_ROUTES.asistenteIa.buscarColorImagen,
-        label: "Buscar Color Desde Imagen",
+        label: "Buscar Código Desde Imagen",
         icon: <ScanSearch className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.asistenteIa.acceso,
       },
