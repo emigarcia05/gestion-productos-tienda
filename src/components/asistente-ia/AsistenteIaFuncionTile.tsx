@@ -14,7 +14,7 @@ export interface AsistenteIaFuncionTileProps {
 
 /**
  * Botón de función del hub Asistente IA.
- * Proporción 2:1 (alto:ancho) → CSS `aspect-ratio: 1 / 2`.
+ * Proporción 5:1 (alto:ancho) → CSS `aspect-ratio: 1 / 5`.
  * Ícono arriba + nombre del módulo en MAYÚSCULAS abajo.
  */
 export default function AsistenteIaFuncionTile({
@@ -32,7 +32,7 @@ export default function AsistenteIaFuncionTile({
       onClick={onClick}
       aria-label={label}
       className={cn(
-        "aspect-[1/2] h-auto w-36 flex-col gap-3 rounded-lg px-3 py-4",
+        "aspect-[1/5] h-auto w-36 flex-col gap-3 rounded-lg px-3 py-4",
         "whitespace-normal text-center font-semibold uppercase leading-tight",
         "has-[>svg]:px-3",
         className,

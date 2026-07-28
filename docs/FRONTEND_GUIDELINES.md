@@ -1511,7 +1511,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-28): **Buscar Código Desde Imagen · proceso** — pasos secuenciales (`AsistenteIaProcesoPaso`): (1) cargar imagen y seleccionar color → copia prompt + abre URL; (2) pegar respuesta de IA (se habilita al completar el 1).*
 
-*Última actualización (2026-07-28): **Asistente IA · hub tiles** — submódulo renombrado a **Buscar Código Desde Imagen**; hub con **`AsistenteIaFuncionTile`** (`aspect-[1/2]`, ícono + label MAYÚSCULAS): **BUSCAR CÓDIGO DESDE IMAGEN** y **GESTION PROMP & URL**. Lookup de prompt: nombre nuevo + legacy.*
+*Última actualización (2026-07-28): **Asistente IA · hub tiles** — submódulo renombrado a **Buscar Código Desde Imagen**; hub con **`AsistenteIaFuncionTile`** (`aspect-[1/5]`, `w-36`, ícono + label MAYÚSCULAS): **BUSCAR CÓDIGO DESDE IMAGEN** y **GESTION PROMP & URL**. Lookup de prompt: nombre nuevo + legacy.*
 
 *Última actualización (2026-07-27): **GESTION PROMP & URL · variables** — en editar/crear prompt: chips **Insertar Variable** (`{{RGB}}` desde `ASISTENTE_IA_VARIABLES_PROMPT`). El cuentagotas completa `{{RGB}}` (legacy `(R,G,B)` sigue funcionando).*
 
