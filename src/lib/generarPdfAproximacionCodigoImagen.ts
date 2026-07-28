@@ -1,14 +1,25 @@
 /**
  * PDF cliente: aproximación de código Alba desde imagen + respuesta IA.
  * Una sola hoja A4 con bandas: título 5% · imagen 30% · colores 30% · texto 15% · logo 20%.
+ * Estética alineada a tokens de la app (primary #0072BB, cards, tablas Balance).
  */
 import { jsPDF } from "jspdf";
 import type { RgbColor } from "@/lib/colorMuestraImagen";
 import { formatRgbTuple, rgbToHex } from "@/lib/colorMuestraImagen";
 import type { CoincidenciaAlbaPdf } from "@/lib/parseRespuestaIaCoincidencias";
 
+/** Tokens de marca / UI (globals.css). */
 const PRIMARY = { r: 0, g: 114, b: 187 }; // #0072BB
-const BLACK = { r: 0, g: 0, b: 0 };
+const PRIMARY_FG = { r: 255, g: 255, b: 255 };
+const BLACK = { r: 0, g: 0, b: 0 }; // texto de datos (legibilidad)
+const BORDER = { r: 226, g: 232, b: 240 }; // --gris-inset / border
+const CARD = { r: 255, g: 255, b: 255 };
+const MUTED_FILL = { r: 241, g: 245, b: 249 }; // --muted / --secondary
+const ROW_ALT = { r: 244, g: 248, b: 252 }; // fila alterna (PDF aumentos)
+const ACCENT_TINT = { r: 224, g: 242, b: 254 }; // --accent #e0f2fe
+const HEADER_TINT = { r: 240, g: 247, b: 251 }; // primary ~6% sobre blanco
+const DIVIDER_SOFT = { r: 186, g: 218, b: 244 }; // #bae4f4 (PDF aumentos)
+
 const TITLE =
   "APROXIMACIÓN DE CÓDIGO DESDE UNA IMAGEN DIGITAL" as const;
 const SUBTITLE_COINCIDENCIAS = "COINCIDENCIAS MÁS CERCANAS" as const;
@@ -46,6 +57,43 @@ function hexToRgb(hex: string): RgbColor {
     g: Number.parseInt(h.slice(2, 4), 16),
     b: Number.parseInt(h.slice(4, 6), 16),
   };
+}
+
+function setFill(
+  doc: jsPDF,
+  c: { r: number; g: number; b: number },
+): void {
+  doc.setFillColor(c.r, c.g, c.b);
+}
+
+function setStroke(
+  doc: jsPDF,
+  c: { r: number; g: number; b: number },
+): void {
+  doc.setDrawColor(c.r, c.g, c.b);
+}
+
+function setText(
+  doc: jsPDF,
+  c: { r: number; g: number; b: number },
+): void {
+  doc.setTextColor(c.r, c.g, c.b);
+}
+
+/** Card suave: fondo + borde redondeado (estilo `bg-card` / `border-border`). */
+function drawCard(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  opts?: { fill?: { r: number; g: number; b: number }; radius?: number },
+): void {
+  const radius = opts?.radius ?? 2.5;
+  setFill(doc, opts?.fill ?? CARD);
+  setStroke(doc, BORDER);
+  doc.setLineWidth(0.35);
+  doc.roundedRect(x, y, w, h, radius, radius, "FD");
 }
 
 /**
@@ -94,7 +142,6 @@ export function componerImagenConMuestra(
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvasW, canvasH);
 
-      // Foto pegada a la izquierda (sin margen).
       const imgY = Math.round((canvasH - naturalH) / 2);
       ctx.drawImage(img, 0, imgY, naturalW, naturalH);
 
@@ -145,13 +192,21 @@ export function componerImagenConMuestra(
       ctx.fill();
 
       const hex = rgbToHex(muestra.color);
+      const radius = Math.max(6, Math.round(swatch * 0.08));
       ctx.fillStyle = hex;
-      ctx.fillRect(sx, sy, swatch, swatch);
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = Math.max(2, Math.round(swatch * 0.02));
-      ctx.strokeRect(sx, sy, swatch, swatch);
+      ctx.strokeStyle = "#0072BB";
+      ctx.lineWidth = Math.max(2, Math.round(swatch * 0.025));
+      if (typeof ctx.roundRect === "function") {
+        ctx.beginPath();
+        ctx.roundRect(sx, sy, swatch, swatch, radius);
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        ctx.fillRect(sx, sy, swatch, swatch);
+        ctx.strokeRect(sx, sy, swatch, swatch);
+      }
 
-      ctx.fillStyle = "#0f172a";
+      ctx.fillStyle = "#000000";
       ctx.font = `bold ${fontSize}px Helvetica, Arial, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
@@ -198,116 +253,189 @@ export function generarPdfAproximacionCodigoImagen(
   const yText = yColors + hColors;
   const yLogo = yText + hText;
 
-  // —— Título (5%) ——
+  // —— Título (5%): franja tint + título marca + acento inferior ——
+  setFill(doc, HEADER_TINT);
+  doc.rect(0, yTitle - 2, pageW, hTitle + 2, "F");
+  setStroke(doc, PRIMARY);
+  doc.setLineWidth(1.1);
+  doc.line(0, yTitle + hTitle, pageW, yTitle + hTitle);
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.setTextColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
-  const titleLines = doc.splitTextToSize(TITLE, contentW);
+  setText(doc, PRIMARY);
+  const titleLines = doc.splitTextToSize(TITLE, contentW - 4);
   const titleLineH = 4.5;
   const titleBlockH = titleLines.length * titleLineH;
   const titleY =
     yTitle + Math.max(titleLineH, (hTitle - titleBlockH) / 2 + titleLineH);
   doc.text(titleLines, pageW / 2, titleY, { align: "center" });
 
-  // —— Imagen muestra (30%) ——
-  const imgPad = 2;
-  const maxImgW = contentW - imgPad * 2;
-  const maxImgH = hImage - imgPad * 2;
+  // —— Imagen muestra (30%): card con borde suave ——
+  const imgCardPad = 3;
+  const imgCardX = marginX;
+  const imgCardY = yImage + 1.5;
+  const imgCardW = contentW;
+  const imgCardH = hImage - 3;
+  drawCard(doc, imgCardX, imgCardY, imgCardW, imgCardH, { radius: 3 });
+
+  const maxImgW = imgCardW - imgCardPad * 2;
+  const maxImgH = imgCardH - imgCardPad * 2;
   const imgScale = Math.min(
     maxImgW / imagenAnotada.width,
     maxImgH / imagenAnotada.height,
   );
   const drawW = imagenAnotada.width * imgScale;
   const drawH = imagenAnotada.height * imgScale;
-  const imgX = marginX + imgPad;
-  const imgY = yImage + imgPad + (maxImgH - drawH) / 2;
+  const imgX = imgCardX + imgCardPad;
+  const imgY = imgCardY + imgCardPad + (maxImgH - drawH) / 2;
   doc.addImage(imagenAnotada.dataUrl, "JPEG", imgX, imgY, drawW, drawH);
 
-  // —— Cuadro colores referencia (30%) ——
+  // —— Cuadro colores (30%): subtítulo + tabla estilo Balance ——
   const colorsPad = 2;
   let cy = yColors + colorsPad;
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.setTextColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
-  doc.text(SUBTITLE_COINCIDENCIAS, marginX, cy + 3.5);
+  setText(doc, PRIMARY);
+  doc.text(SUBTITLE_COINCIDENCIAS, marginX, cy + 3.2);
+  const subW = doc.getTextWidth(SUBTITLE_COINCIDENCIAS);
+  setStroke(doc, PRIMARY);
+  doc.setLineWidth(0.6);
+  doc.line(marginX, cy + 4.4, marginX + Math.min(subW, 48), cy + 4.4);
   cy += 7;
 
-  const sw = 9;
-  const colSwatch = marginX;
-  const colNombre = marginX + sw + 4;
-  const colCodigo = marginX + 78;
-  const colSim = marginX + 130;
-  const headerH = 5;
+  const tableX = marginX;
+  const tableW = contentW;
+  const tableBottom = yColors + hColors - colorsPad;
+  const tableH = Math.max(18, tableBottom - cy);
+  drawCard(doc, tableX, cy, tableW, tableH, { radius: 2.5 });
+
+  const sw = 8;
+  const innerPad = 3;
+  const colSwatch = tableX + innerPad;
+  const colNombre = colSwatch + sw + 4;
+  const colCodigo = tableX + 78;
+  const colSim = tableX + 128;
+  const headerH = 7;
   const rowsAreaTop = cy + headerH;
-  const rowsAreaBottom = yColors + hColors - colorsPad;
-  const rowsAreaH = Math.max(20, rowsAreaBottom - rowsAreaTop);
+  const rowsAreaBottom = cy + tableH - 1.5;
+  const rowsAreaH = Math.max(16, rowsAreaBottom - rowsAreaTop);
   const rowH = rowsAreaH / 5;
+
+  // Cabecera tabla: primary + texto blanco (patrón Balance / tablas marca).
+  setFill(doc, PRIMARY);
+  doc.roundedRect(tableX, cy, tableW, headerH, 2.5, 2.5, "F");
+  setFill(doc, PRIMARY);
+  doc.rect(tableX, cy + headerH - 2.5, tableW, 2.5, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
-  doc.setTextColor(BLACK.r, BLACK.g, BLACK.b);
-  doc.text("COLOR", colSwatch, cy + 3);
-  doc.text("NOMBRE", colNombre, cy + 3);
-  doc.text("CÓDIGO", colCodigo, cy + 3);
-  doc.text("APROX. DIGITAL", colSim, cy + 3);
-  cy += headerH;
-  doc.setDrawColor(226, 232, 240);
-  doc.line(marginX, cy - 1, pageW - marginX, cy - 1);
+  setText(doc, PRIMARY_FG);
+  const headY = cy + 4.6;
+  doc.text("COLOR", colSwatch, headY);
+  doc.text("NOMBRE", colNombre, headY);
+  doc.text("CÓDIGO", colCodigo, headY);
+  doc.text("APROX. DIGITAL", colSim, headY);
 
   const filas = [...informe.coincidencias];
   while (filas.length < 5) {
-    filas.push({ nombre: "—", codigo: "—", similitud: "—", rgb: null, hex: null });
+    filas.push({
+      nombre: "—",
+      codigo: "—",
+      similitud: "—",
+      rgb: null,
+      hex: null,
+    });
   }
 
   for (let i = 0; i < 5; i += 1) {
     const row = filas[i]!;
     const rowTop = rowsAreaTop + i * rowH;
     const swatchY = rowTop + (rowH - sw) / 2;
-    const textY = rowTop + rowH / 2 + 1.2;
+    const textY = rowTop + rowH / 2 + 1.1;
+
+    if (i % 2 === 1) {
+      setFill(doc, ROW_ALT);
+      doc.rect(tableX + 0.4, rowTop, tableW - 0.8, rowH, "F");
+    }
+
+    if (i < 4) {
+      setStroke(doc, DIVIDER_SOFT);
+      doc.setLineWidth(0.2);
+      doc.line(
+        tableX + innerPad,
+        rowTop + rowH,
+        tableX + tableW - innerPad,
+        rowTop + rowH,
+      );
+    }
 
     const fill = row.rgb ?? (row.hex ? hexToRgb(row.hex) : null);
     if (fill) {
-      doc.setFillColor(fill.r, fill.g, fill.b);
-      doc.rect(colSwatch, swatchY, sw, sw, "F");
+      setFill(doc, fill);
+      doc.roundedRect(colSwatch, swatchY, sw, sw, 1.2, 1.2, "F");
     } else {
-      doc.setFillColor(248, 250, 252);
-      doc.rect(colSwatch, swatchY, sw, sw, "F");
+      setFill(doc, MUTED_FILL);
+      doc.roundedRect(colSwatch, swatchY, sw, sw, 1.2, 1.2, "F");
     }
-    doc.setDrawColor(148, 163, 184);
-    doc.rect(colSwatch, swatchY, sw, sw, "S");
+    setStroke(doc, BORDER);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(colSwatch, swatchY, sw, sw, 1.2, 1.2, "S");
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.setTextColor(BLACK.r, BLACK.g, BLACK.b);
+    setText(doc, BLACK);
     const nombreLines = doc.splitTextToSize(
       row.nombre,
       colCodigo - colNombre - 3,
     );
     doc.text(nombreLines[0] ?? row.nombre, colNombre, textY);
+    doc.setFont("helvetica", "bold");
     doc.text(row.codigo, colCodigo, textY);
+    doc.setFont("helvetica", "normal");
     doc.text(row.similitud, colSim, textY);
   }
 
-  // —— Texto descriptivo (15%) ——
-  const textPad = 3;
+  // —— Texto descriptivo (15%): callout con barra primary (estilo aviso app) ——
+  const calloutPad = 3.5;
+  const calloutX = marginX;
+  const calloutY = yText + 2;
+  const calloutW = contentW;
+  const calloutH = hText - 4;
+  drawCard(doc, calloutX, calloutY, calloutW, calloutH, {
+    fill: ACCENT_TINT,
+    radius: 2.5,
+  });
+  setFill(doc, PRIMARY);
+  doc.roundedRect(calloutX, calloutY, 1.8, calloutH, 1, 1, "F");
+  setFill(doc, PRIMARY);
+  doc.rect(calloutX + 0.6, calloutY, 1.2, calloutH, "F");
+
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(BLACK.r, BLACK.g, BLACK.b);
+  doc.setFontSize(7.5);
+  setText(doc, BLACK);
   const disclaimerLines = doc.splitTextToSize(
     DISCLAIMER_APROXIMACION_CODIGO,
-    contentW,
+    calloutW - calloutPad * 2 - 2,
   );
-  const lineH = 3.8;
+  const lineH = 3.5;
   const textBlockH = disclaimerLines.length * lineH;
   const textStartY =
-    yText + textPad + Math.max(0, (hText - textPad * 2 - textBlockH) / 2) + lineH;
-  doc.text(disclaimerLines, marginX, textStartY);
+    calloutY +
+    calloutPad +
+    Math.max(0, (calloutH - calloutPad * 2 - textBlockH) / 2) +
+    lineH;
+  doc.text(disclaimerLines, calloutX + calloutPad + 2, textStartY);
 
-  // —— Logo (20%), centrado ——
+  // —— Logo (20%): divisor suave + logo centrado ——
+  setStroke(doc, DIVIDER_SOFT);
+  doc.setLineWidth(0.45);
+  doc.line(marginX + contentW * 0.2, yLogo + 2, marginX + contentW * 0.8, yLogo + 2);
+
   if (logo?.dataUrl && logo.naturalW > 0) {
-    const logoPad = 4;
+    const logoPad = 5;
     const maxLogoW = Math.min(56, contentW * 0.45);
-    const maxLogoH = hLogo - logoPad * 2;
+    const maxLogoH = hLogo - logoPad * 2 - 2;
     const logoScale = Math.min(
       maxLogoW / logo.naturalW,
       maxLogoH / logo.naturalH,
@@ -315,7 +443,7 @@ export function generarPdfAproximacionCodigoImagen(
     const logoW = logo.naturalW * logoScale;
     const logoHDrawn = logo.naturalH * logoScale;
     const logoX = (pageW - logoW) / 2;
-    const logoYDrawn = yLogo + (hLogo - logoHDrawn) / 2;
+    const logoYDrawn = yLogo + 4 + (hLogo - 4 - logoHDrawn) / 2;
     const format = logo.dataUrl.includes("image/jpeg") ? "JPEG" : "PNG";
     doc.addImage(logo.dataUrl, format, logoX, logoYDrawn, logoW, logoHDrawn);
   }
