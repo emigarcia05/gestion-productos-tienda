@@ -24,9 +24,17 @@ const TITLE =
   "APROXIMACIÓN DE CÓDIGO DESDE UNA IMAGEN DIGITAL" as const;
 const SUBTITLE_COINCIDENCIAS = "COINCIDENCIAS MÁS CERCANAS" as const;
 
-/** Aviso legal / comercial bajo las coincidencias (pie del informe). */
-export const DISCLAIMER_APROXIMACION_CODIGO =
-  "La elección es una comparación digital de colores con el taco digital de Alba. Debe tomarse como una aproximación y referencia del color. El color final en pintura puede variar. Para una mayor aproximación es recomendable acercarse a alguno de nuestros locales para ver el taco en persona.";
+const TITLE_MAS_INFORMACION = "MÁS INFORMACIÓN" as const;
+
+/** Aviso bajo las coincidencias (bloque “Más Información”). */
+export const DISCLAIMER_APROXIMACION_CODIGO_P1 =
+  "Esta herramienta busca el código de pintura más cercano comparando digitalmente una sección de tu foto con nuestra carta de colores.";
+
+export const DISCLAIMER_APROXIMACION_CODIGO_P2 =
+  "Tené en cuenta que los resultados son una guía y aproximación digital, por lo que el color final puede variar. Para apreciar el tono real con mayor precisión, te recomendamos acercarte a nuestras sucursales y consultar la carta de colores en persona.";
+
+/** @deprecated Preferir P1/P2; se mantiene unido por compatibilidad. */
+export const DISCLAIMER_APROXIMACION_CODIGO = `${DISCLAIMER_APROXIMACION_CODIGO_P1} ${DISCLAIMER_APROXIMACION_CODIGO_P2}`;
 
 export interface LogoTiendaColorPdf {
   dataUrl: string;
@@ -117,13 +125,14 @@ export function componerImagenConMuestra(
     const img = new Image();
     img.onload = () => {
       const ladoMenor = Math.min(naturalW, naturalH);
-      const swatch = Math.max(96, Math.round(ladoMenor * 0.3));
-      const gapFlecha = Math.max(28, Math.round(swatch * 0.2));
-      const panelPadX = Math.max(16, Math.round(swatch * 0.12));
-      const fontSize = Math.max(18, Math.round(swatch * 0.2));
+      // Swatch y recuadro de muestra más grandes (legibles en el PDF).
+      const swatch = Math.max(140, Math.round(ladoMenor * 0.42));
+      const gapFlecha = Math.max(32, Math.round(swatch * 0.18));
+      const panelPadX = Math.max(18, Math.round(swatch * 0.12));
+      const fontSize = Math.max(22, Math.round(swatch * 0.18));
       const lineGap = Math.round(fontSize * 1.35);
       const textBlockH = lineGap * 2 + Math.round(fontSize * 0.6);
-      const panelPadBottom = Math.max(12, Math.round(swatch * 0.08));
+      const panelPadBottom = Math.max(14, Math.round(swatch * 0.08));
 
       const padRight = gapFlecha + swatch + panelPadX * 2;
       const canvasW = naturalW + padRight;
@@ -145,7 +154,7 @@ export function componerImagenConMuestra(
       const imgY = Math.round((canvasH - naturalH) / 2);
       ctx.drawImage(img, 0, imgY, naturalW, naturalH);
 
-      const box = Math.max(14, Math.round(ladoMenor * 0.035));
+      const box = Math.max(28, Math.round(ladoMenor * 0.075));
       const bx = Math.max(0, Math.min(naturalW - box, muestra.x - box / 2));
       const by = Math.max(
         0,
@@ -153,7 +162,7 @@ export function componerImagenConMuestra(
       );
 
       ctx.strokeStyle = "#0072BB";
-      ctx.lineWidth = Math.max(2, Math.round(box / 7));
+      ctx.lineWidth = Math.max(3, Math.round(box / 6));
       ctx.strokeRect(bx, by + imgY, box, box);
 
       const sx = naturalW + gapFlecha;
@@ -235,10 +244,17 @@ export function generarPdfAproximacionCodigoImagen(
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const marginX = 12;
-  const marginY = 10;
+  /** Contorno primary que enmarca toda la hoja. */
+  const frameInset = 5.5;
+  const frameGap = 3;
+  const marginX = frameInset + frameGap;
+  const marginY = frameInset + frameGap;
   const contentW = pageW - marginX * 2;
   const contentH = pageH - marginY * 2;
+  const frameX = frameInset;
+  const frameY = frameInset;
+  const frameW = pageW - frameInset * 2;
+  const frameH = pageH - frameInset * 2;
 
   // Bandas fijas (una sola hoja A4).
   const hTitle = contentH * 0.05;
@@ -255,10 +271,15 @@ export function generarPdfAproximacionCodigoImagen(
 
   // —— Título (5%): franja tint + título marca + acento inferior ——
   setFill(doc, HEADER_TINT);
-  doc.rect(0, yTitle - 2, pageW, hTitle + 2, "F");
+  doc.rect(frameX + 0.8, yTitle - 1, frameW - 1.6, hTitle + 1, "F");
   setStroke(doc, PRIMARY);
-  doc.setLineWidth(1.1);
-  doc.line(0, yTitle + hTitle, pageW, yTitle + hTitle);
+  doc.setLineWidth(0.9);
+  doc.line(
+    frameX + 0.8,
+    yTitle + hTitle,
+    frameX + frameW - 0.8,
+    yTitle + hTitle,
+  );
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
@@ -286,7 +307,7 @@ export function generarPdfAproximacionCodigoImagen(
   );
   const drawW = imagenAnotada.width * imgScale;
   const drawH = imagenAnotada.height * imgScale;
-  const imgX = imgCardX + imgCardPad;
+  const imgX = imgCardX + imgCardPad + (maxImgW - drawW) / 2;
   const imgY = imgCardY + imgCardPad + (maxImgH - drawH) / 2;
   doc.addImage(imagenAnotada.dataUrl, "JPEG", imgX, imgY, drawW, drawH);
 
@@ -297,11 +318,20 @@ export function generarPdfAproximacionCodigoImagen(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   setText(doc, PRIMARY);
-  doc.text(SUBTITLE_COINCIDENCIAS, marginX, cy + 3.2);
+  const subtitleCenterX = marginX + contentW / 2;
+  doc.text(SUBTITLE_COINCIDENCIAS, subtitleCenterX, cy + 3.2, {
+    align: "center",
+  });
   const subW = doc.getTextWidth(SUBTITLE_COINCIDENCIAS);
+  const underlineW = Math.min(subW, 52);
   setStroke(doc, PRIMARY);
   doc.setLineWidth(0.6);
-  doc.line(marginX, cy + 4.4, marginX + Math.min(subW, 48), cy + 4.4);
+  doc.line(
+    subtitleCenterX - underlineW / 2,
+    cy + 4.4,
+    subtitleCenterX + underlineW / 2,
+    cy + 4.4,
+  );
   cy += 7;
 
   const tableX = marginX;
@@ -396,12 +426,12 @@ export function generarPdfAproximacionCodigoImagen(
     doc.text(row.similitud, colSim, textY);
   }
 
-  // —— Texto descriptivo (15%): callout con barra primary (estilo aviso app) ——
-  const calloutPad = 3.5;
+  // —— Más Información (15%): callout con barra primary ——
+  const calloutPad = 3;
   const calloutX = marginX;
-  const calloutY = yText + 2;
+  const calloutY = yText + 1.5;
   const calloutW = contentW;
-  const calloutH = hText - 4;
+  const calloutH = hText - 3;
   drawCard(doc, calloutX, calloutY, calloutW, calloutH, {
     fill: ACCENT_TINT,
     radius: 2.5,
@@ -411,21 +441,37 @@ export function generarPdfAproximacionCodigoImagen(
   setFill(doc, PRIMARY);
   doc.rect(calloutX + 0.6, calloutY, 1.2, calloutH, "F");
 
+  const textMaxW = calloutW - calloutPad * 2 - 3;
+  const textX = calloutX + calloutPad + 2.5;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  setText(doc, PRIMARY);
+  const infoTitleY = calloutY + calloutPad + 3.5;
+  doc.text(TITLE_MAS_INFORMACION, calloutX + calloutW / 2, infoTitleY, {
+    align: "center",
+  });
+
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
+  doc.setFontSize(9);
   setText(doc, BLACK);
-  const disclaimerLines = doc.splitTextToSize(
-    DISCLAIMER_APROXIMACION_CODIGO,
-    calloutW - calloutPad * 2 - 2,
+  const lineH = 4;
+  const p1Lines = doc.splitTextToSize(DISCLAIMER_APROXIMACION_CODIGO_P1, textMaxW);
+  const p2Lines = doc.splitTextToSize(DISCLAIMER_APROXIMACION_CODIGO_P2, textMaxW);
+  const paraGap = 2.2;
+  const bodyH =
+    p1Lines.length * lineH + paraGap + p2Lines.length * lineH;
+  const bodyTop =
+    infoTitleY +
+    3 +
+    Math.max(0, (calloutH - (infoTitleY - calloutY) - 3 - bodyH - calloutPad) / 2);
+
+  doc.text(p1Lines, textX, bodyTop + lineH);
+  doc.text(
+    p2Lines,
+    textX,
+    bodyTop + p1Lines.length * lineH + paraGap + lineH,
   );
-  const lineH = 3.5;
-  const textBlockH = disclaimerLines.length * lineH;
-  const textStartY =
-    calloutY +
-    calloutPad +
-    Math.max(0, (calloutH - calloutPad * 2 - textBlockH) / 2) +
-    lineH;
-  doc.text(disclaimerLines, calloutX + calloutPad + 2, textStartY);
 
   // —— Logo (20%): divisor suave + logo centrado ——
   setStroke(doc, DIVIDER_SOFT);
@@ -447,6 +493,11 @@ export function generarPdfAproximacionCodigoImagen(
     const format = logo.dataUrl.includes("image/jpeg") ? "JPEG" : "PNG";
     doc.addImage(logo.dataUrl, format, logoX, logoYDrawn, logoW, logoHDrawn);
   }
+
+  // Contorno A4 (#0072BB) que enmarca toda la información.
+  setStroke(doc, PRIMARY);
+  doc.setLineWidth(1.4);
+  doc.roundedRect(frameX, frameY, frameW, frameH, 2, 2, "S");
 
   return new Uint8Array(doc.output("arraybuffer"));
 }
