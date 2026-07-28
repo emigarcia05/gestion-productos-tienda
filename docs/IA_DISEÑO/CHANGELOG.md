@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.7.0 — 2026-07-28
+
+**Descripción:** PDF de aproximación de código desde imagen (jsPDF cliente): imagen anotada + 5 coincidencias parseadas de la respuesta IA. Prompt seed con columna HEX.
+
+**Motivo:** Entregar un informe imprimible al cerrar el flujo Buscar Código Desde Imagen.
+
 ## 0.6.0 — 2026-07-28
 
 **Descripción:** Rename UI **Buscar Código Desde Imagen**; hub con tiles 2:1 (`AsistenteIaFuncionTile`). Lookup de prompt compatible con nombre legacy.

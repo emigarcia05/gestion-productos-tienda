@@ -53,7 +53,8 @@ npm run ia-diseno:pipeline   # ambos
 - Hub de funciones: tiles **`AsistenteIaFuncionTile`** proporción **5:1** (alto:ancho = `aspect-[1/5]`, ancho fijo `w-36`), ícono arriba + label en **MAYÚSCULAS**. Funciones: **BUSCAR CÓDIGO DESDE IMAGEN**, **GESTION PROMP & URL** (editor).
 - Prompt/URL en tabla **`prod_ia_diseno_promp`** (CRUD: **GESTION PROMP & URL**); la **URL** se usa al buscar. Lookup de prompt: nombre nuevo + legacy **Buscar Color Desde Imagen**.
 - **Variables de prompt:** sintaxis **`{{CLAVE}}`** (catálogo `ASISTENTE_IA_VARIABLES_PROMPT`). Hoy: **`{{RGB}}`** (cuentagotas). En el editor, chips **Insertar Variable**. Compat: plantillas viejas con `(R,G,B)`.
-- **Cuentagotas (cliente):** proceso en pasos — (1) imagen + clic RGB → `aplicarRgbAlPromptBuscarColor` + clipboard + `url_redireccion`; (2) pegar respuesta IA (habilitado tras el paso 1). Imagen **no** se persiste.
+- **Cuentagotas (cliente):** proceso en pasos — (1) imagen + clic RGB → `aplicarRgbAlPromptBuscarColor` + clipboard + `url_redireccion`; (2) pegar respuesta IA → **Generar Pdf** (`generarPdfAproximacionCodigoImagen`: título, imagen con marcador/flecha/swatch RGB, 5 filas color–nombre–código–aproximación). Imagen **no** se persiste en servidor.
+- Prompt seed incluye columna **HEX** para poder pintar swatches de coincidencias en el PDF (parser soporta 3 o 4 columnas).
 - FE: `docs/FRONTEND_GUIDELINES.md`. BE: `docs/BACKEND_GUIDELINES.md`. Reglas del asesor: `REGLAS_NEGOCIO.md` (no mezclar en FE/BE).
 
 ---

@@ -21,11 +21,19 @@ import {
 const MAX_PREVIEW = 640;
 const RADIO_MUESTRA = 8;
 
+export interface MuestraPuntoImagen {
+  x: number;
+  y: number;
+  imagenDataUrl: string;
+  imagenNaturalW: number;
+  imagenNaturalH: number;
+}
+
 export interface CuentagotasImagenMuestraProps {
   color: RgbColor | null;
   onColorChange: (color: RgbColor | null) => void;
-  /** Tras un clic válido en la imagen (muestra RGB). */
-  onColorPicked?: (color: RgbColor) => void;
+  /** Tras un clic válido: color + metadatos de imagen/punto para el PDF. */
+  onColorPicked?: (color: RgbColor, meta: MuestraPuntoImagen) => void;
 }
 
 export default function CuentagotasImagenMuestra({
@@ -167,8 +175,15 @@ export default function CuentagotasImagenMuestra({
       return;
     }
 
+    const imagenDataUrl = canvas.toDataURL("image/jpeg", 0.92);
     onColorChange(sampled);
-    onColorPicked?.(sampled);
+    onColorPicked?.(sampled, {
+      x: pt.x,
+      y: pt.y,
+      imagenDataUrl,
+      imagenNaturalW: canvas.width,
+      imagenNaturalH: canvas.height,
+    });
   }
 
   const hex = color ? rgbToHex(color) : null;
