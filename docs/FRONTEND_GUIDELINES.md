@@ -1509,9 +1509,13 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-27): **Asistente IA · cuentagotas** — en **Buscar Color Desde Imagen**: **Abrir Imagen Muestra** muestra preview con `<img>` + canvas offscreen (fix: el canvas no existía en el DOM al cargar). Clic en la imagen → RGB → `aplicarRgbAlPromptBuscarColor` sobre `prod_ia_diseno_promp` → copiar al portapapeles + abrir `url_redireccion`. Excepción de estilo: `style` dinámico para tamaño del preview y `backgroundColor` del swatch.*
 
+*Última actualización (2026-07-28): **PDF aproximación · títulos** — **APROXIMACIÓN DE CÓDIGO…** y **COINCIDENCIAS MÁS CERCANAS** en mayúsculas y color **`#0072BB`**.*
+
 *Última actualización (2026-07-28): **PDF aproximación · una hoja A4** — layout en bandas: título **5%**, imagen muestra **30%**, colores referencia **30%**, texto **15%**, logo **20%** (sin segunda página).*
 
-*Última actualización (2026-07-28): **PDF aproximación · pie** — debajo de las coincidencias: texto de aviso (comparación digital / aproximación / variar / ver taco en local) + logo **`/logo_tiendacolor.png`** centrado al pie.*
+*Última actualización (2026-07-28): **PDF aproximación · logo** — pie usa **`/logo_tiendacolor_con_fondo.jpg`**.*
+
+*Última actualización (2026-07-28): **PDF aproximación · pie** — debajo de las coincidencias: texto de aviso (comparación digital / aproximación / variar / ver taco en local) + logo centrado al pie.*
 
 *Última actualización (2026-07-28): **PDF aproximación · layout muestra** — foto a la izquierda; swatch ~**30%** del lado menor; RGB/HEX bajo el swatch con tipografía proporcional y legible; bloque anotado alineado a la izquierda en el PDF.*
 

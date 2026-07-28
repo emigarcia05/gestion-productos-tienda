@@ -7,7 +7,7 @@ import type {
 
 async function cargarLogoTiendaColor(): Promise<LogoTiendaColorPdf | null> {
   try {
-    const res = await fetch("/logo_tiendacolor.png");
+    const res = await fetch("/logo_tiendacolor_con_fondo.jpg");
     if (!res.ok) return null;
     const blob = await res.blob();
     const dataUrl = await new Promise<string>((resolve, reject) => {

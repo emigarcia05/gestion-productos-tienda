@@ -8,8 +8,10 @@ import { formatRgbTuple, rgbToHex } from "@/lib/colorMuestraImagen";
 import type { CoincidenciaAlbaPdf } from "@/lib/parseRespuestaIaCoincidencias";
 
 const PRIMARY = { r: 0, g: 114, b: 187 }; // #0072BB
+const BLACK = { r: 0, g: 0, b: 0 };
 const TITLE =
-  "Aproximación de código desde una imagen digital" as const;
+  "APROXIMACIÓN DE CÓDIGO DESDE UNA IMAGEN DIGITAL" as const;
+const SUBTITLE_COINCIDENCIAS = "COINCIDENCIAS MÁS CERCANAS" as const;
 
 /** Aviso legal / comercial bajo las coincidencias (pie del informe). */
 export const DISCLAIMER_APROXIMACION_CODIGO =
@@ -226,8 +228,8 @@ export function generarPdfAproximacionCodigoImagen(
   let cy = yColors + colorsPad;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.setTextColor(15, 23, 42);
-  doc.text("Coincidencias más cercanas", marginX, cy + 3.5);
+  doc.setTextColor(PRIMARY.r, PRIMARY.g, PRIMARY.b);
+  doc.text(SUBTITLE_COINCIDENCIAS, marginX, cy + 3.5);
   cy += 7;
 
   const sw = 9;
@@ -243,7 +245,7 @@ export function generarPdfAproximacionCodigoImagen(
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
-  doc.setTextColor(100, 116, 139);
+  doc.setTextColor(BLACK.r, BLACK.g, BLACK.b);
   doc.text("COLOR", colSwatch, cy + 3);
   doc.text("NOMBRE", colNombre, cy + 3);
   doc.text("CÓDIGO", colCodigo, cy + 3);
@@ -276,7 +278,7 @@ export function generarPdfAproximacionCodigoImagen(
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.setTextColor(15, 23, 42);
+    doc.setTextColor(BLACK.r, BLACK.g, BLACK.b);
     const nombreLines = doc.splitTextToSize(
       row.nombre,
       colCodigo - colNombre - 3,
@@ -290,7 +292,7 @@ export function generarPdfAproximacionCodigoImagen(
   const textPad = 3;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(71, 85, 105);
+  doc.setTextColor(BLACK.r, BLACK.g, BLACK.b);
   const disclaimerLines = doc.splitTextToSize(
     DISCLAIMER_APROXIMACION_CODIGO,
     contentW,
