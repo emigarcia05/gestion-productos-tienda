@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import type { TipoCajaTesoreria } from "@prisma/client";
 import { etiquetaTipoCajaEnPantalla } from "@/lib/cajasTesoreriaTipos";
 
@@ -46,6 +45,7 @@ export default function FinanzasTesoreriaPageClient({
   const [filtroEntidad, setFiltroEntidad] = useState("");
   const [filtroTitular, setFiltroTitular] = useState("");
   const [filtroTipoCaja, setFiltroTipoCaja] = useState("");
+  const [filtroTipoValor, setFiltroTipoValor] = useState("");
 
   const entidadesOptions = useMemo(
     () => [...new Set(filas.map((f) => f.entidadNombre))].sort((a, b) => a.localeCompare(b, "es")),
@@ -59,6 +59,10 @@ export default function FinanzasTesoreriaPageClient({
     () => [...new Set(filas.map((f) => f.tipoCaja))].sort((a, b) => a.localeCompare(b, "es")),
     [filas]
   );
+  const tiposValorOptions = useMemo(
+    () => [...new Set(filas.map((f) => f.tipoValor))].sort((a, b) => a.localeCompare(b, "es")),
+    [filas]
+  );
 
   const filasFiltradas = useMemo(
     () =>
@@ -67,6 +71,7 @@ export default function FinanzasTesoreriaPageClient({
           if (filtroEntidad && fila.entidadNombre !== filtroEntidad) return false;
           if (filtroTitular && fila.titular !== filtroTitular) return false;
           if (filtroTipoCaja && fila.tipoCaja !== filtroTipoCaja) return false;
+          if (filtroTipoValor && fila.tipoValor !== filtroTipoValor) return false;
           return true;
         })
         .sort((a, b) => {
@@ -79,13 +84,14 @@ export default function FinanzasTesoreriaPageClient({
           if (!bOk) return -1;
           return ta - tb;
         }),
-    [filas, filtroEntidad, filtroTitular, filtroTipoCaja]
+    [filas, filtroEntidad, filtroTitular, filtroTipoCaja, filtroTipoValor]
   );
 
   function limpiarFiltros() {
     setFiltroEntidad("");
     setFiltroTitular("");
     setFiltroTipoCaja("");
+    setFiltroTipoValor("");
   }
 
   return (
@@ -172,7 +178,33 @@ export default function FinanzasTesoreriaPageClient({
                     </SelectContent>
                   </Select>
                 </FiltroIndividualContainer>
-                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-2")}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={Boolean(filtroTipoValor)}
+                  onLimpiar={() => setFiltroTipoValor("")}
+                >
+                  <Select
+                    value={filtroTipoValor || undefined}
+                    onValueChange={(v) => setFiltroTipoValor(v)}
+                  >
+                    <SelectTrigger className="input-filtro-unificado">
+                      <SelectValue placeholder="TIPO DE VALOR" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      {tiposValorOptions.map((tipo) => (
+                        <SelectItem key={tipo} value={tipo}>
+                          {tipo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FiltroIndividualContainer>
+                <div className={FILTER_INLINE_ACTION_SLOT_CLASS}>
                   <LimpiarFiltrosButton onClick={limpiarFiltros} />
                 </div>
               </FilaFiltrosDesplegables>
