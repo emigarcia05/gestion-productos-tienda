@@ -9,11 +9,14 @@ import {
   listarSucursalesParaGastos,
   mesAnioCalendarioArgentina,
 } from "@/services/finBalGastoMensualBalance.service";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
 const ANIO_MIN = 2026;
 const ANIO_MAX = 2046;
+
+const anioPeriodoSchema = z.coerce.number().int().min(ANIO_MIN).max(ANIO_MAX);
 
 function clampAnio(a: number): number {
   return Math.min(ANIO_MAX, Math.max(ANIO_MIN, a));
@@ -48,6 +51,30 @@ export default async function BalanceGastosPage({ searchParams }: Props) {
   /** Primera carga sin periodo en la URL: fijar mes/año calendario Argentina en la query. */
   if (mesStr === undefined && anioStr === undefined) {
     redirect(`/finanzas/balance/gastos?mes=${def.mes}&anio=${def.anio}`);
+  }
+
+  const mesTodos = (mesStr ?? "").toLowerCase() === "todos";
+
+  if (mesTodos) {
+    const anioParsed = anioPeriodoSchema.safeParse(anioStr ?? def.anio);
+    if (!anioParsed.success) {
+      redirect(`/finanzas/balance/gastos?mes=${def.mes}&anio=${def.anio}`);
+    }
+    const anio = anioParsed.data;
+    const [filas, sucursalesCentroCosto] = await Promise.all([
+      listarImputacionesMensualesBalance({ anio, mes: null }),
+      listarSucursalesParaGastos(),
+    ]);
+
+    return (
+      <FinanzasBalanceGastosPageClient
+        filas={filas}
+        esEditor={esEditor}
+        mes="todos"
+        anio={anio}
+        sucursalesCentroCosto={sucursalesCentroCosto}
+      />
+    );
   }
 
   const parsed = mesAnioQuerySchema.safeParse({

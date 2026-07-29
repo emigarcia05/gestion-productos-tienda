@@ -40,6 +40,10 @@ export interface BalanceGastoMensualFila {
   id: string;
   /** FK `fin_bal_gasto_final`. */
   gastoFinalId: string;
+  /** Mes calendario de la imputación (`fin_bal_gasto_mensual.mes`, 1–12). */
+  mes: number;
+  /** Año calendario de la imputación (`fin_bal_gasto_mensual.anio`). */
+  anio: number;
   /** Fecha de devengo (mes/año de la fila + día devengado del catálogo). */
   fechaDevengoIso: string;
   sucursalNombre: string;
@@ -358,15 +362,18 @@ export async function listarPeriodosConImputacionesEnDb(): Promise<PeriodosImput
 }
 
 export async function listarImputacionesMensualesBalance(params: {
-  mes: number;
+  /** Si se omite o es `null`, lista todos los meses del `anio`. */
+  mes?: number | null;
   anio: number;
 }): Promise<BalanceGastoMensualFila[]> {
-  const { mes, anio } = params;
+  const { anio } = params;
+  const mesFiltro =
+    params.mes === null || params.mes === undefined ? null : params.mes;
   const isoHoy = dateToIsoYmdArgentina(new Date());
 
   const rows = await prisma.finBalGastoMensual.findMany({
-    where: { mes, anio },
-    orderBy: [{ createdAt: "asc" }],
+    where: mesFiltro === null ? { anio } : { mes: mesFiltro, anio },
+    orderBy: [{ mes: "asc" }, { createdAt: "asc" }],
     include: {
       imputacionSucursal: {
         select: { nombre: true, generaBalance: true, centroCosto: true },
@@ -397,7 +404,9 @@ export async function listarImputacionesMensualesBalance(params: {
 
   return rows.map((r) => {
     const gf = r.gastoFinal;
-    const fechaDevengoIso = isoFechaDevengo(anio, mes, gf.diaDevengado ?? 1);
+    const mesFila = r.mes;
+    const anioFila = r.anio;
+    const fechaDevengoIso = isoFechaDevengo(anioFila, mesFila, gf.diaDevengado ?? 1);
     const montoActual = r.monto;
     const fechaVencimientoIso = fechaVencimientoGastoBalanceDesdeDevengoIso(
       fechaDevengoIso,
@@ -419,6 +428,8 @@ export async function listarImputacionesMensualesBalance(params: {
     return {
       id: r.id,
       gastoFinalId: r.gastoFinalId,
+      mes: mesFila,
+      anio: anioFila,
       fechaDevengoIso,
       sucursalNombre: sucursalDisplay?.nombre.toUpperCase() ?? "—",
       sucursalGeneraBalance: sucursalDisplay?.generaBalance ?? false,

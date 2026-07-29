@@ -138,7 +138,8 @@ const MESES_CALENDARIO: { valor: number; etiqueta: string }[] = [
 interface Props {
   filas: BalanceGastoMensualFila[];
   esEditor: boolean;
-  mes: number;
+  /** Mes 1–12 o `"todos"` (año completo en URL `mes=todos`). */
+  mes: number | "todos";
   anio: number;
   /** Selectores de sucursal (centro de costo) para gasto eventual. */
   sucursalesCentroCosto: { id: string; nombre: string }[];
@@ -241,8 +242,8 @@ export default function FinanzasBalanceGastosPageClient({
     return out;
   }, [filas, filtTipo, filtRubro, filtGasto, filtSucursal, filtProveedor, filtEstado]);
 
-  /** Periodo: siempre `mes` + `anio` (URL / servidor). */
-  function navegarPeriodo(nuevoMes: number, nuevoAnio: number) {
+  /** Periodo: `mes` 1–12 o `todos` + `anio` (URL / servidor). */
+  function navegarPeriodo(nuevoMes: number | "todos", nuevoAnio: number) {
     const q = new URLSearchParams();
     q.set("mes", String(nuevoMes));
     q.set("anio", String(nuevoAnio));
@@ -255,6 +256,9 @@ export default function FinanzasBalanceGastosPageClient({
     navegarPeriodo(mes, nuevoAnio);
   }
 
+  /** Mes concreto para alta de gasto fijo/eventual (con TODOS → mes calendario AR). */
+  const mesParaAlta = mes === "todos" ? mesHoy : mes;
+
   function limpiarFiltros() {
     setFiltRubro("");
     setFiltGasto("");
@@ -266,7 +270,7 @@ export default function FinanzasBalanceGastosPageClient({
 
   async function ejecutarCargaMesDesdeCatalogo(ivaPorGastoFinalId?: Record<string, boolean>) {
     const res = await cargarFinBalGastoMensualMesAction({
-      mes,
+      mes: mesParaAlta,
       anio,
       ...(ivaPorGastoFinalId && Object.keys(ivaPorGastoFinalId).length > 0 ? { ivaPorGastoFinalId } : {}),
     });
@@ -290,9 +294,13 @@ export default function FinanzasBalanceGastosPageClient({
   }
 
   async function handleCargarMes() {
+    if (mes === "todos") {
+      toast.info("Elegí un mes concreto para cargar gastos fijos.");
+      return;
+    }
     setLoading(true);
     try {
-      const pre = await listarPendientesDiscriminaIvaCargaMesAction({ mes, anio });
+      const pre = await listarPendientesDiscriminaIvaCargaMesAction({ mes: mesParaAlta, anio });
       if (!pre.ok) {
         toast.error(pre.error ?? "No se pudo verificar el alta del mes.");
         return;
@@ -336,7 +344,12 @@ export default function FinanzasBalanceGastosPageClient({
               <Button
                 type="button"
                 onClick={() => void handleCargarMes()}
-                disabled={loading}
+                disabled={loading || mes === "todos"}
+                title={
+                  mes === "todos"
+                    ? "Elegí un mes concreto para cargar gastos fijos"
+                    : undefined
+                }
                 className="h-10 px-4 gap-2"
               >
                 {loading ? (
@@ -520,12 +533,18 @@ export default function FinanzasBalanceGastosPageClient({
 
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={mes !== mesHoy}
+                  activo={mes === "todos" || mes !== mesHoy}
                   onLimpiar={() => navegarPeriodo(mesHoy, anio)}
                 >
                   <Select
-                    value={String(mes)}
-                    onValueChange={(v) => navegarPeriodo(parseInt(v, 10), anio)}
+                    value={mes === "todos" ? "todos" : String(mes)}
+                    onValueChange={(v) => {
+                      if (v === "todos") {
+                        navegarPeriodo("todos", anio);
+                        return;
+                      }
+                      navegarPeriodo(parseInt(v, 10), anio);
+                    }}
                   >
                     <SelectTrigger className="input-filtro-unificado" aria-label="Mes del periodo">
                       <SelectValue placeholder="MES" />
@@ -541,6 +560,7 @@ export default function FinanzasBalanceGastosPageClient({
                           {m.etiqueta}
                         </SelectItem>
                       ))}
+                      <SelectItem value="todos">TODOS</SelectItem>
                     </SelectContent>
                   </Select>
                 </FiltroIndividualContainer>
@@ -603,8 +623,8 @@ export default function FinanzasBalanceGastosPageClient({
         open={filaRegistrarMontoPago !== null}
         onOpenChange={(next) => !next && setFilaRegistrarMontoPago(null)}
         fila={filaRegistrarMontoPago}
-        mes={mes}
-        anio={anio}
+        mes={filaRegistrarMontoPago?.mes ?? mesParaAlta}
+        anio={filaRegistrarMontoPago?.anio ?? anio}
         onSuccess={() => router.refresh()}
       />
 
@@ -619,7 +639,7 @@ export default function FinanzasBalanceGastosPageClient({
       <GastoUnicoBalanceModal
         open={gastoUnicoOpen}
         onOpenChange={setGastoUnicoOpen}
-        mes={mes}
+        mes={mesParaAlta}
         anio={anio}
         sucursalesCentroCosto={sucursalesCentroCosto}
         onSuccess={() => router.refresh()}
