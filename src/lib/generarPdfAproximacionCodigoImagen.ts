@@ -1,7 +1,7 @@
 /**
  * PDF cliente: aproximación de código Alba desde imagen + respuesta IA.
  * Una sola hoja A4 con bandas: título 5% · imagen 30% · colores 30% · texto 15% · logo 20%.
- * Estética alineada a tokens de la app (primary #0072BB, cards, tablas Balance).
+ * Estética alineada a tokens de la app (primary #0072BB, margen sólido, cards, tablas Balance).
  */
 import { jsPDF } from "jspdf";
 import type { RgbColor } from "@/lib/colorMuestraImagen";
@@ -17,12 +17,11 @@ const CARD = { r: 255, g: 255, b: 255 };
 const MUTED_FILL = { r: 241, g: 245, b: 249 }; // --muted / --secondary
 const ROW_ALT = { r: 244, g: 248, b: 252 }; // fila alterna (PDF aumentos)
 const ACCENT_TINT = { r: 224, g: 242, b: 254 }; // --accent #e0f2fe
-const HEADER_TINT = { r: 240, g: 247, b: 251 }; // primary ~6% sobre blanco
 const DIVIDER_SOFT = { r: 186, g: 218, b: 244 }; // #bae4f4 (PDF aumentos)
 
 const TITLE =
   "APROXIMACIÓN DE CÓDIGO DESDE UNA IMAGEN DIGITAL" as const;
-const SUBTITLE_COINCIDENCIAS = "COINCIDENCIAS MÁS CERCANAS" as const;
+const SUBTITLE_COINCIDENCIAS = "Código con mayor coincidencia digital" as const;
 
 const TITLE_MAS_INFORMACION = "MÁS INFORMACIÓN" as const;
 
@@ -244,17 +243,23 @@ export function generarPdfAproximacionCodigoImagen(
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  /** Contorno primary que enmarca toda la hoja. */
-  const frameInset = 5.5;
-  const frameGap = 3;
-  const marginX = frameInset + frameGap;
-  const marginY = frameInset + frameGap;
+  /** Margen sólido #0072BB que enmarca toda la hoja. */
+  const marginBand = 7;
+  const contentPad = 3;
+  const marginX = marginBand + contentPad;
+  const marginY = marginBand + contentPad;
   const contentW = pageW - marginX * 2;
   const contentH = pageH - marginY * 2;
-  const frameX = frameInset;
-  const frameY = frameInset;
-  const frameW = pageW - frameInset * 2;
-  const frameH = pageH - frameInset * 2;
+  const innerX = marginBand;
+  const innerY = marginBand;
+  const innerW = pageW - marginBand * 2;
+  const innerH = pageH - marginBand * 2;
+
+  // Fondo: margen primary + panel interior blanco.
+  setFill(doc, PRIMARY);
+  doc.rect(0, 0, pageW, pageH, "F");
+  setFill(doc, CARD);
+  doc.rect(innerX, innerY, innerW, innerH, "F");
 
   // Bandas fijas (una sola hoja A4).
   const hTitle = contentH * 0.05;
@@ -269,26 +274,14 @@ export function generarPdfAproximacionCodigoImagen(
   const yText = yColors + hColors;
   const yLogo = yText + hText;
 
-  // —— Título (5%): franja tint + título marca + acento inferior ——
-  setFill(doc, HEADER_TINT);
-  doc.rect(frameX + 0.8, yTitle - 1, frameW - 1.6, hTitle + 1, "F");
-  setStroke(doc, PRIMARY);
-  doc.setLineWidth(0.9);
-  doc.line(
-    frameX + 0.8,
-    yTitle + hTitle,
-    frameX + frameW - 0.8,
-    yTitle + hTitle,
-  );
-
+  // —— Título (5%): sin fondo; tipografía mayor; centrado H/V en su banda ——
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
+  doc.setFontSize(14);
   setText(doc, PRIMARY);
   const titleLines = doc.splitTextToSize(TITLE, contentW - 4);
-  const titleLineH = 4.5;
+  const titleLineH = 5.5;
   const titleBlockH = titleLines.length * titleLineH;
-  const titleY =
-    yTitle + Math.max(titleLineH, (hTitle - titleBlockH) / 2 + titleLineH);
+  const titleY = yTitle + (hTitle - titleBlockH) / 2 + titleLineH;
   doc.text(titleLines, pageW / 2, titleY, { align: "center" });
 
   // —— Imagen muestra (30%): card con borde suave ——
@@ -322,17 +315,7 @@ export function generarPdfAproximacionCodigoImagen(
   doc.text(SUBTITLE_COINCIDENCIAS, subtitleCenterX, cy + 3.2, {
     align: "center",
   });
-  const subW = doc.getTextWidth(SUBTITLE_COINCIDENCIAS);
-  const underlineW = Math.min(subW, 52);
-  setStroke(doc, PRIMARY);
-  doc.setLineWidth(0.6);
-  doc.line(
-    subtitleCenterX - underlineW / 2,
-    cy + 4.4,
-    subtitleCenterX + underlineW / 2,
-    cy + 4.4,
-  );
-  cy += 7;
+  cy += 6;
 
   const tableX = marginX;
   const tableW = contentW;
@@ -342,11 +325,12 @@ export function generarPdfAproximacionCodigoImagen(
 
   const sw = 8;
   const innerPad = 3;
+  // 5 columnas: Color | Nombre | Código | Aprox. Digital | URL
   const colSwatch = tableX + innerPad;
   const colNombre = colSwatch + sw + 3.5;
-  const colCodigo = tableX + 58;
-  const colSim = tableX + 82;
-  const colLink = tableX + 108;
+  const colCodigo = tableX + 55;
+  const colSim = tableX + 88;
+  const colLink = tableX + 118;
   const linkMaxW = tableX + tableW - innerPad - colLink;
   const headerH = 7;
   const rowsAreaTop = cy + headerH;
@@ -367,8 +351,8 @@ export function generarPdfAproximacionCodigoImagen(
   doc.text("COLOR", colSwatch, headY);
   doc.text("NOMBRE", colNombre, headY);
   doc.text("CÓDIGO", colCodigo, headY);
-  doc.text("APROX.", colSim, headY);
-  doc.text("PÁGINA OFICIAL", colLink, headY);
+  doc.text("APROX. DIGITAL", colSim, headY);
+  doc.text("URL", colLink, headY);
 
   const LINK_LABEL = "Ver color en la página oficial";
 
@@ -447,7 +431,7 @@ export function generarPdfAproximacionCodigoImagen(
     }
   }
 
-  // —— Más Información (15%): callout con barra primary ——
+  // —— Más Información (15%): callout sin barra lateral ——
   const calloutPad = 3;
   const calloutX = marginX;
   const calloutY = yText + 1.5;
@@ -457,13 +441,9 @@ export function generarPdfAproximacionCodigoImagen(
     fill: ACCENT_TINT,
     radius: 2.5,
   });
-  setFill(doc, PRIMARY);
-  doc.roundedRect(calloutX, calloutY, 1.8, calloutH, 1, 1, "F");
-  setFill(doc, PRIMARY);
-  doc.rect(calloutX + 0.6, calloutY, 1.2, calloutH, "F");
 
-  const textMaxW = calloutW - calloutPad * 2 - 3;
-  const textX = calloutX + calloutPad + 2.5;
+  const textMaxW = calloutW - calloutPad * 2;
+  const textX = calloutX + calloutPad;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -514,11 +494,6 @@ export function generarPdfAproximacionCodigoImagen(
     const format = logo.dataUrl.includes("image/jpeg") ? "JPEG" : "PNG";
     doc.addImage(logo.dataUrl, format, logoX, logoYDrawn, logoW, logoHDrawn);
   }
-
-  // Contorno A4 (#0072BB) que enmarca toda la información.
-  setStroke(doc, PRIMARY);
-  doc.setLineWidth(1.4);
-  doc.roundedRect(frameX, frameY, frameW, frameH, 2, 2, "S");
 
   return new Uint8Array(doc.output("arraybuffer"));
 }
