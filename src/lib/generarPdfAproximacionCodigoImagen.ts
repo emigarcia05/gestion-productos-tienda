@@ -32,8 +32,14 @@ export const DISCLAIMER_APROXIMACION_CODIGO_SALUDO = "¡Estimado cliente!" as co
 export const DISCLAIMER_APROXIMACION_CODIGO_P1 =
   "Desarrollamos esta herramienta para ayudarte a encontrar el código de pintura más cercano a tu foto, comparando digitalmente el área seleccionada con nuestra carta de colores.";
 
-export const DISCLAIMER_APROXIMACION_CODIGO_P2 =
-  "Tené en cuenta que el resultado depende en gran medida de la calidad y la iluminación de la imagen proporcionada. Por eso, las sugerencias deben tomarse como una guía aproximada. Para apreciar el tono real con total precisión, te recomendamos acercarte a nuestras sucursales y consultar la carta de colores física.";
+export const DISCLAIMER_APROXIMACION_CODIGO_P2_ANTES =
+  "Tené en cuenta que " as const;
+export const DISCLAIMER_APROXIMACION_CODIGO_P2_NEGRITA =
+  "el resultado depende en gran medida de la calidad y la iluminación de la imagen proporcionada" as const;
+export const DISCLAIMER_APROXIMACION_CODIGO_P2_DESPUES =
+  ". Por eso, las sugerencias deben tomarse como una guía aproximada. Para apreciar el tono real con total precisión, te recomendamos acercarte a nuestras sucursales y consultar la carta de colores física." as const;
+
+export const DISCLAIMER_APROXIMACION_CODIGO_P2 = `${DISCLAIMER_APROXIMACION_CODIGO_P2_ANTES}${DISCLAIMER_APROXIMACION_CODIGO_P2_NEGRITA}${DISCLAIMER_APROXIMACION_CODIGO_P2_DESPUES}`;
 
 /** Texto completo del bloque (compatibilidad). */
 export const DISCLAIMER_APROXIMACION_CODIGO = `${DISCLAIMER_APROXIMACION_CODIGO_SALUDO} ${DISCLAIMER_APROXIMACION_CODIGO_P1} ${DISCLAIMER_APROXIMACION_CODIGO_P2}`;
@@ -104,6 +110,54 @@ function drawCard(
   setStroke(doc, BORDER);
   doc.setLineWidth(0.35);
   doc.roundedRect(x, y, w, h, radius, radius, "FD");
+}
+
+type TextoSegmentoPdf = { text: string; bold?: boolean };
+
+/**
+ * Dibuja texto con segmentos normal/bold, wrap por ancho máx.
+ * Devuelve la Y baseline de la última línea escrita.
+ */
+function drawTextoConNegrita(
+  doc: jsPDF,
+  segmentos: TextoSegmentoPdf[],
+  x: number,
+  yFirstLine: number,
+  maxW: number,
+  lineH: number,
+  fontSize: number,
+): number {
+  const tokens: { text: string; bold: boolean }[] = [];
+  for (const seg of segmentos) {
+    const parts = seg.text.split(/(\s+)/);
+    for (const part of parts) {
+      if (!part) continue;
+      tokens.push({ text: part, bold: Boolean(seg.bold) });
+    }
+  }
+
+  let y = yFirstLine;
+  let xCursor = x;
+  let lineUsed = false;
+
+  for (const token of tokens) {
+    doc.setFont("helvetica", token.bold ? "bold" : "normal");
+    doc.setFontSize(fontSize);
+    const tw = doc.getTextWidth(token.text);
+    const isSpace = /^\s+$/.test(token.text);
+
+    if (!isSpace && lineUsed && xCursor + tw > x + maxW) {
+      y += lineH;
+      xCursor = x;
+    }
+    if (isSpace && xCursor === x) continue;
+
+    doc.text(token.text, xCursor, y);
+    xCursor += tw;
+    lineUsed = true;
+  }
+
+  return y;
 }
 
 /**
@@ -466,13 +520,21 @@ export function generarPdfAproximacionCodigoImagen(
 
   doc.setFont("helvetica", "normal");
   const p1Lines = doc.splitTextToSize(DISCLAIMER_APROXIMACION_CODIGO_P1, textMaxW);
-  const p2Lines = doc.splitTextToSize(DISCLAIMER_APROXIMACION_CODIGO_P2, textMaxW);
   const p1Y = saludoY + paraGap + lineH;
   doc.text(p1Lines, textX, p1Y);
-  doc.text(
-    p2Lines,
+  const p2Y = p1Y + p1Lines.length * lineH + paraGap;
+  drawTextoConNegrita(
+    doc,
+    [
+      { text: DISCLAIMER_APROXIMACION_CODIGO_P2_ANTES },
+      { text: DISCLAIMER_APROXIMACION_CODIGO_P2_NEGRITA, bold: true },
+      { text: DISCLAIMER_APROXIMACION_CODIGO_P2_DESPUES },
+    ],
     textX,
-    p1Y + p1Lines.length * lineH + paraGap,
+    p2Y,
+    textMaxW,
+    lineH,
+    8,
   );
 
   // —— Logo (20%): divisor suave + logo centrado ——
