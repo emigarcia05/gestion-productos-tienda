@@ -1,5 +1,7 @@
 /**
- * URLs canónicas de Gestión Productos alineadas a sidebar:
+ * URLs canónicas de Gestión Del Vendedor / Análisis de Precios alineadas a sidebar:
+ * - Pedido Mercaderia, Ayuda Vendedor, Asistente IA → área Gestión Del Vendedor
+ * - Análisis de Precios → área Finanzas (URLs siguen bajo `/gestion-productos/analisis-precios/...`)
  * área → módulo → agrupador → submódulo.
  * Las rutas internas (`src/app/pedidos`, `proveedores`, …) se sirven vía rewrites en `next.config.ts`.
  */
@@ -277,6 +279,11 @@ export function getGpSidebarModule(pathname: string): GpSidebarModuleId {
     return "asistente-ia";
   }
   return "pedidos";
+}
+
+/** Rutas de Análisis de Precios (canónicas o internas) — viven en el área Finanzas en sidebar. */
+export function isAnalisisPreciosPathname(pathname: string): boolean {
+  return getGpSidebarModule(pathname) === "analisis-precios";
 }
 
 /** Invalidación de caché: canónica + interna (+ alias legacy si aplica). */

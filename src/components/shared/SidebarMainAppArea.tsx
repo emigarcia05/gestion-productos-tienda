@@ -64,8 +64,8 @@ export interface SidebarMainAppAreaProps {
   /** Mostrar nombre del área actual. */
   showLabel?: boolean;
   /**
-   * Si es `false` (rol simple), el modal del logo solo lista **Gestión Productos**.
-   * Finanzas, Estadísticas Productos y Marketing quedan reservados para `editor`.
+   * Si es `false` (rol vendedor/`simple`), el logo no abre modal de áreas
+   * (solo trabaja en **Gestión Del Vendedor**). Finanzas, Estadísticas Productos y Marketing: `editor`.
    * @default true (compatibilidad; el layout pasa `rol === "editor"`).
    */
   esEditor?: boolean;

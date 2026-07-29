@@ -61,8 +61,8 @@ import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 
 const iconClass = "h-5 w-5 shrink-0";
 
-type ModuleId = "pedidos" | "ayuda-vendedor" | "analisis-precios" | "asistente-ia";
-type FinanzasModuleId = "balance" | "finanzas-main" | "analisis-mc";
+type ModuleId = "pedidos" | "ayuda-vendedor" | "asistente-ia";
+type FinanzasModuleId = "balance" | "finanzas-main" | "analisis-mc" | "analisis-precios";
 type MarketingModuleId = "publicaciones" | "base-multimedia";
 type SidebarModuleId = ModuleId | FinanzasModuleId | MarketingModuleId;
 
@@ -182,67 +182,6 @@ const MODULES: NavModule[] = [
     ],
   },
   {
-    id: "analisis-precios",
-    label: "ANALISIS DE PRECIOS",
-    icon: <LineChart className={iconClass} />,
-    submodules: [
-      {
-        label: "Lista Proveedores",
-        icon: <Handshake className="h-4 w-4 shrink-0" />,
-        children: [
-          {
-            href: GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios,
-            label: "Lista Precios",
-            icon: <FileSearch className="h-4 w-4 shrink-0" />,
-            permiso: PERMISOS.proveedores.listaPrecios,
-          },
-          {
-            href: GP_ROUTES.analisisPrecios.listaProveedores.lista,
-            label: "Lista Proveedores",
-            icon: <List className="h-4 w-4 shrink-0" />,
-            permiso: PERMISOS.proveedores.lista,
-          },
-        ],
-      },
-      {
-        label: "Cx y Px Tienda",
-        icon: <Layers className="h-4 w-4 shrink-0" />,
-        children: [
-          {
-            href: GP_ROUTES.analisisPrecios.cxYPxTienda.cxCompra,
-            label: "Cx Compra",
-            icon: <Link2 className="h-4 w-4 shrink-0" />,
-            permiso: PERMISOS.tienda.acceso,
-          },
-          {
-            href: GP_ROUTES.analisisPrecios.cxYPxTienda.pxListas,
-            label: "Px Listas",
-            icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
-            permiso: PERMISOS.cxPxTienda.acceso,
-          },
-        ],
-      },
-      {
-        label: "Comparacion",
-        icon: <GitCompare className="h-4 w-4 shrink-0" />,
-        children: [
-          {
-            href: GP_ROUTES.analisisPrecios.pxCompetencia,
-            label: "Px Competencia",
-            icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
-            permiso: PERMISOS.cxPxTienda.acceso,
-          },
-          {
-            href: GP_ROUTES.analisisPrecios.compCategorias.comparacion,
-            label: "Categorias",
-            icon: <FolderTree className="h-4 w-4 shrink-0" />,
-            permiso: PERMISOS.comparacionCategorias.acceso,
-          },
-        ],
-      },
-    ],
-  },
-  {
     id: "asistente-ia",
     label: "ASISTENTE IA",
     icon: <Sparkles className={iconClass} />,
@@ -351,6 +290,67 @@ const FINANZAS_MODULES: NavModule[] = [
       },
     ],
   },
+  {
+    id: "analisis-precios",
+    label: "ANALISIS DE PRECIOS",
+    icon: <LineChart className={iconClass} />,
+    submodules: [
+      {
+        label: "Lista Proveedores",
+        icon: <Handshake className="h-4 w-4 shrink-0" />,
+        children: [
+          {
+            href: GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios,
+            label: "Lista Precios",
+            icon: <FileSearch className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.proveedores.listaPrecios,
+          },
+          {
+            href: GP_ROUTES.analisisPrecios.listaProveedores.lista,
+            label: "Lista Proveedores",
+            icon: <List className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.proveedores.lista,
+          },
+        ],
+      },
+      {
+        label: "Cx y Px Tienda",
+        icon: <Layers className="h-4 w-4 shrink-0" />,
+        children: [
+          {
+            href: GP_ROUTES.analisisPrecios.cxYPxTienda.cxCompra,
+            label: "Cx Compra",
+            icon: <Link2 className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.tienda.acceso,
+          },
+          {
+            href: GP_ROUTES.analisisPrecios.cxYPxTienda.pxListas,
+            label: "Px Listas",
+            icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.cxPxTienda.acceso,
+          },
+        ],
+      },
+      {
+        label: "Comparacion",
+        icon: <GitCompare className="h-4 w-4 shrink-0" />,
+        children: [
+          {
+            href: GP_ROUTES.analisisPrecios.pxCompetencia,
+            label: "Px Competencia",
+            icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.cxPxTienda.acceso,
+          },
+          {
+            href: GP_ROUTES.analisisPrecios.compCategorias.comparacion,
+            label: "Categorias",
+            icon: <FolderTree className="h-4 w-4 shrink-0" />,
+            permiso: PERMISOS.comparacionCategorias.acceso,
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 const MARKETING_MODULES: NavModule[] = [
@@ -401,6 +401,9 @@ const MARKETING_MODULES: NavModule[] = [
 ];
 
 function getOpenModule(pathname: string): SidebarModuleId {
+  // Análisis de Precios vive en área Finanzas (URLs aún bajo /gestion-productos/...).
+  const gpModule = getGpSidebarModule(pathname);
+  if (gpModule === "analisis-precios") return "analisis-precios";
   if (pathname.startsWith("/finanzas/balance")) return "balance";
   if (pathname.startsWith("/finanzas/analisis-mc")) return "analisis-mc";
   if (pathname.startsWith("/finanzas")) return "finanzas-main";
@@ -410,7 +413,7 @@ function getOpenModule(pathname: string): SidebarModuleId {
   if (pathname.startsWith("/marketing/base-multimedia")) {
     return "base-multimedia";
   }
-  return getGpSidebarModule(pathname);
+  return gpModule;
 }
 
 function isSubmoduleActive(pathname: string, href: string): boolean {

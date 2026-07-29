@@ -5,6 +5,7 @@
  * Modificá este archivo para controlar qué ve cada rol.
  *
  * Roles disponibles: "simple" | "editor"
+ * En UI, el rol `simple` se muestra como **Vendedor** (`SelectorRol`).
  */
 
 export type Rol = "simple" | "editor";
@@ -106,8 +107,8 @@ export const PERMISOS = {
 
   // ─── Ayuda Vendedor — Cargar Gasto (modal Nuevo Gasto Eventual) ───────────
   ayudaVendedor: {
-    /** Misma capacidad que **GASTO EVENTUAL** en `/finanzas/balance/gastos` (solo editor). */
-    cargarGasto: { simple: false, editor: true },
+    /** Misma capacidad que **GASTO EVENTUAL** en `/finanzas/balance/gastos`; área Gestión Del Vendedor abierta a `simple`. */
+    cargarGasto: { simple: true, editor: true },
   },
 
   // ─── Página /importar ─────────────────────────────────────────────────────
@@ -130,9 +131,9 @@ export const PERMISOS = {
     acceso: { simple: false, editor: true },
   },
 
-  // ─── Módulo Asistente IA (Gestión Productos) ───────────────────────────────
+  // ─── Módulo Asistente IA (Gestión Del Vendedor) ────────────────────────────
   asistenteIa: {
-    /** Acceso al módulo (simple + editor). CRUD de prompts: solo editor (`esEditor`). */
+    /** Acceso al módulo (vendedor/`simple` + editor). CRUD de prompts: solo editor (`esEditor`). */
     acceso: { simple: true, editor: true },
   },
 

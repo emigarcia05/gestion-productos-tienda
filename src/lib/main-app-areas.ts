@@ -1,9 +1,13 @@
 /**
  * Áreas principales de la aplicación (macro-secciones).
- * La mayoría de rutas actuales pertenecen a **Gestión Productos**; las demás tienen prefijo dedicado.
+ * **Gestión Del Vendedor** (antes Gestión Productos): pedidos, ayuda vendedor, asistente IA.
+ * **Finanzas** incluye también Análisis de Precios (URLs aún bajo `/gestion-productos/analisis-precios/...`).
  */
 
-import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+import {
+  GP_ROUTES,
+  isAnalisisPreciosPathname,
+} from "@/lib/gestionProductosRoutes";
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 
 export type MainAppAreaId =
@@ -25,7 +29,7 @@ export interface MainAppAreaDefinition {
 export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
   {
     id: "gestion-productos",
-    label: "Gestión Productos",
+    label: "Gestión Del Vendedor",
     statusLabel: "Terminada",
     href: GP_ROUTES.defaultEntry,
   },
@@ -50,8 +54,9 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
 ];
 
 export function getMainAppAreaIdFromPathname(pathname: string): MainAppAreaId {
-  if (pathname === "/gestion-productos" || pathname.startsWith("/gestion-productos/")) {
-    return "gestion-productos";
+  // Análisis de Precios: sidebar en Finanzas; URLs canónicas siguen en /gestion-productos/...
+  if (isAnalisisPreciosPathname(pathname)) {
+    return "finanzas";
   }
   if (pathname === "/finanzas" || pathname.startsWith("/finanzas/")) {
     return "finanzas";
@@ -65,6 +70,7 @@ export function getMainAppAreaIdFromPathname(pathname: string): MainAppAreaId {
   if (pathname === "/marketing" || pathname.startsWith("/marketing/")) {
     return "marketing";
   }
+  // Gestión Del Vendedor (id `gestion-productos`) — resto de rutas GP y legacy.
   return "gestion-productos";
 }
 

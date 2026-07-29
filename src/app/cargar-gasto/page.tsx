@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import CargarGastoPageClient from "@/components/ayuda-vendedor/CargarGastoPageClient";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { esEditor, getRol } from "@/lib/sesion";
+import { getRol } from "@/lib/sesion";
 import {
   listarSucursalesParaGastos,
   mesAnioCalendarioArgentina,
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CargarGastoPage() {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso) || !(await esEditor())) {
+  if (!puede(rol, PERMISOS.ayudaVendedor.cargarGasto)) {
     redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
   }
 

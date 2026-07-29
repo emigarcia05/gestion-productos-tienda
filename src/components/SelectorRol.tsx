@@ -98,7 +98,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
           aria-label={
             rolActual === "simple"
               ? "Cambiar A Modo Editor"
-              : "Volver A Modo Simple"
+              : "Volver A Modo Vendedor"
           }
         >
           <User className="h-4 w-4 shrink-0" aria-hidden />
@@ -107,7 +107,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
               CAMBIAR USUARIO
             </span>
             <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-100 group-hover:opacity-0">
-              {rolActual === "editor" ? "EDITOR" : "SIMPLE"}
+              {rolActual === "editor" ? "EDITOR" : "VENDEDOR"}
             </span>
             <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-0 group-hover:opacity-100">
               CAMBIAR USUARIO
@@ -184,7 +184,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
       <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/80 px-4 py-2.5 shadow-sm">
         <User className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="text-sm font-medium text-foreground">
-          {rolActual === "editor" ? "Modo Editor" : "Modo Simple"}
+          {rolActual === "editor" ? "Modo Editor" : "Modo Vendedor"}
         </span>
         <span className="text-muted-foreground text-xs mx-1">·</span>
         {switcher}

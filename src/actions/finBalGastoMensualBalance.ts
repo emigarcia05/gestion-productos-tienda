@@ -66,6 +66,15 @@ async function requireEditorFinanzas(): Promise<{ ok: false; error: string } | n
   return null;
 }
 
+/** Gasto eventual: Ayuda Vendedor (`cargarGasto`) o el mismo flujo desde Balance · Gastos. */
+async function requireCargarGastoEventual(): Promise<{ ok: false; error: string } | null> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.ayudaVendedor.cargarGasto)) {
+    return { ok: false, error: "Sin permisos para cargar gasto eventual." };
+  }
+  return null;
+}
+
 /** Carga imputaciones del mes `(mes, anio)` desde el catálogo (`gasto_mensual = true`). */
 export async function cargarFinBalGastoMensualMesAction(
   raw?: unknown
@@ -109,7 +118,7 @@ export async function listarPendientesDiscriminaIvaCargaMesAction(
 export async function listarFinBalGastosFinalesNoMensualesAction(
   raw: unknown
 ): Promise<ActionResult<FinBalGastoFinalNoMensualListItem[]>> {
-  const gate = await requireEditorFinanzas();
+  const gate = await requireCargarGastoEventual();
   if (gate) return gate;
 
   const parsed = listarGastosFinalesNoMensualesParamsSchema.safeParse(raw);
@@ -129,7 +138,7 @@ export async function listarFinBalGastosFinalesNoMensualesAction(
 export async function crearFinBalImputacionGastoUnicoAction(
   raw: unknown
 ): Promise<ActionResult<{ id: string }>> {
-  const gate = await requireEditorFinanzas();
+  const gate = await requireCargarGastoEventual();
   if (gate) return gate;
 
   const parsed = crearImputacionGastoUnicoBalanceSchema.safeParse(raw);
