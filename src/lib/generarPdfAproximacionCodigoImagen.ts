@@ -23,17 +23,20 @@ const TITLE =
   "APROXIMACIÓN DE CÓDIGO DESDE UNA IMAGEN DIGITAL" as const;
 const SUBTITLE_COINCIDENCIAS = "Código con mayor coincidencia digital" as const;
 
-const TITLE_MAS_INFORMACION = "¡Estimado cliente!" as const;
+const TITLE_MAS_INFORMACION = "MÁS INFORMACIÓN" as const;
+
+/** Saludo del bloque “Más Información”. */
+export const DISCLAIMER_APROXIMACION_CODIGO_SALUDO = "¡Estimado cliente!" as const;
 
 /** Aviso bajo las coincidencias (bloque “Más Información”). */
 export const DISCLAIMER_APROXIMACION_CODIGO_P1 =
-  "Desarrollamos esta herramienta para ayudarte a encontrar el código de pintura más cercano a tu foto, comparando digitalmente el área que elijas con nuestra carta de colores.";
+  "Desarrollamos esta herramienta para ayudarte a encontrar el código de pintura más cercano a tu foto, comparando digitalmente el área seleccionada con nuestra carta de colores.";
 
 export const DISCLAIMER_APROXIMACION_CODIGO_P2 =
   "Tené en cuenta que el resultado depende en gran medida de la calidad y la iluminación de la imagen proporcionada. Por eso, las sugerencias deben tomarse como una guía aproximada. Para apreciar el tono real con total precisión, te recomendamos acercarte a nuestras sucursales y consultar la carta de colores física.";
 
-/** @deprecated Preferir P1/P2; se mantiene unido por compatibilidad. */
-export const DISCLAIMER_APROXIMACION_CODIGO = `${DISCLAIMER_APROXIMACION_CODIGO_P1} ${DISCLAIMER_APROXIMACION_CODIGO_P2}`;
+/** Texto completo del bloque (compatibilidad). */
+export const DISCLAIMER_APROXIMACION_CODIGO = `${DISCLAIMER_APROXIMACION_CODIGO_SALUDO} ${DISCLAIMER_APROXIMACION_CODIGO_P1} ${DISCLAIMER_APROXIMACION_CODIGO_P2}`;
 
 export interface LogoTiendaColorPdf {
   dataUrl: string;
@@ -453,25 +456,23 @@ export function generarPdfAproximacionCodigoImagen(
     align: "center",
   });
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   setText(doc, BLACK);
-  const lineH = 3.5;
+  const lineH = 3.4;
+  const paraGap = 1.6;
+  const saludoY = infoTitleY + 4.2;
+  doc.text(DISCLAIMER_APROXIMACION_CODIGO_SALUDO, textX, saludoY);
+
+  doc.setFont("helvetica", "normal");
   const p1Lines = doc.splitTextToSize(DISCLAIMER_APROXIMACION_CODIGO_P1, textMaxW);
   const p2Lines = doc.splitTextToSize(DISCLAIMER_APROXIMACION_CODIGO_P2, textMaxW);
-  const paraGap = 1.8;
-  const bodyH =
-    p1Lines.length * lineH + paraGap + p2Lines.length * lineH;
-  const bodyTop =
-    infoTitleY +
-    2.5 +
-    Math.max(0, (calloutH - (infoTitleY - calloutY) - 2.5 - bodyH - calloutPad) / 2);
-
-  doc.text(p1Lines, textX, bodyTop + lineH);
+  const p1Y = saludoY + paraGap + lineH;
+  doc.text(p1Lines, textX, p1Y);
   doc.text(
     p2Lines,
     textX,
-    bodyTop + p1Lines.length * lineH + paraGap + lineH,
+    p1Y + p1Lines.length * lineH + paraGap,
   );
 
   // —— Logo (20%): divisor suave + logo centrado ——

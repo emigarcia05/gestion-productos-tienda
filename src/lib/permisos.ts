@@ -132,8 +132,8 @@ export const PERMISOS = {
 
   // ─── Módulo Asistente IA (Gestión Productos) ───────────────────────────────
   asistenteIa: {
-    /** Solo editor: herramientas que abren ChatGPT / base colores_alba_ia. */
-    acceso: { simple: false, editor: true },
+    /** Acceso al módulo (simple + editor). CRUD de prompts: solo editor (`esEditor`). */
+    acceso: { simple: true, editor: true },
   },
 
 } as const;
