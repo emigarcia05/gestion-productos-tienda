@@ -23,14 +23,14 @@ const TITLE =
   "APROXIMACIÓN DE CÓDIGO DESDE UNA IMAGEN DIGITAL" as const;
 const SUBTITLE_COINCIDENCIAS = "Código con mayor coincidencia digital" as const;
 
-const TITLE_MAS_INFORMACION = "MÁS INFORMACIÓN" as const;
+const TITLE_MAS_INFORMACION = "¡Estimado cliente!" as const;
 
 /** Aviso bajo las coincidencias (bloque “Más Información”). */
 export const DISCLAIMER_APROXIMACION_CODIGO_P1 =
-  "Esta herramienta busca el código de pintura más cercano comparando digitalmente una sección de tu foto con nuestra carta de colores.";
+  "Desarrollamos esta herramienta para ayudarte a encontrar el código de pintura más cercano a tu foto, comparando digitalmente el área que elijas con nuestra carta de colores.";
 
 export const DISCLAIMER_APROXIMACION_CODIGO_P2 =
-  "Tené en cuenta que los resultados son una guía y aproximación digital, por lo que el color final puede variar. Para apreciar el tono real con mayor precisión, te recomendamos acercarte a nuestras sucursales y consultar la carta de colores en persona.";
+  "Tené en cuenta que el resultado depende en gran medida de la calidad y la iluminación de la imagen proporcionada. Por eso, las sugerencias deben tomarse como una guía aproximada. Para apreciar el tono real con total precisión, te recomendamos acercarte a nuestras sucursales y consultar la carta de colores física.";
 
 /** @deprecated Preferir P1/P2; se mantiene unido por compatibilidad. */
 export const DISCLAIMER_APROXIMACION_CODIGO = `${DISCLAIMER_APROXIMACION_CODIGO_P1} ${DISCLAIMER_APROXIMACION_CODIGO_P2}`;
@@ -448,24 +448,24 @@ export function generarPdfAproximacionCodigoImagen(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   setText(doc, PRIMARY);
-  const infoTitleY = calloutY + calloutPad + 3.5;
+  const infoTitleY = calloutY + calloutPad + 3.2;
   doc.text(TITLE_MAS_INFORMACION, calloutX + calloutW / 2, infoTitleY, {
     align: "center",
   });
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   setText(doc, BLACK);
-  const lineH = 4;
+  const lineH = 3.5;
   const p1Lines = doc.splitTextToSize(DISCLAIMER_APROXIMACION_CODIGO_P1, textMaxW);
   const p2Lines = doc.splitTextToSize(DISCLAIMER_APROXIMACION_CODIGO_P2, textMaxW);
-  const paraGap = 2.2;
+  const paraGap = 1.8;
   const bodyH =
     p1Lines.length * lineH + paraGap + p2Lines.length * lineH;
   const bodyTop =
     infoTitleY +
-    3 +
-    Math.max(0, (calloutH - (infoTitleY - calloutY) - 3 - bodyH - calloutPad) / 2);
+    2.5 +
+    Math.max(0, (calloutH - (infoTitleY - calloutY) - 2.5 - bodyH - calloutPad) / 2);
 
   doc.text(p1Lines, textX, bodyTop + lineH);
   doc.text(
