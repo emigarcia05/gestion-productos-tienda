@@ -43,7 +43,8 @@ type FiltroEstadoBalanceGastos =
   | ""
   | "con_monto_sin_pago"
   | "con_monto_con_pago"
-  | "sin_monto";
+  | "sin_monto"
+  | "sin_monto_o_pendiente";
 
 /** Catálogo recurrente mensual vs gasto eventual (`fin_bal_gasto_final.gasto_mensual`). */
 type FiltroTipoBalanceGastos = "" | "mensual" | "eventual";
@@ -70,6 +71,9 @@ function aplicarFiltroEstadoFilas(
       return rows.filter((r) => r.monto > 0 && r.pagado > 0);
     case "sin_monto":
       return rows.filter((r) => r.monto === 0);
+    case "sin_monto_o_pendiente":
+      // Unión de SIN MONTO + CON MONTO Y PENDIENTE.
+      return rows.filter((r) => r.monto === 0 || (r.monto > 0 && r.pagado < r.monto));
     default:
       return rows;
   }
@@ -481,6 +485,7 @@ export default function FinanzasBalanceGastosPageClient({
                       <SelectItem value="con_monto_sin_pago">CON MONTO Y PENDIENTE</SelectItem>
                       <SelectItem value="con_monto_con_pago">CON MONTO Y PAGADO</SelectItem>
                       <SelectItem value="sin_monto">SIN MONTO</SelectItem>
+                      <SelectItem value="sin_monto_o_pendiente">SIN MONTO O PAGO PENDIENTE</SelectItem>
                     </SelectContent>
                   </Select>
                 </FiltroIndividualContainer>
