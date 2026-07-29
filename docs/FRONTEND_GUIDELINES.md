@@ -1537,6 +1537,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-27): **GESTION PROMP & URL** — listado del modal solo muestra el **título del submódulo** + acciones editar/eliminar (sin preview de prompt ni URL en la fila).*
 
+*Última actualización (2026-07-29): **Tesorería · pie resumen** — cada fila de tarjetas inicia con etiqueta **Totales por / tipo de caja** y **Totales por / tipo de tiempo** (`TablaTesoreriaCajas`).*
+
 *Última actualización (2026-07-29): **Asistente IA · rol simple** — `PERMISOS.asistenteIa.acceso` con `simple: true` (módulo visible y usable para usuario simple). CRUD **GESTION PROMP & URL** sigue solo editor.*
 
 *Última actualización (2026-07-27): **Asistente IA** — módulo sidebar **ASISTENTE IA**; submódulo **Buscar Color Desde Imagen**; header/modal **GESTION PROMP & URL** → CRUD `prod_ia_diseno_promp`. Permiso `PERMISOS.asistenteIa.acceso`.*

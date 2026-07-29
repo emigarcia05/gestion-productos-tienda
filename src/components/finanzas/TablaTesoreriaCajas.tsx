@@ -174,6 +174,28 @@ function TarjetaResumenTesoreria({
   );
 }
 
+/** Etiqueta a la izquierda de cada fila de tarjetas del pie de Tesorería. */
+function EtiquetaFilaResumenTesoreria({
+  linea1,
+  linea2,
+}: {
+  linea1: string;
+  linea2: string;
+}) {
+  return (
+    <div className="flex min-h-0 min-w-0 items-center justify-end pr-1 text-right">
+      <p className="text-xs font-semibold leading-tight text-foreground">
+        {linea1}
+        <br />
+        {linea2}
+      </p>
+    </div>
+  );
+}
+
+const RESUMEN_FILA_GRID_CLASS =
+  "grid w-full grid-cols-[6.75rem_1fr_1fr_1fr] items-stretch gap-2";
+
 export default function TablaTesoreriaCajas({
   filas,
   esEditor = false,
@@ -350,7 +372,7 @@ export default function TablaTesoreriaCajas({
           <div
             className="w-full shrink-0 border-t border-border px-2 py-1"
             role="region"
-            aria-label="Resumen por tipo de valor y por disponibilidad"
+            aria-label="Totales por tipo de caja y por tipo de tiempo"
             aria-live="polite"
           >
             <div
@@ -359,7 +381,11 @@ export default function TablaTesoreriaCajas({
                 "[&_.finanzas-resumen-tarjeta]:!w-full [&_.finanzas-resumen-tarjeta]:!min-w-0 [&_.finanzas-resumen-tarjeta]:!max-w-none"
               )}
             >
-              <div className="grid w-full grid-cols-3 items-stretch gap-2">
+              <div className={RESUMEN_FILA_GRID_CLASS}>
+                <EtiquetaFilaResumenTesoreria
+                  linea1="Totales por"
+                  linea2="tipo de caja"
+                />
                 <TarjetaResumenTesoreria etiqueta="EFECTIVO" compact>
                   ${fmtPrecio(efectivoTipoValor)}
                 </TarjetaResumenTesoreria>
@@ -370,7 +396,11 @@ export default function TablaTesoreriaCajas({
                   ${fmtPrecio(chequeTipoValor)}
                 </TarjetaResumenTesoreria>
               </div>
-              <div className="grid w-full grid-cols-3 items-stretch gap-2">
+              <div className={RESUMEN_FILA_GRID_CLASS}>
+                <EtiquetaFilaResumenTesoreria
+                  linea1="Totales por"
+                  linea2="tipo de tiempo"
+                />
                 <TarjetaResumenTesoreria etiqueta="INMEDIATO" compact>
                   ${fmtPrecio(inmediato)}
                 </TarjetaResumenTesoreria>
@@ -378,7 +408,7 @@ export default function TablaTesoreriaCajas({
                   ${fmtPrecio(diferido)}
                 </TarjetaResumenTesoreria>
                 <div className="min-w-0" title="INMEDIATO + DIFERIDO">
-                  <TarjetaResumenTesoreria etiqueta="TOTAL" compact>
+                  <TarjetaResumenTesoreria etiqueta="Inmediato + Diferido" compact>
                     ${fmtPrecio(totalInmediatoDiferido)}
                   </TarjetaResumenTesoreria>
                 </div>
