@@ -183,8 +183,8 @@ function EtiquetaFilaResumenTesoreria({
   linea2: string;
 }) {
   return (
-    <div className="flex min-h-0 min-w-0 items-center justify-end pr-1 text-right">
-      <p className="text-xs font-semibold leading-tight text-foreground">
+    <div className="flex min-h-0 min-w-0 items-center justify-center text-center">
+      <p className="text-xs font-semibold uppercase leading-tight text-foreground">
         {linea1}
         <br />
         {linea2}
