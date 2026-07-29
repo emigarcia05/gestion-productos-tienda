@@ -214,7 +214,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
                 <textarea
                   value={respuestaIa}
                   onChange={(e) => setRespuestaIa(e.target.value)}
-                  rows={8}
+                  rows={5}
                   disabled={!paso1Completo || generandoPdf}
                   placeholder={
                     paso1Completo
@@ -222,7 +222,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
                       : "Completá el paso 1 para habilitar este campo."
                   }
                   className={cn(
-                    "border-input min-h-[8rem] w-full rounded-md border bg-transparent px-3 py-2 text-sm",
+                    "border-input min-h-[5.5rem] w-full rounded-md border bg-transparent px-3 py-2 text-sm",
                     "text-foreground shadow-xs outline-none",
                     "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
                     "disabled:cursor-not-allowed disabled:opacity-50",

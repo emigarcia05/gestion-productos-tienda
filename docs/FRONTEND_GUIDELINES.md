@@ -1509,6 +1509,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-27): **Asistente IA · cuentagotas** — en **Buscar Color Desde Imagen**: **Abrir Imagen Muestra** muestra preview con `<img>` + canvas offscreen (fix: el canvas no existía en el DOM al cargar). Clic en la imagen → RGB → `aplicarRgbAlPromptBuscarColor` sobre `prod_ia_diseno_promp` → copiar al portapapeles + abrir `url_redireccion`. Excepción de estilo: `style` dinámico para tamaño del preview y `backgroundColor` del swatch.*
 
+*Última actualización (2026-07-29): **Buscar Código · cuentagotas modal** — la imagen se selecciona en **`AppModal`**; el paso 1 en página queda compacto (botones + swatch RGB/HEX) para que entren ambos pasos en pantalla.*
+
 *Última actualización (2026-07-29): **PDF aproximación · URL oficial** — tabla input **Nombre|Código|Similitud|URL|RGB**; columna **PÁGINA OFICIAL** con hipervínculo **Ver color en la página oficial** (`textWithLink`). Prompt seed y parser actualizados.*
 
 *Última actualización (2026-07-28): **PDF aproximación · estética** — misma hoja A4 en bandas; visual alineado a tokens de app: franja título tint + acento `#0072BB`, imagen en **card**, tabla coincidencias con cabecera primary/blanco (estilo Balance), filas alternas, callout disclaimer con barra primary (`accent` tint), divisor suave + logo.*

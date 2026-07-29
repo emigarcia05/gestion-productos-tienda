@@ -10,6 +10,8 @@ import {
 } from "react";
 import { ImagePlus, Pipette, X } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import {
   formatRgbTuple,
@@ -18,7 +20,8 @@ import {
   type RgbColor,
 } from "@/lib/colorMuestraImagen";
 
-const MAX_PREVIEW = 640;
+/** Preview grande solo dentro del modal de selección. */
+const MAX_PREVIEW_MODAL = 720;
 const RADIO_MUESTRA = 8;
 
 export interface MuestraPuntoImagen {
@@ -49,6 +52,7 @@ export default function CuentagotasImagenMuestra({
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [displaySize, setDisplaySize] = useState({ w: 0, h: 0 });
+  const [modalOpen, setModalOpen] = useState(false);
 
   const revokeObjectUrl = useCallback(() => {
     if (objectUrlRef.current) {
@@ -62,6 +66,7 @@ export default function CuentagotasImagenMuestra({
     sampleCanvasRef.current = null;
     setPreviewUrl(null);
     setDisplaySize({ w: 0, h: 0 });
+    setModalOpen(false);
     onColorChange(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [onColorChange, revokeObjectUrl]);
@@ -89,8 +94,8 @@ export default function CuentagotasImagenMuestra({
 
     const scale = Math.min(
       1,
-      MAX_PREVIEW / img.naturalWidth,
-      MAX_PREVIEW / img.naturalHeight,
+      MAX_PREVIEW_MODAL / img.naturalWidth,
+      MAX_PREVIEW_MODAL / img.naturalHeight,
     );
     const w = Math.max(1, Math.round(img.naturalWidth * scale));
     const h = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -122,6 +127,7 @@ export default function CuentagotasImagenMuestra({
     objectUrlRef.current = url;
     setPreviewUrl(url);
     setDisplaySize({ w: 0, h: 0 });
+    setModalOpen(true);
   }
 
   function clientPointToNatural(
@@ -184,6 +190,7 @@ export default function CuentagotasImagenMuestra({
       imagenNaturalW: canvas.width,
       imagenNaturalH: canvas.height,
     });
+    setModalOpen(false);
   }
 
   const hex = color ? rgbToHex(color) : null;
@@ -209,72 +216,108 @@ export default function CuentagotasImagenMuestra({
           Abrir Imagen Muestra
         </Button>
         {tieneImagen ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 px-4"
-            onClick={clearImagen}
-          >
-            <X className="h-4 w-4" aria-hidden />
-            Quitar Imagen
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 px-4"
+              onClick={() => setModalOpen(true)}
+            >
+              <Pipette className="h-4 w-4" aria-hidden />
+              {color ? "Cambiar Selección" : "Seleccionar Color"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 px-4"
+              onClick={clearImagen}
+            >
+              <X className="h-4 w-4" aria-hidden />
+              Quitar Imagen
+            </Button>
+          </>
         ) : null}
       </div>
 
-      {tieneImagen ? (
-        <>
-          <p className="text-sm text-muted-foreground">
-            <Pipette className="mr-1 inline h-4 w-4 align-text-bottom" aria-hidden />
-            Hacé clic en la parte de la imagen donde deseás buscar el color.
-          </p>
+      {color && hex ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <div
+            className="h-10 w-10 shrink-0 rounded-md border border-border"
+            style={{ backgroundColor: hex }}
+            title={hex}
+            aria-hidden
+          />
+          <div className="min-w-0 text-sm">
+            <p className="font-medium text-foreground">Color Muestra</p>
+            <p className="tabular-nums text-foreground">
+              RGB: {formatRgbTuple(color)} · HEX: {hex}
+            </p>
+          </div>
+        </div>
+      ) : tieneImagen ? (
+        <p className="text-sm text-muted-foreground">
+          Abrí el modal y hacé clic en la imagen para elegir el color.
+        </p>
+      ) : null}
 
-          <div className="flex flex-wrap items-start gap-4">
-            {/* Preview local ObjectURL: next/image no aplica. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              ref={previewImgRef}
-              src={previewUrl}
-              alt="Imagen muestra para tomar color"
-              className="cursor-crosshair rounded-md border border-border object-contain"
-              style={
-                displaySize.w > 0
-                  ? { width: displaySize.w, height: displaySize.h }
-                  : { maxWidth: MAX_PREVIEW, maxHeight: MAX_PREVIEW }
-              }
-              draggable={false}
-              onLoad={handlePreviewLoad}
-              onError={() => {
-                toast.error("No Se Pudo Mostrar La Imagen");
-                clearImagen();
-              }}
-              onClick={handleImageClick}
-            />
-
-            <div className="flex min-w-[12rem] flex-col gap-2">
-              <p className="text-sm font-medium text-foreground">Color Muestra</p>
-              {color && hex ? (
-                <>
-                  <div
-                    className="h-16 w-full rounded-md border border-border"
-                    style={{ backgroundColor: hex }}
-                    title={hex}
-                  />
-                  <p className="text-sm tabular-nums text-foreground">
-                    RGB: {formatRgbTuple(color)}
-                  </p>
-                  <p className="text-sm tabular-nums text-muted-foreground">
-                    HEX: {hex}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Sin color seleccionado.
-                </p>
-              )}
+      <Dialog
+        open={modalOpen && tieneImagen}
+        onOpenChange={(open) => {
+          if (!open) setModalOpen(false);
+        }}
+      >
+        <AppModal
+          title="Seleccionar Color En La Imagen"
+          size="xl"
+          className="max-w-4xl"
+          padding="sm"
+          actions={
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 px-4"
+              onClick={() => setModalOpen(false)}
+            >
+              Cerrar
+            </Button>
+          }
+        >
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              <Pipette
+                className="mr-1 inline h-4 w-4 align-text-bottom"
+                aria-hidden
+              />
+              Hacé clic en la parte de la imagen donde deseás buscar el color.
+            </p>
+            <div className="flex justify-center">
+              {/* Preview local ObjectURL: next/image no aplica. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                ref={previewImgRef}
+                src={previewUrl ?? undefined}
+                alt="Imagen muestra para tomar color"
+                className="cursor-crosshair rounded-md border border-border object-contain"
+                style={
+                  displaySize.w > 0
+                    ? { width: displaySize.w, height: displaySize.h }
+                    : {
+                        maxWidth: MAX_PREVIEW_MODAL,
+                        maxHeight: MAX_PREVIEW_MODAL,
+                      }
+                }
+                draggable={false}
+                onLoad={handlePreviewLoad}
+                onError={() => {
+                  toast.error("No Se Pudo Mostrar La Imagen");
+                  clearImagen();
+                }}
+                onClick={handleImageClick}
+              />
             </div>
           </div>
-        </>
-      ) : null}
+        </AppModal>
+      </Dialog>
     </div>
   );
 }
