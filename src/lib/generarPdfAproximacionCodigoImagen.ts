@@ -343,9 +343,11 @@ export function generarPdfAproximacionCodigoImagen(
   const sw = 8;
   const innerPad = 3;
   const colSwatch = tableX + innerPad;
-  const colNombre = colSwatch + sw + 4;
-  const colCodigo = tableX + 78;
-  const colSim = tableX + 128;
+  const colNombre = colSwatch + sw + 3.5;
+  const colCodigo = tableX + 58;
+  const colSim = tableX + 82;
+  const colLink = tableX + 108;
+  const linkMaxW = tableX + tableW - innerPad - colLink;
   const headerH = 7;
   const rowsAreaTop = cy + headerH;
   const rowsAreaBottom = cy + tableH - 1.5;
@@ -359,13 +361,16 @@ export function generarPdfAproximacionCodigoImagen(
   doc.rect(tableX, cy + headerH - 2.5, tableW, 2.5, "F");
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   setText(doc, PRIMARY_FG);
   const headY = cy + 4.6;
   doc.text("COLOR", colSwatch, headY);
   doc.text("NOMBRE", colNombre, headY);
   doc.text("CÓDIGO", colCodigo, headY);
-  doc.text("APROX. DIGITAL", colSim, headY);
+  doc.text("APROX.", colSim, headY);
+  doc.text("PÁGINA OFICIAL", colLink, headY);
+
+  const LINK_LABEL = "Ver color en la página oficial";
 
   const filas = [...informe.coincidencias];
   while (filas.length < 5) {
@@ -373,6 +378,7 @@ export function generarPdfAproximacionCodigoImagen(
       nombre: "—",
       codigo: "—",
       similitud: "—",
+      url: null,
       rgb: null,
       hex: null,
     });
@@ -413,17 +419,32 @@ export function generarPdfAproximacionCodigoImagen(
     doc.roundedRect(colSwatch, swatchY, sw, sw, 1.2, 1.2, "S");
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     setText(doc, BLACK);
     const nombreLines = doc.splitTextToSize(
       row.nombre,
-      colCodigo - colNombre - 3,
+      colCodigo - colNombre - 2,
     );
     doc.text(nombreLines[0] ?? row.nombre, colNombre, textY);
     doc.setFont("helvetica", "bold");
     doc.text(row.codigo, colCodigo, textY);
     doc.setFont("helvetica", "normal");
     doc.text(row.similitud, colSim, textY);
+
+    doc.setFontSize(6.5);
+    if (row.url) {
+      setText(doc, PRIMARY);
+      const linkLines = doc.splitTextToSize(LINK_LABEL, linkMaxW);
+      const linkText = linkLines[0] ?? LINK_LABEL;
+      doc.textWithLink(linkText, colLink, textY, { url: row.url });
+      const linkW = doc.getTextWidth(linkText);
+      setStroke(doc, PRIMARY);
+      doc.setLineWidth(0.25);
+      doc.line(colLink, textY + 0.6, colLink + linkW, textY + 0.6);
+    } else {
+      setText(doc, BLACK);
+      doc.text("—", colLink, textY);
+    }
   }
 
   // —— Más Información (15%): callout con barra primary ——

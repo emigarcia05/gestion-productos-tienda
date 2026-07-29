@@ -125,7 +125,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
     if (coincidencias.length === 0) {
       toast.error("No Se Pudieron Leer Coincidencias", {
         description:
-          "La respuesta debe incluir la tabla con Nombre, Código, RGB y Similitud.",
+          "La respuesta debe incluir la tabla con Nombre, Código, Similitud, URL y RGB.",
       });
       return;
     }

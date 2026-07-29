@@ -1,6 +1,9 @@
 /**
  * Parseo de la respuesta de ChatGPT (tabla de coincidencias Alba)
  * para el PDF de aproximación de código desde imagen.
+ *
+ * Formato canónico:
+ * | Nombre | Código | Similitud | URL | RGB (digital) |
  */
 
 import type { RgbColor } from "@/lib/colorMuestraImagen";
@@ -10,6 +13,8 @@ export interface CoincidenciaAlbaPdf {
   nombre: string;
   codigo: string;
   similitud: string;
+  /** URL de la ficha oficial del color (hipervínculo en el PDF). */
+  url: string | null;
   /** RGB digital del color (para rellenar el swatch; no se imprime el texto). */
   rgb: RgbColor | null;
   /** HEX derivado si hubo RGB/HEX en la respuesta. */
@@ -41,8 +46,18 @@ export function parseRgbCelda(raw: string): RgbColor | null {
   const g = Number(m[2]);
   const b = Number(m[3]);
   if ([r, g, b].some((n) => Number.isNaN(n) || n < 0 || n > 255)) return null;
-  // Evitar confundir códigos Alba tipo "30/100" — ya filtramos por 3 enteros 0–255.
   return { r, g, b };
+}
+
+/** Extrae http(s) URL de una celda (markdown `[texto](url)` o URL cruda). */
+export function parseUrlCelda(raw: string): string | null {
+  const t = raw.trim();
+  if (!t || /^\[?\s*url\s*\]?$/i.test(t)) return null;
+  const md = t.match(/\((https?:\/\/[^)\s]+)\)/i);
+  if (md?.[1]) return md[1];
+  const plain = t.match(/https?:\/\/[^\s<>"|]+/i);
+  if (!plain?.[0]) return null;
+  return plain[0].replace(/[),.;]+$/, "");
 }
 
 function esHeaderSimilitud(cell: string): boolean {
@@ -55,7 +70,8 @@ function esCeldaColor(cell: string): boolean {
 
 /**
  * Extrae hasta 5 filas de la tabla markdown.
- * Formatos: Nombre|Código|Similitud · +RGB · +HEX · +RGB+Similitud.
+ * Canónico: Nombre|Código|Similitud|URL|RGB.
+ * Compat: formatos previos sin URL / con RGB+Similitud en otro orden.
  */
 export function parseRespuestaIaCoincidencias(
   texto: string,
@@ -73,7 +89,10 @@ export function parseRespuestaIaCoincidencias(
     if (cells.length < 3) continue;
 
     const joined = cells.join(" ").toLowerCase();
-    if (joined.includes("nombre") && (joined.includes("código") || joined.includes("codigo"))) {
+    if (
+      joined.includes("nombre") &&
+      (joined.includes("código") || joined.includes("codigo"))
+    ) {
       continue;
     }
     if (cells[0]?.includes("[Nombre]") || cells[1]?.includes("[Código]")) {
@@ -87,9 +106,17 @@ export function parseRespuestaIaCoincidencias(
     let rgb: RgbColor | null = null;
     let hex: string | null = null;
     let similitud = "";
+    let url: string | null = null;
 
     for (let i = 2; i < cells.length; i += 1) {
       const cell = cells[i] ?? "";
+      if (!url) {
+        const parsedUrl = parseUrlCelda(cell);
+        if (parsedUrl) {
+          url = parsedUrl;
+          continue;
+        }
+      }
       if (!rgb) {
         const parsedRgb = parseRgbCelda(cell);
         if (parsedRgb) {
@@ -104,24 +131,29 @@ export function parseRespuestaIaCoincidencias(
           continue;
         }
       }
-      if (!similitud && (/%/.test(cell) || esHeaderSimilitud(cell) || cells.length === 3)) {
-        if (!esCeldaColor(cell)) {
+      if (
+        !similitud &&
+        (/%/.test(cell) || esHeaderSimilitud(cell) || cells.length === 3)
+      ) {
+        if (!esCeldaColor(cell) && !parseUrlCelda(cell)) {
           similitud = cell;
         }
-      } else if (!similitud && !esCeldaColor(cell)) {
+      } else if (!similitud && !esCeldaColor(cell) && !parseUrlCelda(cell)) {
         similitud = cell;
       }
     }
 
     if (!similitud && cells.length >= 3) {
-      const last = cells[cells.length - 1] ?? "";
-      if (!esCeldaColor(last)) similitud = last;
+      const candidate = cells[2] ?? "";
+      if (!esCeldaColor(candidate) && !parseUrlCelda(candidate)) {
+        similitud = candidate;
+      }
     }
 
     if (!rgb && hex) rgb = hexToRgbLocal(hex);
     if (!hex && rgb) hex = rgbToHex(rgb);
 
-    rows.push({ nombre, codigo, similitud, rgb, hex });
+    rows.push({ nombre, codigo, similitud, url, rgb, hex });
     if (rows.length >= 5) break;
   }
   return rows;
