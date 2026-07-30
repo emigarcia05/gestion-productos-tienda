@@ -288,13 +288,17 @@ export default function AsistenteIaDisenarColoresVista({
       .map((id) => catalogos.combinar.find((x) => x.id === id)?.nombre)
       .filter((x): x is string => Boolean(x));
 
-    const prompt = aplicarRespuestasAlPromptDisenarColores(config.promp, {
-      cantidadColores: cantidadColoresDesdeSuperficies(superficies),
-      superficies: superficiesResolved,
-      objetivos,
-      estilo,
-      combinar,
-    });
+    const prompt = aplicarRespuestasAlPromptDisenarColores(
+      config.promp,
+      {
+        cantidadColores: cantidadColoresDesdeSuperficies(superficies),
+        superficies: superficiesResolved,
+        objetivos,
+        estilo,
+        combinar,
+      },
+      config.variablesAlias ?? [],
+    );
 
     setEnviando(true);
     try {

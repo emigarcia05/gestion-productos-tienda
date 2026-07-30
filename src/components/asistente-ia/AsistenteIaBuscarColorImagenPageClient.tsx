@@ -93,7 +93,11 @@ export default function AsistenteIaBuscarColorImagenPageClient({
       return;
     }
 
-    const prompt = aplicarRgbAlPromptBuscarColor(plantilla, color);
+    const prompt = aplicarRgbAlPromptBuscarColor(
+      plantilla,
+      color,
+      configBuscarCodigo.variablesAlias ?? [],
+    );
 
     try {
       await navigator.clipboard.writeText(prompt);

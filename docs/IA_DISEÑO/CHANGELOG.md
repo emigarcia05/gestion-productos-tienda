@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.10.0 — 2026-07-30
+
+**Descripción:** **Gestionar Variables** en Editar Prompt: listado de fuentes inyectables por módulo + nombre MAYÚSCULA persistido en `prod_ia_diseno_promp_var`; chips y runtime usan el alias.
+
+**Motivo:** Que el editor controle qué etiqueta `{{…}}` corresponde a cada respuesta/dato de la app.
+
 ## 0.9.2 — 2026-07-30
 
 **Descripción:** Variables de Diseñar Colores en MAYÚSCULA; `{{SUPERFICIES}}` con tabla Markdown cuando hay 2+ superficies (formato óptimo para GPT).

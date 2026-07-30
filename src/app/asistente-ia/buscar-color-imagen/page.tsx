@@ -15,6 +15,7 @@ import {
   listarProdIaDisenoPromps,
 } from "@/services/prodIaDisenoPromp.service";
 import { listarProdIaDisenoCatalogoNombre } from "@/services/prodIaDisenoCatalogos.service";
+import { listarProdIaDisenoPrompVars } from "@/services/prodIaDisenoPrompVar.service";
 
 export const dynamic = "force-dynamic";
 
@@ -50,11 +51,19 @@ export default async function AsistenteIaBuscarColorImagenPage() {
   const defaultsBuscar = getDefaultConfigBuscarColorImagen();
   const defaultsDisenar = getDefaultConfigDisenarColores();
 
+  const [varsBuscar, varsDisenar] = await Promise.all([
+    rowBuscar ? listarProdIaDisenoPrompVars(rowBuscar.id) : Promise.resolve([]),
+    rowDisenar
+      ? listarProdIaDisenoPrompVars(rowDisenar.id)
+      : Promise.resolve([]),
+  ]);
+
   const configBuscarCodigo = rowBuscar
     ? {
         submodulo: rowBuscar.submodulo,
         promp: rowBuscar.promp,
         urlRedireccion: rowBuscar.urlRedireccion,
+        variablesAlias: varsBuscar,
       }
     : defaultsBuscar;
 
@@ -63,6 +72,7 @@ export default async function AsistenteIaBuscarColorImagenPage() {
         submodulo: rowDisenar.submodulo,
         promp: rowDisenar.promp,
         urlRedireccion: rowDisenar.urlRedireccion,
+        variablesAlias: varsDisenar,
       }
     : defaultsDisenar;
 

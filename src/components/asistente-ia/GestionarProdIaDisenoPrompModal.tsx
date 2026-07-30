@@ -14,6 +14,8 @@ import {
   eliminarProdIaDisenoPrompAction,
   listarProdIaDisenoPrompsAction,
 } from "@/actions/prodIaDisenoPromp";
+import { listarProdIaDisenoPrompVarsAction } from "@/actions/prodIaDisenoPrompVar";
+import GestionarProdIaDisenoPrompVarsModal from "@/components/asistente-ia/GestionarProdIaDisenoPrompVarsModal";
 import {
   Select,
   SelectContent,
@@ -22,10 +24,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ASISTENTE_IA_VARIABLES_PROMPT,
+  moduloVariableDesdeSubmodulo,
+  resolverVariablesPromptParaUi,
   submodulosPrompDisponiblesParaAlta,
   type AsistenteIaVariablePrompt,
   type ProdIaDisenoPrompItem,
+  type ProdIaDisenoPrompVarItem,
 } from "@/lib/asistenteIa";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import type { ActionResult } from "@/lib/types";
@@ -67,6 +71,10 @@ export default function GestionarProdIaDisenoPrompModal({
     null,
   );
   const [borrando, setBorrando] = useState(false);
+  const [varsOpen, setVarsOpen] = useState(false);
+  const [varsGuardadas, setVarsGuardadas] = useState<ProdIaDisenoPrompVarItem[]>(
+    [],
+  );
   const prompTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const cargar = useCallback(async () => {
@@ -95,6 +103,8 @@ export default function GestionarProdIaDisenoPrompModal({
     setFormPromp("");
     setFormUrl("");
     setBorrarTarget(null);
+    setVarsOpen(false);
+    setVarsGuardadas([]);
     void cargar();
   }, [open, cargar, itemsIniciales]);
 
@@ -111,6 +121,26 @@ export default function GestionarProdIaDisenoPrompModal({
     [items],
   );
 
+  const submoduloForm =
+    editingItem?.submodulo ?? formSubmodulo;
+  const variablesChips = useMemo(
+    () =>
+      resolverVariablesPromptParaUi(
+        moduloVariableDesdeSubmodulo(submoduloForm),
+        varsGuardadas,
+      ),
+    [submoduloForm, varsGuardadas],
+  );
+
+  async function cargarVars(prompId: string) {
+    const res = await listarProdIaDisenoPrompVarsAction({ prompId });
+    if (!res.ok) {
+      setVarsGuardadas([]);
+      return;
+    }
+    setVarsGuardadas(res.data);
+  }
+
   function abrirCrear() {
     if (!esEditor || pending) return;
     if (submodulosDisponibles.length === 0) {
@@ -123,6 +153,7 @@ export default function GestionarProdIaDisenoPrompModal({
     setFormSubmodulo(submodulosDisponibles[0] ?? "");
     setFormPromp("");
     setFormUrl("");
+    setVarsGuardadas([]);
     setFormOpen(true);
   }
 
@@ -133,6 +164,7 @@ export default function GestionarProdIaDisenoPrompModal({
     setFormPromp(item.promp);
     setFormUrl(item.urlRedireccion);
     setFormOpen(true);
+    void cargarVars(item.id);
   }
 
   function insertarVariable(variable: AsistenteIaVariablePrompt) {
@@ -392,7 +424,7 @@ export default function GestionarProdIaDisenoPrompModal({
                 <span className="text-xs text-muted-foreground">
                   Insertar Variable:
                 </span>
-                {ASISTENTE_IA_VARIABLES_PROMPT.map((variable) => (
+                {variablesChips.map((variable) => (
                   <Button
                     key={variable.clave}
                     type="button"
@@ -406,7 +438,25 @@ export default function GestionarProdIaDisenoPrompModal({
                     {variable.token}
                   </Button>
                 ))}
+                {editingItem ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 px-3"
+                    disabled={pending}
+                    onClick={() => setVarsOpen(true)}
+                  >
+                    Gestionar Variables
+                  </Button>
+                ) : null}
               </div>
+              {!editingItem ? (
+                <p className="text-xs text-muted-foreground">
+                  Guardá el prompt para poder gestionar los nombres de las
+                  variables.
+                </p>
+              ) : null}
               <textarea
                 ref={prompTextareaRef}
                 value={formPromp}
@@ -472,6 +522,20 @@ export default function GestionarProdIaDisenoPrompModal({
           </p>
         </AppModal>
       </Dialog>
+
+      {editingItem ? (
+        <GestionarProdIaDisenoPrompVarsModal
+          open={varsOpen}
+          onOpenChange={setVarsOpen}
+          prompId={editingItem.id}
+          submodulo={editingItem.submodulo}
+          esEditor={esEditor}
+          onSaved={(items) => {
+            setVarsGuardadas(items);
+            onCatalogoChanged?.();
+          }}
+        />
+      ) : null}
     </>
   );
 }

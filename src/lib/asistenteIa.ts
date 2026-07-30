@@ -132,16 +132,32 @@ export interface AsistenteIaVariablePrompt {
   token: string;
   etiqueta: string;
   descripcion: string;
+  /** Módulos del hub donde esta fuente se puede inyectar. */
+  modulos: readonly ("buscar_codigo" | "disenar_colores")[];
 }
 
-/** Catálogo de variables insertables en GESTION PROMP & URL. */
+export type AsistenteIaModuloVariable = "buscar_codigo" | "disenar_colores";
+
+/** Resuelve el slot de variables según el nombre de submódulo en BD. */
+export function moduloVariableDesdeSubmodulo(
+  submodulo: string,
+): AsistenteIaModuloVariable | null {
+  if (ocupaSlotBuscarCodigoImagen(submodulo)) return "buscar_codigo";
+  if (submodulo.trim() === ASISTENTE_IA_SUBMODULO_DISENAR_COLORES) {
+    return "disenar_colores";
+  }
+  return null;
+}
+
+/** Catálogo de fuentes que la app puede inyectar en prompts. */
 export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[] =
   [
     {
       clave: ASISTENTE_IA_VAR_RGB,
       token: ASISTENTE_IA_RGB_TOKEN,
-      etiqueta: "RGB",
+      etiqueta: "RGB (cuentagotas)",
       descripcion: "Color tomado con el cuentagotas, p. ej. (128,64,32).",
+      modulos: ["buscar_codigo"],
     },
     {
       clave: ASISTENTE_IA_VAR_CANTIDAD_COLORES,
@@ -149,33 +165,112 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
       etiqueta: "Cantidad de colores",
       descripcion:
         "Cantidad de colores distintos asignados a superficies (1–4).",
+      modulos: ["disenar_colores"],
     },
     {
       clave: ASISTENTE_IA_VAR_SUPERFICIES,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_SUPERFICIES),
-      etiqueta: "SUPERFICIES",
+      etiqueta: "Superficies a pintar",
       descripcion:
-        "1 superficie: «Nombre, ColorN». Varias: tabla Markdown Superficie|Color (Diseñar Colores).",
+        "1 superficie: «Nombre, ColorN». Varias: tabla Markdown Superficie|Color.",
+      modulos: ["disenar_colores"],
     },
     {
       clave: ASISTENTE_IA_VAR_OBJETIVOS,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_OBJETIVOS),
-      etiqueta: "OBJETIVOS",
+      etiqueta: "Objetivos",
       descripcion: "Objetivos de diseño seleccionados (Diseñar Colores).",
+      modulos: ["disenar_colores"],
     },
     {
       clave: ASISTENTE_IA_VAR_ESTILO,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_ESTILO),
-      etiqueta: "ESTILO",
+      etiqueta: "Estilo",
       descripcion: "Estilo de diseño único (Diseñar Colores).",
+      modulos: ["disenar_colores"],
     },
     {
       clave: ASISTENTE_IA_VAR_COMBINAR_CON,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR_CON),
-      etiqueta: "COMBINARCON",
+      etiqueta: "Combinar con",
       descripcion: "Elementos existentes a combinar (Diseñar Colores).",
+      modulos: ["disenar_colores"],
     },
   ] as const;
+
+export function fuentesPromptParaModulo(
+  modulo: AsistenteIaModuloVariable | null,
+): AsistenteIaVariablePrompt[] {
+  if (!modulo) return [...ASISTENTE_IA_VARIABLES_PROMPT];
+  return ASISTENTE_IA_VARIABLES_PROMPT.filter((v) =>
+    v.modulos.includes(modulo),
+  );
+}
+
+export function isFuentePromptValida(fuente: string): boolean {
+  return ASISTENTE_IA_VARIABLES_PROMPT.some((v) => v.clave === fuente);
+}
+
+/** Normaliza nombre de variable a MAYÚSCULA [A-Z0-9_]. */
+export function normalizarNombreVariablePrompt(raw: string): string {
+  return raw
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+}
+
+export interface ProdIaDisenoPrompVarItem {
+  id: string;
+  prompId: string;
+  fuente: string;
+  variable: string;
+}
+
+/**
+ * Une fuentes del módulo con alias guardados (default = clave de fuente).
+ */
+export function resolverVariablesPromptParaUi(
+  modulo: AsistenteIaModuloVariable | null,
+  guardadas: readonly ProdIaDisenoPrompVarItem[],
+): AsistenteIaVariablePrompt[] {
+  const byFuente = new Map(
+    guardadas.map((g) => [g.fuente, g.variable] as const),
+  );
+  return fuentesPromptParaModulo(modulo).map((f) => {
+    const variable = byFuente.get(f.clave) ?? f.clave;
+    return {
+      ...f,
+      clave: f.clave,
+      token: tokenVariablePrompt(variable),
+      etiqueta: f.etiqueta,
+      descripcion: `${f.descripcion} Token: {{${variable}}}.`,
+      modulos: f.modulos,
+      // keep fuente in clave for insert mapping - token uses custom name
+    };
+  });
+}
+
+/**
+ * Expande valores por fuente canónica agregando claves alias (MAYÚSCULA).
+ */
+export function expandirValoresConAliasVariables(
+  valoresPorFuente: Record<string, string>,
+  alias: readonly { fuente: string; variable: string }[],
+): Record<string, string> {
+  const out: Record<string, string> = { ...valoresPorFuente };
+  for (const a of alias) {
+    const fuenteKey = Object.keys(valoresPorFuente).find(
+      (k) => k.toUpperCase() === a.fuente.toUpperCase(),
+    );
+    if (!fuenteKey) continue;
+    const nombre = normalizarNombreVariablePrompt(a.variable);
+    if (!nombre) continue;
+    out[nombre] = valoresPorFuente[fuenteKey]!;
+  }
+  return out;
+}
 
 /**
  * Plantilla seed/fallback del submódulo (debe incluir `{{RGB}}`).
@@ -215,15 +310,31 @@ export function aplicarVariablesAlPrompt(
 
 /**
  * Inserta el RGB del cuentagotas en la plantilla del módulo.
- * Prioridad: `{{RGB}}` → legacy `(R,G,B)` → append al final.
+ * Prioridad: token alias de RGB / `{{RGB}}` → legacy `(R,G,B)` → append al final.
  */
 export function aplicarRgbAlPromptBuscarColor(
   plantilla: string,
   color: RgbColor,
+  alias: readonly { fuente: string; variable: string }[] = [],
 ): string {
   const tuple = formatRgbTuple(color);
-  if (plantilla.includes(ASISTENTE_IA_RGB_TOKEN) || /\{\{\s*RGB\s*\}\}/i.test(plantilla)) {
-    return aplicarVariablesAlPrompt(plantilla, { [ASISTENTE_IA_VAR_RGB]: tuple });
+  const valores = expandirValoresConAliasVariables(
+    { [ASISTENTE_IA_VAR_RGB]: tuple },
+    alias,
+  );
+  const aliasRgb = alias.find(
+    (a) => a.fuente.toUpperCase() === ASISTENTE_IA_VAR_RGB,
+  );
+  const tokenAlias = aliasRgb
+    ? tokenVariablePrompt(normalizarNombreVariablePrompt(aliasRgb.variable))
+    : null;
+
+  if (
+    (tokenAlias && plantilla.includes(tokenAlias)) ||
+    plantilla.includes(ASISTENTE_IA_RGB_TOKEN) ||
+    /\{\{\s*RGB\s*\}\}/i.test(plantilla)
+  ) {
+    return aplicarVariablesAlPrompt(plantilla, valores);
   }
   if (plantilla.includes(ASISTENTE_IA_RGB_PLACEHOLDER_LEGACY)) {
     return plantilla
@@ -245,6 +356,8 @@ export interface AsistenteIaConfigSubmodulo {
   submodulo: string;
   promp: string;
   urlRedireccion: string;
+  /** Alias fuente→variable guardados para este prompt (opcional). */
+  variablesAlias?: ProdIaDisenoPrompVarItem[];
 }
 
 /** Fallback si aún no hay fila en BD. */
@@ -447,23 +560,28 @@ export function formatListaONada(items: string[], vacio = ""): string {
 export function aplicarRespuestasAlPromptDisenarColores(
   plantilla: string,
   respuestas: AsistenteIaDisenarColoresRespuestas,
+  alias: readonly { fuente: string; variable: string }[] = [],
 ): string {
   const superficies = formatSuperficiesParaPrompt(respuestas.superficies);
   const objetivos = formatListaONada(respuestas.objetivos);
   const estilo = respuestas.estilo.trim();
   const combinar = formatListaONada(respuestas.combinar);
 
-  return aplicarVariablesAlPrompt(plantilla, {
+  const porFuente: Record<string, string> = {
     [ASISTENTE_IA_VAR_CANTIDAD_COLORES]: String(respuestas.cantidadColores),
     [ASISTENTE_IA_VAR_SUPERFICIES]: superficies,
     [ASISTENTE_IA_VAR_OBJETIVOS]: objetivos,
     [ASISTENTE_IA_VAR_ESTILO]: estilo,
     [ASISTENTE_IA_VAR_COMBINAR_CON]: combinar,
-    // Compat plantillas viejas
     [ASISTENTE_IA_VAR_COMBINAR]: combinar,
     Superficies: superficies,
     Objetivos: objetivos,
     Estilo: estilo,
     CombinarCon: combinar,
-  });
+  };
+
+  return aplicarVariablesAlPrompt(
+    plantilla,
+    expandirValoresConAliasVariables(porFuente, alias),
+  );
 }

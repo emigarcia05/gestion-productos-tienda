@@ -1276,8 +1276,30 @@ model ProdIaDisenoPromp {
   urlRedireccion String   @map("url_redireccion") @db.Text
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
+  variables      ProdIaDisenoPrompVar[]
 
   @@map("prod_ia_diseno_promp")
+}
+
+/**
+ * Alias de variables por prompt: fuente canónica (RGB, SUPERFICIES, …)
+ * → nombre de token en MAYÚSCULA insertable como {{VARIABLE}}.
+ */
+model ProdIaDisenoPrompVar {
+  id        String           @id @default(cuid())
+  prompId   String           @map("promp_id")
+  /** Clave de fuente en código (ASISTENTE_IA_VAR_*). */
+  fuente    String           @map("fuente")
+  /** Nombre de variable en el prompt (MAYÚSCULA, sin llaves). */
+  variable  String           @map("variable")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  promp     ProdIaDisenoPromp @relation(fields: [prompId], references: [id], onDelete: Cascade)
+
+  @@unique([prompId, fuente], map: "prod_ia_diseno_promp_var_promp_fuente_key")
+  @@unique([prompId, variable], map: "prod_ia_diseno_promp_var_promp_variable_key")
+  @@index([prompId], map: "prod_ia_diseno_promp_var_promp_id_idx")
+  @@map("prod_ia_diseno_promp_var")
 }
 
 /** Catálogo GESTION DISEÑO — superficies a pintar. */

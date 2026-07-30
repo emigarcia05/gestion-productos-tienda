@@ -1538,6 +1538,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-27): **GESTION PROMP & URL** — listado del modal solo muestra el **título del submódulo** + acciones editar/eliminar (sin preview de prompt ni URL en la fila).*
 
+*Última actualización (2026-07-30): **GESTION PROMP · Gestionar Variables** — botón en editar prompt; modal fuente→nombre MAYÚSCULA; tabla `prod_ia_diseno_promp_var`; chips filtrados por módulo.*
+
 *Última actualización (2026-07-30): **Diseñar Colores · SUPERFICIES** — variables en MAYÚSCULA (`{{SUPERFICIES}}` / `{{OBJETIVOS}}` / `{{ESTILO}}` / `{{COMBINARCON}}`); ≥2 superficies → tabla Markdown para GPT.*
 
 *Última actualización (2026-07-30): **GESTION PROMP & URL · submódulo fijo** — edición solo lectura; alta con Select de `ASISTENTE_IA_SUBMODULOS_PROMP`; sin párrafo de ayuda {{RGB}}; edit API sin renombrar `submodulo`.*
