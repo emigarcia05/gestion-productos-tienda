@@ -81,24 +81,24 @@ function PreguntaAcordeon({
         aria-expanded={abierta}
         onClick={onToggle}
         className={cn(
-          "flex w-full shrink-0 items-start gap-2 px-3 py-2.5 text-left transition-colors",
-          "hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-          abierta && "border-b border-border bg-muted/40",
+          "flex w-full shrink-0 items-start gap-2 bg-primary px-3 py-2.5 text-left text-primary-foreground transition-colors",
+          "hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          abierta && "border-b border-primary",
         )}
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold uppercase tracking-wide text-foreground">
+          <span className="block text-sm font-semibold uppercase tracking-wide text-primary-foreground">
             {numero}. {titulo}
           </span>
           {!abierta && resumen ? (
-            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+            <span className="mt-0.5 block truncate text-xs text-primary-foreground/80">
               {resumen}
             </span>
           ) : null}
         </span>
         <ChevronDown
           className={cn(
-            "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform",
+            "mt-0.5 size-4 shrink-0 text-primary-foreground transition-transform",
             abierta && "rotate-180",
           )}
           aria-hidden
@@ -340,9 +340,6 @@ export default function AsistenteIaDisenarColoresVista({
   return (
     <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-2 lg:gap-6">
       <aside className="flex min-h-0 flex-col gap-2 overflow-hidden">
-        <h3 className="shrink-0 text-sm font-semibold uppercase tracking-wide">
-          Foto De Referencia
-        </h3>
         <input
           ref={fileInputRef}
           id={inputId}
