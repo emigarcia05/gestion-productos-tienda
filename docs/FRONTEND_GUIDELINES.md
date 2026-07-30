@@ -1534,7 +1534,9 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-28): **Asistente IA · hub tiles** — submódulo renombrado a **Buscar Código Desde Imagen**; hub con **`AsistenteIaFuncionTile`** (`aspect-[1/5]`, `w-36`, ícono + label MAYÚSCULAS): **BUSCAR CÓDIGO DESDE IMAGEN** y **GESTION PROMP & URL**. Lookup de prompt: nombre nuevo + legacy.*
 
-*Última actualización (2026-07-27): **GESTION PROMP & URL · variables** — en editar/crear prompt: chips **Insertar Variable** (`{{RGB}}` desde `ASISTENTE_IA_VARIABLES_PROMPT`). El cuentagotas completa `{{RGB}}` (legacy `(R,G,B)` sigue funcionando).*
+*Última actualización (2026-07-30): **GESTION PROMP · Insertar Variable** — botón primary + `DropdownMenu` (`modal={false}`) con listado token/etiqueta; sin chips por variable.*
+
+*Última actualización (2026-07-27): **GESTION PROMP & URL · variables** — en editar/crear prompt: insertar variables desde el catálogo del módulo. El cuentagotas completa `{{RGB}}` (legacy `(R,G,B)` sigue funcionando).*
 
 *Última actualización (2026-07-27): **GESTION PROMP & URL** — listado del modal solo muestra el **título del submódulo** + acciones editar/eliminar (sin preview de prompt ni URL en la fila).*
 
@@ -1546,11 +1548,13 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-30): **Asistente IA · Diseñar Colores · Prompt Maestro** — seed con variables `{{Superficies}}` / `{{Objetivos}}` / `{{Estilo}}` / `{{CombinarCon}}`; formato `Superficie, ColorN`; vacías si no hay selección.*
 
-*Última actualización (2026-07-30): **Asistente IA · Diseñar Colores** — sin pregunta de cantidad; Select de superficies siempre Color 1–4; `{{CANTIDAD_COLORES}}` = colores distintos asignados.*
+*Última actualización (2026-07-30): **Asistente IA · Diseñar Colores** — eliminada variable `{{CANTIDAD_COLORES}}`; Select Color 1–4 sigue en superficies.*
+
+*Última actualización (2026-07-30): **Asistente IA · Diseñar Colores** — sin pregunta de cantidad; Select de superficies siempre Color 1–4.*
 
 *Última actualización (2026-07-30): **Asistente IA · Diseñar Colores · acordeón** — preguntas colapsadas (una abierta); panel de respuestas con scroll interno para caber en viewport.*
 
-*Última actualización (2026-07-30): **Asistente IA · Diseñar Colores** — tile hub + vista 2 columnas (foto referencia | cuestionario 1–5); CTA copiar prompt + abrir URL; variables `{{CANTIDAD_COLORES}}` / `{{SUPERFICIES}}` / `{{OBJETIVOS}}` / `{{ESTILO}}` / `{{COMBINAR}}`.*
+*Última actualización (2026-07-30): **Asistente IA · Diseñar Colores** — tile hub + vista 2 columnas (foto referencia | cuestionario); CTA copiar prompt + abrir URL; variables `{{SUPERFICIES}}` / `{{OBJETIVOS}}` / `{{ESTILO}}` / `{{COMBINARCON}}`.*
 
 *Última actualización (2026-07-30): **Asistente IA · header** — **GESTION PROMP & URL** pasa del tile del hub al header (junto a **GESTION DISEÑO**); hub solo con **Buscar Código Desde Imagen**.*
 

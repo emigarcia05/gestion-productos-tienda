@@ -12,10 +12,13 @@ import {
   listarProdIaDisenoPrompVarsAction,
 } from "@/actions/prodIaDisenoPrompVar";
 import {
+  ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
+  ASISTENTE_IA_SUBMODULO_DISENAR_COLORES,
   fuentesPromptParaModulo,
   moduloVariableDesdeSubmodulo,
   normalizarNombreVariablePrompt,
   tokenVariablePrompt,
+  type AsistenteIaModuloVariable,
   type ProdIaDisenoPrompVarItem,
 } from "@/lib/asistenteIa";
 import type { ActionResult } from "@/lib/types";
@@ -34,7 +37,21 @@ type FilaVar = {
   etiqueta: string;
   descripcion: string;
   variable: string;
+  moduloLabel: string;
 };
+
+function etiquetaModuloVariable(modulo: AsistenteIaModuloVariable): string {
+  if (modulo === "buscar_codigo") {
+    return ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN;
+  }
+  return ASISTENTE_IA_SUBMODULO_DISENAR_COLORES;
+}
+
+function etiquetasModulosFuente(
+  modulos: readonly AsistenteIaModuloVariable[],
+): string {
+  return modulos.map(etiquetaModuloVariable).join(" · ");
+}
 
 export default function GestionarProdIaDisenoPrompVarsModal({
   open,
@@ -67,6 +84,7 @@ export default function GestionarProdIaDisenoPrompVarsModal({
             etiqueta: f.etiqueta,
             descripcion: f.descripcion,
             variable: f.clave,
+            moduloLabel: etiquetasModulosFuente(f.modulos),
           })),
         );
         return;
@@ -78,6 +96,7 @@ export default function GestionarProdIaDisenoPrompVarsModal({
           etiqueta: f.etiqueta,
           descripcion: f.descripcion,
           variable: byFuente.get(f.clave) ?? f.clave,
+          moduloLabel: etiquetasModulosFuente(f.modulos),
         })),
       );
     } finally {
@@ -202,6 +221,9 @@ export default function GestionarProdIaDisenoPrompVarsModal({
                       </p>
                       <p className="mt-1 font-mono text-xs text-muted-foreground">
                         Fuente: {fila.fuente}
+                      </p>
+                      <p className="mt-1 font-mono text-xs text-muted-foreground">
+                        Módulo: {fila.moduloLabel}
                       </p>
                     </div>
                     <div className="flex w-56 shrink-0 flex-col gap-1">

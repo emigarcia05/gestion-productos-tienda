@@ -19,9 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ASISTENTE_IA_CANTIDADES_COLORES,
+  ASISTENTE_IA_INDICES_COLOR,
   aplicarRespuestasAlPromptDisenarColores,
-  type AsistenteIaCantidadColores,
   type AsistenteIaConfigSubmodulo,
 } from "@/lib/asistenteIa";
 import type { ProdIaDisenoCatalogoNombreItem } from "@/lib/prodIaDisenoCatalogos";
@@ -45,14 +44,6 @@ type SuperficieSeleccion = {
 };
 
 type PreguntaId = 1 | 2 | 3 | 4;
-
-function cantidadColoresDesdeSuperficies(
-  superficies: SuperficieSeleccion[],
-): AsistenteIaCantidadColores {
-  const distinct = new Set(superficies.map((s) => s.colorIndex));
-  const n = Math.min(4, Math.max(1, distinct.size)) as AsistenteIaCantidadColores;
-  return n;
-}
 
 function PreguntaAcordeon({
   numero,
@@ -291,7 +282,6 @@ export default function AsistenteIaDisenarColoresVista({
     const prompt = aplicarRespuestasAlPromptDisenarColores(
       config.promp,
       {
-        cantidadColores: cantidadColoresDesdeSuperficies(superficies),
         superficies: superficiesResolved,
         objetivos,
         estilo,
@@ -438,7 +428,7 @@ export default function AsistenteIaDisenarColoresVista({
                             <SelectValue placeholder="Color" />
                           </SelectTrigger>
                           <SelectContent>
-                            {ASISTENTE_IA_CANTIDADES_COLORES.map((n) => (
+                            {ASISTENTE_IA_INDICES_COLOR.map((n) => (
                               <SelectItem key={n} value={String(n)}>
                                 Color {n}
                               </SelectItem>

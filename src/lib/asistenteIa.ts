@@ -82,7 +82,6 @@ export const ASISTENTE_IA_CHATGPT_BUSCAR_COLOR_URL_DEFAULT =
 export const ASISTENTE_IA_VAR_RGB = "RGB" as const;
 
 /** Variables del formulario Diseñar Colores (tokens siempre en MAYÚSCULA). */
-export const ASISTENTE_IA_VAR_CANTIDAD_COLORES = "CANTIDAD_COLORES" as const;
 export const ASISTENTE_IA_VAR_SUPERFICIES = "SUPERFICIES" as const;
 export const ASISTENTE_IA_VAR_OBJETIVOS = "OBJETIVOS" as const;
 export const ASISTENTE_IA_VAR_ESTILO = "ESTILO" as const;
@@ -91,11 +90,12 @@ export const ASISTENTE_IA_VAR_COMBINAR_CON = "COMBINARCON" as const;
 /** @deprecated Alias de plantillas viejas; se sigue rellenando en runtime. */
 export const ASISTENTE_IA_VAR_COMBINAR = "COMBINAR" as const;
 
-/** Cantidad de colores permitida en Diseñar Colores. */
-export type AsistenteIaCantidadColores = 1 | 2 | 3 | 4;
+/** Índices de Color N (Color 1…4) en asignación superficie→color. */
+export type AsistenteIaIndiceColor = 1 | 2 | 3 | 4;
 
-export const ASISTENTE_IA_CANTIDADES_COLORES: readonly AsistenteIaCantidadColores[] =
-  [1, 2, 3, 4] as const;
+export const ASISTENTE_IA_INDICES_COLOR: readonly AsistenteIaIndiceColor[] = [
+  1, 2, 3, 4,
+] as const;
 
 export interface AsistenteIaSuperficieConColor {
   superficieId: string;
@@ -105,7 +105,6 @@ export interface AsistenteIaSuperficieConColor {
 }
 
 export interface AsistenteIaDisenarColoresRespuestas {
-  cantidadColores: AsistenteIaCantidadColores;
   superficies: AsistenteIaSuperficieConColor[];
   objetivos: string[];
   estilo: string;
@@ -158,14 +157,6 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
       etiqueta: "RGB (cuentagotas)",
       descripcion: "Color tomado con el cuentagotas, p. ej. (128,64,32).",
       modulos: ["buscar_codigo"],
-    },
-    {
-      clave: ASISTENTE_IA_VAR_CANTIDAD_COLORES,
-      token: tokenVariablePrompt(ASISTENTE_IA_VAR_CANTIDAD_COLORES),
-      etiqueta: "Cantidad de colores",
-      descripcion:
-        "Cantidad de colores distintos asignados a superficies (1–4).",
-      modulos: ["disenar_colores"],
     },
     {
       clave: ASISTENTE_IA_VAR_SUPERFICIES,
@@ -568,7 +559,6 @@ export function aplicarRespuestasAlPromptDisenarColores(
   const combinar = formatListaONada(respuestas.combinar);
 
   const porFuente: Record<string, string> = {
-    [ASISTENTE_IA_VAR_CANTIDAD_COLORES]: String(respuestas.cantidadColores),
     [ASISTENTE_IA_VAR_SUPERFICIES]: superficies,
     [ASISTENTE_IA_VAR_OBJETIVOS]: objetivos,
     [ASISTENTE_IA_VAR_ESTILO]: estilo,

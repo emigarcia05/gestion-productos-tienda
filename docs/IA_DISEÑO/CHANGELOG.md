@@ -1,5 +1,17 @@
 # Changelog — IA_DISEÑO
 
+## 0.10.2 — 2026-07-30
+
+**Descripción:** En Editar Prompt, chips por variable reemplazados por botón **Insertar Variable** + desplegable (`DropdownMenu`).
+
+**Motivo:** Un solo control para elegir e insertar el token en el prompt.
+
+## 0.10.1 — 2026-07-30
+
+**Descripción:** Eliminada la variable inyectable `{{CANTIDAD_COLORES}}` / fuente «Cantidad de colores» del catálogo y del runtime de Diseñar Colores.
+
+**Motivo:** La cantidad ya no se pide ni se inyecta; el número de colores se deduce de las asignaciones Color N en `{{SUPERFICIES}}`.
+
 ## 0.10.0 — 2026-07-30
 
 **Descripción:** **Gestionar Variables** en Editar Prompt: listado de fuentes inyectables por módulo + nombre MAYÚSCULA persistido en `prod_ia_diseno_promp_var`; chips y runtime usan el alias.

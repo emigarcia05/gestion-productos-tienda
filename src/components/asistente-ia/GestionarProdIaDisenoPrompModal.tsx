@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -123,7 +124,7 @@ export default function GestionarProdIaDisenoPrompModal({
 
   const submoduloForm =
     editingItem?.submodulo ?? formSubmodulo;
-  const variablesChips = useMemo(
+  const variablesDisponibles = useMemo(
     () =>
       resolverVariablesPromptParaUi(
         moduloVariableDesdeSubmodulo(submoduloForm),
@@ -421,29 +422,63 @@ export default function GestionarProdIaDisenoPrompModal({
             <div className="flex flex-col gap-1">
               <ModalMicroLabel>Prompt</ModalMicroLabel>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-muted-foreground">
-                  Insertar Variable:
-                </span>
-                {variablesChips.map((variable) => (
-                  <Button
-                    key={variable.clave}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-2 font-mono text-xs"
-                    disabled={pending}
-                    title={variable.descripcion}
-                    onClick={() => insertarVariable(variable)}
-                  >
-                    {variable.token}
-                  </Button>
-                ))}
+                <DropdownMenu.Root modal={false}>
+                  <DropdownMenu.Trigger asChild>
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      disabled={pending || variablesDisponibles.length === 0}
+                      aria-haspopup="menu"
+                      title={
+                        variablesDisponibles.length === 0
+                          ? "Este submódulo no tiene variables"
+                          : undefined
+                      }
+                    >
+                      Insertar Variable
+                      <ChevronDown className="opacity-80" aria-hidden />
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                      className={cn(
+                        "z-[200] max-h-[min(18rem,var(--radix-dropdown-menu-content-available-height))] min-w-[14rem] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md",
+                        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2",
+                      )}
+                      side="bottom"
+                      align="start"
+                      sideOffset={4}
+                      collisionPadding={8}
+                    >
+                      {variablesDisponibles.map((variable) => (
+                        <DropdownMenu.Item
+                          key={variable.clave}
+                          className={cn(
+                            "cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none select-none",
+                            "focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-muted",
+                          )}
+                          title={variable.descripcion}
+                          onSelect={() => insertarVariable(variable)}
+                        >
+                          <span className="flex flex-col gap-0.5">
+                            <span className="font-mono text-xs font-semibold">
+                              {variable.token}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {variable.etiqueta}
+                            </span>
+                          </span>
+                        </DropdownMenu.Item>
+                      ))}
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
                 {editingItem ? (
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="default"
                     size="sm"
-                    className="h-8 px-3"
                     disabled={pending}
                     onClick={() => setVarsOpen(true)}
                   >
