@@ -32,11 +32,14 @@ export const ASISTENTE_IA_CHATGPT_BUSCAR_COLOR_URL_DEFAULT =
 /** Clave canónica de la variable RGB (cuentagotas). */
 export const ASISTENTE_IA_VAR_RGB = "RGB" as const;
 
-/** Variables del formulario Diseñar Colores. */
+/** Variables del formulario Diseñar Colores (claves = tokens del Prompt Maestro). */
 export const ASISTENTE_IA_VAR_CANTIDAD_COLORES = "CANTIDAD_COLORES" as const;
-export const ASISTENTE_IA_VAR_SUPERFICIES = "SUPERFICIES" as const;
-export const ASISTENTE_IA_VAR_OBJETIVOS = "OBJETIVOS" as const;
-export const ASISTENTE_IA_VAR_ESTILO = "ESTILO" as const;
+export const ASISTENTE_IA_VAR_SUPERFICIES = "Superficies" as const;
+export const ASISTENTE_IA_VAR_OBJETIVOS = "Objetivos" as const;
+export const ASISTENTE_IA_VAR_ESTILO = "Estilo" as const;
+/** Token canónico del Prompt Maestro. */
+export const ASISTENTE_IA_VAR_COMBINAR_CON = "CombinarCon" as const;
+/** @deprecated Alias de plantillas viejas; se sigue rellenando en runtime. */
 export const ASISTENTE_IA_VAR_COMBINAR = "COMBINAR" as const;
 
 /** Cantidad de colores permitida en Diseñar Colores. */
@@ -48,7 +51,7 @@ export const ASISTENTE_IA_CANTIDADES_COLORES: readonly AsistenteIaCantidadColore
 export interface AsistenteIaSuperficieConColor {
   superficieId: string;
   superficieNombre: string;
-  /** Índice 1-based del color asignado (Color 1…N). */
+  /** Índice 1-based del color asignado (Color 1…4). */
   colorIndex: number;
 }
 
@@ -95,14 +98,15 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
       clave: ASISTENTE_IA_VAR_CANTIDAD_COLORES,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_CANTIDAD_COLORES),
       etiqueta: "Cantidad de colores",
-      descripcion: "Cantidad elegida en Diseñar Colores (1–4).",
+      descripcion:
+        "Cantidad de colores distintos asignados a superficies (1–4).",
     },
     {
       clave: ASISTENTE_IA_VAR_SUPERFICIES,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_SUPERFICIES),
       etiqueta: "Superficies",
       descripcion:
-        "Lista de superficies a pintar con su Color N asignado (Diseñar Colores).",
+        "Lista «Superficie, ColorN» (una por línea) según el formulario Diseñar Colores.",
     },
     {
       clave: ASISTENTE_IA_VAR_OBJETIVOS,
@@ -117,9 +121,9 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
       descripcion: "Estilo de diseño único (Diseñar Colores).",
     },
     {
-      clave: ASISTENTE_IA_VAR_COMBINAR,
-      token: tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR),
-      etiqueta: "Combinar",
+      clave: ASISTENTE_IA_VAR_COMBINAR_CON,
+      token: tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR_CON),
+      etiqueta: "Combinar con",
       descripcion: "Elementos existentes a combinar (Diseñar Colores).",
     },
   ] as const;
@@ -203,22 +207,155 @@ export function getDefaultConfigBuscarColorImagen(): AsistenteIaConfigSubmodulo 
   };
 }
 
-/** Plantilla seed/fallback de Diseñar Colores. */
+/** Plantilla seed/fallback de Diseñar Colores (Prompt Maestro). */
 export function buildPromptDisenarColoresDefault(): string {
+  const superficies = tokenVariablePrompt(ASISTENTE_IA_VAR_SUPERFICIES);
+  const objetivos = tokenVariablePrompt(ASISTENTE_IA_VAR_OBJETIVOS);
+  const estilo = tokenVariablePrompt(ASISTENTE_IA_VAR_ESTILO);
+  const combinarCon = tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR_CON);
+
   return [
-    "Sos el asesor de diseño y colores de una pinturería Alba.",
-    "Recomendá únicamente colores reales del catálogo Alba (código + nombre exactos).",
-    "Máximo tres recomendaciones salvo que el pedido pida otra cantidad de colores a buscar.",
-    "Justificá cada opción y, si hay ambiente, incluí un prompt de render concreto.",
+    "# Prompt Maestro – Asesor Profesional de Color para Pinturas",
     "",
-    "Datos del pedido:",
-    `- Cantidad de colores a buscar: ${tokenVariablePrompt(ASISTENTE_IA_VAR_CANTIDAD_COLORES)}`,
-    `- Superficies a pintar (con asignación de Color N): ${tokenVariablePrompt(ASISTENTE_IA_VAR_SUPERFICIES)}`,
-    `- Objetivos: ${tokenVariablePrompt(ASISTENTE_IA_VAR_OBJETIVOS)}`,
-    `- Estilo: ${tokenVariablePrompt(ASISTENTE_IA_VAR_ESTILO)}`,
-    `- Combinar con elementos existentes: ${tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR)}`,
+    "## Rol",
     "",
-    "Respondé con el formato del asesor (contexto, recomendaciones, prompt de render, notas si aplica).",
+    "Actúa como un **Asesor Profesional en Colorimetría, Pintura Arquitectónica y Diseño de Interiores y Exteriores**.",
+    "",
+    "Analiza primero la fotografía proporcionada y luego interpreta las variables recibidas para elaborar una propuesta cromática profesional utilizando **exclusivamente** los colores disponibles en el catálogo suministrado.",
+    "",
+    "---",
+    "",
+    "## Variables",
+    "",
+    "Las siguientes variables son proporcionadas automáticamente por el sistema.",
+    "",
+    "Si una variable está vacía, considérala como **no especificada** e ignórala completamente durante el análisis.",
+    "",
+    "No inventes ni supongas información para completar variables vacías.",
+    "",
+    "### Superficies",
+    "",
+    `'${superficies}'`,
+    "",
+    "Cada elemento se presenta en el formato:",
+    "",
+    "**Superficie, ColorX**",
+    "",
+    "Cada identificador (Color1, Color2, Color3, etc.) representa un único color del catálogo.",
+    "",
+    "Si un mismo identificador aparece en varias superficies, todas deberán utilizar exactamente el mismo color.",
+    "",
+    "### Objetivos",
+    "",
+    `'${objetivos}'`,
+    "",
+    "### Estilo",
+    "",
+    `'${estilo}'`,
+    "",
+    "### Combinar con",
+    "",
+    `'${combinarCon}'`,
+    "",
+    "---",
+    "",
+    "## Antes de responder",
+    "",
+    "Realiza internamente el siguiente proceso:",
+    "",
+    "1. Analiza la fotografía.",
+    "2. Identifica las superficies visibles y los elementos existentes.",
+    "3. Interpreta las variables recibidas.",
+    "4. Determina la estrategia cromática más adecuada.",
+    "5. Selecciona los colores exclusivamente desde el catálogo.",
+    "6. Verifica que todos los colores pertenezcan al catálogo.",
+    `7. Verifica que todos los identificadores de color sean consistentes con la variable **${superficies}**.`,
+    "8. Genera la respuesta final.",
+    "",
+    "---",
+    "",
+    "## Criterios de decisión",
+    "",
+    "Para elaborar la propuesta considera de forma conjunta:",
+    "",
+    "* La arquitectura del ambiente o fachada.",
+    "* La iluminación visible.",
+    "* Las proporciones del espacio.",
+    "* Los materiales y colores existentes.",
+    "* Los objetivos indicados.",
+    "* El estilo solicitado.",
+    "* Los elementos con los cuales deba combinarse, cuando existan.",
+    "",
+    "Prioriza siempre la armonía cromática, el equilibrio visual, la funcionalidad y la coherencia arquitectónica.",
+    "",
+    "---",
+    "",
+    "## Orden de prioridad",
+    "",
+    "Cuando exista información proveniente de distintas fuentes, utiliza el siguiente orden de prioridad:",
+    "",
+    "1. La fotografía.",
+    "2. Las variables proporcionadas.",
+    "3. El catálogo de colores.",
+    "4. Los principios de arquitectura, diseño y teoría del color.",
+    "",
+    "Si detectas una contradicción entre la fotografía y las variables, indícalo explícitamente y fundamenta la recomendación utilizando la evidencia visual disponible.",
+    "",
+    "---",
+    "",
+    "## Reglas obligatorias",
+    "",
+    "* Utiliza únicamente colores existentes en el catálogo proporcionado.",
+    "* Nunca inventes nombres de colores.",
+    "* Nunca modifiques los nombres del catálogo.",
+    `* Asigna un único color del catálogo a cada identificador presente en **${superficies}**.`,
+    "* Todos los elementos que compartan el mismo identificador deberán utilizar exactamente el mismo color.",
+    "* No generes nuevos identificadores de color.",
+    `* No propongas pintar superficies distintas de las especificadas en **${superficies}**.`,
+    "* Si alguna superficie no puede identificarse claramente en la fotografía, indícalo antes de realizar la recomendación.",
+    "* Fundamenta todas las elecciones utilizando criterios de diseño arquitectónico, percepción espacial, iluminación y teoría del color.",
+    "",
+    "---",
+    "",
+    "# Formato de respuesta",
+    "",
+    "## Concepto de diseño",
+    "",
+    "Describe brevemente el concepto general de la propuesta.",
+    "",
+    "---",
+    "",
+    "## Paleta seleccionada",
+    "",
+    "Para cada identificador utilizado indica:",
+    "",
+    "* Identificador.",
+    "* Nombre exacto del color del catálogo.",
+    "* Código del color (si existe).",
+    "* Justificación técnica de la elección.",
+    "",
+    "---",
+    "",
+    "## Distribución de colores",
+    "",
+    "Relaciona cada superficie con el identificador correspondiente.",
+    "",
+    "---",
+    "",
+    "## Justificación técnica",
+    "",
+    "Explica cómo la propuesta:",
+    "",
+    "* Cumple los objetivos indicados.",
+    "* Refuerza el estilo solicitado.",
+    "* Armoniza con los elementos existentes.",
+    "* Aprovecha la iluminación y las características arquitectónicas del espacio.",
+    "",
+    "---",
+    "",
+    "## Recomendaciones",
+    "",
+    "Incluye recomendaciones de aplicación, contraste, equilibrio visual y cualquier observación relevante que contribuya a obtener el mejor resultado final.",
   ].join("\n");
 }
 
@@ -230,19 +367,23 @@ export function getDefaultConfigDisenarColores(): AsistenteIaConfigSubmodulo {
   };
 }
 
-/** Texto legible de superficies → Color N para inyectar en el prompt. */
+/**
+ * Formato Prompt Maestro: una línea por ítem `Superficie, ColorN`.
+ * Vacío si no hay superficies (la IA debe ignorar la variable).
+ */
 export function formatSuperficiesParaPrompt(
   superficies: AsistenteIaSuperficieConColor[],
 ): string {
-  if (superficies.length === 0) return "(sin superficies)";
+  if (superficies.length === 0) return "";
   return superficies
-    .map((s) => `${s.superficieNombre} → Color ${s.colorIndex}`)
-    .join("; ");
+    .map((s) => `${s.superficieNombre}, Color${s.colorIndex}`)
+    .join("\n");
 }
 
-export function formatListaONada(items: string[], vacio = "(ninguno)"): string {
+/** Lista unida por saltos de línea; vacío si no hay ítems. */
+export function formatListaONada(items: string[], vacio = ""): string {
   const cleaned = items.map((s) => s.trim()).filter(Boolean);
-  return cleaned.length > 0 ? cleaned.join("; ") : vacio;
+  return cleaned.length > 0 ? cleaned.join("\n") : vacio;
 }
 
 /** Sustituye variables del formulario Diseñar Colores en la plantilla. */
@@ -250,13 +391,18 @@ export function aplicarRespuestasAlPromptDisenarColores(
   plantilla: string,
   respuestas: AsistenteIaDisenarColoresRespuestas,
 ): string {
+  const superficies = formatSuperficiesParaPrompt(respuestas.superficies);
+  const objetivos = formatListaONada(respuestas.objetivos);
+  const estilo = respuestas.estilo.trim();
+  const combinar = formatListaONada(respuestas.combinar);
+
   return aplicarVariablesAlPrompt(plantilla, {
     [ASISTENTE_IA_VAR_CANTIDAD_COLORES]: String(respuestas.cantidadColores),
-    [ASISTENTE_IA_VAR_SUPERFICIES]: formatSuperficiesParaPrompt(
-      respuestas.superficies,
-    ),
-    [ASISTENTE_IA_VAR_OBJETIVOS]: formatListaONada(respuestas.objetivos),
-    [ASISTENTE_IA_VAR_ESTILO]: respuestas.estilo.trim() || "(sin estilo)",
-    [ASISTENTE_IA_VAR_COMBINAR]: formatListaONada(respuestas.combinar),
+    [ASISTENTE_IA_VAR_SUPERFICIES]: superficies,
+    [ASISTENTE_IA_VAR_OBJETIVOS]: objetivos,
+    [ASISTENTE_IA_VAR_ESTILO]: estilo,
+    [ASISTENTE_IA_VAR_COMBINAR_CON]: combinar,
+    // Compat plantillas viejas con {{COMBINAR}}
+    [ASISTENTE_IA_VAR_COMBINAR]: combinar,
   });
 }

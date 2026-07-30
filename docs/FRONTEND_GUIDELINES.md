@@ -1538,6 +1538,12 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-27): **GESTION PROMP & URL** — listado del modal solo muestra el **título del submódulo** + acciones editar/eliminar (sin preview de prompt ni URL en la fila).*
 
+*Última actualización (2026-07-30): **Asistente IA · Diseñar Colores · Prompt Maestro** — seed con variables `{{Superficies}}` / `{{Objetivos}}` / `{{Estilo}}` / `{{CombinarCon}}`; formato `Superficie, ColorN`; vacías si no hay selección.*
+
+*Última actualización (2026-07-30): **Asistente IA · Diseñar Colores** — sin pregunta de cantidad; Select de superficies siempre Color 1–4; `{{CANTIDAD_COLORES}}` = colores distintos asignados.*
+
+*Última actualización (2026-07-30): **Asistente IA · Diseñar Colores · acordeón** — preguntas colapsadas (una abierta); panel de respuestas con scroll interno para caber en viewport.*
+
 *Última actualización (2026-07-30): **Asistente IA · Diseñar Colores** — tile hub + vista 2 columnas (foto referencia | cuestionario 1–5); CTA copiar prompt + abrir URL; variables `{{CANTIDAD_COLORES}}` / `{{SUPERFICIES}}` / `{{OBJETIVOS}}` / `{{ESTILO}}` / `{{COMBINAR}}`.*
 
 *Última actualización (2026-07-30): **Asistente IA · header** — **GESTION PROMP & URL** pasa del tile del hub al header (junto a **GESTION DISEÑO**); hub solo con **Buscar Código Desde Imagen**.*

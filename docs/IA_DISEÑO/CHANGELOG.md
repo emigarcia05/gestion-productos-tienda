@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.9.1 — 2026-07-30
+
+**Descripción:** Prompt Maestro de Diseñar Colores como seed; variables `{{Superficies}}` / `{{Objetivos}}` / `{{Estilo}}` / `{{CombinarCon}}` rellenadas desde el formulario (`Superficie, ColorN`; vacías si no aplica).
+
+**Motivo:** Estandarizar el prompt del asesor y completar automáticamente las variables según la selección del usuario.
+
 ## 0.9.0 — 2026-07-30
 
 **Descripción:** Módulo hub **Diseñar Colores**: foto de referencia a la izquierda + cuestionario (cantidad, superficies→Color N, objetivos, estilo, combinar) a la derecha; variables de prompt y CTA copiar/abrir ChatGPT.

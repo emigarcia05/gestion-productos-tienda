@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ImagePlus, Sparkles, X } from "lucide-react";
+import { ChevronDown, ImagePlus, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,21 +44,71 @@ type SuperficieSeleccion = {
   colorIndex: number;
 };
 
-function PreguntaBlock({
+type PreguntaId = 1 | 2 | 3 | 4;
+
+function cantidadColoresDesdeSuperficies(
+  superficies: SuperficieSeleccion[],
+): AsistenteIaCantidadColores {
+  const distinct = new Set(superficies.map((s) => s.colorIndex));
+  const n = Math.min(4, Math.max(1, distinct.size)) as AsistenteIaCantidadColores;
+  return n;
+}
+
+function PreguntaAcordeon({
   numero,
   titulo,
+  resumen,
+  abierta,
+  onToggle,
   children,
 }: {
-  numero: number;
+  numero: PreguntaId;
   titulo: string;
+  resumen?: string;
+  abierta: boolean;
+  onToggle: () => void;
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-2 border-b border-border pb-4 last:border-b-0 last:pb-0">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
-        {numero}. {titulo}
-      </h3>
-      {children}
+    <section
+      className={cn(
+        "flex min-h-0 flex-col overflow-hidden rounded-md border border-border bg-background",
+        abierta ? "flex-1" : "shrink-0",
+      )}
+    >
+      <button
+        type="button"
+        aria-expanded={abierta}
+        onClick={onToggle}
+        className={cn(
+          "flex w-full shrink-0 items-start gap-2 px-3 py-2.5 text-left transition-colors",
+          "hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          abierta && "border-b border-border bg-muted/40",
+        )}
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold uppercase tracking-wide text-foreground">
+            {numero}. {titulo}
+          </span>
+          {!abierta && resumen ? (
+            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+              {resumen}
+            </span>
+          ) : null}
+        </span>
+        <ChevronDown
+          className={cn(
+            "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform",
+            abierta && "rotate-180",
+          )}
+          aria-hidden
+        />
+      </button>
+      {abierta ? (
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+          {children}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -97,6 +147,16 @@ function OpcionCheck({
   );
 }
 
+function joinNombres(
+  ids: string[],
+  items: ProdIaDisenoCatalogoNombreItem[],
+): string {
+  return ids
+    .map((id) => items.find((x) => x.id === id)?.nombre)
+    .filter((x): x is string => Boolean(x))
+    .join(", ");
+}
+
 export default function AsistenteIaDisenarColoresVista({
   config,
   catalogos,
@@ -106,12 +166,12 @@ export default function AsistenteIaDisenarColoresVista({
   const objectUrlRef = useRef<string | null>(null);
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [cantidad, setCantidad] = useState<AsistenteIaCantidadColores>(1);
   const [superficies, setSuperficies] = useState<SuperficieSeleccion[]>([]);
   const [objetivoIds, setObjetivoIds] = useState<string[]>([]);
   const [estiloId, setEstiloId] = useState<string>("");
   const [combinarIds, setCombinarIds] = useState<string[]>([]);
   const [enviando, setEnviando] = useState(false);
+  const [preguntaAbierta, setPreguntaAbierta] = useState<PreguntaId>(1);
 
   const revokeObjectUrl = useCallback(() => {
     if (objectUrlRef.current) {
@@ -128,14 +188,6 @@ export default function AsistenteIaDisenarColoresVista({
 
   useEffect(() => () => revokeObjectUrl(), [revokeObjectUrl]);
 
-  useEffect(() => {
-    setSuperficies((prev) =>
-      prev.map((s) =>
-        s.colorIndex > cantidad ? { ...s, colorIndex: cantidad } : s,
-      ),
-    );
-  }, [cantidad]);
-
   function handleFileChange(fileList: FileList | null) {
     const file = fileList?.[0];
     if (!file) return;
@@ -149,6 +201,10 @@ export default function AsistenteIaDisenarColoresVista({
     const url = URL.createObjectURL(file);
     objectUrlRef.current = url;
     setPreviewUrl(url);
+  }
+
+  function togglePregunta(id: PreguntaId) {
+    setPreguntaAbierta((prev) => (prev === id ? prev : id));
   }
 
   function toggleSuperficie(id: string) {
@@ -233,7 +289,7 @@ export default function AsistenteIaDisenarColoresVista({
       .filter((x): x is string => Boolean(x));
 
     const prompt = aplicarRespuestasAlPromptDisenarColores(config.promp, {
-      cantidadColores: cantidad,
+      cantidadColores: cantidadColoresDesdeSuperficies(superficies),
       superficies: superficiesResolved,
       objetivos,
       estilo,
@@ -256,14 +312,35 @@ export default function AsistenteIaDisenarColoresVista({
     }
   }
 
-  const colorOptions = ASISTENTE_IA_CANTIDADES_COLORES.filter(
-    (n) => n <= cantidad,
-  );
+  const resumenSuperficies =
+    superficies.length === 0
+      ? undefined
+      : superficies
+          .map((s) => {
+            const nombre =
+              catalogos.superficies.find((x) => x.id === s.id)?.nombre ?? "?";
+            return `${nombre}, Color${s.colorIndex}`;
+          })
+          .join("; ");
+
+  const resumenObjetivos =
+    objetivoIds.length === 0
+      ? undefined
+      : joinNombres(objetivoIds, catalogos.objetivos);
+
+  const resumenEstilo = estiloId
+    ? catalogos.estilos.find((x) => x.id === estiloId)?.nombre
+    : undefined;
+
+  const resumenCombinar =
+    combinarIds.length === 0
+      ? undefined
+      : joinNombres(combinarIds, catalogos.combinar);
 
   return (
-    <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-2">
-      <aside className="flex min-h-0 flex-col gap-3">
-        <h3 className="text-sm font-semibold uppercase tracking-wide">
+    <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-2 lg:gap-6">
+      <aside className="flex min-h-0 flex-col gap-2 overflow-hidden">
+        <h3 className="shrink-0 text-sm font-semibold uppercase tracking-wide">
           Foto De Referencia
         </h3>
         <input
@@ -275,12 +352,12 @@ export default function AsistenteIaDisenarColoresVista({
           onChange={(e) => handleFileChange(e.target.files)}
         />
         {previewUrl ? (
-          <div className="relative flex min-h-[16rem] flex-1 flex-col overflow-hidden rounded-lg border border-border bg-muted/40">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-muted/40">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewUrl}
               alt="Referencia visual del ambiente o superficie"
-              className="max-h-[70vh] w-full flex-1 object-contain"
+              className="h-full w-full object-contain"
             />
             <div className="absolute right-2 top-2 flex gap-2">
               <Button
@@ -309,7 +386,7 @@ export default function AsistenteIaDisenarColoresVista({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className={cn(
-              "flex min-h-[16rem] flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8",
+              "flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8",
               "text-sm text-muted-foreground transition-colors hover:bg-muted/50",
             )}
           >
@@ -323,146 +400,154 @@ export default function AsistenteIaDisenarColoresVista({
         )}
       </aside>
 
-      <div className="flex min-h-0 flex-col gap-4">
-        <PreguntaBlock numero={1} titulo="¿Cuántos Colores Se Van A Buscar?">
-          <div className="flex flex-wrap gap-2">
-            {ASISTENTE_IA_CANTIDADES_COLORES.map((n) => (
-              <Button
-                key={n}
-                type="button"
-                variant={cantidad === n ? "default" : "outline"}
-                className="h-10 w-12"
-                aria-pressed={cantidad === n}
-                onClick={() => setCantidad(n)}
-              >
-                {n}
-              </Button>
-            ))}
-          </div>
-        </PreguntaBlock>
+      <div className="flex min-h-0 flex-col gap-3 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
+          <PreguntaAcordeon
+            numero={1}
+            titulo="¿Qué Desea Pintar?"
+            resumen={resumenSuperficies}
+            abierta={preguntaAbierta === 1}
+            onToggle={() => togglePregunta(1)}
+          >
+            {catalogos.superficies.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay superficies. Cargalas en GESTION DISEÑO.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {catalogos.superficies.map((item) => {
+                  const selected = superficies.find((s) => s.id === item.id);
+                  return (
+                    <OpcionCheck
+                      key={item.id}
+                      checked={Boolean(selected)}
+                      label={item.nombre}
+                      onToggle={() => toggleSuperficie(item.id)}
+                      trailing={
+                        <Select
+                          value={String(selected?.colorIndex ?? 1)}
+                          onValueChange={(v) =>
+                            setColorSuperficie(item.id, Number(v))
+                          }
+                        >
+                          <SelectTrigger
+                            className="h-9 w-[7.5rem]"
+                            aria-label={`Color para ${item.nombre}`}
+                          >
+                            <SelectValue placeholder="Color" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ASISTENTE_IA_CANTIDADES_COLORES.map((n) => (
+                              <SelectItem key={n} value={String(n)}>
+                                Color {n}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      }
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </PreguntaAcordeon>
 
-        <PreguntaBlock numero={2} titulo="¿Qué Desea Pintar?">
-          {catalogos.superficies.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No hay superficies. Cargalas en GESTION DISEÑO.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {catalogos.superficies.map((item) => {
-                const selected = superficies.find((s) => s.id === item.id);
-                return (
+          <PreguntaAcordeon
+            numero={2}
+            titulo="¿Qué Objetivo Desea Lograr?"
+            resumen={resumenObjetivos}
+            abierta={preguntaAbierta === 2}
+            onToggle={() => togglePregunta(2)}
+          >
+            {catalogos.objetivos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay objetivos. Cargalos en GESTION DISEÑO.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {catalogos.objetivos.map((item) => (
                   <OpcionCheck
                     key={item.id}
-                    checked={Boolean(selected)}
+                    checked={objetivoIds.includes(item.id)}
                     label={item.nombre}
-                    onToggle={() => toggleSuperficie(item.id)}
-                    trailing={
-                      <Select
-                        value={String(selected?.colorIndex ?? 1)}
-                        onValueChange={(v) =>
-                          setColorSuperficie(item.id, Number(v))
-                        }
-                      >
-                        <SelectTrigger
-                          className="h-9 w-[7.5rem]"
-                          aria-label={`Color para ${item.nombre}`}
-                        >
-                          <SelectValue placeholder="Color" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {colorOptions.map((n) => (
-                            <SelectItem key={n} value={String(n)}>
-                              Color {n}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    onToggle={() =>
+                      toggleId(objetivoIds, setObjetivoIds, item.id)
                     }
                   />
-                );
-              })}
-            </div>
-          )}
-        </PreguntaBlock>
+                ))}
+              </div>
+            )}
+          </PreguntaAcordeon>
 
-        <PreguntaBlock numero={3} titulo="¿Qué Objetivo Desea Lograr?">
-          {catalogos.objetivos.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No hay objetivos. Cargalos en GESTION DISEÑO.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {catalogos.objetivos.map((item) => (
-                <OpcionCheck
-                  key={item.id}
-                  checked={objetivoIds.includes(item.id)}
-                  label={item.nombre}
-                  onToggle={() =>
-                    toggleId(objetivoIds, setObjetivoIds, item.id)
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </PreguntaBlock>
+          <PreguntaAcordeon
+            numero={3}
+            titulo="¿Qué Estilo Desea Lograr?"
+            resumen={resumenEstilo}
+            abierta={preguntaAbierta === 3}
+            onToggle={() => togglePregunta(3)}
+          >
+            {catalogos.estilos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay estilos. Cargalos en GESTION DISEÑO.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1" role="radiogroup">
+                {catalogos.estilos.map((item) => {
+                  const checked = estiloId === item.id;
+                  return (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                        checked && "bg-muted",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="estilo-diseno"
+                        className="size-4 accent-primary"
+                        checked={checked}
+                        onChange={() => setEstiloId(item.id)}
+                      />
+                      <span className="min-w-0 flex-1 truncate">
+                        {item.nombre}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </PreguntaAcordeon>
 
-        <PreguntaBlock numero={4} titulo="¿Qué Estilo Desea Lograr?">
-          {catalogos.estilos.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No hay estilos. Cargalos en GESTION DISEÑO.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1" role="radiogroup">
-              {catalogos.estilos.map((item) => {
-                const checked = estiloId === item.id;
-                return (
-                  <label
+          <PreguntaAcordeon
+            numero={4}
+            titulo="¿Desea Combinar Con Algún Elemento Existente?"
+            resumen={resumenCombinar}
+            abierta={preguntaAbierta === 4}
+            onToggle={() => togglePregunta(4)}
+          >
+            {catalogos.combinar.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay elementos. Cargalos en GESTION DISEÑO (opcional).
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {catalogos.combinar.map((item) => (
+                  <OpcionCheck
                     key={item.id}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                      checked && "bg-muted",
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="estilo-diseno"
-                      className="size-4 accent-primary"
-                      checked={checked}
-                      onChange={() => setEstiloId(item.id)}
-                    />
-                    <span className="min-w-0 flex-1 truncate">{item.nombre}</span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-        </PreguntaBlock>
+                    checked={combinarIds.includes(item.id)}
+                    label={item.nombre}
+                    onToggle={() =>
+                      toggleId(combinarIds, setCombinarIds, item.id)
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </PreguntaAcordeon>
+        </div>
 
-        <PreguntaBlock
-          numero={5}
-          titulo="¿Desea Combinar Con Algún Elemento Existente?"
-        >
-          {catalogos.combinar.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No hay elementos. Cargalos en GESTION DISEÑO (opcional).
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {catalogos.combinar.map((item) => (
-                <OpcionCheck
-                  key={item.id}
-                  checked={combinarIds.includes(item.id)}
-                  label={item.nombre}
-                  onToggle={() =>
-                    toggleId(combinarIds, setCombinarIds, item.id)
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </PreguntaBlock>
-
-        <div className="pt-2">
+        <div className="shrink-0">
           <Button
             type="button"
             className="h-10 px-4 gap-2"

@@ -220,7 +220,14 @@ export default function AsistenteIaBuscarColorImagenPageClient({
           </div>
         }
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-6 pt-2">
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col gap-4 pt-2",
+            vista === "disenar-colores"
+              ? "overflow-hidden pb-2"
+              : "overflow-y-auto pb-6",
+          )}
+        >
           {vista === "hub" ? (
             <div className="flex flex-wrap items-start gap-4">
               <AsistenteIaFuncionTile
