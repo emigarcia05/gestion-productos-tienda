@@ -1310,6 +1310,16 @@ model ProdIaDisenoCombinar {
   @@map("prod_ia_diseno_combinar")
 }
 
+/** Catálogo GESTION DISEÑO — objetivos de diseño. */
+model ProdIaDisenoObjetivo {
+  id        String   @id @default(cuid())
+  nombre    String   @unique(map: "prod_ia_diseno_objetivo_nombre_key") @map("nombre")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("prod_ia_diseno_objetivo")
+}
+
 /** Paleta de colores de marca (nombre + descripción + códigos hex). */
 model MktColoresMarca {
   id               String   @id @default(cuid())

@@ -89,6 +89,22 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     toastActualizado: "Opción actualizada.",
     toastEliminado: "Opción eliminada.",
   },
+  objetivo: {
+    title: "Objetivos De Diseño",
+    searchPlaceholder: "Buscar objetivo...",
+    searchAria: "Buscar objetivo de diseño",
+    addAria: "Agregar objetivo",
+    emptyMessage: "No hay objetivos. Usá el botón + para agregar el primero.",
+    emptyFilterMessage: "Ningún objetivo coincide con la búsqueda.",
+    formCreateTitle: "Nuevo Objetivo",
+    formEditTitle: "Editar Objetivo",
+    formLabel: "Nombre",
+    deleteTitle: "Eliminar Objetivo",
+    deleteNoun: "el objetivo",
+    toastCreado: "Objetivo creado.",
+    toastActualizado: "Objetivo actualizado.",
+    toastEliminado: "Objetivo eliminado.",
+  },
 };
 
 const LIST_ROW_ICON_BTN_CLASS = cn(

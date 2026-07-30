@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Layers, Paintbrush, Shuffle } from "lucide-react";
+import { Layers, Paintbrush, Shuffle, Target } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,11 @@ const OPCIONES: {
     kind: "combinar",
     label: "Combinar",
     icon: <Shuffle className="h-5 w-5 shrink-0" aria-hidden />,
+  },
+  {
+    kind: "objetivo",
+    label: "Objetivos De Diseño",
+    icon: <Target className="h-5 w-5 shrink-0" aria-hidden />,
   },
 ];
 

@@ -55,7 +55,8 @@ type Delegate = {
 function delegateForKind(kind: ProdIaDisenoCatalogoKind): Delegate {
   if (kind === "sup_pintar") return prisma.prodIaDisenoSupPintar as unknown as Delegate;
   if (kind === "estilos") return prisma.prodIaDisenoEstilos as unknown as Delegate;
-  return prisma.prodIaDisenoCombinar as unknown as Delegate;
+  if (kind === "combinar") return prisma.prodIaDisenoCombinar as unknown as Delegate;
+  return prisma.prodIaDisenoObjetivo as unknown as Delegate;
 }
 
 export async function listarProdIaDisenoCatalogoNombre(

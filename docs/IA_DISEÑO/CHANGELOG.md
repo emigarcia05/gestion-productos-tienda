@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.8.1 — 2026-07-30
+
+**Descripción:** Catálogo **Objetivos De Diseño** (`prod_ia_diseno_objetivo`) en **GESTION DISEÑO**.
+
+**Motivo:** Completar las listas del formulario de recomendaciones de colores.
+
 ## 0.8.0 — 2026-07-30
 
 **Descripción:** **GESTION DISEÑO** en Asistente IA: tablas `prod_ia_diseno_sup_pintar`, `prod_ia_diseno_estilos`, `prod_ia_diseno_combinar`; botón header + modal hub + CRUD por catálogo (buscador + `+` / editar / borrar).
