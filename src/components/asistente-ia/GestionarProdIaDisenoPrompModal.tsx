@@ -15,7 +15,15 @@ import {
   listarProdIaDisenoPrompsAction,
 } from "@/actions/prodIaDisenoPromp";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ASISTENTE_IA_VARIABLES_PROMPT,
+  submodulosPrompDisponiblesParaAlta,
   type AsistenteIaVariablePrompt,
   type ProdIaDisenoPrompItem,
 } from "@/lib/asistenteIa";
@@ -98,10 +106,21 @@ export default function GestionarProdIaDisenoPrompModal({
     );
   }, [items, busqueda]);
 
+  const submodulosDisponibles = useMemo(
+    () => submodulosPrompDisponiblesParaAlta(items),
+    [items],
+  );
+
   function abrirCrear() {
     if (!esEditor || pending) return;
+    if (submodulosDisponibles.length === 0) {
+      toast.error("Sin Módulos Disponibles", {
+        description: "Todos los módulos del hub ya tienen prompt.",
+      });
+      return;
+    }
     setEditingItem(null);
-    setFormSubmodulo("");
+    setFormSubmodulo(submodulosDisponibles[0] ?? "");
     setFormPromp("");
     setFormUrl("");
     setFormOpen(true);
@@ -141,7 +160,6 @@ export default function GestionarProdIaDisenoPrompModal({
       if (editingItem) {
         const res = await editarProdIaDisenoPrompAction({
           id: editingItem.id,
-          submodulo: formSubmodulo,
           promp: formPromp,
           urlRedireccion: formUrl,
         });
@@ -231,7 +249,12 @@ export default function GestionarProdIaDisenoPrompModal({
                   size="icon"
                   className="h-10 w-10 shrink-0"
                   aria-label="Agregar prompt"
-                  disabled={pending}
+                  disabled={pending || submodulosDisponibles.length === 0}
+                  title={
+                    submodulosDisponibles.length === 0
+                      ? "Todos los módulos ya tienen prompt"
+                      : undefined
+                  }
                   onClick={abrirCrear}
                 >
                   <Plus className="h-5 w-5" />
@@ -336,13 +359,32 @@ export default function GestionarProdIaDisenoPrompModal({
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <ModalMicroLabel>Submódulo</ModalMicroLabel>
-              <Input
-                value={formSubmodulo}
-                onChange={(e) => setFormSubmodulo(e.target.value)}
-                placeholder="Ej. Buscar Código Desde Imagen"
-                className="h-10"
-                disabled={pending}
-              />
+              {editingItem ? (
+                <Input
+                  value={formSubmodulo}
+                  readOnly
+                  className="h-10 bg-muted"
+                  aria-label="Submódulo (fijo al módulo)"
+                  disabled={pending}
+                />
+              ) : (
+                <Select
+                  value={formSubmodulo || undefined}
+                  onValueChange={setFormSubmodulo}
+                  disabled={pending || submodulosDisponibles.length === 0}
+                >
+                  <SelectTrigger className="h-10 w-full" aria-label="Submódulo">
+                    <SelectValue placeholder="Seleccionar módulo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {submodulosDisponibles.map((nombre) => (
+                      <SelectItem key={nombre} value={nombre}>
+                        {nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <ModalMicroLabel>Prompt</ModalMicroLabel>
@@ -365,12 +407,6 @@ export default function GestionarProdIaDisenoPrompModal({
                   </Button>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Las variables usan la forma{" "}
-                <span className="font-mono text-foreground">{"{{RGB}}"}</span> y
-                se completan al usar el cuentagotas. No confundir con ejemplos
-                de respuesta como [Nombre] o [Código].
-              </p>
               <textarea
                 ref={prompTextareaRef}
                 value={formPromp}

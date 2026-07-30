@@ -1,11 +1,17 @@
 import { z } from "zod";
+import {
+  ASISTENTE_IA_SUBMODULOS_PROMP,
+  isAsistenteIaSubmoduloPromp,
+} from "@/lib/asistenteIa";
 import { prismaCuidSchema } from "@/lib/validations/common";
 
-const submoduloSchema = z
+const submoduloCanonicoSchema = z
   .string()
   .trim()
   .min(1, "El submódulo es obligatorio.")
-  .max(120, "El submódulo es demasiado largo.");
+  .refine(isAsistenteIaSubmoduloPromp, {
+    message: `El submódulo debe ser uno de: ${ASISTENTE_IA_SUBMODULOS_PROMP.join(", ")}.`,
+  });
 
 const prompSchema = z
   .string()
@@ -21,14 +27,14 @@ const urlRedireccionSchema = z
   .url("La URL de redirección no es válida.");
 
 export const crearProdIaDisenoPrompSchema = z.object({
-  submodulo: submoduloSchema,
+  submodulo: submoduloCanonicoSchema,
   promp: prompSchema,
   urlRedireccion: urlRedireccionSchema,
 });
 
+/** En edición el submódulo no se renombra (queda fijo al módulo del hub). */
 export const editarProdIaDisenoPrompSchema = z.object({
   id: prismaCuidSchema,
-  submodulo: submoduloSchema,
   promp: prompSchema,
   urlRedireccion: urlRedireccionSchema,
 });

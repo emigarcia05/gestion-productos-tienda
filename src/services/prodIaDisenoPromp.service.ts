@@ -90,7 +90,6 @@ export async function editarProdIaDisenoPromp(
     const row = await prisma.prodIaDisenoPromp.update({
       where: { id: input.id },
       data: {
-        submodulo: input.submodulo.trim(),
         promp: input.promp.trim(),
         urlRedireccion: input.urlRedireccion.trim(),
       },

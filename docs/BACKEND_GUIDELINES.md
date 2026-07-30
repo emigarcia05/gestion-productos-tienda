@@ -1987,6 +1987,10 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-29): **Balance · Gastos · Mes TODOS** — Select Mes con **TODOS** (`mes=todos`); `listarImputacionesMensualesBalance` acepta `mes: null` (año completo); fila con `mes`/`anio`.*
 
+*Última actualización (2026-07-30): **Diseñar Colores · formatSuperficiesParaPrompt** — 1 fila `Nombre, ColorN`; ≥2 tabla Markdown; tokens canónicos en MAYÚSCULA (`SUPERFICIES`, `COMBINARCON`, …).*
+
+*Última actualización (2026-07-30): **GESTION PROMP & URL · submódulo** — create valida contra `ASISTENTE_IA_SUBMODULOS_PROMP`; edit solo `promp` + `url_redireccion` (sin renombrar).*
+
 *Última actualización (2026-07-30): **Asistente IA · Diseñar Colores · Prompt Maestro** — `buildPromptDisenarColoresDefault` + tokens `Superficies`/`Objetivos`/`Estilo`/`CombinarCon`; `formatSuperficiesParaPrompt` = `Nombre, ColorN`; vacíos si no hay datos.*
 
 *Última actualización (2026-07-30): **Asistente IA · Diseñar Colores** — submódulo `ASISTENTE_IA_SUBMODULO_DISENAR_COLORES`; lookup `prod_ia_diseno_promp`; variables de formulario + `aplicarRespuestasAlPromptDisenarColores`; catálogos de GESTION DISEÑO leídos en page server.*

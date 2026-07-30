@@ -26,19 +26,68 @@ export const ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN =
 export const ASISTENTE_IA_SUBMODULO_DISENAR_COLORES =
   "Diseñar Colores" as const;
 
+/**
+ * Submódulos del hub que pueden tener fila en GESTION PROMP & URL.
+ * No incluye el nombre legacy; el lookup sigue resolviendo filas viejas.
+ */
+export const ASISTENTE_IA_SUBMODULOS_PROMP = [
+  ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
+  ASISTENTE_IA_SUBMODULO_DISENAR_COLORES,
+] as const;
+
+export type AsistenteIaSubmoduloPromp =
+  (typeof ASISTENTE_IA_SUBMODULOS_PROMP)[number];
+
+export function isAsistenteIaSubmoduloPromp(
+  value: string,
+): value is AsistenteIaSubmoduloPromp {
+  return (ASISTENTE_IA_SUBMODULOS_PROMP as readonly string[]).includes(value);
+}
+
+/** True si el `submodulo` de BD ocupa el slot de Buscar Código (canónico o legacy). */
+export function ocupaSlotBuscarCodigoImagen(submodulo: string): boolean {
+  const n = submodulo.trim();
+  return (
+    n === ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN ||
+    n === ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY
+  );
+}
+
+/**
+ * Indica si ya hay prompt para un submódulo canónico del hub
+ * (para Buscar Código también cuenta la fila legacy).
+ */
+export function submoduloPrompYaAsignado(
+  submoduloCanonico: AsistenteIaSubmoduloPromp,
+  items: readonly { submodulo: string }[],
+): boolean {
+  if (submoduloCanonico === ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN) {
+    return items.some((i) => ocupaSlotBuscarCodigoImagen(i.submodulo));
+  }
+  return items.some((i) => i.submodulo.trim() === submoduloCanonico);
+}
+
+export function submodulosPrompDisponiblesParaAlta(
+  items: readonly { submodulo: string }[],
+): AsistenteIaSubmoduloPromp[] {
+  return ASISTENTE_IA_SUBMODULOS_PROMP.filter(
+    (s) => !submoduloPrompYaAsignado(s, items),
+  );
+}
+
 export const ASISTENTE_IA_CHATGPT_BUSCAR_COLOR_URL_DEFAULT =
   "https://chatgpt.com/c/6a6770f3-1a34-83e9-b9a6-a24c979961b0" as const;
 
 /** Clave canónica de la variable RGB (cuentagotas). */
 export const ASISTENTE_IA_VAR_RGB = "RGB" as const;
 
-/** Variables del formulario Diseñar Colores (claves = tokens del Prompt Maestro). */
+/** Variables del formulario Diseñar Colores (tokens siempre en MAYÚSCULA). */
 export const ASISTENTE_IA_VAR_CANTIDAD_COLORES = "CANTIDAD_COLORES" as const;
-export const ASISTENTE_IA_VAR_SUPERFICIES = "Superficies" as const;
-export const ASISTENTE_IA_VAR_OBJETIVOS = "Objetivos" as const;
-export const ASISTENTE_IA_VAR_ESTILO = "Estilo" as const;
+export const ASISTENTE_IA_VAR_SUPERFICIES = "SUPERFICIES" as const;
+export const ASISTENTE_IA_VAR_OBJETIVOS = "OBJETIVOS" as const;
+export const ASISTENTE_IA_VAR_ESTILO = "ESTILO" as const;
 /** Token canónico del Prompt Maestro. */
-export const ASISTENTE_IA_VAR_COMBINAR_CON = "CombinarCon" as const;
+export const ASISTENTE_IA_VAR_COMBINAR_CON = "COMBINARCON" as const;
 /** @deprecated Alias de plantillas viejas; se sigue rellenando en runtime. */
 export const ASISTENTE_IA_VAR_COMBINAR = "COMBINAR" as const;
 
@@ -104,26 +153,26 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
     {
       clave: ASISTENTE_IA_VAR_SUPERFICIES,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_SUPERFICIES),
-      etiqueta: "Superficies",
+      etiqueta: "SUPERFICIES",
       descripcion:
-        "Lista «Superficie, ColorN» (una por línea) según el formulario Diseñar Colores.",
+        "1 superficie: «Nombre, ColorN». Varias: tabla Markdown Superficie|Color (Diseñar Colores).",
     },
     {
       clave: ASISTENTE_IA_VAR_OBJETIVOS,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_OBJETIVOS),
-      etiqueta: "Objetivos",
+      etiqueta: "OBJETIVOS",
       descripcion: "Objetivos de diseño seleccionados (Diseñar Colores).",
     },
     {
       clave: ASISTENTE_IA_VAR_ESTILO,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_ESTILO),
-      etiqueta: "Estilo",
+      etiqueta: "ESTILO",
       descripcion: "Estilo de diseño único (Diseñar Colores).",
     },
     {
       clave: ASISTENTE_IA_VAR_COMBINAR_CON,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR_CON),
-      etiqueta: "Combinar con",
+      etiqueta: "COMBINARCON",
       descripcion: "Elementos existentes a combinar (Diseñar Colores).",
     },
   ] as const;
@@ -237,9 +286,10 @@ export function buildPromptDisenarColoresDefault(): string {
     "",
     `'${superficies}'`,
     "",
-    "Cada elemento se presenta en el formato:",
+    "Formato de la variable de superficies:",
     "",
-    "**Superficie, ColorX**",
+    "- Una sola superficie: `Nombre, ColorX` (ej. `CIELO RASO, Color1`).",
+    "- Dos o más superficies: tabla Markdown con columnas **Superficie** y **Color**.",
     "",
     "Cada identificador (Color1, Color2, Color3, etc.) representa un único color del catálogo.",
     "",
@@ -368,16 +418,23 @@ export function getDefaultConfigDisenarColores(): AsistenteIaConfigSubmodulo {
 }
 
 /**
- * Formato Prompt Maestro: una línea por ítem `Superficie, ColorN`.
- * Vacío si no hay superficies (la IA debe ignorar la variable).
+ * Formato Prompt Maestro para GPT:
+ * - 0 → vacío
+ * - 1 → `Nombre, ColorN`
+ * - ≥2 → tabla Markdown | Superficie | Color |
  */
 export function formatSuperficiesParaPrompt(
   superficies: AsistenteIaSuperficieConColor[],
 ): string {
   if (superficies.length === 0) return "";
-  return superficies
-    .map((s) => `${s.superficieNombre}, Color${s.colorIndex}`)
+  if (superficies.length === 1) {
+    const s = superficies[0]!;
+    return `${s.superficieNombre}, Color${s.colorIndex}`;
+  }
+  const rows = superficies
+    .map((s) => `| ${s.superficieNombre} | Color${s.colorIndex} |`)
     .join("\n");
+  return ["| Superficie | Color |", "|---|---|", rows].join("\n");
 }
 
 /** Lista unida por saltos de línea; vacío si no hay ítems. */
@@ -402,7 +459,11 @@ export function aplicarRespuestasAlPromptDisenarColores(
     [ASISTENTE_IA_VAR_OBJETIVOS]: objetivos,
     [ASISTENTE_IA_VAR_ESTILO]: estilo,
     [ASISTENTE_IA_VAR_COMBINAR_CON]: combinar,
-    // Compat plantillas viejas con {{COMBINAR}}
+    // Compat plantillas viejas
     [ASISTENTE_IA_VAR_COMBINAR]: combinar,
+    Superficies: superficies,
+    Objetivos: objetivos,
+    Estilo: estilo,
+    CombinarCon: combinar,
   });
 }

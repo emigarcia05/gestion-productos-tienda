@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.9.2 — 2026-07-30
+
+**Descripción:** Variables de Diseñar Colores en MAYÚSCULA; `{{SUPERFICIES}}` con tabla Markdown cuando hay 2+ superficies (formato óptimo para GPT).
+
+**Motivo:** Estandarizar tokens y mejorar la interpretación de asignaciones superficie↔ColorN.
+
 ## 0.9.1 — 2026-07-30
 
 **Descripción:** Prompt Maestro de Diseñar Colores como seed; variables `{{Superficies}}` / `{{Objetivos}}` / `{{Estilo}}` / `{{CombinarCon}}` rellenadas desde el formulario (`Superficie, ColorN`; vacías si no aplica).
