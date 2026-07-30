@@ -2,8 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileDown, Palette, ScanSearch, Settings2 } from "lucide-react";
+import {
+  ArrowLeft,
+  FileDown,
+  Palette,
+  Paintbrush,
+  ScanSearch,
+  Settings2,
+} from "lucide-react";
 import { toast } from "sonner";
+import AsistenteIaDisenarColoresVista, {
+  type AsistenteIaDisenarColoresCatalogos,
+} from "@/components/asistente-ia/AsistenteIaDisenarColoresVista";
 import AsistenteIaFuncionTile from "@/components/asistente-ia/AsistenteIaFuncionTile";
 import AsistenteIaProcesoPaso from "@/components/asistente-ia/AsistenteIaProcesoPaso";
 import CuentagotasImagenMuestra, {
@@ -15,6 +25,7 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import { Button } from "@/components/ui/button";
 import {
   ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
+  ASISTENTE_IA_SUBMODULO_DISENAR_COLORES,
   aplicarRgbAlPromptBuscarColor,
 } from "@/lib/asistenteIa";
 import type {
@@ -26,17 +37,21 @@ import { descargarPdfAproximacionCodigoImagen } from "@/lib/exportAproximacionCo
 import { parseRespuestaIaCoincidencias } from "@/lib/parseRespuestaIaCoincidencias";
 import { cn } from "@/lib/utils";
 
-type VistaActiva = "hub" | "buscar-codigo";
+type VistaActiva = "hub" | "buscar-codigo" | "disenar-colores";
 
 interface Props {
-  config: AsistenteIaConfigSubmodulo;
+  configBuscarCodigo: AsistenteIaConfigSubmodulo;
+  configDisenarColores: AsistenteIaConfigSubmodulo;
   catalogoInicial: ProdIaDisenoPrompItem[];
+  catalogosDiseno: AsistenteIaDisenarColoresCatalogos;
   esEditor: boolean;
 }
 
 export default function AsistenteIaBuscarColorImagenPageClient({
-  config,
+  configBuscarCodigo,
+  configDisenarColores,
   catalogoInicial,
+  catalogosDiseno,
   esEditor,
 }: Props) {
   const router = useRouter();
@@ -52,9 +67,15 @@ export default function AsistenteIaBuscarColorImagenPageClient({
   const [resetCuentagotas, setResetCuentagotas] = useState(0);
   const [generandoPdf, setGenerandoPdf] = useState(false);
 
-  const url = config.urlRedireccion;
-  const plantilla = config.promp;
-  const tituloModulo = ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN;
+  const url = configBuscarCodigo.urlRedireccion;
+  const plantilla = configBuscarCodigo.promp;
+
+  const tituloModulo =
+    vista === "disenar-colores"
+      ? ASISTENTE_IA_SUBMODULO_DISENAR_COLORES
+      : vista === "buscar-codigo"
+        ? ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN
+        : "Módulos";
 
   async function handleColorPicked(color: RgbColor, meta: MuestraPuntoImagen) {
     setMetaMuestra(meta);
@@ -166,14 +187,24 @@ export default function AsistenteIaBuscarColorImagenPageClient({
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {esEditor ? (
-              <Button
-                type="button"
-                className="h-10 px-4 gap-2"
-                onClick={() => setGestionDisenoOpen(true)}
-              >
-                <Palette className="h-4 w-4 shrink-0" aria-hidden />
-                GESTION DISEÑO
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  className="h-10 px-4 gap-2"
+                  onClick={() => setGestionarOpen(true)}
+                >
+                  <Settings2 className="h-4 w-4 shrink-0" aria-hidden />
+                  GESTION PROMP & URL
+                </Button>
+                <Button
+                  type="button"
+                  className="h-10 px-4 gap-2"
+                  onClick={() => setGestionDisenoOpen(true)}
+                >
+                  <Palette className="h-4 w-4 shrink-0" aria-hidden />
+                  GESTION DISEÑO
+                </Button>
+              </>
             ) : null}
             {vista !== "hub" ? (
               <Button
@@ -197,14 +228,17 @@ export default function AsistenteIaBuscarColorImagenPageClient({
                 icon={<ScanSearch aria-hidden />}
                 onClick={() => setVista("buscar-codigo")}
               />
-              {esEditor ? (
-                <AsistenteIaFuncionTile
-                  label="Gestion Promp & Url"
-                  icon={<Settings2 aria-hidden />}
-                  onClick={() => setGestionarOpen(true)}
-                />
-              ) : null}
+              <AsistenteIaFuncionTile
+                label="Diseñar Colores"
+                icon={<Paintbrush aria-hidden />}
+                onClick={() => setVista("disenar-colores")}
+              />
             </div>
+          ) : vista === "disenar-colores" ? (
+            <AsistenteIaDisenarColoresVista
+              config={configDisenarColores}
+              catalogos={catalogosDiseno}
+            />
           ) : (
             <>
               <AsistenteIaProcesoPaso

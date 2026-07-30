@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.9.0 — 2026-07-30
+
+**Descripción:** Módulo hub **Diseñar Colores**: foto de referencia a la izquierda + cuestionario (cantidad, superficies→Color N, objetivos, estilo, combinar) a la derecha; variables de prompt y CTA copiar/abrir ChatGPT.
+
+**Motivo:** Estandarizar el pedido de recomendaciones de color antes de consultar al asesor.
+
 ## 0.8.1 — 2026-07-30
 
 **Descripción:** Catálogo **Objetivos De Diseño** (`prod_ia_diseno_objetivo`) en **GESTION DISEÑO**.
