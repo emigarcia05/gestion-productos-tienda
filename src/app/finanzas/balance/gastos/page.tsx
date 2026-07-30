@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import FinanzasBalanceGastosPageClient from "@/components/finanzas/FinanzasBalanceGastosPageClient";
-import { mesAnioQuerySchema } from "@/lib/validations/finBalGastoMensualBalance";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import {
@@ -34,6 +33,33 @@ function primerSearchParam(v: string | string[] | undefined): string | undefined
   return s;
 }
 
+/**
+ * Parsea `mes` de la URL: `6`, `6,7,8` o varios `mes=`.
+ * Legacy `todos` → `null` (redirect al default).
+ */
+function parseMesesSearchParam(mesRaw: string | string[] | undefined): number[] | null {
+  if (mesRaw === undefined) return null;
+  const tokens: string[] = [];
+  if (Array.isArray(mesRaw)) {
+    for (const part of mesRaw) {
+      tokens.push(...part.split(","));
+    }
+  } else {
+    tokens.push(...mesRaw.split(","));
+  }
+  if (tokens.some((t) => t.trim().toLowerCase() === "todos")) {
+    return null;
+  }
+  const meses = [
+    ...new Set(
+      tokens
+        .map((t) => Number.parseInt(t.trim(), 10))
+        .filter((n) => Number.isInteger(n) && n >= 1 && n <= 12)
+    ),
+  ].sort((a, b) => a - b);
+  return meses.length > 0 ? meses : null;
+}
+
 export default async function BalanceGastosPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.finanzas.acceso)) {
@@ -45,50 +71,26 @@ export default async function BalanceGastosPage({ searchParams }: Props) {
   const defRaw = mesAnioCalendarioArgentina();
   const def = { mes: defRaw.mes, anio: clampAnio(defRaw.anio) };
 
-  const mesStr = primerSearchParam(sp.mes);
+  const mesRaw = sp.mes;
   const anioStr = primerSearchParam(sp.anio);
 
   /** Primera carga sin periodo en la URL: fijar mes/año calendario Argentina en la query. */
-  if (mesStr === undefined && anioStr === undefined) {
+  if (mesRaw === undefined && anioStr === undefined) {
     redirect(`/finanzas/balance/gastos?mes=${def.mes}&anio=${def.anio}`);
   }
 
-  const mesTodos = (mesStr ?? "").toLowerCase() === "todos";
+  const anioParsed = anioPeriodoSchema.safeParse(anioStr ?? def.anio);
+  const mesesParsed = parseMesesSearchParam(mesRaw);
 
-  if (mesTodos) {
-    const anioParsed = anioPeriodoSchema.safeParse(anioStr ?? def.anio);
-    if (!anioParsed.success) {
-      redirect(`/finanzas/balance/gastos?mes=${def.mes}&anio=${def.anio}`);
-    }
-    const anio = anioParsed.data;
-    const [filas, sucursalesCentroCosto] = await Promise.all([
-      listarImputacionesMensualesBalance({ anio, mes: null }),
-      listarSucursalesParaGastos(),
-    ]);
-
-    return (
-      <FinanzasBalanceGastosPageClient
-        filas={filas}
-        esEditor={esEditor}
-        mes="todos"
-        anio={anio}
-        sucursalesCentroCosto={sucursalesCentroCosto}
-      />
-    );
-  }
-
-  const parsed = mesAnioQuerySchema.safeParse({
-    mes: mesStr ?? def.mes,
-    anio: anioStr ?? def.anio,
-  });
-  if (!parsed.success) {
+  if (!anioParsed.success || !mesesParsed) {
     redirect(`/finanzas/balance/gastos?mes=${def.mes}&anio=${def.anio}`);
   }
 
-  const { mes, anio } = parsed.data;
+  const anio = anioParsed.data;
+  const meses = mesesParsed;
 
   const [filas, sucursalesCentroCosto] = await Promise.all([
-    listarImputacionesMensualesBalance({ mes, anio }),
+    listarImputacionesMensualesBalance({ meses, anio }),
     listarSucursalesParaGastos(),
   ]);
 
@@ -96,7 +98,7 @@ export default async function BalanceGastosPage({ searchParams }: Props) {
     <FinanzasBalanceGastosPageClient
       filas={filas}
       esEditor={esEditor}
-      mes={mes}
+      meses={meses}
       anio={anio}
       sucursalesCentroCosto={sucursalesCentroCosto}
     />

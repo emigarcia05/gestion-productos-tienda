@@ -58,7 +58,7 @@ export async function listarSerieHistorialFilaBalanceMensual(params: {
     const chunk = await Promise.all(
       slice.map(async ({ mes, anio }) => {
         const [filas, vtasMes] = await Promise.all([
-          listarImputacionesMensualesBalance({ mes, anio }),
+          listarImputacionesMensualesBalance({ meses: [mes], anio }),
           listarFinBalVtasPorMesAnio(mes, anio),
         ]);
         const ventasPorSucursalNombre: Record<string, number> = {};

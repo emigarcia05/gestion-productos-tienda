@@ -65,7 +65,7 @@ export interface SidebarMainAppAreaProps {
   showLabel?: boolean;
   /**
    * Si es `false` (rol vendedor/`simple`), el logo no abre modal de áreas
-   * (solo trabaja en **Gestión Del Vendedor**). Finanzas, Estadísticas Productos y Marketing: `editor`.
+   * (solo trabaja en **Gestión Del Vendedor**). **Gestión Fin. & Adm.**, Estadísticas Productos y Marketing: `editor`.
    * @default true (compatibilidad; el layout pasa `rol === "editor"`).
    */
   esEditor?: boolean;

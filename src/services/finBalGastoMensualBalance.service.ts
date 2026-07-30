@@ -362,17 +362,25 @@ export async function listarPeriodosConImputacionesEnDb(): Promise<PeriodosImput
 }
 
 export async function listarImputacionesMensualesBalance(params: {
-  /** Si se omite o es `null`, lista todos los meses del `anio`. */
-  mes?: number | null;
   anio: number;
+  /** Meses calendario 1–12 a incluir (uno o varios). */
+  meses: number[];
 }): Promise<BalanceGastoMensualFila[]> {
   const { anio } = params;
-  const mesFiltro =
-    params.mes === null || params.mes === undefined ? null : params.mes;
+  const mesesUnicos = [
+    ...new Set(
+      params.meses.filter((m) => Number.isInteger(m) && m >= 1 && m <= 12)
+    ),
+  ].sort((a, b) => a - b);
+  if (mesesUnicos.length === 0) return [];
+
   const isoHoy = dateToIsoYmdArgentina(new Date());
 
   const rows = await prisma.finBalGastoMensual.findMany({
-    where: mesFiltro === null ? { anio } : { mes: mesFiltro, anio },
+    where:
+      mesesUnicos.length === 1
+        ? { anio, mes: mesesUnicos[0] }
+        : { anio, mes: { in: mesesUnicos } },
     orderBy: [{ mes: "asc" }, { createdAt: "asc" }],
     include: {
       imputacionSucursal: {

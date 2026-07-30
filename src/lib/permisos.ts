@@ -5,7 +5,7 @@
  * Modificá este archivo para controlar qué ve cada rol.
  *
  * Roles disponibles: "simple" | "editor"
- * En UI, el rol `simple` se muestra como **Vendedor** (`SelectorRol`).
+ * En UI: `simple` → **Vendedor**; `editor` → **Administrador** (`SelectorRol`).
  */
 
 export type Rol = "simple" | "editor";

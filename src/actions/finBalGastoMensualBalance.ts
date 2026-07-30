@@ -284,7 +284,7 @@ export async function cargarFilasBalanceMensualPeriodoAction(
   const { mes, anio } = parsed.data;
   try {
     const [filas, vtasMes] = await Promise.all([
-      listarImputacionesMensualesBalance({ mes, anio }),
+      listarImputacionesMensualesBalance({ meses: [mes], anio }),
       listarFinBalVtasPorMesAnio(mes, anio),
     ]);
     const ventasPorSucursalNombre: Record<string, number> = {};

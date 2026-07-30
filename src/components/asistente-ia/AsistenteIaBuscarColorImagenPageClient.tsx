@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileDown, ScanSearch, Settings2 } from "lucide-react";
+import { ArrowLeft, FileDown, Palette, ScanSearch, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import AsistenteIaFuncionTile from "@/components/asistente-ia/AsistenteIaFuncionTile";
 import AsistenteIaProcesoPaso from "@/components/asistente-ia/AsistenteIaProcesoPaso";
 import CuentagotasImagenMuestra, {
   type MuestraPuntoImagen,
 } from "@/components/asistente-ia/CuentagotasImagenMuestra";
+import GestionarProdIaDisenoHubModal from "@/components/asistente-ia/GestionarProdIaDisenoHubModal";
 import GestionarProdIaDisenoPrompModal from "@/components/asistente-ia/GestionarProdIaDisenoPrompModal";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
   const router = useRouter();
   const [vista, setVista] = useState<VistaActiva>("hub");
   const [gestionarOpen, setGestionarOpen] = useState(false);
+  const [gestionDisenoOpen, setGestionDisenoOpen] = useState(false);
   const [colorMuestra, setColorMuestra] = useState<RgbColor | null>(null);
   const [metaMuestra, setMetaMuestra] = useState<MuestraPuntoImagen | null>(
     null,
@@ -162,17 +164,29 @@ export default function AsistenteIaBuscarColorImagenPageClient({
         subtitle={tituloModulo}
         contentWidth="default"
         actions={
-          vista !== "hub" ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="h-10 px-4"
-              onClick={volverAlHub}
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden />
-              Volver
-            </Button>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            {esEditor ? (
+              <Button
+                type="button"
+                className="h-10 px-4 gap-2"
+                onClick={() => setGestionDisenoOpen(true)}
+              >
+                <Palette className="h-4 w-4 shrink-0" aria-hidden />
+                GESTION DISEÑO
+              </Button>
+            ) : null}
+            {vista !== "hub" ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 px-4"
+                onClick={volverAlHub}
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                Volver
+              </Button>
+            ) : null}
+          </div>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pb-6 pt-2">
@@ -252,13 +266,20 @@ export default function AsistenteIaBuscarColorImagenPageClient({
       </ClassicFilteredTableLayout>
 
       {esEditor ? (
-        <GestionarProdIaDisenoPrompModal
-          open={gestionarOpen}
-          onOpenChange={setGestionarOpen}
-          itemsIniciales={catalogoInicial}
-          esEditor={esEditor}
-          onCatalogoChanged={() => router.refresh()}
-        />
+        <>
+          <GestionarProdIaDisenoPrompModal
+            open={gestionarOpen}
+            onOpenChange={setGestionarOpen}
+            itemsIniciales={catalogoInicial}
+            esEditor={esEditor}
+            onCatalogoChanged={() => router.refresh()}
+          />
+          <GestionarProdIaDisenoHubModal
+            open={gestionDisenoOpen}
+            onOpenChange={setGestionDisenoOpen}
+            esEditor={esEditor}
+          />
+        </>
       ) : null}
     </>
   );

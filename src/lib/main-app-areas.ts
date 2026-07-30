@@ -1,7 +1,8 @@
 /**
  * Áreas principales de la aplicación (macro-secciones).
  * **Gestión Del Vendedor** (antes Gestión Productos): pedidos, ayuda vendedor, asistente IA.
- * **Finanzas** incluye también Análisis de Precios (URLs aún bajo `/gestion-productos/analisis-precios/...`).
+ * **Gestión Fin. & Adm.** (id `finanzas`; antes Finanzas): balance, tesorería, análisis M.C. y Análisis de Precios
+ * (URLs de análisis aún bajo `/gestion-productos/analisis-precios/...`).
  */
 
 import {
@@ -35,7 +36,7 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
   },
   {
     id: "finanzas",
-    label: "Finanzas",
+    label: "Gestión Fin. & Adm.",
     statusLabel: "A construir",
     href: "/finanzas/tesoreria",
   },

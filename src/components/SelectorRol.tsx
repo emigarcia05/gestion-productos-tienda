@@ -73,7 +73,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
         className={switcherClass}
       >
         <ShieldCheck className="h-3 w-3" />
-        Cambiar a Editor
+        Cambiar A Administrador
       </button>
     );
 
@@ -97,7 +97,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
           )}
           aria-label={
             rolActual === "simple"
-              ? "Cambiar A Modo Editor"
+              ? "Cambiar A Modo Administrador"
               : "Volver A Modo Vendedor"
           }
         >
@@ -107,7 +107,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
               CAMBIAR USUARIO
             </span>
             <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-100 group-hover:opacity-0">
-              {rolActual === "editor" ? "EDITOR" : "VENDEDOR"}
+              {rolActual === "editor" ? "ADMINISTRADOR" : "VENDEDOR"}
             </span>
             <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-0 group-hover:opacity-100">
               CAMBIAR USUARIO
@@ -122,7 +122,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
               title={
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-accent2" />
-                  <span>Acceso De Editor</span>
+                  <span>Acceso De Administrador</span>
                 </div>
               }
               actions={
@@ -131,14 +131,14 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
                     Cancelar
                   </Button>
                   <Button onClick={handleActivar} disabled={pending || !clave}>
-                    {pending ? "Verificando..." : "Activar Modo Editor"}
+                    {pending ? "Verificando..." : "Activar Modo Administrador"}
                   </Button>
                 </>
               }
             >
               <div className="space-y-4">
                 <p className="text-sm text-foreground">
-                  Ingresá la clave para activar el modo de edición.
+                  Ingresá la clave para activar el modo administrador.
                 </p>
 
                 <div className="space-y-1.5">
@@ -184,7 +184,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
       <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/80 px-4 py-2.5 shadow-sm">
         <User className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="text-sm font-medium text-foreground">
-          {rolActual === "editor" ? "Modo Editor" : "Modo Vendedor"}
+          {rolActual === "editor" ? "Modo Administrador" : "Modo Vendedor"}
         </span>
         <span className="text-muted-foreground text-xs mx-1">·</span>
         {switcher}
@@ -197,7 +197,7 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
           title={
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-accent2" />
-              <span>Acceso De Editor</span>
+              <span>Acceso De Administrador</span>
             </div>
           }
           actions={
@@ -206,14 +206,14 @@ export default function SelectorRol({ rolActual, compact = false }: Props) {
                 Cancelar
               </Button>
               <Button onClick={handleActivar} disabled={pending || !clave}>
-                {pending ? "Verificando..." : "Activar Modo Editor"}
+                {pending ? "Verificando..." : "Activar Modo Administrador"}
               </Button>
             </>
           }
         >
           <div className="space-y-4">
             <p className="text-sm text-foreground">
-              Ingresá la clave para activar el modo de edición.
+              Ingresá la clave para activar el modo administrador.
             </p>
 
             <div className="space-y-1.5">

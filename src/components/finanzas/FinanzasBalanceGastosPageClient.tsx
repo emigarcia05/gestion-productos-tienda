@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Plus } from "lucide-react";
+import { ChevronDown, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -16,6 +16,7 @@ import FilterBar, {
   FILTER_COUNT_CLASS,
   FILTER_INLINE_ACTION_SLOT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
+  SELECT_TRIGGER_FILTER_CLASS,
   FiltroIndividualContainer,
   FilaFiltrosDesplegables,
   FilterRowSelection,
@@ -138,23 +139,42 @@ const MESES_CALENDARIO: { valor: number; etiqueta: string }[] = [
 interface Props {
   filas: BalanceGastoMensualFila[];
   esEditor: boolean;
-  /** Mes 1–12 o `"todos"` (año completo en URL `mes=todos`). */
-  mes: number | "todos";
+  /** Meses 1–12 seleccionados (URL `mes=6` o `mes=6,7,8`). */
+  meses: number[];
   anio: number;
   /** Selectores de sucursal (centro de costo) para gasto eventual. */
   sucursalesCentroCosto: { id: string; nombre: string }[];
 }
 
+function etiquetaMesesSeleccionados(mesesSel: number[]): string {
+  if (mesesSel.length === 0) return "MES";
+  if (mesesSel.length === 1) {
+    return MESES_CALENDARIO.find((m) => m.valor === mesesSel[0])?.etiqueta ?? "MES";
+  }
+  return mesesSel
+    .map((n) => MESES_CALENDARIO.find((m) => m.valor === n)?.etiqueta ?? String(n))
+    .join(", ");
+}
+
+function mismosMeses(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort((x, y) => x - y);
+  const sb = [...b].sort((x, y) => x - y);
+  return sa.every((v, i) => v === sb[i]);
+}
+
 export default function FinanzasBalanceGastosPageClient({
   filas,
   esEditor,
-  mes,
+  meses,
   anio,
   sucursalesCentroCosto,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(false);
+  const mesesMultiRef = useRef<HTMLDivElement>(null);
+  const [mesesOpen, setMesesOpen] = useState(false);
 
   const [filtRubro, setFiltRubro] = useState("");
   const [filtGasto, setFiltGasto] = useState("");
@@ -242,10 +262,14 @@ export default function FinanzasBalanceGastosPageClient({
     return out;
   }, [filas, filtTipo, filtRubro, filtGasto, filtSucursal, filtProveedor, filtEstado]);
 
-  /** Periodo: `mes` 1–12 o `todos` + `anio` (URL / servidor). */
-  function navegarPeriodo(nuevoMes: number | "todos", nuevoAnio: number) {
+  /** Periodo: uno o más meses + `anio` (URL `mes=6,7&anio=…`). */
+  function navegarPeriodo(nuevosMeses: number[], nuevoAnio: number) {
+    const mesesNorm = [
+      ...new Set(nuevosMeses.filter((m) => m >= 1 && m <= 12)),
+    ].sort((a, b) => a - b);
+    if (mesesNorm.length === 0) return;
     const q = new URLSearchParams();
-    q.set("mes", String(nuevoMes));
+    q.set("mes", mesesNorm.join(","));
     q.set("anio", String(nuevoAnio));
     router.replace(`${pathname}?${q.toString()}`);
     router.refresh();
@@ -253,11 +277,38 @@ export default function FinanzasBalanceGastosPageClient({
 
   function onCambioAnio(nuevoAnioStr: string) {
     const nuevoAnio = parseInt(nuevoAnioStr, 10);
-    navegarPeriodo(mes, nuevoAnio);
+    navegarPeriodo(meses, nuevoAnio);
   }
 
-  /** Mes concreto para alta de gasto fijo/eventual (con TODOS → mes calendario AR). */
-  const mesParaAlta = mes === "todos" ? mesHoy : mes;
+  function toggleMes(mesValor: number) {
+    const tiene = meses.includes(mesValor);
+    if (tiene && meses.length === 1) {
+      toast.info("Dejá al menos un mes seleccionado.");
+      return;
+    }
+    const next = tiene
+      ? meses.filter((m) => m !== mesValor)
+      : [...meses, mesValor];
+    navegarPeriodo(next, anio);
+  }
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (mesesMultiRef.current && !mesesMultiRef.current.contains(e.target as Node)) {
+        setMesesOpen(false);
+      }
+    }
+    if (mesesOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [mesesOpen]);
+
+  /** Mes concreto para alta: si hay uno solo, ese; si no, mes calendario AR. */
+  const mesUnico = meses.length === 1 ? meses[0] : null;
+  const mesParaAlta = mesUnico ?? mesHoy;
+  const mesesFiltroActivo = !mismosMeses(meses, [mesHoy]);
+  const labelMeses = etiquetaMesesSeleccionados(meses);
 
   function limpiarFiltros() {
     setFiltRubro("");
@@ -294,13 +345,13 @@ export default function FinanzasBalanceGastosPageClient({
   }
 
   async function handleCargarMes() {
-    if (mes === "todos") {
-      toast.info("Elegí un mes concreto para cargar gastos fijos.");
+    if (mesUnico === null) {
+      toast.info("Elegí un solo mes para cargar gastos fijos.");
       return;
     }
     setLoading(true);
     try {
-      const pre = await listarPendientesDiscriminaIvaCargaMesAction({ mes: mesParaAlta, anio });
+      const pre = await listarPendientesDiscriminaIvaCargaMesAction({ mes: mesUnico, anio });
       if (!pre.ok) {
         toast.error(pre.error ?? "No se pudo verificar el alta del mes.");
         return;
@@ -344,10 +395,10 @@ export default function FinanzasBalanceGastosPageClient({
               <Button
                 type="button"
                 onClick={() => void handleCargarMes()}
-                disabled={loading || mes === "todos"}
+                disabled={loading || mesUnico === null}
                 title={
-                  mes === "todos"
-                    ? "Elegí un mes concreto para cargar gastos fijos"
+                  mesUnico === null
+                    ? "Elegí un solo mes para cargar gastos fijos"
                     : undefined
                 }
                 className="h-10 px-4 gap-2"
@@ -498,7 +549,7 @@ export default function FinanzasBalanceGastosPageClient({
                       <SelectItem value="con_monto_sin_pago">CON MONTO Y PENDIENTE</SelectItem>
                       <SelectItem value="con_monto_con_pago">CON MONTO Y PAGADO</SelectItem>
                       <SelectItem value="sin_monto">SIN MONTO</SelectItem>
-                      <SelectItem value="sin_monto_o_pendiente">SIN MONTO O PAGO PENDIENTE</SelectItem>
+                      <SelectItem value="sin_monto_o_pendiente">SIN MONTO O PENDIENTE</SelectItem>
                     </SelectContent>
                   </Select>
                 </FiltroIndividualContainer>
@@ -510,7 +561,7 @@ export default function FinanzasBalanceGastosPageClient({
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
                   activo={anio !== anioHoy}
-                  onLimpiar={() => navegarPeriodo(mes, anioHoy)}
+                  onLimpiar={() => navegarPeriodo(meses, anioHoy)}
                 >
                   <Select value={String(anio)} onValueChange={onCambioAnio}>
                     <SelectTrigger className="input-filtro-unificado" aria-label="Año del periodo">
@@ -532,37 +583,57 @@ export default function FinanzasBalanceGastosPageClient({
                 </FiltroIndividualContainer>
 
                 <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={mes === "todos" || mes !== mesHoy}
-                  onLimpiar={() => navegarPeriodo(mesHoy, anio)}
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={mesesFiltroActivo}
+                  onLimpiar={() => navegarPeriodo([mesHoy], anio)}
                 >
-                  <Select
-                    value={mes === "todos" ? "todos" : String(mes)}
-                    onValueChange={(v) => {
-                      if (v === "todos") {
-                        navegarPeriodo("todos", anio);
-                        return;
-                      }
-                      navegarPeriodo(parseInt(v, 10), anio);
-                    }}
-                  >
-                    <SelectTrigger className="input-filtro-unificado" aria-label="Mes del periodo">
-                      <SelectValue placeholder="MES" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro"
+                  <div className="relative" ref={mesesMultiRef}>
+                    <button
+                      type="button"
+                      onClick={() => setMesesOpen((o) => !o)}
+                      className={cn(
+                        SELECT_TRIGGER_FILTER_CLASS,
+                        "flex w-full items-center justify-between gap-2 text-left font-semibold"
+                      )}
+                      aria-expanded={mesesOpen}
+                      aria-haspopup="listbox"
+                      aria-label="Mes del periodo (selección múltiple)"
                     >
-                      {MESES_CALENDARIO.map((m) => (
-                        <SelectItem key={m.valor} value={String(m.valor)}>
-                          {m.etiqueta}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="todos">TODOS</SelectItem>
-                    </SelectContent>
-                  </Select>
+                      <span className="truncate">{labelMeses}</span>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
+                    </button>
+                    {mesesOpen ? (
+                      <div
+                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                        role="listbox"
+                        aria-multiselectable="true"
+                      >
+                        {MESES_CALENDARIO.map((m) => {
+                          const selected = meses.includes(m.valor);
+                          return (
+                            <label
+                              key={m.valor}
+                              role="option"
+                              aria-selected={selected}
+                              className={cn(
+                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                                selected && "bg-muted"
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleMes(m.valor)}
+                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                aria-label={m.etiqueta}
+                              />
+                              <span>{m.etiqueta}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
                 </FiltroIndividualContainer>
 
                 <FiltroIndividualContainer

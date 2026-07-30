@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.8.0 — 2026-07-30
+
+**Descripción:** **GESTION DISEÑO** en Asistente IA: tablas `prod_ia_diseno_sup_pintar`, `prod_ia_diseno_estilos`, `prod_ia_diseno_combinar`; botón header + modal hub + CRUD por catálogo (buscador + `+` / editar / borrar).
+
+**Motivo:** Catálogos para estandarizar el formulario de recomendaciones de colores (siguiente fase).
+
 ## 0.7.0 — 2026-07-28
 
 **Descripción:** PDF de aproximación de código desde imagen (jsPDF cliente): imagen anotada + 5 coincidencias parseadas de la respuesta IA. Prompt seed con columna HEX.

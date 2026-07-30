@@ -61,7 +61,7 @@ export default async function BalanceMensualPage({ searchParams }: Props) {
 
   const { mes, anio } = parsed.data;
   const [filas, sucursalesBalance, vtasMes] = await Promise.all([
-    listarImputacionesMensualesBalance({ mes, anio }),
+    listarImputacionesMensualesBalance({ meses: [mes], anio }),
     listarSucursalesGeneraBalanceParaVtas(),
     listarFinBalVtasPorMesAnio(mes, anio),
   ]);

@@ -1262,7 +1262,7 @@ model MktContenidoUrlDrive {
 }
 
 /**
- * Prompt + URL de redirección por submódulo del Asistente IA (Gestión Productos).
+ * Prompt + URL de redirección por submódulo del Asistente IA (Gestión Del Vendedor).
  * Una fila por opción del sidebar (ej. Buscar Color Desde Imagen).
  * Tabla SQL: `prod_ia_diseno_promp` (ASCII; sección producto IA_DISEÑO).
  */
@@ -1278,6 +1278,36 @@ model ProdIaDisenoPromp {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@map("prod_ia_diseno_promp")
+}
+
+/** Catálogo GESTION DISEÑO — superficies a pintar. */
+model ProdIaDisenoSupPintar {
+  id        String   @id @default(cuid())
+  nombre    String   @unique(map: "prod_ia_diseno_sup_pintar_nombre_key") @map("nombre")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("prod_ia_diseno_sup_pintar")
+}
+
+/** Catálogo GESTION DISEÑO — estilos de diseño. */
+model ProdIaDisenoEstilos {
+  id        String   @id @default(cuid())
+  nombre    String   @unique(map: "prod_ia_diseno_estilos_nombre_key") @map("nombre")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("prod_ia_diseno_estilos")
+}
+
+/** Catálogo GESTION DISEÑO — opciones de combinar. */
+model ProdIaDisenoCombinar {
+  id        String   @id @default(cuid())
+  nombre    String   @unique(map: "prod_ia_diseno_combinar_nombre_key") @map("nombre")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("prod_ia_diseno_combinar")
 }
 
 /** Paleta de colores de marca (nombre + descripción + códigos hex). */
