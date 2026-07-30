@@ -1,21 +1,13 @@
 import { redirect } from "next/navigation";
 import AsistenteIaBuscarColorImagenPageClient from "@/components/asistente-ia/AsistenteIaBuscarColorImagenPageClient";
-import {
-  ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
-  ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY,
-  ASISTENTE_IA_SUBMODULO_DISENAR_COLORES,
-  getDefaultConfigBuscarColorImagen,
-  getDefaultConfigDisenarColores,
-} from "@/lib/asistenteIa";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import {
-  getProdIaDisenoPrompPorSubmodulo,
   listarProdIaDisenoPromps,
+  resolverConfigAsistenteIa,
 } from "@/services/prodIaDisenoPromp.service";
 import { listarProdIaDisenoCatalogoNombre } from "@/services/prodIaDisenoCatalogos.service";
-import { listarProdIaDisenoPrompVars } from "@/services/prodIaDisenoPrompVar.service";
 
 export const dynamic = "force-dynamic";
 
@@ -26,62 +18,40 @@ export default async function AsistenteIaBuscarColorImagenPage() {
   }
 
   const [
-    rowNuevo,
-    rowLegacy,
-    rowDisenar,
+    configBuscarCodigo,
+    configDisenarColores,
     catalogo,
     superficies,
+    objetivos,
     estilos,
     combinar,
-    objetivos,
+    luzNatural,
+    luzArtificial,
   ] = await Promise.all([
-    getProdIaDisenoPrompPorSubmodulo(ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN),
-    getProdIaDisenoPrompPorSubmodulo(
-      ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY,
-    ),
-    getProdIaDisenoPrompPorSubmodulo(ASISTENTE_IA_SUBMODULO_DISENAR_COLORES),
+    resolverConfigAsistenteIa("buscar_codigo"),
+    resolverConfigAsistenteIa("disenar_colores"),
     listarProdIaDisenoPromps(),
     listarProdIaDisenoCatalogoNombre("sup_pintar"),
+    listarProdIaDisenoCatalogoNombre("objetivo"),
     listarProdIaDisenoCatalogoNombre("estilos"),
     listarProdIaDisenoCatalogoNombre("combinar"),
-    listarProdIaDisenoCatalogoNombre("objetivo"),
+    listarProdIaDisenoCatalogoNombre("luz_natural"),
+    listarProdIaDisenoCatalogoNombre("luz_artificial"),
   ]);
-
-  const rowBuscar = rowNuevo ?? rowLegacy;
-  const defaultsBuscar = getDefaultConfigBuscarColorImagen();
-  const defaultsDisenar = getDefaultConfigDisenarColores();
-
-  const [varsBuscar, varsDisenar] = await Promise.all([
-    rowBuscar ? listarProdIaDisenoPrompVars(rowBuscar.id) : Promise.resolve([]),
-    rowDisenar
-      ? listarProdIaDisenoPrompVars(rowDisenar.id)
-      : Promise.resolve([]),
-  ]);
-
-  const configBuscarCodigo = rowBuscar
-    ? {
-        submodulo: rowBuscar.submodulo,
-        promp: rowBuscar.promp,
-        urlRedireccion: rowBuscar.urlRedireccion,
-        variablesAlias: varsBuscar,
-      }
-    : defaultsBuscar;
-
-  const configDisenarColores = rowDisenar
-    ? {
-        submodulo: rowDisenar.submodulo,
-        promp: rowDisenar.promp,
-        urlRedireccion: rowDisenar.urlRedireccion,
-        variablesAlias: varsDisenar,
-      }
-    : defaultsDisenar;
 
   return (
     <AsistenteIaBuscarColorImagenPageClient
       configBuscarCodigo={configBuscarCodigo}
       configDisenarColores={configDisenarColores}
       catalogoInicial={catalogo}
-      catalogosDiseno={{ superficies, estilos, combinar, objetivos }}
+      catalogosDiseno={{
+        superficies,
+        objetivos,
+        estilos,
+        combinar,
+        luzNatural,
+        luzArtificial,
+      }}
       esEditor={rol === "editor"}
     />
   );

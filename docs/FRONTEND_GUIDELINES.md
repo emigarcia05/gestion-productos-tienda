@@ -1534,6 +1534,12 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-28): **Asistente IA · hub tiles** — submódulo renombrado a **Buscar Código Desde Imagen**; hub con **`AsistenteIaFuncionTile`** (`aspect-[1/5]`, `w-36`, ícono + label MAYÚSCULAS): **BUSCAR CÓDIGO DESDE IMAGEN** y **GESTION PROMP & URL**. Lookup de prompt: nombre nuevo + legacy.*
 
+*Última actualización (2026-07-30): **GESTION DISEÑO · hub** — orden 1–6 (Superficies → Objetivos → Estilos → Combinar → Luz Natural → Luz Artificial); CRUD luz en tablas nuevas.*
+
+*Última actualización (2026-07-30): **Diseñar Colores · iluminación** — preguntas 5–6 (radio único; opciones fijas); tokens `{{ILUMINACION_NATURAL}}` / `{{ILUMINACION_ARTIFICIAL}}`.*
+
+*Última actualización (2026-07-30): **Asistente IA · prompt fresco** — al generar/copiar se usa `resolverConfigAsistenteIaAction`; al guardar prompt se sincroniza el estado del cliente.*
+
 *Última actualización (2026-07-30): **GESTION PROMP · Insertar Variable** — botón primary + `DropdownMenu` (`modal={false}`) con listado token/etiqueta; sin chips por variable.*
 
 *Última actualización (2026-07-27): **GESTION PROMP & URL · variables** — en editar/crear prompt: insertar variables desde el catálogo del módulo. El cuentagotas completa `{{RGB}}` (legacy `(R,G,B)` sigue funcionando).*

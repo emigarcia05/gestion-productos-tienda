@@ -1,8 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
-import type { ProdIaDisenoPrompItem } from "@/lib/asistenteIa";
+import { z } from "zod";
+import { GP_INTERNAL, GP_ROUTES } from "@/lib/gestionProductosRoutes";
+import type {
+  AsistenteIaConfigSubmodulo,
+  AsistenteIaModuloVariable,
+  ProdIaDisenoPrompItem,
+} from "@/lib/asistenteIa";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { esEditor, getRol } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
@@ -16,6 +21,7 @@ import {
   editarProdIaDisenoPromp,
   eliminarProdIaDisenoPromp,
   listarProdIaDisenoPromps,
+  resolverConfigAsistenteIa,
 } from "@/services/prodIaDisenoPromp.service";
 
 function firstZodErrorMessage(error: {
@@ -30,7 +36,12 @@ function firstZodErrorMessage(error: {
 
 function revalidateAsistenteIa(): void {
   revalidatePath(GP_ROUTES.asistenteIa.buscarColorImagen);
+  revalidatePath(GP_INTERNAL.asistenteIa.buscarColorImagen);
 }
+
+const resolverConfigSchema = z.object({
+  slot: z.enum(["buscar_codigo", "disenar_colores"]),
+});
 
 async function requireAsistenteIaLectura(): Promise<{ ok: false; error: string } | null> {
   const rol = await getRol();
@@ -60,6 +71,27 @@ export async function listarProdIaDisenoPrompsAction(): Promise<
     return {
       ok: false,
       error: e instanceof Error ? e.message : "No se pudieron listar los prompts.",
+    };
+  }
+}
+
+/** Config actual del slot (BD). Usar al generar/copiar para no depender de props stale. */
+export async function resolverConfigAsistenteIaAction(
+  raw: unknown,
+): Promise<ActionResult<AsistenteIaConfigSubmodulo>> {
+  const gate = await requireAsistenteIaLectura();
+  if (gate) return gate;
+  const parsed = resolverConfigSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  try {
+    const slot = parsed.data.slot as AsistenteIaModuloVariable;
+    return { ok: true, data: await resolverConfigAsistenteIa(slot) };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "No se pudo cargar la configuración.",
     };
   }
 }

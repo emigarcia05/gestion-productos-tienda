@@ -89,6 +89,10 @@ export const ASISTENTE_IA_VAR_ESTILO = "ESTILO" as const;
 export const ASISTENTE_IA_VAR_COMBINAR_CON = "COMBINARCON" as const;
 /** @deprecated Alias de plantillas viejas; se sigue rellenando en runtime. */
 export const ASISTENTE_IA_VAR_COMBINAR = "COMBINAR" as const;
+export const ASISTENTE_IA_VAR_ILUMINACION_NATURAL =
+  "ILUMINACION_NATURAL" as const;
+export const ASISTENTE_IA_VAR_ILUMINACION_ARTIFICIAL =
+  "ILUMINACION_ARTIFICIAL" as const;
 
 /** Índices de Color N (Color 1…4) en asignación superficie→color. */
 export type AsistenteIaIndiceColor = 1 | 2 | 3 | 4;
@@ -96,6 +100,32 @@ export type AsistenteIaIndiceColor = 1 | 2 | 3 | 4;
 export const ASISTENTE_IA_INDICES_COLOR: readonly AsistenteIaIndiceColor[] = [
   1, 2, 3, 4,
 ] as const;
+
+/** Opciones seed de iluminación natural (catálogo `luz_natural`). */
+export const ASISTENTE_IA_ILUMINACION_NATURAL_OPCIONES = [
+  "INTERIOR - NULA",
+  "INTERIOR - LEVE",
+  "INTERIOR - BUENA",
+  "INTERIOR - MUY BUENA",
+  "EXTERIOR - SOL DIRECTO",
+  "EXTERIOR - SOL INDIRECTO",
+] as const;
+
+export type AsistenteIaIluminacionNatural =
+  (typeof ASISTENTE_IA_ILUMINACION_NATURAL_OPCIONES)[number];
+
+/** Opciones seed de iluminación artificial (catálogo `luz_artificial`). */
+export const ASISTENTE_IA_ILUMINACION_ARTIFICIAL_OPCIONES = [
+  "FRIA - LEVE",
+  "FRIA - MEDIA",
+  "FRIA - MUCHA",
+  "CÁLIDA - LEVE",
+  "CÁLIDA - MEDIA",
+  "CÁLIDA - MUCHA",
+] as const;
+
+export type AsistenteIaIluminacionArtificial =
+  (typeof ASISTENTE_IA_ILUMINACION_ARTIFICIAL_OPCIONES)[number];
 
 export interface AsistenteIaSuperficieConColor {
   superficieId: string;
@@ -109,6 +139,8 @@ export interface AsistenteIaDisenarColoresRespuestas {
   objetivos: string[];
   estilo: string;
   combinar: string[];
+  iluminacionNatural: string;
+  iluminacionArtificial: string;
 }
 
 /** Token insertable en plantillas: `{{RGB}}`. */
@@ -185,6 +217,21 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR_CON),
       etiqueta: "Combinar con",
       descripcion: "Elementos existentes a combinar (Diseñar Colores).",
+      modulos: ["disenar_colores"],
+    },
+    {
+      clave: ASISTENTE_IA_VAR_ILUMINACION_NATURAL,
+      token: tokenVariablePrompt(ASISTENTE_IA_VAR_ILUMINACION_NATURAL),
+      etiqueta: "Iluminación natural",
+      descripcion:
+        "Iluminación natural (única): INTERIOR/EXTERIOR con nivel o sol.",
+      modulos: ["disenar_colores"],
+    },
+    {
+      clave: ASISTENTE_IA_VAR_ILUMINACION_ARTIFICIAL,
+      token: tokenVariablePrompt(ASISTENTE_IA_VAR_ILUMINACION_ARTIFICIAL),
+      etiqueta: "Iluminación artificial",
+      descripcion: "Iluminación artificial (única): Fría/Cálida con intensidad.",
       modulos: ["disenar_colores"],
     },
   ] as const;
@@ -366,6 +413,12 @@ export function buildPromptDisenarColoresDefault(): string {
   const objetivos = tokenVariablePrompt(ASISTENTE_IA_VAR_OBJETIVOS);
   const estilo = tokenVariablePrompt(ASISTENTE_IA_VAR_ESTILO);
   const combinarCon = tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR_CON);
+  const iluminacionNatural = tokenVariablePrompt(
+    ASISTENTE_IA_VAR_ILUMINACION_NATURAL,
+  );
+  const iluminacionArtificial = tokenVariablePrompt(
+    ASISTENTE_IA_VAR_ILUMINACION_ARTIFICIAL,
+  );
 
   return [
     "# Prompt Maestro – Asesor Profesional de Color para Pinturas",
@@ -411,6 +464,14 @@ export function buildPromptDisenarColoresDefault(): string {
     "",
     `'${combinarCon}'`,
     "",
+    "### Iluminación natural",
+    "",
+    `'${iluminacionNatural}'`,
+    "",
+    "### Iluminación artificial",
+    "",
+    `'${iluminacionArtificial}'`,
+    "",
     "---",
     "",
     "## Antes de responder",
@@ -433,7 +494,7 @@ export function buildPromptDisenarColoresDefault(): string {
     "Para elaborar la propuesta considera de forma conjunta:",
     "",
     "* La arquitectura del ambiente o fachada.",
-    "* La iluminación visible.",
+    "* La iluminación natural y artificial indicadas (y la visible en la foto).",
     "* Las proporciones del espacio.",
     "* Los materiales y colores existentes.",
     "* Los objetivos indicados.",
@@ -557,6 +618,8 @@ export function aplicarRespuestasAlPromptDisenarColores(
   const objetivos = formatListaONada(respuestas.objetivos);
   const estilo = respuestas.estilo.trim();
   const combinar = formatListaONada(respuestas.combinar);
+  const iluminacionNatural = respuestas.iluminacionNatural.trim();
+  const iluminacionArtificial = respuestas.iluminacionArtificial.trim();
 
   const porFuente: Record<string, string> = {
     [ASISTENTE_IA_VAR_SUPERFICIES]: superficies,
@@ -564,6 +627,8 @@ export function aplicarRespuestasAlPromptDisenarColores(
     [ASISTENTE_IA_VAR_ESTILO]: estilo,
     [ASISTENTE_IA_VAR_COMBINAR_CON]: combinar,
     [ASISTENTE_IA_VAR_COMBINAR]: combinar,
+    [ASISTENTE_IA_VAR_ILUMINACION_NATURAL]: iluminacionNatural,
+    [ASISTENTE_IA_VAR_ILUMINACION_ARTIFICIAL]: iluminacionArtificial,
     Superficies: superficies,
     Objetivos: objetivos,
     Estilo: estilo,

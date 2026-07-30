@@ -37,7 +37,7 @@ function mapDbError(error: unknown, fallback: string): string {
 
 type Delegate = {
   findMany: (args: {
-    orderBy: { nombre: "asc" };
+    orderBy: { nombre: "asc" } | { createdAt: "asc" };
     select: typeof select;
   }) => Promise<{ id: string; nombre: string }[]>;
   create: (args: {
@@ -53,17 +53,36 @@ type Delegate = {
 };
 
 function delegateForKind(kind: ProdIaDisenoCatalogoKind): Delegate {
-  if (kind === "sup_pintar") return prisma.prodIaDisenoSupPintar as unknown as Delegate;
-  if (kind === "estilos") return prisma.prodIaDisenoEstilos as unknown as Delegate;
-  if (kind === "combinar") return prisma.prodIaDisenoCombinar as unknown as Delegate;
-  return prisma.prodIaDisenoObjetivo as unknown as Delegate;
+  switch (kind) {
+    case "sup_pintar":
+      return prisma.prodIaDisenoSupPintar as unknown as Delegate;
+    case "estilos":
+      return prisma.prodIaDisenoEstilos as unknown as Delegate;
+    case "combinar":
+      return prisma.prodIaDisenoCombinar as unknown as Delegate;
+    case "objetivo":
+      return prisma.prodIaDisenoObjetivo as unknown as Delegate;
+    case "luz_natural":
+      return prisma.prodIaDisenoLuzNat as unknown as Delegate;
+    case "luz_artificial":
+      return prisma.prodIaDisenoLuzArt as unknown as Delegate;
+  }
+}
+
+function orderByForKind(
+  kind: ProdIaDisenoCatalogoKind,
+): { nombre: "asc" } | { createdAt: "asc" } {
+  if (kind === "luz_natural" || kind === "luz_artificial") {
+    return { createdAt: "asc" };
+  }
+  return { nombre: "asc" };
 }
 
 export async function listarProdIaDisenoCatalogoNombre(
   kind: ProdIaDisenoCatalogoKind
 ): Promise<ProdIaDisenoCatalogoNombreItem[]> {
   const rows = await delegateForKind(kind).findMany({
-    orderBy: { nombre: "asc" },
+    orderBy: orderByForKind(kind),
     select,
   });
   return rows.map(mapRow);

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+import { GP_INTERNAL, GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import type { ProdIaDisenoPrompVarItem } from "@/lib/asistenteIa";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { esEditor, getRol } from "@/lib/sesion";
@@ -27,6 +27,7 @@ function firstZodErrorMessage(error: {
 
 function revalidateAsistenteIa(): void {
   revalidatePath(GP_ROUTES.asistenteIa.buscarColorImagen);
+  revalidatePath(GP_INTERNAL.asistenteIa.buscarColorImagen);
 }
 
 async function requireAsistenteIaLectura(): Promise<{ ok: false; error: string } | null> {

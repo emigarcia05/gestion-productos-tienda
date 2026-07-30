@@ -1,5 +1,23 @@
 # Changelog — IA_DISEÑO
 
+## 0.10.5 — 2026-07-30
+
+**Descripción:** Hub GESTION DISEÑO reordenado (preguntas 1–6) + catálogos `luz_natural` / `luz_artificial` (`prod_ia_diseno_luz_nat` / `_luz_art`) con seed; formulario lee luz desde catálogo.
+
+**Motivo:** Alinear el menú de gestión con el orden del cuestionario y permitir editar opciones de iluminación.
+
+## 0.10.4 — 2026-07-30
+
+**Descripción:** Diseñar Colores: preguntas 5–6 de iluminación natural/artificial (opción única, listas fijas) + variables `{{ILUMINACION_NATURAL}}` / `{{ILUMINACION_ARTIFICIAL}}`.
+
+**Motivo:** Incorporar contexto lumínico al prompt del asesor de color.
+
+## 0.10.3 — 2026-07-30
+
+**Descripción:** Al copiar/generar el prompt se relee la config desde BD (`resolverConfigAsistenteIa`); al guardar se actualiza el estado del cliente. Evita pegar el Prompt Maestro viejo tras editar.
+
+**Motivo:** La página pasaba props stale del primer render y `router.refresh` no alcanzaba a actualizar el clipboard.
+
 ## 0.10.2 — 2026-07-30
 
 **Descripción:** En Editar Prompt, chips por variable reemplazados por botón **Insertar Variable** + desplegable (`DropdownMenu`).

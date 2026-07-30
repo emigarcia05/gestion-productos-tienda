@@ -23,6 +23,7 @@ import {
   aplicarRespuestasAlPromptDisenarColores,
   type AsistenteIaConfigSubmodulo,
 } from "@/lib/asistenteIa";
+import { resolverConfigAsistenteIaAction } from "@/actions/prodIaDisenoPromp";
 import type { ProdIaDisenoCatalogoNombreItem } from "@/lib/prodIaDisenoCatalogos";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,8 @@ export interface AsistenteIaDisenarColoresCatalogos {
   estilos: ProdIaDisenoCatalogoNombreItem[];
   combinar: ProdIaDisenoCatalogoNombreItem[];
   objetivos: ProdIaDisenoCatalogoNombreItem[];
+  luzNatural: ProdIaDisenoCatalogoNombreItem[];
+  luzArtificial: ProdIaDisenoCatalogoNombreItem[];
 }
 
 interface Props {
@@ -43,7 +46,7 @@ type SuperficieSeleccion = {
   colorIndex: number;
 };
 
-type PreguntaId = 1 | 2 | 3 | 4;
+type PreguntaId = 1 | 2 | 3 | 4 | 5 | 6;
 
 function PreguntaAcordeon({
   numero,
@@ -149,7 +152,7 @@ function joinNombres(
 }
 
 export default function AsistenteIaDisenarColoresVista({
-  config,
+  config: _config,
   catalogos,
 }: Props) {
   const inputId = useId();
@@ -161,6 +164,8 @@ export default function AsistenteIaDisenarColoresVista({
   const [objetivoIds, setObjetivoIds] = useState<string[]>([]);
   const [estiloId, setEstiloId] = useState<string>("");
   const [combinarIds, setCombinarIds] = useState<string[]>([]);
+  const [luzNaturalId, setLuzNaturalId] = useState<string>("");
+  const [luzArtificialId, setLuzArtificialId] = useState<string>("");
   const [enviando, setEnviando] = useState(false);
   const [preguntaAbierta, setPreguntaAbierta] = useState<PreguntaId>(1);
 
@@ -234,6 +239,12 @@ export default function AsistenteIaDisenarColoresVista({
     if (!estiloId) {
       return "Seleccioná un estilo.";
     }
+    if (!luzNaturalId) {
+      return "Seleccioná la iluminación natural.";
+    }
+    if (!luzArtificialId) {
+      return "Seleccioná la iluminación artificial.";
+    }
     return null;
   }
 
@@ -243,57 +254,75 @@ export default function AsistenteIaDisenarColoresVista({
       toast.error("Faltan Datos", { description: error });
       return;
     }
-    if (!config.promp.trim()) {
-      toast.error("Falta Prompt", {
-        description: "Configuralo en GESTION PROMP & URL (Diseñar Colores).",
-      });
-      return;
-    }
-    if (!config.urlRedireccion.trim()) {
-      toast.error("Falta Url", {
-        description: "Configurala en GESTION PROMP & URL (Diseñar Colores).",
-      });
-      return;
-    }
-
-    const superficiesResolved = superficies
-      .map((s) => {
-        const item = catalogos.superficies.find((x) => x.id === s.id);
-        if (!item) return null;
-        return {
-          superficieId: item.id,
-          superficieNombre: item.nombre,
-          colorIndex: s.colorIndex,
-        };
-      })
-      .filter((x): x is NonNullable<typeof x> => x != null);
-
-    const objetivos = objetivoIds
-      .map((id) => catalogos.objetivos.find((x) => x.id === id)?.nombre)
-      .filter((x): x is string => Boolean(x));
-
-    const estilo =
-      catalogos.estilos.find((x) => x.id === estiloId)?.nombre ?? "";
-
-    const combinar = combinarIds
-      .map((id) => catalogos.combinar.find((x) => x.id === id)?.nombre)
-      .filter((x): x is string => Boolean(x));
-
-    const prompt = aplicarRespuestasAlPromptDisenarColores(
-      config.promp,
-      {
-        superficies: superficiesResolved,
-        objetivos,
-        estilo,
-        combinar,
-      },
-      config.variablesAlias ?? [],
-    );
 
     setEnviando(true);
     try {
+      const configRes = await resolverConfigAsistenteIaAction({
+        slot: "disenar_colores",
+      });
+      if (!configRes.ok) {
+        toast.error(configRes.error ?? "No se pudo cargar el prompt.");
+        return;
+      }
+      const cfg = configRes.data;
+
+      if (!cfg.promp.trim()) {
+        toast.error("Falta Prompt", {
+          description: "Configuralo en GESTION PROMP & URL (Diseñar Colores).",
+        });
+        return;
+      }
+      if (!cfg.urlRedireccion.trim()) {
+        toast.error("Falta Url", {
+          description: "Configurala en GESTION PROMP & URL (Diseñar Colores).",
+        });
+        return;
+      }
+
+      const superficiesResolved = superficies
+        .map((s) => {
+          const item = catalogos.superficies.find((x) => x.id === s.id);
+          if (!item) return null;
+          return {
+            superficieId: item.id,
+            superficieNombre: item.nombre,
+            colorIndex: s.colorIndex,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x != null);
+
+      const objetivos = objetivoIds
+        .map((id) => catalogos.objetivos.find((x) => x.id === id)?.nombre)
+        .filter((x): x is string => Boolean(x));
+
+      const estilo =
+        catalogos.estilos.find((x) => x.id === estiloId)?.nombre ?? "";
+
+      const combinar = combinarIds
+        .map((id) => catalogos.combinar.find((x) => x.id === id)?.nombre)
+        .filter((x): x is string => Boolean(x));
+
+      const iluminacionNatural =
+        catalogos.luzNatural.find((x) => x.id === luzNaturalId)?.nombre ?? "";
+      const iluminacionArtificial =
+        catalogos.luzArtificial.find((x) => x.id === luzArtificialId)?.nombre ??
+        "";
+
+      const prompt = aplicarRespuestasAlPromptDisenarColores(
+        cfg.promp,
+        {
+          superficies: superficiesResolved,
+          objetivos,
+          estilo,
+          combinar,
+          iluminacionNatural,
+          iluminacionArtificial,
+        },
+        cfg.variablesAlias ?? [],
+      );
+
       await navigator.clipboard.writeText(prompt);
-      window.open(config.urlRedireccion, "_blank", "noopener,noreferrer");
+      window.open(cfg.urlRedireccion, "_blank", "noopener,noreferrer");
       toast.success("Prompt Copiado", {
         description: "Pegalo en ChatGPT (Ctrl+V).",
       });
@@ -330,6 +359,13 @@ export default function AsistenteIaDisenarColoresVista({
     combinarIds.length === 0
       ? undefined
       : joinNombres(combinarIds, catalogos.combinar);
+
+  const resumenIluminacionNatural = luzNaturalId
+    ? catalogos.luzNatural.find((x) => x.id === luzNaturalId)?.nombre
+    : undefined;
+  const resumenIluminacionArtificial = luzArtificialId
+    ? catalogos.luzArtificial.find((x) => x.id === luzArtificialId)?.nombre
+    : undefined;
 
   return (
     <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-2 lg:gap-6">
@@ -395,7 +431,7 @@ export default function AsistenteIaDisenarColoresVista({
         <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
           <PreguntaAcordeon
             numero={1}
-            titulo="¿Qué Desea Pintar?"
+            titulo="Superficies A Pintar"
             resumen={resumenSuperficies}
             abierta={preguntaAbierta === 1}
             onToggle={() => togglePregunta(1)}
@@ -445,7 +481,7 @@ export default function AsistenteIaDisenarColoresVista({
 
           <PreguntaAcordeon
             numero={2}
-            titulo="¿Qué Objetivo Desea Lograr?"
+            titulo="Objetivos De Diseño"
             resumen={resumenObjetivos}
             abierta={preguntaAbierta === 2}
             onToggle={() => togglePregunta(2)}
@@ -472,7 +508,7 @@ export default function AsistenteIaDisenarColoresVista({
 
           <PreguntaAcordeon
             numero={3}
-            titulo="¿Qué Estilo Desea Lograr?"
+            titulo="Estilos De Diseño"
             resumen={resumenEstilo}
             abierta={preguntaAbierta === 3}
             onToggle={() => togglePregunta(3)}
@@ -512,7 +548,7 @@ export default function AsistenteIaDisenarColoresVista({
 
           <PreguntaAcordeon
             numero={4}
-            titulo="¿Desea Combinar Con Algún Elemento Existente?"
+            titulo="Combinar"
             resumen={resumenCombinar}
             abierta={preguntaAbierta === 4}
             onToggle={() => togglePregunta(4)}
@@ -533,6 +569,82 @@ export default function AsistenteIaDisenarColoresVista({
                     }
                   />
                 ))}
+              </div>
+            )}
+          </PreguntaAcordeon>
+
+          <PreguntaAcordeon
+            numero={5}
+            titulo="Luz Natural"
+            resumen={resumenIluminacionNatural}
+            abierta={preguntaAbierta === 5}
+            onToggle={() => togglePregunta(5)}
+          >
+            {catalogos.luzNatural.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay opciones. Cargalas en GESTION DISEÑO (Luz Natural).
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1" role="radiogroup">
+                {catalogos.luzNatural.map((item) => {
+                  const checked = luzNaturalId === item.id;
+                  return (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                        checked && "bg-muted",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="iluminacion-natural"
+                        className="size-4 accent-primary"
+                        checked={checked}
+                        onChange={() => setLuzNaturalId(item.id)}
+                      />
+                      <span className="min-w-0 flex-1">{item.nombre}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </PreguntaAcordeon>
+
+          <PreguntaAcordeon
+            numero={6}
+            titulo="Luz Artificial"
+            resumen={resumenIluminacionArtificial}
+            abierta={preguntaAbierta === 6}
+            onToggle={() => togglePregunta(6)}
+          >
+            {catalogos.luzArtificial.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay opciones. Cargalas en GESTION DISEÑO (Luz Artificial).
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1" role="radiogroup">
+                {catalogos.luzArtificial.map((item) => {
+                  const checked = luzArtificialId === item.id;
+                  return (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                        checked && "bg-muted",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="iluminacion-artificial"
+                        className="size-4 accent-primary"
+                        checked={checked}
+                        onChange={() => setLuzArtificialId(item.id)}
+                      />
+                      <span className="min-w-0 flex-1">{item.nombre}</span>
+                    </label>
+                  );
+                })}
               </div>
             )}
           </PreguntaAcordeon>

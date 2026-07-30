@@ -1342,6 +1342,26 @@ model ProdIaDisenoObjetivo {
   @@map("prod_ia_diseno_objetivo")
 }
 
+/** Catálogo GESTION DISEÑO — iluminación natural. */
+model ProdIaDisenoLuzNat {
+  id        String   @id @default(cuid())
+  nombre    String   @unique(map: "prod_ia_diseno_luz_nat_nombre_key") @map("nombre")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("prod_ia_diseno_luz_nat")
+}
+
+/** Catálogo GESTION DISEÑO — iluminación artificial. */
+model ProdIaDisenoLuzArt {
+  id        String   @id @default(cuid())
+  nombre    String   @unique(map: "prod_ia_diseno_luz_art_nombre_key") @map("nombre")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("prod_ia_diseno_luz_art")
+}
+
 /** Paleta de colores de marca (nombre + descripción + códigos hex). */
 model MktColoresMarca {
   id               String   @id @default(cuid())

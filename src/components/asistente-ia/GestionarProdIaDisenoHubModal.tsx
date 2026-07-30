@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Layers, Paintbrush, Shuffle, Target } from "lucide-react";
+import { Layers, Paintbrush, Shuffle, Sun, Target, Lightbulb } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   esEditor: boolean;
+  onCatalogoChanged?: () => void;
 }
 
+/** Orden = preguntas 1–6 de Diseñar Colores. */
 const OPCIONES: {
   kind: ProdIaDisenoCatalogoKind;
   label: string;
@@ -24,6 +26,11 @@ const OPCIONES: {
     kind: "sup_pintar",
     label: "Superficies A Pintar",
     icon: <Paintbrush className="h-5 w-5 shrink-0" aria-hidden />,
+  },
+  {
+    kind: "objetivo",
+    label: "Objetivos De Diseño",
+    icon: <Target className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
     kind: "estilos",
@@ -36,9 +43,14 @@ const OPCIONES: {
     icon: <Shuffle className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
-    kind: "objetivo",
-    label: "Objetivos De Diseño",
-    icon: <Target className="h-5 w-5 shrink-0" aria-hidden />,
+    kind: "luz_natural",
+    label: "Luz Natural",
+    icon: <Sun className="h-5 w-5 shrink-0" aria-hidden />,
+  },
+  {
+    kind: "luz_artificial",
+    label: "Luz Artificial",
+    icon: <Lightbulb className="h-5 w-5 shrink-0" aria-hidden />,
   },
 ];
 
@@ -46,6 +58,7 @@ export default function GestionarProdIaDisenoHubModal({
   open,
   onOpenChange,
   esEditor,
+  onCatalogoChanged,
 }: Props) {
   const [catalogoKind, setCatalogoKind] = useState<ProdIaDisenoCatalogoKind | null>(null);
 
@@ -94,6 +107,7 @@ export default function GestionarProdIaDisenoHubModal({
           }}
           kind={catalogoKind}
           esEditor={esEditor}
+          onCatalogoChanged={onCatalogoChanged}
         />
       ) : null}
     </>

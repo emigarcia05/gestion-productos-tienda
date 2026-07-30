@@ -48,6 +48,8 @@ interface Props {
   itemsIniciales: ProdIaDisenoPrompItem[];
   esEditor: boolean;
   onCatalogoChanged?: () => void;
+  onPromptGuardado?: (item: ProdIaDisenoPrompItem) => void;
+  onPromptEliminado?: (submodulo: string) => void;
 }
 
 export default function GestionarProdIaDisenoPrompModal({
@@ -56,6 +58,8 @@ export default function GestionarProdIaDisenoPrompModal({
   itemsIniciales,
   esEditor,
   onCatalogoChanged,
+  onPromptGuardado,
+  onPromptEliminado,
 }: Props) {
   const [items, setItems] = useState<ProdIaDisenoPrompItem[]>(itemsIniciales);
   const [loading, setLoading] = useState(false);
@@ -200,6 +204,7 @@ export default function GestionarProdIaDisenoPrompModal({
           toast.error(res.error ?? "No se pudo guardar.");
           return;
         }
+        onPromptGuardado?.(res.data);
         toast.success("Prompt Actualizado");
       } else {
         const res = await crearProdIaDisenoPrompAction({
@@ -211,6 +216,7 @@ export default function GestionarProdIaDisenoPrompModal({
           toast.error(res.error ?? "No se pudo crear.");
           return;
         }
+        onPromptGuardado?.(res.data);
         toast.success("Prompt Creado");
       }
       setFormOpen(false);
@@ -232,6 +238,7 @@ export default function GestionarProdIaDisenoPrompModal({
         return;
       }
       toast.success("Prompt Eliminado");
+      onPromptEliminado?.(borrarTarget.submodulo);
       setBorrarTarget(null);
       await cargar();
       onCatalogoChanged?.();

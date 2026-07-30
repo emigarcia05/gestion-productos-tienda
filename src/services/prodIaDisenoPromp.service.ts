@@ -1,9 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import type { ProdIaDisenoPrompItem } from "@/lib/asistenteIa";
+import {
+  ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
+  ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY,
+  ASISTENTE_IA_SUBMODULO_DISENAR_COLORES,
+  getDefaultConfigBuscarColorImagen,
+  getDefaultConfigDisenarColores,
+  type AsistenteIaConfigSubmodulo,
+  type AsistenteIaModuloVariable,
+  type ProdIaDisenoPrompItem,
+} from "@/lib/asistenteIa";
 import type {
   CrearProdIaDisenoPrompInput,
   EditarProdIaDisenoPrompInput,
 } from "@/lib/validations/prodIaDisenoPromp";
+import { listarProdIaDisenoPrompVars } from "@/services/prodIaDisenoPrompVar.service";
 import type { ServiceResult } from "@/types/service.types";
 
 const select = {
@@ -47,6 +57,18 @@ function mapDbError(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
+async function configDesdeFila(
+  row: ProdIaDisenoPrompItem,
+): Promise<AsistenteIaConfigSubmodulo> {
+  const variablesAlias = await listarProdIaDisenoPrompVars(row.id);
+  return {
+    submodulo: row.submodulo,
+    promp: row.promp,
+    urlRedireccion: row.urlRedireccion,
+    variablesAlias,
+  };
+}
+
 export async function listarProdIaDisenoPromps(): Promise<ProdIaDisenoPrompItem[]> {
   const rows = await prisma.prodIaDisenoPromp.findMany({
     orderBy: { submodulo: "asc" },
@@ -63,6 +85,33 @@ export async function getProdIaDisenoPrompPorSubmodulo(
     select,
   });
   return row ? mapRow(row) : null;
+}
+
+/**
+ * Config runtime del slot (BD + alias). Si no hay fila, defaults de código.
+ * Leer siempre desde acá al copiar/generar para no usar props stale del cliente.
+ */
+export async function resolverConfigAsistenteIa(
+  slot: AsistenteIaModuloVariable,
+): Promise<AsistenteIaConfigSubmodulo> {
+  if (slot === "disenar_colores") {
+    const row = await getProdIaDisenoPrompPorSubmodulo(
+      ASISTENTE_IA_SUBMODULO_DISENAR_COLORES,
+    );
+    if (!row) return getDefaultConfigDisenarColores();
+    return configDesdeFila(row);
+  }
+
+  const rowNuevo = await getProdIaDisenoPrompPorSubmodulo(
+    ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
+  );
+  const row =
+    rowNuevo ??
+    (await getProdIaDisenoPrompPorSubmodulo(
+      ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY,
+    ));
+  if (!row) return getDefaultConfigBuscarColorImagen();
+  return configDesdeFila(row);
 }
 
 export async function crearProdIaDisenoPromp(

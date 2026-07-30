@@ -1987,6 +1987,12 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-29): **Balance · Gastos · Mes TODOS** — Select Mes con **TODOS** (`mes=todos`); `listarImputacionesMensualesBalance` acepta `mes: null` (año completo); fila con `mes`/`anio`.*
 
+*Última actualización (2026-07-30): **prod_ia_diseno_luz_nat / luz_art** — catálogos GESTION DISEÑO; seed opciones 1–6; listado luz por `createdAt`.*
+
+*Última actualización (2026-07-30): **Diseñar Colores · iluminación** — opciones fijas `ASISTENTE_IA_ILUMINACION_*_OPCIONES`; fuentes `ILUMINACION_NATURAL` / `ILUMINACION_ARTIFICIAL` en runtime.*
+
+*Última actualización (2026-07-30): **Asistente IA · resolverConfigAsistenteIa** — config runtime (promp/url/alias) leída al generar; `revalidatePath` también sobre ruta interna `/asistente-ia/...`.*
+
 *Última actualización (2026-07-30): **prod_ia_diseno_promp_var** — alias `fuente`→`variable` por prompt; CRUD `prodIaDisenoPrompVar`; expandir valores en runtime.*
 
 *Última actualización (2026-07-30): **Diseñar Colores · formatSuperficiesParaPrompt** — 1 fila `Nombre, ColorN`; ≥2 tabla Markdown; tokens canónicos en MAYÚSCULA (`SUPERFICIES`, `COMBINARCON`, …).*

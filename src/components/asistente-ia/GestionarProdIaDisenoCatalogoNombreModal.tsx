@@ -105,6 +105,38 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     toastActualizado: "Objetivo actualizado.",
     toastEliminado: "Objetivo eliminado.",
   },
+  luz_natural: {
+    title: "Luz Natural",
+    searchPlaceholder: "Buscar opción...",
+    searchAria: "Buscar iluminación natural",
+    addAria: "Agregar iluminación natural",
+    emptyMessage: "No hay opciones. Usá el botón + para agregar la primera.",
+    emptyFilterMessage: "Ninguna opción coincide con la búsqueda.",
+    formCreateTitle: "Nueva Opción",
+    formEditTitle: "Editar Opción",
+    formLabel: "Nombre",
+    deleteTitle: "Eliminar Opción",
+    deleteNoun: "la opción",
+    toastCreado: "Opción creada.",
+    toastActualizado: "Opción actualizada.",
+    toastEliminado: "Opción eliminada.",
+  },
+  luz_artificial: {
+    title: "Luz Artificial",
+    searchPlaceholder: "Buscar opción...",
+    searchAria: "Buscar iluminación artificial",
+    addAria: "Agregar iluminación artificial",
+    emptyMessage: "No hay opciones. Usá el botón + para agregar la primera.",
+    emptyFilterMessage: "Ninguna opción coincide con la búsqueda.",
+    formCreateTitle: "Nueva Opción",
+    formEditTitle: "Editar Opción",
+    formLabel: "Nombre",
+    deleteTitle: "Eliminar Opción",
+    deleteNoun: "la opción",
+    toastCreado: "Opción creada.",
+    toastActualizado: "Opción actualizada.",
+    toastEliminado: "Opción eliminada.",
+  },
 };
 
 const LIST_ROW_ICON_BTN_CLASS = cn(
@@ -117,6 +149,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   kind: ProdIaDisenoCatalogoKind;
   esEditor: boolean;
+  onCatalogoChanged?: () => void;
 }
 
 export default function GestionarProdIaDisenoCatalogoNombreModal({
@@ -124,6 +157,7 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
   onOpenChange,
   kind,
   esEditor,
+  onCatalogoChanged,
 }: Props) {
   const copy = COPY_BY_KIND[kind];
 
@@ -211,6 +245,7 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
       setEditingItem(null);
       setFormNombre("");
       await cargar();
+      onCatalogoChanged?.();
     } finally {
       setPending(false);
     }
@@ -230,6 +265,7 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
       toast.success(copy.toastEliminado);
       setBorrarTarget(null);
       await cargar();
+      onCatalogoChanged?.();
     } finally {
       setBorrando(false);
     }
