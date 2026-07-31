@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.10.6 — 2026-07-31
+
+**Descripción:** Restaurado el armado del informe en `handleGenerarPdf` (Buscar Código Desde Imagen): `imagenDataUrl`, `imagenNaturalW/H`, `muestra: { color, x, y }` y `coincidencias`, según `InformeAproximacionCodigoImagen`.
+
+**Motivo:** La refactorización de 0.10.3 pasaba `metaMuestra` como `muestra` y rompía el build (`Property 'color' is missing in type 'MuestraPuntoImagen'`).
+
 ## 0.10.5 — 2026-07-30
 
 **Descripción:** Hub GESTION DISEÑO reordenado (preguntas 1–6) + catálogos `luz_natural` / `luz_artificial` (`prod_ia_diseno_luz_nat` / `_luz_art`) con seed; formulario lee luz desde catálogo.

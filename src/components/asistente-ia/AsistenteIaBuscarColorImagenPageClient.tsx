@@ -150,28 +150,54 @@ export default function AsistenteIaBuscarColorImagenPageClient({
     if (color == null) {
       setMetaMuestra(null);
       setPaso1Completo(false);
+      setRespuestaIa("");
     }
   }
 
   async function handleGenerarPdf() {
-    if (!metaMuestra || !respuestaIa.trim() || generandoPdf) return;
+    const texto = respuestaIa.trim();
+    if (!texto) {
+      toast.error("Falta Respuesta", {
+        description: "Pegá la respuesta de la IA en el campo.",
+      });
+      return;
+    }
+    if (!colorMuestra || !metaMuestra) {
+      toast.error("Falta Muestra", {
+        description:
+          "Completá el paso 1 (imagen y color) antes de generar el PDF.",
+      });
+      return;
+    }
+
+    const coincidencias = parseRespuestaIaCoincidencias(texto);
+    if (coincidencias.length === 0) {
+      toast.error("No Se Pudieron Leer Coincidencias", {
+        description:
+          "La respuesta debe incluir la tabla con Nombre, Código, Similitud, URL y RGB.",
+      });
+      return;
+    }
+
     setGenerandoPdf(true);
     try {
-      const filas = parseRespuestaIaCoincidencias(respuestaIa);
-      if (filas.length === 0) {
-        toast.error("No Se Pudieron Leer Coincidencias", {
-          description: "Revisá el formato de la respuesta pegada.",
-        });
-        return;
-      }
       await descargarPdfAproximacionCodigoImagen({
-        muestra: metaMuestra,
-        filas,
+        imagenDataUrl: metaMuestra.imagenDataUrl,
+        imagenNaturalW: metaMuestra.imagenNaturalW,
+        imagenNaturalH: metaMuestra.imagenNaturalH,
+        muestra: {
+          color: colorMuestra,
+          x: metaMuestra.x,
+          y: metaMuestra.y,
+        },
+        coincidencias,
       });
-      toast.success("Pdf Generado");
-    } catch (e) {
+      toast.success("Pdf Generado", {
+        description: "Se descargó el informe de aproximación.",
+      });
+    } catch (err) {
       toast.error("No Se Pudo Generar El Pdf", {
-        description: e instanceof Error ? e.message : "Error desconocido.",
+        description: err instanceof Error ? err.message : "Error desconocido.",
       });
     } finally {
       setGenerandoPdf(false);
