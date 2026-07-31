@@ -536,13 +536,6 @@ export default function GestionarProdIaDisenoPrompModal({
                   variables.
                 </p>
               ) : null}
-              <p className="text-xs text-muted-foreground">
-                Opcional vacío: envolvé la frase con{" "}
-                <code className="rounded bg-muted px-1 py-0.5 text-[0.7rem]">
-                  {"{{#VARIABLE}}…{{/VARIABLE}}"}
-                </code>{" "}
-                (p. ej. Combinar) para no incluirla en el prompt generado.
-              </p>
               <textarea
                 ref={prompTextareaRef}
                 value={formPromp}
@@ -570,10 +563,6 @@ export default function GestionarProdIaDisenoPrompModal({
             {esFormDisenarColores ? (
               <div className="flex flex-col gap-1">
                 <ModalMicroLabel>Plantilla Superficies</ModalMicroLabel>
-                <p className="text-xs text-muted-foreground">
-                  Una línea por superficie. Usá {"{{SUPERFICIE}}"} y {"{{COLOR}}"}.
-                  Se repite según las superficies elegidas (1–4).
-                </p>
                 <Input
                   value={formPlantillaSuperficies}
                   onChange={(e) => setFormPlantillaSuperficies(e.target.value)}
@@ -583,6 +572,14 @@ export default function GestionarProdIaDisenoPrompModal({
                 />
               </div>
             ) : null}
+            <p className="text-xs text-muted-foreground">
+              Frases opcionales: envolvé el texto con{" "}
+              <code className="rounded bg-muted px-1 py-0.5 text-[0.7rem]">
+                {"{{#VARIABLE}}…{{/VARIABLE}}"}
+              </code>
+              . Si la variable queda vacía (p. ej. Combinar), esa frase no se
+              incluye en el prompt generado.
+            </p>
           </div>
         </AppModal>
       </Dialog>
