@@ -38,18 +38,34 @@ export const ASISTENTE_IA_SUBMODULOS_PROMP = [
 export type AsistenteIaSubmoduloPromp =
   (typeof ASISTENTE_IA_SUBMODULOS_PROMP)[number];
 
+/**
+ * Los `submodulo` de BD conviven en distinto casing (filas viejas en MAYÚSCULAS,
+ * altas nuevas en Title Case). Toda comparación pasa por acá.
+ */
+export function normalizarSubmoduloPromp(value: string): string {
+  return value.trim().toLocaleUpperCase("es-AR");
+}
+
+export function mismoSubmoduloPromp(a: string, b: string): boolean {
+  return normalizarSubmoduloPromp(a) === normalizarSubmoduloPromp(b);
+}
+
 export function isAsistenteIaSubmoduloPromp(
   value: string,
 ): value is AsistenteIaSubmoduloPromp {
-  return (ASISTENTE_IA_SUBMODULOS_PROMP as readonly string[]).includes(value);
+  return (ASISTENTE_IA_SUBMODULOS_PROMP as readonly string[]).some((s) =>
+    mismoSubmoduloPromp(s, value),
+  );
 }
 
 /** True si el `submodulo` de BD ocupa el slot de Buscar Código (canónico o legacy). */
 export function ocupaSlotBuscarCodigoImagen(submodulo: string): boolean {
-  const n = submodulo.trim();
   return (
-    n === ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN ||
-    n === ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY
+    mismoSubmoduloPromp(submodulo, ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN) ||
+    mismoSubmoduloPromp(
+      submodulo,
+      ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY,
+    )
   );
 }
 
@@ -64,7 +80,7 @@ export function submoduloPrompYaAsignado(
   if (submoduloCanonico === ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN) {
     return items.some((i) => ocupaSlotBuscarCodigoImagen(i.submodulo));
   }
-  return items.some((i) => i.submodulo.trim() === submoduloCanonico);
+  return items.some((i) => mismoSubmoduloPromp(i.submodulo, submoduloCanonico));
 }
 
 export function submodulosPrompDisponiblesParaAlta(
@@ -174,8 +190,22 @@ export function moduloVariableDesdeSubmodulo(
   submodulo: string,
 ): AsistenteIaModuloVariable | null {
   if (ocupaSlotBuscarCodigoImagen(submodulo)) return "buscar_codigo";
-  if (submodulo.trim() === ASISTENTE_IA_SUBMODULO_DISENAR_COLORES) {
+  if (mismoSubmoduloPromp(submodulo, ASISTENTE_IA_SUBMODULO_DISENAR_COLORES)) {
     return "disenar_colores";
+  }
+  return null;
+}
+
+/** Nombre canónico del módulo del hub al que aplica una fila de BD. */
+export function submoduloCanonicoDesdeBd(
+  submodulo: string,
+): AsistenteIaSubmoduloPromp | null {
+  const modulo = moduloVariableDesdeSubmodulo(submodulo);
+  if (modulo === "buscar_codigo") {
+    return ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN;
+  }
+  if (modulo === "disenar_colores") {
+    return ASISTENTE_IA_SUBMODULO_DISENAR_COLORES;
   }
   return null;
 }
@@ -193,45 +223,46 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
     {
       clave: ASISTENTE_IA_VAR_SUPERFICIES,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_SUPERFICIES),
-      etiqueta: "Superficies a pintar",
+      etiqueta: "Superficie a pintar",
       descripcion:
-        "1 superficie: «Nombre, ColorN». Varias: tabla Markdown Superficie|Color.",
+        "Obligatorio, hasta 4. 1 ítem: «Nombre, ColorN». Varias: tabla Markdown Superficie|Color.",
       modulos: ["disenar_colores"],
     },
     {
       clave: ASISTENTE_IA_VAR_OBJETIVOS,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_OBJETIVOS),
-      etiqueta: "Objetivos",
-      descripcion: "Objetivos de diseño seleccionados (Diseñar Colores).",
+      etiqueta: "Objetivo de diseño",
+      descripcion: "Obligatorio · 1 sola respuesta (Diseñar Colores).",
       modulos: ["disenar_colores"],
     },
     {
       clave: ASISTENTE_IA_VAR_ESTILO,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_ESTILO),
-      etiqueta: "Estilo",
-      descripcion: "Estilo de diseño único (Diseñar Colores).",
-      modulos: ["disenar_colores"],
-    },
-    {
-      clave: ASISTENTE_IA_VAR_COMBINAR_CON,
-      token: tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR_CON),
-      etiqueta: "Combinar con",
-      descripcion: "Elementos existentes a combinar (Diseñar Colores).",
+      etiqueta: "Estilo de diseño",
+      descripcion: "Obligatorio · 1 sola respuesta (Diseñar Colores).",
       modulos: ["disenar_colores"],
     },
     {
       clave: ASISTENTE_IA_VAR_ILUMINACION_NATURAL,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_ILUMINACION_NATURAL),
-      etiqueta: "Iluminación natural",
+      etiqueta: "Luz natural",
       descripcion:
-        "Iluminación natural (única): INTERIOR/EXTERIOR con nivel o sol.",
+        "Obligatorio · 1 sola: INTERIOR/EXTERIOR con nivel o sol.",
       modulos: ["disenar_colores"],
     },
     {
       clave: ASISTENTE_IA_VAR_ILUMINACION_ARTIFICIAL,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_ILUMINACION_ARTIFICIAL),
-      etiqueta: "Iluminación artificial",
-      descripcion: "Iluminación artificial (única): Fría/Cálida con intensidad.",
+      etiqueta: "Luz artificial",
+      descripcion:
+        "Obligatorio · 1 sola: Fría/Cálida con intensidad.",
+      modulos: ["disenar_colores"],
+    },
+    {
+      clave: ASISTENTE_IA_VAR_COMBINAR_CON,
+      token: tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR_CON),
+      etiqueta: "Combinar",
+      descripcion: "Opcional · 1 sola respuesta (Diseñar Colores).",
       modulos: ["disenar_colores"],
     },
   ] as const;
@@ -460,10 +491,6 @@ export function buildPromptDisenarColoresDefault(): string {
     "",
     `'${estilo}'`,
     "",
-    "### Combinar con",
-    "",
-    `'${combinarCon}'`,
-    "",
     "### Iluminación natural",
     "",
     `'${iluminacionNatural}'`,
@@ -471,6 +498,10 @@ export function buildPromptDisenarColoresDefault(): string {
     "### Iluminación artificial",
     "",
     `'${iluminacionArtificial}'`,
+    "",
+    "### Combinar con",
+    "",
+    `'${combinarCon}'`,
     "",
     "---",
     "",

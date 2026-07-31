@@ -77,11 +77,16 @@ export async function listarProdIaDisenoPromps(): Promise<ProdIaDisenoPrompItem[
   return rows.map(mapRow);
 }
 
+/**
+ * Lookup case-insensitive: en BD conviven filas en MAYÚSCULAS (seed/altas viejas)
+ * y en Title Case (nombre canónico). Comparar exacto dejaba el prompt sin resolver
+ * y el runtime caía al default de código.
+ */
 export async function getProdIaDisenoPrompPorSubmodulo(
   submodulo: string,
 ): Promise<ProdIaDisenoPrompItem | null> {
-  const row = await prisma.prodIaDisenoPromp.findUnique({
-    where: { submodulo: submodulo.trim() },
+  const row = await prisma.prodIaDisenoPromp.findFirst({
+    where: { submodulo: { equals: submodulo.trim(), mode: "insensitive" } },
     select,
   });
   return row ? mapRow(row) : null;

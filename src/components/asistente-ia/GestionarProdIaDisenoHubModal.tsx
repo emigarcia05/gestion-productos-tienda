@@ -16,7 +16,7 @@ interface Props {
   onCatalogoChanged?: () => void;
 }
 
-/** Orden = preguntas 1–6 de Diseñar Colores. */
+/** Orden y etiquetas = preguntas 1–6 de Diseñar Colores (`{n}. {titulo}`). */
 const OPCIONES: {
   kind: ProdIaDisenoCatalogoKind;
   label: string;
@@ -24,33 +24,33 @@ const OPCIONES: {
 }[] = [
   {
     kind: "sup_pintar",
-    label: "Superficies A Pintar",
+    label: "1. Superficie A Pintar",
     icon: <Paintbrush className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
     kind: "objetivo",
-    label: "Objetivos De Diseño",
+    label: "2. Objetivo De Diseño",
     icon: <Target className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
     kind: "estilos",
-    label: "Estilos De Diseño",
+    label: "3. Estilo De Diseño",
     icon: <Layers className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
-    kind: "combinar",
-    label: "Combinar",
-    icon: <Shuffle className="h-5 w-5 shrink-0" aria-hidden />,
-  },
-  {
     kind: "luz_natural",
-    label: "Luz Natural",
+    label: "4. Luz Natural",
     icon: <Sun className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
     kind: "luz_artificial",
-    label: "Luz Artificial",
+    label: "5. Luz Artificial",
     icon: <Lightbulb className="h-5 w-5 shrink-0" aria-hidden />,
+  },
+  {
+    kind: "combinar",
+    label: "6. Combinar",
+    icon: <Shuffle className="h-5 w-5 shrink-0" aria-hidden />,
   },
 ];
 

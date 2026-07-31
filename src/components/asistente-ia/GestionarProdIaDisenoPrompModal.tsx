@@ -27,6 +27,7 @@ import {
 import {
   moduloVariableDesdeSubmodulo,
   resolverVariablesPromptParaUi,
+  submoduloCanonicoDesdeBd,
   submodulosPrompDisponiblesParaAlta,
   type AsistenteIaVariablePrompt,
   type ProdIaDisenoPrompItem,
@@ -41,6 +42,11 @@ const LIST_ROW_ICON_BTN_CLASS = cn(
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
   "h-9 w-9 min-h-9 max-h-9",
 );
+
+/** Módulo del hub al que aplica la fila (el `submodulo` de BD puede ser legacy). */
+function etiquetaModulo(item: ProdIaDisenoPrompItem): string {
+  return submoduloCanonicoDesdeBd(item.submodulo) ?? item.submodulo;
+}
 
 interface Props {
   open: boolean;
@@ -117,7 +123,10 @@ export default function GestionarProdIaDisenoPrompModal({
     const q = busqueda.trim();
     if (!q) return items;
     return items.filter((item) =>
-      matchByMultiTerm([item.submodulo, item.promp, item.urlRedireccion], q),
+      matchByMultiTerm(
+        [etiquetaModulo(item), item.submodulo, item.promp, item.urlRedireccion],
+        q,
+      ),
     );
   }, [items, busqueda]);
 
@@ -165,7 +174,7 @@ export default function GestionarProdIaDisenoPrompModal({
   function abrirEditar(item: ProdIaDisenoPrompItem) {
     if (!esEditor || pending) return;
     setEditingItem(item);
-    setFormSubmodulo(item.submodulo);
+    setFormSubmodulo(etiquetaModulo(item));
     setFormPromp(item.promp);
     setFormUrl(item.urlRedireccion);
     setFormOpen(true);
@@ -320,7 +329,7 @@ export default function GestionarProdIaDisenoPrompModal({
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-foreground">
-                          {item.submodulo}
+                          {etiquetaModulo(item)}
                         </p>
                       </div>
                       {esEditor ? (
@@ -330,7 +339,7 @@ export default function GestionarProdIaDisenoPrompModal({
                             variant="ghost"
                             size="icon"
                             className={LIST_ROW_ICON_BTN_CLASS}
-                            aria-label={`Editar ${item.submodulo}`}
+                            aria-label={`Editar ${etiquetaModulo(item)}`}
                             disabled={pending || borrando}
                             onClick={() => abrirEditar(item)}
                           >
@@ -341,7 +350,7 @@ export default function GestionarProdIaDisenoPrompModal({
                             variant="ghost"
                             size="icon"
                             className={LIST_ROW_ICON_BTN_CLASS}
-                            aria-label={`Eliminar ${item.submodulo}`}
+                            aria-label={`Eliminar ${etiquetaModulo(item)}`}
                             disabled={pending || borrando}
                             onClick={() => setBorrarTarget(item)}
                           >
@@ -560,7 +569,10 @@ export default function GestionarProdIaDisenoPrompModal({
         >
           <p className="text-sm text-foreground">
             ¿Eliminar el prompt de{" "}
-            <span className="font-semibold">{borrarTarget?.submodulo}</span>?
+            <span className="font-semibold">
+              {borrarTarget ? etiquetaModulo(borrarTarget) : ""}
+            </span>
+            ?
           </p>
         </AppModal>
       </Dialog>

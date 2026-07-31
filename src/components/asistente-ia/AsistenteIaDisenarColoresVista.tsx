@@ -48,6 +48,9 @@ type SuperficieSeleccion = {
 
 type PreguntaId = 1 | 2 | 3 | 4 | 5 | 6;
 
+/** Máximo de superficies seleccionables (pregunta 1, obligatorio). */
+const MAX_SUPERFICIES = 4;
+
 function PreguntaAcordeon({
   numero,
   titulo,
@@ -141,16 +144,6 @@ function OpcionCheck({
   );
 }
 
-function joinNombres(
-  ids: string[],
-  items: ProdIaDisenoCatalogoNombreItem[],
-): string {
-  return ids
-    .map((id) => items.find((x) => x.id === id)?.nombre)
-    .filter((x): x is string => Boolean(x))
-    .join(", ");
-}
-
 export default function AsistenteIaDisenarColoresVista({
   config: _config,
   catalogos,
@@ -161,11 +154,12 @@ export default function AsistenteIaDisenarColoresVista({
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [superficies, setSuperficies] = useState<SuperficieSeleccion[]>([]);
-  const [objetivoIds, setObjetivoIds] = useState<string[]>([]);
+  const [objetivoId, setObjetivoId] = useState<string>("");
   const [estiloId, setEstiloId] = useState<string>("");
-  const [combinarIds, setCombinarIds] = useState<string[]>([]);
   const [luzNaturalId, setLuzNaturalId] = useState<string>("");
   const [luzArtificialId, setLuzArtificialId] = useState<string>("");
+  /** Opcional: una sola respuesta o vacío. */
+  const [combinarId, setCombinarId] = useState<string>("");
   const [enviando, setEnviando] = useState(false);
   const [preguntaAbierta, setPreguntaAbierta] = useState<PreguntaId>(1);
 
@@ -204,11 +198,18 @@ export default function AsistenteIaDisenarColoresVista({
   }
 
   function toggleSuperficie(id: string) {
-    setSuperficies((prev) => {
-      const exists = prev.find((s) => s.id === id);
-      if (exists) return prev.filter((s) => s.id !== id);
-      return [...prev, { id, colorIndex: 1 }];
-    });
+    const exists = superficies.find((s) => s.id === id);
+    if (exists) {
+      setSuperficies(superficies.filter((s) => s.id !== id));
+      return;
+    }
+    if (superficies.length >= MAX_SUPERFICIES) {
+      toast.error("Máximo Alcanzado", {
+        description: `Podés seleccionar hasta ${MAX_SUPERFICIES} superficies.`,
+      });
+      return;
+    }
+    setSuperficies([...superficies, { id, colorIndex: 1 }]);
   }
 
   function setColorSuperficie(id: string, colorIndex: number) {
@@ -217,33 +218,29 @@ export default function AsistenteIaDisenarColoresVista({
     );
   }
 
-  function toggleId(
-    ids: string[],
-    setIds: (next: string[]) => void,
-    id: string,
-  ) {
-    if (ids.includes(id)) {
-      setIds(ids.filter((x) => x !== id));
-      return;
-    }
-    setIds([...ids, id]);
+  /** Selección única opcional: re-clic desmarca. */
+  function toggleCombinar(id: string) {
+    setCombinarId((prev) => (prev === id ? "" : id));
   }
 
   function validar(): string | null {
     if (superficies.length === 0) {
       return "Seleccioná al menos una superficie a pintar.";
     }
-    if (objetivoIds.length === 0) {
-      return "Seleccioná al menos un objetivo.";
+    if (superficies.length > MAX_SUPERFICIES) {
+      return `Máximo ${MAX_SUPERFICIES} superficies.`;
+    }
+    if (!objetivoId) {
+      return "Seleccioná un objetivo de diseño.";
     }
     if (!estiloId) {
-      return "Seleccioná un estilo.";
+      return "Seleccioná un estilo de diseño.";
     }
     if (!luzNaturalId) {
-      return "Seleccioná la iluminación natural.";
+      return "Seleccioná la luz natural.";
     }
     if (!luzArtificialId) {
-      return "Seleccioná la iluminación artificial.";
+      return "Seleccioná la luz artificial.";
     }
     return null;
   }
@@ -291,16 +288,20 @@ export default function AsistenteIaDisenarColoresVista({
         })
         .filter((x): x is NonNullable<typeof x> => x != null);
 
-      const objetivos = objetivoIds
-        .map((id) => catalogos.objetivos.find((x) => x.id === id)?.nombre)
-        .filter((x): x is string => Boolean(x));
+      const objetivos = (() => {
+        const nombre = catalogos.objetivos.find((x) => x.id === objetivoId)
+          ?.nombre;
+        return nombre ? [nombre] : [];
+      })();
 
       const estilo =
         catalogos.estilos.find((x) => x.id === estiloId)?.nombre ?? "";
 
-      const combinar = combinarIds
-        .map((id) => catalogos.combinar.find((x) => x.id === id)?.nombre)
-        .filter((x): x is string => Boolean(x));
+      const combinar = (() => {
+        const nombre = catalogos.combinar.find((x) => x.id === combinarId)
+          ?.nombre;
+        return nombre ? [nombre] : [];
+      })();
 
       const iluminacionNatural =
         catalogos.luzNatural.find((x) => x.id === luzNaturalId)?.nombre ?? "";
@@ -346,25 +347,23 @@ export default function AsistenteIaDisenarColoresVista({
           })
           .join("; ");
 
-  const resumenObjetivos =
-    objetivoIds.length === 0
-      ? undefined
-      : joinNombres(objetivoIds, catalogos.objetivos);
+  const resumenObjetivos = objetivoId
+    ? catalogos.objetivos.find((x) => x.id === objetivoId)?.nombre
+    : undefined;
 
   const resumenEstilo = estiloId
     ? catalogos.estilos.find((x) => x.id === estiloId)?.nombre
     : undefined;
-
-  const resumenCombinar =
-    combinarIds.length === 0
-      ? undefined
-      : joinNombres(combinarIds, catalogos.combinar);
 
   const resumenIluminacionNatural = luzNaturalId
     ? catalogos.luzNatural.find((x) => x.id === luzNaturalId)?.nombre
     : undefined;
   const resumenIluminacionArtificial = luzArtificialId
     ? catalogos.luzArtificial.find((x) => x.id === luzArtificialId)?.nombre
+    : undefined;
+
+  const resumenCombinar = combinarId
+    ? catalogos.combinar.find((x) => x.id === combinarId)?.nombre
     : undefined;
 
   return (
@@ -431,7 +430,7 @@ export default function AsistenteIaDisenarColoresVista({
         <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
           <PreguntaAcordeon
             numero={1}
-            titulo="Superficies A Pintar"
+            titulo="Superficie A Pintar"
             resumen={resumenSuperficies}
             abierta={preguntaAbierta === 1}
             onToggle={() => togglePregunta(1)}
@@ -481,7 +480,7 @@ export default function AsistenteIaDisenarColoresVista({
 
           <PreguntaAcordeon
             numero={2}
-            titulo="Objetivos De Diseño"
+            titulo="Objetivo De Diseño"
             resumen={resumenObjetivos}
             abierta={preguntaAbierta === 2}
             onToggle={() => togglePregunta(2)}
@@ -491,24 +490,37 @@ export default function AsistenteIaDisenarColoresVista({
                 No hay objetivos. Cargalos en GESTION DISEÑO.
               </p>
             ) : (
-              <div className="flex flex-col gap-1">
-                {catalogos.objetivos.map((item) => (
-                  <OpcionCheck
-                    key={item.id}
-                    checked={objetivoIds.includes(item.id)}
-                    label={item.nombre}
-                    onToggle={() =>
-                      toggleId(objetivoIds, setObjetivoIds, item.id)
-                    }
-                  />
-                ))}
+              <div className="flex flex-col gap-1" role="radiogroup">
+                {catalogos.objetivos.map((item) => {
+                  const checked = objetivoId === item.id;
+                  return (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                        checked && "bg-muted",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="objetivo-diseno"
+                        className="size-4 accent-primary"
+                        checked={checked}
+                        onChange={() => setObjetivoId(item.id)}
+                      />
+                      <span className="min-w-0 flex-1 truncate">
+                        {item.nombre}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             )}
           </PreguntaAcordeon>
 
           <PreguntaAcordeon
             numero={3}
-            titulo="Estilos De Diseño"
+            titulo="Estilo De Diseño"
             resumen={resumenEstilo}
             abierta={preguntaAbierta === 3}
             onToggle={() => togglePregunta(3)}
@@ -548,37 +560,10 @@ export default function AsistenteIaDisenarColoresVista({
 
           <PreguntaAcordeon
             numero={4}
-            titulo="Combinar"
-            resumen={resumenCombinar}
-            abierta={preguntaAbierta === 4}
-            onToggle={() => togglePregunta(4)}
-          >
-            {catalogos.combinar.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay elementos. Cargalos en GESTION DISEÑO (opcional).
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {catalogos.combinar.map((item) => (
-                  <OpcionCheck
-                    key={item.id}
-                    checked={combinarIds.includes(item.id)}
-                    label={item.nombre}
-                    onToggle={() =>
-                      toggleId(combinarIds, setCombinarIds, item.id)
-                    }
-                  />
-                ))}
-              </div>
-            )}
-          </PreguntaAcordeon>
-
-          <PreguntaAcordeon
-            numero={5}
             titulo="Luz Natural"
             resumen={resumenIluminacionNatural}
-            abierta={preguntaAbierta === 5}
-            onToggle={() => togglePregunta(5)}
+            abierta={preguntaAbierta === 4}
+            onToggle={() => togglePregunta(4)}
           >
             {catalogos.luzNatural.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -612,11 +597,11 @@ export default function AsistenteIaDisenarColoresVista({
           </PreguntaAcordeon>
 
           <PreguntaAcordeon
-            numero={6}
+            numero={5}
             titulo="Luz Artificial"
             resumen={resumenIluminacionArtificial}
-            abierta={preguntaAbierta === 6}
-            onToggle={() => togglePregunta(6)}
+            abierta={preguntaAbierta === 5}
+            onToggle={() => togglePregunta(5)}
           >
             {catalogos.luzArtificial.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -645,6 +630,31 @@ export default function AsistenteIaDisenarColoresVista({
                     </label>
                   );
                 })}
+              </div>
+            )}
+          </PreguntaAcordeon>
+
+          <PreguntaAcordeon
+            numero={6}
+            titulo="Combinar"
+            resumen={resumenCombinar}
+            abierta={preguntaAbierta === 6}
+            onToggle={() => togglePregunta(6)}
+          >
+            {catalogos.combinar.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay elementos. Cargalos en GESTION DISEÑO (opcional).
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {catalogos.combinar.map((item) => (
+                  <OpcionCheck
+                    key={item.id}
+                    checked={combinarId === item.id}
+                    label={item.nombre}
+                    onToggle={() => toggleCombinar(item.id)}
+                  />
+                ))}
               </div>
             )}
           </PreguntaAcordeon>

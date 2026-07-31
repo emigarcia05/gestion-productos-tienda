@@ -42,7 +42,7 @@ type CatalogoCopy = {
 
 const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
   sup_pintar: {
-    title: "Superficies A Pintar",
+    title: "Superficie A Pintar",
     searchPlaceholder: "Buscar superficie...",
     searchAria: "Buscar superficie a pintar",
     addAria: "Agregar superficie",
@@ -58,7 +58,7 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     toastEliminado: "Superficie eliminada.",
   },
   estilos: {
-    title: "Estilos De Diseño",
+    title: "Estilo De Diseño",
     searchPlaceholder: "Buscar estilo...",
     searchAria: "Buscar estilo de diseño",
     addAria: "Agregar estilo",
@@ -90,7 +90,7 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     toastEliminado: "Opción eliminada.",
   },
   objetivo: {
-    title: "Objetivos De Diseño",
+    title: "Objetivo De Diseño",
     searchPlaceholder: "Buscar objetivo...",
     searchAria: "Buscar objetivo de diseño",
     addAria: "Agregar objetivo",

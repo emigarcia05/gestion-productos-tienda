@@ -1,5 +1,17 @@
 # Changelog — IA_DISEÑO
 
+## 0.10.8 — 2026-07-31
+
+**Descripción:** Lookup de `prod_ia_diseno_promp.submodulo` **case-insensitive** (`mode: "insensitive"` + `mismoSubmoduloPromp`). GESTION PROMP & URL lista el **módulo canónico** del hub por fila (`submoduloCanonicoDesdeBd`).
+
+**Motivo:** Las filas en BD están en MAYÚSCULAS (`DISEÑAR COLORES`, `BUSCAR COLOR DESDE IMAGEN`) y la comparación exacta contra los nombres canónicos nunca matcheaba: el runtime caía siempre al prompt default de código, así que los prompts editados no se usaban.
+
+## 0.10.7 — 2026-07-31
+
+**Descripción:** Diseñar Colores: nuevo orden 1 Superficie (≤4) → 2 Objetivo (1) → 3 Estilo (1) → 4 Luz Natural (1) → 5 Luz Artificial (1) → 6 Combinar (opcional, 1). Hub GESTION DISEÑO con etiquetas numeradas idénticas al acordeón; Objetivo/Combinar pasan a selección única.
+
+**Motivo:** Definir obligatoriedad y cardinalidad del cuestionario; Combinar al final como opcional; alinear nombres del hub con la página.
+
 ## 0.10.6 — 2026-07-31
 
 **Descripción:** Restaurado el armado del informe en `handleGenerarPdf` (Buscar Código Desde Imagen): `imagenDataUrl`, `imagenNaturalW/H`, `muestra: { color, x, y }` y `coincidencias`, según `InformeAproximacionCodigoImagen`.

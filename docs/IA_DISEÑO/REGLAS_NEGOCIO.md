@@ -2,6 +2,23 @@
 
 Solo reglas funcionales. Implementación: `AGENTEIA_GUIDELINES.md`. Formato de respuesta: `PROMPT_GPT_ASESOR_DISENO_COLORES.md`.
 
+## Cuestionario Diseñar Colores (UI)
+
+Orden y cardinalidad al generar el prompt:
+
+| # | Pregunta | Obligatoriedad | Respuestas |
+|---|----------|----------------|-----------|
+| 1 | Superficie A Pintar | Obligatorio | Hasta 4 |
+| 2 | Objetivo De Diseño | Obligatorio | 1 |
+| 3 | Estilo De Diseño | Obligatorio | 1 |
+| 4 | Luz Natural | Obligatorio | 1 |
+| 5 | Luz Artificial | Obligatorio | 1 |
+| 6 | Combinar | Opcional | 0 o 1 |
+
+Si Combinar está vacío, el token queda vacío y el asesor lo ignora (variable no especificada).
+
+## Respuesta del asesor (GPT)
+
 1. **Nunca inventar códigos.** Solo `codigo` existente en catálogo Alba / `colores_alba_ia`.
 2. **Solo colores oficiales Alba.** No aproximaciones genéricas sin código.
 3. **No afirmar** superficies, subfamilia o descripción oficial si están vacías en fuente.

@@ -1987,6 +1987,10 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-29): **Balance · Gastos · Mes TODOS** — Select Mes con **TODOS** (`mes=todos`); `listarImputacionesMensualesBalance` acepta `mes: null` (año completo); fila con `mes`/`anio`.*
 
+*Última actualización (2026-07-31): **prod_ia_diseno_promp · lookup case-insensitive** — `getProdIaDisenoPrompPorSubmodulo` usa `findFirst` + `mode: "insensitive"`; helpers `normalizarSubmoduloPromp` / `mismoSubmoduloPromp` / `submoduloCanonicoDesdeBd`. Filas en MAYÚSCULAS ya resuelven (antes caía al default de código).*
+
+*Última actualización (2026-07-31): **Diseñar Colores · reglas UI** — `PROD_IA_DISENO_CATALOGO_KINDS` reordenado (luz antes de combinar); cardinalidad en cliente (máx. 4 superficies; objetivo/estilo/luz únicos; combinar 0–1).*
+
 *Última actualización (2026-07-30): **prod_ia_diseno_luz_nat / luz_art** — catálogos GESTION DISEÑO; seed opciones 1–6; listado luz por `createdAt`.*
 
 *Última actualización (2026-07-30): **Diseñar Colores · iluminación** — opciones fijas `ASISTENTE_IA_ILUMINACION_*_OPCIONES`; fuentes `ILUMINACION_NATURAL` / `ILUMINACION_ARTIFICIAL` en runtime.*

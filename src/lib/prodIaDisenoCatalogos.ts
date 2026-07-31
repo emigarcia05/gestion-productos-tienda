@@ -7,9 +7,9 @@ export type ProdIaDisenoCatalogoKind =
   | "sup_pintar"
   | "objetivo"
   | "estilos"
-  | "combinar"
   | "luz_natural"
-  | "luz_artificial";
+  | "luz_artificial"
+  | "combinar";
 
 export interface ProdIaDisenoCatalogoNombreItem {
   id: string;
@@ -21,7 +21,7 @@ export const PROD_IA_DISENO_CATALOGO_KINDS: ProdIaDisenoCatalogoKind[] = [
   "sup_pintar",
   "objetivo",
   "estilos",
-  "combinar",
   "luz_natural",
   "luz_artificial",
+  "combinar",
 ];

@@ -29,6 +29,7 @@ import {
   ASISTENTE_IA_SUBMODULO_DISENAR_COLORES,
   aplicarRgbAlPromptBuscarColor,
   getDefaultConfigDisenarColores,
+  moduloVariableDesdeSubmodulo,
 } from "@/lib/asistenteIa";
 import type {
   AsistenteIaConfigSubmodulo,
@@ -83,7 +84,9 @@ export default function AsistenteIaBuscarColorImagenPageClient({
         : "Módulos";
 
   function aplicarPromptGuardado(item: ProdIaDisenoPrompItem) {
-    if (item.submodulo !== ASISTENTE_IA_SUBMODULO_DISENAR_COLORES) return;
+    if (moduloVariableDesdeSubmodulo(item.submodulo) !== "disenar_colores") {
+      return;
+    }
     setConfigDisenar((prev) => ({
       ...prev,
       submodulo: item.submodulo,
@@ -93,7 +96,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
   }
 
   function aplicarPromptEliminado(submodulo: string) {
-    if (submodulo === ASISTENTE_IA_SUBMODULO_DISENAR_COLORES) {
+    if (moduloVariableDesdeSubmodulo(submodulo) === "disenar_colores") {
       setConfigDisenar(getDefaultConfigDisenarColores());
     }
   }
