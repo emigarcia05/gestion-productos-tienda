@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.11.4 — 2026-07-31
+
+**Descripción:** Bloques opcionales `{{#VAR}}…{{/VAR}}` en el prompt: si la variable está vacía, se omite el bloque (`omitirBloquesCondicionalesVacios` dentro de `aplicarVariablesAlPrompt`). Seed de Diseñar Colores envuelve la sección Combinar.
+
+**Motivo:** Combinar es opcional; no dejar la frase/sección en el prompt cuando no hay respuesta.
+
 ## 0.11.3 — 2026-07-31
 
 **Descripción:** Plantilla editable de superficies en `prod_ia_diseno_promp.plantilla_superficies` (GESTION PROMP · Diseñar Colores). Placeholders `{{SUPERFICIE}}` / `{{COLOR}}`; se repite 1–4 filas. Default: `- {{SUPERFICIE}} → {{COLOR}}`.

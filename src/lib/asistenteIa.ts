@@ -280,7 +280,8 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
       clave: ASISTENTE_IA_VAR_COMBINAR_CON,
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_COMBINAR_CON),
       etiqueta: "Combinar",
-      descripcion: "Opcional · 1 sola respuesta (Diseñar Colores).",
+      descripcion:
+        "Opcional · 1 sola. Envuelve la frase con {{#COMBINARCON}}…{{/COMBINARCON}} para omitirla si queda vacío.",
       modulos: ["disenar_colores"],
     },
   ] as const;
@@ -382,17 +383,58 @@ export function buildPromptBuscarColorDesdeImagenDefault(): string {
 }
 
 /**
- * Sustituye `{{CLAVE}}` por valores. Claves sin valor se dejan intactas.
+ * Valor de una variable en el mapa (case-insensitive). Sin match → "".
+ */
+function valorVariablePrompt(
+  valores: Record<string, string>,
+  clave: string,
+): string {
+  const key = clave.toUpperCase();
+  const found = Object.entries(valores).find(([k]) => k.toUpperCase() === key);
+  return found?.[1] ?? "";
+}
+
+/**
+ * Bloques opcionales: `{{#VAR}}…{{/VAR}}`.
+ * Si `VAR` está ausente o solo whitespace, se elimina el bloque entero;
+ * si tiene valor, se deja el cuerpo (luego se sustituyen `{{VAR}}` normales).
+ * Un nivel (sin anidar). Útil p. ej. para Combinar, que es opcional.
+ */
+export function omitirBloquesCondicionalesVacios(
+  plantilla: string,
+  valores: Record<string, string>,
+): string {
+  const re =
+    /\{\{#\s*([A-Za-z0-9_]+)\s*\}\}([\s\S]*?)\{\{\/\s*([A-Za-z0-9_]+)\s*\}\}/gi;
+  const out = plantilla.replace(
+    re,
+    (match, open: string, cuerpo: string, close: string) => {
+      if (open.toUpperCase() !== close.toUpperCase()) return match;
+      const val = valorVariablePrompt(valores, open).trim();
+      return val ? cuerpo : "";
+    },
+  );
+  return out.replace(/\n{3,}/g, "\n\n");
+}
+
+/**
+ * Sustituye `{{CLAVE}}` por valores. Primero omite bloques `{{#CLAVE}}…{{/CLAVE}}`
+ * si el valor está vacío. Claves sin valor en tokens simples se dejan intactas.
  */
 export function aplicarVariablesAlPrompt(
   plantilla: string,
   valores: Record<string, string>,
 ): string {
-  return plantilla.replace(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g, (match, clave: string) => {
-    const key = clave.toUpperCase();
-    const found = Object.entries(valores).find(([k]) => k.toUpperCase() === key);
-    return found ? found[1] : match;
-  });
+  const sinBloquesVacios = omitirBloquesCondicionalesVacios(plantilla, valores);
+  return sinBloquesVacios.replace(
+    /\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g,
+    (match, clave: string) => {
+      const found = Object.entries(valores).find(
+        ([k]) => k.toUpperCase() === clave.toUpperCase(),
+      );
+      return found ? found[1] : match;
+    },
+  );
 }
 
 /**
@@ -534,10 +576,12 @@ export function buildPromptDisenarColoresDefault(): string {
     "",
     `'${iluminacionArtificial}'`,
     "",
+    `{{#${ASISTENTE_IA_VAR_COMBINAR_CON}}}`,
     "### Combinar con",
     "",
     `'${combinarCon}'`,
     "",
+    `{{/${ASISTENTE_IA_VAR_COMBINAR_CON}}}`,
     "---",
     "",
     "## Antes de responder",

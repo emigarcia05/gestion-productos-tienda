@@ -536,6 +536,13 @@ export default function GestionarProdIaDisenoPrompModal({
                   variables.
                 </p>
               ) : null}
+              <p className="text-xs text-muted-foreground">
+                Opcional vacío: envolvé la frase con{" "}
+                <code className="rounded bg-muted px-1 py-0.5 text-[0.7rem]">
+                  {"{{#VARIABLE}}…{{/VARIABLE}}"}
+                </code>{" "}
+                (p. ej. Combinar) para no incluirla en el prompt generado.
+              </p>
               <textarea
                 ref={prompTextareaRef}
                 value={formPromp}

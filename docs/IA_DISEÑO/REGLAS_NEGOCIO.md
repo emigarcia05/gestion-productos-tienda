@@ -15,7 +15,7 @@ Orden y cardinalidad al generar el prompt:
 | 5 | Luz Artificial | Obligatorio | 1 |
 | 6 | Combinar | Opcional | 0 o 1 |
 
-Si Combinar está vacío, el token queda vacío y el asesor lo ignora (variable no especificada).
+Si Combinar está vacío: con el bloque `{{#COMBINARCON}}…{{/COMBINARCON}}` en el prompt, **no se incluye** esa sección en el texto generado. Sin el bloque, el token queda vacío y el Prompt Maestro indica ignorar variables vacías.
 
 Los valores de catálogo se muestran con **`nombre`** en la UI y se inyectan con **`texto`** al armar el prompt. Excepción **Superficies**: `texto` + Color A–D se combinan con una plantilla única (`plantilla_superficies`) repetida por cada superficie elegida.
 
