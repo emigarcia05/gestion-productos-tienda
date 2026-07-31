@@ -1,6 +1,7 @@
 /**
  * Catálogos de GESTION DISEÑO (Asistente IA).
  * Orden del hub = orden de preguntas en Diseñar Colores.
+ * `nombre` = UI (español); `nombreEn` = texto inyectado en el prompt (inglés).
  */
 
 export type ProdIaDisenoCatalogoKind =
@@ -13,7 +14,18 @@ export type ProdIaDisenoCatalogoKind =
 
 export interface ProdIaDisenoCatalogoNombreItem {
   id: string;
+  /** Etiqueta en pantalla (español). */
   nombre: string;
+  /** Valor para el prompt (inglés). */
+  nombreEn: string;
+}
+
+/** Texto a inyectar en el prompt; fallback a español si faltara inglés. */
+export function nombreCatalogoParaPrompt(
+  item: Pick<ProdIaDisenoCatalogoNombreItem, "nombre" | "nombreEn">,
+): string {
+  const en = item.nombreEn.trim();
+  return en || item.nombre.trim();
 }
 
 /** Orden canónico del hub GESTION DISEÑO (preguntas 1–6). */

@@ -1,19 +1,27 @@
 import { z } from "zod";
 import { prismaCuidSchema } from "@/lib/validations/common";
 
-const nombreCatalogoSchema = z
+const nombreEsSchema = z
   .string()
   .trim()
-  .min(1, "Ingresá un nombre.")
-  .max(200, "El nombre es demasiado largo.");
+  .min(1, "Ingresá el nombre en español.")
+  .max(200, "El nombre en español es demasiado largo.");
+
+const nombreEnSchema = z
+  .string()
+  .trim()
+  .min(1, "Ingresá el nombre en inglés.")
+  .max(200, "El nombre en inglés es demasiado largo.");
 
 export const crearProdIaDisenoCatalogoNombreSchema = z.object({
-  nombre: nombreCatalogoSchema,
+  nombre: nombreEsSchema,
+  nombreEn: nombreEnSchema,
 });
 
 export const editarProdIaDisenoCatalogoNombreSchema = z.object({
   id: prismaCuidSchema,
-  nombre: nombreCatalogoSchema,
+  nombre: nombreEsSchema,
+  nombreEn: nombreEnSchema,
 });
 
 export const eliminarProdIaDisenoCatalogoNombreSchema = z.object({

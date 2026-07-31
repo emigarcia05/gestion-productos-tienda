@@ -225,7 +225,7 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_SUPERFICIES),
       etiqueta: "Superficie a pintar",
       descripcion:
-        "Obligatorio, hasta 4. 1 ítem: «Nombre, ColorN». Varias: tabla Markdown Superficie|Color.",
+        "Obligatorio, hasta 4. Lista: `- Nombre {{ColorN}}.` (una línea por superficie).",
       modulos: ["disenar_colores"],
     },
     {
@@ -476,10 +476,9 @@ export function buildPromptDisenarColoresDefault(): string {
     "",
     "Formato de la variable de superficies:",
     "",
-    "- Una sola superficie: `Nombre, ColorX` (ej. `CIELO RASO, Color1`).",
-    "- Dos o más superficies: tabla Markdown con columnas **Superficie** y **Color**.",
+    "- Una línea por superficie: `- Nombre {{ColorN}}.` (ej. `- CIELO RASO {{Color1}}.`).",
     "",
-    "Cada identificador (Color1, Color2, Color3, etc.) representa un único color del catálogo.",
+    "Cada identificador (`{{Color1}}`, `{{Color2}}`, etc.) representa un único color del catálogo.",
     "",
     "Si un mismo identificador aparece en varias superficies, todas deberán utilizar exactamente el mismo color.",
     "",
@@ -614,23 +613,17 @@ export function getDefaultConfigDisenarColores(): AsistenteIaConfigSubmodulo {
 }
 
 /**
- * Formato Prompt Maestro para GPT:
- * - 0 → vacío
- * - 1 → `Nombre, ColorN`
- * - ≥2 → tabla Markdown | Superficie | Color |
+ * Formato Prompt Maestro para GPT (lista, no matriz):
+ * `- Nombre {{ColorN}}.`
+ * Vacío si no hay superficies.
  */
 export function formatSuperficiesParaPrompt(
   superficies: AsistenteIaSuperficieConColor[],
 ): string {
   if (superficies.length === 0) return "";
-  if (superficies.length === 1) {
-    const s = superficies[0]!;
-    return `${s.superficieNombre}, Color${s.colorIndex}`;
-  }
-  const rows = superficies
-    .map((s) => `| ${s.superficieNombre} | Color${s.colorIndex} |`)
+  return superficies
+    .map((s) => `- ${s.superficieNombre} {{Color${s.colorIndex}}}.`)
     .join("\n");
-  return ["| Superficie | Color |", "|---|---|", rows].join("\n");
 }
 
 /** Lista unida por saltos de línea; vacío si no hay ítems. */

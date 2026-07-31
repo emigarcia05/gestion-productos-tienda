@@ -17,6 +17,8 @@ Orden y cardinalidad al generar el prompt:
 
 Si Combinar está vacío, el token queda vacío y el asesor lo ignora (variable no especificada).
 
+Los valores de catálogo se muestran en **español** en la UI y se inyectan en **inglés** (`nombre_en`) al armar el prompt.
+
 ## Respuesta del asesor (GPT)
 
 1. **Nunca inventar códigos.** Solo `codigo` existente en catálogo Alba / `colores_alba_ia`.

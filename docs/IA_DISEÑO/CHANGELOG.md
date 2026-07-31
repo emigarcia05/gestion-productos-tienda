@@ -1,5 +1,17 @@
 # Changelog — IA_DISEÑO
 
+## 0.11.0 — 2026-07-31
+
+**Descripción:** Catálogos GESTION DISEÑO con `nombre` (ES, UI) + `nombre_en` (EN, prompt). CRUD pide ambos; `nombreCatalogoParaPrompt` inyecta inglés al generar.
+
+**Motivo:** Mejor precisión del prompt en inglés sin cambiar la UX en español.
+
+## 0.10.9 — 2026-07-31
+
+**Descripción:** `formatSuperficiesParaPrompt` deja la tabla Markdown y pasa lista: `- Nombre {{ColorN}}.` (una línea por superficie).
+
+**Motivo:** Formato pedido para inyectar `{{SUPERFICIES}}` en el prompt final.
+
 ## 0.10.8 — 2026-07-31
 
 **Descripción:** Lookup de `prod_ia_diseno_promp.submodulo` **case-insensitive** (`mode: "insensitive"` + `mismoSubmoduloPromp`). GESTION PROMP & URL lista el **módulo canónico** del hub por fila (`submoduloCanonicoDesdeBd`).

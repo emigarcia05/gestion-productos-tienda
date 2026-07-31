@@ -25,6 +25,7 @@ import {
 } from "@/lib/asistenteIa";
 import { resolverConfigAsistenteIaAction } from "@/actions/prodIaDisenoPromp";
 import type { ProdIaDisenoCatalogoNombreItem } from "@/lib/prodIaDisenoCatalogos";
+import { nombreCatalogoParaPrompt } from "@/lib/prodIaDisenoCatalogos";
 import { cn } from "@/lib/utils";
 
 export interface AsistenteIaDisenarColoresCatalogos {
@@ -282,32 +283,35 @@ export default function AsistenteIaDisenarColoresVista({
           if (!item) return null;
           return {
             superficieId: item.id,
-            superficieNombre: item.nombre,
+            superficieNombre: nombreCatalogoParaPrompt(item),
             colorIndex: s.colorIndex,
           };
         })
         .filter((x): x is NonNullable<typeof x> => x != null);
 
       const objetivos = (() => {
-        const nombre = catalogos.objetivos.find((x) => x.id === objetivoId)
-          ?.nombre;
-        return nombre ? [nombre] : [];
+        const item = catalogos.objetivos.find((x) => x.id === objetivoId);
+        return item ? [nombreCatalogoParaPrompt(item)] : [];
       })();
 
-      const estilo =
-        catalogos.estilos.find((x) => x.id === estiloId)?.nombre ?? "";
+      const estiloItem = catalogos.estilos.find((x) => x.id === estiloId);
+      const estilo = estiloItem ? nombreCatalogoParaPrompt(estiloItem) : "";
 
       const combinar = (() => {
-        const nombre = catalogos.combinar.find((x) => x.id === combinarId)
-          ?.nombre;
-        return nombre ? [nombre] : [];
+        const item = catalogos.combinar.find((x) => x.id === combinarId);
+        return item ? [nombreCatalogoParaPrompt(item)] : [];
       })();
 
-      const iluminacionNatural =
-        catalogos.luzNatural.find((x) => x.id === luzNaturalId)?.nombre ?? "";
-      const iluminacionArtificial =
-        catalogos.luzArtificial.find((x) => x.id === luzArtificialId)?.nombre ??
-        "";
+      const luzNatItem = catalogos.luzNatural.find((x) => x.id === luzNaturalId);
+      const iluminacionNatural = luzNatItem
+        ? nombreCatalogoParaPrompt(luzNatItem)
+        : "";
+      const luzArtItem = catalogos.luzArtificial.find(
+        (x) => x.id === luzArtificialId,
+      );
+      const iluminacionArtificial = luzArtItem
+        ? nombreCatalogoParaPrompt(luzArtItem)
+        : "";
 
       const prompt = aplicarRespuestasAlPromptDisenarColores(
         cfg.promp,

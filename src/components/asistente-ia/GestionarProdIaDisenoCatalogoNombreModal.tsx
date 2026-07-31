@@ -32,7 +32,8 @@ type CatalogoCopy = {
   emptyFilterMessage: string;
   formCreateTitle: string;
   formEditTitle: string;
-  formLabel: string;
+  formLabelEs: string;
+  formLabelEn: string;
   deleteTitle: string;
   deleteNoun: string;
   toastCreado: string;
@@ -50,7 +51,8 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     emptyFilterMessage: "Ninguna superficie coincide con la búsqueda.",
     formCreateTitle: "Nueva Superficie",
     formEditTitle: "Editar Superficie",
-    formLabel: "Nombre",
+    formLabelEs: "Nombre (español)",
+    formLabelEn: "Nombre (inglés · prompt)",
     deleteTitle: "Eliminar Superficie",
     deleteNoun: "la superficie",
     toastCreado: "Superficie creada.",
@@ -66,7 +68,8 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     emptyFilterMessage: "Ningún estilo coincide con la búsqueda.",
     formCreateTitle: "Nuevo Estilo",
     formEditTitle: "Editar Estilo",
-    formLabel: "Nombre",
+    formLabelEs: "Nombre (español)",
+    formLabelEn: "Nombre (inglés · prompt)",
     deleteTitle: "Eliminar Estilo",
     deleteNoun: "el estilo",
     toastCreado: "Estilo creado.",
@@ -82,7 +85,8 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     emptyFilterMessage: "Ninguna opción coincide con la búsqueda.",
     formCreateTitle: "Nueva Opción",
     formEditTitle: "Editar Opción",
-    formLabel: "Nombre",
+    formLabelEs: "Nombre (español)",
+    formLabelEn: "Nombre (inglés · prompt)",
     deleteTitle: "Eliminar Opción",
     deleteNoun: "la opción",
     toastCreado: "Opción creada.",
@@ -98,7 +102,8 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     emptyFilterMessage: "Ningún objetivo coincide con la búsqueda.",
     formCreateTitle: "Nuevo Objetivo",
     formEditTitle: "Editar Objetivo",
-    formLabel: "Nombre",
+    formLabelEs: "Nombre (español)",
+    formLabelEn: "Nombre (inglés · prompt)",
     deleteTitle: "Eliminar Objetivo",
     deleteNoun: "el objetivo",
     toastCreado: "Objetivo creado.",
@@ -114,7 +119,8 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     emptyFilterMessage: "Ninguna opción coincide con la búsqueda.",
     formCreateTitle: "Nueva Opción",
     formEditTitle: "Editar Opción",
-    formLabel: "Nombre",
+    formLabelEs: "Nombre (español)",
+    formLabelEn: "Nombre (inglés · prompt)",
     deleteTitle: "Eliminar Opción",
     deleteNoun: "la opción",
     toastCreado: "Opción creada.",
@@ -130,7 +136,8 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     emptyFilterMessage: "Ninguna opción coincide con la búsqueda.",
     formCreateTitle: "Nueva Opción",
     formEditTitle: "Editar Opción",
-    formLabel: "Nombre",
+    formLabelEs: "Nombre (español)",
+    formLabelEn: "Nombre (inglés · prompt)",
     deleteTitle: "Eliminar Opción",
     deleteNoun: "la opción",
     toastCreado: "Opción creada.",
@@ -167,6 +174,7 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ProdIaDisenoCatalogoNombreItem | null>(null);
   const [formNombre, setFormNombre] = useState("");
+  const [formNombreEn, setFormNombreEn] = useState("");
   const [pending, setPending] = useState(false);
   const [borrarTarget, setBorrarTarget] = useState<ProdIaDisenoCatalogoNombreItem | null>(null);
   const [borrando, setBorrando] = useState(false);
@@ -193,6 +201,7 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
     setFormOpen(false);
     setEditingItem(null);
     setFormNombre("");
+    setFormNombreEn("");
     setBorrarTarget(null);
     void cargar();
   }, [open, cargar]);
@@ -200,13 +209,16 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
   const listaFiltrada = useMemo(() => {
     const q = busqueda.trim();
     if (!q) return items;
-    return items.filter((item) => matchByMultiTerm([item.nombre], q));
+    return items.filter((item) =>
+      matchByMultiTerm([item.nombre, item.nombreEn], q),
+    );
   }, [items, busqueda]);
 
   function abrirCrear() {
     if (!esEditor || pending) return;
     setEditingItem(null);
     setFormNombre("");
+    setFormNombreEn("");
     setFormOpen(true);
   }
 
@@ -214,17 +226,21 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
     if (!esEditor || pending) return;
     setEditingItem(item);
     setFormNombre(item.nombre);
+    setFormNombreEn(item.nombreEn);
     setFormOpen(true);
   }
 
   async function handleGuardarForm() {
-    if (!esEditor || !formNombre.trim() || pending) return;
+    if (!esEditor || !formNombre.trim() || !formNombreEn.trim() || pending) {
+      return;
+    }
     setPending(true);
     try {
       if (editingItem) {
         const res = await editarProdIaDisenoCatalogoNombreAction(kind, {
           id: editingItem.id,
           nombre: formNombre,
+          nombreEn: formNombreEn,
         });
         if (!res.ok) {
           toast.error(res.error ?? "No se pudo guardar.");
@@ -234,6 +250,7 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
       } else {
         const res = await crearProdIaDisenoCatalogoNombreAction(kind, {
           nombre: formNombre,
+          nombreEn: formNombreEn,
         });
         if (!res.ok) {
           toast.error(res.error ?? "No se pudo crear.");
@@ -244,6 +261,7 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
       setFormOpen(false);
       setEditingItem(null);
       setFormNombre("");
+      setFormNombreEn("");
       await cargar();
       onCatalogoChanged?.();
     } finally {
@@ -327,9 +345,14 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
                       key={item.id}
                       className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2"
                     >
-                      <p className="min-w-0 flex-1 truncate text-left font-medium text-foreground">
-                        {item.nombre}
-                      </p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-left font-medium text-foreground">
+                          {item.nombre}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          EN: {item.nombreEn}
+                        </p>
+                      </div>
                       {esEditor ? (
                         <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5">
                           <Button
@@ -373,6 +396,7 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
           if (!next) {
             setEditingItem(null);
             setFormNombre("");
+            setFormNombreEn("");
           }
         }}
       >
@@ -389,13 +413,16 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
                   setFormOpen(false);
                   setEditingItem(null);
                   setFormNombre("");
+                  setFormNombreEn("");
                 }}
               >
                 Cancelar
               </Button>
               <Button
                 type="button"
-                disabled={pending || !formNombre.trim()}
+                disabled={
+                  pending || !formNombre.trim() || !formNombreEn.trim()
+                }
                 onClick={() => void handleGuardarForm()}
               >
                 Guardar
@@ -403,21 +430,32 @@ export default function GestionarProdIaDisenoCatalogoNombreModal({
             </div>
           }
         >
-          <div className="flex flex-col gap-1">
-            <ModalMicroLabel>{copy.formLabel}</ModalMicroLabel>
-            <Input
-              value={formNombre}
-              onChange={(e) => setFormNombre(e.target.value)}
-              placeholder="Nombre (se guardará en mayúsculas)"
-              disabled={pending}
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  void handleGuardarForm();
-                }
-              }}
-            />
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <ModalMicroLabel>{copy.formLabelEs}</ModalMicroLabel>
+              <Input
+                value={formNombre}
+                onChange={(e) => setFormNombre(e.target.value)}
+                placeholder="Se guarda en mayúsculas"
+                disabled={pending}
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <ModalMicroLabel>{copy.formLabelEn}</ModalMicroLabel>
+              <Input
+                value={formNombreEn}
+                onChange={(e) => setFormNombreEn(e.target.value)}
+                placeholder="Se inyecta en el prompt (mayúsculas)"
+                disabled={pending}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleGuardarForm();
+                  }
+                }}
+              />
+            </div>
           </div>
         </AppModal>
       </Dialog>

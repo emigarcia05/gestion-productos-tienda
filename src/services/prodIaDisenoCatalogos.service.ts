@@ -9,10 +9,26 @@ import type {
 } from "@/lib/validations/prodIaDisenoCatalogos";
 import type { ServiceResult } from "@/types/service.types";
 
-const select = { id: true, nombre: true } as const;
+const select = { id: true, nombre: true, nombreEn: true } as const;
 
-function mapRow(row: { id: string; nombre: string }): ProdIaDisenoCatalogoNombreItem {
-  return { id: row.id, nombre: row.nombre.trim() };
+function normalizarNombreEs(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLocaleUpperCase("es-AR");
+}
+
+function normalizarNombreEn(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLocaleUpperCase("en-US");
+}
+
+function mapRow(row: {
+  id: string;
+  nombre: string;
+  nombreEn: string;
+}): ProdIaDisenoCatalogoNombreItem {
+  return {
+    id: row.id,
+    nombre: row.nombre.trim(),
+    nombreEn: row.nombreEn.trim(),
+  };
 }
 
 function mapDbError(error: unknown, fallback: string): string {
@@ -22,7 +38,7 @@ function mapDbError(error: unknown, fallback: string): string {
     "code" in error &&
     (error as { code?: string }).code === "P2002"
   ) {
-    return "Ya existe un ítem con ese nombre.";
+    return "Ya existe un ítem con ese nombre (español o inglés).";
   }
   if (
     error &&
@@ -35,20 +51,22 @@ function mapDbError(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
+type Row = { id: string; nombre: string; nombreEn: string };
+
 type Delegate = {
   findMany: (args: {
     orderBy: { nombre: "asc" } | { createdAt: "asc" };
     select: typeof select;
-  }) => Promise<{ id: string; nombre: string }[]>;
+  }) => Promise<Row[]>;
   create: (args: {
-    data: { nombre: string };
+    data: { nombre: string; nombreEn: string };
     select: typeof select;
-  }) => Promise<{ id: string; nombre: string }>;
+  }) => Promise<Row>;
   update: (args: {
     where: { id: string };
-    data: { nombre: string };
+    data: { nombre: string; nombreEn: string };
     select: typeof select;
-  }) => Promise<{ id: string; nombre: string }>;
+  }) => Promise<Row>;
   delete: (args: { where: { id: string } }) => Promise<unknown>;
 };
 
@@ -79,7 +97,7 @@ function orderByForKind(
 }
 
 export async function listarProdIaDisenoCatalogoNombre(
-  kind: ProdIaDisenoCatalogoKind
+  kind: ProdIaDisenoCatalogoKind,
 ): Promise<ProdIaDisenoCatalogoNombreItem[]> {
   const rows = await delegateForKind(kind).findMany({
     orderBy: orderByForKind(kind),
@@ -90,11 +108,14 @@ export async function listarProdIaDisenoCatalogoNombre(
 
 export async function crearProdIaDisenoCatalogoNombre(
   kind: ProdIaDisenoCatalogoKind,
-  input: CrearProdIaDisenoCatalogoNombreInput
+  input: CrearProdIaDisenoCatalogoNombreInput,
 ): Promise<ServiceResult<ProdIaDisenoCatalogoNombreItem>> {
   try {
     const row = await delegateForKind(kind).create({
-      data: { nombre: input.nombre.trim().replace(/\s+/g, " ").toLocaleUpperCase("es-AR") },
+      data: {
+        nombre: normalizarNombreEs(input.nombre),
+        nombreEn: normalizarNombreEn(input.nombreEn),
+      },
       select,
     });
     return { success: true, data: mapRow(row) };
@@ -105,12 +126,15 @@ export async function crearProdIaDisenoCatalogoNombre(
 
 export async function editarProdIaDisenoCatalogoNombre(
   kind: ProdIaDisenoCatalogoKind,
-  input: EditarProdIaDisenoCatalogoNombreInput
+  input: EditarProdIaDisenoCatalogoNombreInput,
 ): Promise<ServiceResult<ProdIaDisenoCatalogoNombreItem>> {
   try {
     const row = await delegateForKind(kind).update({
       where: { id: input.id },
-      data: { nombre: input.nombre.trim().replace(/\s+/g, " ").toLocaleUpperCase("es-AR") },
+      data: {
+        nombre: normalizarNombreEs(input.nombre),
+        nombreEn: normalizarNombreEn(input.nombreEn),
+      },
       select,
     });
     return { success: true, data: mapRow(row) };
@@ -121,7 +145,7 @@ export async function editarProdIaDisenoCatalogoNombre(
 
 export async function eliminarProdIaDisenoCatalogoNombre(
   kind: ProdIaDisenoCatalogoKind,
-  id: string
+  id: string,
 ): Promise<ServiceResult<{ id: string }>> {
   try {
     await delegateForKind(kind).delete({ where: { id } });

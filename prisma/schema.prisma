@@ -1305,7 +1305,10 @@ model ProdIaDisenoPrompVar {
 /** Catálogo GESTION DISEÑO — superficies a pintar. */
 model ProdIaDisenoSupPintar {
   id        String   @id @default(cuid())
+  /** Etiqueta UI (español). */
   nombre    String   @unique(map: "prod_ia_diseno_sup_pintar_nombre_key") @map("nombre")
+  /** Texto inyectado en el prompt (inglés). */
+  nombreEn  String   @unique(map: "prod_ia_diseno_sup_pintar_nombre_en_key") @map("nombre_en")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1316,6 +1319,7 @@ model ProdIaDisenoSupPintar {
 model ProdIaDisenoEstilos {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_ia_diseno_estilos_nombre_key") @map("nombre")
+  nombreEn  String   @unique(map: "prod_ia_diseno_estilos_nombre_en_key") @map("nombre_en")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1326,6 +1330,7 @@ model ProdIaDisenoEstilos {
 model ProdIaDisenoCombinar {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_ia_diseno_combinar_nombre_key") @map("nombre")
+  nombreEn  String   @unique(map: "prod_ia_diseno_combinar_nombre_en_key") @map("nombre_en")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1336,6 +1341,7 @@ model ProdIaDisenoCombinar {
 model ProdIaDisenoObjetivo {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_ia_diseno_objetivo_nombre_key") @map("nombre")
+  nombreEn  String   @unique(map: "prod_ia_diseno_objetivo_nombre_en_key") @map("nombre_en")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1346,6 +1352,7 @@ model ProdIaDisenoObjetivo {
 model ProdIaDisenoLuzNat {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_ia_diseno_luz_nat_nombre_key") @map("nombre")
+  nombreEn  String   @unique(map: "prod_ia_diseno_luz_nat_nombre_en_key") @map("nombre_en")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1356,6 +1363,7 @@ model ProdIaDisenoLuzNat {
 model ProdIaDisenoLuzArt {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_ia_diseno_luz_art_nombre_key") @map("nombre")
+  nombreEn  String   @unique(map: "prod_ia_diseno_luz_art_nombre_en_key") @map("nombre_en")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
