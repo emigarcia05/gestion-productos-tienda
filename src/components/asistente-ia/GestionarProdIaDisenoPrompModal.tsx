@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT,
   moduloVariableDesdeSubmodulo,
   resolverVariablesPromptParaUi,
   submoduloCanonicoDesdeBd,
@@ -77,6 +78,9 @@ export default function GestionarProdIaDisenoPrompModal({
   const [formSubmodulo, setFormSubmodulo] = useState("");
   const [formPromp, setFormPromp] = useState("");
   const [formUrl, setFormUrl] = useState("");
+  const [formPlantillaSuperficies, setFormPlantillaSuperficies] = useState<string>(
+    ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT,
+  );
   const [pending, setPending] = useState(false);
   const [borrarTarget, setBorrarTarget] = useState<ProdIaDisenoPrompItem | null>(
     null,
@@ -113,6 +117,7 @@ export default function GestionarProdIaDisenoPrompModal({
     setFormSubmodulo("");
     setFormPromp("");
     setFormUrl("");
+    setFormPlantillaSuperficies(ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT);
     setBorrarTarget(null);
     setVarsOpen(false);
     setVarsGuardadas([]);
@@ -137,6 +142,8 @@ export default function GestionarProdIaDisenoPrompModal({
 
   const submoduloForm =
     editingItem?.submodulo ?? formSubmodulo;
+  const esFormDisenarColores =
+    moduloVariableDesdeSubmodulo(submoduloForm) === "disenar_colores";
   const variablesDisponibles = useMemo(
     () =>
       resolverVariablesPromptParaUi(
@@ -167,6 +174,7 @@ export default function GestionarProdIaDisenoPrompModal({
     setFormSubmodulo(submodulosDisponibles[0] ?? "");
     setFormPromp("");
     setFormUrl("");
+    setFormPlantillaSuperficies(ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT);
     setVarsGuardadas([]);
     setFormOpen(true);
   }
@@ -177,6 +185,10 @@ export default function GestionarProdIaDisenoPrompModal({
     setFormSubmodulo(etiquetaModulo(item));
     setFormPromp(item.promp);
     setFormUrl(item.urlRedireccion);
+    setFormPlantillaSuperficies(
+      item.plantillaSuperficies?.trim() ||
+        ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT,
+    );
     setFormOpen(true);
     void cargarVars(item.id);
   }
@@ -208,6 +220,9 @@ export default function GestionarProdIaDisenoPrompModal({
           id: editingItem.id,
           promp: formPromp,
           urlRedireccion: formUrl,
+          plantillaSuperficies: esFormDisenarColores
+            ? formPlantillaSuperficies
+            : null,
         });
         if (!res.ok) {
           toast.error(res.error ?? "No se pudo guardar.");
@@ -220,6 +235,9 @@ export default function GestionarProdIaDisenoPrompModal({
           submodulo: formSubmodulo,
           promp: formPromp,
           urlRedireccion: formUrl,
+          plantillaSuperficies: esFormDisenarColores
+            ? formPlantillaSuperficies
+            : null,
         });
         if (!res.ok) {
           toast.error(res.error ?? "No se pudo crear.");
@@ -419,7 +437,17 @@ export default function GestionarProdIaDisenoPrompModal({
               ) : (
                 <Select
                   value={formSubmodulo || undefined}
-                  onValueChange={setFormSubmodulo}
+                  onValueChange={(v) => {
+                    setFormSubmodulo(v);
+                    if (
+                      moduloVariableDesdeSubmodulo(v) === "disenar_colores" &&
+                      !formPlantillaSuperficies.trim()
+                    ) {
+                      setFormPlantillaSuperficies(
+                        ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT,
+                      );
+                    }
+                  }}
                   disabled={pending || submodulosDisponibles.length === 0}
                 >
                   <SelectTrigger className="h-10 w-full" aria-label="Submódulo">
@@ -532,6 +560,22 @@ export default function GestionarProdIaDisenoPrompModal({
                 disabled={pending}
               />
             </div>
+            {esFormDisenarColores ? (
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>Plantilla Superficies</ModalMicroLabel>
+                <p className="text-xs text-muted-foreground">
+                  Una línea por superficie. Usá {"{{SUPERFICIE}}"} y {"{{COLOR}}"}.
+                  Se repite según las superficies elegidas (1–4).
+                </p>
+                <Input
+                  value={formPlantillaSuperficies}
+                  onChange={(e) => setFormPlantillaSuperficies(e.target.value)}
+                  placeholder={ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT}
+                  className="h-10 font-mono text-xs"
+                  disabled={pending}
+                />
+              </div>
+            ) : null}
           </div>
         </AppModal>
       </Dialog>

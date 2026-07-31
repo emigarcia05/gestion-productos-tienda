@@ -17,7 +17,7 @@ Orden y cardinalidad al generar el prompt:
 
 Si Combinar está vacío, el token queda vacío y el asesor lo ignora (variable no especificada).
 
-Los valores de catálogo se muestran en **español** en la UI y se inyectan en **inglés** (`nombre_en`) al armar el prompt.
+Los valores de catálogo se muestran con **`nombre`** en la UI y se inyectan con **`texto`** al armar el prompt. Excepción **Superficies**: `texto` + Color A–D se combinan con una plantilla única (`plantilla_superficies`) repetida por cada superficie elegida.
 
 ## Respuesta del asesor (GPT)
 

@@ -1274,6 +1274,11 @@ model ProdIaDisenoPromp {
   promp          String   @map("promp") @db.Text
   /** URL a abrir en pestaña nueva (ChatGPT u otro destino). */
   urlRedireccion String   @map("url_redireccion") @db.Text
+  /**
+   * Solo Diseñar Colores: plantilla de una fila de superficie.
+   * Placeholders: {{SUPERFICIE}} {{COLOR}}. Se repite por cada superficie elegida.
+   */
+  plantillaSuperficies String? @map("plantilla_superficies") @db.Text
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
   variables      ProdIaDisenoPrompVar[]
@@ -1305,10 +1310,10 @@ model ProdIaDisenoPrompVar {
 /** Catálogo GESTION DISEÑO — superficies a pintar. */
 model ProdIaDisenoSupPintar {
   id        String   @id @default(cuid())
-  /** Etiqueta UI (español). */
+  /** Etiqueta en pantalla. */
   nombre    String   @unique(map: "prod_ia_diseno_sup_pintar_nombre_key") @map("nombre")
-  /** Texto inyectado en el prompt (inglés). */
-  nombreEn  String   @unique(map: "prod_ia_diseno_sup_pintar_nombre_en_key") @map("nombre_en")
+  /** Texto inyectado al generar el prompt. */
+  texto     String   @unique(map: "prod_ia_diseno_sup_pintar_texto_key") @map("texto")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1319,7 +1324,7 @@ model ProdIaDisenoSupPintar {
 model ProdIaDisenoEstilos {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_ia_diseno_estilos_nombre_key") @map("nombre")
-  nombreEn  String   @unique(map: "prod_ia_diseno_estilos_nombre_en_key") @map("nombre_en")
+  texto     String   @unique(map: "prod_ia_diseno_estilos_texto_key") @map("texto")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1330,7 +1335,7 @@ model ProdIaDisenoEstilos {
 model ProdIaDisenoCombinar {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_ia_diseno_combinar_nombre_key") @map("nombre")
-  nombreEn  String   @unique(map: "prod_ia_diseno_combinar_nombre_en_key") @map("nombre_en")
+  texto     String   @unique(map: "prod_ia_diseno_combinar_texto_key") @map("texto")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1341,7 +1346,7 @@ model ProdIaDisenoCombinar {
 model ProdIaDisenoObjetivo {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_ia_diseno_objetivo_nombre_key") @map("nombre")
-  nombreEn  String   @unique(map: "prod_ia_diseno_objetivo_nombre_en_key") @map("nombre_en")
+  texto     String   @unique(map: "prod_ia_diseno_objetivo_texto_key") @map("texto")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1352,7 +1357,7 @@ model ProdIaDisenoObjetivo {
 model ProdIaDisenoLuzNat {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_ia_diseno_luz_nat_nombre_key") @map("nombre")
-  nombreEn  String   @unique(map: "prod_ia_diseno_luz_nat_nombre_en_key") @map("nombre_en")
+  texto     String   @unique(map: "prod_ia_diseno_luz_nat_texto_key") @map("texto")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1363,7 +1368,7 @@ model ProdIaDisenoLuzNat {
 model ProdIaDisenoLuzArt {
   id        String   @id @default(cuid())
   nombre    String   @unique(map: "prod_ia_diseno_luz_art_nombre_key") @map("nombre")
-  nombreEn  String   @unique(map: "prod_ia_diseno_luz_art_nombre_en_key") @map("nombre_en")
+  texto     String   @unique(map: "prod_ia_diseno_luz_art_texto_key") @map("texto")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

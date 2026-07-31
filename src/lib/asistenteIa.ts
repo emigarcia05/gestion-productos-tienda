@@ -243,7 +243,7 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_SUPERFICIES),
       etiqueta: "Superficie a pintar",
       descripcion:
-        "Obligatorio, hasta 4. Una fila: Paint the {{Surface}} with a color of your choice (Color A).",
+        "Obligatorio, hasta 4. Plantilla repetida con {{SUPERFICIE}} y {{COLOR}} (editable en GESTION PROMP).",
       modulos: ["disenar_colores"],
     },
     {
@@ -437,6 +437,11 @@ export interface ProdIaDisenoPrompItem {
   submodulo: string;
   promp: string;
   urlRedireccion: string;
+  /**
+   * Diseñar Colores: plantilla de una fila (`{{SUPERFICIE}}`, `{{COLOR}}`).
+   * Null/vacío → default en código.
+   */
+  plantillaSuperficies: string | null;
 }
 
 export interface AsistenteIaConfigSubmodulo {
@@ -445,7 +450,18 @@ export interface AsistenteIaConfigSubmodulo {
   urlRedireccion: string;
   /** Alias fuente→variable guardados para este prompt (opcional). */
   variablesAlias?: ProdIaDisenoPrompVarItem[];
+  /** Plantilla de fila para {{SUPERFICIES}} (solo Diseñar Colores). */
+  plantillaSuperficies?: string | null;
 }
+
+/** Placeholders de la plantilla de superficie. */
+export const ASISTENTE_IA_PLANTILLA_SUPERFICIE_TOKEN_SUPERFICIE =
+  "SUPERFICIE" as const;
+export const ASISTENTE_IA_PLANTILLA_SUPERFICIE_TOKEN_COLOR = "COLOR" as const;
+
+/** Default: una línea por superficie elegida. */
+export const ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT =
+  `- {{${ASISTENTE_IA_PLANTILLA_SUPERFICIE_TOKEN_SUPERFICIE}}} → {{${ASISTENTE_IA_PLANTILLA_SUPERFICIE_TOKEN_COLOR}}}` as const;
 
 /** Fallback si aún no hay fila en BD. */
 export function getDefaultConfigBuscarColorImagen(): AsistenteIaConfigSubmodulo {
@@ -494,10 +510,11 @@ export function buildPromptDisenarColoresDefault(): string {
     "",
     "Formato de la variable de superficies:",
     "",
-    "- Una línea por superficie (1 a 4): `Paint the {{Surface Name}} with a color of your choice (Color A)`.",
-    "- Ejemplo: `Paint the {{Left Wall}} with a color of your choice (Color A)`.",
+    "- Una línea por superficie (1 a 4), según la plantilla configurada (placeholders `{{SUPERFICIE}}` y `{{COLOR}}`).",
+    `- Default: \`${ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT}\`.`,
+    "- Ejemplo: `- Left Wall → Color A`.",
     "",
-    "Each identifier (`Color A`, `Color B`, `Color C`, `Color D`) represents a single catalog color.",
+    "Each color identifier (`Color A`, `Color B`, `Color C`, `Color D`) represents a single catalog color.",
     "",
     "If the same identifier appears on several surfaces, all of them must use exactly the same color.",
     "",
@@ -628,11 +645,12 @@ export function getDefaultConfigDisenarColores(): AsistenteIaConfigSubmodulo {
     submodulo: ASISTENTE_IA_SUBMODULO_DISENAR_COLORES,
     promp: buildPromptDisenarColoresDefault(),
     urlRedireccion: ASISTENTE_IA_CHATGPT_BUSCAR_COLOR_URL_DEFAULT,
+    plantillaSuperficies: ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT,
   };
 }
 
 /**
- * Title Case para el nombre de superficie dentro de `{{…}}` del prompt.
+ * Title Case para el nombre de superficie en la plantilla.
  * `LEFT WALL` → `Left Wall`.
  */
 export function titleCaseSuperficieParaPrompt(nombre: string): string {
@@ -642,19 +660,42 @@ export function titleCaseSuperficieParaPrompt(nombre: string): string {
     .replace(/\b\w/g, (c) => c.toLocaleUpperCase("en-US"));
 }
 
+function reemplazarTokenPlantilla(
+  plantilla: string,
+  token: string,
+  valor: string,
+): string {
+  const re = new RegExp(`\\{\\{\\s*${token}\\s*\\}\\}`, "gi");
+  return plantilla.replace(re, valor);
+}
+
 /**
- * Formato Prompt Maestro para GPT (1–4 filas):
- * `Paint the {{Surface Name}} with a color of your choice (Color A)`
- * Vacío si no hay superficies.
+ * Arma {{SUPERFICIES}}: repite la plantilla (1–4 filas).
+ * Placeholders: {{SUPERFICIE}} (texto del catálogo en Title Case) y {{COLOR}} (`Color A`…).
  */
 export function formatSuperficiesParaPrompt(
   superficies: AsistenteIaSuperficieConColor[],
+  plantillaFila?: string | null,
 ): string {
   if (superficies.length === 0) return "";
+  const plantilla =
+    plantillaFila?.trim() || ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT;
   return superficies
     .map((s) => {
-      const surface = titleCaseSuperficieParaPrompt(s.superficieNombre);
-      return `Paint the {{${surface}}} with a color of your choice (${etiquetaColorDesdeIndice(s.colorIndex)})`;
+      const superficie = titleCaseSuperficieParaPrompt(s.superficieNombre);
+      const color = etiquetaColorDesdeIndice(s.colorIndex);
+      let linea = plantilla;
+      linea = reemplazarTokenPlantilla(
+        linea,
+        ASISTENTE_IA_PLANTILLA_SUPERFICIE_TOKEN_SUPERFICIE,
+        superficie,
+      );
+      linea = reemplazarTokenPlantilla(
+        linea,
+        ASISTENTE_IA_PLANTILLA_SUPERFICIE_TOKEN_COLOR,
+        color,
+      );
+      return linea;
     })
     .join("\n");
 }
@@ -670,8 +711,12 @@ export function aplicarRespuestasAlPromptDisenarColores(
   plantilla: string,
   respuestas: AsistenteIaDisenarColoresRespuestas,
   alias: readonly { fuente: string; variable: string }[] = [],
+  plantillaSuperficies?: string | null,
 ): string {
-  const superficies = formatSuperficiesParaPrompt(respuestas.superficies);
+  const superficies = formatSuperficiesParaPrompt(
+    respuestas.superficies,
+    plantillaSuperficies,
+  );
   const objetivos = formatListaONada(respuestas.objetivos);
   const estilo = respuestas.estilo.trim();
   const combinar = formatListaONada(respuestas.combinar);

@@ -26,10 +26,18 @@ const urlRedireccionSchema = z
   .max(2000, "La URL es demasiado larga.")
   .url("La URL de redirección no es válida.");
 
+const plantillaSuperficiesSchema = z
+  .string()
+  .trim()
+  .max(500, "La plantilla de superficies es demasiado larga.")
+  .optional()
+  .nullable();
+
 export const crearProdIaDisenoPrompSchema = z.object({
   submodulo: submoduloCanonicoSchema,
   promp: prompSchema,
   urlRedireccion: urlRedireccionSchema,
+  plantillaSuperficies: plantillaSuperficiesSchema,
 });
 
 /** En edición el submódulo no se renombra (queda fijo al módulo del hub). */
@@ -37,6 +45,7 @@ export const editarProdIaDisenoPrompSchema = z.object({
   id: prismaCuidSchema,
   promp: prompSchema,
   urlRedireccion: urlRedireccionSchema,
+  plantillaSuperficies: plantillaSuperficiesSchema,
 });
 
 export const eliminarProdIaDisenoPrompSchema = z.object({

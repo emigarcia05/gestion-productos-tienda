@@ -1,5 +1,17 @@
 # Changelog — IA_DISEÑO
 
+## 0.11.3 — 2026-07-31
+
+**Descripción:** Plantilla editable de superficies en `prod_ia_diseno_promp.plantilla_superficies` (GESTION PROMP · Diseñar Colores). Placeholders `{{SUPERFICIE}}` / `{{COLOR}}`; se repite 1–4 filas. Default: `- {{SUPERFICIE}} → {{COLOR}}`.
+
+**Motivo:** Definir desde la UI cómo se escribe cada superficie+color, sin tocar el `texto` del catálogo.
+
+## 0.11.2 — 2026-07-31
+
+**Descripción:** Catálogos: columna `nombre_en` renombrada a **`texto`**. Convención: `nombre` = pantalla, `texto` = valor al generar el prompt (`textoCatalogoParaPrompt`).
+
+**Motivo:** Clarificar semántica (no solo “inglés”) alineada al uso real del campo.
+
 ## 0.11.1 — 2026-07-31
 
 **Descripción:** `formatSuperficiesParaPrompt` → `Paint the {{Surface Name}} with a color of your choice (Color A|B|C|D)` (1–4 filas; Title Case del `nombre_en`). Select UI: Color A–D.

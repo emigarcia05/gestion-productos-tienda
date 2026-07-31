@@ -9,25 +9,26 @@ import type {
 } from "@/lib/validations/prodIaDisenoCatalogos";
 import type { ServiceResult } from "@/types/service.types";
 
-const select = { id: true, nombre: true, nombreEn: true } as const;
+const select = { id: true, nombre: true, texto: true } as const;
 
-function normalizarNombreEs(value: string): string {
+function normalizarNombre(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLocaleUpperCase("es-AR");
 }
 
-function normalizarNombreEn(value: string): string {
+/** Texto de prompt: trim + espacios; mayúsculas para consistencia con seeds. */
+function normalizarTexto(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLocaleUpperCase("en-US");
 }
 
 function mapRow(row: {
   id: string;
   nombre: string;
-  nombreEn: string;
+  texto: string;
 }): ProdIaDisenoCatalogoNombreItem {
   return {
     id: row.id,
     nombre: row.nombre.trim(),
-    nombreEn: row.nombreEn.trim(),
+    texto: row.texto.trim(),
   };
 }
 
@@ -38,7 +39,7 @@ function mapDbError(error: unknown, fallback: string): string {
     "code" in error &&
     (error as { code?: string }).code === "P2002"
   ) {
-    return "Ya existe un ítem con ese nombre (español o inglés).";
+    return "Ya existe un ítem con ese nombre o texto.";
   }
   if (
     error &&
@@ -51,7 +52,7 @@ function mapDbError(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-type Row = { id: string; nombre: string; nombreEn: string };
+type Row = { id: string; nombre: string; texto: string };
 
 type Delegate = {
   findMany: (args: {
@@ -59,12 +60,12 @@ type Delegate = {
     select: typeof select;
   }) => Promise<Row[]>;
   create: (args: {
-    data: { nombre: string; nombreEn: string };
+    data: { nombre: string; texto: string };
     select: typeof select;
   }) => Promise<Row>;
   update: (args: {
     where: { id: string };
-    data: { nombre: string; nombreEn: string };
+    data: { nombre: string; texto: string };
     select: typeof select;
   }) => Promise<Row>;
   delete: (args: { where: { id: string } }) => Promise<unknown>;
@@ -113,8 +114,8 @@ export async function crearProdIaDisenoCatalogoNombre(
   try {
     const row = await delegateForKind(kind).create({
       data: {
-        nombre: normalizarNombreEs(input.nombre),
-        nombreEn: normalizarNombreEn(input.nombreEn),
+        nombre: normalizarNombre(input.nombre),
+        texto: normalizarTexto(input.texto),
       },
       select,
     });
@@ -132,8 +133,8 @@ export async function editarProdIaDisenoCatalogoNombre(
     const row = await delegateForKind(kind).update({
       where: { id: input.id },
       data: {
-        nombre: normalizarNombreEs(input.nombre),
-        nombreEn: normalizarNombreEn(input.nombreEn),
+        nombre: normalizarNombre(input.nombre),
+        texto: normalizarTexto(input.texto),
       },
       select,
     });

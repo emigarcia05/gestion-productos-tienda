@@ -92,6 +92,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
       submodulo: item.submodulo,
       promp: item.promp,
       urlRedireccion: item.urlRedireccion,
+      plantillaSuperficies: item.plantillaSuperficies,
     }));
   }
 

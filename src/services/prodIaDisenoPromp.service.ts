@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import {
+  ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT,
   ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
   ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY,
   ASISTENTE_IA_SUBMODULO_DISENAR_COLORES,
   getDefaultConfigBuscarColorImagen,
   getDefaultConfigDisenarColores,
+  moduloVariableDesdeSubmodulo,
   type AsistenteIaConfigSubmodulo,
   type AsistenteIaModuloVariable,
   type ProdIaDisenoPrompItem,
@@ -21,6 +23,7 @@ const select = {
   submodulo: true,
   promp: true,
   urlRedireccion: true,
+  plantillaSuperficies: true,
 } as const;
 
 function mapRow(row: {
@@ -28,12 +31,14 @@ function mapRow(row: {
   submodulo: string;
   promp: string;
   urlRedireccion: string;
+  plantillaSuperficies: string | null;
 }): ProdIaDisenoPrompItem {
   return {
     id: row.id,
     submodulo: row.submodulo.trim(),
     promp: row.promp,
     urlRedireccion: row.urlRedireccion.trim(),
+    plantillaSuperficies: row.plantillaSuperficies?.trim() || null,
   };
 }
 
@@ -57,6 +62,14 @@ function mapDbError(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
+function plantillaParaAlta(submodulo: string, valor?: string | null): string | null {
+  if (moduloVariableDesdeSubmodulo(submodulo) !== "disenar_colores") {
+    return null;
+  }
+  const t = valor?.trim();
+  return t || ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT;
+}
+
 async function configDesdeFila(
   row: ProdIaDisenoPrompItem,
 ): Promise<AsistenteIaConfigSubmodulo> {
@@ -66,6 +79,7 @@ async function configDesdeFila(
     promp: row.promp,
     urlRedireccion: row.urlRedireccion,
     variablesAlias,
+    plantillaSuperficies: row.plantillaSuperficies,
   };
 }
 
@@ -128,6 +142,10 @@ export async function crearProdIaDisenoPromp(
         submodulo: input.submodulo.trim(),
         promp: input.promp.trim(),
         urlRedireccion: input.urlRedireccion.trim(),
+        plantillaSuperficies: plantillaParaAlta(
+          input.submodulo,
+          input.plantillaSuperficies,
+        ),
       },
       select,
     });
@@ -141,11 +159,25 @@ export async function editarProdIaDisenoPromp(
   input: EditarProdIaDisenoPrompInput,
 ): Promise<ServiceResult<ProdIaDisenoPrompItem>> {
   try {
+    const existing = await prisma.prodIaDisenoPromp.findUnique({
+      where: { id: input.id },
+      select: { submodulo: true },
+    });
+    if (!existing) {
+      return { success: false, error: "El registro no existe." };
+    }
+
+    const esDisenar =
+      moduloVariableDesdeSubmodulo(existing.submodulo) === "disenar_colores";
+
     const row = await prisma.prodIaDisenoPromp.update({
       where: { id: input.id },
       data: {
         promp: input.promp.trim(),
         urlRedireccion: input.urlRedireccion.trim(),
+        plantillaSuperficies: esDisenar
+          ? plantillaParaAlta(existing.submodulo, input.plantillaSuperficies)
+          : null,
       },
       select,
     });

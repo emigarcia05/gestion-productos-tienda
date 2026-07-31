@@ -26,7 +26,7 @@ import {
 } from "@/lib/asistenteIa";
 import { resolverConfigAsistenteIaAction } from "@/actions/prodIaDisenoPromp";
 import type { ProdIaDisenoCatalogoNombreItem } from "@/lib/prodIaDisenoCatalogos";
-import { nombreCatalogoParaPrompt } from "@/lib/prodIaDisenoCatalogos";
+import { textoCatalogoParaPrompt } from "@/lib/prodIaDisenoCatalogos";
 import { cn } from "@/lib/utils";
 
 export interface AsistenteIaDisenarColoresCatalogos {
@@ -284,7 +284,7 @@ export default function AsistenteIaDisenarColoresVista({
           if (!item) return null;
           return {
             superficieId: item.id,
-            superficieNombre: nombreCatalogoParaPrompt(item),
+            superficieNombre: textoCatalogoParaPrompt(item),
             colorIndex: s.colorIndex,
           };
         })
@@ -292,26 +292,26 @@ export default function AsistenteIaDisenarColoresVista({
 
       const objetivos = (() => {
         const item = catalogos.objetivos.find((x) => x.id === objetivoId);
-        return item ? [nombreCatalogoParaPrompt(item)] : [];
+        return item ? [textoCatalogoParaPrompt(item)] : [];
       })();
 
       const estiloItem = catalogos.estilos.find((x) => x.id === estiloId);
-      const estilo = estiloItem ? nombreCatalogoParaPrompt(estiloItem) : "";
+      const estilo = estiloItem ? textoCatalogoParaPrompt(estiloItem) : "";
 
       const combinar = (() => {
         const item = catalogos.combinar.find((x) => x.id === combinarId);
-        return item ? [nombreCatalogoParaPrompt(item)] : [];
+        return item ? [textoCatalogoParaPrompt(item)] : [];
       })();
 
       const luzNatItem = catalogos.luzNatural.find((x) => x.id === luzNaturalId);
       const iluminacionNatural = luzNatItem
-        ? nombreCatalogoParaPrompt(luzNatItem)
+        ? textoCatalogoParaPrompt(luzNatItem)
         : "";
       const luzArtItem = catalogos.luzArtificial.find(
         (x) => x.id === luzArtificialId,
       );
       const iluminacionArtificial = luzArtItem
-        ? nombreCatalogoParaPrompt(luzArtItem)
+        ? textoCatalogoParaPrompt(luzArtItem)
         : "";
 
       const prompt = aplicarRespuestasAlPromptDisenarColores(
@@ -325,6 +325,7 @@ export default function AsistenteIaDisenarColoresVista({
           iluminacionArtificial,
         },
         cfg.variablesAlias ?? [],
+        cfg.plantillaSuperficies,
       );
 
       await navigator.clipboard.writeText(prompt);
