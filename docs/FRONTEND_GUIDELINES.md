@@ -1528,6 +1528,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-28): **PDF aproximación · layout muestra** — foto a la izquierda; swatch ~**30%** del lado menor; RGB/HEX bajo el swatch con tipografía proporcional y legible; bloque anotado alineado a la izquierda en el PDF.*
 
+*Última actualización (2026-07-31): **Diseñar Colores · SUPERFICIES** — `Paint the {{Surface Name}} with a color of your choice (Color A|B|C|D)` (1–4 filas); Select Color A–D.*
+
 *Última actualización (2026-07-31): **GESTION DISEÑO · nombre_en** — catálogos con `nombre` (UI ES) + `nombre_en` (prompt EN); modal CRUD dual; `nombreCatalogoParaPrompt` al generar.*
 
 *Última actualización (2026-07-31): **Diseñar Colores · SUPERFICIES** — `formatSuperficiesParaPrompt` → lista `- Nombre {{ColorN}}.` (sin tabla Markdown).*

@@ -1987,6 +1987,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-29): **Balance · Gastos · Mes TODOS** — Select Mes con **TODOS** (`mes=todos`); `listarImputacionesMensualesBalance` acepta `mes: null` (año completo); fila con `mes`/`anio`.*
 
+*Última actualización (2026-07-31): **Diseñar Colores · formatSuperficiesParaPrompt** — `Paint the {{Surface}} with a color of your choice (Color A|B|C|D)`; `etiquetaColorDesdeIndice`.*
+
 *Última actualización (2026-07-31): **prod_ia_diseno_* · nombre_en** — columna `nombre_en` (unique) en los 6 catálogos; seed inglés de filas existentes; create/update normalizan ES (`es-AR`) y EN (`en-US`).*
 
 *Última actualización (2026-07-31): **Diseñar Colores · formatSuperficiesParaPrompt** — lista `- Nombre {{ColorN}}.` (reemplaza tabla Markdown / `Nombre, ColorN`).*

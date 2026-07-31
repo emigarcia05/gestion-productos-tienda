@@ -21,6 +21,7 @@ import {
 import {
   ASISTENTE_IA_INDICES_COLOR,
   aplicarRespuestasAlPromptDisenarColores,
+  etiquetaColorDesdeIndice,
   type AsistenteIaConfigSubmodulo,
 } from "@/lib/asistenteIa";
 import { resolverConfigAsistenteIaAction } from "@/actions/prodIaDisenoPromp";
@@ -347,7 +348,7 @@ export default function AsistenteIaDisenarColoresVista({
           .map((s) => {
             const nombre =
               catalogos.superficies.find((x) => x.id === s.id)?.nombre ?? "?";
-            return `${nombre}, Color${s.colorIndex}`;
+            return `${nombre}, ${etiquetaColorDesdeIndice(s.colorIndex)}`;
           })
           .join("; ");
 
@@ -469,7 +470,7 @@ export default function AsistenteIaDisenarColoresVista({
                           <SelectContent>
                             {ASISTENTE_IA_INDICES_COLOR.map((n) => (
                               <SelectItem key={n} value={String(n)}>
-                                Color {n}
+                                {etiquetaColorDesdeIndice(n)}
                               </SelectItem>
                             ))}
                           </SelectContent>

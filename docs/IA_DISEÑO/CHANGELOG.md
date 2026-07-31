@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.11.1 — 2026-07-31
+
+**Descripción:** `formatSuperficiesParaPrompt` → `Paint the {{Surface Name}} with a color of your choice (Color A|B|C|D)` (1–4 filas; Title Case del `nombre_en`). Select UI: Color A–D.
+
+**Motivo:** Formato de instrucción en inglés pedido para GPT; letras en lugar de números.
+
 ## 0.11.0 — 2026-07-31
 
 **Descripción:** Catálogos GESTION DISEÑO con `nombre` (ES, UI) + `nombre_en` (EN, prompt). CRUD pide ambos; `nombreCatalogoParaPrompt` inyecta inglés al generar.

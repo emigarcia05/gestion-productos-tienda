@@ -110,12 +110,30 @@ export const ASISTENTE_IA_VAR_ILUMINACION_NATURAL =
 export const ASISTENTE_IA_VAR_ILUMINACION_ARTIFICIAL =
   "ILUMINACION_ARTIFICIAL" as const;
 
-/** Índices de Color N (Color 1…4) en asignación superficie→color. */
+/** Índices 1–4 mapeados a letras A–D (Color A…D). */
 export type AsistenteIaIndiceColor = 1 | 2 | 3 | 4;
 
 export const ASISTENTE_IA_INDICES_COLOR: readonly AsistenteIaIndiceColor[] = [
   1, 2, 3, 4,
 ] as const;
+
+export const ASISTENTE_IA_LETRAS_COLOR = ["A", "B", "C", "D"] as const;
+
+export type AsistenteIaLetraColor =
+  (typeof ASISTENTE_IA_LETRAS_COLOR)[number];
+
+/** `1` → `A`, `2` → `B`, … */
+export function letraColorDesdeIndice(
+  index: number,
+): AsistenteIaLetraColor | string {
+  const letra = ASISTENTE_IA_LETRAS_COLOR[index - 1];
+  return letra ?? String(index);
+}
+
+/** Etiqueta UI / prompt: `Color A`. */
+export function etiquetaColorDesdeIndice(index: number): string {
+  return `Color ${letraColorDesdeIndice(index)}`;
+}
 
 /** Opciones seed de iluminación natural (catálogo `luz_natural`). */
 export const ASISTENTE_IA_ILUMINACION_NATURAL_OPCIONES = [
@@ -146,7 +164,7 @@ export type AsistenteIaIluminacionArtificial =
 export interface AsistenteIaSuperficieConColor {
   superficieId: string;
   superficieNombre: string;
-  /** Índice 1-based del color asignado (Color 1…4). */
+  /** Índice 1-based del color asignado (Color A…D). */
   colorIndex: number;
 }
 
@@ -225,7 +243,7 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
       token: tokenVariablePrompt(ASISTENTE_IA_VAR_SUPERFICIES),
       etiqueta: "Superficie a pintar",
       descripcion:
-        "Obligatorio, hasta 4. Lista: `- Nombre {{ColorN}}.` (una línea por superficie).",
+        "Obligatorio, hasta 4. Una fila: Paint the {{Surface}} with a color of your choice (Color A).",
       modulos: ["disenar_colores"],
     },
     {
@@ -476,11 +494,12 @@ export function buildPromptDisenarColoresDefault(): string {
     "",
     "Formato de la variable de superficies:",
     "",
-    "- Una línea por superficie: `- Nombre {{ColorN}}.` (ej. `- CIELO RASO {{Color1}}.`).",
+    "- Una línea por superficie (1 a 4): `Paint the {{Surface Name}} with a color of your choice (Color A)`.",
+    "- Ejemplo: `Paint the {{Left Wall}} with a color of your choice (Color A)`.",
     "",
-    "Cada identificador (`{{Color1}}`, `{{Color2}}`, etc.) representa un único color del catálogo.",
+    "Each identifier (`Color A`, `Color B`, `Color C`, `Color D`) represents a single catalog color.",
     "",
-    "Si un mismo identificador aparece en varias superficies, todas deberán utilizar exactamente el mismo color.",
+    "If the same identifier appears on several surfaces, all of them must use exactly the same color.",
     "",
     "### Objetivos",
     "",
@@ -613,8 +632,19 @@ export function getDefaultConfigDisenarColores(): AsistenteIaConfigSubmodulo {
 }
 
 /**
- * Formato Prompt Maestro para GPT (lista, no matriz):
- * `- Nombre {{ColorN}}.`
+ * Title Case para el nombre de superficie dentro de `{{…}}` del prompt.
+ * `LEFT WALL` → `Left Wall`.
+ */
+export function titleCaseSuperficieParaPrompt(nombre: string): string {
+  return nombre
+    .trim()
+    .toLocaleLowerCase("en-US")
+    .replace(/\b\w/g, (c) => c.toLocaleUpperCase("en-US"));
+}
+
+/**
+ * Formato Prompt Maestro para GPT (1–4 filas):
+ * `Paint the {{Surface Name}} with a color of your choice (Color A)`
  * Vacío si no hay superficies.
  */
 export function formatSuperficiesParaPrompt(
@@ -622,7 +652,10 @@ export function formatSuperficiesParaPrompt(
 ): string {
   if (superficies.length === 0) return "";
   return superficies
-    .map((s) => `- ${s.superficieNombre} {{Color${s.colorIndex}}}.`)
+    .map((s) => {
+      const surface = titleCaseSuperficieParaPrompt(s.superficieNombre);
+      return `Paint the {{${surface}}} with a color of your choice (${etiquetaColorDesdeIndice(s.colorIndex)})`;
+    })
     .join("\n");
 }
 
