@@ -1530,6 +1530,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-03): **Diseñar Colores · acordeón** — orden 1 Modo → 2 Objetivo → 3 Estilo → 4 Luz Natural → 5 Luz Artificial → 6 Combinar → 7 Superficie A Pintar.*
 
+*Última actualización (2026-08-03): **GESTION DISEÑO · catálogo unificado** — UI sin cambios de API; persistencia `prod_ia_diseno_catalogo` por `kind`.*
+
 *Última actualización (2026-08-03): **GESTION DISEÑO · texto** — sentence case al guardar; superficies en prompt con el mismo casing.*
 
 *Última actualización (2026-08-03): **Diseñar Colores · reorden** — 1 Modo → 2 Objetivo → 3 Estilo → 4 Luz Nat → 5 Luz Art → 6 Combinar → 7 Superficie; hub `PROD_IA_DISENO_CATALOGO_KINDS` alineado.*

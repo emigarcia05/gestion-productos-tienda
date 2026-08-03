@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.13.0 — 2026-08-03
+
+**Descripción:** Catálogos GESTION DISEÑO unificados en **`prod_ia_diseno_catalogo`** (`kind` + `nombre` + `texto`; unique compuestos por kind). Se eliminan las 7 tablas legacy. Servicio CRUD filtra por `kind`.
+
+**Motivo:** Mismo shape en todos los catálogos; agregar una pregunta nueva no requiere nueva tabla.
+
 ## 0.12.2 — 2026-08-03
 
 **Descripción:** Columna **`texto`** de catálogos GESTION DISEÑO en **sentence case** (`normalizarTexto` al crear/editar + migración de filas existentes). Superficies en plantilla usan el mismo casing (`sentenceCaseTextoCatalogo`).

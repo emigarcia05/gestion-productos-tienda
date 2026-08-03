@@ -1987,6 +1987,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-07-29): **Balance · Gastos · Mes TODOS** — Select Mes con **TODOS** (`mes=todos`); `listarImputacionesMensualesBalance` acepta `mes: null` (año completo); fila con `mes`/`anio`.*
 
+*Última actualización (2026-08-03): **prod_ia_diseno_catalogo** — tabla unificada GESTION DISEÑO (`kind`, `nombre`, `texto`); migración `20260803200000_prod_ia_diseno_catalogo_unificado` (copia + drop de 7 tablas legacy).*
+
 *Última actualización (2026-08-03): **prod_ia_diseno_* · texto sentence case** — `normalizarTexto` (1ª mayúscula + resto minúsculas) en create/update; migración `20260803180000_prod_ia_diseno_catalogo_texto_sentence_case`.*
 
 *Última actualización (2026-08-03): **Diseñar Colores · reorden preguntas** — `PROD_IA_DISENO_CATALOGO_KINDS`: modo → objetivo → estilos → luz_nat → luz_art → combinar → sup_pintar.*

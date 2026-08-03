@@ -1,6 +1,7 @@
 /**
  * Catálogos de GESTION DISEÑO (Asistente IA).
  * Orden del hub = orden de preguntas en Diseñar Colores.
+ * Persistencia unificada en `prod_ia_diseno_catalogo` (columna `kind`).
  * `nombre` = etiqueta en pantalla (MAYÚSCULAS); `texto` = valor inyectado al prompt (**sentence case**).
  */
 

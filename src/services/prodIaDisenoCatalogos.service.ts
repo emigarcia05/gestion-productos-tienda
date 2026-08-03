@@ -53,44 +53,6 @@ function mapDbError(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-type Row = { id: string; nombre: string; texto: string };
-
-type Delegate = {
-  findMany: (args: {
-    orderBy: { nombre: "asc" } | { createdAt: "asc" };
-    select: typeof select;
-  }) => Promise<Row[]>;
-  create: (args: {
-    data: { nombre: string; texto: string };
-    select: typeof select;
-  }) => Promise<Row>;
-  update: (args: {
-    where: { id: string };
-    data: { nombre: string; texto: string };
-    select: typeof select;
-  }) => Promise<Row>;
-  delete: (args: { where: { id: string } }) => Promise<unknown>;
-};
-
-function delegateForKind(kind: ProdIaDisenoCatalogoKind): Delegate {
-  switch (kind) {
-    case "modo_diseno":
-      return prisma.prodIaDisenoModoDiseno as unknown as Delegate;
-    case "sup_pintar":
-      return prisma.prodIaDisenoSupPintar as unknown as Delegate;
-    case "estilos":
-      return prisma.prodIaDisenoEstilos as unknown as Delegate;
-    case "combinar":
-      return prisma.prodIaDisenoCombinar as unknown as Delegate;
-    case "objetivo":
-      return prisma.prodIaDisenoObjetivo as unknown as Delegate;
-    case "luz_natural":
-      return prisma.prodIaDisenoLuzNat as unknown as Delegate;
-    case "luz_artificial":
-      return prisma.prodIaDisenoLuzArt as unknown as Delegate;
-  }
-}
-
 function orderByForKind(
   kind: ProdIaDisenoCatalogoKind,
 ): { nombre: "asc" } | { createdAt: "asc" } {
@@ -103,7 +65,8 @@ function orderByForKind(
 export async function listarProdIaDisenoCatalogoNombre(
   kind: ProdIaDisenoCatalogoKind,
 ): Promise<ProdIaDisenoCatalogoNombreItem[]> {
-  const rows = await delegateForKind(kind).findMany({
+  const rows = await prisma.prodIaDisenoCatalogo.findMany({
+    where: { kind },
     orderBy: orderByForKind(kind),
     select,
   });
@@ -115,8 +78,9 @@ export async function crearProdIaDisenoCatalogoNombre(
   input: CrearProdIaDisenoCatalogoNombreInput,
 ): Promise<ServiceResult<ProdIaDisenoCatalogoNombreItem>> {
   try {
-    const row = await delegateForKind(kind).create({
+    const row = await prisma.prodIaDisenoCatalogo.create({
       data: {
+        kind,
         nombre: normalizarNombre(input.nombre),
         texto: normalizarTexto(input.texto),
       },
@@ -133,7 +97,14 @@ export async function editarProdIaDisenoCatalogoNombre(
   input: EditarProdIaDisenoCatalogoNombreInput,
 ): Promise<ServiceResult<ProdIaDisenoCatalogoNombreItem>> {
   try {
-    const row = await delegateForKind(kind).update({
+    const existing = await prisma.prodIaDisenoCatalogo.findFirst({
+      where: { id: input.id, kind },
+      select: { id: true },
+    });
+    if (!existing) {
+      return { success: false, error: "El registro no existe." };
+    }
+    const row = await prisma.prodIaDisenoCatalogo.update({
       where: { id: input.id },
       data: {
         nombre: normalizarNombre(input.nombre),
@@ -152,7 +123,14 @@ export async function eliminarProdIaDisenoCatalogoNombre(
   id: string,
 ): Promise<ServiceResult<{ id: string }>> {
   try {
-    await delegateForKind(kind).delete({ where: { id } });
+    const existing = await prisma.prodIaDisenoCatalogo.findFirst({
+      where: { id, kind },
+      select: { id: true },
+    });
+    if (!existing) {
+      return { success: false, error: "El registro no existe." };
+    }
+    await prisma.prodIaDisenoCatalogo.delete({ where: { id } });
     return { success: true, data: { id } };
   } catch (error) {
     return { success: false, error: mapDbError(error, "No se pudo eliminar el ítem.") };

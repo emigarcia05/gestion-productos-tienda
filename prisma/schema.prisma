@@ -1307,83 +1307,26 @@ model ProdIaDisenoPrompVar {
   @@map("prod_ia_diseno_promp_var")
 }
 
-/** Catálogo GESTION DISEÑO — superficies a pintar. */
-model ProdIaDisenoSupPintar {
+/**
+ * Catálogo unificado GESTION DISEÑO (preguntas Diseñar Colores).
+ * `kind` = discriminador (`modo_diseno`, `objetivo`, `estilos`, …).
+ * Uniques compuestos: mismo nombre/texto puede existir en distintos kinds.
+ */
+model ProdIaDisenoCatalogo {
   id        String   @id @default(cuid())
-  /** Etiqueta en pantalla. */
-  nombre    String   @unique(map: "prod_ia_diseno_sup_pintar_nombre_key") @map("nombre")
-  /** Texto inyectado al generar el prompt. */
-  texto     String   @unique(map: "prod_ia_diseno_sup_pintar_texto_key") @map("texto")
+  /** Discriminador del catálogo (mismo valor que `ProdIaDisenoCatalogoKind`). */
+  kind      String   @map("kind")
+  /** Etiqueta en pantalla (MAYÚSCULAS). */
+  nombre    String   @map("nombre")
+  /** Texto inyectado al prompt (sentence case). */
+  texto     String   @map("texto")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("prod_ia_diseno_sup_pintar")
-}
-
-/** Catálogo GESTION DISEÑO — estilos de diseño. */
-model ProdIaDisenoEstilos {
-  id        String   @id @default(cuid())
-  nombre    String   @unique(map: "prod_ia_diseno_estilos_nombre_key") @map("nombre")
-  texto     String   @unique(map: "prod_ia_diseno_estilos_texto_key") @map("texto")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("prod_ia_diseno_estilos")
-}
-
-/** Catálogo GESTION DISEÑO — opciones de combinar. */
-model ProdIaDisenoCombinar {
-  id        String   @id @default(cuid())
-  nombre    String   @unique(map: "prod_ia_diseno_combinar_nombre_key") @map("nombre")
-  texto     String   @unique(map: "prod_ia_diseno_combinar_texto_key") @map("texto")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("prod_ia_diseno_combinar")
-}
-
-/** Catálogo GESTION DISEÑO — objetivos de diseño. */
-model ProdIaDisenoObjetivo {
-  id        String   @id @default(cuid())
-  nombre    String   @unique(map: "prod_ia_diseno_objetivo_nombre_key") @map("nombre")
-  texto     String   @unique(map: "prod_ia_diseno_objetivo_texto_key") @map("texto")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("prod_ia_diseno_objetivo")
-}
-
-/** Catálogo GESTION DISEÑO — iluminación natural. */
-model ProdIaDisenoLuzNat {
-  id        String   @id @default(cuid())
-  nombre    String   @unique(map: "prod_ia_diseno_luz_nat_nombre_key") @map("nombre")
-  texto     String   @unique(map: "prod_ia_diseno_luz_nat_texto_key") @map("texto")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("prod_ia_diseno_luz_nat")
-}
-
-/** Catálogo GESTION DISEÑO — iluminación artificial. */
-model ProdIaDisenoLuzArt {
-  id        String   @id @default(cuid())
-  nombre    String   @unique(map: "prod_ia_diseno_luz_art_nombre_key") @map("nombre")
-  texto     String   @unique(map: "prod_ia_diseno_luz_art_texto_key") @map("texto")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("prod_ia_diseno_luz_art")
-}
-
-/** Catálogo GESTION DISEÑO — modo de diseño (pregunta 1). */
-model ProdIaDisenoModoDiseno {
-  id        String   @id @default(cuid())
-  nombre    String   @unique(map: "prod_ia_diseno_modo_diseno_nombre_key") @map("nombre")
-  texto     String   @unique(map: "prod_ia_diseno_modo_diseno_texto_key") @map("texto")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("prod_ia_diseno_modo_diseno")
+  @@unique([kind, nombre], map: "prod_ia_diseno_catalogo_kind_nombre_key")
+  @@unique([kind, texto], map: "prod_ia_diseno_catalogo_kind_texto_key")
+  @@index([kind], map: "prod_ia_diseno_catalogo_kind_idx")
+  @@map("prod_ia_diseno_catalogo")
 }
 
 /** Paleta de colores de marca (nombre + descripción + códigos hex). */
