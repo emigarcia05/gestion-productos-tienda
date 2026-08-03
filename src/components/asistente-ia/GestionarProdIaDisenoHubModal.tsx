@@ -36,34 +36,34 @@ const OPCIONES: {
     icon: <Palette className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
-    kind: "sup_pintar",
-    label: "2. Superficie A Pintar",
-    icon: <Paintbrush className="h-5 w-5 shrink-0" aria-hidden />,
-  },
-  {
     kind: "objetivo",
-    label: "3. Objetivo De Diseño",
+    label: "2. Objetivo De Diseño",
     icon: <Target className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
     kind: "estilos",
-    label: "4. Estilo De Diseño",
+    label: "3. Estilo De Diseño",
     icon: <Layers className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
     kind: "luz_natural",
-    label: "5. Luz Natural",
+    label: "4. Luz Natural",
     icon: <Sun className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
     kind: "luz_artificial",
-    label: "6. Luz Artificial",
+    label: "5. Luz Artificial",
     icon: <Lightbulb className="h-5 w-5 shrink-0" aria-hidden />,
   },
   {
     kind: "combinar",
-    label: "7. Combinar",
+    label: "6. Combinar",
     icon: <Shuffle className="h-5 w-5 shrink-0" aria-hidden />,
+  },
+  {
+    kind: "sup_pintar",
+    label: "7. Superficie A Pintar",
+    icon: <Paintbrush className="h-5 w-5 shrink-0" aria-hidden />,
   },
 ];
 

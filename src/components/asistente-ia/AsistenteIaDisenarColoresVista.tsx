@@ -51,7 +51,7 @@ type SuperficieSeleccion = {
 
 type PreguntaId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-/** Máximo de superficies seleccionables (pregunta 2, obligatorio). */
+/** Máximo de superficies seleccionables (pregunta 7, obligatorio). */
 const MAX_SUPERFICIES = 4;
 
 function PreguntaAcordeon({
@@ -489,10 +489,191 @@ export default function AsistenteIaDisenarColoresVista({
 
           <PreguntaAcordeon
             numero={2}
-            titulo="Superficie A Pintar"
-            resumen={resumenSuperficies}
+            titulo="Objetivo De Diseño"
+            resumen={resumenObjetivos}
             abierta={preguntaAbierta === 2}
             onToggle={() => togglePregunta(2)}
+          >
+            {catalogos.objetivos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay objetivos. Cargalos en GESTION DISEÑO.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1" role="radiogroup">
+                {catalogos.objetivos.map((item) => {
+                  const checked = objetivoId === item.id;
+                  return (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                        checked && "bg-muted",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="objetivo-diseno"
+                        className="size-4 accent-primary"
+                        checked={checked}
+                        onChange={() => setObjetivoId(item.id)}
+                      />
+                      <span className="min-w-0 flex-1 truncate">
+                        {item.nombre}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </PreguntaAcordeon>
+
+          <PreguntaAcordeon
+            numero={3}
+            titulo="Estilo De Diseño"
+            resumen={resumenEstilo}
+            abierta={preguntaAbierta === 3}
+            onToggle={() => togglePregunta(3)}
+          >
+            {catalogos.estilos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay estilos. Cargalos en GESTION DISEÑO.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1" role="radiogroup">
+                {catalogos.estilos.map((item) => {
+                  const checked = estiloId === item.id;
+                  return (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                        checked && "bg-muted",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="estilo-diseno"
+                        className="size-4 accent-primary"
+                        checked={checked}
+                        onChange={() => setEstiloId(item.id)}
+                      />
+                      <span className="min-w-0 flex-1 truncate">
+                        {item.nombre}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </PreguntaAcordeon>
+
+          <PreguntaAcordeon
+            numero={4}
+            titulo="Luz Natural"
+            resumen={resumenIluminacionNatural}
+            abierta={preguntaAbierta === 4}
+            onToggle={() => togglePregunta(4)}
+          >
+            {catalogos.luzNatural.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay opciones. Cargalas en GESTION DISEÑO (Luz Natural).
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1" role="radiogroup">
+                {catalogos.luzNatural.map((item) => {
+                  const checked = luzNaturalId === item.id;
+                  return (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                        checked && "bg-muted",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="iluminacion-natural"
+                        className="size-4 accent-primary"
+                        checked={checked}
+                        onChange={() => setLuzNaturalId(item.id)}
+                      />
+                      <span className="min-w-0 flex-1">{item.nombre}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </PreguntaAcordeon>
+
+          <PreguntaAcordeon
+            numero={5}
+            titulo="Luz Artificial"
+            resumen={resumenIluminacionArtificial}
+            abierta={preguntaAbierta === 5}
+            onToggle={() => togglePregunta(5)}
+          >
+            {catalogos.luzArtificial.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay opciones. Cargalas en GESTION DISEÑO (Luz Artificial).
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1" role="radiogroup">
+                {catalogos.luzArtificial.map((item) => {
+                  const checked = luzArtificialId === item.id;
+                  return (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                        checked && "bg-muted",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="iluminacion-artificial"
+                        className="size-4 accent-primary"
+                        checked={checked}
+                        onChange={() => setLuzArtificialId(item.id)}
+                      />
+                      <span className="min-w-0 flex-1">{item.nombre}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </PreguntaAcordeon>
+
+          <PreguntaAcordeon
+            numero={6}
+            titulo="Combinar"
+            resumen={resumenCombinar}
+            abierta={preguntaAbierta === 6}
+            onToggle={() => togglePregunta(6)}
+          >
+            {catalogos.combinar.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay elementos. Cargalos en GESTION DISEÑO (opcional).
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {catalogos.combinar.map((item) => (
+                  <OpcionCheck
+                    key={item.id}
+                    checked={combinarId === item.id}
+                    label={item.nombre}
+                    onToggle={() => toggleCombinar(item.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </PreguntaAcordeon>
+
+          <PreguntaAcordeon
+            numero={7}
+            titulo="Superficie A Pintar"
+            resumen={resumenSuperficies}
+            abierta={preguntaAbierta === 7}
+            onToggle={() => togglePregunta(7)}
           >
             {catalogos.superficies.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -533,187 +714,6 @@ export default function AsistenteIaDisenarColoresVista({
                     />
                   );
                 })}
-              </div>
-            )}
-          </PreguntaAcordeon>
-
-          <PreguntaAcordeon
-            numero={3}
-            titulo="Objetivo De Diseño"
-            resumen={resumenObjetivos}
-            abierta={preguntaAbierta === 3}
-            onToggle={() => togglePregunta(3)}
-          >
-            {catalogos.objetivos.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay objetivos. Cargalos en GESTION DISEÑO.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1" role="radiogroup">
-                {catalogos.objetivos.map((item) => {
-                  const checked = objetivoId === item.id;
-                  return (
-                    <label
-                      key={item.id}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                        checked && "bg-muted",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="objetivo-diseno"
-                        className="size-4 accent-primary"
-                        checked={checked}
-                        onChange={() => setObjetivoId(item.id)}
-                      />
-                      <span className="min-w-0 flex-1 truncate">
-                        {item.nombre}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </PreguntaAcordeon>
-
-          <PreguntaAcordeon
-            numero={4}
-            titulo="Estilo De Diseño"
-            resumen={resumenEstilo}
-            abierta={preguntaAbierta === 4}
-            onToggle={() => togglePregunta(4)}
-          >
-            {catalogos.estilos.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay estilos. Cargalos en GESTION DISEÑO.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1" role="radiogroup">
-                {catalogos.estilos.map((item) => {
-                  const checked = estiloId === item.id;
-                  return (
-                    <label
-                      key={item.id}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                        checked && "bg-muted",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="estilo-diseno"
-                        className="size-4 accent-primary"
-                        checked={checked}
-                        onChange={() => setEstiloId(item.id)}
-                      />
-                      <span className="min-w-0 flex-1 truncate">
-                        {item.nombre}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </PreguntaAcordeon>
-
-          <PreguntaAcordeon
-            numero={5}
-            titulo="Luz Natural"
-            resumen={resumenIluminacionNatural}
-            abierta={preguntaAbierta === 5}
-            onToggle={() => togglePregunta(5)}
-          >
-            {catalogos.luzNatural.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay opciones. Cargalas en GESTION DISEÑO (Luz Natural).
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1" role="radiogroup">
-                {catalogos.luzNatural.map((item) => {
-                  const checked = luzNaturalId === item.id;
-                  return (
-                    <label
-                      key={item.id}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                        checked && "bg-muted",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="iluminacion-natural"
-                        className="size-4 accent-primary"
-                        checked={checked}
-                        onChange={() => setLuzNaturalId(item.id)}
-                      />
-                      <span className="min-w-0 flex-1">{item.nombre}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </PreguntaAcordeon>
-
-          <PreguntaAcordeon
-            numero={6}
-            titulo="Luz Artificial"
-            resumen={resumenIluminacionArtificial}
-            abierta={preguntaAbierta === 6}
-            onToggle={() => togglePregunta(6)}
-          >
-            {catalogos.luzArtificial.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay opciones. Cargalas en GESTION DISEÑO (Luz Artificial).
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1" role="radiogroup">
-                {catalogos.luzArtificial.map((item) => {
-                  const checked = luzArtificialId === item.id;
-                  return (
-                    <label
-                      key={item.id}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                        checked && "bg-muted",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="iluminacion-artificial"
-                        className="size-4 accent-primary"
-                        checked={checked}
-                        onChange={() => setLuzArtificialId(item.id)}
-                      />
-                      <span className="min-w-0 flex-1">{item.nombre}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </PreguntaAcordeon>
-
-          <PreguntaAcordeon
-            numero={7}
-            titulo="Combinar"
-            resumen={resumenCombinar}
-            abierta={preguntaAbierta === 7}
-            onToggle={() => togglePregunta(7)}
-          >
-            {catalogos.combinar.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay elementos. Cargalos en GESTION DISEÑO (opcional).
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {catalogos.combinar.map((item) => (
-                  <OpcionCheck
-                    key={item.id}
-                    checked={combinarId === item.id}
-                    label={item.nombre}
-                    onToggle={() => toggleCombinar(item.id)}
-                  />
-                ))}
               </div>
             )}
           </PreguntaAcordeon>

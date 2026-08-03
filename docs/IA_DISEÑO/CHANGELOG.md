@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.12.1 — 2026-08-03
+
+**Descripción:** Acordeón Diseñar Colores reordenado: 1 Modo → 2 Objetivo → 3 Estilo → 4 Luz Natural → 5 Luz Artificial → 6 Combinar → 7 Superficie A Pintar. Validación y payload de prompt sin cambios de campos.
+
+**Motivo:** Dejar Superficie al final del cuestionario UI.
+
 ## 0.12.0 — 2026-08-03
 
 **Descripción:** Pregunta **1. Modo De Diseño** (obligatoria, 1 respuesta). Catálogo `prod_ia_diseno_modo_diseno` en GESTION DISEÑO; variable `{{MODO_DISENO}}`. Orden: Modo → Superficie → Objetivo → Estilo → Luz Nat → Luz Art → Combinar.

@@ -6,12 +6,12 @@
 
 export type ProdIaDisenoCatalogoKind =
   | "modo_diseno"
-  | "sup_pintar"
   | "objetivo"
   | "estilos"
   | "luz_natural"
   | "luz_artificial"
-  | "combinar";
+  | "combinar"
+  | "sup_pintar";
 
 export interface ProdIaDisenoCatalogoNombreItem {
   id: string;
@@ -32,10 +32,10 @@ export function textoCatalogoParaPrompt(
 /** Orden canónico del hub GESTION DISEÑO (preguntas 1–7). */
 export const PROD_IA_DISENO_CATALOGO_KINDS: ProdIaDisenoCatalogoKind[] = [
   "modo_diseno",
-  "sup_pintar",
   "objetivo",
   "estilos",
   "luz_natural",
   "luz_artificial",
   "combinar",
+  "sup_pintar",
 ];

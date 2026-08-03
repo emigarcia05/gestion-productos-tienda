@@ -1528,6 +1528,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-28): **PDF aproximación · layout muestra** — foto a la izquierda; swatch ~**30%** del lado menor; RGB/HEX bajo el swatch con tipografía proporcional y legible; bloque anotado alineado a la izquierda en el PDF.*
 
+*Última actualización (2026-08-03): **Diseñar Colores · acordeón** — orden 1 Modo → 2 Objetivo → 3 Estilo → 4 Luz Natural → 5 Luz Artificial → 6 Combinar → 7 Superficie A Pintar.*
+
 *Última actualización (2026-08-03): **Diseñar Colores · pregunta 1** — Modo De Diseño (obligatorio, radio 1); hub GESTION DISEÑO + `{{MODO_DISENO}}`; orden 1 Modo → 2 Superficie → … → 7 Combinar.*
 
 *Última actualización (2026-07-31): **Diseñar Colores · SUPERFICIES** — `Paint the {{Surface Name}} with a color of your choice (Color A|B|C|D)` (1–4 filas); Select Color A–D.*
