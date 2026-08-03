@@ -1528,6 +1528,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-07-28): **PDF aproximación · layout muestra** — foto a la izquierda; swatch ~**30%** del lado menor; RGB/HEX bajo el swatch con tipografía proporcional y legible; bloque anotado alineado a la izquierda en el PDF.*
 
+*Última actualización (2026-08-03): **Diseñar Colores · layout** — sin foto; 2 columnas (preguntas | opciones de la activa); respondida vs sin respuesta (`CheckCircle2` / `Circle`).*
+
 *Última actualización (2026-08-03): **Diseñar Colores · acordeón** — orden 1 Modo → 2 Objetivo → 3 Estilo → 4 Luz Natural → 5 Luz Artificial → 6 Combinar → 7 Superficie A Pintar.*
 
 *Última actualización (2026-08-03): **GESTION DISEÑO · catálogo unificado** — UI sin cambios de API; persistencia `prod_ia_diseno_catalogo` por `kind`.*

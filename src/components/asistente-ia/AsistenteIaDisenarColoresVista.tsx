@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import { ChevronDown, ImagePlus, Sparkles, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { CheckCircle2, Circle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,64 +47,15 @@ type PreguntaId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 /** Máximo de superficies seleccionables (pregunta 7, obligatorio). */
 const MAX_SUPERFICIES = 4;
 
-function PreguntaAcordeon({
-  numero,
-  titulo,
-  resumen,
-  abierta,
-  onToggle,
-  children,
-}: {
-  numero: PreguntaId;
-  titulo: string;
-  resumen?: string;
-  abierta: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <section
-      className={cn(
-        "flex min-h-0 flex-col overflow-hidden rounded-md border border-border bg-background",
-        abierta ? "flex-1" : "shrink-0",
-      )}
-    >
-      <button
-        type="button"
-        aria-expanded={abierta}
-        onClick={onToggle}
-        className={cn(
-          "flex w-full shrink-0 items-start gap-2 bg-primary px-3 py-2.5 text-left text-primary-foreground transition-colors",
-          "hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-          abierta && "border-b border-primary",
-        )}
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold uppercase tracking-wide text-primary-foreground">
-            {numero}. {titulo}
-          </span>
-          {!abierta && resumen ? (
-            <span className="mt-0.5 block truncate text-xs text-primary-foreground/80">
-              {resumen}
-            </span>
-          ) : null}
-        </span>
-        <ChevronDown
-          className={cn(
-            "mt-0.5 size-4 shrink-0 text-primary-foreground transition-transform",
-            abierta && "rotate-180",
-          )}
-          aria-hidden
-        />
-      </button>
-      {abierta ? (
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
-          {children}
-        </div>
-      ) : null}
-    </section>
-  );
-}
+const PREGUNTAS: { id: PreguntaId; titulo: string }[] = [
+  { id: 1, titulo: "Modo De Diseño" },
+  { id: 2, titulo: "Objetivo De Diseño" },
+  { id: 3, titulo: "Estilo De Diseño" },
+  { id: 4, titulo: "Luz Natural" },
+  { id: 5, titulo: "Luz Artificial" },
+  { id: 6, titulo: "Combinar" },
+  { id: 7, titulo: "Superficie A Pintar" },
+];
 
 function OpcionCheck({
   checked,
@@ -147,15 +91,96 @@ function OpcionCheck({
   );
 }
 
+function PreguntaNavItem({
+  numero,
+  titulo,
+  resumen,
+  respondida,
+  seleccionada,
+  onSelect,
+}: {
+  numero: PreguntaId;
+  titulo: string;
+  resumen?: string;
+  respondida: boolean;
+  seleccionada: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={seleccionada}
+      onClick={onSelect}
+      className={cn(
+        "flex w-full items-start gap-2 rounded-md border px-3 py-2.5 text-left transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+        seleccionada
+          ? "border-primary bg-primary text-primary-foreground"
+          : respondida
+            ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/10"
+            : "border-border bg-background text-muted-foreground hover:bg-muted/50",
+      )}
+    >
+      {respondida ? (
+        <CheckCircle2
+          className={cn(
+            "mt-0.5 size-4 shrink-0",
+            seleccionada ? "text-primary-foreground" : "text-primary",
+          )}
+          aria-hidden
+        />
+      ) : (
+        <Circle
+          className={cn(
+            "mt-0.5 size-4 shrink-0",
+            seleccionada ? "text-primary-foreground/80" : "text-muted-foreground",
+          )}
+          aria-hidden
+        />
+      )}
+      <span className="min-w-0 flex-1">
+        <span
+          className={cn(
+            "block text-sm font-semibold uppercase tracking-wide",
+            seleccionada ? "text-primary-foreground" : "text-foreground",
+          )}
+        >
+          {numero}. {titulo}
+        </span>
+        {resumen ? (
+          <span
+            className={cn(
+              "mt-0.5 block truncate text-xs",
+              seleccionada
+                ? "text-primary-foreground/80"
+                : respondida
+                  ? "text-foreground/70"
+                  : "text-muted-foreground",
+            )}
+          >
+            {resumen}
+          </span>
+        ) : (
+          <span
+            className={cn(
+              "mt-0.5 block text-xs",
+              seleccionada
+                ? "text-primary-foreground/70"
+                : "text-muted-foreground",
+            )}
+          >
+            Sin respuesta
+          </span>
+        )}
+      </span>
+    </button>
+  );
+}
+
 export default function AsistenteIaDisenarColoresVista({
   config: _config,
   catalogos,
 }: Props) {
-  const inputId = useId();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const objectUrlRef = useRef<string | null>(null);
-
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [modoDisenoId, setModoDisenoId] = useState<string>("");
   const [superficies, setSuperficies] = useState<SuperficieSeleccion[]>([]);
   const [objetivoId, setObjetivoId] = useState<string>("");
@@ -165,41 +190,7 @@ export default function AsistenteIaDisenarColoresVista({
   /** Opcional: una sola respuesta o vacío. */
   const [combinarId, setCombinarId] = useState<string>("");
   const [enviando, setEnviando] = useState(false);
-  const [preguntaAbierta, setPreguntaAbierta] = useState<PreguntaId>(1);
-
-  const revokeObjectUrl = useCallback(() => {
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
-    }
-  }, []);
-
-  const clearImagen = useCallback(() => {
-    revokeObjectUrl();
-    setPreviewUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [revokeObjectUrl]);
-
-  useEffect(() => () => revokeObjectUrl(), [revokeObjectUrl]);
-
-  function handleFileChange(fileList: FileList | null) {
-    const file = fileList?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Archivo Inválido", {
-        description: "Seleccioná una imagen (JPG, PNG, WEBP, etc.).",
-      });
-      return;
-    }
-    revokeObjectUrl();
-    const url = URL.createObjectURL(file);
-    objectUrlRef.current = url;
-    setPreviewUrl(url);
-  }
-
-  function togglePregunta(id: PreguntaId) {
-    setPreguntaAbierta((prev) => (prev === id ? prev : id));
-  }
+  const [preguntaActiva, setPreguntaActiva] = useState<PreguntaId>(1);
 
   function toggleSuperficie(id: string) {
     const exists = superficies.find((s) => s.id === id);
@@ -231,12 +222,6 @@ export default function AsistenteIaDisenarColoresVista({
     if (!modoDisenoId) {
       return "Seleccioná un modo de diseño.";
     }
-    if (superficies.length === 0) {
-      return "Seleccioná al menos una superficie a pintar.";
-    }
-    if (superficies.length > MAX_SUPERFICIES) {
-      return `Máximo ${MAX_SUPERFICIES} superficies.`;
-    }
     if (!objetivoId) {
       return "Seleccioná un objetivo de diseño.";
     }
@@ -248,6 +233,12 @@ export default function AsistenteIaDisenarColoresVista({
     }
     if (!luzArtificialId) {
       return "Seleccioná la luz artificial.";
+    }
+    if (superficies.length === 0) {
+      return "Seleccioná al menos una superficie a pintar.";
+    }
+    if (superficies.length > MAX_SUPERFICIES) {
+      return `Máximo ${MAX_SUPERFICIES} superficies.`;
     }
     return null;
   }
@@ -355,17 +346,6 @@ export default function AsistenteIaDisenarColoresVista({
     ? catalogos.modosDiseno.find((x) => x.id === modoDisenoId)?.nombre
     : undefined;
 
-  const resumenSuperficies =
-    superficies.length === 0
-      ? undefined
-      : superficies
-          .map((s) => {
-            const nombre =
-              catalogos.superficies.find((x) => x.id === s.id)?.nombre ?? "?";
-            return `${nombre}, ${etiquetaColorDesdeIndice(s.colorIndex)}`;
-          })
-          .join("; ");
-
   const resumenObjetivos = objetivoId
     ? catalogos.objetivos.find((x) => x.id === objetivoId)?.nombre
     : undefined;
@@ -385,351 +365,329 @@ export default function AsistenteIaDisenarColoresVista({
     ? catalogos.combinar.find((x) => x.id === combinarId)?.nombre
     : undefined;
 
-  return (
-    <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-2 lg:gap-6">
-      <aside className="flex min-h-0 flex-col gap-2 overflow-hidden">
-        <input
-          ref={fileInputRef}
-          id={inputId}
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          onChange={(e) => handleFileChange(e.target.files)}
-        />
-        {previewUrl ? (
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-muted/40">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={previewUrl}
-              alt="Referencia visual del ambiente o superficie"
-              className="h-full w-full object-contain"
-            />
-            <div className="absolute right-2 top-2 flex gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="h-8 px-2"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Cambiar
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="h-8 w-8 px-0"
-                aria-label="Quitar imagen"
-                onClick={clearImagen}
-              >
-                <X className="h-4 w-4" aria-hidden />
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className={cn(
-              "flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8",
-              "text-sm text-muted-foreground transition-colors hover:bg-muted/50",
-            )}
-          >
-            <ImagePlus className="size-10 opacity-70" aria-hidden />
-            <span className="font-medium text-foreground">Cargar Foto</span>
-            <span className="max-w-xs text-center text-xs">
-              Queda a la izquierda como referencia visual (no se guarda en el
-              servidor).
-            </span>
-          </button>
-        )}
-      </aside>
+  const resumenSuperficies =
+    superficies.length === 0
+      ? undefined
+      : superficies
+          .map((s) => {
+            const nombre =
+              catalogos.superficies.find((x) => x.id === s.id)?.nombre ?? "?";
+            return `${nombre}, ${etiquetaColorDesdeIndice(s.colorIndex)}`;
+          })
+          .join("; ");
 
-      <div className="flex min-h-0 flex-col gap-3 overflow-hidden">
-        <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
-          <PreguntaAcordeon
-            numero={1}
-            titulo="Modo De Diseño"
-            resumen={resumenModoDiseno}
-            abierta={preguntaAbierta === 1}
-            onToggle={() => togglePregunta(1)}
-          >
-            {catalogos.modosDiseno.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay modos. Cargalos en GESTION DISEÑO.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1" role="radiogroup">
-                {catalogos.modosDiseno.map((item) => {
-                  const checked = modoDisenoId === item.id;
-                  return (
-                    <label
-                      key={item.id}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                        checked && "bg-muted",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="modo-diseno"
-                        className="size-4 accent-primary"
-                        checked={checked}
-                        onChange={() => setModoDisenoId(item.id)}
-                      />
-                      <span className="min-w-0 flex-1 truncate">
-                        {item.nombre}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </PreguntaAcordeon>
+  const resumenPorPregunta: Record<PreguntaId, string | undefined> = {
+    1: resumenModoDiseno,
+    2: resumenObjetivos,
+    3: resumenEstilo,
+    4: resumenIluminacionNatural,
+    5: resumenIluminacionArtificial,
+    6: resumenCombinar,
+    7: resumenSuperficies,
+  };
 
-          <PreguntaAcordeon
-            numero={2}
-            titulo="Objetivo De Diseño"
-            resumen={resumenObjetivos}
-            abierta={preguntaAbierta === 2}
-            onToggle={() => togglePregunta(2)}
-          >
-            {catalogos.objetivos.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay objetivos. Cargalos en GESTION DISEÑO.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1" role="radiogroup">
-                {catalogos.objetivos.map((item) => {
-                  const checked = objetivoId === item.id;
-                  return (
-                    <label
-                      key={item.id}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                        checked && "bg-muted",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="objetivo-diseno"
-                        className="size-4 accent-primary"
-                        checked={checked}
-                        onChange={() => setObjetivoId(item.id)}
-                      />
-                      <span className="min-w-0 flex-1 truncate">
-                        {item.nombre}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </PreguntaAcordeon>
+  /** Combinar es opcional: no marca “respondida” si está vacío. */
+  const respondidaPorPregunta: Record<PreguntaId, boolean> = {
+    1: Boolean(modoDisenoId),
+    2: Boolean(objetivoId),
+    3: Boolean(estiloId),
+    4: Boolean(luzNaturalId),
+    5: Boolean(luzArtificialId),
+    6: Boolean(combinarId),
+    7: superficies.length > 0,
+  };
 
-          <PreguntaAcordeon
-            numero={3}
-            titulo="Estilo De Diseño"
-            resumen={resumenEstilo}
-            abierta={preguntaAbierta === 3}
-            onToggle={() => togglePregunta(3)}
-          >
-            {catalogos.estilos.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay estilos. Cargalos en GESTION DISEÑO.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1" role="radiogroup">
-                {catalogos.estilos.map((item) => {
-                  const checked = estiloId === item.id;
-                  return (
-                    <label
-                      key={item.id}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                        checked && "bg-muted",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="estilo-diseno"
-                        className="size-4 accent-primary"
-                        checked={checked}
-                        onChange={() => setEstiloId(item.id)}
-                      />
-                      <span className="min-w-0 flex-1 truncate">
-                        {item.nombre}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </PreguntaAcordeon>
+  const preguntaActivaMeta =
+    PREGUNTAS.find((p) => p.id === preguntaActiva) ?? PREGUNTAS[0]!;
 
-          <PreguntaAcordeon
-            numero={4}
-            titulo="Luz Natural"
-            resumen={resumenIluminacionNatural}
-            abierta={preguntaAbierta === 4}
-            onToggle={() => togglePregunta(4)}
-          >
-            {catalogos.luzNatural.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay opciones. Cargalas en GESTION DISEÑO (Luz Natural).
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1" role="radiogroup">
-                {catalogos.luzNatural.map((item) => {
-                  const checked = luzNaturalId === item.id;
-                  return (
-                    <label
-                      key={item.id}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                        checked && "bg-muted",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="iluminacion-natural"
-                        className="size-4 accent-primary"
-                        checked={checked}
-                        onChange={() => setLuzNaturalId(item.id)}
-                      />
-                      <span className="min-w-0 flex-1">{item.nombre}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </PreguntaAcordeon>
-
-          <PreguntaAcordeon
-            numero={5}
-            titulo="Luz Artificial"
-            resumen={resumenIluminacionArtificial}
-            abierta={preguntaAbierta === 5}
-            onToggle={() => togglePregunta(5)}
-          >
-            {catalogos.luzArtificial.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay opciones. Cargalas en GESTION DISEÑO (Luz Artificial).
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1" role="radiogroup">
-                {catalogos.luzArtificial.map((item) => {
-                  const checked = luzArtificialId === item.id;
-                  return (
-                    <label
-                      key={item.id}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
-                        checked && "bg-muted",
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="iluminacion-artificial"
-                        className="size-4 accent-primary"
-                        checked={checked}
-                        onChange={() => setLuzArtificialId(item.id)}
-                      />
-                      <span className="min-w-0 flex-1">{item.nombre}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </PreguntaAcordeon>
-
-          <PreguntaAcordeon
-            numero={6}
-            titulo="Combinar"
-            resumen={resumenCombinar}
-            abierta={preguntaAbierta === 6}
-            onToggle={() => togglePregunta(6)}
-          >
-            {catalogos.combinar.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay elementos. Cargalos en GESTION DISEÑO (opcional).
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {catalogos.combinar.map((item) => (
-                  <OpcionCheck
-                    key={item.id}
-                    checked={combinarId === item.id}
-                    label={item.nombre}
-                    onToggle={() => toggleCombinar(item.id)}
+  function renderOpciones(): ReactNode {
+    switch (preguntaActiva) {
+      case 1:
+        if (catalogos.modosDiseno.length === 0) {
+          return (
+            <p className="text-sm text-muted-foreground">
+              No hay modos. Cargalos en GESTION DISEÑO.
+            </p>
+          );
+        }
+        return (
+          <div className="flex flex-col gap-1" role="radiogroup">
+            {catalogos.modosDiseno.map((item) => {
+              const checked = modoDisenoId === item.id;
+              return (
+                <label
+                  key={item.id}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                    checked && "bg-muted",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="modo-diseno"
+                    className="size-4 accent-primary"
+                    checked={checked}
+                    onChange={() => setModoDisenoId(item.id)}
                   />
-                ))}
-              </div>
-            )}
-          </PreguntaAcordeon>
-
-          <PreguntaAcordeon
-            numero={7}
-            titulo="Superficie A Pintar"
-            resumen={resumenSuperficies}
-            abierta={preguntaAbierta === 7}
-            onToggle={() => togglePregunta(7)}
-          >
-            {catalogos.superficies.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay superficies. Cargalas en GESTION DISEÑO.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {catalogos.superficies.map((item) => {
-                  const selected = superficies.find((s) => s.id === item.id);
-                  return (
-                    <OpcionCheck
-                      key={item.id}
-                      checked={Boolean(selected)}
-                      label={item.nombre}
-                      onToggle={() => toggleSuperficie(item.id)}
-                      trailing={
-                        <Select
-                          value={String(selected?.colorIndex ?? 1)}
-                          onValueChange={(v) =>
-                            setColorSuperficie(item.id, Number(v))
-                          }
-                        >
-                          <SelectTrigger
-                            className="h-9 w-[7.5rem]"
-                            aria-label={`Color para ${item.nombre}`}
-                          >
-                            <SelectValue placeholder="Color" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ASISTENTE_IA_INDICES_COLOR.map((n) => (
-                              <SelectItem key={n} value={String(n)}>
-                                {etiquetaColorDesdeIndice(n)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                  <span className="min-w-0 flex-1 truncate">{item.nombre}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
+      case 2:
+        if (catalogos.objetivos.length === 0) {
+          return (
+            <p className="text-sm text-muted-foreground">
+              No hay objetivos. Cargalos en GESTION DISEÑO.
+            </p>
+          );
+        }
+        return (
+          <div className="flex flex-col gap-1" role="radiogroup">
+            {catalogos.objetivos.map((item) => {
+              const checked = objetivoId === item.id;
+              return (
+                <label
+                  key={item.id}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                    checked && "bg-muted",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="objetivo-diseno"
+                    className="size-4 accent-primary"
+                    checked={checked}
+                    onChange={() => setObjetivoId(item.id)}
+                  />
+                  <span className="min-w-0 flex-1 truncate">{item.nombre}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
+      case 3:
+        if (catalogos.estilos.length === 0) {
+          return (
+            <p className="text-sm text-muted-foreground">
+              No hay estilos. Cargalos en GESTION DISEÑO.
+            </p>
+          );
+        }
+        return (
+          <div className="flex flex-col gap-1" role="radiogroup">
+            {catalogos.estilos.map((item) => {
+              const checked = estiloId === item.id;
+              return (
+                <label
+                  key={item.id}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                    checked && "bg-muted",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="estilo-diseno"
+                    className="size-4 accent-primary"
+                    checked={checked}
+                    onChange={() => setEstiloId(item.id)}
+                  />
+                  <span className="min-w-0 flex-1 truncate">{item.nombre}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
+      case 4:
+        if (catalogos.luzNatural.length === 0) {
+          return (
+            <p className="text-sm text-muted-foreground">
+              No hay opciones. Cargalas en GESTION DISEÑO (Luz Natural).
+            </p>
+          );
+        }
+        return (
+          <div className="flex flex-col gap-1" role="radiogroup">
+            {catalogos.luzNatural.map((item) => {
+              const checked = luzNaturalId === item.id;
+              return (
+                <label
+                  key={item.id}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                    checked && "bg-muted",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="iluminacion-natural"
+                    className="size-4 accent-primary"
+                    checked={checked}
+                    onChange={() => setLuzNaturalId(item.id)}
+                  />
+                  <span className="min-w-0 flex-1">{item.nombre}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
+      case 5:
+        if (catalogos.luzArtificial.length === 0) {
+          return (
+            <p className="text-sm text-muted-foreground">
+              No hay opciones. Cargalas en GESTION DISEÑO (Luz Artificial).
+            </p>
+          );
+        }
+        return (
+          <div className="flex flex-col gap-1" role="radiogroup">
+            {catalogos.luzArtificial.map((item) => {
+              const checked = luzArtificialId === item.id;
+              return (
+                <label
+                  key={item.id}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                    checked && "bg-muted",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="iluminacion-artificial"
+                    className="size-4 accent-primary"
+                    checked={checked}
+                    onChange={() => setLuzArtificialId(item.id)}
+                  />
+                  <span className="min-w-0 flex-1">{item.nombre}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
+      case 6:
+        if (catalogos.combinar.length === 0) {
+          return (
+            <p className="text-sm text-muted-foreground">
+              No hay elementos. Cargalos en GESTION DISEÑO (opcional).
+            </p>
+          );
+        }
+        return (
+          <div className="flex flex-col gap-1">
+            {catalogos.combinar.map((item) => (
+              <OpcionCheck
+                key={item.id}
+                checked={combinarId === item.id}
+                label={item.nombre}
+                onToggle={() => toggleCombinar(item.id)}
+              />
+            ))}
+          </div>
+        );
+      case 7:
+        if (catalogos.superficies.length === 0) {
+          return (
+            <p className="text-sm text-muted-foreground">
+              No hay superficies. Cargalas en GESTION DISEÑO.
+            </p>
+          );
+        }
+        return (
+          <div className="flex flex-col gap-1">
+            {catalogos.superficies.map((item) => {
+              const selected = superficies.find((s) => s.id === item.id);
+              return (
+                <OpcionCheck
+                  key={item.id}
+                  checked={Boolean(selected)}
+                  label={item.nombre}
+                  onToggle={() => toggleSuperficie(item.id)}
+                  trailing={
+                    <Select
+                      value={String(selected?.colorIndex ?? 1)}
+                      onValueChange={(v) =>
+                        setColorSuperficie(item.id, Number(v))
                       }
-                    />
-                  );
-                })}
-              </div>
-            )}
-          </PreguntaAcordeon>
-        </div>
+                    >
+                      <SelectTrigger
+                        className="h-9 w-[7.5rem]"
+                        aria-label={`Color para ${item.nombre}`}
+                      >
+                        <SelectValue placeholder="Color" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ASISTENTE_IA_INDICES_COLOR.map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {etiquetaColorDesdeIndice(n)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  }
+                />
+              );
+            })}
+          </div>
+        );
+      default:
+        return null;
+    }
+  }
 
-        <div className="shrink-0">
-          <Button
-            type="button"
-            className="h-10 px-4 gap-2"
-            disabled={enviando}
-            onClick={() => void handleGenerarPrompt()}
-          >
-            <Sparkles className="h-4 w-4" aria-hidden />
-            {enviando ? "Generando..." : "Copiar Prompt Y Abrir Chatgpt"}
-          </Button>
-        </div>
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-2 lg:gap-6">
+        <nav
+          aria-label="Preguntas del cuestionario"
+          className="flex min-h-0 flex-col gap-1.5 overflow-y-auto"
+        >
+          {PREGUNTAS.map((p) => (
+            <PreguntaNavItem
+              key={p.id}
+              numero={p.id}
+              titulo={p.titulo}
+              resumen={resumenPorPregunta[p.id]}
+              respondida={respondidaPorPregunta[p.id]}
+              seleccionada={preguntaActiva === p.id}
+              onSelect={() => setPreguntaActiva(p.id)}
+            />
+          ))}
+        </nav>
+
+        <section
+          className={cn(
+            "flex min-h-0 flex-col overflow-hidden rounded-md border border-border bg-background",
+          )}
+        >
+          <header className="shrink-0 border-b border-border bg-muted/40 px-3 py-2.5">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+              {preguntaActivaMeta.id}. {preguntaActivaMeta.titulo}
+            </h2>
+            {preguntaActiva === 6 ? (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Opcional · re-clic desmarca
+              </p>
+            ) : null}
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+            {renderOpciones()}
+          </div>
+        </section>
+      </div>
+
+      <div className="shrink-0">
+        <Button
+          type="button"
+          className="h-10 gap-2 px-4"
+          disabled={enviando}
+          onClick={() => void handleGenerarPrompt()}
+        >
+          <Sparkles className="h-4 w-4" aria-hidden />
+          {enviando ? "Generando..." : "Copiar Prompt Y Abrir Chatgpt"}
+        </Button>
       </div>
     </div>
   );

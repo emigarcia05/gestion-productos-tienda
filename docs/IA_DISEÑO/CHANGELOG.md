@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.13.2 — 2026-08-03
+
+**Descripción:** Diseñar Colores: se elimina la columna de foto de referencia. Layout 2 columnas — izquierda lista de 7 preguntas; derecha opciones de la pregunta activa. Diferencia visual entre preguntas con/sin respuesta (`CheckCircle2` / `Circle` + tokens primary).
+
+**Motivo:** Enfocar el flujo en el cuestionario; la foto ya no aporta al prompt.
+
 ## 0.13.1 — 2026-08-03
 
 **Descripción:** `kind=combinar` → columna **`texto`** en **minúsculas** (create/update + migración de filas). Resto de kinds sigue en sentence case.
