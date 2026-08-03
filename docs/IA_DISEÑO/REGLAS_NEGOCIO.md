@@ -18,7 +18,7 @@ Orden y cardinalidad al generar el prompt:
 
 Si Combinar está vacío: con el bloque `{{#COMBINARCON}}…{{/COMBINARCON}}` en el prompt, **no se incluye** esa sección en el texto generado. Sin el bloque, el token queda vacío y el Prompt Maestro indica ignorar variables vacías.
 
-Los valores de catálogo se muestran con **`nombre`** en la UI (MAYÚSCULAS) y se inyectan con **`texto`** en **sentence case** al armar el prompt. Excepción **Superficies**: `texto` + Color A–D se combinan con una plantilla única (`plantilla_superficies`) repetida por cada superficie elegida.
+Los valores de catálogo viven en **`prod_ia_diseno_catalogo`** (discriminador `kind`). Se muestran con **`nombre`** en la UI (MAYÚSCULAS) y se inyectan con **`texto`** en **sentence case** al armar el prompt. Excepción **Superficies**: `texto` + Color A–D se combinan con una plantilla única (`plantilla_superficies`) repetida por cada superficie elegida.
 
 ## Respuesta del asesor (GPT)
 
