@@ -73,6 +73,8 @@ type Delegate = {
 
 function delegateForKind(kind: ProdIaDisenoCatalogoKind): Delegate {
   switch (kind) {
+    case "modo_diseno":
+      return prisma.prodIaDisenoModoDiseno as unknown as Delegate;
     case "sup_pintar":
       return prisma.prodIaDisenoSupPintar as unknown as Delegate;
     case "estilos":

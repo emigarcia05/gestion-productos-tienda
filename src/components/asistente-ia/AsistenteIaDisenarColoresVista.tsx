@@ -30,6 +30,7 @@ import { textoCatalogoParaPrompt } from "@/lib/prodIaDisenoCatalogos";
 import { cn } from "@/lib/utils";
 
 export interface AsistenteIaDisenarColoresCatalogos {
+  modosDiseno: ProdIaDisenoCatalogoNombreItem[];
   superficies: ProdIaDisenoCatalogoNombreItem[];
   estilos: ProdIaDisenoCatalogoNombreItem[];
   combinar: ProdIaDisenoCatalogoNombreItem[];
@@ -48,9 +49,9 @@ type SuperficieSeleccion = {
   colorIndex: number;
 };
 
-type PreguntaId = 1 | 2 | 3 | 4 | 5 | 6;
+type PreguntaId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-/** Máximo de superficies seleccionables (pregunta 1, obligatorio). */
+/** Máximo de superficies seleccionables (pregunta 2, obligatorio). */
 const MAX_SUPERFICIES = 4;
 
 function PreguntaAcordeon({
@@ -155,6 +156,7 @@ export default function AsistenteIaDisenarColoresVista({
   const objectUrlRef = useRef<string | null>(null);
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [modoDisenoId, setModoDisenoId] = useState<string>("");
   const [superficies, setSuperficies] = useState<SuperficieSeleccion[]>([]);
   const [objetivoId, setObjetivoId] = useState<string>("");
   const [estiloId, setEstiloId] = useState<string>("");
@@ -226,6 +228,9 @@ export default function AsistenteIaDisenarColoresVista({
   }
 
   function validar(): string | null {
+    if (!modoDisenoId) {
+      return "Seleccioná un modo de diseño.";
+    }
     if (superficies.length === 0) {
       return "Seleccioná al menos una superficie a pintar.";
     }
@@ -278,6 +283,9 @@ export default function AsistenteIaDisenarColoresVista({
         return;
       }
 
+      const modoItem = catalogos.modosDiseno.find((x) => x.id === modoDisenoId);
+      const modoDiseno = modoItem ? textoCatalogoParaPrompt(modoItem) : "";
+
       const superficiesResolved = superficies
         .map((s) => {
           const item = catalogos.superficies.find((x) => x.id === s.id);
@@ -317,6 +325,7 @@ export default function AsistenteIaDisenarColoresVista({
       const prompt = aplicarRespuestasAlPromptDisenarColores(
         cfg.promp,
         {
+          modoDiseno,
           superficies: superficiesResolved,
           objetivos,
           estilo,
@@ -341,6 +350,10 @@ export default function AsistenteIaDisenarColoresVista({
       setEnviando(false);
     }
   }
+
+  const resumenModoDiseno = modoDisenoId
+    ? catalogos.modosDiseno.find((x) => x.id === modoDisenoId)?.nombre
+    : undefined;
 
   const resumenSuperficies =
     superficies.length === 0
@@ -436,10 +449,50 @@ export default function AsistenteIaDisenarColoresVista({
         <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
           <PreguntaAcordeon
             numero={1}
-            titulo="Superficie A Pintar"
-            resumen={resumenSuperficies}
+            titulo="Modo De Diseño"
+            resumen={resumenModoDiseno}
             abierta={preguntaAbierta === 1}
             onToggle={() => togglePregunta(1)}
+          >
+            {catalogos.modosDiseno.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay modos. Cargalos en GESTION DISEÑO.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1" role="radiogroup">
+                {catalogos.modosDiseno.map((item) => {
+                  const checked = modoDisenoId === item.id;
+                  return (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted",
+                        checked && "bg-muted",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="modo-diseno"
+                        className="size-4 accent-primary"
+                        checked={checked}
+                        onChange={() => setModoDisenoId(item.id)}
+                      />
+                      <span className="min-w-0 flex-1 truncate">
+                        {item.nombre}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </PreguntaAcordeon>
+
+          <PreguntaAcordeon
+            numero={2}
+            titulo="Superficie A Pintar"
+            resumen={resumenSuperficies}
+            abierta={preguntaAbierta === 2}
+            onToggle={() => togglePregunta(2)}
           >
             {catalogos.superficies.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -485,11 +538,11 @@ export default function AsistenteIaDisenarColoresVista({
           </PreguntaAcordeon>
 
           <PreguntaAcordeon
-            numero={2}
+            numero={3}
             titulo="Objetivo De Diseño"
             resumen={resumenObjetivos}
-            abierta={preguntaAbierta === 2}
-            onToggle={() => togglePregunta(2)}
+            abierta={preguntaAbierta === 3}
+            onToggle={() => togglePregunta(3)}
           >
             {catalogos.objetivos.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -525,11 +578,11 @@ export default function AsistenteIaDisenarColoresVista({
           </PreguntaAcordeon>
 
           <PreguntaAcordeon
-            numero={3}
+            numero={4}
             titulo="Estilo De Diseño"
             resumen={resumenEstilo}
-            abierta={preguntaAbierta === 3}
-            onToggle={() => togglePregunta(3)}
+            abierta={preguntaAbierta === 4}
+            onToggle={() => togglePregunta(4)}
           >
             {catalogos.estilos.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -565,11 +618,11 @@ export default function AsistenteIaDisenarColoresVista({
           </PreguntaAcordeon>
 
           <PreguntaAcordeon
-            numero={4}
+            numero={5}
             titulo="Luz Natural"
             resumen={resumenIluminacionNatural}
-            abierta={preguntaAbierta === 4}
-            onToggle={() => togglePregunta(4)}
+            abierta={preguntaAbierta === 5}
+            onToggle={() => togglePregunta(5)}
           >
             {catalogos.luzNatural.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -603,11 +656,11 @@ export default function AsistenteIaDisenarColoresVista({
           </PreguntaAcordeon>
 
           <PreguntaAcordeon
-            numero={5}
+            numero={6}
             titulo="Luz Artificial"
             resumen={resumenIluminacionArtificial}
-            abierta={preguntaAbierta === 5}
-            onToggle={() => togglePregunta(5)}
+            abierta={preguntaAbierta === 6}
+            onToggle={() => togglePregunta(6)}
           >
             {catalogos.luzArtificial.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -641,11 +694,11 @@ export default function AsistenteIaDisenarColoresVista({
           </PreguntaAcordeon>
 
           <PreguntaAcordeon
-            numero={6}
+            numero={7}
             titulo="Combinar"
             resumen={resumenCombinar}
-            abierta={preguntaAbierta === 6}
-            onToggle={() => togglePregunta(6)}
+            abierta={preguntaAbierta === 7}
+            onToggle={() => togglePregunta(7)}
           >
             {catalogos.combinar.length === 0 ? (
               <p className="text-sm text-muted-foreground">

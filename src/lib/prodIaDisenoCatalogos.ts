@@ -5,6 +5,7 @@
  */
 
 export type ProdIaDisenoCatalogoKind =
+  | "modo_diseno"
   | "sup_pintar"
   | "objetivo"
   | "estilos"
@@ -28,8 +29,9 @@ export function textoCatalogoParaPrompt(
   return t || item.nombre.trim();
 }
 
-/** Orden canónico del hub GESTION DISEÑO (preguntas 1–6). */
+/** Orden canónico del hub GESTION DISEÑO (preguntas 1–7). */
 export const PROD_IA_DISENO_CATALOGO_KINDS: ProdIaDisenoCatalogoKind[] = [
+  "modo_diseno",
   "sup_pintar",
   "objetivo",
   "estilos",

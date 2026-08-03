@@ -101,6 +101,8 @@ export const ASISTENTE_IA_VAR_RGB = "RGB" as const;
 export const ASISTENTE_IA_VAR_SUPERFICIES = "SUPERFICIES" as const;
 export const ASISTENTE_IA_VAR_OBJETIVOS = "OBJETIVOS" as const;
 export const ASISTENTE_IA_VAR_ESTILO = "ESTILO" as const;
+/** Token canónico — Modo de Diseño (pregunta 1). */
+export const ASISTENTE_IA_VAR_MODO_DISENO = "MODO_DISENO" as const;
 /** Token canónico del Prompt Maestro. */
 export const ASISTENTE_IA_VAR_COMBINAR_CON = "COMBINARCON" as const;
 /** @deprecated Alias de plantillas viejas; se sigue rellenando en runtime. */
@@ -169,6 +171,7 @@ export interface AsistenteIaSuperficieConColor {
 }
 
 export interface AsistenteIaDisenarColoresRespuestas {
+  modoDiseno: string;
   superficies: AsistenteIaSuperficieConColor[];
   objetivos: string[];
   estilo: string;
@@ -237,6 +240,13 @@ export const ASISTENTE_IA_VARIABLES_PROMPT: readonly AsistenteIaVariablePrompt[]
       etiqueta: "RGB (cuentagotas)",
       descripcion: "Color tomado con el cuentagotas, p. ej. (128,64,32).",
       modulos: ["buscar_codigo"],
+    },
+    {
+      clave: ASISTENTE_IA_VAR_MODO_DISENO,
+      token: tokenVariablePrompt(ASISTENTE_IA_VAR_MODO_DISENO),
+      etiqueta: "Modo de diseño",
+      descripcion: "Obligatorio · 1 sola respuesta (Diseñar Colores).",
+      modulos: ["disenar_colores"],
     },
     {
       clave: ASISTENTE_IA_VAR_SUPERFICIES,
@@ -516,6 +526,7 @@ export function getDefaultConfigBuscarColorImagen(): AsistenteIaConfigSubmodulo 
 
 /** Plantilla seed/fallback de Diseñar Colores (Prompt Maestro). */
 export function buildPromptDisenarColoresDefault(): string {
+  const modoDiseno = tokenVariablePrompt(ASISTENTE_IA_VAR_MODO_DISENO);
   const superficies = tokenVariablePrompt(ASISTENTE_IA_VAR_SUPERFICIES);
   const objetivos = tokenVariablePrompt(ASISTENTE_IA_VAR_OBJETIVOS);
   const estilo = tokenVariablePrompt(ASISTENTE_IA_VAR_ESTILO);
@@ -545,6 +556,10 @@ export function buildPromptDisenarColoresDefault(): string {
     "Si una variable está vacía, considérala como **no especificada** e ignórala completamente durante el análisis.",
     "",
     "No inventes ni supongas información para completar variables vacías.",
+    "",
+    "### Modo de diseño",
+    "",
+    `'${modoDiseno}'`,
     "",
     "### Superficies",
     "",
@@ -604,6 +619,7 @@ export function buildPromptDisenarColoresDefault(): string {
     "Para elaborar la propuesta considera de forma conjunta:",
     "",
     "* La arquitectura del ambiente o fachada.",
+    "* El modo de diseño solicitado.",
     "* La iluminación natural y artificial indicadas (y la visible en la foto).",
     "* Las proporciones del espacio.",
     "* Los materiales y colores existentes.",
@@ -766,8 +782,10 @@ export function aplicarRespuestasAlPromptDisenarColores(
   const combinar = formatListaONada(respuestas.combinar);
   const iluminacionNatural = respuestas.iluminacionNatural.trim();
   const iluminacionArtificial = respuestas.iluminacionArtificial.trim();
+  const modoDiseno = respuestas.modoDiseno.trim();
 
   const porFuente: Record<string, string> = {
+    [ASISTENTE_IA_VAR_MODO_DISENO]: modoDiseno,
     [ASISTENTE_IA_VAR_SUPERFICIES]: superficies,
     [ASISTENTE_IA_VAR_OBJETIVOS]: objetivos,
     [ASISTENTE_IA_VAR_ESTILO]: estilo,
@@ -779,6 +797,7 @@ export function aplicarRespuestasAlPromptDisenarColores(
     Objetivos: objetivos,
     Estilo: estilo,
     CombinarCon: combinar,
+    ModoDiseno: modoDiseno,
   };
 
   return aplicarVariablesAlPrompt(

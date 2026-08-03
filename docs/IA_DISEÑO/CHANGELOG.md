@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.12.0 — 2026-08-03
+
+**Descripción:** Pregunta **1. Modo De Diseño** (obligatoria, 1 respuesta). Catálogo `prod_ia_diseno_modo_diseno` en GESTION DISEÑO; variable `{{MODO_DISENO}}`. Orden: Modo → Superficie → Objetivo → Estilo → Luz Nat → Luz Art → Combinar.
+
+**Motivo:** Priorizar el modo de diseño al inicio del cuestionario, gestionable desde el hub.
+
 ## 0.11.4 — 2026-07-31
 
 **Descripción:** Bloques opcionales `{{#VAR}}…{{/VAR}}` en el prompt: si la variable está vacía, se omite el bloque (`omitirBloquesCondicionalesVacios` dentro de `aplicarVariablesAlPrompt`). Seed de Diseñar Colores envuelve la sección Combinar.

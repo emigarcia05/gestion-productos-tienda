@@ -8,12 +8,13 @@ Orden y cardinalidad al generar el prompt:
 
 | # | Pregunta | Obligatoriedad | Respuestas |
 |---|----------|----------------|-----------|
-| 1 | Superficie A Pintar | Obligatorio | Hasta 4 |
-| 2 | Objetivo De Diseño | Obligatorio | 1 |
-| 3 | Estilo De Diseño | Obligatorio | 1 |
-| 4 | Luz Natural | Obligatorio | 1 |
-| 5 | Luz Artificial | Obligatorio | 1 |
-| 6 | Combinar | Opcional | 0 o 1 |
+| 1 | Modo De Diseño | Obligatorio | 1 |
+| 2 | Superficie A Pintar | Obligatorio | Hasta 4 |
+| 3 | Objetivo De Diseño | Obligatorio | 1 |
+| 4 | Estilo De Diseño | Obligatorio | 1 |
+| 5 | Luz Natural | Obligatorio | 1 |
+| 6 | Luz Artificial | Obligatorio | 1 |
+| 7 | Combinar | Opcional | 0 o 1 |
 
 Si Combinar está vacío: con el bloque `{{#COMBINARCON}}…{{/COMBINARCON}}` en el prompt, **no se incluye** esa sección en el texto generado. Sin el bloque, el token queda vacío y el Prompt Maestro indica ignorar variables vacías.
 

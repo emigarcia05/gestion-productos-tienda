@@ -1375,6 +1375,17 @@ model ProdIaDisenoLuzArt {
   @@map("prod_ia_diseno_luz_art")
 }
 
+/** Catálogo GESTION DISEÑO — modo de diseño (pregunta 1). */
+model ProdIaDisenoModoDiseno {
+  id        String   @id @default(cuid())
+  nombre    String   @unique(map: "prod_ia_diseno_modo_diseno_nombre_key") @map("nombre")
+  texto     String   @unique(map: "prod_ia_diseno_modo_diseno_texto_key") @map("texto")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("prod_ia_diseno_modo_diseno")
+}
+
 /** Paleta de colores de marca (nombre + descripción + códigos hex). */
 model MktColoresMarca {
   id               String   @id @default(cuid())

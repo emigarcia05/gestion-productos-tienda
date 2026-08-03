@@ -144,6 +144,23 @@ const COPY_BY_KIND: Record<ProdIaDisenoCatalogoKind, CatalogoCopy> = {
     toastActualizado: "Opción actualizada.",
     toastEliminado: "Opción eliminada.",
   },
+  modo_diseno: {
+    title: "Modo De Diseño",
+    searchPlaceholder: "Buscar modo...",
+    searchAria: "Buscar modo de diseño",
+    addAria: "Agregar modo de diseño",
+    emptyMessage: "No hay modos. Usá el botón + para agregar el primero.",
+    emptyFilterMessage: "Ningún modo coincide con la búsqueda.",
+    formCreateTitle: "Nuevo Modo",
+    formEditTitle: "Editar Modo",
+    formLabelNombre: "Nombre",
+    formLabelTexto: "Texto (prompt)",
+    deleteTitle: "Eliminar Modo",
+    deleteNoun: "el modo",
+    toastCreado: "Modo creado.",
+    toastActualizado: "Modo actualizado.",
+    toastEliminado: "Modo eliminado.",
+  },
 };
 
 const LIST_ROW_ICON_BTN_CLASS = cn(

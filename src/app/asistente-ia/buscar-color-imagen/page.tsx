@@ -21,6 +21,7 @@ export default async function AsistenteIaBuscarColorImagenPage() {
     configBuscarCodigo,
     configDisenarColores,
     catalogo,
+    modosDiseno,
     superficies,
     objetivos,
     estilos,
@@ -31,6 +32,7 @@ export default async function AsistenteIaBuscarColorImagenPage() {
     resolverConfigAsistenteIa("buscar_codigo"),
     resolverConfigAsistenteIa("disenar_colores"),
     listarProdIaDisenoPromps(),
+    listarProdIaDisenoCatalogoNombre("modo_diseno"),
     listarProdIaDisenoCatalogoNombre("sup_pintar"),
     listarProdIaDisenoCatalogoNombre("objetivo"),
     listarProdIaDisenoCatalogoNombre("estilos"),
@@ -45,6 +47,7 @@ export default async function AsistenteIaBuscarColorImagenPage() {
       configDisenarColores={configDisenarColores}
       catalogoInicial={catalogo}
       catalogosDiseno={{
+        modosDiseno,
         superficies,
         objetivos,
         estilos,

@@ -55,6 +55,7 @@ async function requireEditorAsistenteIa(): Promise<{ ok: false; error: string } 
 
 function isKind(v: unknown): v is ProdIaDisenoCatalogoKind {
   return (
+    v === "modo_diseno" ||
     v === "sup_pintar" ||
     v === "estilos" ||
     v === "combinar" ||
