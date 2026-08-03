@@ -6,6 +6,9 @@
 
 import type { RgbColor } from "@/lib/colorMuestraImagen";
 import { formatRgbTuple } from "@/lib/colorMuestraImagen";
+import { sentenceCaseTextoCatalogo } from "@/lib/prodIaDisenoCatalogos";
+
+export { sentenceCaseTextoCatalogo } from "@/lib/prodIaDisenoCatalogos";
 
 /** Base de conocimiento oficial (capa 3 IA_DISEÑO). */
 export const ASISTENTE_IA_BASE_COLORES = "colores_alba_ia" as const;
@@ -710,8 +713,11 @@ export function getDefaultConfigDisenarColores(): AsistenteIaConfigSubmodulo {
 }
 
 /**
- * Title Case para el nombre de superficie en la plantilla.
- * `LEFT WALL` → `Left Wall`.
+ * Sentence case para texto de catálogo / superficie en plantilla.
+ * Reexportado desde `@/lib/prodIaDisenoCatalogos`.
+ *
+ * @deprecated Preferir import directo de `sentenceCaseTextoCatalogo`.
+ * Title Case legacy: `LEFT WALL` → `Left Wall`.
  */
 export function titleCaseSuperficieParaPrompt(nombre: string): string {
   return nombre
@@ -731,7 +737,7 @@ function reemplazarTokenPlantilla(
 
 /**
  * Arma {{SUPERFICIES}}: repite la plantilla (1–4 filas).
- * Placeholders: {{SUPERFICIE}} (texto del catálogo en Title Case) y {{COLOR}} (`Color A`…).
+ * Placeholders: {{SUPERFICIE}} (texto del catálogo en sentence case) y {{COLOR}} (`Color A`…).
  */
 export function formatSuperficiesParaPrompt(
   superficies: AsistenteIaSuperficieConColor[],
@@ -742,7 +748,7 @@ export function formatSuperficiesParaPrompt(
     plantillaFila?.trim() || ASISTENTE_IA_PLANTILLA_SUPERFICIE_DEFAULT;
   return superficies
     .map((s) => {
-      const superficie = titleCaseSuperficieParaPrompt(s.superficieNombre);
+      const superficie = sentenceCaseTextoCatalogo(s.superficieNombre);
       const color = etiquetaColorDesdeIndice(s.colorIndex);
       let linea = plantilla;
       linea = reemplazarTokenPlantilla(

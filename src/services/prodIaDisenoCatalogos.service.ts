@@ -3,6 +3,7 @@ import type {
   ProdIaDisenoCatalogoKind,
   ProdIaDisenoCatalogoNombreItem,
 } from "@/lib/prodIaDisenoCatalogos";
+import { sentenceCaseTextoCatalogo } from "@/lib/prodIaDisenoCatalogos";
 import type {
   CrearProdIaDisenoCatalogoNombreInput,
   EditarProdIaDisenoCatalogoNombreInput,
@@ -15,9 +16,9 @@ function normalizarNombre(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLocaleUpperCase("es-AR");
 }
 
-/** Texto de prompt: trim + espacios; mayúsculas para consistencia con seeds. */
+/** Texto de prompt: trim + espacios; **sentence case**. */
 function normalizarTexto(value: string): string {
-  return value.trim().replace(/\s+/g, " ").toLocaleUpperCase("en-US");
+  return sentenceCaseTextoCatalogo(value);
 }
 
 function mapRow(row: {

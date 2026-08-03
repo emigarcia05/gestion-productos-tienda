@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.12.2 — 2026-08-03
+
+**Descripción:** Columna **`texto`** de catálogos GESTION DISEÑO en **sentence case** (`normalizarTexto` al crear/editar + migración de filas existentes). Superficies en plantilla usan el mismo casing (`sentenceCaseTextoCatalogo`).
+
+**Motivo:** Unificar el formato del valor inyectado al prompt (no ALL CAPS).
+
 ## 0.12.1 — 2026-08-03
 
 **Descripción:** Reorden cuestionario + hub GESTION DISEÑO: 1 Modo → 2 Objetivo → 3 Estilo → 4 Luz Natural → 5 Luz Artificial → 6 Combinar → **7 Superficie A Pintar**. Seed del Prompt Maestro y `PROD_IA_DISENO_CATALOGO_KINDS` alineados.

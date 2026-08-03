@@ -1,7 +1,7 @@
 /**
  * Catálogos de GESTION DISEÑO (Asistente IA).
  * Orden del hub = orden de preguntas en Diseñar Colores.
- * `nombre` = etiqueta en pantalla; `texto` = valor inyectado al generar el prompt.
+ * `nombre` = etiqueta en pantalla (MAYÚSCULAS); `texto` = valor inyectado al prompt (**sentence case**).
  */
 
 export type ProdIaDisenoCatalogoKind =
@@ -17,8 +17,22 @@ export interface ProdIaDisenoCatalogoNombreItem {
   id: string;
   /** Etiqueta en pantalla. */
   nombre: string;
-  /** Texto a pegar al generar el prompt. */
+  /** Texto a pegar al generar el prompt (sentence case). */
   texto: string;
+}
+
+/**
+ * Sentence case para `texto` de catálogo.
+ * `LEFT WALL` → `Left wall`.
+ */
+export function sentenceCaseTextoCatalogo(texto: string): string {
+  const t = texto.trim().replace(/\s+/g, " ");
+  if (!t) return t;
+  const lower = t.toLocaleLowerCase("en-US");
+  const chars = [...lower];
+  const first = chars[0];
+  if (!first) return lower;
+  return first.toLocaleUpperCase("en-US") + chars.slice(1).join("");
 }
 
 /** Texto a inyectar en el prompt; fallback a `nombre` si `texto` estuviera vacío. */
