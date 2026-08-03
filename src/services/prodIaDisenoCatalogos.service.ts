@@ -16,9 +16,14 @@ function normalizarNombre(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLocaleUpperCase("es-AR");
 }
 
-/** Texto de prompt: trim + espacios; **sentence case**. */
-function normalizarTexto(value: string): string {
-  return sentenceCaseTextoCatalogo(value);
+/** Texto de prompt: trim + espacios. Combinar → minúsculas; resto → sentence case. */
+function normalizarTexto(kind: ProdIaDisenoCatalogoKind, value: string): string {
+  const t = value.trim().replace(/\s+/g, " ");
+  if (!t) return t;
+  if (kind === "combinar") {
+    return t.toLocaleLowerCase("en-US");
+  }
+  return sentenceCaseTextoCatalogo(t);
 }
 
 function mapRow(row: {
@@ -82,7 +87,7 @@ export async function crearProdIaDisenoCatalogoNombre(
       data: {
         kind,
         nombre: normalizarNombre(input.nombre),
-        texto: normalizarTexto(input.texto),
+        texto: normalizarTexto(kind, input.texto),
       },
       select,
     });
@@ -108,7 +113,7 @@ export async function editarProdIaDisenoCatalogoNombre(
       where: { id: input.id },
       data: {
         nombre: normalizarNombre(input.nombre),
-        texto: normalizarTexto(input.texto),
+        texto: normalizarTexto(kind, input.texto),
       },
       select,
     });

@@ -1,5 +1,11 @@
 # Changelog — IA_DISEÑO
 
+## 0.13.1 — 2026-08-03
+
+**Descripción:** `kind=combinar` → columna **`texto`** en **minúsculas** (create/update + migración de filas). Resto de kinds sigue en sentence case.
+
+**Motivo:** Formato de inyección al prompt específico para Combinar.
+
 ## 0.13.0 — 2026-08-03
 
 **Descripción:** Catálogos GESTION DISEÑO unificados en **`prod_ia_diseno_catalogo`** (`kind` + `nombre` + `texto`; unique compuestos por kind). Se eliminan las 7 tablas legacy. Servicio CRUD filtra por `kind`.
