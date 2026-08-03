@@ -2,9 +2,9 @@
 
 ## 0.12.1 — 2026-08-03
 
-**Descripción:** Acordeón Diseñar Colores reordenado: 1 Modo → 2 Objetivo → 3 Estilo → 4 Luz Natural → 5 Luz Artificial → 6 Combinar → 7 Superficie A Pintar. Validación y payload de prompt sin cambios de campos.
+**Descripción:** Reorden cuestionario + hub GESTION DISEÑO: 1 Modo → 2 Objetivo → 3 Estilo → 4 Luz Natural → 5 Luz Artificial → 6 Combinar → **7 Superficie A Pintar**. Seed del Prompt Maestro y `PROD_IA_DISENO_CATALOGO_KINDS` alineados.
 
-**Motivo:** Dejar Superficie al final del cuestionario UI.
+**Motivo:** Superficie al final del flujo.
 
 ## 0.12.0 — 2026-08-03
 
