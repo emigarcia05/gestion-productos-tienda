@@ -181,23 +181,23 @@ export default function EstCategorizacionPageClient({
 
   return (
     <>
-    <ClassicFilteredTableLayout
-      title="ESTADÍSTICAS PRODUCTOS"
-      subtitle="Categorizacion"
-      contentWidth="full"
-      actions={
-        esEditor ? (
-          <Button
-            type="button"
-            className="h-10 px-4 gap-2"
-            onClick={() => setModalColoresOpen(true)}
-          >
-            <Palette className="h-4 w-4 shrink-0" aria-hidden />
-            Gestion Colores
-          </Button>
-        ) : undefined
-      }
-      filters={
+      <ClassicFilteredTableLayout
+        title="ESTADÍSTICAS PRODUCTOS"
+        subtitle="Categorizacion"
+        contentWidth="full"
+        actions={
+          esEditor ? (
+            <Button
+              type="button"
+              className="h-10 px-4 gap-2"
+              onClick={() => setModalColoresOpen(true)}
+            >
+              <Palette className="h-4 w-4 shrink-0" aria-hidden />
+              Gestion Colores
+            </Button>
+          ) : undefined
+        }
+        filters={
         <FilterBar className="filtros-contenedor-tienda bg-card">
           <FilterRowSelection className="w-full min-w-0">
             <FilaFiltrosDesplegables>
@@ -480,13 +480,13 @@ export default function EstCategorizacionPageClient({
       </div>
     </ClassicFilteredTableLayout>
 
-    <GestionarEstPorProdColoresModal
-      open={modalColoresOpen}
-      onOpenChange={setModalColoresOpen}
-      itemsIniciales={coloresCatalogo}
-      esEditor={esEditor}
-      onCatalogoChanged={() => router.refresh()}
-    />
+      <GestionarEstPorProdColoresModal
+        open={modalColoresOpen}
+        onOpenChange={setModalColoresOpen}
+        itemsIniciales={coloresCatalogo}
+        esEditor={esEditor}
+        onCatalogoChanged={() => router.refresh()}
+      />
     </>
   );
 }
