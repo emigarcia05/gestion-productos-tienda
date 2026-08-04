@@ -279,7 +279,6 @@ export default function ImportarEstPorProdModal({
   }
 
   const busy = importando || leyendoArchivo;
-  const filaEjemplo = filasCrudas[0] ?? [];
 
   return (
     <>
@@ -488,8 +487,6 @@ export default function ImportarEstPorProdModal({
                         <TableCell className="celda-datos celda-mono truncate">
                           {encabezados[i] ? (
                             encabezados[i]
-                          ) : filaEjemplo[i] != null && String(filaEjemplo[i]).trim() !== "" ? (
-                            String(filaEjemplo[i])
                           ) : (
                             <span className="text-muted-foreground italic">—</span>
                           )}

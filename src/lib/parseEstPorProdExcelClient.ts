@@ -7,8 +7,12 @@ export type CampoDestinoEstPorProd = "codTienda" | "vtasEnUn" | "ignorar";
 
 export type MapeoColumnasEstPorProd = Record<number, CampoDestinoEstPorProd>;
 
-/** Filas iniciales del export DUX que no se importan (metadatos). La 3.ª fila es el encabezado. */
-export const FILAS_OMITIR_INICIO_EST_POR_PROD = 2;
+/**
+ * Filas a omitir al inicio del Excel antes del encabezado/datos.
+ * `0` = la primera fila de la planilla es el encabezado (nombres de columna)
+ * cuando «LOS DATOS TIENEN ENCABEZADOS» está en Sí.
+ */
+export const FILAS_OMITIR_INICIO_EST_POR_PROD = 0;
 
 const MAX_SAFE_COD_TIENDA_INT = Number.MAX_SAFE_INTEGER;
 
