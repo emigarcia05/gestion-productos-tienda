@@ -464,24 +464,26 @@ export default function EstCategorizacionPageClient({
             </FilaFiltrosDesplegables>
           </FilterRowSelection>
 
-          <FilterRowSearch className="w-full min-w-0">
-            <FiltroBusquedaInput
-              id="filtro-est-categorizacion-descripcion"
-              placeholder="Buscar por descripción..."
-              value={q}
-              onChange={(value) => {
-                handleQChange(value);
-                setPaginaActual(1);
-              }}
-              isDebouncing={isDebouncing}
-              inputRef={inputRef}
-            />
-            <span className={cn(FILTER_COUNT_CLASS, "ml-auto shrink-0")}>
+          <div className="flex items-center gap-3">
+            <FilterRowSearch className="flex-1">
+              <FiltroBusquedaInput
+                id="filtro-est-categorizacion-descripcion"
+                placeholder="Buscar por descripción..."
+                value={q}
+                onChange={(value) => {
+                  handleQChange(value);
+                  setPaginaActual(1);
+                }}
+                isDebouncing={isDebouncing}
+                inputRef={inputRef}
+              />
+            </FilterRowSearch>
+            <LimpiarFiltrosButton onClick={limpiarFiltros} />
+            <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
               {filasFiltradas.length.toLocaleString("es-AR")} PRODUCTO
               {filasFiltradas.length === 1 ? "" : "S"}
             </span>
-            <LimpiarFiltrosButton onClick={limpiarFiltros} />
-          </FilterRowSearch>
+          </div>
         </FilterBar>
       }
     >
