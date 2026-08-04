@@ -42,6 +42,8 @@ import {
   Palette,
   Sparkles,
   ScanSearch,
+  BarChart3,
+  Tags,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -58,13 +60,15 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
 import { GP_ROUTES, getGpSidebarModule, isGpRouteActive } from "@/lib/gestionProductosRoutes";
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
+import { ESTADISTICAS_PRODUCTOS_ROUTES } from "@/lib/estadisticasProductosRoutes";
 
 const iconClass = "h-5 w-5 shrink-0";
 
 type ModuleId = "pedidos" | "ayuda-vendedor" | "asistente-ia";
 type FinanzasModuleId = "balance" | "finanzas-main" | "analisis-mc" | "analisis-precios";
 type MarketingModuleId = "publicaciones" | "base-multimedia";
-type SidebarModuleId = ModuleId | FinanzasModuleId | MarketingModuleId;
+type EstadisticasModuleId = "est-productos";
+type SidebarModuleId = ModuleId | FinanzasModuleId | MarketingModuleId | EstadisticasModuleId;
 
 interface SubmoduleItem {
   /** Omitir en agrupadores solo desplegables (sin página propia). */
@@ -400,6 +404,28 @@ const MARKETING_MODULES: NavModule[] = [
   },
 ];
 
+const ESTADISTICAS_MODULES: NavModule[] = [
+  {
+    id: "est-productos",
+    label: "ESTADÍSTICAS",
+    icon: <BarChart3 className={iconClass} />,
+    submodules: [
+      {
+        href: ESTADISTICAS_PRODUCTOS_ROUTES.ventasPorProducto,
+        label: "Ventas Por Producto",
+        icon: <PackageSearch className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.estadisticasProductos.acceso,
+      },
+      {
+        href: ESTADISTICAS_PRODUCTOS_ROUTES.categorizacion,
+        label: "Categorizacion",
+        icon: <Tags className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.estadisticasProductos.acceso,
+      },
+    ],
+  },
+];
+
 function getOpenModule(pathname: string): SidebarModuleId {
   // Análisis de Precios vive en área Finanzas (URLs aún bajo /gestion-productos/...).
   const gpModule = getGpSidebarModule(pathname);
@@ -412,6 +438,12 @@ function getOpenModule(pathname: string): SidebarModuleId {
   }
   if (pathname.startsWith("/marketing/base-multimedia")) {
     return "base-multimedia";
+  }
+  if (
+    pathname === "/estadisticas-productos" ||
+    pathname.startsWith("/estadisticas-productos/")
+  ) {
+    return "est-productos";
   }
   return gpModule;
 }
@@ -451,6 +483,15 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href === MARKETING_ROUTES.baseMultimedia.coloresMarca) {
     return pathname === MARKETING_ROUTES.baseMultimedia.coloresMarca;
   }
+  if (href === ESTADISTICAS_PRODUCTOS_ROUTES.ventasPorProducto) {
+    return (
+      pathname === ESTADISTICAS_PRODUCTOS_ROUTES.ventasPorProducto ||
+      pathname === "/estadisticas-productos"
+    );
+  }
+  if (href === ESTADISTICAS_PRODUCTOS_ROUTES.categorizacion) {
+    return pathname === ESTADISTICAS_PRODUCTOS_ROUTES.categorizacion;
+  }
   return pathname === href;
 }
 
@@ -488,7 +529,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
         ? FINANZAS_MODULES
         : mainAreaId === "marketing"
           ? MARKETING_MODULES
-          : [];
+          : mainAreaId === "estadisticas-productos"
+            ? ESTADISTICAS_MODULES
+            : [];
 
   const visibleModules: NavModule[] = modulesForArea.filter((module) => {
     if (module.href && module.permiso && puede(rol, module.permiso)) return true;
@@ -507,7 +550,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           ? FINANZAS_MODULES
           : mainAreaId === "marketing"
             ? MARKETING_MODULES
-            : [];
+            : mainAreaId === "estadisticas-productos"
+              ? ESTADISTICAS_MODULES
+              : [];
     const autoOpenByModule = new Map<SidebarModuleId, string>();
     for (const navModule of areaModules) {
       for (const sub of navModule.submodules) {

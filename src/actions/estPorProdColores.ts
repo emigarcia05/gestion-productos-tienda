@@ -70,8 +70,10 @@ export async function crearEstPorProdColorAction(
   }
   const res = await crearEstPorProdColor(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
-  revalidatePath("/estadisticas-productos");
-  return { ok: true, data: res.data };
+    revalidatePath("/estadisticas-productos");
+    revalidatePath("/estadisticas-productos/ventas-por-producto");
+    revalidatePath("/estadisticas-productos/categorizacion");
+    return { ok: true, data: res.data };
 }
 
 export async function editarEstPorProdColorAction(
@@ -85,8 +87,10 @@ export async function editarEstPorProdColorAction(
   }
   const res = await editarEstPorProdColor(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
-  revalidatePath("/estadisticas-productos");
-  return { ok: true, data: res.data };
+    revalidatePath("/estadisticas-productos");
+    revalidatePath("/estadisticas-productos/ventas-por-producto");
+    revalidatePath("/estadisticas-productos/categorizacion");
+    return { ok: true, data: res.data };
 }
 
 export async function eliminarEstPorProdColorAction(
@@ -100,6 +104,8 @@ export async function eliminarEstPorProdColorAction(
   }
   const res = await eliminarEstPorProdColor(parsed.data.id);
   if (!res.success) return { ok: false, error: res.error };
-  revalidatePath("/estadisticas-productos");
-  return { ok: true, data: res.data };
+    revalidatePath("/estadisticas-productos");
+    revalidatePath("/estadisticas-productos/ventas-por-producto");
+    revalidatePath("/estadisticas-productos/categorizacion");
+    return { ok: true, data: res.data };
 }

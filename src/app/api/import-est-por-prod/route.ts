@@ -37,6 +37,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: res.error }, { status: 400 });
     }
     revalidatePath("/estadisticas-productos");
+    revalidatePath("/estadisticas-productos/ventas-por-producto");
+    revalidatePath("/estadisticas-productos/categorizacion");
     return NextResponse.json({ ok: true, data: res.data });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "No se pudo importar la planilla.";

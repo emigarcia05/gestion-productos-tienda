@@ -75,6 +75,8 @@ export async function importarEstPorProdAction(
     const res = await importarEstPorProd(parsed.data);
     if (!res.success) return { ok: false, error: res.error };
     revalidatePath("/estadisticas-productos");
+    revalidatePath("/estadisticas-productos/ventas-por-producto");
+    revalidatePath("/estadisticas-productos/categorizacion");
     return { ok: true, data: res.data };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "No se pudo importar la planilla.";
@@ -100,6 +102,8 @@ export async function eliminarEstPorProdAction(raw: unknown): Promise<ActionResu
     const res = await eliminarEstPorProd(parsed.data.id);
     if (!res.success) return { ok: false, error: res.error };
     revalidatePath("/estadisticas-productos");
+    revalidatePath("/estadisticas-productos/ventas-por-producto");
+    revalidatePath("/estadisticas-productos/categorizacion");
     return { ok: true, data: res.data };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "No se pudo eliminar el registro.";

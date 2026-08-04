@@ -9,6 +9,7 @@ import {
   GP_ROUTES,
   isAnalisisPreciosPathname,
 } from "@/lib/gestionProductosRoutes";
+import { ESTADISTICAS_PRODUCTOS_ROUTES } from "@/lib/estadisticasProductosRoutes";
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 
 export type MainAppAreaId =
@@ -44,7 +45,7 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
     id: "estadisticas-productos",
     label: "Estadísticas Productos",
     statusLabel: "A construir",
-    href: "/estadisticas-productos",
+    href: ESTADISTICAS_PRODUCTOS_ROUTES.defaultEntry,
   },
   {
     id: "marketing",
