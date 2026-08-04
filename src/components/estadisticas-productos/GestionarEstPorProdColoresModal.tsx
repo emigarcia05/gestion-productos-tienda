@@ -146,7 +146,7 @@ export default function GestionarEstPorProdColoresModal({
     <>
       <Dialog open={open} onOpenChange={(next) => !pending && !borrando && onOpenChange(next)}>
         <AppModal
-          title="Gestionar Colores"
+          title="Gestion Colores"
           size="lg"
           className="max-w-xl"
           scrollBody

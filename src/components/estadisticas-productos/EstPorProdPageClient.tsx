@@ -172,7 +172,7 @@ export default function EstPorProdPageClient({
                 onClick={() => setModalColoresOpen(true)}
               >
                 <Palette className="h-4 w-4 shrink-0" aria-hidden />
-                Gestionar Colores
+                Gestion Colores
               </Button>
               <Button
                 type="button"
