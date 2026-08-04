@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileUp, Trash2 } from "lucide-react";
+import { FileUp, Palette, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ import FilterBar, {
 import { cn } from "@/lib/utils";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionClient from "@/components/shared/PaginacionClient";
+import GestionarEstPorProdColoresModal from "@/components/estadisticas-productos/GestionarEstPorProdColoresModal";
 import ImportarEstPorProdModal from "@/components/estadisticas-productos/ImportarEstPorProdModal";
 import {
   Table,
@@ -42,6 +43,7 @@ import {
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { eliminarEstPorProdAction } from "@/actions/estPorProd";
+import type { EstPorProdColorItem } from "@/lib/estPorProdColores";
 import type { EstPorProdItem, SucursalConDepositoOption } from "@/lib/estPorProdTypes";
 
 const MESES: { valor: number; etiqueta: string }[] = [
@@ -68,6 +70,7 @@ const FILTRO_TODOS = "none";
 interface Props {
   filas: EstPorProdItem[];
   sucursales: SucursalConDepositoOption[];
+  colores: EstPorProdColorItem[];
   esEditor: boolean;
   defaultMes: number;
   defaultAnio: number;
@@ -94,6 +97,7 @@ function etiquetaMes(mes: number): string {
 export default function EstPorProdPageClient({
   filas,
   sucursales,
+  colores,
   esEditor,
   defaultMes,
   defaultAnio,
@@ -103,6 +107,7 @@ export default function EstPorProdPageClient({
   const [filtAnio, setFiltAnio] = useState<string>(FILTRO_TODOS);
   const [filtSucursalId, setFiltSucursalId] = useState<string>(FILTRO_TODOS);
   const [modalImportOpen, setModalImportOpen] = useState(false);
+  const [modalColoresOpen, setModalColoresOpen] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
 
   const filasFiltradas = useMemo(() => {
@@ -160,14 +165,24 @@ export default function EstPorProdPageClient({
         contentWidth="full"
         actions={
           esEditor ? (
-            <Button
-              type="button"
-              className="h-10 px-4 gap-2"
-              onClick={() => setModalImportOpen(true)}
-            >
-              <FileUp className="h-4 w-4 shrink-0" aria-hidden />
-              Importar Datos
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                className="h-10 px-4 gap-2"
+                onClick={() => setModalColoresOpen(true)}
+              >
+                <Palette className="h-4 w-4 shrink-0" aria-hidden />
+                Gestionar Colores
+              </Button>
+              <Button
+                type="button"
+                className="h-10 px-4 gap-2"
+                onClick={() => setModalImportOpen(true)}
+              >
+                <FileUp className="h-4 w-4 shrink-0" aria-hidden />
+                Importar Datos
+              </Button>
+            </div>
           ) : undefined
         }
         filters={
@@ -387,6 +402,13 @@ export default function EstPorProdPageClient({
         sucursales={sucursales}
         defaultMes={defaultMes}
         defaultAnio={defaultAnio}
+      />
+
+      <GestionarEstPorProdColoresModal
+        open={modalColoresOpen}
+        onOpenChange={setModalColoresOpen}
+        itemsIniciales={colores}
+        esEditor={esEditor}
       />
     </>
   );

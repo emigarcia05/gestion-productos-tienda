@@ -7,6 +7,7 @@ import {
   listarEstPorProd,
   listarSucursalesConDepositoParaEstPorProd,
 } from "@/services/estPorProd.service";
+import { listarEstPorProdColores } from "@/services/estPorProdColores.service";
 import EstPorProdPageClient from "@/components/estadisticas-productos/EstPorProdPageClient";
 
 export const dynamic = "force-dynamic";
@@ -19,9 +20,10 @@ export default async function EstadisticasProductosPage() {
 
   const esEditor = rol === "editor";
   const { mes: defaultMes, anio: defaultAnio } = mesAnioCalendarioArgentina();
-  const [filas, sucursales] = await Promise.all([
+  const [filas, sucursales, colores] = await Promise.all([
     listarEstPorProd(),
     listarSucursalesConDepositoParaEstPorProd(),
+    listarEstPorProdColores(),
   ]);
 
   return (
@@ -29,6 +31,7 @@ export default async function EstadisticasProductosPage() {
       <EstPorProdPageClient
         filas={filas}
         sucursales={sucursales}
+        colores={colores}
         esEditor={esEditor}
         defaultMes={defaultMes}
         defaultAnio={defaultAnio}

@@ -525,6 +525,21 @@ model EstPorProd {
 }
 
 /**
+ * Catálogo de nombres de color para estadísticas por producto.
+ * El color no viene en columna: se detecta por match (regex) del `nombre`
+ * (MAYÚSCULAS) dentro de la descripción del producto en `prod_tienda`.
+ */
+model EstPorProdColor {
+  id        String   @id @default(cuid())
+  /** Nombre en MAYÚSCULAS (p. ej. BLANCO); único para match en descripciones. */
+  nombre    String   @unique(map: "est_por_prod_colores_nombre_key")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("est_por_prod_colores")
+}
+
+/**
  * Líneas importadas desde TXT AFIP (comprobantes emitidos, registro fijo). Posición de IVA · débito:
  * se agrupa `imp_iva` por mes de `fecha_emision` (importado del TXT · alícuotas AFIP).
  * Tabla física **`fin_bal_iva_deb_import`** (histórico: `fin_bal_iva_deb_import_line` → `fin_bal_pos_iva_final`).
