@@ -183,6 +183,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | `vinculos.ts` | `listarParaVincularFiltrosSchema.proveedorId` → `prismaCuidSchema.optional()`. |
 | `pxListasPrecios.ts` | `getPxListasPreciosPageData(params: unknown)` + `getPxListasPreciosPageParamsSchema.safeParse()`. |
 | `POST /api/import-lista-precios` | Body validado con `importarListaPreciosProveedorSchema` (`proveedorId`: `prismaCuidSchema`; límites filas/celdas). |
+| `POST /api/import-est-por-prod` | Body `importarEstPorProdSchema`; gate `guardEstPorProdImportarEsEditor`. Ver §2.5g. |
 | `importar.ts` (validaciones) | `importarProductosSchema` / `importarListaPreciosProveedorSchema`: `proveedorId` con `prismaCuidSchema` (antes `z.string().max(128)` local). |
 
 **Patrones a mantener:**
@@ -938,8 +939,9 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 - **Regla de sucursal**: solo sucursales con **`deposito` no nulo** (y no vacío tras `trim`) — `listarSucursalesConDepositoParaEstPorProd()`; distinto de `fin_bal_vtas` (`genera_balance`).
 - **Servicio** (`src/services/estPorProd.service.ts`): `listarEstPorProd`, `importarEstPorProd` (upsert masivo en transacción; omite filas cuyo `cod_tienda` no existe en `prod_tienda`), `eliminarEstPorProd`.
 - **Validación** (`@/lib/validations/estPorProd.ts`): `importarEstPorProdSchema` (`mes`/`anio` vía `mesAnioQuerySchema`, `sucursalId` con `globalSucursalIdSchema`, hasta 20 000 líneas); `eliminarEstPorProdSchema`.
-- **Actions** (`src/actions/estPorProd.ts`): `importarEstPorProdAction`, `eliminarEstPorProdAction`, **`verificarEstPorProdPeriodoAction`**; **`reemplazarPeriodo`** en importación borra todos los registros del **mes/año/sucursal** antes del upsert (confirmación en UI). Tras mutar, **`revalidatePath("/estadisticas-productos")`**.
-- **Import UI**: planilla parseada en cliente (`@/lib/parseEstPorProdExcelClient.ts` + `xlsx`). Con encabezados en Sí, la **primera fila** de la planilla es el encabezado (`FILAS_OMITIR_INICIO_EST_POR_PROD = 0`); la tabla **PRIMERA FILA / MAPEAR A** muestra esos nombres de columna. Mapeo inicial col. **0** → `codTienda`, col. **1** → `vtasEnUn` (editable en modal). Modal **`ImportarEstPorProdModal`**.
+- **Actions** (`src/actions/estPorProd.ts`): `eliminarEstPorProdAction`, **`verificarEstPorProdPeriodoAction`**; **`reemplazarPeriodo`** en importación borra todos los registros del **mes/año/sucursal** antes del upsert (confirmación en UI). Tras mutar, **`revalidatePath("/estadisticas-productos")`**.
+- **Import HTTP**: **`POST /api/import-est-por-prod`** (gate `guardEstPorProdImportarEsEditor`, `maxDuration` 300, body `importarEstPorProdSchema`). El modal llama a esta ruta (no a Lista de Precios). El polling **`GET /api/import-lista-precios/status`** del sidebar es **solo** para import de lista de precios y no participa en este módulo.
+- **Import UI**: planilla parseada en cliente (`@/lib/parseEstPorProdExcelClient.ts` + `xlsx`). Con encabezados en Sí, la **primera fila** de la planilla es el encabezado (`FILAS_OMITIR_INICIO_EST_POR_PROD = 0`); la tabla **PRIMERA FILA / MAPEAR A** muestra esos nombres de columna. Mapeo inicial col. **0** → `codTienda`, col. **1** → `vtasEnUn` (editable en modal). Modal **`ImportarEstPorProdModal`**. Códigos de planilla que no existan en `prod_tienda` se omiten (toast con muestra).
 
 ### 2.5g-bis Marketing · publicaciones (`mkt_publi*`)
 

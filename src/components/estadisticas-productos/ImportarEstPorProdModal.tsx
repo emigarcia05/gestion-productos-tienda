@@ -33,7 +33,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  importarEstPorProdAction,
   verificarEstPorProdPeriodoAction,
 } from "@/actions/estPorProd";
 import {
@@ -44,6 +43,7 @@ import {
   mapeoPorDefectoEstPorProd,
   separarEncabezadosYFilasEstPorProd,
 } from "@/lib/parseEstPorProdExcelClient";
+import type { ImportarEstPorProdResultado } from "@/lib/estPorProdTypes";
 import { cn } from "@/lib/utils";
 import { etiquetaPeriodoEstPorProd } from "@/lib/estPorProdPeriodo";
 import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
@@ -203,18 +203,45 @@ export default function ImportarEstPorProdModal({
   async function ejecutarImportar(reemplazarPeriodo: boolean) {
     setImportando(true);
     try {
-      const r = await importarEstPorProdAction({
-        mes,
-        anio,
-        sucursalId,
-        lineas: lineasParseadas,
-        reemplazarPeriodo,
+      const res = await fetch("/api/import-est-por-prod", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mes,
+          anio,
+          sucursalId,
+          lineas: lineasParseadas,
+          reemplazarPeriodo,
+        }),
       });
-      if (!r.ok) {
-        toast.error(r.error ?? "No se pudo importar.");
+
+      let payload: {
+        ok?: boolean;
+        error?: string;
+        data?: ImportarEstPorProdResultado;
+      } | null = null;
+      try {
+        payload = (await res.json()) as {
+          ok?: boolean;
+          error?: string;
+          data?: ImportarEstPorProdResultado;
+        };
+      } catch {
+        payload = null;
+      }
+
+      if (!res.ok || !payload?.ok || !payload.data) {
+        toast.error(
+          payload?.error ??
+            (res.status === 413
+              ? "La planilla es demasiado grande para importar de una vez."
+              : "No se pudo importar la planilla.")
+        );
         return;
       }
-      const { importados, omitidosCodTiendaInexistente, codigosOmitidos, reemplazados } = r.data;
+
+      const { importados, omitidosCodTiendaInexistente, codigosOmitidos, reemplazados } =
+        payload.data;
       let msg =
         importados === 1
           ? "1 producto importado."
@@ -241,6 +268,10 @@ export default function ImportarEstPorProdModal({
       setConfirmReemplazoOpen(false);
       onOpenChange(false);
       router.refresh();
+    } catch {
+      toast.error("No se pudo importar la planilla.", {
+        description: "Revisá la conexión e intentá de nuevo.",
+      });
     } finally {
       setImportando(false);
     }
@@ -264,6 +295,8 @@ export default function ImportarEstPorProdModal({
         return;
       }
       await ejecutarImportar(false);
+    } catch {
+      toast.error("No se pudo verificar el periodo.");
     } finally {
       setImportando(false);
     }

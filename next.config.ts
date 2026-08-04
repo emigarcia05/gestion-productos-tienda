@@ -97,6 +97,10 @@ const nextConfig: NextConfig = {
   /** Evita fallos de TLS al descargar Geist en `next/font` durante `next build` (p. ej. entornos corporativos). */
   experimental: {
     turbopackUseSystemTlsCerts: true,
+    /** Planillas de estadísticas / imports con muchas filas vía Server Actions. */
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
   },
   async redirects() {
     return [

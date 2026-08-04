@@ -46,3 +46,21 @@ export async function guardListaPreciosImportarEsEditor(): Promise<NextResponse 
   }
   return null;
 }
+
+/** Import estadísticas por producto (`est_por_prod`). */
+export async function guardEstPorProdImportarEsEditor(): Promise<NextResponse | null> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) {
+    return NextResponse.json(
+      { ok: false, error: "Sin permisos para estadísticas de productos." },
+      { status: 403 }
+    );
+  }
+  if (!(await esEditor())) {
+    return NextResponse.json(
+      { ok: false, error: "Solo el modo editor puede importar estadísticas." },
+      { status: 403 }
+    );
+  }
+  return null;
+}

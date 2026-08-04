@@ -17,3 +17,11 @@ export interface EstPorProdItem {
   sucursal: { id: string; nombre: string };
   producto: { codTienda: string; descripcionTienda: string | null };
 }
+
+/** Resultado de `POST /api/import-est-por-prod` / `importarEstPorProd`. */
+export interface ImportarEstPorProdResultado {
+  importados: number;
+  omitidosCodTiendaInexistente: number;
+  codigosOmitidos: string[];
+  reemplazados: number;
+}

@@ -1,10 +1,18 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { EstPorProdItem, SucursalConDepositoOption } from "@/lib/estPorProdTypes";
+import type {
+  EstPorProdItem,
+  ImportarEstPorProdResultado,
+  SucursalConDepositoOption,
+} from "@/lib/estPorProdTypes";
 import type { ImportarEstPorProdInput } from "@/lib/validations/estPorProd";
 import type { ServiceResult } from "@/types";
 
-export type { EstPorProdItem, SucursalConDepositoOption } from "@/lib/estPorProdTypes";
+export type {
+  EstPorProdItem,
+  ImportarEstPorProdResultado,
+  SucursalConDepositoOption,
+} from "@/lib/estPorProdTypes";
 
 const IMPORT_UPSERT_CHUNK = 100;
 
@@ -86,13 +94,6 @@ async function sucursalTieneDeposito(sucursalId: string): Promise<boolean> {
     select: { deposito: true },
   });
   return s?.deposito != null && s.deposito.trim() !== "";
-}
-
-export interface ImportarEstPorProdResultado {
-  importados: number;
-  omitidosCodTiendaInexistente: number;
-  codigosOmitidos: string[];
-  reemplazados: number;
 }
 
 export interface EstPorProdPeriodoExistente {
@@ -217,6 +218,13 @@ export async function importarEstPorProd(
       },
     };
   } catch (e: unknown) {
+    const code = e && typeof e === "object" && "code" in e ? (e as { code: string }).code : "";
+    if (code === "P2021" || code === "P2022") {
+      return {
+        success: false,
+        error: "Falta la tabla est_por_prod en la base. Aplicá las migraciones Prisma.",
+      };
+    }
     const msg = e instanceof Error ? e.message : "No se pudo importar la planilla.";
     return { success: false, error: msg };
   }
