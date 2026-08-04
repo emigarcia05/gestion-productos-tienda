@@ -30,6 +30,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   itemsIniciales: EstPorProdColorItem[];
   esEditor: boolean;
+  /** Tras crear/editar/eliminar: p. ej. `router.refresh()` para recalcular colores en la tabla. */
+  onCatalogoChanged?: () => void;
 }
 
 export default function GestionarEstPorProdColoresModal({
@@ -37,6 +39,7 @@ export default function GestionarEstPorProdColoresModal({
   onOpenChange,
   itemsIniciales,
   esEditor,
+  onCatalogoChanged,
 }: Props) {
   const [items, setItems] = useState<EstPorProdColorItem[]>(itemsIniciales);
   const [loading, setLoading] = useState(false);
@@ -120,6 +123,7 @@ export default function GestionarEstPorProdColoresModal({
       setEditingItem(null);
       setFormNombre("");
       await cargar();
+      onCatalogoChanged?.();
     } finally {
       setPending(false);
     }
@@ -137,6 +141,7 @@ export default function GestionarEstPorProdColoresModal({
       toast.success("Color eliminado.");
       setBorrarTarget(null);
       await cargar();
+      onCatalogoChanged?.();
     } finally {
       setBorrando(false);
     }

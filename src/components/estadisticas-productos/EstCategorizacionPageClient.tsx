@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Palette } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -20,6 +23,7 @@ import FilterBar, {
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionClient from "@/components/shared/PaginacionClient";
+import GestionarEstPorProdColoresModal from "@/components/estadisticas-productos/GestionarEstPorProdColoresModal";
 import {
   Table,
   TableBody,
@@ -31,6 +35,7 @@ import {
 } from "@/components/ui/table";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import type { EstCategorizacionItem } from "@/lib/estCategorizacionTypes";
+import type { EstPorProdColorItem } from "@/lib/estPorProdColores";
 import { etiquetaLitros } from "@/lib/estPorProdLitros";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -43,6 +48,8 @@ const FOCUS_KEY = "filtros-est-categorizacion-focus";
 
 interface Props {
   filas: EstCategorizacionItem[];
+  coloresCatalogo: EstPorProdColorItem[];
+  esEditor: boolean;
 }
 
 function opcionesOrdenadas(valores: string[]): string[] {
@@ -51,12 +58,18 @@ function opcionesOrdenadas(valores: string[]): string[] {
   );
 }
 
-export default function EstCategorizacionPageClient({ filas }: Props) {
+export default function EstCategorizacionPageClient({
+  filas,
+  coloresCatalogo,
+  esEditor,
+}: Props) {
+  const router = useRouter();
   const [filtMarca, setFiltMarca] = useState(FILTRO_TODOS);
   const [filtRubro, setFiltRubro] = useState(FILTRO_TODOS);
   const [filtSubRubro, setFiltSubRubro] = useState(FILTRO_TODOS);
   const [filtColor, setFiltColor] = useState(FILTRO_TODOS);
   const [filtLts, setFiltLts] = useState(FILTRO_TODOS);
+  const [modalColoresOpen, setModalColoresOpen] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
 
   const {
@@ -167,10 +180,23 @@ export default function EstCategorizacionPageClient({ filas }: Props) {
       : undefined;
 
   return (
+    <>
     <ClassicFilteredTableLayout
       title="ESTADÍSTICAS PRODUCTOS"
       subtitle="Categorizacion"
       contentWidth="full"
+      actions={
+        esEditor ? (
+          <Button
+            type="button"
+            className="h-10 px-4 gap-2"
+            onClick={() => setModalColoresOpen(true)}
+          >
+            <Palette className="h-4 w-4 shrink-0" aria-hidden />
+            Gestion Colores
+          </Button>
+        ) : undefined
+      }
       filters={
         <FilterBar className="filtros-contenedor-tienda bg-card">
           <FilterRowSelection className="w-full min-w-0">
@@ -453,5 +479,14 @@ export default function EstCategorizacionPageClient({ filas }: Props) {
         </section>
       </div>
     </ClassicFilteredTableLayout>
+
+    <GestionarEstPorProdColoresModal
+      open={modalColoresOpen}
+      onOpenChange={setModalColoresOpen}
+      itemsIniciales={coloresCatalogo}
+      esEditor={esEditor}
+      onCatalogoChanged={() => router.refresh()}
+    />
+    </>
   );
 }
