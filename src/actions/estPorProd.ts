@@ -30,25 +30,27 @@ function firstZodErrorMessage(error: {
 export async function verificarEstPorProdPeriodoAction(
   raw: unknown
 ): Promise<ActionResult<EstPorProdPeriodoExistente>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) {
-    return { ok: false, error: "Sin permisos para estadísticas de productos." };
-  }
-
-  const parsed = verificarEstPorProdPeriodoSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, error: firstZodErrorMessage(parsed.error) };
-  }
-
   try {
-    const data = await verificarEstPorProdPeriodo(
+    const rol = await getRol();
+    if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) {
+      return { ok: false, error: "Sin permisos para estadísticas de productos." };
+    }
+
+    const parsed = verificarEstPorProdPeriodoSchema.safeParse(raw);
+    if (!parsed.success) {
+      return { ok: false, error: firstZodErrorMessage(parsed.error) };
+    }
+
+    const res = await verificarEstPorProdPeriodo(
       parsed.data.sucursalId,
       parsed.data.mes,
       parsed.data.anio
     );
-    return { ok: true, data };
+    if (!res.success) return { ok: false, error: res.error };
+    return { ok: true, data: res.data };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "No se pudo verificar el periodo.";
+    console.error("[estPorProd] verificarEstPorProdPeriodoAction:", e);
     return { ok: false, error: msg };
   }
 }

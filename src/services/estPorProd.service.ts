@@ -101,15 +101,42 @@ export interface EstPorProdPeriodoExistente {
   cantidad: number;
 }
 
+function mapEstPorProdDbError(error: unknown, fallback: string): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof (error as { code?: unknown }).code === "string"
+  ) {
+    const code = (error as { code: string }).code;
+    if (code === "P2021" || code === "P2022") {
+      return "Falta la tabla est_por_prod en la base. Aplicá las migraciones Prisma.";
+    }
+  }
+  const msg = error instanceof Error ? error.message : "";
+  if (/est_por_prod/i.test(msg) && /does not exist|no existe|P2021/i.test(msg)) {
+    return "Falta la tabla est_por_prod en la base. Aplicá las migraciones Prisma.";
+  }
+  return msg || fallback;
+}
+
 export async function verificarEstPorProdPeriodo(
   sucursalId: string,
   mes: number,
   anio: number
-): Promise<EstPorProdPeriodoExistente> {
-  const cantidad = await prisma.estPorProd.count({
-    where: { sucursalId, mes, anio },
-  });
-  return { existe: cantidad > 0, cantidad };
+): Promise<ServiceResult<EstPorProdPeriodoExistente>> {
+  try {
+    const cantidad = await prisma.estPorProd.count({
+      where: { sucursalId, mes, anio },
+    });
+    return { success: true, data: { existe: cantidad > 0, cantidad } };
+  } catch (e: unknown) {
+    console.error("[estPorProd.service] verificarEstPorProdPeriodo:", e);
+    return {
+      success: false,
+      error: mapEstPorProdDbError(e, "No se pudo verificar el periodo."),
+    };
+  }
 }
 
 async function eliminarEstPorProdPorPeriodo(
@@ -134,11 +161,15 @@ export async function importarEstPorProd(
     };
   }
 
-  const periodoExistente = await verificarEstPorProdPeriodo(
+  const periodoRes = await verificarEstPorProdPeriodo(
     input.sucursalId,
     input.mes,
     input.anio
   );
+  if (!periodoRes.success) {
+    return { success: false, error: periodoRes.error };
+  }
+  const periodoExistente = periodoRes.data;
   if (periodoExistente.existe && !input.reemplazarPeriodo) {
     return {
       success: false,
@@ -218,14 +249,7 @@ export async function importarEstPorProd(
       },
     };
   } catch (e: unknown) {
-    const code = e && typeof e === "object" && "code" in e ? (e as { code: string }).code : "";
-    if (code === "P2021" || code === "P2022") {
-      return {
-        success: false,
-        error: "Falta la tabla est_por_prod en la base. Aplicá las migraciones Prisma.",
-      };
-    }
-    const msg = e instanceof Error ? e.message : "No se pudo importar la planilla.";
+    const msg = mapEstPorProdDbError(e, "No se pudo importar la planilla.");
     return { success: false, error: msg };
   }
 }

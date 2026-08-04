@@ -1,9 +1,19 @@
 import { z } from "zod";
-import { globalSucursalIdSchema, listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
+import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
 import { mesAnioQuerySchema } from "@/lib/validations/finBalGastoMensualBalance";
 
 const VTAS_EN_UN_MAX = 999_999_999.9999;
 const MAX_LINEAS_IMPORT = 20_000;
+
+/**
+ * ID de sucursal para este módulo: acepta cuid/uuid/`suc_corporativo` y otros ids
+ * legados de `global_sucursales` (no forzar solo cuid/uuid).
+ */
+export const estPorProdSucursalIdSchema = z
+  .string()
+  .trim()
+  .min(1, "Seleccioná una sucursal.")
+  .max(64, "ID de sucursal inválido.");
 
 const estPorProdLineaImportSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
@@ -14,7 +24,7 @@ const estPorProdLineaImportSchema = z.object({
 });
 
 export const importarEstPorProdSchema = mesAnioQuerySchema.extend({
-  sucursalId: globalSucursalIdSchema,
+  sucursalId: estPorProdSucursalIdSchema,
   /** Si true, borra todos los registros del periodo+sucursal antes de importar. */
   reemplazarPeriodo: z.boolean().optional().default(false),
   lineas: z
@@ -25,7 +35,7 @@ export const importarEstPorProdSchema = mesAnioQuerySchema.extend({
 export type ImportarEstPorProdInput = z.infer<typeof importarEstPorProdSchema>;
 
 export const verificarEstPorProdPeriodoSchema = mesAnioQuerySchema.extend({
-  sucursalId: globalSucursalIdSchema,
+  sucursalId: estPorProdSucursalIdSchema,
 });
 export type VerificarEstPorProdPeriodoInput = z.infer<typeof verificarEstPorProdPeriodoSchema>;
 

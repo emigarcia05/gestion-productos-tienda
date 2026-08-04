@@ -33,9 +33,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  verificarEstPorProdPeriodoAction,
-} from "@/actions/estPorProd";
-import {
   type CampoDestinoEstPorProd,
   type MapeoColumnasEstPorProd,
   leerFilasCrudasEstPorProdArchivo,
@@ -283,20 +280,46 @@ export default function ImportarEstPorProdModal({
       toast.error("Asigná todos los campos requeridos.");
       return;
     }
+    if (!sucursalId) {
+      toast.error("Seleccioná una sucursal.");
+      return;
+    }
     setImportando(true);
     try {
-      const verificacion = await verificarEstPorProdPeriodoAction({ mes, anio, sucursalId });
-      if (!verificacion.ok) {
-        toast.error(verificacion.error ?? "No se pudo verificar el periodo.");
+      const res = await fetch("/api/import-est-por-prod/verificar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mes, anio, sucursalId }),
+      });
+
+      let payload: {
+        ok?: boolean;
+        error?: string;
+        data?: { existe: boolean; cantidad: number };
+      } | null = null;
+      try {
+        payload = (await res.json()) as {
+          ok?: boolean;
+          error?: string;
+          data?: { existe: boolean; cantidad: number };
+        };
+      } catch {
+        payload = null;
+      }
+
+      if (!res.ok || !payload?.ok || !payload.data) {
+        toast.error(payload?.error ?? "No se pudo verificar el periodo.");
         return;
       }
-      if (verificacion.data.existe) {
+
+      if (payload.data.existe) {
         setConfirmReemplazoOpen(true);
         return;
       }
       await ejecutarImportar(false);
-    } catch {
-      toast.error("No se pudo verificar el periodo.");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "No se pudo verificar el periodo.";
+      toast.error(msg);
     } finally {
       setImportando(false);
     }
