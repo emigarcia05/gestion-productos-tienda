@@ -71,6 +71,7 @@ export default function EstCategorizacionPageClient({
   const [filtLts, setFiltLts] = useState(FILTRO_TODOS);
   const [modalColoresOpen, setModalColoresOpen] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
+  const [qDebounced, setQDebounced] = useState("");
 
   const {
     q,
@@ -79,9 +80,13 @@ export default function EstCategorizacionPageClient({
     handleQChange,
     isDebouncing,
   } = useFiltrosConBusqueda({
-    qActual: "",
+    qActual: qDebounced,
     debounceMs: 300,
     focusStorageKey: FOCUS_KEY,
+    onDebouncedSearch: (value) => {
+      setQDebounced(value);
+      setPaginaActual(1);
+    },
   });
 
   const marcas = useMemo(
@@ -142,12 +147,12 @@ export default function EstCategorizacionPageClient({
     } else if (filtLts !== FILTRO_TODOS) {
       out = out.filter((f) => etiquetaLitros(f.lts) === filtLts);
     }
-    const qTrim = q.trim();
+    const qTrim = qDebounced.trim();
     if (qTrim) {
       out = out.filter((f) => matchByMultiTerm([f.descripcionTienda], qTrim));
     }
     return out;
-  }, [filas, filtMarca, filtRubro, filtSubRubro, filtColor, filtLts, q]);
+  }, [filas, filtMarca, filtRubro, filtSubRubro, filtColor, filtLts, qDebounced]);
 
   const totalPaginas = Math.max(1, Math.ceil(filasFiltradas.length / PAGE_SIZE));
   const paginaSafe = Math.min(paginaActual, totalPaginas);
@@ -156,14 +161,6 @@ export default function EstCategorizacionPageClient({
     paginaSafe * PAGE_SIZE
   );
 
-  const hayFiltros =
-    filtMarca !== FILTRO_TODOS ||
-    filtRubro !== FILTRO_TODOS ||
-    filtSubRubro !== FILTRO_TODOS ||
-    filtColor !== FILTRO_TODOS ||
-    filtLts !== FILTRO_TODOS ||
-    q.trim() !== "";
-
   function limpiarFiltros() {
     setFiltMarca(FILTRO_TODOS);
     setFiltRubro(FILTRO_TODOS);
@@ -171,6 +168,7 @@ export default function EstCategorizacionPageClient({
     setFiltColor(FILTRO_TODOS);
     setFiltLts(FILTRO_TODOS);
     setQ("");
+    setQDebounced("");
     setPaginaActual(1);
   }
 
@@ -383,24 +381,21 @@ export default function EstCategorizacionPageClient({
 
           <FilterRowSearch className="w-full min-w-0">
             <FiltroBusquedaInput
-              ref={inputRef}
+              id="filtro-est-categorizacion-descripcion"
+              placeholder="Buscar por descripción..."
               value={q}
-              onChange={(e) => {
-                handleQChange(e);
+              onChange={(value) => {
+                handleQChange(value);
                 setPaginaActual(1);
               }}
               isDebouncing={isDebouncing}
-              placeholder="Buscar por descripción..."
-              aria-label="Buscar por descripción"
+              inputRef={inputRef}
             />
             <span className={cn(FILTER_COUNT_CLASS, "ml-auto shrink-0")}>
               {filasFiltradas.length.toLocaleString("es-AR")} PRODUCTO
               {filasFiltradas.length === 1 ? "" : "S"}
             </span>
-            <LimpiarFiltrosButton
-              onClick={limpiarFiltros}
-              disabled={!hayFiltros}
-            />
+            <LimpiarFiltrosButton onClick={limpiarFiltros} />
           </FilterRowSearch>
         </FilterBar>
       }
