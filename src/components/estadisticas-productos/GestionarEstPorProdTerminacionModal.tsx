@@ -9,14 +9,13 @@ import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  crearEstPorProdLtsConversionAction,
-  editarEstPorProdLtsConversionAction,
-  eliminarEstPorProdLtsConversionAction,
-  listarEstPorProdLtsConversionesAction,
-} from "@/actions/estPorProdLtsConversion";
+  crearEstPorProdTerminacionAction,
+  editarEstPorProdTerminacionAction,
+  eliminarEstPorProdTerminacionAction,
+  listarEstPorProdTerminacionesAction,
+} from "@/actions/estPorProdTerminacion";
 import { matchByMultiTerm } from "@/lib/busqueda";
-import type { EstPorProdLtsConversionItem } from "@/lib/estPorProdLtsConversion";
-import { etiquetaLitros } from "@/lib/estPorProdLitros";
+import type { EstPorProdTerminacionItem } from "@/lib/estPorProdTerminacion";
 import type { ActionResult } from "@/lib/types";
 import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
@@ -29,34 +28,29 @@ const LIST_ROW_ICON_BTN_CLASS = cn(
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  itemsIniciales: EstPorProdLtsConversionItem[];
+  itemsIniciales: EstPorProdTerminacionItem[];
   esEditor: boolean;
-  /** Tras crear/editar/eliminar: p. ej. `router.refresh()` para recalcular LTS. */
+  /** Tras crear/editar/eliminar: p. ej. `router.refresh()` para recalcular terminaciones. */
   onCatalogoChanged?: () => void;
 }
 
-function formatoConversionInput(n: number): string {
-  return etiquetaLitros(n);
-}
-
-export default function GestionarEstPorProdLtsConversionModal({
+export default function GestionarEstPorProdTerminacionModal({
   open,
   onOpenChange,
   itemsIniciales,
   esEditor,
   onCatalogoChanged,
 }: Props) {
-  const [items, setItems] = useState<EstPorProdLtsConversionItem[]>(itemsIniciales);
+  const [items, setItems] = useState<EstPorProdTerminacionItem[]>(itemsIniciales);
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [formOpen, setFormOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<EstPorProdLtsConversionItem | null>(
+  const [editingItem, setEditingItem] = useState<EstPorProdTerminacionItem | null>(
     null
   );
-  const [formTexto, setFormTexto] = useState("");
-  const [formConversion, setFormConversion] = useState("");
+  const [formTerminacion, setFormTerminacion] = useState("");
   const [pending, setPending] = useState(false);
-  const [borrarTarget, setBorrarTarget] = useState<EstPorProdLtsConversionItem | null>(
+  const [borrarTarget, setBorrarTarget] = useState<EstPorProdTerminacionItem | null>(
     null
   );
   const [borrando, setBorrando] = useState(false);
@@ -64,10 +58,10 @@ export default function GestionarEstPorProdLtsConversionModal({
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
-      const res: ActionResult<EstPorProdLtsConversionItem[]> =
-        await listarEstPorProdLtsConversionesAction();
+      const res: ActionResult<EstPorProdTerminacionItem[]> =
+        await listarEstPorProdTerminacionesAction();
       if (!res.ok) {
-        toast.error(res.error ?? "No se pudieron cargar las conversiones.");
+        toast.error(res.error ?? "No se pudieron cargar las terminaciones.");
         setItems([]);
         return;
       }
@@ -83,8 +77,7 @@ export default function GestionarEstPorProdLtsConversionModal({
     setBusqueda("");
     setFormOpen(false);
     setEditingItem(null);
-    setFormTexto("");
-    setFormConversion("");
+    setFormTerminacion("");
     setBorrarTarget(null);
     void cargar();
   }, [open, cargar, itemsIniciales]);
@@ -92,57 +85,50 @@ export default function GestionarEstPorProdLtsConversionModal({
   const listaFiltrada = useMemo(() => {
     const q = busqueda.trim();
     if (!q) return items;
-    return items.filter((item) =>
-      matchByMultiTerm([item.texto, etiquetaLitros(item.conversionLts)], q)
-    );
+    return items.filter((item) => matchByMultiTerm([item.terminacion], q));
   }, [items, busqueda]);
 
   function abrirCrear() {
     if (!esEditor || pending) return;
     setEditingItem(null);
-    setFormTexto("");
-    setFormConversion("");
+    setFormTerminacion("");
     setFormOpen(true);
   }
 
-  function abrirEditar(item: EstPorProdLtsConversionItem) {
+  function abrirEditar(item: EstPorProdTerminacionItem) {
     if (!esEditor || pending) return;
     setEditingItem(item);
-    setFormTexto(item.texto);
-    setFormConversion(formatoConversionInput(item.conversionLts));
+    setFormTerminacion(item.terminacion);
     setFormOpen(true);
   }
 
   async function handleGuardarForm() {
-    if (!esEditor || !formTexto.trim() || !formConversion.trim() || pending) return;
+    if (!esEditor || !formTerminacion.trim() || pending) return;
     setPending(true);
     try {
       if (editingItem) {
-        const res = await editarEstPorProdLtsConversionAction({
+        const res = await editarEstPorProdTerminacionAction({
           id: editingItem.id,
-          texto: formTexto,
-          conversionLts: formConversion,
+          terminacion: formTerminacion,
         });
         if (!res.ok) {
           toast.error(res.error ?? "No se pudo guardar.");
           return;
         }
-        toast.success("Conversión actualizada.");
+        toast.success("Terminación actualizada.");
       } else {
-        const res = await crearEstPorProdLtsConversionAction({
-          texto: formTexto,
-          conversionLts: formConversion,
+        const res = await crearEstPorProdTerminacionAction({
+          terminacion: formTerminacion,
         });
         if (!res.ok) {
           toast.error(res.error ?? "No se pudo crear.");
           return;
         }
-        toast.success("Conversión creada.");
+        toast.success("Terminación creada.");
       }
       setFormOpen(false);
       setEditingItem(null);
-      setFormTexto("");
-      setFormConversion("");
+      setFormTerminacion("");
       await cargar();
       onCatalogoChanged?.();
     } finally {
@@ -154,12 +140,12 @@ export default function GestionarEstPorProdLtsConversionModal({
     if (!borrarTarget || borrando) return;
     setBorrando(true);
     try {
-      const res = await eliminarEstPorProdLtsConversionAction({ id: borrarTarget.id });
+      const res = await eliminarEstPorProdTerminacionAction({ id: borrarTarget.id });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo eliminar.");
         return;
       }
-      toast.success("Conversión eliminada.");
+      toast.success("Terminación eliminada.");
       setBorrarTarget(null);
       await cargar();
       onCatalogoChanged?.();
@@ -172,7 +158,7 @@ export default function GestionarEstPorProdLtsConversionModal({
     <>
       <Dialog open={open} onOpenChange={(next) => !pending && !borrando && onOpenChange(next)}>
         <AppModal
-          title="Gestion Conversion"
+          title="Gestion Terminacion"
           size="lg"
           className="max-w-xl"
           scrollBody
@@ -190,8 +176,8 @@ export default function GestionarEstPorProdLtsConversionModal({
         >
           <div className="flex flex-col gap-4">
             <p className="text-xs text-muted-foreground">
-              Definí un texto (p. ej. «440 CC») y su equivalente en litros (p. ej. 0,4). Se busca
-              dentro de la descripción del producto y se muestra en la columna LTS.
+              Las terminaciones se guardan en mayúsculas y se buscan dentro de la descripción
+              del producto (p. ej. «… LAVABLE BLANCO MATE …» → MATE).
             </p>
             <div className="flex items-center gap-2">
               <div className="relative min-w-0 flex-1">
@@ -199,9 +185,9 @@ export default function GestionarEstPorProdLtsConversionModal({
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar por texto o litros..."
+                  placeholder="Buscar terminación por nombre..."
                   className="h-10 pl-9"
-                  aria-label="Buscar conversión de litros"
+                  aria-label="Buscar terminación por nombre"
                 />
               </div>
               {esEditor ? (
@@ -210,7 +196,7 @@ export default function GestionarEstPorProdLtsConversionModal({
                   variant="default"
                   size="icon"
                   className="h-10 w-10 shrink-0"
-                  aria-label="Agregar conversión"
+                  aria-label="Agregar terminación"
                   disabled={pending}
                   onClick={abrirCrear}
                 >
@@ -224,12 +210,12 @@ export default function GestionarEstPorProdLtsConversionModal({
                 <p className="text-sm text-muted-foreground">Cargando...</p>
               ) : items.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No hay conversiones. Usá el botón + para agregar la primera (p. ej. 440 CC →
-                  0,4).
+                  No hay terminaciones. Usá el botón + para agregar la primera (p. ej. MATE,
+                  SATINADO).
                 </p>
               ) : listaFiltrada.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Ninguna conversión coincide con la búsqueda.
+                  Ninguna terminación coincide con la búsqueda.
                 </p>
               ) : (
                 <ul className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto pr-1">
@@ -238,12 +224,9 @@ export default function GestionarEstPorProdLtsConversionModal({
                       key={item.id}
                       className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2"
                     >
-                      <div className="min-w-0 flex-1 text-left">
-                        <p className="truncate font-medium text-foreground">{item.texto}</p>
-                        <p className="text-xs text-muted-foreground">
-                          → {etiquetaLitros(item.conversionLts)} LTS
-                        </p>
-                      </div>
+                      <p className="min-w-0 flex-1 truncate text-left font-medium text-foreground">
+                        {item.terminacion}
+                      </p>
                       {esEditor ? (
                         <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5">
                           <Button
@@ -251,7 +234,7 @@ export default function GestionarEstPorProdLtsConversionModal({
                             variant="ghost"
                             size="icon"
                             className={LIST_ROW_ICON_BTN_CLASS}
-                            aria-label={`Editar ${item.texto}`}
+                            aria-label={`Editar ${item.terminacion}`}
                             disabled={pending}
                             onClick={() => abrirEditar(item)}
                           >
@@ -262,7 +245,7 @@ export default function GestionarEstPorProdLtsConversionModal({
                             variant="ghost"
                             size="icon"
                             className={LIST_ROW_ICON_BTN_CLASS}
-                            aria-label={`Eliminar ${item.texto}`}
+                            aria-label={`Eliminar ${item.terminacion}`}
                             disabled={pending}
                             onClick={() => setBorrarTarget(item)}
                           >
@@ -286,13 +269,12 @@ export default function GestionarEstPorProdLtsConversionModal({
           setFormOpen(next);
           if (!next) {
             setEditingItem(null);
-            setFormTexto("");
-            setFormConversion("");
+            setFormTerminacion("");
           }
         }}
       >
         <AppModal
-          title={editingItem ? "Editar Conversion Lts" : "Nueva Conversion Lts"}
+          title={editingItem ? "Editar Terminacion" : "Nueva Terminacion"}
           size="sm"
           actions={
             <div className="flex w-full justify-end gap-2">
@@ -303,15 +285,14 @@ export default function GestionarEstPorProdLtsConversionModal({
                 onClick={() => {
                   setFormOpen(false);
                   setEditingItem(null);
-                  setFormTexto("");
-                  setFormConversion("");
+                  setFormTerminacion("");
                 }}
               >
                 Cancelar
               </Button>
               <Button
                 type="button"
-                disabled={pending || !formTexto.trim() || !formConversion.trim()}
+                disabled={pending || !formTerminacion.trim()}
                 onClick={() => void handleGuardarForm()}
               >
                 Guardar
@@ -319,33 +300,21 @@ export default function GestionarEstPorProdLtsConversionModal({
             </div>
           }
         >
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Texto</ModalMicroLabel>
-              <Input
-                value={formTexto}
-                onChange={(e) => setFormTexto(e.target.value)}
-                placeholder="Ej. 440 CC (se guarda en mayúsculas)"
-                disabled={pending}
-                autoFocus
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Conversion Lts</ModalMicroLabel>
-              <Input
-                value={formConversion}
-                onChange={(e) => setFormConversion(e.target.value)}
-                placeholder="Ej. 0,4"
-                inputMode="decimal"
-                disabled={pending}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    void handleGuardarForm();
-                  }
-                }}
-              />
-            </div>
+          <div className="flex flex-col gap-1">
+            <ModalMicroLabel>Terminacion</ModalMicroLabel>
+            <Input
+              value={formTerminacion}
+              onChange={(e) => setFormTerminacion(e.target.value)}
+              placeholder="Ej. MATE (se guardará en mayúsculas)"
+              disabled={pending}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleGuardarForm();
+                }
+              }}
+            />
           </div>
         </AppModal>
       </Dialog>
@@ -355,7 +324,7 @@ export default function GestionarEstPorProdLtsConversionModal({
         onOpenChange={(o) => !o && !borrando && setBorrarTarget(null)}
       >
         <AppModal
-          title="Eliminar Conversion Lts"
+          title="Eliminar Terminacion"
           size="sm"
           actions={
             <div className="flex w-full justify-end gap-2">
@@ -379,11 +348,10 @@ export default function GestionarEstPorProdLtsConversionModal({
           }
         >
           <p className="text-sm text-muted-foreground">
-            ¿Eliminar la conversión{" "}
-            <span className="font-semibold text-foreground">{borrarTarget?.texto}</span>
-            {borrarTarget
-              ? ` → ${etiquetaLitros(borrarTarget.conversionLts)} LTS`
-              : ""}
+            ¿Eliminar la terminación{" "}
+            <span className="font-semibold text-foreground">
+              {borrarTarget?.terminacion}
+            </span>
             ? Esta acción no se puede deshacer.
           </p>
         </AppModal>

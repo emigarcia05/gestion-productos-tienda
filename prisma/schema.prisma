@@ -557,6 +557,21 @@ model EstPorProdLtsConversion {
 }
 
 /**
+ * Catálogo de terminaciones (acabado) para Categorizacion.
+ * Se detecta `terminacion` (MAYÚSCULAS) por regex en la descripción
+ * (p. ej. MATE, SATINADO, BRILLANTE).
+ */
+model EstPorProdTerminacion {
+  id          String   @id @default(cuid())
+  /** Nombre en MAYÚSCULAS; único para match en descripciones. */
+  terminacion String   @unique(map: "est_por_prod_terminacion_terminacion_key")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("est_por_prod_terminacion")
+}
+
+/**
  * Líneas importadas desde TXT AFIP (comprobantes emitidos, registro fijo). Posición de IVA · débito:
  * se agrupa `imp_iva` por mes de `fecha_emision` (importado del TXT · alícuotas AFIP).
  * Tabla física **`fin_bal_iva_deb_import`** (histórico: `fin_bal_iva_deb_import_line` → `fin_bal_pos_iva_final`).

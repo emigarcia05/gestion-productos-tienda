@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Beaker, Palette } from "lucide-react";
+import { Beaker, Paintbrush, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -25,6 +25,7 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import PaginacionClient from "@/components/shared/PaginacionClient";
 import GestionarEstPorProdColoresModal from "@/components/estadisticas-productos/GestionarEstPorProdColoresModal";
 import GestionarEstPorProdLtsConversionModal from "@/components/estadisticas-productos/GestionarEstPorProdLtsConversionModal";
+import GestionarEstPorProdTerminacionModal from "@/components/estadisticas-productos/GestionarEstPorProdTerminacionModal";
 import {
   Table,
   TableBody,
@@ -38,6 +39,7 @@ import { matchByMultiTerm } from "@/lib/busqueda";
 import type { EstCategorizacionItem } from "@/lib/estCategorizacionTypes";
 import type { EstPorProdColorItem } from "@/lib/estPorProdColores";
 import type { EstPorProdLtsConversionItem } from "@/lib/estPorProdLtsConversion";
+import type { EstPorProdTerminacionItem } from "@/lib/estPorProdTerminacion";
 import { etiquetaLitros } from "@/lib/estPorProdLitros";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -45,6 +47,7 @@ import { cn } from "@/lib/utils";
 
 const FILTRO_TODOS = "none";
 const FILTRO_SIN_COLOR = "__SIN_COLOR__";
+const FILTRO_SIN_TERMINACION = "__SIN_TERMINACION__";
 const FILTRO_SIN_LTS = "__SIN_LTS__";
 const FOCUS_KEY = "filtros-est-categorizacion-focus";
 
@@ -52,6 +55,7 @@ interface Props {
   filas: EstCategorizacionItem[];
   coloresCatalogo: EstPorProdColorItem[];
   ltsConversionesCatalogo: EstPorProdLtsConversionItem[];
+  terminacionesCatalogo: EstPorProdTerminacionItem[];
   esEditor: boolean;
 }
 
@@ -65,6 +69,7 @@ export default function EstCategorizacionPageClient({
   filas,
   coloresCatalogo,
   ltsConversionesCatalogo,
+  terminacionesCatalogo,
   esEditor,
 }: Props) {
   const router = useRouter();
@@ -72,9 +77,11 @@ export default function EstCategorizacionPageClient({
   const [filtRubro, setFiltRubro] = useState(FILTRO_TODOS);
   const [filtSubRubro, setFiltSubRubro] = useState(FILTRO_TODOS);
   const [filtColor, setFiltColor] = useState(FILTRO_TODOS);
+  const [filtTerminacion, setFiltTerminacion] = useState(FILTRO_TODOS);
   const [filtLts, setFiltLts] = useState(FILTRO_TODOS);
   const [modalColoresOpen, setModalColoresOpen] = useState(false);
   const [modalLtsOpen, setModalLtsOpen] = useState(false);
+  const [modalTerminacionOpen, setModalTerminacionOpen] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
   const [qDebounced, setQDebounced] = useState("");
 
@@ -119,6 +126,11 @@ export default function EstCategorizacionPageClient({
     return opcionesOrdenadas(names);
   }, [filas]);
 
+  const terminacionesOpciones = useMemo(() => {
+    const names = filas.flatMap((f) => f.terminaciones);
+    return opcionesOrdenadas(names);
+  }, [filas]);
+
   const litrosOpciones = useMemo(() => {
     const vals = [
       ...new Set(
@@ -147,6 +159,11 @@ export default function EstCategorizacionPageClient({
     } else if (filtColor !== FILTRO_TODOS) {
       out = out.filter((f) => f.colores.includes(filtColor));
     }
+    if (filtTerminacion === FILTRO_SIN_TERMINACION) {
+      out = out.filter((f) => f.terminaciones.length === 0);
+    } else if (filtTerminacion !== FILTRO_TODOS) {
+      out = out.filter((f) => f.terminaciones.includes(filtTerminacion));
+    }
     if (filtLts === FILTRO_SIN_LTS) {
       out = out.filter((f) => f.lts == null);
     } else if (filtLts !== FILTRO_TODOS) {
@@ -157,7 +174,16 @@ export default function EstCategorizacionPageClient({
       out = out.filter((f) => matchByMultiTerm([f.descripcionTienda], qTrim));
     }
     return out;
-  }, [filas, filtMarca, filtRubro, filtSubRubro, filtColor, filtLts, qDebounced]);
+  }, [
+    filas,
+    filtMarca,
+    filtRubro,
+    filtSubRubro,
+    filtColor,
+    filtTerminacion,
+    filtLts,
+    qDebounced,
+  ]);
 
   const totalPaginas = Math.max(1, Math.ceil(filasFiltradas.length / PAGE_SIZE));
   const paginaSafe = Math.min(paginaActual, totalPaginas);
@@ -171,6 +197,7 @@ export default function EstCategorizacionPageClient({
     setFiltRubro(FILTRO_TODOS);
     setFiltSubRubro(FILTRO_TODOS);
     setFiltColor(FILTRO_TODOS);
+    setFiltTerminacion(FILTRO_TODOS);
     setFiltLts(FILTRO_TODOS);
     setQ("");
     setQDebounced("");
@@ -205,7 +232,15 @@ export default function EstCategorizacionPageClient({
               onClick={() => setModalLtsOpen(true)}
             >
               <Beaker className="h-4 w-4 shrink-0" aria-hidden />
-              Gestion Lts
+              Gestion Conversion
+            </Button>
+            <Button
+              type="button"
+              className="h-10 px-4 gap-2"
+              onClick={() => setModalTerminacionOpen(true)}
+            >
+              <Paintbrush className="h-4 w-4 shrink-0" aria-hidden />
+              Gestion Terminacion
             </Button>
           </div>
         ) : undefined
@@ -359,6 +394,41 @@ export default function EstCategorizacionPageClient({
 
               <FiltroIndividualContainer
                 className={FILTER_SELECT_WRAPPER_CLASS}
+                activo={filtTerminacion !== FILTRO_TODOS}
+                onLimpiar={() => {
+                  setFiltTerminacion(FILTRO_TODOS);
+                  setPaginaActual(1);
+                }}
+              >
+                <Select
+                  value={filtTerminacion}
+                  onValueChange={(v) => {
+                    setFiltTerminacion(v);
+                    setPaginaActual(1);
+                  }}
+                >
+                  <SelectTrigger className="input-filtro-unificado" aria-label="Terminacion">
+                    <SelectValue placeholder="TERMINACION" />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro max-h-60"
+                  >
+                    <SelectItem value={FILTRO_TODOS}>TERMINACION</SelectItem>
+                    {terminacionesOpciones.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value={FILTRO_SIN_TERMINACION}>SIN TERMINACION</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FiltroIndividualContainer>
+
+              <FiltroIndividualContainer
+                className={FILTER_SELECT_WRAPPER_CLASS}
                 activo={filtLts !== FILTRO_TODOS}
                 onLimpiar={() => {
                   setFiltLts(FILTRO_TODOS);
@@ -421,18 +491,19 @@ export default function EstCategorizacionPageClient({
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[38%]">DESCRIPCIÓN</TableHead>
-                  <TableHead className="w-[14%]">MARCA</TableHead>
-                  <TableHead className="w-[14%]">RUBRO</TableHead>
-                  <TableHead className="w-[14%]">SUB RUBRO</TableHead>
+                  <TableHead className="w-[32%]">DESCRIPCIÓN</TableHead>
+                  <TableHead className="w-[12%]">MARCA</TableHead>
+                  <TableHead className="w-[12%]">RUBRO</TableHead>
+                  <TableHead className="w-[12%]">SUB RUBRO</TableHead>
                   <TableHead className="w-[12%]">COLOR</TableHead>
+                  <TableHead className="w-[12%]">TERMINACION</TableHead>
                   <TableHead className="w-[8%] text-right">LTS</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filasPagina.length === 0 ? (
                   <EmptyTableRow
-                    colSpan={6}
+                    colSpan={7}
                     message={
                       emptyMessage ??
                       (filas.length === 0
@@ -461,6 +532,11 @@ export default function EstCategorizacionPageClient({
                       </TableCell>
                       <TableCell className="celda-datos">
                         {f.colorEtiqueta || (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="celda-datos">
+                        {f.terminacionEtiqueta || (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
@@ -502,6 +578,14 @@ export default function EstCategorizacionPageClient({
         open={modalLtsOpen}
         onOpenChange={setModalLtsOpen}
         itemsIniciales={ltsConversionesCatalogo}
+        esEditor={esEditor}
+        onCatalogoChanged={() => router.refresh()}
+      />
+
+      <GestionarEstPorProdTerminacionModal
+        open={modalTerminacionOpen}
+        onOpenChange={setModalTerminacionOpen}
+        itemsIniciales={terminacionesCatalogo}
         esEditor={esEditor}
         onCatalogoChanged={() => router.refresh()}
       />

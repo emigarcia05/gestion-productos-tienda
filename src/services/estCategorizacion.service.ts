@@ -2,17 +2,19 @@ import { prisma } from "@/lib/prisma";
 import type { EstCategorizacionItem } from "@/lib/estCategorizacionTypes";
 import { matchColoresEnDescripcion } from "@/lib/estPorProdColores";
 import { resolverLitrosDesdeDescripcion } from "@/lib/estPorProdLitros";
+import { matchTerminacionesEnDescripcion } from "@/lib/estPorProdTerminacion";
 import { listarEstPorProdColores } from "@/services/estPorProdColores.service";
 import { listarEstPorProdLtsConversiones } from "@/services/estPorProdLtsConversion.service";
+import { listarEstPorProdTerminaciones } from "@/services/estPorProdTerminacion.service";
 
 function upperOrEmpty(value: string | null | undefined): string {
   return (value ?? "").trim().toLocaleUpperCase("es-AR");
 }
 
-/** Listado de `prod_tienda` con color y litros derivados de la descripción. */
+/** Listado de `prod_tienda` con color, terminación y litros derivados de la descripción. */
 export async function listarProdTiendaCategorizacion(): Promise<EstCategorizacionItem[]> {
   try {
-    const [rows, colores, conversionesLts] = await Promise.all([
+    const [rows, colores, conversionesLts, terminaciones] = await Promise.all([
       prisma.prodTienda.findMany({
         select: {
           codTienda: true,
@@ -25,12 +27,18 @@ export async function listarProdTiendaCategorizacion(): Promise<EstCategorizacio
       }),
       listarEstPorProdColores(),
       listarEstPorProdLtsConversiones(),
+      listarEstPorProdTerminaciones(),
     ]);
 
     return rows.map((r) => {
       const descripcionTienda = (r.descripcionTienda ?? "").trim();
-      const matched = matchColoresEnDescripcion(descripcionTienda, colores);
-      const coloresNombres = matched.map((c) => c.nombre);
+      const matchedColores = matchColoresEnDescripcion(descripcionTienda, colores);
+      const coloresNombres = matchedColores.map((c) => c.nombre);
+      const matchedTerm = matchTerminacionesEnDescripcion(
+        descripcionTienda,
+        terminaciones
+      );
+      const terminacionesNombres = matchedTerm.map((t) => t.terminacion);
       return {
         codTienda: r.codTienda,
         descripcionTienda,
@@ -39,6 +47,8 @@ export async function listarProdTiendaCategorizacion(): Promise<EstCategorizacio
         subRubro: upperOrEmpty(r.subRubro),
         colores: coloresNombres,
         colorEtiqueta: coloresNombres.join(" · "),
+        terminaciones: terminacionesNombres,
+        terminacionEtiqueta: terminacionesNombres.join(" · "),
         lts: resolverLitrosDesdeDescripcion(descripcionTienda, conversionesLts),
       };
     });
