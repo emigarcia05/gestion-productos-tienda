@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Palette } from "lucide-react";
+import { Beaker, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -24,6 +24,7 @@ import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionClient from "@/components/shared/PaginacionClient";
 import GestionarEstPorProdColoresModal from "@/components/estadisticas-productos/GestionarEstPorProdColoresModal";
+import GestionarEstPorProdLtsConversionModal from "@/components/estadisticas-productos/GestionarEstPorProdLtsConversionModal";
 import {
   Table,
   TableBody,
@@ -36,6 +37,7 @@ import {
 import { matchByMultiTerm } from "@/lib/busqueda";
 import type { EstCategorizacionItem } from "@/lib/estCategorizacionTypes";
 import type { EstPorProdColorItem } from "@/lib/estPorProdColores";
+import type { EstPorProdLtsConversionItem } from "@/lib/estPorProdLtsConversion";
 import { etiquetaLitros } from "@/lib/estPorProdLitros";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -49,6 +51,7 @@ const FOCUS_KEY = "filtros-est-categorizacion-focus";
 interface Props {
   filas: EstCategorizacionItem[];
   coloresCatalogo: EstPorProdColorItem[];
+  ltsConversionesCatalogo: EstPorProdLtsConversionItem[];
   esEditor: boolean;
 }
 
@@ -61,6 +64,7 @@ function opcionesOrdenadas(valores: string[]): string[] {
 export default function EstCategorizacionPageClient({
   filas,
   coloresCatalogo,
+  ltsConversionesCatalogo,
   esEditor,
 }: Props) {
   const router = useRouter();
@@ -70,6 +74,7 @@ export default function EstCategorizacionPageClient({
   const [filtColor, setFiltColor] = useState(FILTRO_TODOS);
   const [filtLts, setFiltLts] = useState(FILTRO_TODOS);
   const [modalColoresOpen, setModalColoresOpen] = useState(false);
+  const [modalLtsOpen, setModalLtsOpen] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
   const [qDebounced, setQDebounced] = useState("");
 
@@ -183,8 +188,9 @@ export default function EstCategorizacionPageClient({
         title="ESTADÍSTICAS PRODUCTOS"
         subtitle="Categorizacion"
         contentWidth="full"
-        actions={
-          esEditor ? (
+      actions={
+        esEditor ? (
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               className="h-10 px-4 gap-2"
@@ -193,8 +199,17 @@ export default function EstCategorizacionPageClient({
               <Palette className="h-4 w-4 shrink-0" aria-hidden />
               Gestion Colores
             </Button>
-          ) : undefined
-        }
+            <Button
+              type="button"
+              className="h-10 px-4 gap-2"
+              onClick={() => setModalLtsOpen(true)}
+            >
+              <Beaker className="h-4 w-4 shrink-0" aria-hidden />
+              Gestion Lts
+            </Button>
+          </div>
+        ) : undefined
+      }
         filters={
         <FilterBar className="filtros-contenedor-tienda bg-card">
           <FilterRowSelection className="w-full min-w-0">
@@ -479,6 +494,14 @@ export default function EstCategorizacionPageClient({
         open={modalColoresOpen}
         onOpenChange={setModalColoresOpen}
         itemsIniciales={coloresCatalogo}
+        esEditor={esEditor}
+        onCatalogoChanged={() => router.refresh()}
+      />
+
+      <GestionarEstPorProdLtsConversionModal
+        open={modalLtsOpen}
+        onOpenChange={setModalLtsOpen}
+        itemsIniciales={ltsConversionesCatalogo}
         esEditor={esEditor}
         onCatalogoChanged={() => router.refresh()}
       />

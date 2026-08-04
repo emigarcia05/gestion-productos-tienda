@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import type { EstCategorizacionItem } from "@/lib/estCategorizacionTypes";
 import { matchColoresEnDescripcion } from "@/lib/estPorProdColores";
-import { extraerLitrosDesdeDescripcion } from "@/lib/estPorProdLitros";
+import { resolverLitrosDesdeDescripcion } from "@/lib/estPorProdLitros";
 import { listarEstPorProdColores } from "@/services/estPorProdColores.service";
+import { listarEstPorProdLtsConversiones } from "@/services/estPorProdLtsConversion.service";
 
 function upperOrEmpty(value: string | null | undefined): string {
   return (value ?? "").trim().toLocaleUpperCase("es-AR");
@@ -11,7 +12,7 @@ function upperOrEmpty(value: string | null | undefined): string {
 /** Listado de `prod_tienda` con color y litros derivados de la descripción. */
 export async function listarProdTiendaCategorizacion(): Promise<EstCategorizacionItem[]> {
   try {
-    const [rows, colores] = await Promise.all([
+    const [rows, colores, conversionesLts] = await Promise.all([
       prisma.prodTienda.findMany({
         select: {
           codTienda: true,
@@ -23,6 +24,7 @@ export async function listarProdTiendaCategorizacion(): Promise<EstCategorizacio
         orderBy: [{ descripcionTienda: "asc" }, { codTienda: "asc" }],
       }),
       listarEstPorProdColores(),
+      listarEstPorProdLtsConversiones(),
     ]);
 
     return rows.map((r) => {
@@ -37,7 +39,7 @@ export async function listarProdTiendaCategorizacion(): Promise<EstCategorizacio
         subRubro: upperOrEmpty(r.subRubro),
         colores: coloresNombres,
         colorEtiqueta: coloresNombres.join(" · "),
-        lts: extraerLitrosDesdeDescripcion(descripcionTienda),
+        lts: resolverLitrosDesdeDescripcion(descripcionTienda, conversionesLts),
       };
     });
   } catch (e: unknown) {

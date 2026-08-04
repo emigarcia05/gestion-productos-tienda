@@ -4,6 +4,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarProdTiendaCategorizacion } from "@/services/estCategorizacion.service";
 import { listarEstPorProdColores } from "@/services/estPorProdColores.service";
+import { listarEstPorProdLtsConversiones } from "@/services/estPorProdLtsConversion.service";
 import EstCategorizacionPageClient from "@/components/estadisticas-productos/EstCategorizacionPageClient";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,10 @@ export default async function EstCategorizacionPage() {
   }
 
   const esEditor = rol === "editor";
-  const [filas, coloresCatalogo] = await Promise.all([
+  const [filas, coloresCatalogo, ltsConversionesCatalogo] = await Promise.all([
     listarProdTiendaCategorizacion(),
     listarEstPorProdColores(),
+    listarEstPorProdLtsConversiones(),
   ]);
 
   return (
@@ -25,6 +27,7 @@ export default async function EstCategorizacionPage() {
       <EstCategorizacionPageClient
         filas={filas}
         coloresCatalogo={coloresCatalogo}
+        ltsConversionesCatalogo={ltsConversionesCatalogo}
         esEditor={esEditor}
       />
     </div>

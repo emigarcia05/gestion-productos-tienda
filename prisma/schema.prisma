@@ -540,6 +540,23 @@ model EstPorProdColor {
 }
 
 /**
+ * Catálogo de conversiones texto → litros para Categorizacion.
+ * Se detecta `texto` (MAYÚSCULAS) por regex en la descripción y se usa `conversion_lts`
+ * (p. ej. «440 CC» → 0.4).
+ */
+model EstPorProdLtsConversion {
+  id            String   @id @default(cuid())
+  /** Fragmento a buscar en la descripción (MAYÚSCULAS), p. ej. «440 CC». */
+  texto         String   @unique(map: "est_por_prod_lts_conversion_texto_key")
+  /** Litros equivalentes (p. ej. 0.4 para 440 CC). */
+  conversionLts Decimal  @map("conversion_lts") @db.Decimal(12, 4)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("est_por_prod_lts_conversion")
+}
+
+/**
  * Líneas importadas desde TXT AFIP (comprobantes emitidos, registro fijo). Posición de IVA · débito:
  * se agrupa `imp_iva` por mes de `fecha_emision` (importado del TXT · alícuotas AFIP).
  * Tabla física **`fin_bal_iva_deb_import`** (histórico: `fin_bal_iva_deb_import_line` → `fin_bal_pos_iva_final`).
