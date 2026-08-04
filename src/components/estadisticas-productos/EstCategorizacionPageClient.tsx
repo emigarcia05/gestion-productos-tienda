@@ -248,7 +248,7 @@ export default function EstCategorizacionPageClient({
         filters={
         <FilterBar className="filtros-contenedor-tienda bg-card">
           <FilterRowSelection className="w-full min-w-0">
-            <FilaFiltrosDesplegables>
+            <FilaFiltrosDesplegables columnas={6}>
               <FiltroIndividualContainer
                 className={FILTER_SELECT_WRAPPER_CLASS}
                 activo={filtMarca !== FILTRO_TODOS}
