@@ -13,7 +13,6 @@ import {
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
-import ModalSiNoChoice from "@/components/shared/ModalSiNoChoice";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -35,6 +34,8 @@ import {
 import {
   type CampoDestinoEstPorProd,
   type MapeoColumnasEstPorProd,
+  FILA_ENCABEZADO_DEFAULT_EST_POR_PROD,
+  FILA_ENCABEZADO_MAX_EST_POR_PROD,
   leerFilasCrudasEstPorProdArchivo,
   lineasDesdeMapeoEstPorProd,
   mapeoPorDefectoEstPorProd,
@@ -103,7 +104,7 @@ export default function ImportarEstPorProdModal({
     lockedSucursalId ?? sucursales[0]?.id ?? ""
   );
   const [archivoNombre, setArchivoNombre] = useState<string | null>(null);
-  const [tieneEncabezados, setTieneEncabezados] = useState(true);
+  const [filaEncabezado, setFilaEncabezado] = useState(FILA_ENCABEZADO_DEFAULT_EST_POR_PROD);
   const [isDragging, setIsDragging] = useState(false);
   const [todasLasFilas, setTodasLasFilas] = useState<unknown[][]>([]);
   const [encabezados, setEncabezados] = useState<string[]>([]);
@@ -126,7 +127,7 @@ export default function ImportarEstPorProdModal({
     setMes(lockedMes ?? defaultMes);
     setAnio(lockedAnio ?? defaultAnio);
     setSucursalId(lockedSucursalId ?? sucursales[0]?.id ?? "");
-    setTieneEncabezados(true);
+    setFilaEncabezado(FILA_ENCABEZADO_DEFAULT_EST_POR_PROD);
     setIsDragging(false);
     setConfirmReemplazoOpen(false);
     resetArchivo();
@@ -141,12 +142,21 @@ export default function ImportarEstPorProdModal({
     }
     const { encabezados: enc, filasCrudas: filas } = separarEncabezadosYFilasEstPorProd(
       todasLasFilas,
-      tieneEncabezados
+      filaEncabezado
     );
     setEncabezados(enc);
     setFilasCrudas(filas);
     setMapeo(mapeoPorDefectoEstPorProd(enc));
-  }, [todasLasFilas, tieneEncabezados]);
+  }, [todasLasFilas, filaEncabezado]);
+
+  const opcionesFilaEncabezado = useMemo(() => {
+    const maxDesdeArchivo =
+      todasLasFilas.length > 0
+        ? Math.min(FILA_ENCABEZADO_MAX_EST_POR_PROD, todasLasFilas.length)
+        : FILA_ENCABEZADO_MAX_EST_POR_PROD;
+    const max = Math.max(maxDesdeArchivo, FILA_ENCABEZADO_DEFAULT_EST_POR_PROD);
+    return Array.from({ length: max }, (_, i) => i + 1);
+  }, [todasLasFilas.length]);
 
   const { lineas: lineasParseadas, filasOmitidas } = useMemo(
     () => lineasDesdeMapeoEstPorProd(filasCrudas, mapeo),
@@ -527,13 +537,32 @@ export default function ImportarEstPorProdModal({
             </div>
 
             <span className="text-sm font-medium text-foreground min-w-0 truncate">
-              LOS DATOS TIENEN ENCABEZADOS
+              FILA DE ENCABEZADOS
             </span>
-            <ModalSiNoChoice
-              value={tieneEncabezados}
-              onChange={setTieneEncabezados}
-              disabled={busy || !archivoNombre}
-            />
+            <Select
+              value={String(filaEncabezado)}
+              onValueChange={(v) => setFilaEncabezado(Number(v))}
+              disabled={busy}
+            >
+              <SelectTrigger
+                className="input-filtro-unificado w-full min-w-0"
+                aria-label="Fila de encabezados"
+              >
+                <SelectValue placeholder="FILA 3" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                {opcionesFilaEncabezado.map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {`FILA ${n}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {!archivoNombre ? (
@@ -569,7 +598,7 @@ export default function ImportarEstPorProdModal({
                 <Table variant="compact" className="table-fixed w-full">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[45%]">PRIMERA FILA</TableHead>
+                      <TableHead className="w-[45%]">ENCABEZADO</TableHead>
                       <TableHead className="w-[55%]">MAPEAR A</TableHead>
                     </TableRow>
                   </TableHeader>

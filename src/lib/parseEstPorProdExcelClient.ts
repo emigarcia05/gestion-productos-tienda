@@ -8,11 +8,13 @@ export type CampoDestinoEstPorProd = "codTienda" | "vtasEnUn" | "ignorar";
 export type MapeoColumnasEstPorProd = Record<number, CampoDestinoEstPorProd>;
 
 /**
- * Filas a omitir al inicio del Excel antes del encabezado/datos.
- * `0` = la primera fila de la planilla es el encabezado (nombres de columna)
- * cuando «LOS DATOS TIENEN ENCABEZADOS» está en Sí.
+ * Fila 1-based de la planilla donde están los nombres de columna.
+ * Default **3** (típico export DUX con títulos previos).
  */
-export const FILAS_OMITIR_INICIO_EST_POR_PROD = 0;
+export const FILA_ENCABEZADO_DEFAULT_EST_POR_PROD = 3;
+
+/** Máximo de filas ofrecidas en el selector de encabezado del modal. */
+export const FILA_ENCABEZADO_MAX_EST_POR_PROD = 20;
 
 const MAX_SAFE_COD_TIENDA_INT = Number.MAX_SAFE_INTEGER;
 
@@ -92,28 +94,29 @@ function parseVtasEnUn(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * Siempre hay encabezados. `filaEncabezado` es 1-based (fila 1 = primera del archivo).
+ * Las filas posteriores a esa se toman como datos.
+ */
 export function separarEncabezadosYFilasEstPorProd(
   todasLasFilas: unknown[][],
-  tieneEncabezados: boolean,
-  filasOmitirInicio: number = FILAS_OMITIR_INICIO_EST_POR_PROD
+  filaEncabezado: number = FILA_ENCABEZADO_DEFAULT_EST_POR_PROD
 ): { encabezados: string[]; filasCrudas: unknown[][] } {
-  const omitir = Math.max(0, Math.min(filasOmitirInicio, todasLasFilas.length));
-  const desde = todasLasFilas.slice(omitir);
-
-  if (desde.length === 0) {
+  if (todasLasFilas.length === 0) {
     return { encabezados: [], filasCrudas: [] };
   }
-  if (tieneEncabezados) {
-    const primera = desde[0] ?? [];
-    const encabezados = primera.map((c, i) => {
-      const s = String(c ?? "").trim();
-      return s || `Columna ${i + 1}`;
-    });
-    return { encabezados, filasCrudas: desde.slice(1) };
+
+  const filaIdx = Math.max(1, Math.floor(filaEncabezado)) - 1;
+  if (filaIdx >= todasLasFilas.length) {
+    return { encabezados: [], filasCrudas: [] };
   }
-  const ancho = Math.max(...desde.map((r) => r.length), 0);
-  const encabezados = Array.from({ length: ancho }, (_, i) => `Columna ${i + 1}`);
-  return { encabezados, filasCrudas: desde };
+
+  const primera = todasLasFilas[filaIdx] ?? [];
+  const encabezados = primera.map((c, i) => {
+    const s = String(c ?? "").trim();
+    return s || `Columna ${i + 1}`;
+  });
+  return { encabezados, filasCrudas: todasLasFilas.slice(filaIdx + 1) };
 }
 
 /** Mapeo por defecto del export Excel: col. 1 → COD. TIENDA, col. 2 → VTAS. EN UN. (editable en UI). */
