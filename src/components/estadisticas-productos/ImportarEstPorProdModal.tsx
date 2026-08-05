@@ -43,7 +43,10 @@ import {
 } from "@/lib/parseEstPorProdExcelClient";
 import type { ImportarEstPorProdResultado } from "@/lib/estPorProdTypes";
 import { cn } from "@/lib/utils";
-import { etiquetaPeriodoEstPorProd } from "@/lib/estPorProdPeriodo";
+import {
+  EST_POR_PROD_CARGA_DESDE,
+  etiquetaPeriodoEstPorProd,
+} from "@/lib/estPorProdPeriodo";
 import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
 import type { SucursalEstOption } from "@/lib/estPorProdTypes";
 
@@ -62,7 +65,7 @@ const MESES: { valor: number; etiqueta: string }[] = [
   { valor: 12, etiqueta: "DICIEMBRE" },
 ];
 
-const ANIO_MIN = 2025;
+const ANIO_MIN = EST_POR_PROD_CARGA_DESDE.anio;
 const ANIO_MAX = 2046;
 const ANIOS = Array.from({ length: ANIO_MAX - ANIO_MIN + 1 }, (_, i) => ANIO_MIN + i);
 

@@ -14,7 +14,7 @@ const MESES_TITULO: Record<number, string> = {
 };
 
 /** Primer periodo de la grilla Carga de Datos (inclusive). */
-export const EST_POR_PROD_CARGA_DESDE = { mes: 9, anio: 2025 } as const;
+export const EST_POR_PROD_CARGA_DESDE = { mes: 1, anio: 2026 } as const;
 
 export type EstPorProdPeriodo = { mes: number; anio: number };
 
@@ -22,7 +22,7 @@ export function etiquetaMesEstPorProd(mes: number): string {
   return MESES_TITULO[mes] ?? String(mes);
 }
 
-/** Ej.: `Septiembre 2025` */
+/** Ej.: `Enero 2026` */
 export function etiquetaPeriodoCortoEstPorProd(mes: number, anio: number): string {
   return `${etiquetaMesEstPorProd(mes)} ${anio}`;
 }
@@ -40,7 +40,7 @@ export function etiquetaPeriodoEstPorProd(
 
 /**
  * Periodos de la grilla Carga de Datos: desde `hasta` (mes actual) hacia atrás
- * hasta Septiembre 2025 inclusive. Primera fila = más actual.
+ * hasta Enero 2026 inclusive. Primera fila = más actual.
  */
 export function listarPeriodosCargaEstPorProd(
   hasta: EstPorProdPeriodo
