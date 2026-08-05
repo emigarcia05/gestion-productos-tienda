@@ -173,20 +173,6 @@ export default function EstPorProdPageClient({
                                       TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS
                                     )}
                                   >
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                      aria-label={`Subir datos ${etiquetaCelda}`}
-                                      title="Subir datos"
-                                      onClick={() => setImportTarget(target)}
-                                    >
-                                      <FileUp
-                                        className={TABLE_ROW_ACTION_ICON_CLASS}
-                                        aria-hidden
-                                      />
-                                    </Button>
                                     {tieneDatos ? (
                                       <Button
                                         type="button"
@@ -208,7 +194,22 @@ export default function EstPorProdPageClient({
                                           aria-hidden
                                         />
                                       </Button>
-                                    ) : null}
+                                    ) : (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                        aria-label={`Subir datos ${etiquetaCelda}`}
+                                        title="Subir datos"
+                                        onClick={() => setImportTarget(target)}
+                                      >
+                                        <FileUp
+                                          className={TABLE_ROW_ACTION_ICON_CLASS}
+                                          aria-hidden
+                                        />
+                                      </Button>
+                                    )}
                                   </div>
                                 ) : tieneDatos ? (
                                   <span className="text-xs text-muted-foreground tabular-nums">
