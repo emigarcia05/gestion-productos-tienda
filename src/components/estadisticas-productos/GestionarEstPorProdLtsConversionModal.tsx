@@ -189,10 +189,6 @@ export default function GestionarEstPorProdLtsConversionModal({
           }
         >
           <div className="flex flex-col gap-4">
-            <p className="text-xs text-muted-foreground">
-              Definí un texto (p. ej. «440 CC») y su equivalente en litros (p. ej. 0,4). Se busca
-              dentro de la descripción del producto y se muestra en la columna LTS.
-            </p>
             <div className="flex items-center gap-2">
               <div className="relative min-w-0 flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
