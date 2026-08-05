@@ -18,6 +18,14 @@ export interface EstPorProdItem {
   producto: { codTienda: string; descripcionTienda: string | null };
 }
 
+/** Celda de la grilla Carga de Datos (ocupación por periodo × sucursal). */
+export interface EstPorProdCeldaCarga {
+  sucursalId: string;
+  mes: number;
+  anio: number;
+  cantidad: number;
+}
+
 /** Resultado de `POST /api/import-est-por-prod` / `importarEstPorProd`. */
 export interface ImportarEstPorProdResultado {
   importados: number;

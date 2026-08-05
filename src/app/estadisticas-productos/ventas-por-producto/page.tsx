@@ -4,7 +4,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance.service";
 import {
-  listarEstPorProd,
+  listarEstPorProdCeldasCargadas,
   listarSucursalesConDepositoParaEstPorProd,
 } from "@/services/estPorProd.service";
 import EstPorProdPageClient from "@/components/estadisticas-productos/EstPorProdPageClient";
@@ -18,20 +18,20 @@ export default async function EstadisticasProductosPage() {
   }
 
   const esEditor = rol === "editor";
-  const { mes: defaultMes, anio: defaultAnio } = mesAnioCalendarioArgentina();
-  const [filas, sucursales] = await Promise.all([
-    listarEstPorProd(),
+  const { mes: mesActual, anio: anioActual } = mesAnioCalendarioArgentina();
+  const [sucursales, celdas] = await Promise.all([
     listarSucursalesConDepositoParaEstPorProd(),
+    listarEstPorProdCeldasCargadas(),
   ]);
 
   return (
     <div className="area-page-shell">
       <EstPorProdPageClient
-        filas={filas}
         sucursales={sucursales}
+        celdas={celdas}
         esEditor={esEditor}
-        defaultMes={defaultMes}
-        defaultAnio={defaultAnio}
+        mesActual={mesActual}
+        anioActual={anioActual}
       />
     </div>
   );

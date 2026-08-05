@@ -5,6 +5,7 @@ import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
+  eliminarEstPorProdPorPeriodoSchema,
   eliminarEstPorProdSchema,
   importarEstPorProdSchema,
   verificarEstPorProdPeriodoSchema,
@@ -12,6 +13,7 @@ import {
 import type { EstPorProdItem } from "@/lib/estPorProdTypes";
 import {
   eliminarEstPorProd,
+  eliminarEstPorProdPorPeriodo,
   importarEstPorProd,
   verificarEstPorProdPeriodo,
   type EstPorProdPeriodoExistente,
@@ -107,6 +109,39 @@ export async function eliminarEstPorProdAction(raw: unknown): Promise<ActionResu
     return { ok: true, data: res.data };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "No se pudo eliminar el registro.";
+    return { ok: false, error: msg };
+  }
+}
+
+export async function eliminarEstPorProdPorPeriodoAction(
+  raw: unknown
+): Promise<ActionResult<{ eliminados: number }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) {
+    return { ok: false, error: "Sin permisos para estadísticas de productos." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede eliminar registros." };
+  }
+
+  const parsed = eliminarEstPorProdPorPeriodoSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  try {
+    const res = await eliminarEstPorProdPorPeriodo(
+      parsed.data.sucursalId,
+      parsed.data.mes,
+      parsed.data.anio
+    );
+    if (!res.success) return { ok: false, error: res.error };
+    revalidatePath("/estadisticas-productos");
+    revalidatePath("/estadisticas-productos/ventas-por-producto");
+    revalidatePath("/estadisticas-productos/categorizacion");
+    return { ok: true, data: res.data };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "No se pudo eliminar el periodo.";
     return { ok: false, error: msg };
   }
 }

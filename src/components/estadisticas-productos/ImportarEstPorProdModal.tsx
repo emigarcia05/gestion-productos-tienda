@@ -61,7 +61,7 @@ const MESES: { valor: number; etiqueta: string }[] = [
   { valor: 12, etiqueta: "DICIEMBRE" },
 ];
 
-const ANIO_MIN = 2026;
+const ANIO_MIN = 2025;
 const ANIO_MAX = 2046;
 const ANIOS = Array.from({ length: ANIO_MAX - ANIO_MIN + 1 }, (_, i) => ANIO_MIN + i);
 
@@ -77,6 +77,10 @@ interface Props {
   sucursales: SucursalConDepositoOption[];
   defaultMes: number;
   defaultAnio: number;
+  /** Si se define, fija mes/año/sucursal desde la celda de la grilla (solo lectura). */
+  lockedMes?: number;
+  lockedAnio?: number;
+  lockedSucursalId?: string;
 }
 
 export default function ImportarEstPorProdModal({
@@ -85,12 +89,19 @@ export default function ImportarEstPorProdModal({
   sucursales,
   defaultMes,
   defaultAnio,
+  lockedMes,
+  lockedAnio,
+  lockedSucursalId,
 }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [mes, setMes] = useState(defaultMes);
-  const [anio, setAnio] = useState(defaultAnio);
-  const [sucursalId, setSucursalId] = useState(sucursales[0]?.id ?? "");
+  const periodoFijo =
+    lockedMes != null && lockedAnio != null && Boolean(lockedSucursalId);
+  const [mes, setMes] = useState(lockedMes ?? defaultMes);
+  const [anio, setAnio] = useState(lockedAnio ?? defaultAnio);
+  const [sucursalId, setSucursalId] = useState(
+    lockedSucursalId ?? sucursales[0]?.id ?? ""
+  );
   const [archivoNombre, setArchivoNombre] = useState<string | null>(null);
   const [tieneEncabezados, setTieneEncabezados] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
@@ -112,14 +123,14 @@ export default function ImportarEstPorProdModal({
 
   useEffect(() => {
     if (!open) return;
-    setMes(defaultMes);
-    setAnio(defaultAnio);
-    setSucursalId(sucursales[0]?.id ?? "");
+    setMes(lockedMes ?? defaultMes);
+    setAnio(lockedAnio ?? defaultAnio);
+    setSucursalId(lockedSucursalId ?? sucursales[0]?.id ?? "");
     setTieneEncabezados(true);
     setIsDragging(false);
     setConfirmReemplazoOpen(false);
     resetArchivo();
-  }, [open, defaultMes, defaultAnio, sucursales]);
+  }, [open, defaultMes, defaultAnio, sucursales, lockedMes, lockedAnio, lockedSucursalId]);
 
   useEffect(() => {
     if (todasLasFilas.length === 0) {
@@ -346,7 +357,7 @@ export default function ImportarEstPorProdModal({
         }}
       >
       <AppModal
-        title="Importar Estadísticas Por Producto"
+        title="Importar Datos"
         size="xl"
         className="max-w-3xl"
         bodyClassName="max-w-full min-w-0"
@@ -377,78 +388,103 @@ export default function ImportarEstPorProdModal({
         }
       >
         <div className="space-y-4 pt-2 min-w-0 overflow-hidden text-sm">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="est-por-prod-import-mes">Mes</Label>
-              <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))} disabled={busy}>
-                <SelectTrigger id="est-por-prod-import-mes" className="input-filtro-unificado w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro max-h-60"
-                >
-                  {MESES.map((m) => (
-                    <SelectItem key={m.valor} value={String(m.valor)}>
-                      {m.etiqueta}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="est-por-prod-import-anio">Año</Label>
-              <Select value={String(anio)} onValueChange={(v) => setAnio(Number(v))} disabled={busy}>
-                <SelectTrigger id="est-por-prod-import-anio" className="input-filtro-unificado w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro max-h-60"
-                >
-                  {ANIOS.map((a) => (
-                    <SelectItem key={a} value={String(a)}>
-                      {a}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="est-por-prod-import-sucursal">Sucursal</Label>
-            {sucursales.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                No hay sucursales con depósito configurado en la base de datos.
+          {periodoFijo ? (
+            <div className="space-y-1 rounded-md border border-border bg-muted/40 px-3 py-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
+                Periodo
               </p>
-            ) : (
-              <Select value={sucursalId} onValueChange={setSucursalId} disabled={busy}>
-                <SelectTrigger
-                  id="est-por-prod-import-sucursal"
-                  className="input-filtro-unificado w-full"
-                >
-                  <SelectValue placeholder="SUCURSAL" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  {sucursales.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+              <p className="font-medium text-foreground">{etiquetaPeriodoSeleccionado}</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="est-por-prod-import-mes">Mes</Label>
+                  <Select
+                    value={String(mes)}
+                    onValueChange={(v) => setMes(Number(v))}
+                    disabled={busy}
+                  >
+                    <SelectTrigger
+                      id="est-por-prod-import-mes"
+                      className="input-filtro-unificado w-full"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro max-h-60"
+                    >
+                      {MESES.map((m) => (
+                        <SelectItem key={m.valor} value={String(m.valor)}>
+                          {m.etiqueta}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="est-por-prod-import-anio">Año</Label>
+                  <Select
+                    value={String(anio)}
+                    onValueChange={(v) => setAnio(Number(v))}
+                    disabled={busy}
+                  >
+                    <SelectTrigger
+                      id="est-por-prod-import-anio"
+                      className="input-filtro-unificado w-full"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro max-h-60"
+                    >
+                      {ANIOS.map((a) => (
+                        <SelectItem key={a} value={String(a)}>
+                          {a}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="est-por-prod-import-sucursal">Sucursal</Label>
+                {sucursales.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    No hay sucursales con depósito configurado en la base de datos.
+                  </p>
+                ) : (
+                  <Select value={sucursalId} onValueChange={setSucursalId} disabled={busy}>
+                    <SelectTrigger
+                      id="est-por-prod-import-sucursal"
+                      className="input-filtro-unificado w-full"
+                    >
+                      <SelectValue placeholder="SUCURSAL" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      {sucursales.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </>
+          )}
 
           <div className="grid grid-cols-[1fr_10rem] gap-x-4 gap-y-3 items-center">
             <span className="text-sm font-medium text-foreground min-w-0 truncate">

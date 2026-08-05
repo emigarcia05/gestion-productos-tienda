@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type {
+  EstPorProdCeldaCarga,
   EstPorProdItem,
   ImportarEstPorProdResultado,
   SucursalConDepositoOption,
@@ -9,6 +10,7 @@ import type { ImportarEstPorProdInput } from "@/lib/validations/estPorProd";
 import type { ServiceResult } from "@/types";
 
 export type {
+  EstPorProdCeldaCarga,
   EstPorProdItem,
   ImportarEstPorProdResultado,
   SucursalConDepositoOption,
@@ -88,6 +90,25 @@ export async function listarEstPorProd(): Promise<EstPorProdItem[]> {
   }
 }
 
+/** Ocupación de la grilla Carga de Datos: count por (sucursal, mes, anio). */
+export async function listarEstPorProdCeldasCargadas(): Promise<EstPorProdCeldaCarga[]> {
+  try {
+    const rows = await prisma.estPorProd.groupBy({
+      by: ["sucursalId", "mes", "anio"],
+      _count: { _all: true },
+    });
+    return rows.map((r) => ({
+      sucursalId: r.sucursalId,
+      mes: r.mes,
+      anio: r.anio,
+      cantidad: r._count._all,
+    }));
+  } catch (e: unknown) {
+    console.error("[estPorProd.service] listarEstPorProdCeldasCargadas:", e);
+    return [];
+  }
+}
+
 async function sucursalTieneDeposito(sucursalId: string): Promise<boolean> {
   const s = await prisma.sucursal.findUnique({
     where: { id: sucursalId },
@@ -139,7 +160,7 @@ export async function verificarEstPorProdPeriodo(
   }
 }
 
-async function eliminarEstPorProdPorPeriodo(
+async function eliminarEstPorProdPorPeriodoInternal(
   sucursalId: string,
   mes: number,
   anio: number
@@ -148,6 +169,24 @@ async function eliminarEstPorProdPorPeriodo(
     where: { sucursalId, mes, anio },
   });
   return res.count;
+}
+
+/** Borra todos los registros de un periodo × sucursal (grilla Carga de Datos). */
+export async function eliminarEstPorProdPorPeriodo(
+  sucursalId: string,
+  mes: number,
+  anio: number
+): Promise<ServiceResult<{ eliminados: number }>> {
+  try {
+    const eliminados = await eliminarEstPorProdPorPeriodoInternal(sucursalId, mes, anio);
+    return { success: true, data: { eliminados } };
+  } catch (e: unknown) {
+    console.error("[estPorProd.service] eliminarEstPorProdPorPeriodo:", e);
+    return {
+      success: false,
+      error: mapEstPorProdDbError(e, "No se pudo eliminar el periodo."),
+    };
+  }
 }
 
 /** Upsert masivo por periodo + sucursal (una fila por `cod_tienda`). */
@@ -205,7 +244,7 @@ export async function importarEstPorProd(
   try {
     let reemplazados = 0;
     if (input.reemplazarPeriodo && periodoExistente.existe) {
-      reemplazados = await eliminarEstPorProdPorPeriodo(
+      reemplazados = await eliminarEstPorProdPorPeriodoInternal(
         input.sucursalId,
         input.mes,
         input.anio

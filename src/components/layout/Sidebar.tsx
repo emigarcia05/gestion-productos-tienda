@@ -412,7 +412,7 @@ const ESTADISTICAS_MODULES: NavModule[] = [
     submodules: [
       {
         href: ESTADISTICAS_PRODUCTOS_ROUTES.ventasPorProducto,
-        label: "Ventas Por Producto",
+        label: "Carga de Datos",
         icon: <PackageSearch className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.estadisticasProductos.acceso,
       },
