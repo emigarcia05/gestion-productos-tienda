@@ -1545,6 +1545,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-04): **Filtros · fila 6 columnas** — `FilaFiltrosDesplegables columnas={6}` / `.fila-filtros-6` solo cuando hay 6 desplegables juntos (Categorizacion); ≤5 sin cambios (default 5).*
 
+*Última actualización (2026-08-05): **Est. · Estadísticas Vtas** — FECHA default = último periodo con ventas; opciones sin datos marcadas `(SIN DATOS)`.*
+
 *Última actualización (2026-08-05): **Est. · Estadísticas Vtas** — gráfico barras horizontales Variante × Un. Vendidas (margen superior derecho).*
 
 *Última actualización (2026-08-05): **Est. · Estadísticas Vtas** — módulo `/estadisticas-productos/estadisticas-vtas` con 2 FilterBar (producto + sucursal/fecha/unidad); placeholder de gráficos.*

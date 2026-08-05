@@ -31,6 +31,7 @@ import type {
 import type { SucursalEstOption } from "@/lib/estPorProdTypes";
 import {
   clavePeriodoEstPorProd,
+  clavePeriodoMasRecienteConVentas,
   etiquetaPeriodoCortoEstPorProd,
   listarPeriodosCargaEstPorProd,
 } from "@/lib/estPorProdPeriodo";
@@ -65,7 +66,14 @@ export default function EstVtasPageClient({
   mesActual,
   anioActual,
 }: Props) {
-  const periodoActualClave = clavePeriodoEstPorProd(mesActual, anioActual);
+  const fechaDefault = useMemo(
+    () =>
+      clavePeriodoMasRecienteConVentas(ventas, {
+        mes: mesActual,
+        anio: anioActual,
+      }),
+    [ventas, mesActual, anioActual]
+  );
 
   const [filtMarca, setFiltMarca] = useState(FILTRO_TODOS);
   const [filtRubro, setFiltRubro] = useState(FILTRO_TODOS);
@@ -74,9 +82,16 @@ export default function EstVtasPageClient({
   const [filtTerminacion, setFiltTerminacion] = useState(FILTRO_TODOS);
   const [filtPresentacion, setFiltPresentacion] = useState(FILTRO_TODOS);
   const [filtSucursalId, setFiltSucursalId] = useState(FILTRO_TODOS);
-  const [filtFecha, setFiltFecha] = useState(periodoActualClave);
+  const [filtFecha, setFiltFecha] = useState(fechaDefault);
   const [filtUnidad, setFiltUnidad] = useState<EstVtasModoUnidad>("unidad");
   const [qDebounced, setQDebounced] = useState("");
+
+  const periodosConVentas = useMemo(() => {
+    const keys = new Set(
+      ventas.map((v) => clavePeriodoEstPorProd(v.mes, v.anio))
+    );
+    return keys;
+  }, [ventas]);
 
   const {
     q,
@@ -196,7 +211,7 @@ export default function EstVtasPageClient({
     setFiltTerminacion(FILTRO_TODOS);
     setFiltPresentacion(FILTRO_TODOS);
     setFiltSucursalId(FILTRO_TODOS);
-    setFiltFecha(periodoActualClave);
+    setFiltFecha(fechaDefault);
     setFiltUnidad("unidad");
     setQ("");
     setQDebounced("");
@@ -454,8 +469,8 @@ export default function EstVtasPageClient({
 
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtFecha !== periodoActualClave}
-                  onLimpiar={() => setFiltFecha(periodoActualClave)}
+                  activo={filtFecha !== fechaDefault}
+                  onLimpiar={() => setFiltFecha(fechaDefault)}
                 >
                   <Select value={filtFecha} onValueChange={setFiltFecha}>
                     <SelectTrigger className="input-filtro-unificado" aria-label="Fecha">
@@ -469,11 +484,14 @@ export default function EstVtasPageClient({
                     >
                       {periodos.map((p) => {
                         const clave = clavePeriodoEstPorProd(p.mes, p.anio);
+                        const conDatos = periodosConVentas.has(clave);
+                        const etiqueta = etiquetaPeriodoCortoEstPorProd(
+                          p.mes,
+                          p.anio
+                        ).toLocaleUpperCase("es-AR");
                         return (
                           <SelectItem key={clave} value={clave}>
-                            {etiquetaPeriodoCortoEstPorProd(p.mes, p.anio).toLocaleUpperCase(
-                              "es-AR"
-                            )}
+                            {conDatos ? etiqueta : `${etiqueta} (SIN DATOS)`}
                           </SelectItem>
                         );
                       })}
@@ -521,6 +539,7 @@ export default function EstVtasPageClient({
         <div className="min-h-0 min-w-0 flex-1 rounded-md border border-border border-dashed bg-card/40" />
         <EstVtasGraficoVarianteBarras
           barras={barrasVariante}
+          sinVentasCargadas={ventas.length === 0}
           className="h-full max-h-full w-[min(28rem,40%)] shrink-0 self-start"
         />
       </div>

@@ -80,3 +80,25 @@ export function listarPeriodosCargaEstPorProd(
   }
   return out;
 }
+
+/**
+ * Clave del periodo más reciente presente en `ventas`; si no hay, usa `fallback`.
+ * Evita abrir Estadísticas Vtas en el mes calendario sin datos cargados.
+ */
+export function clavePeriodoMasRecienteConVentas(
+  ventas: ReadonlyArray<{ mes: number; anio: number }>,
+  fallback: EstPorProdPeriodo
+): string {
+  let best: EstPorProdPeriodo | null = null;
+  for (const v of ventas) {
+    if (
+      !best ||
+      v.anio > best.anio ||
+      (v.anio === best.anio && v.mes > best.mes)
+    ) {
+      best = { mes: v.mes, anio: v.anio };
+    }
+  }
+  const p = best ?? fallback;
+  return clavePeriodoEstPorProd(p.mes, p.anio);
+}
