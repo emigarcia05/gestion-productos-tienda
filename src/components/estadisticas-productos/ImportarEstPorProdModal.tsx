@@ -252,10 +252,10 @@ export default function ImportarEstPorProdModal({
         payload.data;
       let msg =
         importados === 1
-          ? "1 producto importado."
-          : `${importados.toLocaleString("es-AR")} productos importados.`;
+          ? "Periodo cargado: 1 producto."
+          : `Periodo cargado: ${importados.toLocaleString("es-AR")} productos.`;
       if (reemplazados > 0) {
-        msg += ` Se reemplazaron ${reemplazados.toLocaleString("es-AR")} registro(s) anteriores.`;
+        msg += ` Se reemplazó el periodo anterior (${reemplazados.toLocaleString("es-AR")} producto(s)).`;
       }
       if (filasOmitidas > 0) {
         msg += ` ${filasOmitidas.toLocaleString("es-AR")} fila(s) omitida(s) por datos inválidos en la planilla.`;
@@ -665,10 +665,11 @@ export default function ImportarEstPorProdModal({
           }
         >
           <div className="space-y-3 text-sm">
-            <p className="text-foreground">Ya existe datos para</p>
+            <p className="text-foreground">Ya hay datos cargados para</p>
             <p className="font-semibold text-foreground">{etiquetaPeriodoSeleccionado}</p>
             <p className="text-foreground">
-              ¿Desea eliminar los datos anteriores y escribir estos nuevos datos?
+              Se eliminará todo el periodo de esa sucursal y se reemplazará con la planilla
+              nueva. ¿Continuar?
             </p>
           </div>
         </AppModal>

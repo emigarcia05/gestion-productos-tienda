@@ -79,7 +79,7 @@ export default function EstPorProdPageClient({
     const key = celdaKey(target.sucursalId, target.mes, target.anio);
     if (
       !window.confirm(
-        `¿Eliminar todos los datos de ${etiqueta}? Esta acción no se puede deshacer.`
+        `¿Eliminar todo el periodo de ${etiqueta}? Se borrarán todos los productos de esa sucursal en ese mes/año. Esta acción no se puede deshacer.`
       )
     ) {
       return;
@@ -88,13 +88,13 @@ export default function EstPorProdPageClient({
     try {
       const r = await eliminarEstPorProdPorPeriodoAction(target);
       if (!r.ok) {
-        toast.error(r.error ?? "No se pudo eliminar.");
+        toast.error(r.error ?? "No se pudo eliminar el periodo.");
         return;
       }
       toast.success(
-        r.data.eliminados === 1
-          ? "1 registro eliminado."
-          : `${r.data.eliminados.toLocaleString("es-AR")} registros eliminados.`
+        r.data.eliminados === 0
+          ? "Periodo sin datos (nada que borrar)."
+          : `Periodo eliminado (${r.data.eliminados.toLocaleString("es-AR")} producto(s)).`
       );
       router.refresh();
     } finally {

@@ -171,7 +171,7 @@ async function eliminarEstPorProdPorPeriodoInternal(
   return res.count;
 }
 
-/** Borra todos los registros de un periodo × sucursal (grilla Carga de Datos). */
+/** Borra todos los productos de un periodo × sucursal (única vía de baja en Carga de Datos). */
 export async function eliminarEstPorProdPorPeriodo(
   sucursalId: string,
   mes: number,
@@ -189,7 +189,11 @@ export async function eliminarEstPorProdPorPeriodo(
   }
 }
 
-/** Upsert masivo por periodo + sucursal (una fila por `cod_tienda`). */
+/**
+ * Carga masiva por periodo × sucursal (unidad de trabajo de Carga de Datos).
+ * Siempre limpia TODO el bloque mes/año/sucursal y vuelve a insertar la planilla;
+ * no se trabaja ítem a ítem ni se dejan filas huérfanas del archivo anterior.
+ */
 export async function importarEstPorProd(
   input: ImportarEstPorProdInput
 ): Promise<ServiceResult<ImportarEstPorProdResultado>> {
@@ -242,40 +246,25 @@ export async function importarEstPorProd(
   }
 
   try {
-    let reemplazados = 0;
-    if (input.reemplazarPeriodo && periodoExistente.existe) {
-      reemplazados = await eliminarEstPorProdPorPeriodoInternal(
-        input.sucursalId,
-        input.mes,
-        input.anio
-      );
-    }
+    // Siempre borrar el periodo completo de la sucursal antes de insertar.
+    const reemplazados = await eliminarEstPorProdPorPeriodoInternal(
+      input.sucursalId,
+      input.mes,
+      input.anio
+    );
 
     const entries = [...porCodigo.entries()];
     for (let i = 0; i < entries.length; i += IMPORT_UPSERT_CHUNK) {
       const slice = entries.slice(i, i + IMPORT_UPSERT_CHUNK);
-      await prisma.$transaction(
-        slice.map(([codTienda, vtasEnUn]) =>
-          prisma.estPorProd.upsert({
-            where: {
-              sucursalId_mes_anio_codTienda: {
-                sucursalId: input.sucursalId,
-                mes: input.mes,
-                anio: input.anio,
-                codTienda,
-              },
-            },
-            create: {
-              sucursalId: input.sucursalId,
-              mes: input.mes,
-              anio: input.anio,
-              codTienda,
-              vtasEnUn,
-            },
-            update: { vtasEnUn },
-          })
-        )
-      );
+      await prisma.estPorProd.createMany({
+        data: slice.map(([codTienda, vtasEnUn]) => ({
+          sucursalId: input.sucursalId,
+          mes: input.mes,
+          anio: input.anio,
+          codTienda,
+          vtasEnUn,
+        })),
+      });
     }
 
     return {
