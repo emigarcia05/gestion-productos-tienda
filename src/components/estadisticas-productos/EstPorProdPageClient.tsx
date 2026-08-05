@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileUp, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -16,7 +16,6 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { eliminarEstPorProdPorPeriodoAction } from "@/actions/estPorProd";
 import {
   etiquetaPeriodoCortoEstPorProd,
   listarPeriodosCargaEstPorProd,
@@ -60,6 +59,11 @@ export default function EstPorProdPageClient({
   const router = useRouter();
   const [importTarget, setImportTarget] = useState<CeldaTarget | null>(null);
   const [borrandoKey, setBorrandoKey] = useState<string | null>(null);
+  const [celdasLocal, setCeldasLocal] = useState(celdas);
+
+  useEffect(() => {
+    setCeldasLocal(celdas);
+  }, [celdas]);
 
   const periodos = useMemo(
     () => listarPeriodosCargaEstPorProd({ mes: mesActual, anio: anioActual }),
@@ -68,11 +72,11 @@ export default function EstPorProdPageClient({
 
   const cantidadPorCelda = useMemo(() => {
     const map = new Map<string, number>();
-    for (const c of celdas) {
+    for (const c of celdasLocal) {
       map.set(celdaKey(c.sucursalId, c.mes, c.anio), c.cantidad);
     }
     return map;
-  }, [celdas]);
+  }, [celdasLocal]);
 
   async function handleEliminarPeriodo(target: CeldaTarget, etiqueta: string) {
     if (!esEditor) return;
@@ -86,17 +90,53 @@ export default function EstPorProdPageClient({
     }
     setBorrandoKey(key);
     try {
-      const r = await eliminarEstPorProdPorPeriodoAction(target);
-      if (!r.ok) {
-        toast.error(r.error ?? "No se pudo eliminar el periodo.");
+      const res = await fetch("/api/est-por-prod/eliminar-periodo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sucursalId: target.sucursalId,
+          mes: target.mes,
+          anio: target.anio,
+        }),
+      });
+
+      let payload: {
+        ok?: boolean;
+        error?: string;
+        data?: { eliminados: number };
+      } | null = null;
+      try {
+        payload = (await res.json()) as {
+          ok?: boolean;
+          error?: string;
+          data?: { eliminados: number };
+        };
+      } catch {
+        payload = null;
+      }
+
+      if (!res.ok || !payload?.ok || !payload.data) {
+        toast.error(payload?.error ?? "No se pudo eliminar el periodo.");
         return;
       }
+
+      const { eliminados } = payload.data;
+      setCeldasLocal((prev) =>
+        prev.filter(
+          (c) =>
+            celdaKey(c.sucursalId, c.mes, c.anio) !== key
+        )
+      );
       toast.success(
-        r.data.eliminados === 0
+        eliminados === 0
           ? "Periodo sin datos (nada que borrar)."
-          : `Periodo eliminado (${r.data.eliminados.toLocaleString("es-AR")} producto(s)).`
+          : `Periodo eliminado (${eliminados.toLocaleString("es-AR")} producto(s)).`
       );
       router.refresh();
+    } catch {
+      toast.error("No se pudo eliminar el periodo.", {
+        description: "Revisá la conexión e intentá de nuevo.",
+      });
     } finally {
       setBorrandoKey(null);
     }

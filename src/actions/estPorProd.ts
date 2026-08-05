@@ -116,20 +116,20 @@ export async function eliminarEstPorProdAction(raw: unknown): Promise<ActionResu
 export async function eliminarEstPorProdPorPeriodoAction(
   raw: unknown
 ): Promise<ActionResult<{ eliminados: number }>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) {
-    return { ok: false, error: "Sin permisos para estadísticas de productos." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede eliminar registros." };
-  }
-
-  const parsed = eliminarEstPorProdPorPeriodoSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, error: firstZodErrorMessage(parsed.error) };
-  }
-
   try {
+    const rol = await getRol();
+    if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) {
+      return { ok: false, error: "Sin permisos para estadísticas de productos." };
+    }
+    if (!(await esEditor())) {
+      return { ok: false, error: "Solo el modo editor puede eliminar registros." };
+    }
+
+    const parsed = eliminarEstPorProdPorPeriodoSchema.safeParse(raw);
+    if (!parsed.success) {
+      return { ok: false, error: firstZodErrorMessage(parsed.error) };
+    }
+
     const res = await eliminarEstPorProdPorPeriodo(
       parsed.data.sucursalId,
       parsed.data.mes,
@@ -142,6 +142,7 @@ export async function eliminarEstPorProdPorPeriodoAction(
     return { ok: true, data: res.data };
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "No se pudo eliminar el periodo.";
+    console.error("[estPorProd] eliminarEstPorProdPorPeriodoAction:", e);
     return { ok: false, error: msg };
   }
 }
