@@ -18,12 +18,6 @@ export const EST_POR_PROD_CARGA_DESDE = { mes: 9, anio: 2025 } as const;
 
 export type EstPorProdPeriodo = { mes: number; anio: number };
 
-function titleCaseSucursal(nombre: string): string {
-  const lower = nombre.trim().toLocaleLowerCase("es");
-  if (!lower) return nombre;
-  return lower.charAt(0).toLocaleUpperCase("es") + lower.slice(1);
-}
-
 export function etiquetaMesEstPorProd(mes: number): string {
   return MESES_TITULO[mes] ?? String(mes);
 }
@@ -33,13 +27,15 @@ export function etiquetaPeriodoCortoEstPorProd(mes: number, anio: number): strin
   return `${etiquetaMesEstPorProd(mes)} ${anio}`;
 }
 
-/** Ej.: `Guaymallén - Enero - 2026` */
+/** Ej.: `GUAYMALLÉN - ENERO - 2026` */
 export function etiquetaPeriodoEstPorProd(
   nombreSucursal: string,
   mes: number,
   anio: number
 ): string {
-  return `${titleCaseSucursal(nombreSucursal)} - ${etiquetaMesEstPorProd(mes)} - ${anio}`;
+  return `${nombreSucursal.trim()} - ${etiquetaMesEstPorProd(mes)} - ${anio}`.toLocaleUpperCase(
+    "es-AR"
+  );
 }
 
 /**
