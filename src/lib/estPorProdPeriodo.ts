@@ -14,7 +14,7 @@ const MESES_TITULO: Record<number, string> = {
 };
 
 /** Primer periodo de la grilla Carga de Datos (inclusive). */
-export const EST_POR_PROD_CARGA_DESDE = { mes: 1, anio: 2026 } as const;
+export const EST_POR_PROD_CARGA_DESDE = { mes: 5, anio: 2026 } as const;
 
 export type EstPorProdPeriodo = { mes: number; anio: number };
 
@@ -40,7 +40,7 @@ export function etiquetaPeriodoEstPorProd(
 
 /**
  * Periodos de la grilla Carga de Datos: desde `hasta` (mes actual) hacia atrás
- * hasta Enero 2026 inclusive. Primera fila = más actual.
+ * hasta Mayo 2026 inclusive. Primera fila = más actual.
  */
 export function listarPeriodosCargaEstPorProd(
   hasta: EstPorProdPeriodo
