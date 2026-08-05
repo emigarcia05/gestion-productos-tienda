@@ -26,6 +26,7 @@ import type {
   EstPorProdPosicionUnidad,
   EstPorProdUnPresentacionItem,
 } from "@/lib/estPorProdUnPresentacion";
+import { etiquetaPosicionUnidad } from "@/lib/estPorProdUnPresentacion";
 import type { ActionResult } from "@/lib/types";
 import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
@@ -107,7 +108,7 @@ export default function GestionarEstPorProdUnPresentacionModal({
     if (!q) return items;
     return items.filter((item) =>
       matchByMultiTerm(
-        [item.unidad, item.posicionUnidad, etiquetaSuma(item.suma)],
+        [item.unidad, item.posicionUnidad, etiquetaPosicionUnidad(item.posicionUnidad), etiquetaSuma(item.suma)],
         q
       )
     );
@@ -257,7 +258,8 @@ export default function GestionarEstPorProdUnPresentacionModal({
                       <div className="min-w-0 flex-1 text-left">
                         <p className="truncate font-medium text-foreground">{item.unidad}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.posicionUnidad} · SUMA {etiquetaSuma(item.suma)}
+                          {etiquetaPosicionUnidad(item.posicionUnidad)} · SUMA{" "}
+                          {etiquetaSuma(item.suma)}
                         </p>
                       </div>
                       {esEditor ? (
@@ -358,6 +360,7 @@ export default function GestionarEstPorProdUnPresentacionModal({
                 >
                   <SelectItem value="PREFIJO">PREFIJO</SelectItem>
                   <SelectItem value="SUFIJO">SUFIJO</SelectItem>
+                  <SelectItem value="SUFIJO_SIN_ESPACIO">SUFIJO SIN ESPACIO</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -7,7 +7,11 @@ const unidadSchema = z
   .min(1, "Ingresá la unidad.")
   .max(40, "La unidad es demasiado larga.");
 
-export const estPorProdPosicionUnidadSchema = z.enum(["PREFIJO", "SUFIJO"]);
+export const estPorProdPosicionUnidadSchema = z.enum([
+  "PREFIJO",
+  "SUFIJO",
+  "SUFIJO_SIN_ESPACIO",
+]);
 
 export const crearEstPorProdUnPresentacionSchema = z.object({
   unidad: unidadSchema,

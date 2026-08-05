@@ -568,6 +568,8 @@ model EstPorProdUnPresentacion {
 enum EstPorProdPosicionUnidad {
   PREFIJO
   SUFIJO
+  /** Sufijo pegado al número, sin espacio (p. ej. `3''`). */
+  SUFIJO_SIN_ESPACIO
 
   @@map("est_por_prod_posicion_unidad")
 }
