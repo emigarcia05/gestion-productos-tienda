@@ -36,20 +36,36 @@ export function etiquetaPresentacionConversion(item: EstPorProdPresentacionItem)
 }
 
 /**
+ * Unifica marcas de pulgada para el match en descripciones.
+ * Catálogo suele usar `''`; DUX/listas suelen traer `"` (o ″ / “ ”).
+ * Ejemplo: `3''` y `3"` pasan a la misma forma canónica.
+ */
+export function normalizarMarcasPulgadaParaMatch(valor: string): string {
+  return valor
+    .replace(/\u2033/g, '"') // ″ double prime
+    .replace(/\u2036/g, '"') // ‶
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"') // “ ” „ ‟
+    .replace(/(?:'|′|´|ʼ){2}/g, '"'); // '' / dos primes como pulgadas
+}
+
+/**
  * Busca el primer (texto más largo) match del catálogo en la descripción.
  * Compara en MAYÚSCULAS con límite de palabra (no letra/dígito alrededor).
+ * Normaliza marcas de pulgada (`3''` ↔ `3"`) antes del regex.
  */
 export function matchPresentacionEnDescripcion(
   descripcion: string | null | undefined,
   presentaciones: EstPorProdPresentacionItem[]
 ): EstPorProdPresentacionItem | null {
-  const haystack = (descripcion ?? "").toLocaleUpperCase("es-AR").trim();
+  const haystack = normalizarMarcasPulgadaParaMatch(
+    (descripcion ?? "").toLocaleUpperCase("es-AR").trim()
+  );
   if (!haystack || presentaciones.length === 0) return null;
 
   const ordenados = [...presentaciones].sort((a, b) => b.texto.length - a.texto.length);
 
   for (const item of ordenados) {
-    const texto = item.texto.trim();
+    const texto = normalizarMarcasPulgadaParaMatch(item.texto.trim());
     if (!texto) continue;
     const pattern = new RegExp(
       `(?<![\\p{L}\\p{N}])${escaparRegexLiteral(texto)}(?![\\p{L}\\p{N}])`,

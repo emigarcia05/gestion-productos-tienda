@@ -1544,6 +1544,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-04): **Filtros · fila 6 columnas** — `FilaFiltrosDesplegables columnas={6}` / `.fila-filtros-6` solo cuando hay 6 desplegables juntos (Categorizacion); ≤5 sin cambios (default 5).*
 
+*Última actualización (2026-08-05): **Est. · Presentacion** — match pulgadas `3''` ↔ `3"` en Categorizacion.*
+
 *Última actualización (2026-08-05): **Est. · Unidades** — posición `SUFIJO_SIN_ESPACIO` (p. ej. `3''`); `etiquetaPosicionUnidad`.*
 
 *Última actualización (2026-08-05): **Est. · Presentacion** — conversión opcional; Convertir a un. solo `suma=true`.*
