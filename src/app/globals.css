@@ -1322,6 +1322,25 @@
   color: var(--foreground) !important;
 }
 
+/**
+ * Carga de Datos (est. por producto): columna PERIODO sticky hereda cebra/hover
+ * vía `--tabla-row-bg`; celdas sin datos resaltadas (acción pendiente, token accent2).
+ */
+.tabla-gestion-compacta.tabla-est-carga-datos tbody td.celda-est-carga-periodo {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: var(--tabla-row-bg, var(--card));
+  font-weight: 500;
+  box-shadow: 1px 0 0 0 var(--border);
+}
+.tabla-gestion-compacta.tabla-est-carga-datos tbody td.celda-est-carga-pendiente {
+  background-color: color-mix(in oklab, var(--accent2) 22%, var(--tabla-row-bg, var(--card)));
+}
+.tabla-gestion-compacta.tabla-est-carga-datos tbody tr:hover td.celda-est-carga-pendiente {
+  background-color: color-mix(in oklab, var(--accent2) 30%, var(--tabla-row-bg, var(--card)));
+}
+
 /* Flujo de fondo (`/finanzas/venc-por-fecha`): **thead** = centrado global. **FECHA** en cuerpo
  * centrada en la columna (`text-center` en `TablaFlujoDeFondo`); modal detalle: **PROVEEDOR** con
  * `text-left` en JSX. Importes: `TD_NUM`. **SALDO** negativo: `text-destructive` en la celda. */

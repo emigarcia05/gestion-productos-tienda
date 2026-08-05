@@ -114,7 +114,7 @@ export default function EstPorProdPageClient({
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <section className="contenedor-tabla-gestion flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
             <div className="min-h-0 flex-1 overflow-auto">
-              <Table>
+              <Table className="tabla-est-carga-datos">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-[14%] sticky left-0 z-30 bg-primary">
@@ -146,7 +146,7 @@ export default function EstPorProdPageClient({
                       ).toLocaleUpperCase("es-AR");
                       return (
                         <TableRow key={`${p.anio}-${p.mes}`}>
-                          <TableCell className="celda-datos sticky left-0 z-10 bg-card font-medium">
+                          <TableCell className="celda-datos celda-est-carga-periodo">
                             {etiquetaPeriodo}
                           </TableCell>
                           {sucursales.map((s) => {
@@ -162,7 +162,10 @@ export default function EstPorProdPageClient({
                             return (
                               <TableCell
                                 key={key}
-                                className="celda-datos celda-datos--accion-relleno-fila"
+                                className={cn(
+                                  "celda-datos celda-datos--accion-relleno-fila",
+                                  !tieneDatos && "celda-est-carga-pendiente"
+                                )}
                               >
                                 {esEditor ? (
                                   <div
@@ -212,7 +215,7 @@ export default function EstPorProdPageClient({
                                     {cantidad.toLocaleString("es-AR")}
                                   </span>
                                 ) : (
-                                  <span className="text-muted-foreground">—</span>
+                                  ""
                                 )}
                               </TableCell>
                             );
