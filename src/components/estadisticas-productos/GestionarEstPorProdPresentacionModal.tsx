@@ -28,6 +28,7 @@ import {
   etiquetaPresentacionMedida,
 } from "@/lib/estPorProdPresentacion";
 import type { EstPorProdUnPresentacionItem } from "@/lib/estPorProdUnPresentacion";
+import { formatearPresentacionConUnidad } from "@/lib/estPorProdUnPresentacion";
 import type { ActionResult } from "@/lib/types";
 import { TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,8 @@ const LIST_ROW_ICON_BTN_CLASS = cn(
 );
 
 const SELECT_TRIGGER_CLASS = "input-filtro-unificado w-full";
+
+const INPUT_READONLY_CLASS = "bg-muted/40 cursor-default";
 
 interface Props {
   open: boolean;
@@ -53,6 +56,24 @@ function formatoNumeroInput(n: number): string {
   return Number.isInteger(n)
     ? String(n)
     : n.toLocaleString("es-AR", { maximumFractionDigits: 4 });
+}
+
+/** Parseo liviano para previsualizar unidad completa (coma/punto). */
+function parseNumeroPreview(raw: string): number | null {
+  const normalized = raw.trim().replace(/\s+/g, "").replace(",", ".");
+  if (!normalized) return null;
+  const n = Number(normalized);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function previewUnidadCompleta(
+  numericaRaw: string,
+  unidad: EstPorProdUnPresentacionItem | undefined
+): string {
+  if (!unidad) return "";
+  const n = parseNumeroPreview(numericaRaw);
+  if (n === null) return "";
+  return formatearPresentacionConUnidad(n, unidad).toLocaleUpperCase("es-AR");
 }
 
 export default function GestionarEstPorProdPresentacionModal({
@@ -82,6 +103,29 @@ export default function GestionarEstPorProdPresentacionModal({
   const [borrando, setBorrando] = useState(false);
 
   const sinUnidades = unidades.length === 0;
+  const unidadesConversion = useMemo(
+    () => unidades.filter((u) => u.id !== formUnidadMedidaId),
+    [unidades, formUnidadMedidaId]
+  );
+
+  const unidadMedida = useMemo(
+    () => unidades.find((u) => u.id === formUnidadMedidaId),
+    [unidades, formUnidadMedidaId]
+  );
+  const unidadConversion = useMemo(
+    () => unidades.find((u) => u.id === formConversionAUnidadId),
+    [unidades, formConversionAUnidadId]
+  );
+
+  const unidadCompletaPreview = useMemo(
+    () => previewUnidadCompleta(formPresentacionNumerica, unidadMedida),
+    [formPresentacionNumerica, unidadMedida]
+  );
+  const unidadConvertidaCompletaPreview = useMemo(
+    () =>
+      previewUnidadCompleta(formConversionAUnidadPresentacion, unidadConversion),
+    [formConversionAUnidadPresentacion, unidadConversion]
+  );
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -158,7 +202,15 @@ export default function GestionarEstPorProdPresentacionModal({
     formUnidadMedidaId.length > 0 &&
     formPresentacionNumerica.trim().length > 0 &&
     formConversionAUnidadId.length > 0 &&
+    formConversionAUnidadId !== formUnidadMedidaId &&
     formConversionAUnidadPresentacion.trim().length > 0;
+
+  function onChangeUnidadMedida(nextId: string) {
+    setFormUnidadMedidaId(nextId);
+    if (formConversionAUnidadId === nextId) {
+      setFormConversionAUnidadId("");
+    }
+  }
 
   async function handleGuardarForm() {
     if (!esEditor || !formValido || pending) return;
@@ -365,85 +417,129 @@ export default function GestionarEstPorProdPresentacionModal({
             </div>
           }
         >
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Unidad medida</ModalMicroLabel>
-              <Select
-                value={formUnidadMedidaId || undefined}
-                onValueChange={setFormUnidadMedidaId}
-                disabled={pending}
+          <div className="flex flex-col gap-4">
+            <section className="flex flex-col gap-3" aria-labelledby="presentacion-form-seccion">
+              <ModalMicroLabel
+                id="presentacion-form-seccion"
+                align="center"
+                className="font-bold"
               >
-                <SelectTrigger className={SELECT_TRIGGER_CLASS} aria-label="Unidad medida">
-                  <SelectValue placeholder="Seleccionar unidad" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro max-h-60"
+                Presentacion
+              </ModalMicroLabel>
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>Unidad medida</ModalMicroLabel>
+                <Select
+                  value={formUnidadMedidaId || undefined}
+                  onValueChange={onChangeUnidadMedida}
+                  disabled={pending}
                 >
-                  {unidades.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.unidad}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Presentacion numerica</ModalMicroLabel>
-              <Input
-                value={formPresentacionNumerica}
-                onChange={(e) => setFormPresentacionNumerica(e.target.value)}
-                placeholder="Ej. 0,44"
-                inputMode="decimal"
-                disabled={pending}
-                autoFocus
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Conversion a unidad</ModalMicroLabel>
-              <Select
-                value={formConversionAUnidadId || undefined}
-                onValueChange={setFormConversionAUnidadId}
-                disabled={pending}
+                  <SelectTrigger className={SELECT_TRIGGER_CLASS} aria-label="Unidad medida">
+                    <SelectValue placeholder="Seleccionar unidad" />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro max-h-60"
+                  >
+                    {unidades.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.unidad}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>Presentacion numerica</ModalMicroLabel>
+                <Input
+                  value={formPresentacionNumerica}
+                  onChange={(e) => setFormPresentacionNumerica(e.target.value)}
+                  placeholder="Ej. 0,44"
+                  inputMode="decimal"
+                  disabled={pending}
+                  autoFocus
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>Unidad completa</ModalMicroLabel>
+                <Input
+                  value={unidadCompletaPreview}
+                  readOnly
+                  tabIndex={-1}
+                  placeholder="Se forma con unidad + número"
+                  className={INPUT_READONLY_CLASS}
+                  aria-label="Unidad completa"
+                />
+              </div>
+            </section>
+
+            <section
+              className="flex flex-col gap-3 border-t border-border pt-4"
+              aria-labelledby="conversion-form-seccion"
+            >
+              <ModalMicroLabel
+                id="conversion-form-seccion"
+                align="center"
+                className="font-bold"
               >
-                <SelectTrigger
-                  className={SELECT_TRIGGER_CLASS}
-                  aria-label="Conversion a unidad"
+                Conversion
+              </ModalMicroLabel>
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>Convertir a un.</ModalMicroLabel>
+                <Select
+                  value={formConversionAUnidadId || undefined}
+                  onValueChange={setFormConversionAUnidadId}
+                  disabled={pending || !formUnidadMedidaId || unidadesConversion.length === 0}
                 >
-                  <SelectValue placeholder="Seleccionar unidad" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro max-h-60"
-                >
-                  {unidades.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.unidad}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Conversion a unidad presentacion</ModalMicroLabel>
-              <Input
-                value={formConversionAUnidadPresentacion}
-                onChange={(e) => setFormConversionAUnidadPresentacion(e.target.value)}
-                placeholder="Ej. 0,44"
-                inputMode="decimal"
-                disabled={pending}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    void handleGuardarForm();
-                  }
-                }}
-              />
-            </div>
+                  <SelectTrigger
+                    className={SELECT_TRIGGER_CLASS}
+                    aria-label="Convertir a un."
+                  >
+                    <SelectValue placeholder="Seleccionar unidad" />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro max-h-60"
+                  >
+                    {unidadesConversion.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.unidad}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>Convertir a presentacion.</ModalMicroLabel>
+                <Input
+                  value={formConversionAUnidadPresentacion}
+                  onChange={(e) => setFormConversionAUnidadPresentacion(e.target.value)}
+                  placeholder="Ej. 0,44"
+                  inputMode="decimal"
+                  disabled={pending}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void handleGuardarForm();
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>Unidad convertida completa</ModalMicroLabel>
+                <Input
+                  value={unidadConvertidaCompletaPreview}
+                  readOnly
+                  tabIndex={-1}
+                  placeholder="Se forma con unidad + número"
+                  className={INPUT_READONLY_CLASS}
+                  aria-label="Unidad convertida completa"
+                />
+              </div>
+            </section>
           </div>
         </AppModal>
       </Dialog>

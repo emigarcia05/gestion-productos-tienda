@@ -152,6 +152,12 @@ export async function listarEstPorProdPresentaciones(): Promise<
 export async function crearEstPorProdPresentacion(
   input: CrearEstPorProdPresentacionInput
 ): Promise<ServiceResult<EstPorProdPresentacionItem>> {
+  if (input.unidadMedidaId === input.conversionAUnidadId) {
+    return {
+      success: false,
+      error: "Convertir a un. debe ser distinta de la unidad medida.",
+    };
+  }
   if (!(await unidadesExisten(input.unidadMedidaId, input.conversionAUnidadId))) {
     return { success: false, error: "Seleccioná unidades de presentación válidas." };
   }
@@ -187,6 +193,12 @@ export async function crearEstPorProdPresentacion(
 export async function editarEstPorProdPresentacion(
   input: EditarEstPorProdPresentacionInput
 ): Promise<ServiceResult<EstPorProdPresentacionItem>> {
+  if (input.unidadMedidaId === input.conversionAUnidadId) {
+    return {
+      success: false,
+      error: "Convertir a un. debe ser distinta de la unidad medida.",
+    };
+  }
   if (!(await unidadesExisten(input.unidadMedidaId, input.conversionAUnidadId))) {
     return { success: false, error: "Seleccioná unidades de presentación válidas." };
   }

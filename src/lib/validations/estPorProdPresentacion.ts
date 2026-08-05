@@ -4,6 +4,7 @@ import { prismaCuidSchema } from "@/lib/validations/common";
 /**
  * Validación de filas de `est_por_prod_presentacion`.
  * `texto` se deriva en el servicio (presentacion_numerica + unidad medida) y no se pide al cliente.
+ * Convertir a un. debe ser distinta de la unidad medida.
  */
 
 /** Acepta número o string con coma/punto decimal (p. ej. «0,4» / «0.4»). */
@@ -25,20 +26,29 @@ const numeroPresentacionSchema = z.preprocess(
     .max(100_000_000, "El valor es demasiado grande.")
 );
 
-export const crearEstPorProdPresentacionSchema = z.object({
+const presentacionCamposObjectSchema = z.object({
   unidadMedidaId: prismaCuidSchema,
   presentacionNumerica: numeroPresentacionSchema,
   conversionAUnidadId: prismaCuidSchema,
   conversionAUnidadPresentacion: numeroPresentacionSchema,
 });
 
-export const editarEstPorProdPresentacionSchema = z.object({
-  id: prismaCuidSchema,
-  unidadMedidaId: prismaCuidSchema,
-  presentacionNumerica: numeroPresentacionSchema,
-  conversionAUnidadId: prismaCuidSchema,
-  conversionAUnidadPresentacion: numeroPresentacionSchema,
-});
+function refineUnidadesDistintas<T extends z.infer<typeof presentacionCamposObjectSchema>>(
+  schema: z.ZodType<T>
+) {
+  return schema.refine((v) => v.unidadMedidaId !== v.conversionAUnidadId, {
+    message: "Convertir a un. debe ser distinta de la unidad medida.",
+    path: ["conversionAUnidadId"],
+  });
+}
+
+export const crearEstPorProdPresentacionSchema = refineUnidadesDistintas(
+  presentacionCamposObjectSchema
+);
+
+export const editarEstPorProdPresentacionSchema = refineUnidadesDistintas(
+  presentacionCamposObjectSchema.extend({ id: prismaCuidSchema })
+);
 
 export const eliminarEstPorProdPresentacionSchema = z.object({
   id: prismaCuidSchema,
