@@ -583,13 +583,14 @@ model EstPorProdPresentacion {
   texto                          String   @unique(map: "est_por_prod_presentacion_texto_key")
   unidadMedidaId                 String   @map("unidad_medida_id")
   presentacionNumerica           Decimal  @map("presentacion_numerica") @db.Decimal(12, 4)
-  conversionAUnidadId            String   @map("conversion_a_unidad_id")
-  conversionAUnidadPresentacion  Decimal  @map("conversion_a_unidad_presentacion") @db.Decimal(12, 4)
+  /** Conversión opcional; solo unidades con `suma = true`. */
+  conversionAUnidadId            String?  @map("conversion_a_unidad_id")
+  conversionAUnidadPresentacion  Decimal? @map("conversion_a_unidad_presentacion") @db.Decimal(12, 4)
   createdAt                      DateTime @default(now()) @map("created_at")
   updatedAt                      DateTime @updatedAt @map("updated_at")
 
-  unidadMedida        EstPorProdUnPresentacion @relation("PresentacionUnidadMedida", fields: [unidadMedidaId], references: [id], onDelete: Restrict)
-  conversionAUnidad   EstPorProdUnPresentacion @relation("PresentacionConversionUnidad", fields: [conversionAUnidadId], references: [id], onDelete: Restrict)
+  unidadMedida        EstPorProdUnPresentacion  @relation("PresentacionUnidadMedida", fields: [unidadMedidaId], references: [id], onDelete: Restrict)
+  conversionAUnidad   EstPorProdUnPresentacion? @relation("PresentacionConversionUnidad", fields: [conversionAUnidadId], references: [id], onDelete: Restrict)
 
   @@index([unidadMedidaId])
   @@index([conversionAUnidadId])

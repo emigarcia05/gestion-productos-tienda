@@ -42,6 +42,9 @@ const SELECT_TRIGGER_CLASS = "input-filtro-unificado w-full";
 
 const INPUT_READONLY_CLASS = "bg-muted/40 cursor-default";
 
+/** Valor sentinel del Select para dejar conversión vacía. */
+const SIN_CONVERSION = "__SIN_CONVERSION__";
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -103,9 +106,15 @@ export default function GestionarEstPorProdPresentacionModal({
   const [borrando, setBorrando] = useState(false);
 
   const sinUnidades = unidades.length === 0;
+  /** Destinos de conversión: `suma = true` y distintas de la unidad medida. */
   const unidadesConversion = useMemo(
-    () => unidades.filter((u) => u.id !== formUnidadMedidaId),
-    [unidades, formUnidadMedidaId]
+    () =>
+      unidades.filter(
+        (u) =>
+          u.id !== formUnidadMedidaId &&
+          (u.suma || u.id === formConversionAUnidadId)
+      ),
+    [unidades, formUnidadMedidaId, formConversionAUnidadId]
   );
 
   const unidadMedida = useMemo(
@@ -191,36 +200,55 @@ export default function GestionarEstPorProdPresentacionModal({
     setEditingItem(item);
     setFormUnidadMedidaId(item.unidadMedidaId);
     setFormPresentacionNumerica(formatoNumeroInput(item.presentacionNumerica));
-    setFormConversionAUnidadId(item.conversionAUnidadId);
+    setFormConversionAUnidadId(item.conversionAUnidadId ?? "");
     setFormConversionAUnidadPresentacion(
-      formatoNumeroInput(item.conversionAUnidadPresentacion)
+      item.conversionAUnidadPresentacion == null
+        ? ""
+        : formatoNumeroInput(item.conversionAUnidadPresentacion)
     );
     setFormOpen(true);
   }
 
+  const conversionParcial =
+    (formConversionAUnidadId.length > 0) !==
+    (formConversionAUnidadPresentacion.trim().length > 0);
+
   const formValido =
     formUnidadMedidaId.length > 0 &&
     formPresentacionNumerica.trim().length > 0 &&
-    formConversionAUnidadId.length > 0 &&
-    formConversionAUnidadId !== formUnidadMedidaId &&
-    formConversionAUnidadPresentacion.trim().length > 0;
+    !conversionParcial &&
+    (formConversionAUnidadId.length === 0 ||
+      formConversionAUnidadId !== formUnidadMedidaId);
 
   function onChangeUnidadMedida(nextId: string) {
     setFormUnidadMedidaId(nextId);
     if (formConversionAUnidadId === nextId) {
       setFormConversionAUnidadId("");
+      setFormConversionAUnidadPresentacion("");
     }
+  }
+
+  function onChangeConversionUnidad(nextId: string) {
+    if (nextId === SIN_CONVERSION) {
+      setFormConversionAUnidadId("");
+      setFormConversionAUnidadPresentacion("");
+      return;
+    }
+    setFormConversionAUnidadId(nextId);
   }
 
   async function handleGuardarForm() {
     if (!esEditor || !formValido || pending) return;
     setPending(true);
     try {
+      const conConversion = formConversionAUnidadId.length > 0;
       const payload = {
         unidadMedidaId: formUnidadMedidaId,
         presentacionNumerica: formPresentacionNumerica,
-        conversionAUnidadId: formConversionAUnidadId,
-        conversionAUnidadPresentacion: formConversionAUnidadPresentacion,
+        conversionAUnidadId: conConversion ? formConversionAUnidadId : null,
+        conversionAUnidadPresentacion: conConversion
+          ? formConversionAUnidadPresentacion
+          : null,
       };
       if (editingItem) {
         const res = await editarEstPorProdPresentacionAction({
@@ -342,9 +370,11 @@ export default function GestionarEstPorProdPresentacionModal({
                     >
                       <div className="min-w-0 flex-1 text-left">
                         <p className="truncate font-medium text-foreground">{item.texto}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {`→ ${etiquetaPresentacionMedida(item)} (= ${etiquetaPresentacionConversion(item)})`}
-                        </p>
+                        {item.conversionAUnidad ? (
+                          <p className="text-xs text-muted-foreground">
+                            {`= ${etiquetaPresentacionConversion(item)}`}
+                          </p>
+                        ) : null}
                       </div>
                       {esEditor ? (
                         <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5">
@@ -488,15 +518,15 @@ export default function GestionarEstPorProdPresentacionModal({
               <div className="flex flex-col gap-1">
                 <ModalMicroLabel>Convertir a un.</ModalMicroLabel>
                 <Select
-                  value={formConversionAUnidadId || undefined}
-                  onValueChange={setFormConversionAUnidadId}
-                  disabled={pending || !formUnidadMedidaId || unidadesConversion.length === 0}
+                  value={formConversionAUnidadId || SIN_CONVERSION}
+                  onValueChange={onChangeConversionUnidad}
+                  disabled={pending || !formUnidadMedidaId}
                 >
                   <SelectTrigger
                     className={SELECT_TRIGGER_CLASS}
                     aria-label="Convertir a un."
                   >
-                    <SelectValue placeholder="Seleccionar unidad" />
+                    <SelectValue placeholder="Sin conversion" />
                   </SelectTrigger>
                   <SelectContent
                     position="popper"
@@ -504,6 +534,7 @@ export default function GestionarEstPorProdPresentacionModal({
                     align="start"
                     className="select-content-filtro max-h-60"
                   >
+                    <SelectItem value={SIN_CONVERSION}>SIN CONVERSION</SelectItem>
                     {unidadesConversion.map((u) => (
                       <SelectItem key={u.id} value={u.id}>
                         {u.unidad}
@@ -519,7 +550,7 @@ export default function GestionarEstPorProdPresentacionModal({
                   onChange={(e) => setFormConversionAUnidadPresentacion(e.target.value)}
                   placeholder="Ej. 0,44"
                   inputMode="decimal"
-                  disabled={pending}
+                  disabled={pending || !formConversionAUnidadId}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -575,8 +606,8 @@ export default function GestionarEstPorProdPresentacionModal({
           <p className="text-sm text-muted-foreground">
             ¿Eliminar la presentación{" "}
             <span className="font-semibold text-foreground">{borrarTarget?.texto}</span>
-            {borrarTarget
-              ? ` → ${etiquetaPresentacionMedida(borrarTarget)} (= ${etiquetaPresentacionConversion(borrarTarget)})`
+            {borrarTarget?.conversionAUnidad
+              ? ` (= ${etiquetaPresentacionConversion(borrarTarget)})`
               : ""}
             ? Esta acción no se puede deshacer.
           </p>

@@ -51,8 +51,8 @@ function mapRow(r: {
   texto: string;
   unidadMedidaId: string;
   presentacionNumerica: Prisma.Decimal;
-  conversionAUnidadId: string;
-  conversionAUnidadPresentacion: Prisma.Decimal;
+  conversionAUnidadId: string | null;
+  conversionAUnidadPresentacion: Prisma.Decimal | null;
   unidadMedida: {
     id: string;
     unidad: string;
@@ -64,7 +64,7 @@ function mapRow(r: {
     unidad: string;
     posicionUnidad: EstPorProdPosicionUnidad;
     suma: boolean;
-  };
+  } | null;
 }): EstPorProdPresentacionItem {
   return {
     id: r.id,
@@ -72,9 +72,12 @@ function mapRow(r: {
     unidadMedidaId: r.unidadMedidaId,
     presentacionNumerica: toNumber(r.presentacionNumerica),
     conversionAUnidadId: r.conversionAUnidadId,
-    conversionAUnidadPresentacion: toNumber(r.conversionAUnidadPresentacion),
+    conversionAUnidadPresentacion:
+      r.conversionAUnidadPresentacion == null
+        ? null
+        : toNumber(r.conversionAUnidadPresentacion),
     unidadMedida: mapUnidad(r.unidadMedida),
-    conversionAUnidad: mapUnidad(r.conversionAUnidad),
+    conversionAUnidad: r.conversionAUnidad ? mapUnidad(r.conversionAUnidad) : null,
   };
 }
 
@@ -93,15 +96,43 @@ function mapDbError(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-async function unidadesExisten(
+/**
+ * Valida unidad de medida y, si hay conversión, que exista, sea distinta y `suma = true`.
+ */
+async function validarUnidadesPresentacion(
   unidadMedidaId: string,
-  conversionAUnidadId: string
-): Promise<boolean> {
-  const count = await prisma.estPorProdUnPresentacion.count({
-    where: { id: { in: [unidadMedidaId, conversionAUnidadId] } },
+  conversionAUnidadId: string | null
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const medida = await prisma.estPorProdUnPresentacion.findUnique({
+    where: { id: unidadMedidaId },
+    select: { id: true },
   });
-  const ids = new Set([unidadMedidaId, conversionAUnidadId]);
-  return count === ids.size;
+  if (!medida) {
+    return { ok: false, error: "Seleccioná una unidad de medida válida." };
+  }
+  if (conversionAUnidadId == null) {
+    return { ok: true };
+  }
+  if (conversionAUnidadId === unidadMedidaId) {
+    return {
+      ok: false,
+      error: "Convertir a un. debe ser distinta de la unidad medida.",
+    };
+  }
+  const destino = await prisma.estPorProdUnPresentacion.findUnique({
+    where: { id: conversionAUnidadId },
+    select: { id: true, suma: true },
+  });
+  if (!destino) {
+    return { ok: false, error: "Seleccioná una unidad de conversión válida." };
+  }
+  if (!destino.suma) {
+    return {
+      ok: false,
+      error: "Solo se puede convertir a unidades con suma habilitada.",
+    };
+  }
+  return { ok: true };
 }
 
 /**
@@ -131,6 +162,27 @@ async function derivarTextoPresentacion(
   return { ok: true, texto };
 }
 
+function datosConversion(input: {
+  conversionAUnidadId: string | null;
+  conversionAUnidadPresentacion: number | null;
+}): {
+  conversionAUnidadId: string | null;
+  conversionAUnidadPresentacion: Prisma.Decimal | null;
+} {
+  if (
+    input.conversionAUnidadId == null ||
+    input.conversionAUnidadPresentacion == null
+  ) {
+    return { conversionAUnidadId: null, conversionAUnidadPresentacion: null };
+  }
+  return {
+    conversionAUnidadId: input.conversionAUnidadId,
+    conversionAUnidadPresentacion: new Prisma.Decimal(
+      input.conversionAUnidadPresentacion
+    ),
+  };
+}
+
 export async function listarEstPorProdPresentaciones(): Promise<
   EstPorProdPresentacionItem[]
 > {
@@ -152,14 +204,12 @@ export async function listarEstPorProdPresentaciones(): Promise<
 export async function crearEstPorProdPresentacion(
   input: CrearEstPorProdPresentacionInput
 ): Promise<ServiceResult<EstPorProdPresentacionItem>> {
-  if (input.unidadMedidaId === input.conversionAUnidadId) {
-    return {
-      success: false,
-      error: "Convertir a un. debe ser distinta de la unidad medida.",
-    };
-  }
-  if (!(await unidadesExisten(input.unidadMedidaId, input.conversionAUnidadId))) {
-    return { success: false, error: "Seleccioná unidades de presentación válidas." };
+  const unidadesOk = await validarUnidadesPresentacion(
+    input.unidadMedidaId,
+    input.conversionAUnidadId
+  );
+  if (!unidadesOk.ok) {
+    return { success: false, error: unidadesOk.error };
   }
   const derivado = await derivarTextoPresentacion(
     input.presentacionNumerica,
@@ -168,16 +218,15 @@ export async function crearEstPorProdPresentacion(
   if (!derivado.ok) {
     return { success: false, error: derivado.error };
   }
+  const conversion = datosConversion(input);
   try {
     const created = await prisma.estPorProdPresentacion.create({
       data: {
         texto: derivado.texto,
         unidadMedidaId: input.unidadMedidaId,
         presentacionNumerica: new Prisma.Decimal(input.presentacionNumerica),
-        conversionAUnidadId: input.conversionAUnidadId,
-        conversionAUnidadPresentacion: new Prisma.Decimal(
-          input.conversionAUnidadPresentacion
-        ),
+        conversionAUnidadId: conversion.conversionAUnidadId,
+        conversionAUnidadPresentacion: conversion.conversionAUnidadPresentacion,
       },
       include: presentacionInclude,
     });
@@ -193,14 +242,12 @@ export async function crearEstPorProdPresentacion(
 export async function editarEstPorProdPresentacion(
   input: EditarEstPorProdPresentacionInput
 ): Promise<ServiceResult<EstPorProdPresentacionItem>> {
-  if (input.unidadMedidaId === input.conversionAUnidadId) {
-    return {
-      success: false,
-      error: "Convertir a un. debe ser distinta de la unidad medida.",
-    };
-  }
-  if (!(await unidadesExisten(input.unidadMedidaId, input.conversionAUnidadId))) {
-    return { success: false, error: "Seleccioná unidades de presentación válidas." };
+  const unidadesOk = await validarUnidadesPresentacion(
+    input.unidadMedidaId,
+    input.conversionAUnidadId
+  );
+  if (!unidadesOk.ok) {
+    return { success: false, error: unidadesOk.error };
   }
   const derivado = await derivarTextoPresentacion(
     input.presentacionNumerica,
@@ -209,6 +256,7 @@ export async function editarEstPorProdPresentacion(
   if (!derivado.ok) {
     return { success: false, error: derivado.error };
   }
+  const conversion = datosConversion(input);
   try {
     const updated = await prisma.estPorProdPresentacion.update({
       where: { id: input.id },
@@ -216,10 +264,8 @@ export async function editarEstPorProdPresentacion(
         texto: derivado.texto,
         unidadMedidaId: input.unidadMedidaId,
         presentacionNumerica: new Prisma.Decimal(input.presentacionNumerica),
-        conversionAUnidadId: input.conversionAUnidadId,
-        conversionAUnidadPresentacion: new Prisma.Decimal(
-          input.conversionAUnidadPresentacion
-        ),
+        conversionAUnidadId: conversion.conversionAUnidadId,
+        conversionAUnidadPresentacion: conversion.conversionAUnidadPresentacion,
       },
       include: presentacionInclude,
     });

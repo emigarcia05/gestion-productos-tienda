@@ -9,10 +9,11 @@ export type EstPorProdPresentacionItem = {
   texto: string;
   unidadMedidaId: string;
   presentacionNumerica: number;
-  conversionAUnidadId: string;
-  conversionAUnidadPresentacion: number;
+  /** Null si no hay conversión. */
+  conversionAUnidadId: string | null;
+  conversionAUnidadPresentacion: number | null;
   unidadMedida: EstPorProdUnPresentacionItem;
-  conversionAUnidad: EstPorProdUnPresentacionItem;
+  conversionAUnidad: EstPorProdUnPresentacionItem | null;
 };
 
 /** Etiqueta de la presentación medida (unidad + número). */
@@ -20,8 +21,14 @@ export function etiquetaPresentacionMedida(item: EstPorProdPresentacionItem): st
   return formatearPresentacionConUnidad(item.presentacionNumerica, item.unidadMedida);
 }
 
-/** Etiqueta de la conversión a otra unidad. */
+/** Etiqueta de la conversión a otra unidad; vacío si no hay conversión. */
 export function etiquetaPresentacionConversion(item: EstPorProdPresentacionItem): string {
+  if (
+    item.conversionAUnidad == null ||
+    item.conversionAUnidadPresentacion == null
+  ) {
+    return "";
+  }
   return formatearPresentacionConUnidad(
     item.conversionAUnidadPresentacion,
     item.conversionAUnidad
