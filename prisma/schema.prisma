@@ -546,20 +546,54 @@ model EstPorProdColor {
 }
 
 /**
- * Catálogo de conversiones texto → litros para Categorizacion.
- * Se detecta `texto` (MAYÚSCULAS) por regex en la descripción y se usa `conversion_lts`
- * (p. ej. «440 CC» → 0.4).
+ * Catálogo de unidades de presentación (p. ej. LTS, Nº).
+ * Prefijo = unidad antes del número (Nº 20); Sufijo = después (20 LTS).
+ * `suma` = true si el valor numérico puede agregarse en estadísticas.
  */
-model EstPorProdLtsConversion {
-  id            String   @id @default(cuid())
-  /** Fragmento a buscar en la descripción (MAYÚSCULAS), p. ej. «440 CC». */
-  texto         String   @unique(map: "est_por_prod_lts_conversion_texto_key")
-  /** Litros equivalentes (p. ej. 0.4 para 440 CC). */
-  conversionLts Decimal  @map("conversion_lts") @db.Decimal(12, 4)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+model EstPorProdUnPresentacion {
+  id              String                   @id @default(cuid())
+  /** Texto de unidad en MAYÚSCULAS (único). */
+  unidad          String                   @unique(map: "est_por_prod_un_presentacion_unidad_key")
+  posicionUnidad  EstPorProdPosicionUnidad @map("posicion_unidad")
+  suma            Boolean                  @default(false)
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
 
-  @@map("est_por_prod_lts_conversion")
+  presentacionesComoMedida     EstPorProdPresentacion[] @relation("PresentacionUnidadMedida")
+  presentacionesComoConversion EstPorProdPresentacion[] @relation("PresentacionConversionUnidad")
+
+  @@map("est_por_prod_un_presentacion")
+}
+
+enum EstPorProdPosicionUnidad {
+  PREFIJO
+  SUFIJO
+
+  @@map("est_por_prod_posicion_unidad")
+}
+
+/**
+ * Catálogo de presentaciones para Categorizacion.
+ * Se detecta `texto` (MAYÚSCULAS) por regex en la descripción; define unidad de medida,
+ * valor numérico y conversión opcional a otra unidad.
+ */
+model EstPorProdPresentacion {
+  id                             String   @id @default(cuid())
+  /** Fragmento a buscar en la descripción (MAYÚSCULAS), p. ej. «440 CC». */
+  texto                          String   @unique(map: "est_por_prod_presentacion_texto_key")
+  unidadMedidaId                 String   @map("unidad_medida_id")
+  presentacionNumerica           Decimal  @map("presentacion_numerica") @db.Decimal(12, 4)
+  conversionAUnidadId            String   @map("conversion_a_unidad_id")
+  conversionAUnidadPresentacion  Decimal  @map("conversion_a_unidad_presentacion") @db.Decimal(12, 4)
+  createdAt                      DateTime @default(now()) @map("created_at")
+  updatedAt                      DateTime @updatedAt @map("updated_at")
+
+  unidadMedida        EstPorProdUnPresentacion @relation("PresentacionUnidadMedida", fields: [unidadMedidaId], references: [id], onDelete: Restrict)
+  conversionAUnidad   EstPorProdUnPresentacion @relation("PresentacionConversionUnidad", fields: [conversionAUnidadId], references: [id], onDelete: Restrict)
+
+  @@index([unidadMedidaId])
+  @@index([conversionAUnidadId])
+  @@map("est_por_prod_presentacion")
 }
 
 /**

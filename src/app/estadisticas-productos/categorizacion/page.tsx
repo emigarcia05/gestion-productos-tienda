@@ -4,8 +4,9 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarProdTiendaCategorizacion } from "@/services/estCategorizacion.service";
 import { listarEstPorProdColores } from "@/services/estPorProdColores.service";
-import { listarEstPorProdLtsConversiones } from "@/services/estPorProdLtsConversion.service";
+import { listarEstPorProdPresentaciones } from "@/services/estPorProdPresentacion.service";
 import { listarEstPorProdTerminaciones } from "@/services/estPorProdTerminacion.service";
+import { listarEstPorProdUnPresentaciones } from "@/services/estPorProdUnPresentacion.service";
 import EstCategorizacionPageClient from "@/components/estadisticas-productos/EstCategorizacionPageClient";
 
 export const dynamic = "force-dynamic";
@@ -17,20 +18,27 @@ export default async function EstCategorizacionPage() {
   }
 
   const esEditor = rol === "editor";
-  const [filas, coloresCatalogo, ltsConversionesCatalogo, terminacionesCatalogo] =
-    await Promise.all([
-      listarProdTiendaCategorizacion(),
-      listarEstPorProdColores(),
-      listarEstPorProdLtsConversiones(),
-      listarEstPorProdTerminaciones(),
-    ]);
+  const [
+    filas,
+    coloresCatalogo,
+    presentacionesCatalogo,
+    unidadesCatalogo,
+    terminacionesCatalogo,
+  ] = await Promise.all([
+    listarProdTiendaCategorizacion(),
+    listarEstPorProdColores(),
+    listarEstPorProdPresentaciones(),
+    listarEstPorProdUnPresentaciones(),
+    listarEstPorProdTerminaciones(),
+  ]);
 
   return (
     <div className="area-page-shell">
       <EstCategorizacionPageClient
         filas={filas}
         coloresCatalogo={coloresCatalogo}
-        ltsConversionesCatalogo={ltsConversionesCatalogo}
+        presentacionesCatalogo={presentacionesCatalogo}
+        unidadesCatalogo={unidadesCatalogo}
         terminacionesCatalogo={terminacionesCatalogo}
         esEditor={esEditor}
       />

@@ -1,4 +1,4 @@
-/** Fila de Categorización (`prod_tienda` + color/terminación/lts calculados). */
+/** Fila de Categorización (`prod_tienda` + color/terminación/presentación calculados). */
 export type EstCategorizacionItem = {
   codTienda: string;
   descripcionTienda: string;
@@ -13,6 +13,6 @@ export type EstCategorizacionItem = {
   terminaciones: string[];
   /** Texto para columna TERMINACION (` · ` si hay varias). */
   terminacionEtiqueta: string;
-  /** Litros detectados en la descripción; `null` si no hay. */
-  lts: number | null;
+  /** Etiqueta de presentación medida (p. ej. `20 LTS` / `Nº 20`); vacío si no hay match. */
+  presentacionEtiqueta: string;
 };

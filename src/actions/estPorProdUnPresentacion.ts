@@ -1,22 +1,22 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { EstPorProdLtsConversionItem } from "@/lib/estPorProdLtsConversion";
+import type { EstPorProdUnPresentacionItem } from "@/lib/estPorProdUnPresentacion";
 import { ESTADISTICAS_PRODUCTOS_ROUTES } from "@/lib/estadisticasProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { esEditor, getRol } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 import {
-  crearEstPorProdLtsConversionSchema,
-  editarEstPorProdLtsConversionSchema,
-  eliminarEstPorProdLtsConversionSchema,
-} from "@/lib/validations/estPorProdLtsConversion";
+  crearEstPorProdUnPresentacionSchema,
+  editarEstPorProdUnPresentacionSchema,
+  eliminarEstPorProdUnPresentacionSchema,
+} from "@/lib/validations/estPorProdUnPresentacion";
 import {
-  crearEstPorProdLtsConversion,
-  editarEstPorProdLtsConversion,
-  eliminarEstPorProdLtsConversion,
-  listarEstPorProdLtsConversiones,
-} from "@/services/estPorProdLtsConversion.service";
+  crearEstPorProdUnPresentacion,
+  editarEstPorProdUnPresentacion,
+  eliminarEstPorProdUnPresentacion,
+  listarEstPorProdUnPresentaciones,
+} from "@/services/estPorProdUnPresentacion.service";
 
 function firstZodErrorMessage(error: {
   flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
@@ -40,7 +40,7 @@ async function requireEditorEstadisticas(): Promise<{ ok: false; error: string }
   const gate = await requireEstadisticasLectura();
   if (gate) return gate;
   if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede gestionar conversiones de litros." };
+    return { ok: false, error: "Solo el modo editor puede gestionar unidades de presentación." };
   }
   return null;
 }
@@ -50,61 +50,61 @@ function revalidateCategorizacion() {
   revalidatePath(ESTADISTICAS_PRODUCTOS_ROUTES.categorizacion);
 }
 
-export async function listarEstPorProdLtsConversionesAction(): Promise<
-  ActionResult<EstPorProdLtsConversionItem[]>
+export async function listarEstPorProdUnPresentacionesAction(): Promise<
+  ActionResult<EstPorProdUnPresentacionItem[]>
 > {
   const gate = await requireEstadisticasLectura();
   if (gate) return gate;
   try {
-    return { ok: true, data: await listarEstPorProdLtsConversiones() };
+    return { ok: true, data: await listarEstPorProdUnPresentaciones() };
   } catch (e) {
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "No se pudieron listar las conversiones.",
+      error: e instanceof Error ? e.message : "No se pudieron listar las unidades.",
     };
   }
 }
 
-export async function crearEstPorProdLtsConversionAction(
+export async function crearEstPorProdUnPresentacionAction(
   raw: unknown
-): Promise<ActionResult<EstPorProdLtsConversionItem>> {
+): Promise<ActionResult<EstPorProdUnPresentacionItem>> {
   const gate = await requireEditorEstadisticas();
   if (gate) return gate;
-  const parsed = crearEstPorProdLtsConversionSchema.safeParse(raw);
+  const parsed = crearEstPorProdUnPresentacionSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
-  const res = await crearEstPorProdLtsConversion(parsed.data);
+  const res = await crearEstPorProdUnPresentacion(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
   revalidateCategorizacion();
   return { ok: true, data: res.data };
 }
 
-export async function editarEstPorProdLtsConversionAction(
+export async function editarEstPorProdUnPresentacionAction(
   raw: unknown
-): Promise<ActionResult<EstPorProdLtsConversionItem>> {
+): Promise<ActionResult<EstPorProdUnPresentacionItem>> {
   const gate = await requireEditorEstadisticas();
   if (gate) return gate;
-  const parsed = editarEstPorProdLtsConversionSchema.safeParse(raw);
+  const parsed = editarEstPorProdUnPresentacionSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
-  const res = await editarEstPorProdLtsConversion(parsed.data);
+  const res = await editarEstPorProdUnPresentacion(parsed.data);
   if (!res.success) return { ok: false, error: res.error };
   revalidateCategorizacion();
   return { ok: true, data: res.data };
 }
 
-export async function eliminarEstPorProdLtsConversionAction(
+export async function eliminarEstPorProdUnPresentacionAction(
   raw: unknown
 ): Promise<ActionResult<{ id: string }>> {
   const gate = await requireEditorEstadisticas();
   if (gate) return gate;
-  const parsed = eliminarEstPorProdLtsConversionSchema.safeParse(raw);
+  const parsed = eliminarEstPorProdUnPresentacionSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
-  const res = await eliminarEstPorProdLtsConversion(parsed.data.id);
+  const res = await eliminarEstPorProdUnPresentacion(parsed.data.id);
   if (!res.success) return { ok: false, error: res.error };
   revalidateCategorizacion();
   return { ok: true, data: res.data };

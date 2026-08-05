@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Beaker, Paintbrush, Palette } from "lucide-react";
+import { Beaker, Paintbrush, Palette, Ruler } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -24,8 +24,9 @@ import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionClient from "@/components/shared/PaginacionClient";
 import GestionarEstPorProdColoresModal from "@/components/estadisticas-productos/GestionarEstPorProdColoresModal";
-import GestionarEstPorProdLtsConversionModal from "@/components/estadisticas-productos/GestionarEstPorProdLtsConversionModal";
+import GestionarEstPorProdPresentacionModal from "@/components/estadisticas-productos/GestionarEstPorProdPresentacionModal";
 import GestionarEstPorProdTerminacionModal from "@/components/estadisticas-productos/GestionarEstPorProdTerminacionModal";
+import GestionarEstPorProdUnPresentacionModal from "@/components/estadisticas-productos/GestionarEstPorProdUnPresentacionModal";
 import {
   Table,
   TableBody,
@@ -38,9 +39,9 @@ import {
 import { matchByMultiTerm } from "@/lib/busqueda";
 import type { EstCategorizacionItem } from "@/lib/estCategorizacionTypes";
 import type { EstPorProdColorItem } from "@/lib/estPorProdColores";
-import type { EstPorProdLtsConversionItem } from "@/lib/estPorProdLtsConversion";
+import type { EstPorProdPresentacionItem } from "@/lib/estPorProdPresentacion";
 import type { EstPorProdTerminacionItem } from "@/lib/estPorProdTerminacion";
-import { etiquetaLitros } from "@/lib/estPorProdLitros";
+import type { EstPorProdUnPresentacionItem } from "@/lib/estPorProdUnPresentacion";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
@@ -48,13 +49,14 @@ import { cn } from "@/lib/utils";
 const FILTRO_TODOS = "none";
 const FILTRO_SIN_COLOR = "__SIN_COLOR__";
 const FILTRO_SIN_TERMINACION = "__SIN_TERMINACION__";
-const FILTRO_SIN_LTS = "__SIN_LTS__";
+const FILTRO_SIN_PRESENTACION = "__SIN_PRESENTACION__";
 const FOCUS_KEY = "filtros-est-categorizacion-focus";
 
 interface Props {
   filas: EstCategorizacionItem[];
   coloresCatalogo: EstPorProdColorItem[];
-  ltsConversionesCatalogo: EstPorProdLtsConversionItem[];
+  presentacionesCatalogo: EstPorProdPresentacionItem[];
+  unidadesCatalogo: EstPorProdUnPresentacionItem[];
   terminacionesCatalogo: EstPorProdTerminacionItem[];
   esEditor: boolean;
 }
@@ -68,7 +70,8 @@ function opcionesOrdenadas(valores: string[]): string[] {
 export default function EstCategorizacionPageClient({
   filas,
   coloresCatalogo,
-  ltsConversionesCatalogo,
+  presentacionesCatalogo,
+  unidadesCatalogo,
   terminacionesCatalogo,
   esEditor,
 }: Props) {
@@ -78,9 +81,10 @@ export default function EstCategorizacionPageClient({
   const [filtSubRubro, setFiltSubRubro] = useState(FILTRO_TODOS);
   const [filtColor, setFiltColor] = useState(FILTRO_TODOS);
   const [filtTerminacion, setFiltTerminacion] = useState(FILTRO_TODOS);
-  const [filtLts, setFiltLts] = useState(FILTRO_TODOS);
+  const [filtPresentacion, setFiltPresentacion] = useState(FILTRO_TODOS);
   const [modalColoresOpen, setModalColoresOpen] = useState(false);
-  const [modalLtsOpen, setModalLtsOpen] = useState(false);
+  const [modalUnidadesOpen, setModalUnidadesOpen] = useState(false);
+  const [modalPresentacionOpen, setModalPresentacionOpen] = useState(false);
   const [modalTerminacionOpen, setModalTerminacionOpen] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
   const [qDebounced, setQDebounced] = useState("");
@@ -131,16 +135,10 @@ export default function EstCategorizacionPageClient({
     return opcionesOrdenadas(names);
   }, [filas]);
 
-  const litrosOpciones = useMemo(() => {
-    const vals = [
-      ...new Set(
-        filas
-          .map((f) => f.lts)
-          .filter((n): n is number => n != null)
-          .map((n) => etiquetaLitros(n))
-      ),
-    ];
-    return vals.sort((a, b) => Number(a.replace(",", ".")) - Number(b.replace(",", ".")));
+  const presentacionOpciones = useMemo(() => {
+    return opcionesOrdenadas(
+      filas.map((f) => f.presentacionEtiqueta).filter((v) => v.trim() !== "")
+    );
   }, [filas]);
 
   const filasFiltradas = useMemo(() => {
@@ -164,10 +162,10 @@ export default function EstCategorizacionPageClient({
     } else if (filtTerminacion !== FILTRO_TODOS) {
       out = out.filter((f) => f.terminaciones.includes(filtTerminacion));
     }
-    if (filtLts === FILTRO_SIN_LTS) {
-      out = out.filter((f) => f.lts == null);
-    } else if (filtLts !== FILTRO_TODOS) {
-      out = out.filter((f) => etiquetaLitros(f.lts) === filtLts);
+    if (filtPresentacion === FILTRO_SIN_PRESENTACION) {
+      out = out.filter((f) => f.presentacionEtiqueta.trim() === "");
+    } else if (filtPresentacion !== FILTRO_TODOS) {
+      out = out.filter((f) => f.presentacionEtiqueta === filtPresentacion);
     }
     const qTrim = qDebounced.trim();
     if (qTrim) {
@@ -181,7 +179,7 @@ export default function EstCategorizacionPageClient({
     filtSubRubro,
     filtColor,
     filtTerminacion,
-    filtLts,
+    filtPresentacion,
     qDebounced,
   ]);
 
@@ -198,7 +196,7 @@ export default function EstCategorizacionPageClient({
     setFiltSubRubro(FILTRO_TODOS);
     setFiltColor(FILTRO_TODOS);
     setFiltTerminacion(FILTRO_TODOS);
-    setFiltLts(FILTRO_TODOS);
+    setFiltPresentacion(FILTRO_TODOS);
     setQ("");
     setQDebounced("");
     setPaginaActual(1);
@@ -229,10 +227,18 @@ export default function EstCategorizacionPageClient({
             <Button
               type="button"
               className="h-10 px-4 gap-2"
-              onClick={() => setModalLtsOpen(true)}
+              onClick={() => setModalUnidadesOpen(true)}
+            >
+              <Ruler className="h-4 w-4 shrink-0" aria-hidden />
+              Gestion Unidades
+            </Button>
+            <Button
+              type="button"
+              className="h-10 px-4 gap-2"
+              onClick={() => setModalPresentacionOpen(true)}
             >
               <Beaker className="h-4 w-4 shrink-0" aria-hidden />
-              Gestion Conversion
+              Gestion Presentacion
             </Button>
             <Button
               type="button"
@@ -429,21 +435,21 @@ export default function EstCategorizacionPageClient({
 
               <FiltroIndividualContainer
                 className={FILTER_SELECT_WRAPPER_CLASS}
-                activo={filtLts !== FILTRO_TODOS}
+                activo={filtPresentacion !== FILTRO_TODOS}
                 onLimpiar={() => {
-                  setFiltLts(FILTRO_TODOS);
+                  setFiltPresentacion(FILTRO_TODOS);
                   setPaginaActual(1);
                 }}
               >
                 <Select
-                  value={filtLts}
+                  value={filtPresentacion}
                   onValueChange={(v) => {
-                    setFiltLts(v);
+                    setFiltPresentacion(v);
                     setPaginaActual(1);
                   }}
                 >
-                  <SelectTrigger className="input-filtro-unificado" aria-label="Lts">
-                    <SelectValue placeholder="LTS" />
+                  <SelectTrigger className="input-filtro-unificado" aria-label="Presentacion">
+                    <SelectValue placeholder="PRESENTACION" />
                   </SelectTrigger>
                   <SelectContent
                     position="popper"
@@ -451,13 +457,13 @@ export default function EstCategorizacionPageClient({
                     align="start"
                     className="select-content-filtro max-h-60"
                   >
-                    <SelectItem value={FILTRO_TODOS}>LTS</SelectItem>
-                    {litrosOpciones.map((l) => (
-                      <SelectItem key={l} value={l}>
-                        {l}
+                    <SelectItem value={FILTRO_TODOS}>PRESENTACION</SelectItem>
+                    {presentacionOpciones.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
                       </SelectItem>
                     ))}
-                    <SelectItem value={FILTRO_SIN_LTS}>SIN LTS</SelectItem>
+                    <SelectItem value={FILTRO_SIN_PRESENTACION}>SIN PRESENTACION</SelectItem>
                   </SelectContent>
                 </Select>
               </FiltroIndividualContainer>
@@ -499,7 +505,7 @@ export default function EstCategorizacionPageClient({
                   <TableHead className="w-[12%]">SUB RUBRO</TableHead>
                   <TableHead className="w-[12%]">COLOR</TableHead>
                   <TableHead className="w-[12%]">TERMINACION</TableHead>
-                  <TableHead className="w-[8%] text-right">LTS</TableHead>
+                  <TableHead className="w-[8%]">PRESENTACION</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -542,10 +548,8 @@ export default function EstCategorizacionPageClient({
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="celda-datos celda-mono text-right">
-                        {f.lts != null ? (
-                          etiquetaLitros(f.lts)
-                        ) : (
+                      <TableCell className="celda-datos">
+                        {f.presentacionEtiqueta || (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
@@ -576,10 +580,19 @@ export default function EstCategorizacionPageClient({
         onCatalogoChanged={() => router.refresh()}
       />
 
-      <GestionarEstPorProdLtsConversionModal
-        open={modalLtsOpen}
-        onOpenChange={setModalLtsOpen}
-        itemsIniciales={ltsConversionesCatalogo}
+      <GestionarEstPorProdUnPresentacionModal
+        open={modalUnidadesOpen}
+        onOpenChange={setModalUnidadesOpen}
+        itemsIniciales={unidadesCatalogo}
+        esEditor={esEditor}
+        onCatalogoChanged={() => router.refresh()}
+      />
+
+      <GestionarEstPorProdPresentacionModal
+        open={modalPresentacionOpen}
+        onOpenChange={setModalPresentacionOpen}
+        itemsIniciales={presentacionesCatalogo}
+        unidades={unidadesCatalogo}
         esEditor={esEditor}
         onCatalogoChanged={() => router.refresh()}
       />
