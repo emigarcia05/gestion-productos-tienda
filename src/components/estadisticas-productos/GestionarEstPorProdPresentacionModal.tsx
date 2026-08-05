@@ -70,7 +70,6 @@ export default function GestionarEstPorProdPresentacionModal({
   const [editingItem, setEditingItem] = useState<EstPorProdPresentacionItem | null>(
     null
   );
-  const [formTexto, setFormTexto] = useState("");
   const [formUnidadMedidaId, setFormUnidadMedidaId] = useState("");
   const [formPresentacionNumerica, setFormPresentacionNumerica] = useState("");
   const [formConversionAUnidadId, setFormConversionAUnidadId] = useState("");
@@ -106,7 +105,6 @@ export default function GestionarEstPorProdPresentacionModal({
     setBusqueda("");
     setFormOpen(false);
     setEditingItem(null);
-    setFormTexto("");
     setFormUnidadMedidaId("");
     setFormPresentacionNumerica("");
     setFormConversionAUnidadId("");
@@ -132,7 +130,6 @@ export default function GestionarEstPorProdPresentacionModal({
 
   function resetForm() {
     setEditingItem(null);
-    setFormTexto("");
     setFormUnidadMedidaId("");
     setFormPresentacionNumerica("");
     setFormConversionAUnidadId("");
@@ -148,7 +145,6 @@ export default function GestionarEstPorProdPresentacionModal({
   function abrirEditar(item: EstPorProdPresentacionItem) {
     if (!esEditor || pending || sinUnidades) return;
     setEditingItem(item);
-    setFormTexto(item.texto);
     setFormUnidadMedidaId(item.unidadMedidaId);
     setFormPresentacionNumerica(formatoNumeroInput(item.presentacionNumerica));
     setFormConversionAUnidadId(item.conversionAUnidadId);
@@ -159,7 +155,6 @@ export default function GestionarEstPorProdPresentacionModal({
   }
 
   const formValido =
-    formTexto.trim().length > 0 &&
     formUnidadMedidaId.length > 0 &&
     formPresentacionNumerica.trim().length > 0 &&
     formConversionAUnidadId.length > 0 &&
@@ -170,7 +165,6 @@ export default function GestionarEstPorProdPresentacionModal({
     setPending(true);
     try {
       const payload = {
-        texto: formTexto,
         unidadMedidaId: formUnidadMedidaId,
         presentacionNumerica: formPresentacionNumerica,
         conversionAUnidadId: formConversionAUnidadId,
@@ -373,16 +367,6 @@ export default function GestionarEstPorProdPresentacionModal({
         >
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
-              <ModalMicroLabel>Texto</ModalMicroLabel>
-              <Input
-                value={formTexto}
-                onChange={(e) => setFormTexto(e.target.value)}
-                placeholder="Ej. 440 CC (se guarda en mayúsculas)"
-                disabled={pending}
-                autoFocus
-              />
-            </div>
-            <div className="flex flex-col gap-1">
               <ModalMicroLabel>Unidad medida</ModalMicroLabel>
               <Select
                 value={formUnidadMedidaId || undefined}
@@ -414,6 +398,7 @@ export default function GestionarEstPorProdPresentacionModal({
                 placeholder="Ej. 0,44"
                 inputMode="decimal"
                 disabled={pending}
+                autoFocus
               />
             </div>
             <div className="flex flex-col gap-1">

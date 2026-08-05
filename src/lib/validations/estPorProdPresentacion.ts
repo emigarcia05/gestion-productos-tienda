@@ -1,11 +1,10 @@
 import { z } from "zod";
 import { prismaCuidSchema } from "@/lib/validations/common";
 
-const textoSchema = z
-  .string()
-  .trim()
-  .min(1, "Ingresá el texto a buscar en la descripción.")
-  .max(200, "El texto es demasiado largo.");
+/**
+ * Validación de filas de `est_por_prod_presentacion`.
+ * `texto` se deriva en el servicio (presentacion_numerica + unidad medida) y no se pide al cliente.
+ */
 
 /** Acepta número o string con coma/punto decimal (p. ej. «0,4» / «0.4»). */
 function parseNumeroPresentacion(value: unknown): unknown {
@@ -27,7 +26,6 @@ const numeroPresentacionSchema = z.preprocess(
 );
 
 export const crearEstPorProdPresentacionSchema = z.object({
-  texto: textoSchema,
   unidadMedidaId: prismaCuidSchema,
   presentacionNumerica: numeroPresentacionSchema,
   conversionAUnidadId: prismaCuidSchema,
@@ -36,7 +34,6 @@ export const crearEstPorProdPresentacionSchema = z.object({
 
 export const editarEstPorProdPresentacionSchema = z.object({
   id: prismaCuidSchema,
-  texto: textoSchema,
   unidadMedidaId: prismaCuidSchema,
   presentacionNumerica: numeroPresentacionSchema,
   conversionAUnidadId: prismaCuidSchema,

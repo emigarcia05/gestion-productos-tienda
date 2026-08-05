@@ -5,6 +5,7 @@ import type {
   EstPorProdPosicionUnidad,
   EstPorProdUnPresentacionItem,
 } from "@/lib/estPorProdUnPresentacion";
+import { formatearPresentacionConUnidad } from "@/lib/estPorProdUnPresentacion";
 import type {
   CrearEstPorProdPresentacionInput,
   EditarEstPorProdPresentacionInput,
@@ -103,6 +104,33 @@ async function unidadesExisten(
   return count === ids.size;
 }
 
+/**
+ * `texto` de match = presentación numérica + unidad de medida (prefijo/sufijo), en MAYÚSCULAS.
+ * No lo envía el cliente; se recalcula en create/update.
+ */
+async function derivarTextoPresentacion(
+  presentacionNumerica: number,
+  unidadMedidaId: string
+): Promise<{ ok: true; texto: string } | { ok: false; error: string }> {
+  const unidad = await prisma.estPorProdUnPresentacion.findUnique({
+    where: { id: unidadMedidaId },
+    select: { unidad: true, posicionUnidad: true },
+  });
+  if (!unidad) {
+    return { ok: false, error: "Seleccioná una unidad de medida válida." };
+  }
+  const texto = normalizarTexto(
+    formatearPresentacionConUnidad(presentacionNumerica, {
+      unidad: unidad.unidad,
+      posicionUnidad: unidad.posicionUnidad as EstPorProdPosicionUnidad,
+    })
+  );
+  if (!texto) {
+    return { ok: false, error: "No se pudo generar el texto de la presentación." };
+  }
+  return { ok: true, texto };
+}
+
 export async function listarEstPorProdPresentaciones(): Promise<
   EstPorProdPresentacionItem[]
 > {
@@ -124,17 +152,20 @@ export async function listarEstPorProdPresentaciones(): Promise<
 export async function crearEstPorProdPresentacion(
   input: CrearEstPorProdPresentacionInput
 ): Promise<ServiceResult<EstPorProdPresentacionItem>> {
-  const texto = normalizarTexto(input.texto);
-  if (!texto) {
-    return { success: false, error: "El texto no puede quedar vacío." };
-  }
   if (!(await unidadesExisten(input.unidadMedidaId, input.conversionAUnidadId))) {
     return { success: false, error: "Seleccioná unidades de presentación válidas." };
+  }
+  const derivado = await derivarTextoPresentacion(
+    input.presentacionNumerica,
+    input.unidadMedidaId
+  );
+  if (!derivado.ok) {
+    return { success: false, error: derivado.error };
   }
   try {
     const created = await prisma.estPorProdPresentacion.create({
       data: {
-        texto,
+        texto: derivado.texto,
         unidadMedidaId: input.unidadMedidaId,
         presentacionNumerica: new Prisma.Decimal(input.presentacionNumerica),
         conversionAUnidadId: input.conversionAUnidadId,
@@ -156,18 +187,21 @@ export async function crearEstPorProdPresentacion(
 export async function editarEstPorProdPresentacion(
   input: EditarEstPorProdPresentacionInput
 ): Promise<ServiceResult<EstPorProdPresentacionItem>> {
-  const texto = normalizarTexto(input.texto);
-  if (!texto) {
-    return { success: false, error: "El texto no puede quedar vacío." };
-  }
   if (!(await unidadesExisten(input.unidadMedidaId, input.conversionAUnidadId))) {
     return { success: false, error: "Seleccioná unidades de presentación válidas." };
+  }
+  const derivado = await derivarTextoPresentacion(
+    input.presentacionNumerica,
+    input.unidadMedidaId
+  );
+  if (!derivado.ok) {
+    return { success: false, error: derivado.error };
   }
   try {
     const updated = await prisma.estPorProdPresentacion.update({
       where: { id: input.id },
       data: {
-        texto,
+        texto: derivado.texto,
         unidadMedidaId: input.unidadMedidaId,
         presentacionNumerica: new Prisma.Decimal(input.presentacionNumerica),
         conversionAUnidadId: input.conversionAUnidadId,

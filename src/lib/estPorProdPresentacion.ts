@@ -5,7 +5,7 @@ import { formatearPresentacionConUnidad } from "@/lib/estPorProdUnPresentacion";
 /** Ítem del catálogo `est_por_prod_presentacion`. */
 export type EstPorProdPresentacionItem = {
   id: string;
-  /** Texto en MAYÚSCULAS a buscar en la descripción (p. ej. «440 CC»). */
+  /** Texto en MAYÚSCULAS a buscar en la descripción (derivado de numérica + unidad). */
   texto: string;
   unidadMedidaId: string;
   presentacionNumerica: number;
