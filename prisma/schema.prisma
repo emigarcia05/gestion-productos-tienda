@@ -226,6 +226,12 @@ model Sucursal {
    * Independiente de `centro_costo`: una sucursal puede ser centro de costo sin generar balance.
    */
   generaBalance  Boolean  @default(false) @map("genera_balance")
+  /**
+   * Si la sucursal aparece en Estadísticas Productos · Carga de Datos
+   * (columnas de la grilla periodo × sucursal). Independiente de `deposito`
+   * y de `genera_balance`. Default `false` (opt-in); se gestiona por seed / UPDATE en DB.
+   */
+  generaEst      Boolean  @default(false) @map("genera_est")
   idDux          String?  @map("id_dux")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -498,7 +504,7 @@ model FinBalVtas {
 
 /**
  * Estadísticas de ventas en unidades por producto y sucursal (`est_por_prod`).
- * La sucursal debe existir en `global_sucursales` con `deposito` no nulo (validado en servicio).
+ * La sucursal debe existir en `global_sucursales` con `genera_est = true` (validado en servicio).
  * `cod_tienda` referencia `prod_tienda.cod_tienda` (código numérico DUX importado como texto).
  */
 model EstPorProd {

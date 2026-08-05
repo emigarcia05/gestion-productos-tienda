@@ -4,7 +4,7 @@ import type {
   EstPorProdCeldaCarga,
   EstPorProdItem,
   ImportarEstPorProdResultado,
-  SucursalConDepositoOption,
+  SucursalEstOption,
 } from "@/lib/estPorProdTypes";
 import type { ImportarEstPorProdInput } from "@/lib/validations/estPorProd";
 import type { ServiceResult } from "@/types";
@@ -13,7 +13,7 @@ export type {
   EstPorProdCeldaCarga,
   EstPorProdItem,
   ImportarEstPorProdResultado,
-  SucursalConDepositoOption,
+  SucursalEstOption,
 } from "@/lib/estPorProdTypes";
 
 const IMPORT_UPSERT_CHUNK = 100;
@@ -59,11 +59,11 @@ const estPorProdInclude = {
   producto: { select: { codTienda: true, descripcionTienda: true } },
 } as const;
 
-/** Sucursales elegibles: `deposito` no nulo (regla de negocio del módulo). */
-export async function listarSucursalesConDepositoParaEstPorProd(): Promise<SucursalConDepositoOption[]> {
+/** Sucursales elegibles para Carga de Datos: `genera_est = true`. */
+export async function listarSucursalesParaEstPorProd(): Promise<SucursalEstOption[]> {
   try {
     const rows = await prisma.sucursal.findMany({
-      where: { deposito: { not: null } },
+      where: { generaEst: true },
       select: { id: true, nombre: true },
       orderBy: [{ nombre: "asc" }],
     });
@@ -72,7 +72,7 @@ export async function listarSucursalesConDepositoParaEstPorProd(): Promise<Sucur
       nombre: r.nombre.toLocaleUpperCase("es"),
     }));
   } catch (e: unknown) {
-    console.error("[estPorProd.service] listarSucursalesConDepositoParaEstPorProd:", e);
+    console.error("[estPorProd.service] listarSucursalesParaEstPorProd:", e);
     return [];
   }
 }
@@ -109,12 +109,12 @@ export async function listarEstPorProdCeldasCargadas(): Promise<EstPorProdCeldaC
   }
 }
 
-async function sucursalTieneDeposito(sucursalId: string): Promise<boolean> {
+async function sucursalGeneraEst(sucursalId: string): Promise<boolean> {
   const s = await prisma.sucursal.findUnique({
     where: { id: sucursalId },
-    select: { deposito: true },
+    select: { generaEst: true },
   });
-  return s?.deposito != null && s.deposito.trim() !== "";
+  return s?.generaEst === true;
 }
 
 export interface EstPorProdPeriodoExistente {
@@ -197,10 +197,10 @@ export async function eliminarEstPorProdPorPeriodo(
 export async function importarEstPorProd(
   input: ImportarEstPorProdInput
 ): Promise<ServiceResult<ImportarEstPorProdResultado>> {
-  if (!(await sucursalTieneDeposito(input.sucursalId))) {
+  if (!(await sucursalGeneraEst(input.sucursalId))) {
     return {
       success: false,
-      error: "La sucursal no existe o no tiene depósito configurado.",
+      error: "La sucursal no existe o no tiene genera_est habilitado.",
     };
   }
 

@@ -23,7 +23,7 @@ import {
 } from "@/lib/estPorProdPeriodo";
 import type {
   EstPorProdCeldaCarga,
-  SucursalConDepositoOption,
+  SucursalEstOption,
 } from "@/lib/estPorProdTypes";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -33,7 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 
 interface Props {
-  sucursales: SucursalConDepositoOption[];
+  sucursales: SucursalEstOption[];
   celdas: EstPorProdCeldaCarga[];
   esEditor: boolean;
   mesActual: number;
@@ -131,7 +131,7 @@ export default function EstPorProdPageClient({
                   {sucursales.length === 0 ? (
                     <EmptyTableRow
                       colSpan={colSpan}
-                      message="No hay sucursales con depósito configurado."
+                      message="No hay sucursales con genera_est habilitado."
                     />
                   ) : periodos.length === 0 ? (
                     <EmptyTableRow

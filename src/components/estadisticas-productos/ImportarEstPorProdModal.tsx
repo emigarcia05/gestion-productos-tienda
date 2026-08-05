@@ -44,7 +44,7 @@ import type { ImportarEstPorProdResultado } from "@/lib/estPorProdTypes";
 import { cn } from "@/lib/utils";
 import { etiquetaPeriodoEstPorProd } from "@/lib/estPorProdPeriodo";
 import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
-import type { SucursalConDepositoOption } from "@/lib/estPorProdTypes";
+import type { SucursalEstOption } from "@/lib/estPorProdTypes";
 
 const MESES: { valor: number; etiqueta: string }[] = [
   { valor: 1, etiqueta: "ENERO" },
@@ -74,7 +74,7 @@ const CAMPOS_MAPEO: { value: CampoDestinoEstPorProd; label: string; required: bo
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  sucursales: SucursalConDepositoOption[];
+  sucursales: SucursalEstOption[];
   defaultMes: number;
   defaultAnio: number;
   /** Si se define, fija mes/año/sucursal desde la celda de la grilla (solo lectura). */

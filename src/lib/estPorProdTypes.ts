@@ -1,6 +1,7 @@
 /** Tipos compartidos UI ↔ servidor para estadísticas por producto (`est_por_prod`). */
 
-export interface SucursalConDepositoOption {
+/** Sucursal con `genera_est = true` (columnas de Carga de Datos). */
+export interface SucursalEstOption {
   id: string;
   nombre: string;
 }

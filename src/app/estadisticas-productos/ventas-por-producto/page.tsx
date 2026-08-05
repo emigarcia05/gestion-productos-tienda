@@ -5,7 +5,7 @@ import { getRol } from "@/lib/sesion";
 import { mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance.service";
 import {
   listarEstPorProdCeldasCargadas,
-  listarSucursalesConDepositoParaEstPorProd,
+  listarSucursalesParaEstPorProd,
 } from "@/services/estPorProd.service";
 import EstPorProdPageClient from "@/components/estadisticas-productos/EstPorProdPageClient";
 
@@ -20,7 +20,7 @@ export default async function EstadisticasProductosPage() {
   const esEditor = rol === "editor";
   const { mes: mesActual, anio: anioActual } = mesAnioCalendarioArgentina();
   const [sucursales, celdas] = await Promise.all([
-    listarSucursalesConDepositoParaEstPorProd(),
+    listarSucursalesParaEstPorProd(),
     listarEstPorProdCeldasCargadas(),
   ]);
 
