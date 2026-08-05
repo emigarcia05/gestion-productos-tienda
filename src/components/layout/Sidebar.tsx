@@ -422,6 +422,12 @@ const ESTADISTICAS_MODULES: NavModule[] = [
         icon: <Tags className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.estadisticasProductos.acceso,
       },
+      {
+        href: ESTADISTICAS_PRODUCTOS_ROUTES.estadisticasVtas,
+        label: "Estadísticas Vtas",
+        icon: <LineChart className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.estadisticasProductos.acceso,
+      },
     ],
   },
 ];
@@ -491,6 +497,9 @@ function isSubmoduleActive(pathname: string, href: string): boolean {
   }
   if (href === ESTADISTICAS_PRODUCTOS_ROUTES.categorizacion) {
     return pathname === ESTADISTICAS_PRODUCTOS_ROUTES.categorizacion;
+  }
+  if (href === ESTADISTICAS_PRODUCTOS_ROUTES.estadisticasVtas) {
+    return pathname === ESTADISTICAS_PRODUCTOS_ROUTES.estadisticasVtas;
   }
   return pathname === href;
 }

@@ -27,6 +27,25 @@ export function etiquetaPeriodoCortoEstPorProd(mes: number, anio: number): strin
   return `${etiquetaMesEstPorProd(mes)} ${anio}`;
 }
 
+/** Clave estable para selects de periodo (`2026-05`). */
+export function clavePeriodoEstPorProd(mes: number, anio: number): string {
+  return `${anio}-${String(mes).padStart(2, "0")}`;
+}
+
+/** Parsea `clavePeriodoEstPorProd`; null si inválida. */
+export function parseClavePeriodoEstPorProd(
+  clave: string
+): EstPorProdPeriodo | null {
+  const m = /^(\d{4})-(\d{2})$/.exec(clave.trim());
+  if (!m) return null;
+  const anio = Number(m[1]);
+  const mes = Number(m[2]);
+  if (!Number.isInteger(anio) || !Number.isInteger(mes) || mes < 1 || mes > 12) {
+    return null;
+  }
+  return { mes, anio };
+}
+
 /** Ej.: `GUAYMALLÉN - ENERO - 2026` */
 export function etiquetaPeriodoEstPorProd(
   nombreSucursal: string,
