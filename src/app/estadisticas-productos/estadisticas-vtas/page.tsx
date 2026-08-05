@@ -3,8 +3,11 @@ import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance.service";
-import { listarProdTiendaCategorizacion } from "@/services/estCategorizacion.service";
 import { listarSucursalesParaEstPorProd } from "@/services/estPorProd.service";
+import {
+  listarProductosEstVtas,
+  listarVentasEstVtas,
+} from "@/services/estVtas.service";
 import EstVtasPageClient from "@/components/estadisticas-productos/EstVtasPageClient";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +19,9 @@ export default async function EstVtasPage() {
   }
 
   const { mes: mesActual, anio: anioActual } = mesAnioCalendarioArgentina();
-  const [filas, sucursales] = await Promise.all([
-    listarProdTiendaCategorizacion(),
+  const [filas, ventas, sucursales] = await Promise.all([
+    listarProductosEstVtas(),
+    listarVentasEstVtas(),
     listarSucursalesParaEstPorProd(),
   ]);
 
@@ -25,6 +29,7 @@ export default async function EstVtasPage() {
     <div className="area-page-shell">
       <EstVtasPageClient
         filas={filas}
+        ventas={ventas}
         sucursales={sucursales}
         mesActual={mesActual}
         anioActual={anioActual}

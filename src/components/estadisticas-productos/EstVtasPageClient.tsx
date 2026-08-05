@@ -20,8 +20,14 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import EstVtasGraficoVarianteBarras from "@/components/estadisticas-productos/EstVtasGraficoVarianteBarras";
 import { matchByMultiTerm } from "@/lib/busqueda";
-import type { EstCategorizacionItem } from "@/lib/estCategorizacionTypes";
+import { agregarUnidadesPorVariante } from "@/lib/estVtasAgregar";
+import type {
+  EstVtasModoUnidad,
+  EstVtasProductoItem,
+  EstVtasVentaItem,
+} from "@/lib/estVtasTypes";
 import type { SucursalEstOption } from "@/lib/estPorProdTypes";
 import {
   clavePeriodoEstPorProd,
@@ -36,13 +42,11 @@ const FILTRO_SIN_COLOR = "__SIN_COLOR__";
 const FILTRO_SIN_TERMINACION = "__SIN_TERMINACION__";
 const FILTRO_SIN_PRESENTACION = "__SIN_PRESENTACION__";
 
-/** Modo de agregación para gráficos (próximo paso). */
-export type EstVtasModoUnidad = "unidad" | "suma";
-
 const FOCUS_KEY = "filtros-est-vtas-focus";
 
 interface Props {
-  filas: EstCategorizacionItem[];
+  filas: EstVtasProductoItem[];
+  ventas: EstVtasVentaItem[];
   sucursales: SucursalEstOption[];
   mesActual: number;
   anioActual: number;
@@ -56,6 +60,7 @@ function opcionesOrdenadas(valores: string[]): string[] {
 
 export default function EstVtasPageClient({
   filas,
+  ventas,
   sucursales,
   mesActual,
   anioActual,
@@ -170,6 +175,18 @@ export default function EstVtasPageClient({
     filtPresentacion,
     qDebounced,
   ]);
+
+  const barrasVariante = useMemo(
+    () =>
+      agregarUnidadesPorVariante({
+        productosFiltrados: filasFiltradas,
+        ventas,
+        sucursalId: filtSucursalId,
+        fechaClave: filtFecha,
+        modoUnidad: filtUnidad,
+      }),
+    [filasFiltradas, ventas, filtSucursalId, filtFecha, filtUnidad]
+  );
 
   function limpiarFiltros() {
     setFiltMarca(FILTRO_TODOS);
@@ -500,12 +517,12 @@ export default function EstVtasPageClient({
         </div>
       }
     >
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <section className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-md border border-border bg-card p-8">
-          <p className="text-sm text-muted-foreground">
-            Los gráficos de ventas se agregarán en un próximo paso.
-          </p>
-        </section>
+      <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
+        <div className="min-h-0 min-w-0 flex-1 rounded-md border border-border border-dashed bg-card/40" />
+        <EstVtasGraficoVarianteBarras
+          barras={barrasVariante}
+          className="h-full max-h-full w-[min(28rem,40%)] shrink-0 self-start"
+        />
       </div>
     </ClassicFilteredTableLayout>
   );
