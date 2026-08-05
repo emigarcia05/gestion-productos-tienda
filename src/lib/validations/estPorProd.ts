@@ -15,7 +15,7 @@ export const estPorProdSucursalIdSchema = z
   .min(1, "Seleccioná una sucursal.")
   .max(64, "ID de sucursal inválido.");
 
-/** Periodo válido para Carga de Datos (desde Enero 2026). */
+/** Periodo válido para Carga de Datos (desde Mayo 2026). */
 export const estPorProdMesAnioSchema = z.object({
   mes: z.coerce.number().int().min(1).max(12),
   anio: z.coerce
@@ -28,7 +28,7 @@ export const estPorProdMesAnioSchema = z.object({
   if (val.anio < anio || (val.anio === anio && val.mes < mes)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "El periodo debe ser desde Enero 2026 en adelante.",
+      message: "El periodo debe ser desde Mayo 2026 en adelante.",
       path: ["mes"],
     });
   }
