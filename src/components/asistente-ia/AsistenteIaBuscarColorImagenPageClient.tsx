@@ -48,6 +48,8 @@ interface Props {
   catalogoInicial: ProdIaDisenoPrompItem[];
   catalogosDiseno: AsistenteIaDisenarColoresCatalogos;
   esEditor: boolean;
+  /** Vista inicial al entrar desde sidebar (evita hub). */
+  initialVista?: VistaActiva;
 }
 
 export default function AsistenteIaBuscarColorImagenPageClient({
@@ -56,9 +58,10 @@ export default function AsistenteIaBuscarColorImagenPageClient({
   catalogoInicial,
   catalogosDiseno,
   esEditor,
+  initialVista = "hub",
 }: Props) {
   const router = useRouter();
-  const [vista, setVista] = useState<VistaActiva>("hub");
+  const [vista, setVista] = useState<VistaActiva>(initialVista);
   const [gestionarOpen, setGestionarOpen] = useState(false);
   const [gestionDisenoOpen, setGestionDisenoOpen] = useState(false);
   const [configDisenar, setConfigDisenar] =

@@ -16,7 +16,8 @@ function legacyGestionProductosRedirects(): { source: string; destination: strin
     { source: "/gestion-productos/proveedores/sugeridos", destination: R.ayudaVendedor.pxVenta.pxVtaSugerido, permanent: true },
     { source: "/gestion-productos/tienda/calc-tintometrico", destination: R.ayudaVendedor.pxVenta.pxTintometrico, permanent: true },
     { source: "/gestion-productos/tienda/calc-litros", destination: R.ayudaVendedor.calcLitros, permanent: true },
-    { source: "/gestion-productos/procesos", destination: R.ayudaVendedor.procesos, permanent: true },
+    { source: "/gestion-productos/procesos", destination: R.defaultEntry, permanent: true },
+    { source: "/gestion-productos/ayuda-vendedor/procesos", destination: R.defaultEntry, permanent: true },
     { source: "/gestion-productos/cargar-gasto", destination: R.ayudaVendedor.cargarGasto, permanent: true },
     { source: "/gestion-productos/tienda/control-stock", destination: R.ayudaVendedor.controlStock, permanent: true },
     {
@@ -60,7 +61,6 @@ function canonicalGestionProductosRewrites(): { source: string; destination: str
     { source: R.ayudaVendedor.pxVenta.pxVtaSugerido, destination: I.ayudaVendedor.pxVenta.pxVtaSugerido },
     { source: R.ayudaVendedor.pxVenta.pxTintometrico, destination: I.ayudaVendedor.pxVenta.pxTintometrico },
     { source: R.ayudaVendedor.calcLitros, destination: I.ayudaVendedor.calcLitros },
-    { source: R.ayudaVendedor.procesos, destination: I.ayudaVendedor.procesos },
     { source: R.ayudaVendedor.cargarGasto, destination: I.ayudaVendedor.cargarGasto },
     { source: R.ayudaVendedor.controlStock, destination: I.ayudaVendedor.controlStock },
     {
@@ -82,6 +82,10 @@ function canonicalGestionProductosRewrites(): { source: string; destination: str
     {
       source: R.asistenteIa.buscarColorImagen,
       destination: I.asistenteIa.buscarColorImagen,
+    },
+    {
+      source: R.asistenteIa.disenarColores,
+      destination: I.asistenteIa.disenarColores,
     },
   ];
 }
@@ -222,7 +226,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/procesos",
-        destination: R.ayudaVendedor.procesos,
+        destination: R.defaultEntry,
         permanent: true,
       },
       {

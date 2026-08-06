@@ -1,6 +1,6 @@
 /**
  * URLs canónicas de Vendedor / Análisis de Precios alineadas a sidebar:
- * - Pedido Mercaderia, Ayuda Vendedor, Asistente IA → área Vendedor
+ * - Pedir Merc., Asistencia Precios, Calcular Lts, Cargar Gastos, Asistente IA → área Vendedor
  * - Análisis de Precios → área Administración (id `finanzas`; URLs siguen bajo `/gestion-productos/analisis-precios/...`)
  * área → módulo → agrupador → submódulo.
  * Las rutas internas (`src/app/pedidos`, `proveedores`, …) se sirven vía rewrites en `next.config.ts`.
@@ -25,8 +25,8 @@ export const GP_ROUTES = {
       pxTintometrico: `${GP}/ayuda-vendedor/px-venta/px-tintometrico`,
     },
     calcLitros: `${GP}/ayuda-vendedor/calc-litros`,
-    procesos: `${GP}/ayuda-vendedor/procesos`,
     cargarGasto: `${GP}/ayuda-vendedor/cargar-gasto`,
+    /** Sin entrada en sidebar Vendedor; ruta canónica conservada. */
     controlStock: `${GP}/ayuda-vendedor/control-stock`,
   },
   analisisPrecios: {
@@ -47,6 +47,7 @@ export const GP_ROUTES = {
   },
   asistenteIa: {
     buscarColorImagen: `${GP}/asistente-ia/buscar-color-imagen`,
+    disenarColores: `${GP}/asistente-ia/disenar-colores`,
   },
 } as const;
 
@@ -67,7 +68,6 @@ export const GP_INTERNAL = {
       pxTintometrico: "/tienda/tintometrico",
     },
     calcLitros: "/tienda/litros",
-    procesos: "/procesos",
     cargarGasto: "/cargar-gasto",
     controlStock: "/stock",
   },
@@ -89,6 +89,7 @@ export const GP_INTERNAL = {
   },
   asistenteIa: {
     buscarColorImagen: "/asistente-ia/buscar-color-imagen",
+    disenarColores: "/asistente-ia/disenar-colores",
   },
   /** Legacy: grilla productos por proveedor (sin entrada en sidebar). */
   proveedoresLegacy: "/proveedores",
@@ -127,7 +128,6 @@ const GP_ROUTE_ALIASES: Record<string, readonly string[]> = {
     "/tienda/tinto-lts",
   ],
   [GP_ROUTES.ayudaVendedor.calcLitros]: ["/gestion-productos/tienda/calc-litros", "/tienda/litros"],
-  [GP_ROUTES.ayudaVendedor.procesos]: ["/gestion-productos/procesos", "/procesos"],
   [GP_ROUTES.ayudaVendedor.cargarGasto]: ["/gestion-productos/cargar-gasto", "/cargar-gasto"],
   [GP_ROUTES.ayudaVendedor.controlStock]: [
     "/gestion-productos/tienda/control-stock",
@@ -173,6 +173,9 @@ const GP_ROUTE_ALIASES: Record<string, readonly string[]> = {
   [GP_ROUTES.asistenteIa.buscarColorImagen]: [
     "/asistente-ia/buscar-color-imagen",
   ],
+  [GP_ROUTES.asistenteIa.disenarColores]: [
+    "/asistente-ia/disenar-colores",
+  ],
 };
 
 const PEDIDO_MERCADERIA_PREFIXES = [
@@ -184,21 +187,33 @@ const PEDIDO_MERCADERIA_PREFIXES = [
   "/pedidos",
 ] as const;
 
-const AYUDA_VENDEDOR_PREFIXES = [
-  `${GP}/ayuda-vendedor`,
+const ASISTENCIA_PRECIOS_PREFIXES = [
+  GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido,
+  GP_ROUTES.ayudaVendedor.pxVenta.pxTintometrico,
+  `${GP}/ayuda-vendedor/px-venta`,
   "/gestion-productos/proveedores/sugeridos",
   "/proveedores/sugeridos",
   "/gestion-productos/tienda/calc-tintometrico",
-  "/gestion-productos/tienda/calc-litros",
-  "/gestion-productos/tienda/control-stock",
-  "/gestion-productos/procesos",
-  "/gestion-productos/cargar-gasto",
   "/tienda/tintometrico",
-  "/tienda/litros",
   "/tienda/tinto-lts",
-  "/stock",
-  "/procesos",
+] as const;
+
+const CALCULAR_LTS_PREFIXES = [
+  GP_ROUTES.ayudaVendedor.calcLitros,
+  "/gestion-productos/tienda/calc-litros",
+  "/tienda/litros",
+] as const;
+
+const CARGAR_GASTOS_PREFIXES = [
+  GP_ROUTES.ayudaVendedor.cargarGasto,
+  "/gestion-productos/cargar-gasto",
   "/cargar-gasto",
+] as const;
+
+const CONTROL_STOCK_PREFIXES = [
+  GP_ROUTES.ayudaVendedor.controlStock,
+  "/gestion-productos/tienda/control-stock",
+  "/stock",
 ] as const;
 
 const ANALISIS_PRECIOS_PREFIXES = [
@@ -226,6 +241,7 @@ const ANALISIS_PRECIOS_PREFIXES = [
 const ASISTENTE_IA_PREFIXES = [
   `${GP}/asistente-ia`,
   GP_ROUTES.asistenteIa.buscarColorImagen,
+  GP_ROUTES.asistenteIa.disenarColores,
   "/asistente-ia",
 ] as const;
 
@@ -261,7 +277,10 @@ export function isGpRouteActive(pathname: string, canonicalHref: string): boolea
 
 export type GpSidebarModuleId =
   | "pedidos"
-  | "ayuda-vendedor"
+  | "asistencia-precios"
+  | "calcular-lts"
+  | "cargar-gastos"
+  | "control-stock"
   | "analisis-precios"
   | "asistente-ia";
 
@@ -269,8 +288,17 @@ export function getGpSidebarModule(pathname: string): GpSidebarModuleId {
   if (PEDIDO_MERCADERIA_PREFIXES.some((p) => pathnameMatchesPrefix(pathname, p))) {
     return "pedidos";
   }
-  if (AYUDA_VENDEDOR_PREFIXES.some((p) => pathnameMatchesPrefix(pathname, p))) {
-    return "ayuda-vendedor";
+  if (ASISTENCIA_PRECIOS_PREFIXES.some((p) => pathnameMatchesPrefix(pathname, p))) {
+    return "asistencia-precios";
+  }
+  if (CALCULAR_LTS_PREFIXES.some((p) => pathnameMatchesPrefix(pathname, p))) {
+    return "calcular-lts";
+  }
+  if (CARGAR_GASTOS_PREFIXES.some((p) => pathnameMatchesPrefix(pathname, p))) {
+    return "cargar-gastos";
+  }
+  if (CONTROL_STOCK_PREFIXES.some((p) => pathnameMatchesPrefix(pathname, p))) {
+    return "control-stock";
   }
   if (ANALISIS_PRECIOS_PREFIXES.some((p) => pathnameMatchesPrefix(pathname, p))) {
     return "analisis-precios";

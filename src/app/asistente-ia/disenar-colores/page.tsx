@@ -11,7 +11,7 @@ import { listarProdIaDisenoCatalogoNombre } from "@/services/prodIaDisenoCatalog
 
 export const dynamic = "force-dynamic";
 
-async function loadAsistenteIaPageData() {
+export default async function AsistenteIaDisenarColoresPage() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.asistenteIa.acceso)) {
     redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
@@ -41,34 +41,22 @@ async function loadAsistenteIaPageData() {
     listarProdIaDisenoCatalogoNombre("luz_artificial"),
   ]);
 
-  return {
-    rol,
-    configBuscarCodigo,
-    configDisenarColores,
-    catalogo,
-    catalogosDiseno: {
-      modosDiseno,
-      superficies,
-      objetivos,
-      estilos,
-      combinar,
-      luzNatural,
-      luzArtificial,
-    },
-  };
-}
-
-export default async function AsistenteIaBuscarColorImagenPage() {
-  const data = await loadAsistenteIaPageData();
-
   return (
     <AsistenteIaBuscarColorImagenPageClient
-      configBuscarCodigo={data.configBuscarCodigo}
-      configDisenarColores={data.configDisenarColores}
-      catalogoInicial={data.catalogo}
-      catalogosDiseno={data.catalogosDiseno}
-      esEditor={data.rol === "editor"}
-      initialVista="buscar-codigo"
+      configBuscarCodigo={configBuscarCodigo}
+      configDisenarColores={configDisenarColores}
+      catalogoInicial={catalogo}
+      catalogosDiseno={{
+        modosDiseno,
+        superficies,
+        objetivos,
+        estilos,
+        combinar,
+        luzNatural,
+        luzArtificial,
+      }}
+      esEditor={rol === "editor"}
+      initialVista="disenar-colores"
     />
   );
 }

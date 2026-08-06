@@ -100,11 +100,6 @@ export const PERMISOS = {
     acceso: { simple: true, editor: true },
   },
 
-  // ─── Módulo /gestion-productos/procesos (guías post-exportación Excel → DUX) ─
-  procesos: {
-    acceso: { simple: true, editor: true },
-  },
-
   // ─── Ayuda Vendedor — Cargar Gasto (modal Nuevo Gasto Eventual) ───────────
   ayudaVendedor: {
     /** Misma capacidad que **GASTO EVENTUAL** en `/finanzas/balance/gastos`; área Vendedor abierta a `simple`. */

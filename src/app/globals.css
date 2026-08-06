@@ -2157,48 +2157,6 @@ button.tabla-row-btn-filled-brand {
   max-height: 100% !important;
 }
 
-/* Carrete de pasos (ProcesoInstructivoCarrusel): flechas = botones; números = indicadores `<span>`. */
-main button.proceso-paso-nav-flecha {
-  height: 2.25rem !important;
-  min-height: 2.25rem !important;
-  width: 2.25rem !important;
-  min-width: 2.25rem !important;
-  padding: 0 !important;
-  border-radius: 9999px !important;
-  box-shadow: none !important;
-  font-size: var(--text-sm) !important;
-  font-weight: var(--font-weight-semibold) !important;
-  background-color: #0072bb !important;
-  color: #fff !important;
-  border: none !important;
-}
-
-main button.proceso-paso-nav-flecha:hover:not(:disabled) {
-  background-color: color-mix(in srgb, #0072bb 90%, transparent) !important;
-  filter: none !important;
-}
-
-.proceso-paso-nav-numero {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  border: 2px solid #0072bb;
-  background-color: transparent;
-  color: #000;
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
-  line-height: 1;
-}
-
-.proceso-paso-nav-numero--actual {
-  height: 3.375rem !important;
-  min-height: 3.375rem !important;
-  width: 3.375rem !important;
-  min-width: 3.375rem !important;
-  font-size: 1.125rem !important;
-}
-
 /* ─── Título de sección (SectionHeader): diseño global, misma apariencia en todas las rutas ─── */
 .section-header {
   padding: 0.75rem 1.5rem 0;

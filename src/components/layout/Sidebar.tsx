@@ -15,8 +15,6 @@ import {
   Receipt,
   CircleDollarSign,
   ListChecks,
-  LifeBuoy,
-  PackageSearch,
   PackageCheck,
   Megaphone,
   CalendarRange,
@@ -26,6 +24,7 @@ import {
   Palette,
   Sparkles,
   ScanSearch,
+  Paintbrush,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -47,7 +46,12 @@ import SidebarNavDivider from "@/components/layout/SidebarNavDivider";
 
 const iconClass = "h-5 w-5 shrink-0";
 
-type ModuleId = "pedidos" | "ayuda-vendedor" | "asistente-ia";
+type ModuleId =
+  | "pedidos"
+  | "asistencia-precios"
+  | "calcular-lts"
+  | "cargar-gastos"
+  | "asistente-ia";
 type MarketingModuleId = "publicaciones" | "base-multimedia";
 type SidebarModuleId = ModuleId | MarketingModuleId;
 
@@ -75,17 +79,11 @@ type NavModule = {
 const MODULES: NavModule[] = [
   {
     id: "pedidos",
-    label: "PEDIDO MERCADERIA",
+    label: "PEDIR MERC.",
     icon: <ClipboardList className={iconClass} />,
     submodules: [
       {
-        href: GP_ROUTES.pedidoMercaderia.generarPedido,
-        label: "Generar Pedido",
-        icon: <Send className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.pedidos.acceso,
-      },
-      {
-        label: "Conf. Pedido",
+        label: "Cant. Pedida",
         icon: <ListChecks className="h-4 w-4 shrink-0" />,
         children: [
           {
@@ -103,11 +101,17 @@ const MODULES: NavModule[] = [
           },
           {
             href: GP_ROUTES.pedidoMercaderia.confPedido.reposicion,
-            label: "Reposición",
+            label: "Reposicion",
             icon: <RotateCw className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.pedidos.acceso,
           },
         ],
+      },
+      {
+        href: GP_ROUTES.pedidoMercaderia.generarPedido,
+        label: "Generar Pedido",
+        icon: <Send className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.pedidos.acceso,
       },
       {
         href: GP_ROUTES.pedidoMercaderia.recepcionPedido,
@@ -118,53 +122,39 @@ const MODULES: NavModule[] = [
     ],
   },
   {
-    id: "ayuda-vendedor",
-    label: "AYUDA VENDEDOR",
-    icon: <LifeBuoy className={iconClass} />,
+    id: "asistencia-precios",
+    label: "ASISTENCIA PRECIOS",
+    icon: <CircleDollarSign className={iconClass} />,
     submodules: [
       {
-        label: "Px Venta",
-        icon: <CircleDollarSign className="h-4 w-4 shrink-0" />,
-        children: [
-          {
-            href: GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido,
-            label: "Px. Vta. Sugerido",
-            icon: <FileSearch className="h-4 w-4 shrink-0" />,
-            permiso: PERMISOS.proveedores.sugeridos,
-          },
-          {
-            href: GP_ROUTES.ayudaVendedor.pxVenta.pxTintometrico,
-            label: "Px Tintométrico",
-            icon: <Pipette className="h-4 w-4 shrink-0" />,
-            permiso: PERMISOS.tienda.tintoLts,
-          },
-        ],
+        href: GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido,
+        label: "Px Sugeridos",
+        icon: <FileSearch className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.proveedores.sugeridos,
       },
       {
-        href: GP_ROUTES.ayudaVendedor.calcLitros,
-        label: "Calc. Litros",
-        icon: <Droplets className="h-4 w-4 shrink-0" />,
+        href: GP_ROUTES.ayudaVendedor.pxVenta.pxTintometrico,
+        label: "Px Tintométricos",
+        icon: <Pipette className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.tienda.tintoLts,
       },
-      {
-        href: GP_ROUTES.ayudaVendedor.procesos,
-        label: "Procesos",
-        icon: <ListChecks className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.procesos.acceso,
-      },
-      {
-        href: GP_ROUTES.ayudaVendedor.cargarGasto,
-        label: "Cargar Gasto",
-        icon: <Receipt className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.ayudaVendedor.cargarGasto,
-      },
-      {
-        href: GP_ROUTES.ayudaVendedor.controlStock,
-        label: "Control Stock",
-        icon: <PackageSearch className="h-4 w-4 shrink-0" />,
-        permiso: PERMISOS.stock.acceso,
-      },
     ],
+  },
+  {
+    id: "calcular-lts",
+    label: "CALCULAR LTS",
+    icon: <Droplets className={iconClass} />,
+    href: GP_ROUTES.ayudaVendedor.calcLitros,
+    permiso: PERMISOS.tienda.tintoLts,
+    submodules: [],
+  },
+  {
+    id: "cargar-gastos",
+    label: "CARGAR GASTOS",
+    icon: <Receipt className={iconClass} />,
+    href: GP_ROUTES.ayudaVendedor.cargarGasto,
+    permiso: PERMISOS.ayudaVendedor.cargarGasto,
+    submodules: [],
   },
   {
     id: "asistente-ia",
@@ -173,8 +163,14 @@ const MODULES: NavModule[] = [
     submodules: [
       {
         href: GP_ROUTES.asistenteIa.buscarColorImagen,
-        label: "Buscar Código Desde Imagen",
+        label: "Buscar Cód. Imagen",
         icon: <ScanSearch className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.asistenteIa.acceso,
+      },
+      {
+        href: GP_ROUTES.asistenteIa.disenarColores,
+        label: "Diseñar",
+        icon: <Paintbrush className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.asistenteIa.acceso,
       },
     ],
@@ -228,7 +224,7 @@ const MARKETING_MODULES: NavModule[] = [
   },
 ];
 
-function getOpenModule(pathname: string): SidebarModuleId {
+function getOpenModule(pathname: string): SidebarModuleId | null {
   if (pathname.startsWith("/marketing/publicaciones") || pathname === "/marketing") {
     return "publicaciones";
   }
@@ -236,13 +232,14 @@ function getOpenModule(pathname: string): SidebarModuleId {
     return "base-multimedia";
   }
   const gpModule = getGpSidebarModule(pathname);
-  // analisis-precios vive en acordeón Administración; no es módulo del área Vendedor.
-  if (gpModule === "analisis-precios") return "pedidos";
+  if (gpModule === "analisis-precios" || gpModule === "control-stock") {
+    return null;
+  }
   return gpModule;
 }
 
 function isSubmoduleActive(pathname: string, href: string): boolean {
-  if (href.startsWith("/gestion-productos")) {
+  if (href.startsWith("/gestion-productos") || href.startsWith("/asistente-ia")) {
     return isGpRouteActive(pathname, href);
   }
   if (href === MARKETING_ROUTES.publicaciones.calendario) {
