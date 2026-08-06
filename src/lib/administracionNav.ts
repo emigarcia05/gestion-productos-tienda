@@ -1,10 +1,10 @@
 /**
- * Navegación del área **Administración**: 3 pilares en sidebar + desgloses
- * horizontales (flyout por hover).
+ * Navegación del área **Administración**: 3 pilares en sidebar + árbol
+ * de decisiones en acordeón vertical (`AdministracionAccordionNav`).
  *
  * FINANZAS → BALANCE | OPERACIONES → pantallas
  * LISTAS PRECIOS → Vta Por Prod. | ANÁLISIS M.C. → pantallas
- * ESTADÍSTICAS → pantallas (un solo desglose)
+ * ESTADÍSTICAS → pantallas (desglose directo)
  */
 
 import {
@@ -46,7 +46,7 @@ export interface AdmScreenDef {
   permiso: { simple: boolean; editor: boolean };
 }
 
-/** Grupo del primer desglose (abre segundo panel con pantallas). */
+/** Grupo intermedio del acordeón (abre pantallas hijas). */
 export interface AdmGroupDef {
   id: string;
   label: string;
@@ -60,8 +60,8 @@ export interface AdmPillarDef {
   label: string;
   icon: AdmIconId;
   /**
-   * Primer desglose: grupos (abre panel 2) o pantallas directas
-   * (ESTADÍSTICAS: un solo panel).
+   * Primer desglose: grupos (acordeón anidado) o pantallas directas
+   * (ESTADÍSTICAS: hojas bajo el pilar).
    */
   groups?: AdmGroupDef[];
   screens?: AdmScreenDef[];

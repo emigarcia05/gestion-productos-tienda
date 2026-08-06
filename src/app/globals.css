@@ -828,6 +828,17 @@
   }
 
   /**
+   * Separador entre opciones del árbol sidebar (Vendedor / Administración / Marketing).
+   * Empieza en el margen izquierdo del ícono (`px-3` = 0.75rem) y llega al borde derecho del hover.
+   */
+  .sidebar-nav-divider {
+    height: 1px;
+    margin-left: 0.75rem;
+    margin-right: 0.75rem;
+    background-color: color-mix(in oklab, var(--sidebar-foreground) 22%, transparent);
+  }
+
+  /**
    * Tarjeta envoltorio de tabla (shadcn Card + overrides compactos).
    * Combinar con `cn("card-tabla-envoltorio", "flex-1")` cuando la card deba crecer en flex.
    */

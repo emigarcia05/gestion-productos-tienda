@@ -42,7 +42,8 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
 import { GP_ROUTES, getGpSidebarModule, isGpRouteActive } from "@/lib/gestionProductosRoutes";
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
-import AdministracionFlyoutNav from "@/components/layout/AdministracionFlyoutNav";
+import AdministracionAccordionNav from "@/components/layout/AdministracionAccordionNav";
+import SidebarNavDivider from "@/components/layout/SidebarNavDivider";
 
 const iconClass = "h-5 w-5 shrink-0";
 
@@ -235,7 +236,7 @@ function getOpenModule(pathname: string): SidebarModuleId {
     return "base-multimedia";
   }
   const gpModule = getGpSidebarModule(pathname);
-  // analisis-precios vive en flyout Administración; no es módulo accordion del sidebar.
+  // analisis-precios vive en acordeón Administración; no es módulo del área Vendedor.
   if (gpModule === "analisis-precios") return "pedidos";
   return gpModule;
 }
@@ -354,16 +355,18 @@ export default function Sidebar({ rol }: { rol: Rol }) {
     moduleId: SidebarModuleId,
     depth = 0
   ) {
-    return submodules
-      .filter((sub) => submoduleVisible(sub, rol))
-      .map((sub) => {
-        if (!sub.href && sub.children?.length) {
-          const groupKey = submoduleGroupKey(moduleId, sub.label);
-          const isSubOpen = openSubGroups.has(groupKey);
-          const groupActive = isSubmoduleGroupActive(sub, pathname);
-          return (
+    const visible = submodules.filter((sub) => submoduleVisible(sub, rol));
+    return visible.map((sub, index) => {
+      const divider = index > 0 ? <SidebarNavDivider /> : null;
+
+      if (!sub.href && sub.children?.length) {
+        const groupKey = submoduleGroupKey(moduleId, sub.label);
+        const isSubOpen = openSubGroups.has(groupKey);
+        const groupActive = isSubmoduleGroupActive(sub, pathname);
+        return (
+          <div key={groupKey}>
+            {divider}
             <Collapsible
-              key={groupKey}
               open={isSubOpen}
               onOpenChange={(open) => toggleSubGroup(moduleId, groupKey, open)}
               className="group/subcollapsible"
@@ -389,19 +392,22 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className={cn("space-y-0.5 py-0.5", depth === 0 ? "ml-4" : "ml-2")}>
+                <div className={cn("py-0.5", depth === 0 ? "ml-4" : "ml-2")}>
                   {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
                 </div>
               </CollapsibleContent>
             </Collapsible>
-          );
-        }
+          </div>
+        );
+      }
 
-        if (!sub.href) return null;
+      if (!sub.href) return null;
 
-        const active = isSubmoduleActive(pathname, sub.href);
-        return (
-          <div key={sub.href} className="space-y-0.5">
+      const active = isSubmoduleActive(pathname, sub.href);
+      return (
+        <div key={sub.href}>
+          {divider}
+          <div className="space-y-0">
             <Link
               href={sub.href}
               className={cn(
@@ -418,76 +424,83 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             </Link>
 
             {sub.children && sub.children.length > 0 ? (
-              <div className="ml-4 space-y-0.5">
+              <div className="ml-4">
                 {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
               </div>
             ) : null}
           </div>
-        );
-      });
+        </div>
+      );
+    });
   }
 
   return (
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
       <nav className="flex flex-col gap-0.5 px-4 pt-3 pb-4 overflow-y-auto" aria-label="Navegación principal">
         {mainAreaId === "finanzas" ? (
-          <AdministracionFlyoutNav rol={rol} />
+          <AdministracionAccordionNav rol={rol} />
         ) : visibleModules.length > 0 ? (
-          visibleModules.map((module) => {
+          visibleModules.map((module, moduleIndex) => {
+            const moduleDivider = moduleIndex > 0 ? <SidebarNavDivider /> : null;
+
             if (module.href) {
               const active = isSubmoduleActive(pathname, module.href);
               return (
-                <Link
-                  key={module.id}
-                  href={module.href}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                    "[&>span:first-child_svg]:text-sidebar-foreground",
-                    active
-                      ? "bg-sidebar-accent"
-                      : "hover:bg-sidebar-accent"
-                  )}
-                  aria-current={active ? "page" : undefined}
-                >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center">
-                    {module.icon}
-                  </span>
-                  <span className="min-w-0 flex-1 text-left">{module.label}</span>
-                </Link>
+                <div key={module.id}>
+                  {moduleDivider}
+                  <Link
+                    href={module.href}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                      "[&>span:first-child_svg]:text-sidebar-foreground",
+                      active
+                        ? "bg-sidebar-accent"
+                        : "hover:bg-sidebar-accent"
+                    )}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                      {module.icon}
+                    </span>
+                    <span className="min-w-0 flex-1 text-left">{module.label}</span>
+                  </Link>
+                </div>
               );
             }
 
             const isOpen = openId === module.id;
             return (
-              <Collapsible
-                key={module.id}
-                open={isOpen}
-                onOpenChange={(open) => setOpenId(open ? module.id : null)}
-                className="group/collapsible"
-              >
-                <CollapsibleTrigger
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                    "[&>span:first-child_svg]:text-sidebar-foreground",
-                    !isOpen && "hover:bg-sidebar-accent"
-                  )}
-                  aria-expanded={isOpen}
+              <div key={module.id}>
+                {moduleDivider}
+                <Collapsible
+                  open={isOpen}
+                  onOpenChange={(open) => setOpenId(open ? module.id : null)}
+                  className="group/collapsible"
                 >
-                  <span className="h-5 w-5 shrink-0 flex items-center justify-center">
-                    {module.icon}
-                  </span>
-                  <span className="min-w-0 flex-1 text-left">{module.label}</span>
-                  <ChevronDown
-                    className={cn("h-4 w-4 shrink-0 text-sidebar-indicator transition-transform duration-200", isOpen && "rotate-180")}
-                    aria-hidden
-                  />
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="mt-0.5 ml-2 pl-4 border-l-2 border-sidebar-indicator space-y-0.5 py-1">
-                    {renderSubmoduleItems(module.submodules, module.id)}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+                  <CollapsibleTrigger
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                      "[&>span:first-child_svg]:text-sidebar-foreground",
+                      !isOpen && "hover:bg-sidebar-accent"
+                    )}
+                    aria-expanded={isOpen}
+                  >
+                    <span className="h-5 w-5 shrink-0 flex items-center justify-center">
+                      {module.icon}
+                    </span>
+                    <span className="min-w-0 flex-1 text-left">{module.label}</span>
+                    <ChevronDown
+                      className={cn("h-4 w-4 shrink-0 text-sidebar-indicator transition-transform duration-200", isOpen && "rotate-180")}
+                      aria-hidden
+                    />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-0.5 ml-2 space-y-0 py-1 pl-2">
+                      {renderSubmoduleItems(module.submodules, module.id)}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
             );
           })
         ) : (
