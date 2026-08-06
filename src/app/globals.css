@@ -839,32 +839,13 @@
   }
 
   /**
-   * Jerarquía del acordeón sidebar: línea vertical a la derecha del ícono.
-   * Misma escala: mezcla `--sidebar-user-switcher-bg` (#021D36) sobre `--sidebar` (#0072BB).
-   * depth-1 = primer desglose (16 %); depth-2 = hojas anidadas (30 %).
+   * Guía vertical continua del acordeón sidebar (misma en todos los niveles).
+   * Color de la escala: mezcla `#021D36` sobre `#0072BB` (~45 %) para leerse de un vistazo.
+   * Aplicar al contenedor de cada `CollapsibleContent` abierto.
    */
-  .sidebar-nav-depth-1,
-  .sidebar-nav-depth-2 {
-    display: block;
-    width: 2px;
-    align-self: stretch;
-    flex-shrink: 0;
-    min-height: 1rem;
-    border-radius: 1px;
-  }
-  .sidebar-nav-depth-1 {
-    background-color: color-mix(
-      in oklab,
-      var(--sidebar-user-switcher-bg) 16%,
-      var(--sidebar)
-    );
-  }
-  .sidebar-nav-depth-2 {
-    background-color: color-mix(
-      in oklab,
-      var(--sidebar-user-switcher-bg) 30%,
-      var(--sidebar)
-    );
+  .sidebar-nav-tree {
+    border-left: 2px solid
+      color-mix(in oklab, var(--sidebar-user-switcher-bg) 45%, var(--sidebar));
   }
 
   /**
