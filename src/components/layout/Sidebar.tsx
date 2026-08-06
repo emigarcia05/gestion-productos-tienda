@@ -276,6 +276,19 @@ function isSubmoduleGroupActive(sub: SubmoduleItem, pathname: string): boolean {
   );
 }
 
+/** True si el módulo o algún descendiente coincide con la ruta (para data-active del módulo). */
+function isNavModuleActive(module: NavModule, pathname: string): boolean {
+  if (module.href && isSubmoduleActive(pathname, module.href)) return true;
+  function walk(items: SubmoduleItem[]): boolean {
+    for (const item of items) {
+      if (item.href && isSubmoduleActive(pathname, item.href)) return true;
+      if (item.children?.length && walk(item.children)) return true;
+    }
+    return false;
+  }
+  return walk(module.submodules);
+}
+
 function submoduleGroupKey(moduleId: SidebarModuleId, label: string): string {
   return `${moduleId}:${label}`;
 }
@@ -459,6 +472,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             }
 
             const isOpen = openId === module.id;
+            const moduleActive = isNavModuleActive(module, pathname);
             return (
               <div key={module.id}>
                 {moduleDivider}
@@ -469,6 +483,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 >
                   <CollapsibleTrigger
                     className="sidebar-nav-module"
+                    data-active={moduleActive ? "true" : undefined}
                     aria-expanded={isOpen}
                   >
                     <span className="h-5 w-5 shrink-0 flex items-center justify-center">

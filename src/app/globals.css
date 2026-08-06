@@ -858,6 +858,44 @@
   }
 
   /**
+   * Módulo / pilar de primer nivel (MAYÚSCULAS). Hover y data-active (ruta hija);
+   * íconos siempre blancos.
+   */
+  .sidebar-nav-module {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: var(--radius);
+    padding: 0.625rem 0.75rem;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--sidebar-foreground);
+    background-color: transparent;
+    transition: background-color 0.15s;
+    outline: none;
+    cursor: pointer;
+    border: none;
+    box-shadow: none;
+  }
+  .sidebar-nav-module svg {
+    color: var(--sidebar-foreground) !important;
+  }
+  .sidebar-container .sidebar-nav-module:hover,
+  .sidebar-container .sidebar-nav-module[data-active="true"],
+  .sidebar-container .sidebar-nav-module[data-active="true"]:hover {
+    background-color: var(--sidebar-accent) !important;
+  }
+  .sidebar-nav-module:hover svg,
+  .sidebar-nav-module[data-active="true"] svg,
+  .sidebar-nav-module[data-active="true"]:hover svg {
+    color: var(--sidebar-foreground) !important;
+  }
+  .sidebar-nav-module:focus-visible {
+    box-shadow: 0 0 0 2px var(--sidebar-ring);
+  }
+
+  /**
    * Fila de navegación del acordeón (submódulo 1 / submódulo 2 / pantallas).
    * Hover en todo el ancho del panel; íconos siempre blancos.
    */
@@ -871,16 +909,23 @@
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
     color: var(--sidebar-foreground);
+    background-color: transparent;
     transition: background-color 0.15s, color 0.15s;
     outline: none;
     border-left: 2px solid transparent;
+    cursor: pointer;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    box-shadow: none;
   }
   .sidebar-nav-item svg {
     color: var(--sidebar-foreground) !important;
   }
-  .sidebar-nav-item:hover,
-  .sidebar-nav-item[data-active="true"]:hover {
-    background-color: var(--sidebar-accent);
+  .sidebar-container .sidebar-nav-item:hover,
+  .sidebar-container .sidebar-nav-item[data-active="true"],
+  .sidebar-container .sidebar-nav-item[data-active="true"]:hover {
+    background-color: var(--sidebar-accent) !important;
     color: var(--sidebar-foreground);
   }
   .sidebar-nav-item:hover svg,
@@ -893,42 +938,6 @@
   }
   .sidebar-nav-item[data-active="true"] {
     border-left-color: var(--sidebar-indicator);
-    background-color: var(--sidebar-accent);
-  }
-
-  /**
-   * Módulo / pilar de primer nivel (MAYÚSCULAS). Hover en abierto o cerrado; íconos blancos.
-   */
-  .sidebar-nav-module {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    gap: 0.75rem;
-    border-radius: var(--radius);
-    padding: 0.625rem 0.75rem;
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-bold);
-    color: var(--sidebar-foreground);
-    transition: background-color 0.15s;
-    outline: none;
-  }
-  .sidebar-nav-module svg {
-    color: var(--sidebar-foreground) !important;
-  }
-  .sidebar-nav-module:hover,
-  .sidebar-nav-module[data-active="true"]:hover {
-    background-color: var(--sidebar-accent);
-  }
-  .sidebar-nav-module:hover svg,
-  .sidebar-nav-module[data-active="true"] svg,
-  .sidebar-nav-module[data-active="true"]:hover svg {
-    color: var(--sidebar-foreground) !important;
-  }
-  .sidebar-nav-module:focus-visible {
-    box-shadow: 0 0 0 2px var(--sidebar-ring);
-  }
-  .sidebar-nav-module[data-active="true"] {
-    background-color: var(--sidebar-accent);
   }
 
   /**
