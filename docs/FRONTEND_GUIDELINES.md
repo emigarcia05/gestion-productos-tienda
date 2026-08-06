@@ -306,8 +306,8 @@ import SectionHeader from "@/components/SectionHeader";
 | `.section-header` | Encabezado de sección (título, barra primaria, acciones). Fondo: `var(--card)`. |
 | `.card-tabla-envoltorio` | **`Card`** que envuelve la tabla principal en páginas con layout estándar cuando se use `Card` (ej. Comp. Proveedores, Generar Pedido): `min-h-0` flex column, `rounded-xl`, `border-border`, `bg-card`, `gap-0`, `py-0`, sombra vía **`--card-tabla-envoltorio-shadow`**. Incluye override específico sobre `Card` base (`[data-slot="card"].card-tabla-envoltorio`) para anular `gap-6 py-6 border-card-border` heredados y evitar espacio extra entre borde, encabezado y cuerpo de tabla. No duplicar la misma cadena de utilidades Tailwind en cada página. |
 | `.sidebar-nav-divider` / `SidebarNavDivider` | Separador entre opciones hermanas del sidebar (Vendedor / Administración / Marketing): `h-px`, márgenes `0.75rem` (alineado al ícono/`px-3` y al borde del hover), color `sidebar-foreground` al 22 %. |
-| `.sidebar-nav-tree` | Guía vertical del acordeón: línea `::before` en el **margen izquierdo del panel** (= borde izquierdo del hover de cada hijo). Color `color-mix` `#021D36` @45 % sobre `#0072BB`. |
-| `.sidebar-nav-item`, `.sidebar-nav-module` | Filas del acordeón: **hover siempre** al pasar el mouse (`bg-sidebar-accent`), independiente de activo/ruta. El ítem ocupa el ancho del panel para alinear hover con la guía. |
+| `.sidebar-nav-tree` | Guía vertical del acordeón: línea `::before` **amarilla** (`--sidebar-indicator` / `#ffc107`) en el margen izquierdo del hover de cada hijo. |
+| `.sidebar-nav-item`, `.sidebar-nav-module` | Hover en **módulo / submódulo 1 / submódulo 2** al pasar el mouse (`bg-sidebar-accent`). Íconos **siempre blancos** (`sidebar-foreground`). |
 | `--card-tabla-envoltorio-shadow` | **`:root`**: sombra suave de la tarjeta-tabla (antes repetida como `shadow-[0_4px_12px_rgba(0,0,0,0.05)]`). |
 | `.modal-app`, `.modal-app__header`, `.modal-app__body`, `.modal-app__footer` | Modales con tabla y filtros. |
 | `--modal-field-label-color` | **`:root`**: color de etiquetas de campo en modales (`var(--foreground)`). Aplicado con `!important` en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]` a `label`, `[data-slot="label"]`, `.modal-field-label`, `.modal-micro-label`, `dt`. |
@@ -1544,6 +1544,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-04): **Est. · Gestion Lts** — modal catálogo `est_por_prod_lts_conversion` (texto → litros) en header de Categorizacion.*
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
+
+*Última actualización (2026-08-06): **Sidebar · detalle hover** — íconos siempre blancos; guía `.sidebar-nav-tree` en amarillo (`--sidebar-indicator`); hover en módulo / submódulo 1 / submódulo 2.
 
 *Última actualización (2026-08-06): **Sidebar · hover** — hover en todo elemento del acordeón; guía `.sidebar-nav-tree` alineada al margen izquierdo del hover; clases `.sidebar-nav-item` / `.sidebar-nav-module`.
 

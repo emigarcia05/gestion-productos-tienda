@@ -839,8 +839,8 @@
   }
 
   /**
-   * Guía vertical continua del acordeón sidebar (mismo color en todos los niveles).
-   * La línea (`::before`) queda en el margen izquierdo del panel = borde izquierdo del hover de cada hijo.
+   * Guía vertical del acordeón: amarillo `--sidebar-indicator` (#ffc107),
+   * alineada al margen izquierdo del hover de cada hijo.
    */
   .sidebar-nav-tree {
     position: relative;
@@ -854,16 +854,12 @@
     bottom: 0;
     width: 2px;
     border-radius: 1px;
-    background-color: color-mix(
-      in oklab,
-      var(--sidebar-user-switcher-bg) 45%,
-      var(--sidebar)
-    );
+    background-color: var(--sidebar-indicator);
   }
 
   /**
-   * Fila de navegación del acordeón (submódulos / pantallas).
-   * Hover en todo el ancho del panel; el borde izquierdo coincide con `.sidebar-nav-tree::before`.
+   * Fila de navegación del acordeón (submódulo 1 / submódulo 2 / pantallas).
+   * Hover en todo el ancho del panel; íconos siempre blancos.
    */
   .sidebar-nav-item {
     display: flex;
@@ -879,12 +875,18 @@
     outline: none;
     border-left: 2px solid transparent;
   }
-  .sidebar-nav-item:hover {
+  .sidebar-nav-item svg {
+    color: var(--sidebar-foreground) !important;
+  }
+  .sidebar-nav-item:hover,
+  .sidebar-nav-item[data-active="true"]:hover {
     background-color: var(--sidebar-accent);
     color: var(--sidebar-foreground);
   }
-  .sidebar-nav-item:hover svg {
-    color: var(--sidebar-foreground);
+  .sidebar-nav-item:hover svg,
+  .sidebar-nav-item[data-active="true"] svg,
+  .sidebar-nav-item[data-active="true"]:hover svg {
+    color: var(--sidebar-foreground) !important;
   }
   .sidebar-nav-item:focus-visible {
     box-shadow: 0 0 0 2px var(--sidebar-ring);
@@ -893,12 +895,9 @@
     border-left-color: var(--sidebar-indicator);
     background-color: var(--sidebar-accent);
   }
-  .sidebar-nav-item[data-active="true"] svg {
-    color: var(--sidebar-foreground);
-  }
 
   /**
-   * Módulo / pilar de primer nivel (MAYÚSCULAS). Hover siempre, abierto o cerrado.
+   * Módulo / pilar de primer nivel (MAYÚSCULAS). Hover en abierto o cerrado; íconos blancos.
    */
   .sidebar-nav-module {
     display: flex;
@@ -913,17 +912,23 @@
     transition: background-color 0.15s;
     outline: none;
   }
-  .sidebar-nav-module:hover {
+  .sidebar-nav-module svg {
+    color: var(--sidebar-foreground) !important;
+  }
+  .sidebar-nav-module:hover,
+  .sidebar-nav-module[data-active="true"]:hover {
     background-color: var(--sidebar-accent);
+  }
+  .sidebar-nav-module:hover svg,
+  .sidebar-nav-module[data-active="true"] svg,
+  .sidebar-nav-module[data-active="true"]:hover svg {
+    color: var(--sidebar-foreground) !important;
   }
   .sidebar-nav-module:focus-visible {
     box-shadow: 0 0 0 2px var(--sidebar-ring);
   }
   .sidebar-nav-module[data-active="true"] {
     background-color: var(--sidebar-accent);
-  }
-  .sidebar-nav-module > span:first-child svg {
-    color: var(--sidebar-foreground);
   }
 
   /**

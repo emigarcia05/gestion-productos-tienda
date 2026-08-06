@@ -130,7 +130,7 @@ function GroupAccordion({
         <span className="min-w-0 flex-1 truncate text-left">{group.label}</span>
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 shrink-0 text-sidebar-indicator transition-transform duration-200",
+            "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
             isOpen && "rotate-180"
           )}
           aria-hidden
@@ -247,7 +247,7 @@ function PillarAccordion({
         <span className="min-w-0 flex-1 text-left">{pillar.label}</span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 text-sidebar-indicator transition-transform duration-200",
+            "h-4 w-4 shrink-0 transition-transform duration-200",
             isOpen && "rotate-180"
           )}
           aria-hidden
