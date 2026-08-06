@@ -1,5 +1,5 @@
 /**
- * Rutas canónicas del área Estadísticas Productos.
+ * Rutas canónicas del módulo Estadísticas Productos (área **Administración**).
  * Prefijo: `/estadisticas-productos/{submódulo}`.
  */
 

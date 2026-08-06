@@ -433,7 +433,8 @@ const ESTADISTICAS_MODULES: NavModule[] = [
 ];
 
 function getOpenModule(pathname: string): SidebarModuleId {
-  // Análisis de Precios vive en área Finanzas (URLs aún bajo /gestion-productos/...).
+  // Análisis de Precios y Estadísticas viven en área Administración
+  // (URLs bajo /gestion-productos/... y /estadisticas-productos/...).
   const gpModule = getGpSidebarModule(pathname);
   if (gpModule === "analisis-precios") return "analisis-precios";
   if (pathname.startsWith("/finanzas/balance")) return "balance";
@@ -535,12 +536,10 @@ export default function Sidebar({ rol }: { rol: Rol }) {
     mainAreaId === "gestion-productos"
       ? MODULES
       : mainAreaId === "finanzas"
-        ? FINANZAS_MODULES
+        ? [...FINANZAS_MODULES, ...ESTADISTICAS_MODULES]
         : mainAreaId === "marketing"
           ? MARKETING_MODULES
-          : mainAreaId === "estadisticas-productos"
-            ? ESTADISTICAS_MODULES
-            : [];
+          : [];
 
   const visibleModules: NavModule[] = modulesForArea.filter((module) => {
     if (module.href && module.permiso && puede(rol, module.permiso)) return true;
@@ -556,12 +555,10 @@ export default function Sidebar({ rol }: { rol: Rol }) {
       mainAreaId === "gestion-productos"
         ? MODULES
         : mainAreaId === "finanzas"
-          ? FINANZAS_MODULES
+          ? [...FINANZAS_MODULES, ...ESTADISTICAS_MODULES]
           : mainAreaId === "marketing"
             ? MARKETING_MODULES
-            : mainAreaId === "estadisticas-productos"
-              ? ESTADISTICAS_MODULES
-              : [];
+            : [];
     const autoOpenByModule = new Map<SidebarModuleId, string>();
     for (const navModule of areaModules) {
       for (const sub of navModule.submodules) {

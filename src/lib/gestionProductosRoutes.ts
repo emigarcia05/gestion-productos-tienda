@@ -1,7 +1,7 @@
 /**
- * URLs canónicas de Gestión Del Vendedor / Análisis de Precios alineadas a sidebar:
- * - Pedido Mercaderia, Ayuda Vendedor, Asistente IA → área Gestión Del Vendedor
- * - Análisis de Precios → área Finanzas (URLs siguen bajo `/gestion-productos/analisis-precios/...`)
+ * URLs canónicas de Vendedor / Análisis de Precios alineadas a sidebar:
+ * - Pedido Mercaderia, Ayuda Vendedor, Asistente IA → área Vendedor
+ * - Análisis de Precios → área Administración (id `finanzas`; URLs siguen bajo `/gestion-productos/analisis-precios/...`)
  * área → módulo → agrupador → submódulo.
  * Las rutas internas (`src/app/pedidos`, `proveedores`, …) se sirven vía rewrites en `next.config.ts`.
  */

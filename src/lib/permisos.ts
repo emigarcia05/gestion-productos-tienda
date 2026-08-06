@@ -107,7 +107,7 @@ export const PERMISOS = {
 
   // ─── Ayuda Vendedor — Cargar Gasto (modal Nuevo Gasto Eventual) ───────────
   ayudaVendedor: {
-    /** Misma capacidad que **GASTO EVENTUAL** en `/finanzas/balance/gastos`; área Gestión Del Vendedor abierta a `simple`. */
+    /** Misma capacidad que **GASTO EVENTUAL** en `/finanzas/balance/gastos`; área Vendedor abierta a `simple`. */
     cargarGasto: { simple: true, editor: true },
   },
 
@@ -131,7 +131,7 @@ export const PERMISOS = {
     acceso: { simple: false, editor: true },
   },
 
-  // ─── Módulo Asistente IA (Gestión Del Vendedor) ────────────────────────────
+  // ─── Módulo Asistente IA (Vendedor) ────────────────────────────────────────
   asistenteIa: {
     /** Acceso al módulo (vendedor/`simple` + editor). CRUD de prompts: solo editor (`esEditor`). */
     acceso: { simple: true, editor: true },

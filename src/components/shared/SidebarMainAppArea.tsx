@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Boxes, Landmark, Megaphone, type LucideIcon } from "lucide-react";
+import { Boxes, Landmark, Megaphone, type LucideIcon } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,6 @@ type AreaTitleContext = NonNullable<VariantProps<typeof areaTitleVariants>["cont
 const areaIcons: Record<MainAppAreaId, LucideIcon> = {
   "gestion-productos": Boxes,
   finanzas: Landmark,
-  "estadisticas-productos": BarChart3,
   marketing: Megaphone,
 };
 
@@ -65,7 +64,7 @@ export interface SidebarMainAppAreaProps {
   showLabel?: boolean;
   /**
    * Si es `false` (rol vendedor/`simple`), el logo no abre modal de áreas
-   * (solo trabaja en **Gestión Del Vendedor**). **Gestión Fin. & Adm.**, Estadísticas Productos y Marketing: `editor`.
+   * (solo trabaja en **Vendedor**). **Administración** y **Marketing**: `editor`.
    * @default true (compatibilidad; el layout pasa `rol === "editor"`).
    */
   esEditor?: boolean;
@@ -85,7 +84,7 @@ export default function SidebarMainAppArea({
   const currentId = getMainAppAreaIdFromPathname(pathname);
   const current = getMainAppAreaById(currentId);
 
-  /** Solo editor puede cambiar de macro-área (Finanzas / Estadísticas). */
+  /** Solo editor puede cambiar de macro-área (Administración / Marketing). */
   const logoAbreSelector = esEditor;
 
   function navigateToArea(id: MainAppAreaId) {

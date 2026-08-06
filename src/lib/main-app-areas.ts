@@ -1,21 +1,21 @@
 /**
  * Áreas principales de la aplicación (macro-secciones).
- * **Gestión Del Vendedor** (antes Gestión Productos): pedidos, ayuda vendedor, asistente IA.
- * **Gestión Fin. & Adm.** (id `finanzas`; antes Finanzas): balance, tesorería, análisis M.C. y Análisis de Precios
- * (URLs de análisis aún bajo `/gestion-productos/analisis-precios/...`).
+ * **Vendedor** (id `gestion-productos`): pedidos, ayuda vendedor, asistente IA.
+ * **Administración** (id `finanzas`): balance, tesorería, análisis M.C., Análisis de Precios
+ * (URLs de análisis aún bajo `/gestion-productos/analisis-precios/...`) y Estadísticas Productos
+ * (URLs bajo `/estadisticas-productos/...`).
+ * **Marketing** (id `marketing`).
  */
 
 import {
   GP_ROUTES,
   isAnalisisPreciosPathname,
 } from "@/lib/gestionProductosRoutes";
-import { ESTADISTICAS_PRODUCTOS_ROUTES } from "@/lib/estadisticasProductosRoutes";
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 
 export type MainAppAreaId =
   | "gestion-productos"
   | "finanzas"
-  | "estadisticas-productos"
   | "marketing";
 
 export interface MainAppAreaDefinition {
@@ -31,21 +31,15 @@ export interface MainAppAreaDefinition {
 export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
   {
     id: "gestion-productos",
-    label: "Gestión Del Vendedor",
+    label: "Vendedor",
     statusLabel: "Terminada",
     href: GP_ROUTES.defaultEntry,
   },
   {
     id: "finanzas",
-    label: "Gestión Fin. & Adm.",
+    label: "Administración",
     statusLabel: "A construir",
     href: "/finanzas/tesoreria",
-  },
-  {
-    id: "estadisticas-productos",
-    label: "Estadísticas Productos",
-    statusLabel: "A construir",
-    href: ESTADISTICAS_PRODUCTOS_ROUTES.defaultEntry,
   },
   {
     id: "marketing",
@@ -56,23 +50,24 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
 ];
 
 export function getMainAppAreaIdFromPathname(pathname: string): MainAppAreaId {
-  // Análisis de Precios: sidebar en Finanzas; URLs canónicas siguen en /gestion-productos/...
+  // Análisis de Precios: sidebar en Administración; URLs canónicas siguen en /gestion-productos/...
   if (isAnalisisPreciosPathname(pathname)) {
     return "finanzas";
   }
   if (pathname === "/finanzas" || pathname.startsWith("/finanzas/")) {
     return "finanzas";
   }
+  // Estadísticas Productos vive en área Administración (URLs bajo /estadisticas-productos/...).
   if (
     pathname === "/estadisticas-productos" ||
     pathname.startsWith("/estadisticas-productos/")
   ) {
-    return "estadisticas-productos";
+    return "finanzas";
   }
   if (pathname === "/marketing" || pathname.startsWith("/marketing/")) {
     return "marketing";
   }
-  // Gestión Del Vendedor (id `gestion-productos`) — resto de rutas GP y legacy.
+  // Vendedor (id `gestion-productos`) — resto de rutas GP y legacy.
   return "gestion-productos";
 }
 
