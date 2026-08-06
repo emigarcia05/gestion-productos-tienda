@@ -44,6 +44,7 @@ import { GP_ROUTES, getGpSidebarModule, isGpRouteActive } from "@/lib/gestionPro
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 import AdministracionAccordionNav from "@/components/layout/AdministracionAccordionNav";
 import SidebarNavDivider from "@/components/layout/SidebarNavDivider";
+import SidebarNavDepthRail from "@/components/layout/SidebarNavDepthRail";
 
 const iconClass = "h-5 w-5 shrink-0";
 
@@ -355,6 +356,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
     moduleId: SidebarModuleId,
     depth = 0
   ) {
+    const railDepth: 1 | 2 = depth === 0 ? 1 : 2;
     const visible = submodules.filter((sub) => submoduleVisible(sub, rol));
     return visible.map((sub, index) => {
       const divider = index > 0 ? <SidebarNavDivider /> : null;
@@ -381,7 +383,10 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 )}
                 aria-expanded={isSubOpen}
               >
-                {sub.icon}
+                <span className="flex shrink-0 items-stretch gap-1.5">
+                  {sub.icon}
+                  <SidebarNavDepthRail depth={railDepth} />
+                </span>
                 <span className="min-w-0 flex-1 truncate text-left">{sub.label}</span>
                 <ChevronDown
                   className={cn(
@@ -392,12 +397,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div
-                  className={cn(
-                    "py-0.5 sidebar-nav-depth-2",
-                    depth === 0 ? "ml-4" : "ml-2"
-                  )}
-                >
+                <div className={cn("py-0.5", depth === 0 ? "ml-4" : "ml-2")}>
                   {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
                 </div>
               </CollapsibleContent>
@@ -424,12 +424,15 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 sub.isUrgente && "relative"
               )}
             >
-              {sub.icon}
+              <span className="flex shrink-0 items-stretch gap-1.5">
+                {sub.icon}
+                <SidebarNavDepthRail depth={railDepth} />
+              </span>
               <span className="min-w-0 truncate">{sub.label}</span>
             </Link>
 
             {sub.children && sub.children.length > 0 ? (
-              <div className="ml-4 sidebar-nav-depth-2">
+              <div className="ml-4">
                 {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
               </div>
             ) : null}
@@ -500,7 +503,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                     />
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="mt-0.5 ml-2 space-y-0 py-1 pl-2 sidebar-nav-depth-1">
+                    <div className="mt-0.5 ml-2 space-y-0 py-1 pl-2">
                       {renderSubmoduleItems(module.submodules, module.id)}
                     </div>
                   </CollapsibleContent>

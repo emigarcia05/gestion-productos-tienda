@@ -26,6 +26,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import SidebarNavDivider from "@/components/layout/SidebarNavDivider";
+import SidebarNavDepthRail from "@/components/layout/SidebarNavDepthRail";
 
 const iconClass = "h-5 w-5 shrink-0";
 const subIconClass = "h-4 w-4 shrink-0";
@@ -61,9 +62,11 @@ function deriveOpenFromPath(
 function ScreenLink({
   screen,
   pathname,
+  depth,
 }: {
   screen: AdmScreenDef;
   pathname: string;
+  depth: 1 | 2;
 }) {
   const Icon = ADM_ICON_MAP[screen.icon];
   const active = isAdmScreenActive(pathname, screen);
@@ -78,7 +81,10 @@ function ScreenLink({
       )}
       aria-current={active ? "page" : undefined}
     >
-      <Icon className={subIconClass} aria-hidden />
+      <span className="flex shrink-0 items-stretch gap-1.5">
+        <Icon className={subIconClass} aria-hidden />
+        <SidebarNavDepthRail depth={depth} />
+      </span>
       <span className="min-w-0 truncate">{screen.label}</span>
     </Link>
   );
@@ -87,16 +93,18 @@ function ScreenLink({
 function ScreensList({
   screens,
   pathname,
+  depth,
 }: {
   screens: AdmScreenDef[];
   pathname: string;
+  depth: 1 | 2;
 }) {
   return (
     <div className="flex flex-col">
       {screens.map((screen, index) => (
         <div key={screen.id}>
           {index > 0 ? <SidebarNavDivider /> : null}
-          <ScreenLink screen={screen} pathname={pathname} />
+          <ScreenLink screen={screen} pathname={pathname} depth={depth} />
         </div>
       ))}
     </div>
@@ -137,7 +145,10 @@ function GroupAccordion({
         )}
         aria-expanded={isOpen}
       >
-        <Icon className={subIconClass} aria-hidden />
+        <span className="flex shrink-0 items-stretch gap-1.5">
+          <Icon className={subIconClass} aria-hidden />
+          <SidebarNavDepthRail depth={1} />
+        </span>
         <span className="min-w-0 flex-1 truncate text-left">{group.label}</span>
         <ChevronDown
           className={cn(
@@ -148,8 +159,8 @@ function GroupAccordion({
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="ml-4 space-y-0 py-0.5 sidebar-nav-depth-2">
-          <ScreensList screens={group.screens} pathname={pathname} />
+        <div className="ml-4 space-y-0 py-0.5">
+          <ScreensList screens={group.screens} pathname={pathname} depth={2} />
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -268,7 +279,7 @@ function PillarAccordion({
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mt-0.5 ml-2 space-y-0 py-1 pl-2 sidebar-nav-depth-1">
+        <div className="mt-0.5 ml-2 space-y-0 py-1 pl-2">
           {groups.length > 0 ? (
             <div className="flex flex-col">
               {groups.map((group, index) => (
@@ -285,7 +296,7 @@ function PillarAccordion({
               ))}
             </div>
           ) : (
-            <ScreensList screens={screens} pathname={pathname} />
+            <ScreensList screens={screens} pathname={pathname} depth={1} />
           )}
         </div>
       </CollapsibleContent>

@@ -839,17 +839,25 @@
   }
 
   /**
-   * Jerarquía visual del acordeón sidebar: azul más profundo al abrir cada nivel.
-   * Mezcla `--sidebar-user-switcher-bg` (#021D36) sobre `--sidebar` (#0072BB).
-   * depth-1 = primer desglose (grupos / submódulos); depth-2 = hojas anidadas.
+   * Jerarquía del acordeón sidebar: línea vertical a la derecha del ícono.
+   * Misma escala: mezcla `--sidebar-user-switcher-bg` (#021D36) sobre `--sidebar` (#0072BB).
+   * depth-1 = primer desglose (16 %); depth-2 = hojas anidadas (30 %).
    */
+  .sidebar-nav-depth-1,
+  .sidebar-nav-depth-2 {
+    display: block;
+    width: 2px;
+    align-self: stretch;
+    flex-shrink: 0;
+    min-height: 1rem;
+    border-radius: 1px;
+  }
   .sidebar-nav-depth-1 {
     background-color: color-mix(
       in oklab,
       var(--sidebar-user-switcher-bg) 16%,
       var(--sidebar)
     );
-    border-radius: calc(var(--radius) - 2px);
   }
   .sidebar-nav-depth-2 {
     background-color: color-mix(
@@ -857,7 +865,6 @@
       var(--sidebar-user-switcher-bg) 30%,
       var(--sidebar)
     );
-    border-radius: calc(var(--radius) - 2px);
   }
 
   /**
