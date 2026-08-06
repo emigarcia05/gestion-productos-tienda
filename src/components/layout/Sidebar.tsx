@@ -370,12 +370,10 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             >
               <CollapsibleTrigger
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                  "border-l-2 -ml-[2px] pl-[10px]",
-                  groupActive
-                    ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
-                    : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground"
+                  "sidebar-nav-item",
+                  groupActive && "font-semibold"
                 )}
+                data-active={groupActive ? "true" : undefined}
                 aria-expanded={isSubOpen}
               >
                 {sub.icon}
@@ -391,7 +389,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               <CollapsibleContent>
                 <div
                   className={cn(
-                    "sidebar-nav-tree mt-0.5 space-y-0 py-1 pl-3",
+                    "sidebar-nav-tree mt-0.5 space-y-0 py-1",
                     depth === 0 ? "ml-3" : "ml-2"
                   )}
                 >
@@ -412,21 +410,16 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <div className="space-y-0">
             <Link
               href={sub.href}
-              className={cn(
-                "group flex items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors",
-                "border-l-2 -ml-[2px] pl-[10px]",
-                active
-                  ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
-                  : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground",
-                sub.isUrgente && "relative"
-              )}
+              className={cn("sidebar-nav-item", sub.isUrgente && "relative")}
+              data-active={active ? "true" : undefined}
+              aria-current={active ? "page" : undefined}
             >
               {sub.icon}
               <span className="min-w-0 truncate">{sub.label}</span>
             </Link>
 
             {sub.children && sub.children.length > 0 ? (
-              <div className="sidebar-nav-tree ml-3 mt-0.5 space-y-0 py-1 pl-3">
+              <div className="sidebar-nav-tree ml-3 mt-0.5 space-y-0 py-1">
                 {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
               </div>
             ) : null}
@@ -452,13 +445,8 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                   {moduleDivider}
                   <Link
                     href={module.href}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                      "[&>span:first-child_svg]:text-sidebar-foreground",
-                      active
-                        ? "bg-sidebar-accent"
-                        : "hover:bg-sidebar-accent"
-                    )}
+                    className="sidebar-nav-module"
+                    data-active={active ? "true" : undefined}
                     aria-current={active ? "page" : undefined}
                   >
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center">
@@ -480,11 +468,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                   className="group/collapsible"
                 >
                   <CollapsibleTrigger
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                      "[&>span:first-child_svg]:text-sidebar-foreground",
-                      !isOpen && "hover:bg-sidebar-accent"
-                    )}
+                    className="sidebar-nav-module"
                     aria-expanded={isOpen}
                   >
                     <span className="h-5 w-5 shrink-0 flex items-center justify-center">
@@ -497,7 +481,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                     />
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="sidebar-nav-tree mt-0.5 ml-3 space-y-0 py-1 pl-3">
+                    <div className="sidebar-nav-tree mt-0.5 space-y-0 py-1">
                       {renderSubmoduleItems(module.submodules, module.id)}
                     </div>
                   </CollapsibleContent>

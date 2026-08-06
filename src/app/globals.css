@@ -839,13 +839,91 @@
   }
 
   /**
-   * Guía vertical continua del acordeón sidebar (misma en todos los niveles).
-   * Color de la escala: mezcla `#021D36` sobre `#0072BB` (~45 %) para leerse de un vistazo.
-   * Aplicar al contenedor de cada `CollapsibleContent` abierto.
+   * Guía vertical continua del acordeón sidebar (mismo color en todos los niveles).
+   * La línea (`::before`) queda en el margen izquierdo del panel = borde izquierdo del hover de cada hijo.
    */
   .sidebar-nav-tree {
-    border-left: 2px solid
-      color-mix(in oklab, var(--sidebar-user-switcher-bg) 45%, var(--sidebar));
+    position: relative;
+    padding-left: 0.75rem;
+  }
+  .sidebar-nav-tree::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    border-radius: 1px;
+    background-color: color-mix(
+      in oklab,
+      var(--sidebar-user-switcher-bg) 45%,
+      var(--sidebar)
+    );
+  }
+
+  /**
+   * Fila de navegación del acordeón (submódulos / pantallas).
+   * Hover en todo el ancho del panel; el borde izquierdo coincide con `.sidebar-nav-tree::before`.
+   */
+  .sidebar-nav-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: calc(var(--radius) - 2px);
+    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--sidebar-foreground);
+    transition: background-color 0.15s, color 0.15s;
+    outline: none;
+    border-left: 2px solid transparent;
+  }
+  .sidebar-nav-item:hover {
+    background-color: var(--sidebar-accent);
+    color: var(--sidebar-foreground);
+  }
+  .sidebar-nav-item:hover svg {
+    color: var(--sidebar-foreground);
+  }
+  .sidebar-nav-item:focus-visible {
+    box-shadow: 0 0 0 2px var(--sidebar-ring);
+  }
+  .sidebar-nav-item[data-active="true"] {
+    border-left-color: var(--sidebar-indicator);
+    background-color: var(--sidebar-accent);
+  }
+  .sidebar-nav-item[data-active="true"] svg {
+    color: var(--sidebar-foreground);
+  }
+
+  /**
+   * Módulo / pilar de primer nivel (MAYÚSCULAS). Hover siempre, abierto o cerrado.
+   */
+  .sidebar-nav-module {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: var(--radius);
+    padding: 0.625rem 0.75rem;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--sidebar-foreground);
+    transition: background-color 0.15s;
+    outline: none;
+  }
+  .sidebar-nav-module:hover {
+    background-color: var(--sidebar-accent);
+  }
+  .sidebar-nav-module:focus-visible {
+    box-shadow: 0 0 0 2px var(--sidebar-ring);
+  }
+  .sidebar-nav-module[data-active="true"] {
+    background-color: var(--sidebar-accent);
+  }
+  .sidebar-nav-module > span:first-child svg {
+    color: var(--sidebar-foreground);
   }
 
   /**

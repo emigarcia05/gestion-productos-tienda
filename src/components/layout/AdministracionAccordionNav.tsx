@@ -30,13 +30,9 @@ import SidebarNavDivider from "@/components/layout/SidebarNavDivider";
 const iconClass = "h-5 w-5 shrink-0";
 const subIconClass = "h-4 w-4 shrink-0";
 
-const PILLAR_TRIGGER =
-  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring [&>span:first-child_svg]:text-sidebar-foreground";
-
-const ROW_CLASS =
-  "flex w-full items-center gap-2 rounded-md py-2 pl-3 pr-2 text-sm font-medium text-sidebar-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring border-l-2 -ml-[2px] pl-[10px]";
-
-const TREE_PANEL = "sidebar-nav-tree mt-0.5 ml-3 space-y-0 py-1 pl-3";
+/** Panel hijo: línea guía alineada al margen izquierdo del hover. */
+const TREE_PANEL = "sidebar-nav-tree mt-0.5 space-y-0 py-1";
+const TREE_PANEL_NESTED = "sidebar-nav-tree mt-0.5 ml-3 space-y-0 py-1";
 
 function deriveOpenFromPath(
   pathname: string,
@@ -72,12 +68,8 @@ function ScreenLink({
   return (
     <Link
       href={screen.href}
-      className={cn(
-        ROW_CLASS,
-        active
-          ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
-          : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground"
-      )}
+      className="sidebar-nav-item"
+      data-active={active ? "true" : undefined}
       aria-current={active ? "page" : undefined}
     >
       <Icon className={subIconClass} aria-hidden />
@@ -130,13 +122,8 @@ function GroupAccordion({
       className="group/adm-group"
     >
       <CollapsibleTrigger
-        className={cn(
-          ROW_CLASS,
-          "font-semibold",
-          groupActive
-            ? "border-sidebar-indicator bg-sidebar-accent [&_svg]:text-sidebar-foreground"
-            : "border-transparent [&_svg]:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground hover:[&_svg]:text-sidebar-foreground"
-        )}
+        className={cn("sidebar-nav-item", "font-semibold")}
+        data-active={groupActive ? "true" : undefined}
         aria-expanded={isOpen}
       >
         <Icon className={subIconClass} aria-hidden />
@@ -150,7 +137,7 @@ function GroupAccordion({
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className={TREE_PANEL}>
+        <div className={TREE_PANEL_NESTED}>
           <ScreensList screens={group.screens} pathname={pathname} />
         </div>
       </CollapsibleContent>
@@ -250,11 +237,8 @@ function PillarAccordion({
       className="group/adm-pillar"
     >
       <CollapsibleTrigger
-        className={cn(
-          PILLAR_TRIGGER,
-          pillarActive && isOpen && "bg-sidebar-accent/50",
-          !isOpen && "hover:bg-sidebar-accent"
-        )}
+        className="sidebar-nav-module"
+        data-active={pillarActive ? "true" : undefined}
         aria-expanded={isOpen}
       >
         <span className="flex h-5 w-5 shrink-0 items-center justify-center">
