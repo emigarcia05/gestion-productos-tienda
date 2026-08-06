@@ -394,8 +394,8 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               <CollapsibleContent>
                 <div
                   className={cn(
-                    "py-0.5",
-                    depth === 0 ? "ml-4 sidebar-nav-depth-2" : "ml-2 sidebar-nav-depth-2"
+                    "py-0.5 sidebar-nav-depth-2",
+                    depth === 0 ? "ml-4" : "ml-2"
                   )}
                 >
                   {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
