@@ -18,14 +18,17 @@ const pageSectionHeaderRootVariants = cva("section-header shrink-0 w-full", {
 });
 
 export type PageSectionHeaderProps = {
-  /** Nombre del módulo (h1). */
+  /** Nombre del módulo (h1). Visual: MAYÚSCULAS vía `.section-header__titulo`. */
   title: string;
   /**
-   * Submódulo 1 (negrita en el h3).
-   * Con `subtitleSecondary`: "Submódulo 1 - Submódulo 2".
+   * Submódulo 1. Visual: MAYÚSCULAS + negrita (`.section-header__subtitulo-primario`).
+   * Con `subtitleSecondary`: "SUBMÓDULO 1 - Submódulo 2".
    */
   subtitle?: string;
-  /** Submódulo 2 (peso normal), separado por " - " tras `subtitle`. */
+  /**
+   * Submódulo 2. Visual: Title Case + negrita (`.section-header__subtitulo-secundario`),
+   * separado por " - " tras `subtitle`.
+   */
   subtitleSecondary?: string;
   actions?: ReactNode;
   className?: string;
@@ -35,7 +38,8 @@ export type PageSectionHeaderProps = {
  * Núcleo compartido de encabezados de página (barra primaria, título, subtítulo, acciones).
  * Usar vía `SectionHeader` o `ClassicPageHeader` para no romper APIs existentes.
  *
- * Jerarquía visual del subtítulo: **Submódulo 1** (negrita) - Submódulo 2 (normal).
+ * Jerarquía visual: **MÓDULO** (h1 MAYÚSCULAS) → **SUBMÓDULO 1** (MAYÚSCULAS negrita)
+ * - **Submódulo 2** (Title Case negrita).
  */
 export default function PageSectionHeader({
   title,

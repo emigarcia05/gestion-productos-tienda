@@ -32,7 +32,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 3. **Texto en mayúscula inicial (title case)**  
    - **Títulos de modales** y **textos de botones**: cada palabra con primera letra en mayúscula. Ejemplos: "Importar Lista De Precios", "Nueva Importación".  
    - **Sidebar**: nombre del **módulo** en MAYÚSCULAS (ej. "MERCADERÍA", "PRECIOS"). Nombre del **submódulo** o **agrupador desplegable** dentro de un módulo: title case (ej. "Lista Precios", "Lista Proveedores", "Cx Compra", "Pedido Urgente", "Px. Vta. Sugerido").  
-   - Encabezados de página (SectionHeader/ClassicPageHeader): title case. Aplicar también a `title`/`aria-label` cuando sean etiquetas de UI.
+   - Encabezados de página (`SectionHeader` / `ClassicPageHeader`): **módulo** MAYÚSCULAS; **submódulo 1** MAYÚSCULAS + negrita; **submódulo 2** Title Case + negrita (vía CSS `.section-header__*`). Los props pueden seguir en Title Case; el CSS aplica el transform. Aplicar Title Case también a `title`/`aria-label` de botones y modales.
 4. **Abreviaciones con punto**  
    - Toda abreviatura en la UI (encabezados, labels, placeholders, tooltips, nombres de archivo generados) debe terminar en punto. Ejemplos: Px., Cx., Dto., Desc., Cant., Prov., Cod., Cód., Sug., Disp., Ext., Transp., Finan., Vta., Comp., Cat., Últ., Mín., Act.
 5. **Mayúsculas en filtros y tablas**  
@@ -295,6 +295,7 @@ export default function MiFiltros({ qActual, totalItems }: { qActual: string; to
 import SectionHeader from "@/components/SectionHeader";
 
 <SectionHeader titulo="Mercadería" subtitulo="Cant. Pedida" subtituloSecundario="Urgente" actions={<Button>Acción</Button>} />
+{/* Visual: MERCADERÍA / CANT. PEDIDA - Urgente */}
 ```
 
 ---
@@ -303,7 +304,7 @@ import SectionHeader from "@/components/SectionHeader";
 
 | Clase / variable | Uso |
 |------------------|-----|
-| `.section-header` | Encabezado de sección (título, barra primaria, acciones). Fondo: `var(--card)`. |
+| `.section-header` | Encabezado de sección (título, barra primaria, acciones). Fondo: `var(--card)`. **Módulo** (`.section-header__titulo`): MAYÚSCULAS. **Submódulo 1** (`.section-header__subtitulo-primario`): MAYÚSCULAS + negrita. **Submódulo 2** (`.section-header__subtitulo-secundario`): Title Case + negrita. |
 | `.card-tabla-envoltorio` | **`Card`** que envuelve la tabla principal en páginas con layout estándar cuando se use `Card` (ej. Comp. Proveedores, Generar Pedido): `min-h-0` flex column, `rounded-xl`, `border-border`, `bg-card`, `gap-0`, `py-0`, sombra vía **`--card-tabla-envoltorio-shadow`**. Incluye override específico sobre `Card` base (`[data-slot="card"].card-tabla-envoltorio`) para anular `gap-6 py-6 border-card-border` heredados y evitar espacio extra entre borde, encabezado y cuerpo de tabla. No duplicar la misma cadena de utilidades Tailwind en cada página. |
 | `.sidebar-nav-divider` / `SidebarNavDivider` | Separador entre opciones hermanas del sidebar (Vendedor / Administración / Marketing): `h-px`, márgenes `0.75rem` (alineado al ícono/`px-3` y al borde del hover), color `sidebar-foreground` al 22 %. |
 | `.sidebar-nav-tree` | Guía vertical del acordeón: línea `::before` **amarilla** (`--sidebar-indicator` / `#ffc107`) en el margen izquierdo del hover de cada hijo. |
@@ -643,13 +644,13 @@ Input monetario reutilizable (formato **AR**): muestra **`$`**, miles con `.` y 
 Núcleo **único** del encabezado de página (barra primaria, `h1`, `h3`, acciones, `Separator`). Variantes con **CVA** (`pageSectionHeaderRootVariants`) para evitar duplicar clases entre rutas.
 
 - **Props**
-  - **`title`**: `string` (módulo, title case).
-  - **`subtitle`**: `string?` — **submódulo 1** en negrita (`.section-header__subtitulo-primario`). Vacío/`undefined` no renderiza el `h3`.
-  - **`subtitleSecondary`**: `string?` — **submódulo 2** en peso normal (`.section-header__subtitulo-secundario`), separado por ` - `.
+  - **`title`**: `string` (módulo; visual MAYÚSCULAS vía CSS).
+  - **`subtitle`**: `string?` — **submódulo 1** MAYÚSCULAS + negrita (`.section-header__subtitulo-primario`). Vacío/`undefined` no renderiza el `h3`.
+  - **`subtitleSecondary`**: `string?` — **submódulo 2** Title Case + negrita (`.section-header__subtitulo-secundario`), separado por ` - `.
   - **`actions`**: `ReactNode?` (botones a la derecha, tamaño uniforme `h-10 px-4` vía CSS global).
   - **`tone`**: `"default" | "card"` (default `"default"`). `"card"` añade `bg-card` como refuerzo del token; el layout global `.section-header` ya usa `var(--card)`.
   - **`className`**: `string?`.
-- **Jerarquía del subtítulo:** `Módulo` (h1) → **`Submódulo 1`** (negrita) - `Submódulo 2` (normal).
+- **Jerarquía tipográfica:** **`MÓDULO`** (h1 MAYÚSCULAS) → **`SUBMÓDULO 1`** (MAYÚSCULAS negrita) - **`Submódulo 2`** (Title Case negrita).
 - **Accesibilidad**: `role="banner"` en el `<header>`; barra decorativa con `aria-hidden`.
 
 **Consumo recomendado:** no importar este componente directamente salvo nuevos layouts; usar `SectionHeader` (API en español) o `ClassicPageHeader` (inglés + `tone="card"`).
@@ -663,9 +664,9 @@ Wrapper sobre `PageSectionHeader` con **`tone="card"`** (misma API que antes: `t
 Layout reutilizable para páginas con **header + filtros + tabla**. Centraliza espaciados y contenedores con variantes **CVA** para evitar clases duplicadas en rutas.
 
 - **Props**
-  - **`title`**: `string` (title case, renderizado en `ClassicPageHeader`).
-  - **`subtitle`**: `string?` (submódulo 1, negrita).
-  - **`subtitleSecondary`**: `string?` (submódulo 2, normal).
+  - **`title`**: `string` (módulo; visual MAYÚSCULAS vía `ClassicPageHeader` / CSS).
+  - **`subtitle`**: `string?` (submódulo 1, MAYÚSCULAS + negrita).
+  - **`subtitleSecondary`**: `string?` (submódulo 2, Title Case + negrita).
   - **`actions`**: `ReactNode?` (acciones del header).
   - **`filters`**: `ReactNode?` (bloque de filtros).
   - **`children`**: `ReactNode` (contenido principal; normalmente tabla).
@@ -691,7 +692,7 @@ Página **Finanzas → Balance → Balance mensual** (`/finanzas/balance/mensual
 
 ### `SectionHeader` (`src/components/SectionHeader.tsx`)
 
-API histórica (`titulo`, `subtitulo`, `subtituloSecundario`, `actions`). Delega en `PageSectionHeader` con `tone` default. Misma jerarquía: módulo → submódulo 1 (negrita) → submódulo 2 (normal).
+API histórica (`titulo`, `subtitulo`, `subtituloSecundario`, `actions`). Delega en `PageSectionHeader` con `tone` default. Misma jerarquía: **MÓDULO** (MAYÚSCULAS) → **SUBMÓDULO 1** (MAYÚSCULAS negrita) → **Submódulo 2** (Title Case negrita).
 
 ### `TableEmptyState` (`src/components/shared/TableEmptyState.tsx`)
 
@@ -1547,6 +1548,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-04): **Est. · Gestion Lts** — modal catálogo `est_por_prod_lts_conversion` (texto → litros) en header de Categorizacion.*
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
+
+*Última actualización (2026-08-06): **SectionHeader · tipografía** — módulo MAYÚSCULAS; submódulo 1 MAYÚSCULAS + negrita; submódulo 2 Title Case + negrita (CSS `.section-header__*`).
 
 *Última actualización (2026-08-06): **Vendedor · renombre módulos** — **PEDIR MERC.** → **MERCADERÍA**; **ASISTENCIA PRECIOS** → **PRECIOS** (sidebar + `SectionHeader`).
 

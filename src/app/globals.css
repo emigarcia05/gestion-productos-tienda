@@ -2271,6 +2271,7 @@ button.tabla-row-btn-filled-brand {
   font-family: var(--font-sans);
   color: var(--foreground);
   margin: 0;
+  text-transform: uppercase;
 }
 .section-header__subtitulo {
   margin-top: 0.25rem;
@@ -2280,14 +2281,16 @@ button.tabla-row-btn-filled-brand {
 .section-header__subtitulo-primario {
   font-weight: var(--font-weight-bold);
   color: var(--foreground);
+  text-transform: uppercase;
 }
 .section-header__subtitulo-sep {
-  font-weight: var(--font-weight-normal);
+  font-weight: var(--font-weight-bold);
   color: var(--muted-foreground);
 }
 .section-header__subtitulo-secundario {
-  font-weight: var(--font-weight-normal);
-  color: var(--muted-foreground);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  text-transform: none;
 }
 .section-header .section-header-divider {
   background-color: var(--border);
