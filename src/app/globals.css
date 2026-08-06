@@ -828,14 +828,18 @@
   }
 
   /**
-   * Separador entre opciones del árbol sidebar (Vendedor / Administración / Marketing).
-   * Empieza en el margen izquierdo del ícono (`px-3` = 0.75rem) y llega al borde derecho del hover.
+   * Separador entre opciones hermanas del sidebar (Vendedor / Administración / Marketing).
+   * Fuera del árbol: desde el margen del ícono. Dentro de `.sidebar-nav-tree`:
+   * desde la guía amarilla hasta el borde derecho del hover.
    */
   .sidebar-nav-divider {
     height: 1px;
     margin-left: 0.75rem;
     margin-right: 0.75rem;
     background-color: color-mix(in oklab, var(--sidebar-foreground) 22%, transparent);
+  }
+  .sidebar-nav-tree .sidebar-nav-divider {
+    margin-left: 0;
   }
 
   /**

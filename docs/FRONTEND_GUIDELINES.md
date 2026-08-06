@@ -306,7 +306,7 @@ import SectionHeader from "@/components/SectionHeader";
 |------------------|-----|
 | `.section-header` | Encabezado de sección (título, barra primaria, acciones). Fondo: `var(--card)`. **Módulo** (`.section-header__titulo`): MAYÚSCULAS. **Submódulo 1** (`.section-header__subtitulo-primario`): MAYÚSCULAS + negrita. **Submódulo 2** (`.section-header__subtitulo-secundario`): Title Case + negrita. |
 | `.card-tabla-envoltorio` | **`Card`** que envuelve la tabla principal en páginas con layout estándar cuando se use `Card` (ej. Comp. Proveedores, Generar Pedido): `min-h-0` flex column, `rounded-xl`, `border-border`, `bg-card`, `gap-0`, `py-0`, sombra vía **`--card-tabla-envoltorio-shadow`**. Incluye override específico sobre `Card` base (`[data-slot="card"].card-tabla-envoltorio`) para anular `gap-6 py-6 border-card-border` heredados y evitar espacio extra entre borde, encabezado y cuerpo de tabla. No duplicar la misma cadena de utilidades Tailwind en cada página. |
-| `.sidebar-nav-divider` / `SidebarNavDivider` | Separador entre opciones hermanas del sidebar (Vendedor / Administración / Marketing): `h-px`, márgenes `0.75rem` (alineado al ícono/`px-3` y al borde del hover), color `sidebar-foreground` al 22 %. |
+| `.sidebar-nav-divider` / `SidebarNavDivider` | Separador entre opciones hermanas del sidebar: `h-px`, color `sidebar-foreground` al 22 %. Fuera del árbol: márgenes `0.75rem`. **Dentro de** `.sidebar-nav-tree`: `margin-left: 0` para llegar hasta la guía amarilla; `margin-right: 0.75rem`. |
 | `.sidebar-nav-tree` | Guía vertical del acordeón: línea `::before` **amarilla** (`--sidebar-indicator` / `#ffc107`) en el **margen izquierdo del hover** de cada hijo (`left` = `--sidebar-nav-tree-indent` / `padding-left`). |
 | `.sidebar-nav-item`, `.sidebar-nav-module` | Hover / activo (`bg-sidebar-accent`) + indicador izquierdo amarillo (`--sidebar-indicator`) en **módulo / submódulo 1 / submódulo 2**. El módulo (`.sidebar-nav-module`) lleva `data-active` si la ruta actual es suya o de un descendiente (`isNavModuleActive` / `isAdmPillarActive`). Íconos **siempre blancos** (`sidebar-foreground`). |
 | `--card-tabla-envoltorio-shadow` | **`:root`**: sombra suave de la tarjeta-tabla (antes repetida como `shadow-[0_4px_12px_rgba(0,0,0,0.05)]`). |
@@ -1548,6 +1548,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-04): **Est. · Gestion Lts** — modal catálogo `est_por_prod_lts_conversion` (texto → litros) en header de Categorizacion.*
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
+
+*Última actualización (2026-08-06): **Sidebar · divisores** — `.sidebar-nav-tree .sidebar-nav-divider` con `margin-left: 0` para extender la línea blanca hasta la guía amarilla.
 
 *Última actualización (2026-08-06): **Sidebar · guía tree** — `.sidebar-nav-tree::before` alineada al margen izquierdo del hover (`left` = `padding-left` / `--sidebar-nav-tree-indent`).
 
