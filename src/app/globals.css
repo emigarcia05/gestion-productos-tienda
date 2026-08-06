@@ -840,16 +840,17 @@
 
   /**
    * Guía vertical del acordeón: amarillo `--sidebar-indicator` (#ffc107),
-   * alineada al margen izquierdo del hover de cada hijo.
+   * alineada al margen izquierdo del hover de cada hijo (`padding-left`).
    */
   .sidebar-nav-tree {
+    --sidebar-nav-tree-indent: 0.75rem;
     position: relative;
-    padding-left: 0.75rem;
+    padding-left: var(--sidebar-nav-tree-indent);
   }
   .sidebar-nav-tree::before {
     content: "";
     position: absolute;
-    left: 0;
+    left: var(--sidebar-nav-tree-indent);
     top: 0;
     bottom: 0;
     width: 2px;
