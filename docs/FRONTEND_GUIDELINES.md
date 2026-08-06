@@ -1543,6 +1543,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
 
+*Última actualización (2026-08-06): **Administración · flyout UI** — paneles `h-fit`/`items-start`; hover solo en ítem; separador `w-[80%]`; 1ª apertura MAYÚSCULAS, 2ª title case.
+
 *Última actualización (2026-08-06): **Administración · flyout** — sidebar 3 pilares + paneles horizontales al hover (`AdministracionFlyoutNav`); **Vta Por Prod.** + **ANÁLISIS M.C.** bajo LISTAS PRECIOS; OPERACIONES bajo FINANZAS.
 
 *Última actualización (2026-08-06): **Áreas** — labels **Vendedor** / **Administración** / **Marketing** (3 macro-áreas); Estadísticas Productos migrada al sidebar de **Administración** (`finanzas`); URLs `/estadisticas-productos/*` sin cambio.
