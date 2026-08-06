@@ -19,7 +19,7 @@ export default function CargarGastoPageClient({ mes, anio, sucursalesCentroCosto
 
   return (
     <div className="area-page-shell">
-      <SectionHeader titulo="Ayuda Vendedor" subtitulo="Cargar Gasto" />
+      <SectionHeader titulo="Cargar Gastos" />
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 pb-6">
         {!modalOpen ? (
           <Button type="button" className="h-10 gap-2 px-4" onClick={() => setModalOpen(true)}>

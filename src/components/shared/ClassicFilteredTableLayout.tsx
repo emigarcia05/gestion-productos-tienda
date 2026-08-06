@@ -5,8 +5,10 @@ import ClassicPageHeader from "./ClassicPageHeader";
 export interface ClassicFilteredTableLayoutProps {
   /** Título del módulo (h1 en el header). */
   title: string;
-  /** Submódulo o contexto (h3 en el header). */
+  /** Submódulo 1 (negrita en el h3). */
   subtitle?: string;
+  /** Submódulo 2 (normal), separado por " - ". */
+  subtitleSecondary?: string;
   /** Botones/acciones en la zona derecha del header. */
   actions?: React.ReactNode;
   /** Contenedor de filtros (inputs, selects). Padding y gap consistentes. */
@@ -69,6 +71,7 @@ const contentVariants = cva(
 export default function ClassicFilteredTableLayout({
   title,
   subtitle,
+  subtitleSecondary,
   actions,
   filters,
   children,
@@ -81,7 +84,12 @@ export default function ClassicFilteredTableLayout({
 }: ClassicFilteredTableLayoutProps) {
   return (
     <div className={cn(rootVariants({ tone }), className)}>
-      <ClassicPageHeader title={title} subtitle={subtitle} actions={actions} />
+      <ClassicPageHeader
+        title={title}
+        subtitle={subtitle}
+        subtitleSecondary={subtitleSecondary}
+        actions={actions}
+      />
 
       <div
         className={cn(

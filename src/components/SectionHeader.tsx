@@ -2,9 +2,12 @@ import type { ReactNode } from "react";
 import PageSectionHeader from "@/components/shared/PageSectionHeader";
 
 interface Props {
+  /** Nombre del módulo (h1). */
   titulo: string;
-  /** Nombre del submódulo actual (menor jerarquía, debajo del título) */
+  /** Submódulo 1 (negrita). */
   subtitulo?: string;
+  /** Submódulo 2 (normal), tras " - ". */
+  subtituloSecundario?: string;
   /** Botones de acción a la derecha; tamaño uniforme obligatorio (h-10 px-4) */
   actions?: ReactNode;
 }
@@ -13,8 +16,18 @@ interface Props {
  * Encabezado de sección (API histórica en español).
  * @see PageSectionHeader — implementación única con CVA.
  */
-export default function SectionHeader({ titulo, subtitulo, actions }: Props) {
+export default function SectionHeader({
+  titulo,
+  subtitulo,
+  subtituloSecundario,
+  actions,
+}: Props) {
   return (
-    <PageSectionHeader title={titulo} subtitle={subtitulo} actions={actions} />
+    <PageSectionHeader
+      title={titulo}
+      subtitle={subtitulo}
+      subtitleSecondary={subtituloSecundario}
+      actions={actions}
+    />
   );
 }

@@ -237,8 +237,9 @@ export default function PedidoUrgentePageClient({
     <>
       <PosicionIvaComparacionAutoRefresh initialToken={ivaComparacionRevisionToken} />
       <ClassicFilteredTableLayout
-        title="Pedido Mercadería"
-        subtitle="Pedido Urgente"
+        title="Pedir Merc."
+        subtitle="Cant. Pedida"
+        subtitleSecondary="Urgente"
         actions={actions}
         filters={filters}
     >

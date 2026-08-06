@@ -18,8 +18,15 @@ const pageSectionHeaderRootVariants = cva("section-header shrink-0 w-full", {
 });
 
 export type PageSectionHeaderProps = {
+  /** Nombre del módulo (h1). */
   title: string;
+  /**
+   * Submódulo 1 (negrita en el h3).
+   * Con `subtitleSecondary`: "Submódulo 1 - Submódulo 2".
+   */
   subtitle?: string;
+  /** Submódulo 2 (peso normal), separado por " - " tras `subtitle`. */
+  subtitleSecondary?: string;
   actions?: ReactNode;
   className?: string;
 } & VariantProps<typeof pageSectionHeaderRootVariants>;
@@ -27,15 +34,20 @@ export type PageSectionHeaderProps = {
 /**
  * Núcleo compartido de encabezados de página (barra primaria, título, subtítulo, acciones).
  * Usar vía `SectionHeader` o `ClassicPageHeader` para no romper APIs existentes.
+ *
+ * Jerarquía visual del subtítulo: **Submódulo 1** (negrita) - Submódulo 2 (normal).
  */
 export default function PageSectionHeader({
   title,
   subtitle,
+  subtitleSecondary,
   actions,
   className,
   tone = "default",
 }: PageSectionHeaderProps) {
   const showSubtitle = subtitle != null && subtitle !== "";
+  const showSecondary =
+    showSubtitle && subtitleSecondary != null && subtitleSecondary !== "";
 
   return (
     <header
@@ -48,7 +60,20 @@ export default function PageSectionHeader({
           <div className="min-w-0 flex flex-col gap-0.5">
             <h1 className="section-header__titulo">{title}</h1>
             {showSubtitle && (
-              <h3 className="section-header__subtitulo">{subtitle}</h3>
+              <h3 className="section-header__subtitulo">
+                <span className="section-header__subtitulo-primario">{subtitle}</span>
+                {showSecondary ? (
+                  <>
+                    <span className="section-header__subtitulo-sep" aria-hidden>
+                      {" "}
+                      -{" "}
+                    </span>
+                    <span className="section-header__subtitulo-secundario">
+                      {subtitleSecondary}
+                    </span>
+                  </>
+                ) : null}
+              </h3>
             )}
           </div>
         </div>

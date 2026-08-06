@@ -108,7 +108,7 @@ export default async function EnviarPedidoPage({ searchParams }: Props) {
     <>
       <PosicionIvaComparacionAutoRefresh initialToken={ivaComparacionRevisionToken} />
       <ClassicFilteredTableLayout
-        title="Pedido Mercadería"
+        title="Pedir Merc."
         subtitle="Generar Pedido"
         actions={actions}
         filters={filters}

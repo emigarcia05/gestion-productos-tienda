@@ -270,8 +270,9 @@ export default function PedidoTintometricoPageClient({
 
   return (
     <ClassicFilteredTableLayout
-      title="Pedido Mercadería"
-      subtitle="Pedido Tintométrico"
+      title="Pedir Merc."
+      subtitle="Cant. Pedida"
+      subtitleSecondary="Tintométrico"
       actions={
         <div className="flex items-center gap-2">
           <Button

@@ -24,8 +24,8 @@ interface Props {
 export default function SugeridosPageClient({ proveedores, marcas }: Props) {
   return (
     <ClassicFilteredTableLayout
-      title="Lista Proveedores"
-      subtitle="Px. Vta. Sugerido"
+      title="Asistencia Precios"
+      subtitle="Px Sugeridos"
     >
       <SugeridosTablaConFiltros
         proveedores={proveedores}

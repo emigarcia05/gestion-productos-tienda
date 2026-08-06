@@ -294,7 +294,7 @@ export default function MiFiltros({ qActual, totalItems }: { qActual: string; to
 ```tsx
 import SectionHeader from "@/components/SectionHeader";
 
-<SectionHeader titulo="Título" subtitulo="Subtítulo opcional" actions={<Button>Acción</Button>} />
+<SectionHeader titulo="Pedir Merc." subtitulo="Cant. Pedida" subtituloSecundario="Urgente" actions={<Button>Acción</Button>} />
 ```
 
 ---
@@ -643,11 +643,13 @@ Input monetario reutilizable (formato **AR**): muestra **`$`**, miles con `.` y 
 Núcleo **único** del encabezado de página (barra primaria, `h1`, `h3`, acciones, `Separator`). Variantes con **CVA** (`pageSectionHeaderRootVariants`) para evitar duplicar clases entre rutas.
 
 - **Props**
-  - **`title`**: `string` (title case).
-  - **`subtitle`**: `string?` (vacío o `undefined` no renderiza el `h3`).
+  - **`title`**: `string` (módulo, title case).
+  - **`subtitle`**: `string?` — **submódulo 1** en negrita (`.section-header__subtitulo-primario`). Vacío/`undefined` no renderiza el `h3`.
+  - **`subtitleSecondary`**: `string?` — **submódulo 2** en peso normal (`.section-header__subtitulo-secundario`), separado por ` - `.
   - **`actions`**: `ReactNode?` (botones a la derecha, tamaño uniforme `h-10 px-4` vía CSS global).
   - **`tone`**: `"default" | "card"` (default `"default"`). `"card"` añade `bg-card` como refuerzo del token; el layout global `.section-header` ya usa `var(--card)`.
   - **`className`**: `string?`.
+- **Jerarquía del subtítulo:** `Módulo` (h1) → **`Submódulo 1`** (negrita) - `Submódulo 2` (normal).
 - **Accesibilidad**: `role="banner"` en el `<header>`; barra decorativa con `aria-hidden`.
 
 **Consumo recomendado:** no importar este componente directamente salvo nuevos layouts; usar `SectionHeader` (API en español) o `ClassicPageHeader` (inglés + `tone="card"`).
@@ -662,7 +664,8 @@ Layout reutilizable para páginas con **header + filtros + tabla**. Centraliza e
 
 - **Props**
   - **`title`**: `string` (title case, renderizado en `ClassicPageHeader`).
-  - **`subtitle`**: `string?`.
+  - **`subtitle`**: `string?` (submódulo 1, negrita).
+  - **`subtitleSecondary`**: `string?` (submódulo 2, normal).
   - **`actions`**: `ReactNode?` (acciones del header).
   - **`filters`**: `ReactNode?` (bloque de filtros).
   - **`children`**: `ReactNode` (contenido principal; normalmente tabla).
@@ -688,7 +691,7 @@ Página **Finanzas → Balance → Balance mensual** (`/finanzas/balance/mensual
 
 ### `SectionHeader` (`src/components/SectionHeader.tsx`)
 
-API histórica (`titulo`, `subtitulo`, `actions`). Delega en `PageSectionHeader` con `tone` default (sin refuerzo `bg-card` explícito en Tailwind).
+API histórica (`titulo`, `subtitulo`, `subtituloSecundario`, `actions`). Delega en `PageSectionHeader` con `tone` default. Misma jerarquía: módulo → submódulo 1 (negrita) → submódulo 2 (normal).
 
 ### `TableEmptyState` (`src/components/shared/TableEmptyState.tsx`)
 
@@ -878,7 +881,7 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
 ### Ayuda Vendedor — `Px Tintométrico` (`/tienda/tintometrico`) y `Calc. Litros` (`/tienda/litros`)
 
 - Rutas canónicas bajo **Ayuda Vendedor** (`/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`); la URL antigua `/tienda/tinto-lts` redirige (308) a tintométrico.
-- Ambos usan encabezado estándar (`SectionHeader`) con título **Ayuda Vendedor** y subtítulo **Px Tintométrico** o **Calc. Litros** según la pantalla.
+- **Px Tintométricos** usa `SectionHeader` título **Asistencia Precios** + subtítulo **Px Tintométricos**. **Calcular Lts** usa título **Calcular Lts** (módulo de enlace directo).
 - No renderizan bloque de filtros (`FilterBar`).
 - **Px Tintométrico** (antes **Calc. Tintométrico**): cálculo local en cliente (sin persistencia de montos). Una card `bg-card` a ancho útil (`max-w-xl` centrada para el formulario) con título en mayúsculas **CÁLCULO DE PX TINTOMÉTRICO** + línea `bg-primary` al `70%`; grilla etiqueta/campo: `Proveedor` (`Select` con `SELECT_TRIGGER_FILTER_CLASS`), `Px. Compra` (`Input` entero), `Px Lista Tienda` (solo lectura, múltiplo de 100). Solo proveedores con `coeficienteTintometrico > 1` en el desplegable. **Editar Coeficientes** solo `editor`; modal `EditarCoeficientesModal` con tabla de dos columnas (**PROVEEDOR** y **COEFICIENTE** editable), persistencia en DB y botón **Guardar** deshabilitado cuando no hay cambios (o durante guardado).
 - **Calc. Litros**: cálculo local; card única a ancho completo del contenedor con título **CALCULO DE LTS** + línea `bg-primary` al `70%`; selectores **FORMA DE CÁLCULO** y **TIPO DE PINTURA**; tablas según forma (paredes, módulo, pileta). **EDITAR RENDIMIENTOS** solo `editor` (modal CRUD `prod_rendimientos`, antes `tipos_pintura_rendimientos`). Los campos **LARGO**, **ANCHO**, **ALTO** y **PROFUNDIDAD** (dimensiones en metros) usan `InputDimensionMts` en `TiendaCalcLitrosPageClient.tsx`: `Input` con `pr-10` + sufijo visual **Mts.** (`text-muted-foreground`, `pointer-events-none`, `aria-hidden`); el valor sigue siendo solo el número; `aria-label` incluye «en metros».
@@ -1544,6 +1547,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-04): **Est. · Gestion Lts** — modal catálogo `est_por_prod_lts_conversion` (texto → litros) en header de Categorizacion.*
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
+
+*Última actualización (2026-08-06): **SectionHeader · jerarquía** — `title` = módulo; `subtitle` = submódulo 1 (negrita); `subtitleSecondary` = submódulo 2 (normal). Pantallas Vendedor alineadas al sidebar.
 
 *Última actualización (2026-08-06): **Sidebar · detalle hover** — íconos siempre blancos; guía `.sidebar-nav-tree` en amarillo (`--sidebar-indicator`); hover en módulo / submódulo 1 / submódulo 2.
 

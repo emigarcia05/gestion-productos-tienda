@@ -25,8 +25,6 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import { Button } from "@/components/ui/button";
 import { resolverConfigAsistenteIaAction } from "@/actions/prodIaDisenoPromp";
 import {
-  ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN,
-  ASISTENTE_IA_SUBMODULO_DISENAR_COLORES,
   aplicarRgbAlPromptBuscarColor,
   getDefaultConfigDisenarColores,
   moduloVariableDesdeSubmodulo,
@@ -79,12 +77,12 @@ export default function AsistenteIaBuscarColorImagenPageClient({
     setConfigDisenar(configDisenarColores);
   }, [configDisenarColores]);
 
-  const tituloModulo =
+  const subtituloAsistente =
     vista === "disenar-colores"
-      ? ASISTENTE_IA_SUBMODULO_DISENAR_COLORES
+      ? "Diseñar"
       : vista === "buscar-codigo"
-        ? ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN
-        : "Módulos";
+        ? "Buscar Cód. Imagen"
+        : undefined;
 
   function aplicarPromptGuardado(item: ProdIaDisenoPrompItem) {
     if (moduloVariableDesdeSubmodulo(item.submodulo) !== "disenar_colores") {
@@ -224,7 +222,7 @@ export default function AsistenteIaBuscarColorImagenPageClient({
     <>
       <ClassicFilteredTableLayout
         title="Asistente IA"
-        subtitle={tituloModulo}
+        subtitle={subtituloAsistente}
         contentWidth="default"
         actions={
           <div className="flex flex-wrap items-center gap-2">

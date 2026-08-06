@@ -63,8 +63,9 @@ export default function ReposicionPageClient({
     <>
       <PosicionIvaComparacionAutoRefresh initialToken={ivaComparacionRevisionToken} />
       <ClassicFilteredTableLayout
-        title="Pedido Mercadería"
-        subtitle="Pedido Reposición"
+        title="Pedir Merc."
+        subtitle="Cant. Pedida"
+        subtitleSecondary="Reposicion"
       actions={
         <GenerarPedidoToolbarButton
           proveedores={proveedores}
