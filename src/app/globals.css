@@ -859,7 +859,7 @@
 
   /**
    * Módulo / pilar de primer nivel (MAYÚSCULAS). Hover y data-active (ruta hija);
-   * íconos siempre blancos.
+   * íconos siempre blancos; indicador amarillo izquierdo como `.sidebar-nav-item`.
    */
   .sidebar-nav-module {
     display: flex;
@@ -872,10 +872,13 @@
     font-weight: var(--font-weight-bold);
     color: var(--sidebar-foreground);
     background-color: transparent;
-    transition: background-color 0.15s;
+    transition: background-color 0.15s, border-left-color 0.15s;
     outline: none;
     cursor: pointer;
-    border: none;
+    border-left: 2px solid transparent;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
     box-shadow: none;
   }
   .sidebar-nav-module svg {
@@ -885,6 +888,7 @@
   .sidebar-container .sidebar-nav-module[data-active="true"],
   .sidebar-container .sidebar-nav-module[data-active="true"]:hover {
     background-color: var(--sidebar-accent) !important;
+    border-left-color: var(--sidebar-indicator);
   }
   .sidebar-nav-module:hover svg,
   .sidebar-nav-module[data-active="true"] svg,
@@ -910,7 +914,7 @@
     font-weight: var(--font-weight-medium);
     color: var(--sidebar-foreground);
     background-color: transparent;
-    transition: background-color 0.15s, color 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-left-color 0.15s;
     outline: none;
     border-left: 2px solid transparent;
     cursor: pointer;
@@ -927,6 +931,7 @@
   .sidebar-container .sidebar-nav-item[data-active="true"]:hover {
     background-color: var(--sidebar-accent) !important;
     color: var(--sidebar-foreground);
+    border-left-color: var(--sidebar-indicator);
   }
   .sidebar-nav-item:hover svg,
   .sidebar-nav-item[data-active="true"] svg,
@@ -935,9 +940,6 @@
   }
   .sidebar-nav-item:focus-visible {
     box-shadow: 0 0 0 2px var(--sidebar-ring);
-  }
-  .sidebar-nav-item[data-active="true"] {
-    border-left-color: var(--sidebar-indicator);
   }
 
   /**
