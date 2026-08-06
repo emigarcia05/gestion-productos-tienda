@@ -75,7 +75,7 @@ export default function TiendaCalcTintometricoPageClient({
         onSaved={() => router.refresh()}
       />
       <SectionHeader
-        titulo="Asistencia Precios"
+        titulo="Precios"
         subtitulo="Px Tintométricos"
       />
 

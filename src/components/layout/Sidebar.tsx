@@ -79,7 +79,7 @@ type NavModule = {
 const MODULES: NavModule[] = [
   {
     id: "pedidos",
-    label: "PEDIR MERC.",
+    label: "MERCADERÍA",
     icon: <ClipboardList className={iconClass} />,
     submodules: [
       {
@@ -123,7 +123,7 @@ const MODULES: NavModule[] = [
   },
   {
     id: "asistencia-precios",
-    label: "ASISTENCIA PRECIOS",
+    label: "PRECIOS",
     icon: <CircleDollarSign className={iconClass} />,
     submodules: [
       {
