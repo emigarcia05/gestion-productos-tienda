@@ -839,6 +839,28 @@
   }
 
   /**
+   * Jerarquía visual del acordeón sidebar: azul más profundo al abrir cada nivel.
+   * Mezcla `--sidebar-user-switcher-bg` (#021D36) sobre `--sidebar` (#0072BB).
+   * depth-1 = primer desglose (grupos / submódulos); depth-2 = hojas anidadas.
+   */
+  .sidebar-nav-depth-1 {
+    background-color: color-mix(
+      in oklab,
+      var(--sidebar-user-switcher-bg) 16%,
+      var(--sidebar)
+    );
+    border-radius: calc(var(--radius) - 2px);
+  }
+  .sidebar-nav-depth-2 {
+    background-color: color-mix(
+      in oklab,
+      var(--sidebar-user-switcher-bg) 30%,
+      var(--sidebar)
+    );
+    border-radius: calc(var(--radius) - 2px);
+  }
+
+  /**
    * Tarjeta envoltorio de tabla (shadcn Card + overrides compactos).
    * Combinar con `cn("card-tabla-envoltorio", "flex-1")` cuando la card deba crecer en flex.
    */

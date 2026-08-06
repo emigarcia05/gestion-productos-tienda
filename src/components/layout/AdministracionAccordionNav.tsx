@@ -148,7 +148,7 @@ function GroupAccordion({
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="ml-4 space-y-0 py-0.5">
+        <div className="ml-4 space-y-0 py-0.5 sidebar-nav-depth-2">
           <ScreensList screens={group.screens} pathname={pathname} />
         </div>
       </CollapsibleContent>
@@ -268,7 +268,7 @@ function PillarAccordion({
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mt-0.5 ml-2 space-y-0 py-1 pl-2">
+        <div className="mt-0.5 ml-2 space-y-0 py-1 pl-2 sidebar-nav-depth-1">
           {groups.length > 0 ? (
             <div className="flex flex-col">
               {groups.map((group, index) => (

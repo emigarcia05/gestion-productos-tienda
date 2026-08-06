@@ -392,7 +392,12 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className={cn("py-0.5", depth === 0 ? "ml-4" : "ml-2")}>
+                <div
+                  className={cn(
+                    "py-0.5",
+                    depth === 0 ? "ml-4 sidebar-nav-depth-2" : "ml-2 sidebar-nav-depth-2"
+                  )}
+                >
                   {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
                 </div>
               </CollapsibleContent>
@@ -424,7 +429,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             </Link>
 
             {sub.children && sub.children.length > 0 ? (
-              <div className="ml-4">
+              <div className="ml-4 sidebar-nav-depth-2">
                 {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
               </div>
             ) : null}
@@ -495,7 +500,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                     />
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="mt-0.5 ml-2 space-y-0 py-1 pl-2">
+                    <div className="mt-0.5 ml-2 space-y-0 py-1 pl-2 sidebar-nav-depth-1">
                       {renderSubmoduleItems(module.submodules, module.id)}
                     </div>
                   </CollapsibleContent>
