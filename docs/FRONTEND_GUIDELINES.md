@@ -1560,6 +1560,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-07): **Sidebar · orden pie** — línea → sync → logo → switcher de módulos (separa los dos botones).
 
+*Última actualización (2026-08-07): **Est. Vtas · G3 ejes en negro** — etiquetas de ejes X/Y con `fill-foreground`.
+
 *Última actualización (2026-08-07): **Est. Vtas · G2 tabla Top 10** — DESCRIPCION (`.est-vtas-desc-btn`) · TOTAL PERIODO · PROMEDIO MENSUAL; ya no es gráfico de barras.
 
 *Última actualización (2026-08-07): **Est. Vtas · G3 sin filtro FECHA** — historial ENE–DIC agrega todos los años; FECHA solo afecta G1/G2.

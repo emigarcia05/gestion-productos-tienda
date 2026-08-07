@@ -143,7 +143,7 @@ export default function EstVtasGraficoBarrasMensual({
                     y={yPx(t)}
                     textAnchor="end"
                     dominantBaseline="middle"
-                    className="fill-muted-foreground"
+                    className="fill-foreground"
                     fontSize={9}
                   >
                     {fmtUnidades(t)}
@@ -189,7 +189,7 @@ export default function EstVtasGraficoBarrasMensual({
                       className={
                         marcado
                           ? "fill-foreground font-semibold"
-                          : "fill-muted-foreground"
+                          : "fill-foreground"
                       }
                       fontSize={9}
                     >
