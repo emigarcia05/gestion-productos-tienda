@@ -306,7 +306,7 @@ import SectionHeader from "@/components/SectionHeader";
 |------------------|-----|
 | `.section-header` | Encabezado de sección (título, barra primaria, acciones). Fondo: `var(--card)`. **Módulo** (`.section-header__titulo`): MAYÚSCULAS. **Submódulo 1** (`.section-header__subtitulo-primario`): MAYÚSCULAS + negrita. **Submódulo 2** (`.section-header__subtitulo-secundario`): Title Case + negrita. |
 | `.card-tabla-envoltorio` | **`Card`** que envuelve la tabla principal en páginas con layout estándar cuando se use `Card` (ej. Comp. Proveedores, Generar Pedido): `min-h-0` flex column, `rounded-xl`, `border-border`, `bg-card`, `gap-0`, `py-0`, sombra vía **`--card-tabla-envoltorio-shadow`**. Incluye override específico sobre `Card` base (`[data-slot="card"].card-tabla-envoltorio`) para anular `gap-6 py-6 border-card-border` heredados y evitar espacio extra entre borde, encabezado y cuerpo de tabla. No duplicar la misma cadena de utilidades Tailwind en cada página. |
-| `.sidebar-nav-divider` / `SidebarNavDivider` | Separador **solo entre módulos de primera jerarquía** (`1px`, ~32 % `sidebar-foreground`, márgenes al ícono). No usar dentro de paneles anidados. |
+| `.sidebar-nav-scroll` | Scroll del `<nav>` del sidebar: barra **fina** (6px / `scrollbar-width: thin`), thumb redondeado con `sidebar-foreground` semitransparente sobre track transparente; hover del thumb un poco más opaco. |
 | `.sidebar-nav-tree` / `--nested` | Panel de hijos del acordeón: **solo indentación** (`padding-left`), **sin** guía vertical ni divisores horizontales. `--nested` = segundo nivel de indent. |
 | `.sidebar-nav-item`, `.sidebar-nav-module` | **Hover**: `bg-sidebar-accent`. **`data-active`**: página actual — accent + barra amarilla (única señal vertical de estado). **`data-ancestor`**: padre con hijo activo — semibold, sin accent. Chevron `.sidebar-nav-chevron` más opaco al expandir. Íconos siempre blancos. |
 | `--card-tabla-envoltorio-shadow` | **`:root`**: sombra suave de la tarjeta-tabla (antes repetida como `shadow-[0_4px_12px_rgba(0,0,0,0.05)]`). |
@@ -1548,6 +1548,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-04): **Est. · Gestion Lts** — modal catálogo `est_por_prod_lts_conversion` (texto → litros) en header de Categorizacion.*
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
+
+*Última actualización (2026-08-07): **Sidebar · scrollbar** — `.sidebar-nav-scroll`: barra fina redondeada con tokens `sidebar-foreground` (sin amarillo de indicador).
 
 *Última actualización (2026-08-07): **Sidebar · divisores** — horizontales **solo entre módulos de primera jerarquía**; sin divisores dentro del acordeón anidado.
 

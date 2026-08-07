@@ -431,7 +431,10 @@ export default function Sidebar({ rol }: { rol: Rol }) {
 
   return (
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
-      <nav className="flex flex-col gap-0.5 px-4 pt-3 pb-4 overflow-y-auto" aria-label="Navegación principal">
+      <nav
+        className="sidebar-nav-scroll flex min-h-0 flex-col gap-0.5 px-4 pt-3 pb-4"
+        aria-label="Navegación principal"
+      >
         {mainAreaId === "finanzas" ? (
           <AdministracionAccordionNav rol={rol} />
         ) : visibleModules.length > 0 ? (
