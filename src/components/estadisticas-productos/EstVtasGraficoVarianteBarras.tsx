@@ -9,12 +9,12 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
-  EST_VTAS_DESGLOSE_OPTIONS,
-  EST_VTAS_EJE_Y_OPTIONS,
-  etiquetaEstVtasEjeY,
+  etiquetaEstVtasDimension,
+  opcionesDesgloseEstVtas,
+  opcionesDimensionEstVtas,
   type EstVtasBarraDimension,
   type EstVtasDesglose,
-  type EstVtasEjeY,
+  type EstVtasDimensionGrafico,
   type EstVtasGrupoDimension,
   type EstVtasSeleccionDesglose,
 } from "@/lib/estVtasTypes";
@@ -22,16 +22,17 @@ import {
 interface Props {
   barras: EstVtasBarraDimension[];
   /**
-   * Desglose jerárquico del gráfico 1 (categoría → sucursales).
+   * Desglose jerárquico del gráfico 1 (categoría → hijos).
    * Si hay grupos, se renderizan en lugar de `barras` planas.
    */
   grupos?: EstVtasGrupoDimension[] | null;
-  ejeY: EstVtasEjeY;
-  onEjeYChange: (eje: EstVtasEjeY) => void;
-  /** Categoría del eje Y seleccionada (modo 1 dimensión). */
+  /** Dimensión del eje Y (producto o sucursal). */
+  dimension: EstVtasDimensionGrafico;
+  onDimensionChange: (dimension: EstVtasDimensionGrafico) => void;
+  /** Categoría de la dimensión seleccionada (modo 1 dimensión). */
   seleccionada?: string | null;
   onSeleccionar?: (etiqueta: string | null) => void;
-  /** Selección categoría + sucursal (modo desglose). */
+  /** Selección categoría + hijo (modo desglose). */
   seleccionDesglose?: EstVtasSeleccionDesglose | null;
   onSeleccionarDesglose?: (sel: EstVtasSeleccionDesglose | null) => void;
   /**
@@ -43,7 +44,7 @@ interface Props {
   sinVentasCargadas?: boolean;
   /** Aria del Select de dimensión (distinguir gráfico 1 vs 2). */
   ariaLabelDimension?: string;
-  /** Desglose del gráfico 1 (`ninguno` | `sucursal`). Solo si se pasa `onDesgloseChange`. */
+  /** Desglose del gráfico 1. Solo si se pasa `onDesgloseChange`. */
   desglose?: EstVtasDesglose;
   onDesgloseChange?: (desglose: EstVtasDesglose) => void;
   className?: string;
@@ -62,7 +63,7 @@ const EST_VTAS_BARRAS_FILAS_VISIBLES = 9;
 const EST_VTAS_BARRAS_FILA_REM = 2;
 /** Alto visual de la barra dentro de la fila — modo 1 dimensión. */
 const EST_VTAS_BARRAS_ALTO_CLASS = "h-3.5";
-/** Alto de fila en desglose sucursal: aire mínimo entre barras hijas. */
+/** Alto de fila en desglose: aire mínimo entre barras hijas. */
 const EST_VTAS_BARRAS_DESGLOSE_FILA_REM = 1.15;
 /** Alto visual de la barra en desglose. */
 const EST_VTAS_BARRAS_DESGLOSE_ALTO_CLASS = "h-2.5";
@@ -75,10 +76,10 @@ const EST_VTAS_SELECT_DESGLOSE_CLASS =
   "est-vtas-select-desglose h-auto w-auto max-w-full gap-1 border-0 bg-transparent px-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shadow-none hover:bg-muted/40 focus-visible:ring-1 focus-visible:ring-ring/40 [&_svg]:size-3 [&_svg]:opacity-70";
 
 /**
- * Tonos de azul (marca `#0072BB` y vecinos) para distinguir sucursales
- * cuando el desglose del gráfico 1 está activo. Índice estable por sucursal.
+ * Tonos de azul (marca `#0072BB` y vecinos) para distinguir valores del desglose.
+ * Índice estable por id de hijo.
  */
-const EST_VTAS_AZULES_SUCURSAL = [
+const EST_VTAS_AZULES_DESGLOSE = [
   "bg-[#0072BB]",
   "bg-[#1A8AD4]",
   "bg-[#4AA3DE]",
@@ -94,21 +95,21 @@ function anchoBarraPct(unidades: number, max: number): number {
   return Math.max((unidades / max) * 100, 2);
 }
 
-function claseAzulSucursal(index: number): string {
-  return EST_VTAS_AZULES_SUCURSAL[index % EST_VTAS_AZULES_SUCURSAL.length]!;
+function claseAzulDesglose(index: number): string {
+  return EST_VTAS_AZULES_DESGLOSE[index % EST_VTAS_AZULES_DESGLOSE.length]!;
 }
 
 /**
  * Barras horizontales: eje Y = dimensión elegida, eje X = Un. vendidas.
  * Título = Select píldora primary. Solo las barras son clicables (no las etiquetas).
  * Layout: 15% etiquetas · 85% barras (+ valor); viewport de 9 filas con scroll.
- * Con desglose SUCURSAL: grupos categoría → barras hijas por sucursal (azules distintos).
+ * Con desglose: grupos categoría → barras hijas (azules distintos + leyenda).
  */
 export default function EstVtasGraficoVarianteBarras({
   barras,
   grupos = null,
-  ejeY,
-  onEjeYChange,
+  dimension,
+  onDimensionChange,
   seleccionada = null,
   onSeleccionar,
   seleccionDesglose = null,
@@ -124,42 +125,43 @@ export default function EstVtasGraficoVarianteBarras({
   const filasPlanas = modoGrupos ? [] : barras;
   const max = modoGrupos
     ? (grupos ?? []).reduce(
-        (m, g) =>
-          Math.max(m, ...g.sucursales.map((s) => s.unidades), 0),
+        (m, g) => Math.max(m, ...g.hijos.map((h) => h.unidades), 0),
         0
       )
     : filasPlanas.reduce((m, b) => Math.max(m, b.unidades), 0);
   const vacio = modoGrupos
     ? !grupos || grupos.length === 0
     : filasPlanas.length === 0;
-  const labelEjeY = etiquetaEstVtasEjeY(ejeY);
+  const labelDimension = etiquetaEstVtasDimension(dimension);
   const seleccionablePlano = typeof onSeleccionar === "function";
   const seleccionableDesglose = typeof onSeleccionarDesglose === "function";
   const plotHeightRem = EST_VTAS_BARRAS_FILAS_VISIBLES * EST_VTAS_BARRAS_FILA_REM;
   const conDesglose = typeof onDesgloseChange === "function";
+  const opcionesDimension = opcionesDimensionEstVtas(desglose);
+  const opcionesDesglose = opcionesDesgloseEstVtas(dimension);
 
-  /** Índice de color estable por sucursalId (orden de primera aparición). */
-  const colorPorSucursalId = (() => {
+  /** Índice de color estable por hijoId (orden de primera aparición). */
+  const colorPorHijoId = (() => {
     const map = new Map<string, number>();
     if (!grupos) return map;
     for (const g of grupos) {
-      for (const s of g.sucursales) {
-        if (!map.has(s.sucursalId)) map.set(s.sucursalId, map.size);
+      for (const h of g.hijos) {
+        if (!map.has(h.id)) map.set(h.id, map.size);
       }
     }
     return map;
   })();
 
-  const leyendaSucursales = (() => {
+  const leyendaHijos = (() => {
     if (!grupos) return [];
     const seen = new Map<string, { id: string; etiqueta: string; index: number }>();
     for (const g of grupos) {
-      for (const s of g.sucursales) {
-        if (!seen.has(s.sucursalId)) {
-          seen.set(s.sucursalId, {
-            id: s.sucursalId,
-            etiqueta: s.etiqueta,
-            index: colorPorSucursalId.get(s.sucursalId) ?? 0,
+      for (const h of g.hijos) {
+        if (!seen.has(h.id)) {
+          seen.set(h.id, {
+            id: h.id,
+            etiqueta: h.etiqueta,
+            index: colorPorHijoId.get(h.id) ?? 0,
           });
         }
       }
@@ -176,8 +178,8 @@ export default function EstVtasGraficoVarianteBarras({
     if (!onSeleccionarDesglose) return;
     const misma =
       seleccionDesglose &&
-      seleccionDesglose.categoria === sel.categoria &&
-      seleccionDesglose.sucursalId === sel.sucursalId;
+      seleccionDesglose.categoriaId === sel.categoriaId &&
+      seleccionDesglose.hijoId === sel.hijoId;
     onSeleccionarDesglose(misma ? null : sel);
   }
 
@@ -212,14 +214,14 @@ export default function EstVtasGraficoVarianteBarras({
       )}
       aria-label={
         modoGrupos
-          ? `Unidades vendidas por ${labelEjeY.toLowerCase()} desglosadas por sucursal`
-          : `Unidades vendidas por ${labelEjeY.toLowerCase()}`
+          ? `Unidades vendidas por ${labelDimension.toLowerCase()} con desglose`
+          : `Unidades vendidas por ${labelDimension.toLowerCase()}`
       }
     >
       <header className="flex shrink-0 flex-col items-center gap-0.5">
         <Select
-          value={ejeY}
-          onValueChange={(v) => onEjeYChange(v as EstVtasEjeY)}
+          value={dimension}
+          onValueChange={(v) => onDimensionChange(v as EstVtasDimensionGrafico)}
         >
           <SelectTrigger
             size="sm"
@@ -234,7 +236,7 @@ export default function EstVtasGraficoVarianteBarras({
             align="center"
             className="select-content-filtro"
           >
-            {EST_VTAS_EJE_Y_OPTIONS.map((opt) => (
+            {opcionesDimension.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {`Un. Vendidas Por ${opt.label}`}
               </SelectItem>
@@ -260,7 +262,7 @@ export default function EstVtasGraficoVarianteBarras({
               align="center"
               className="select-content-filtro"
             >
-              {EST_VTAS_DESGLOSE_OPTIONS.map((opt) => (
+              {opcionesDesglose.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {`Desglose: ${opt.label}`}
                 </SelectItem>
@@ -289,14 +291,19 @@ export default function EstVtasGraficoVarianteBarras({
           ) : modoGrupos && grupos ? (
             <div className="flex flex-col gap-1 py-0.5">
               {grupos.map((g) => (
-                <div key={g.etiqueta} className="flex flex-col" role="group" aria-label={g.etiqueta}>
-                  {g.sucursales.map((s, rowIdx) => {
-                    const widthPct = anchoBarraPct(s.unidades, max);
-                    const colorIdx = colorPorSucursalId.get(s.sucursalId) ?? 0;
-                    const fillClass = claseAzulSucursal(colorIdx);
+                <div
+                  key={g.id}
+                  className="flex flex-col"
+                  role="group"
+                  aria-label={g.etiqueta}
+                >
+                  {g.hijos.map((h, rowIdx) => {
+                    const widthPct = anchoBarraPct(h.unidades, max);
+                    const colorIdx = colorPorHijoId.get(h.id) ?? 0;
+                    const fillClass = claseAzulDesglose(colorIdx);
                     const activa =
-                      seleccionDesglose?.categoria === g.etiqueta &&
-                      seleccionDesglose.sucursalId === s.sucursalId;
+                      seleccionDesglose?.categoriaId === g.id &&
+                      seleccionDesglose.hijoId === h.id;
                     const pista = renderPista(
                       widthPct,
                       fillClass,
@@ -306,7 +313,7 @@ export default function EstVtasGraficoVarianteBarras({
 
                     return (
                       <div
-                        key={`${g.etiqueta}::${s.sucursalId}`}
+                        key={`${g.id}::${h.id}`}
                         className="grid grid-cols-[minmax(0,15%)_minmax(0,1fr)] items-center gap-x-2"
                         style={{
                           height: `${EST_VTAS_BARRAS_DESGLOSE_FILA_REM}rem`,
@@ -328,13 +335,14 @@ export default function EstVtasGraficoVarianteBarras({
                             <button
                               type="button"
                               aria-pressed={activa}
-                              aria-label={`${g.etiqueta}, ${s.etiqueta}: ${fmtUnidades(s.unidades)} unidades vendidas`}
-                              title={`${s.etiqueta}: ${fmtUnidades(s.unidades)}`}
+                              aria-label={`${g.etiqueta}, ${h.etiqueta}: ${fmtUnidades(h.unidades)} unidades vendidas`}
+                              title={`${h.etiqueta}: ${fmtUnidades(h.unidades)}`}
                               onClick={() =>
                                 handleBarraDesgloseClick({
                                   categoria: g.etiqueta,
-                                  sucursalEtiqueta: s.etiqueta,
-                                  sucursalId: s.sucursalId,
+                                  categoriaId: g.id,
+                                  hijoEtiqueta: h.etiqueta,
+                                  hijoId: h.id,
                                 })
                               }
                               className={cn(
@@ -350,15 +358,15 @@ export default function EstVtasGraficoVarianteBarras({
                             <div
                               className="flex min-w-0 flex-1 items-center"
                               role="img"
-                              aria-label={`${g.etiqueta}, ${s.etiqueta}: ${fmtUnidades(s.unidades)} unidades vendidas`}
-                              title={`${s.etiqueta}: ${fmtUnidades(s.unidades)}`}
+                              aria-label={`${g.etiqueta}, ${h.etiqueta}: ${fmtUnidades(h.unidades)} unidades vendidas`}
+                              title={`${h.etiqueta}: ${fmtUnidades(h.unidades)}`}
                             >
                               {pista}
                             </div>
                           )}
 
                           <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-foreground">
-                            {fmtUnidades(s.unidades)}
+                            {fmtUnidades(h.unidades)}
                           </span>
                         </div>
                       </div>
@@ -378,7 +386,7 @@ export default function EstVtasGraficoVarianteBarras({
 
                 return (
                   <div
-                    key={b.etiqueta}
+                    key={b.id ?? b.etiqueta}
                     className="grid grid-cols-[minmax(0,15%)_minmax(0,1fr)] items-center gap-x-2"
                     style={{ height: `${EST_VTAS_BARRAS_FILA_REM}rem` }}
                   >
@@ -426,22 +434,22 @@ export default function EstVtasGraficoVarianteBarras({
           )}
         </div>
         <div className="mt-1.5 flex shrink-0 flex-col items-center gap-1">
-          {modoGrupos && leyendaSucursales.length > 0 ? (
+          {modoGrupos && leyendaHijos.length > 0 ? (
             <ul className="flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-1">
-              {leyendaSucursales.map((s) => (
+              {leyendaHijos.map((h) => (
                 <li
-                  key={s.id}
+                  key={h.id}
                   className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-wide text-muted-foreground"
                 >
                   <span
                     className={cn(
                       "inline-block h-2 w-2 shrink-0 rounded-sm",
-                      claseAzulSucursal(s.index)
+                      claseAzulDesglose(h.index)
                     )}
                     aria-hidden
                   />
-                  <span className="max-w-[5.5rem] truncate" title={s.etiqueta}>
-                    {s.etiqueta}
+                  <span className="max-w-[5.5rem] truncate" title={h.etiqueta}>
+                    {h.etiqueta}
                   </span>
                 </li>
               ))}

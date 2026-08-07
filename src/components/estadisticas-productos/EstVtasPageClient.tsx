@@ -27,16 +27,19 @@ import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   agregarTopProductos,
   agregarUnidadesMensualesAnio,
+  agregarUnidadesPorDobleDimension,
   agregarUnidadesPorEjeY,
-  agregarUnidadesPorEjeYDesgloseSucursal,
+  filtroProductoDesdeDimension,
 } from "@/lib/estVtasAgregar";
-import type {
-  EstVtasDesglose,
-  EstVtasEjeY,
-  EstVtasModoUnidad,
-  EstVtasProductoItem,
-  EstVtasSeleccionDesglose,
-  EstVtasVentaItem,
+import {
+  esEstVtasEjeY,
+  type EstVtasDesglose,
+  type EstVtasDimensionGrafico,
+  type EstVtasFiltroDimension,
+  type EstVtasModoUnidad,
+  type EstVtasProductoItem,
+  type EstVtasSeleccionDesglose,
+  type EstVtasVentaItem,
 } from "@/lib/estVtasTypes";
 import type { SucursalEstOption } from "@/lib/estPorProdTypes";
 import {
@@ -94,10 +97,11 @@ export default function EstVtasPageClient({
   const [filtSucursalId, setFiltSucursalId] = useState(FILTRO_TODOS);
   const [filtFecha, setFiltFecha] = useState(fechaDefault);
   const [filtUnidad, setFiltUnidad] = useState<EstVtasModoUnidad>("unidad");
-  const [ejeY1, setEjeY1] = useState<EstVtasEjeY>("marca");
+  const [dimension1, setDimension1] =
+    useState<EstVtasDimensionGrafico>("marca");
   const [desglose1, setDesglose1] = useState<EstVtasDesglose>("ninguno");
   const [seleccionGrafico1, setSeleccionGrafico1] = useState<string | null>(null);
-  const [seleccionSucursalDesglose, setSeleccionSucursalDesglose] =
+  const [seleccionDesglose1, setSeleccionDesglose1] =
     useState<EstVtasSeleccionDesglose | null>(null);
   /** `codTienda` del producto elegido en el Top 10. */
   const [seleccionProductoTop, setSeleccionProductoTop] = useState<string | null>(
@@ -210,6 +214,8 @@ export default function EstVtasPageClient({
     qDebounced,
   ]);
 
+  const desgloseActivo = desglose1 !== "ninguno";
+
   const barrasCategoria1 = useMemo(
     () =>
       agregarUnidadesPorEjeY({
@@ -218,48 +224,55 @@ export default function EstVtasPageClient({
         sucursalId: filtSucursalId,
         fechaClave: filtFecha,
         modoUnidad: filtUnidad,
-        ejeY: ejeY1,
+        ejeY: dimension1,
+        sucursales,
       }),
-    [filasFiltradas, ventas, filtSucursalId, filtFecha, filtUnidad, ejeY1]
+    [
+      filasFiltradas,
+      ventas,
+      filtSucursalId,
+      filtFecha,
+      filtUnidad,
+      dimension1,
+      sucursales,
+    ]
   );
 
-  const desgloseSucursalActivo = desglose1 === "sucursal";
-
   const gruposGrafico1 = useMemo(() => {
-    if (!desgloseSucursalActivo) return null;
-    return agregarUnidadesPorEjeYDesgloseSucursal({
+    if (!desgloseActivo || desglose1 === "ninguno") return null;
+    return agregarUnidadesPorDobleDimension({
       productosFiltrados: filasFiltradas,
       ventas,
       fechaClave: filtFecha,
       modoUnidad: filtUnidad,
-      ejeY: ejeY1,
+      dimension: dimension1,
+      desglose: desglose1,
       sucursales,
     });
   }, [
-    desgloseSucursalActivo,
+    desgloseActivo,
+    desglose1,
     filasFiltradas,
     ventas,
     filtFecha,
     filtUnidad,
-    ejeY1,
+    dimension1,
     sucursales,
   ]);
 
+  const seleccionDesgloseValida = useMemo(() => {
+    if (!desgloseActivo || !seleccionDesglose1 || !gruposGrafico1) return null;
+    const ok = gruposGrafico1.some(
+      (g) =>
+        g.id === seleccionDesglose1.categoriaId &&
+        g.hijos.some((h) => h.id === seleccionDesglose1.hijoId)
+    );
+    return ok ? seleccionDesglose1 : null;
+  }, [desgloseActivo, seleccionDesglose1, gruposGrafico1]);
+
   const seleccionCategoria1Valida = useMemo(() => {
-    if (desgloseSucursalActivo) {
-      if (
-        !seleccionSucursalDesglose ||
-        !gruposGrafico1?.some(
-          (g) =>
-            g.etiqueta === seleccionSucursalDesglose.categoria &&
-            g.sucursales.some(
-              (s) => s.sucursalId === seleccionSucursalDesglose.sucursalId
-            )
-        )
-      ) {
-        return null;
-      }
-      return seleccionSucursalDesglose.categoria;
+    if (desgloseActivo) {
+      return seleccionDesgloseValida?.categoria ?? null;
     }
     if (
       seleccionGrafico1 &&
@@ -269,58 +282,96 @@ export default function EstVtasPageClient({
     }
     return null;
   }, [
-    desgloseSucursalActivo,
-    seleccionSucursalDesglose,
-    gruposGrafico1,
+    desgloseActivo,
+    seleccionDesgloseValida,
     seleccionGrafico1,
     barrasCategoria1,
   ]);
 
-  const seleccionDesgloseValida =
-    desgloseSucursalActivo &&
-    seleccionSucursalDesglose &&
-    seleccionCategoria1Valida === seleccionSucursalDesglose.categoria
-      ? seleccionSucursalDesglose
-      : null;
+  /** Sucursal efectiva: selección G1 (plano o desglose) o filtro global. */
+  const sucursalIdEfectiva = useMemo(() => {
+    if (desgloseActivo && seleccionDesgloseValida) {
+      if (dimension1 === "sucursal") return seleccionDesgloseValida.categoriaId;
+      if (desglose1 === "sucursal") return seleccionDesgloseValida.hijoId;
+    } else if (!desgloseActivo && seleccionCategoria1Valida && dimension1 === "sucursal") {
+      const barra = barrasCategoria1.find(
+        (b) => b.etiqueta === seleccionCategoria1Valida
+      );
+      if (barra?.id) return barra.id;
+    }
+    return filtSucursalId;
+  }, [
+    desgloseActivo,
+    seleccionDesgloseValida,
+    dimension1,
+    desglose1,
+    seleccionCategoria1Valida,
+    barrasCategoria1,
+    filtSucursalId,
+  ]);
 
-  const sucursalIdDesglose = seleccionDesgloseValida?.sucursalId ?? null;
+  /** Filtros de producto derivados de la selección del gráfico 1. */
+  const filtrosDimensionG1 = useMemo((): EstVtasFiltroDimension[] | null => {
+    if (!seleccionCategoria1Valida) return null;
 
-  const sucursalIdEfectiva = sucursalIdDesglose ?? filtSucursalId;
+    if (desgloseActivo && seleccionDesgloseValida && desglose1 !== "ninguno") {
+      const out: EstVtasFiltroDimension[] = [];
+      const fCat = filtroProductoDesdeDimension(
+        dimension1,
+        seleccionDesgloseValida.categoria
+      );
+      if (fCat) out.push(fCat);
+      const fHijo = filtroProductoDesdeDimension(
+        desglose1,
+        seleccionDesgloseValida.hijoEtiqueta
+      );
+      if (fHijo) out.push(fHijo);
+      return out.length > 0 ? out : null;
+    }
+
+    if (esEstVtasEjeY(dimension1)) {
+      return [{ ejeY: dimension1, etiqueta: seleccionCategoria1Valida }];
+    }
+    return null;
+  }, [
+    seleccionCategoria1Valida,
+    desgloseActivo,
+    seleccionDesgloseValida,
+    desglose1,
+    dimension1,
+  ]);
+
+  const haySeleccionG1 = seleccionCategoria1Valida != null;
 
   const barrasTopProductos = useMemo(() => {
-    if (!seleccionCategoria1Valida) return [];
+    if (!haySeleccionG1) return [];
     return agregarTopProductos({
       productosFiltrados: filasFiltradas,
       ventas,
       sucursalId: sucursalIdEfectiva,
       fechaClave: filtFecha,
       modoUnidad: filtUnidad,
-      filtros: [{ ejeY: ejeY1, etiqueta: seleccionCategoria1Valida }],
+      filtros: filtrosDimensionG1,
       topN: 10,
     });
   }, [
+    haySeleccionG1,
     filasFiltradas,
     ventas,
     sucursalIdEfectiva,
     filtFecha,
     filtUnidad,
-    ejeY1,
-    seleccionCategoria1Valida,
+    filtrosDimensionG1,
   ]);
 
   const seleccionProductoTopValida =
-    seleccionCategoria1Valida &&
+    haySeleccionG1 &&
     seleccionProductoTop &&
     barrasTopProductos.some((b) => b.codTienda === seleccionProductoTop)
       ? seleccionProductoTop
       : null;
 
   const puntosMensuales = useMemo(() => {
-    const filtrosDim =
-      seleccionCategoria1Valida != null
-        ? [{ ejeY: ejeY1, etiqueta: seleccionCategoria1Valida }]
-        : null;
-
     // G3 ignora FECHA: agrega ENE…DIC de todos los años con los filtros actuales.
     return agregarUnidadesMensualesAnio({
       productosFiltrados: filasFiltradas,
@@ -328,7 +379,7 @@ export default function EstVtasPageClient({
       sucursalId: sucursalIdEfectiva,
       modoUnidad: filtUnidad,
       anio: null,
-      filtros: filtrosDim,
+      filtros: filtrosDimensionG1,
       codTienda: seleccionProductoTopValida,
     });
   }, [
@@ -336,33 +387,38 @@ export default function EstVtasPageClient({
     ventas,
     sucursalIdEfectiva,
     filtUnidad,
-    ejeY1,
-    seleccionCategoria1Valida,
+    filtrosDimensionG1,
     seleccionProductoTopValida,
   ]);
 
-  function handleEjeY1Change(eje: EstVtasEjeY) {
-    setEjeY1(eje);
+  function handleDimension1Change(dim: EstVtasDimensionGrafico) {
+    setDimension1(dim);
+    if (desglose1 === dim) {
+      setDesglose1("ninguno");
+    }
     setSeleccionGrafico1(null);
-    setSeleccionSucursalDesglose(null);
+    setSeleccionDesglose1(null);
     setSeleccionProductoTop(null);
   }
 
   function handleDesglose1Change(desglose: EstVtasDesglose) {
-    setDesglose1(desglose);
+    // Opciones de UI ya excluyen la dimensión activa; defensivo si coinciden.
+    setDesglose1(
+      desglose !== "ninguno" && desglose === dimension1 ? "ninguno" : desglose
+    );
     setSeleccionGrafico1(null);
-    setSeleccionSucursalDesglose(null);
+    setSeleccionDesglose1(null);
     setSeleccionProductoTop(null);
   }
 
   function handleSeleccionarGrafico1(etiqueta: string | null) {
     setSeleccionGrafico1(etiqueta);
-    setSeleccionSucursalDesglose(null);
+    setSeleccionDesglose1(null);
     setSeleccionProductoTop(null);
   }
 
   function handleSeleccionarDesglose1(sel: EstVtasSeleccionDesglose | null) {
-    setSeleccionSucursalDesglose(sel);
+    setSeleccionDesglose1(sel);
     setSeleccionGrafico1(sel?.categoria ?? null);
     setSeleccionProductoTop(null);
   }
@@ -703,19 +759,17 @@ export default function EstVtasPageClient({
         <EstVtasGraficoVarianteBarras
           barras={barrasCategoria1}
           grupos={gruposGrafico1}
-          ejeY={ejeY1}
-          onEjeYChange={handleEjeY1Change}
+          dimension={dimension1}
+          onDimensionChange={handleDimension1Change}
           desglose={desglose1}
           onDesgloseChange={handleDesglose1Change}
-          seleccionada={
-            desgloseSucursalActivo ? null : seleccionCategoria1Valida
-          }
+          seleccionada={desgloseActivo ? null : seleccionCategoria1Valida}
           onSeleccionar={
-            desgloseSucursalActivo ? undefined : handleSeleccionarGrafico1
+            desgloseActivo ? undefined : handleSeleccionarGrafico1
           }
           seleccionDesglose={seleccionDesgloseValida}
           onSeleccionarDesglose={
-            desgloseSucursalActivo ? handleSeleccionarDesglose1 : undefined
+            desgloseActivo ? handleSeleccionarDesglose1 : undefined
           }
           sinVentasCargadas={ventas.length === 0}
           ariaLabelDimension="Dimensión del eje Y — gráfico 1"
@@ -726,7 +780,7 @@ export default function EstVtasPageClient({
           seleccionadoCod={seleccionProductoTopValida}
           onSeleccionar={setSeleccionProductoTop}
           vacioPorDependencia={
-            seleccionCategoria1Valida
+            haySeleccionG1
               ? null
               : "Seleccioná una categoría en el gráfico 1 para ver el Top 10."
           }
