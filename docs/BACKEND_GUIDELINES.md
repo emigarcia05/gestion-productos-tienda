@@ -37,6 +37,7 @@ Sigue estas reglas para mantener seguridad, integridad de datos y arquitectura l
 ### 1.2.1 Activación de modo editor (`sesion.ts`)
 
 - Entrada **`clave`**: validar con Zod (`z.string().min(1).max(500)`) antes de comparar con `EDITOR_PASSWORD`. Evita payloads anómalos y documenta el contrato.
+- **UI de activación**: `SidebarAreaSwitcher` al elegir el módulo **Administración** (`MAIN_APP_AREAS.requierePassword`) si la sesión es `simple`. Ya no existe el switcher de “nivel de usuario” (`SelectorRol`).
 - **`volverModoSimple()`**: no exige rol previo; destruye la cookie de sesión (equivale a salir del modo editor). No hay payload que validar con Zod.
 
 - **Arranque por sesión de navegador** (`src/middleware.ts` + `src/lib/sesion-arranque.ts`): la cookie **`tienda-app-arranque`** es de **sesión de navegador** (sin `maxAge`). En la **primera** petición de documento de esa sesión, si existía la cookie iron-session del rol (`gestion-rol`), el middleware la **elimina** y añade la cabecera interna **`x-tienda-forzar-rol-simple`** al request para ese ciclo; **`getRol()`** devuelve **`"simple"`** al detectarla (el `Set-Cookie` de borrado no aplica aún a `cookies()` en el mismo render). Así, al abrir la app tras cerrar el navegador, el arranque no conserva modo editor de la cookie anterior. Las rutas **`/api/*`** quedan fuera del `matcher` del middleware para no alterar el orden de llamadas API en herramientas externas.
@@ -2024,6 +2025,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-04): **Est. · terminacion** — tabla `est_por_prod_terminacion`; match regex; modal **Gestion Terminacion**; columna TERMINACION en Categorizacion.*
 
 *Última actualización (2026-08-06): **Áreas** — Estadísticas Productos bajo sidebar **Administración** (id `finanzas`); sin macro-área propia. Ver §2.5g.
+
+*Última actualización (2026-08-07): **Sesión · Administración** — la clave `EDITOR_PASSWORD` se pide al entrar al módulo Administración vía `SidebarAreaSwitcher` (ya no hay switcher de nivel de usuario).
 
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarUnidadesMensualesAnio` (serie ENE…DIC del año de `fechaClave`, filtros dimensionales de gráficos 1 y 2).
 

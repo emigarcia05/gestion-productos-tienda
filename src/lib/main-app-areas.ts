@@ -26,6 +26,11 @@ export interface MainAppAreaDefinition {
   statusLabel: string;
   /** Ruta de entrada al elegir el área desde el modal. */
   href: string;
+  /**
+   * Si `true`, al elegir el área desde el switcher se pide `EDITOR_PASSWORD`
+   * (activa rol `editor`) cuando la sesión aún es `simple`.
+   */
+  requierePassword: boolean;
 }
 
 export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
@@ -34,18 +39,21 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
     label: "Vendedor",
     statusLabel: "Terminada",
     href: GP_ROUTES.defaultEntry,
+    requierePassword: false,
   },
   {
     id: "finanzas",
     label: "Administración",
     statusLabel: "A construir",
     href: "/finanzas/tesoreria",
+    requierePassword: true,
   },
   {
     id: "marketing",
     label: "Marketing",
     statusLabel: "A construir",
     href: MARKETING_ROUTES.defaultEntry,
+    requierePassword: false,
   },
 ];
 

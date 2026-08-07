@@ -5,7 +5,8 @@
  * Modificá este archivo para controlar qué ve cada rol.
  *
  * Roles disponibles: "simple" | "editor"
- * En UI: `simple` → **Vendedor**; `editor` → **Administrador** (`SelectorRol`).
+ * El rol `editor` se activa al ingresar al módulo **Administración** con clave
+ * (`SidebarAreaSwitcher` + `EDITOR_PASSWORD`). Vendedor y Marketing son libre acceso.
  */
 
 export type Rol = "simple" | "editor";
@@ -123,7 +124,8 @@ export const PERMISOS = {
 
   // ─── Área /marketing ──────────────────────────────────────────────────────
   marketing: {
-    acceso: { simple: false, editor: true },
+    /** Libre acceso de lectura/navegación; mutaciones CRUD siguen con `esEditor()`. */
+    acceso: { simple: true, editor: true },
   },
 
   // ─── Módulo Asistente IA (Vendedor) ────────────────────────────────────────
