@@ -103,8 +103,8 @@ function claseAzulDesglose(index: number): string {
 
 /**
  * Barras horizontales: eje Y = dimensión elegida, eje X = Un. vendidas.
- * Título = Select píldora primary con solo el nombre de la dimensión (MARCA, RUBRO…).
- * Desglose = Select con el nombre de la variable (SIN DESGLOSE, SUCURSAL…).
+ * Título = Select píldora primary de ancho fijo (igual que Top 10 / Mes).
+ * Desglose = Select con borde primary suave; basura para volver a SIN DESGLOSE.
  * Solo las barras son clicables (no las etiquetas).
  * Layout: 15% etiquetas · 85% barras (+ valor); viewport de 9 filas con scroll.
  * Con desglose: grupos categoría → barras hijas (azules distintos + leyenda).
