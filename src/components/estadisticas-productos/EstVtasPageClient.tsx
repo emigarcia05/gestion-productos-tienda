@@ -21,9 +21,11 @@ import FilterBar, {
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import EstVtasGraficoBarrasMensual from "@/components/estadisticas-productos/EstVtasGraficoBarrasMensual";
+import EstVtasGraficoTopProductos from "@/components/estadisticas-productos/EstVtasGraficoTopProductos";
 import EstVtasGraficoVarianteBarras from "@/components/estadisticas-productos/EstVtasGraficoVarianteBarras";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
+  agregarTopProductos,
   agregarUnidadesMensualesAnio,
   agregarUnidadesPorEjeY,
   agregarUnidadesPorEjeYDesgloseSucursal,
@@ -95,12 +97,14 @@ export default function EstVtasPageClient({
   const [filtFecha, setFiltFecha] = useState(fechaDefault);
   const [filtUnidad, setFiltUnidad] = useState<EstVtasModoUnidad>("unidad");
   const [ejeY1, setEjeY1] = useState<EstVtasEjeY>("marca");
-  const [ejeY2, setEjeY2] = useState<EstVtasEjeY>("variante");
   const [desglose1, setDesglose1] = useState<EstVtasDesglose>("ninguno");
   const [seleccionGrafico1, setSeleccionGrafico1] = useState<string | null>(null);
   const [seleccionSucursalDesglose, setSeleccionSucursalDesglose] =
     useState<EstVtasSeleccionDesglose | null>(null);
-  const [seleccionGrafico2, setSeleccionGrafico2] = useState<string | null>(null);
+  /** `codTienda` del producto elegido en el Top 10. */
+  const [seleccionProductoTop, setSeleccionProductoTop] = useState<string | null>(
+    null
+  );
   const [qDebounced, setQDebounced] = useState("");
 
   const periodosConVentas = useMemo(() => {
@@ -285,16 +289,16 @@ export default function EstVtasPageClient({
 
   const sucursalIdEfectiva = sucursalIdDesglose ?? filtSucursalId;
 
-  const barrasGrafico2 = useMemo(() => {
+  const barrasTopProductos = useMemo(() => {
     if (!seleccionCategoria1Valida) return [];
-    return agregarUnidadesPorEjeY({
+    return agregarTopProductos({
       productosFiltrados: filasFiltradas,
       ventas,
       sucursalId: sucursalIdEfectiva,
       fechaClave: filtFecha,
       modoUnidad: filtUnidad,
-      ejeY: ejeY2,
-      filtroPadre: { ejeY: ejeY1, etiqueta: seleccionCategoria1Valida },
+      filtros: [{ ejeY: ejeY1, etiqueta: seleccionCategoria1Valida }],
+      topN: 10,
     });
   }, [
     filasFiltradas,
@@ -303,16 +307,20 @@ export default function EstVtasPageClient({
     filtFecha,
     filtUnidad,
     ejeY1,
-    ejeY2,
     seleccionCategoria1Valida,
   ]);
 
-  const seleccionGrafico2Valida =
+  const seleccionProductoTopValida =
     seleccionCategoria1Valida &&
-    seleccionGrafico2 &&
-    barrasGrafico2.some((b) => b.etiqueta === seleccionGrafico2)
-      ? seleccionGrafico2
+    seleccionProductoTop &&
+    barrasTopProductos.some((b) => b.codTienda === seleccionProductoTop)
+      ? seleccionProductoTop
       : null;
+
+  const productoTopSeleccionado = seleccionProductoTopValida
+    ? barrasTopProductos.find((b) => b.codTienda === seleccionProductoTopValida) ??
+      null
+    : null;
 
   const periodoFiltro = useMemo(
     () => parseClavePeriodoEstPorProd(filtFecha),
@@ -320,7 +328,7 @@ export default function EstVtasPageClient({
   );
 
   const puntosMensuales = useMemo(() => {
-    if (!seleccionCategoria1Valida || !seleccionGrafico2Valida) {
+    if (!seleccionCategoria1Valida || !seleccionProductoTopValida) {
       return Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, unidades: 0 }));
     }
     return agregarUnidadesMensualesAnio({
@@ -329,10 +337,8 @@ export default function EstVtasPageClient({
       sucursalId: sucursalIdEfectiva,
       fechaClave: filtFecha,
       modoUnidad: filtUnidad,
-      filtros: [
-        { ejeY: ejeY1, etiqueta: seleccionCategoria1Valida },
-        { ejeY: ejeY2, etiqueta: seleccionGrafico2Valida },
-      ],
+      filtros: [{ ejeY: ejeY1, etiqueta: seleccionCategoria1Valida }],
+      codTienda: seleccionProductoTopValida,
     });
   }, [
     filasFiltradas,
@@ -341,40 +347,34 @@ export default function EstVtasPageClient({
     filtFecha,
     filtUnidad,
     ejeY1,
-    ejeY2,
     seleccionCategoria1Valida,
-    seleccionGrafico2Valida,
+    seleccionProductoTopValida,
   ]);
 
   function handleEjeY1Change(eje: EstVtasEjeY) {
     setEjeY1(eje);
     setSeleccionGrafico1(null);
     setSeleccionSucursalDesglose(null);
-    setSeleccionGrafico2(null);
-  }
-
-  function handleEjeY2Change(eje: EstVtasEjeY) {
-    setEjeY2(eje);
-    setSeleccionGrafico2(null);
+    setSeleccionProductoTop(null);
   }
 
   function handleDesglose1Change(desglose: EstVtasDesglose) {
     setDesglose1(desglose);
     setSeleccionGrafico1(null);
     setSeleccionSucursalDesglose(null);
-    setSeleccionGrafico2(null);
+    setSeleccionProductoTop(null);
   }
 
   function handleSeleccionarGrafico1(etiqueta: string | null) {
     setSeleccionGrafico1(etiqueta);
     setSeleccionSucursalDesglose(null);
-    setSeleccionGrafico2(null);
+    setSeleccionProductoTop(null);
   }
 
   function handleSeleccionarDesglose1(sel: EstVtasSeleccionDesglose | null) {
     setSeleccionSucursalDesglose(sel);
     setSeleccionGrafico1(sel?.categoria ?? null);
-    setSeleccionGrafico2(null);
+    setSeleccionProductoTop(null);
   }
 
   function limpiarFiltros() {
@@ -736,16 +736,14 @@ export default function EstVtasPageClient({
           ariaLabelDimension="Dimensión del eje Y — gráfico 1"
           className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
         />
-        <EstVtasGraficoVarianteBarras
-          barras={barrasGrafico2}
-          ejeY={ejeY2}
-          onEjeYChange={handleEjeY2Change}
-          seleccionada={seleccionGrafico2Valida}
-          onSeleccionar={setSeleccionGrafico2}
+        <EstVtasGraficoTopProductos
+          barras={barrasTopProductos}
+          seleccionadoCod={seleccionProductoTopValida}
+          onSeleccionar={setSeleccionProductoTop}
           vacioPorDependencia={
             seleccionCategoria1Valida
               ? null
-              : "Seleccioná una categoría en el gráfico 1 para ver el desglose."
+              : "Seleccioná una categoría en el gráfico 1 para ver el Top 10."
           }
           contextoFiltro={
             seleccionCategoria1Valida
@@ -760,8 +758,7 @@ export default function EstVtasPageClient({
               : null
           }
           sinVentasCargadas={ventas.length === 0}
-          ariaLabelDimension="Dimensión del eje Y — gráfico 2"
-          className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
+          className="h-full max-h-full w-[min(26rem,36%)] shrink-0 self-start"
         />
         <EstVtasGraficoBarrasMensual
           puntos={puntosMensuales}
@@ -770,15 +767,15 @@ export default function EstVtasPageClient({
           vacioPorDependencia={
             !seleccionCategoria1Valida
               ? "Seleccioná una categoría en el gráfico 1."
-              : !seleccionGrafico2Valida
-                ? "Seleccioná una categoría en el gráfico 2 para ver la evolución mensual."
+              : !seleccionProductoTopValida
+                ? "Seleccioná un producto del Top 10 para ver la evolución mensual."
                 : null
           }
           contextoFiltro={
-            seleccionCategoria1Valida && seleccionGrafico2Valida
+            seleccionCategoria1Valida && productoTopSeleccionado
               ? [
                   `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`,
-                  `${etiquetaEstVtasEjeY(ejeY2)}: ${seleccionGrafico2Valida}`,
+                  `Producto: ${productoTopSeleccionado.etiqueta}`,
                   seleccionDesgloseValida
                     ? `Sucursal: ${seleccionDesgloseValida.sucursalEtiqueta}`
                     : null,

@@ -1,5 +1,6 @@
 import type {
   EstVtasBarraDimension,
+  EstVtasBarraProducto,
   EstVtasEjeY,
   EstVtasFiltroDimension,
   EstVtasGrupoDimension,
@@ -237,7 +238,8 @@ export function agregarUnidadesPorEjeYDesgloseSucursal(params: {
 
 /**
  * Serie temporal del año de `fechaClave`: siempre 12 puntos (ENE…DIC).
- * `filtros` acumula las categorías elegidas en los gráficos 1 y 2.
+ * `filtros` acumula las categorías elegidas en los gráficos dimensionales.
+ * `codTienda` acota a un producto (Top 10 / gráfico 2).
  */
 export function agregarUnidadesMensualesAnio(params: {
   productosFiltrados: EstVtasProductoItem[];
@@ -246,16 +248,20 @@ export function agregarUnidadesMensualesAnio(params: {
   fechaClave: string;
   modoUnidad: EstVtasModoUnidad;
   filtros?: EstVtasFiltroDimension[] | null;
+  codTienda?: string | null;
 }): EstVtasPuntoMensual[] {
   const periodo = parseClavePeriodoEstPorProd(params.fechaClave);
   if (!periodo) {
     return Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, unidades: 0 }));
   }
 
-  const productos = aplicarFiltrosDimension(
+  let productos = aplicarFiltrosDimension(
     params.productosFiltrados,
     params.filtros
   );
+  if (params.codTienda) {
+    productos = productos.filter((p) => p.codTienda === params.codTienda);
+  }
   const porCod = new Map(productos.map((p) => [p.codTienda, p] as const));
   const totales = new Map<number, number>();
   for (let m = 1; m <= 12; m++) totales.set(m, 0);
@@ -280,6 +286,66 @@ export function agregarUnidadesMensualesAnio(params: {
     const mes = i + 1;
     return { mes, unidades: totales.get(mes) ?? 0 };
   });
+}
+
+/**
+ * Top N productos por Un. vendidas (gráfico 2), respetando filtros de producto,
+ * sucursal, periodo, modo unidad y filtros dimensionales del gráfico 1.
+ */
+export function agregarTopProductos(params: {
+  productosFiltrados: EstVtasProductoItem[];
+  ventas: EstVtasVentaItem[];
+  sucursalId: string;
+  fechaClave: string;
+  modoUnidad: EstVtasModoUnidad;
+  filtros?: EstVtasFiltroDimension[] | null;
+  topN?: number;
+}): EstVtasBarraProducto[] {
+  const periodo = parseClavePeriodoEstPorProd(params.fechaClave);
+  if (!periodo) return [];
+
+  const topN = params.topN ?? 10;
+  const productos = aplicarFiltrosDimension(
+    params.productosFiltrados,
+    params.filtros
+  );
+  const porCod = new Map(productos.map((p) => [p.codTienda, p] as const));
+  if (porCod.size === 0) return [];
+
+  const totales = new Map<string, number>();
+
+  for (const v of params.ventas) {
+    if (v.mes !== periodo.mes || v.anio !== periodo.anio) continue;
+    if (params.sucursalId !== FILTRO_TODOS && v.sucursalId !== params.sucursalId) {
+      continue;
+    }
+    const prod = porCod.get(v.codTienda);
+    if (!prod) continue;
+
+    const factor = params.modoUnidad === "suma" ? prod.factorSuma : 1;
+    const aporte = v.vtasEnUn * factor;
+    if (aporte <= 0) continue;
+    totales.set(v.codTienda, (totales.get(v.codTienda) ?? 0) + aporte);
+  }
+
+  return [...totales.entries()]
+    .map(([codTienda, unidades]) => {
+      const prod = porCod.get(codTienda);
+      const desc = prod?.descripcionTienda.trim() ?? "";
+      return {
+        codTienda,
+        etiqueta: desc !== "" ? desc : codTienda,
+        unidades,
+      };
+    })
+    .filter((r) => r.unidades > 0)
+    .sort(
+      (a, b) =>
+        b.unidades - a.unidades ||
+        a.etiqueta.localeCompare(b.etiqueta, "es") ||
+        a.codTienda.localeCompare(b.codTienda, "es")
+    )
+    .slice(0, topN);
 }
 
 /** @deprecated Usar `agregarUnidadesPorEjeY`. */

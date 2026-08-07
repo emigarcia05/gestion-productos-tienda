@@ -105,5 +105,12 @@ export type EstVtasPuntoMensual = {
   unidades: number;
 };
 
+/** Barra del Top productos (gráfico 2). */
+export type EstVtasBarraProducto = {
+  codTienda: string;
+  etiqueta: string;
+  unidades: number;
+};
+
 /** @deprecated Usar `EstVtasBarraDimension`. */
 export type EstVtasBarraVariante = EstVtasBarraDimension;
