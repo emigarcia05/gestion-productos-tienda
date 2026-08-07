@@ -2433,6 +2433,37 @@ main button.proceso-paso-imagen-btn:active:not(:disabled) {
   transition: none !important;
 }
 
+/*
+ * Est. Vtas · barra del gráfico: anula `main button` / `:not([data-variant])`
+ * (altura 2.5rem, padding 1rem, fondo primary, sombra). Prioridad a la estética
+ * del gráfico: pista transparente + fill proporcional.
+ */
+main button.est-vtas-barra-btn,
+main button.est-vtas-barra-btn:hover:not(:disabled),
+main button.est-vtas-barra-btn:focus-visible,
+main button.est-vtas-barra-btn:active:not(:disabled) {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  flex: 1 1 0% !important;
+  width: auto !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  white-space: normal !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: inherit !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transition: box-shadow 0.15s !important;
+}
+
 /* Input/select de filtro: SSOT en @layer components (.input-filtro-unificado, .input-filtro-custom). */
 
 /* Tokens de marca: usar en componentes vía Tailwind (bg-primary, text-accent2, etc.) */

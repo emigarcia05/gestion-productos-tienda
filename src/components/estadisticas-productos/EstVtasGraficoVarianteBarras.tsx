@@ -287,7 +287,8 @@ export default function EstVtasGraficoVarianteBarras({
                           aria-label={`${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
                           onClick={() => handleBarraClick(b.etiqueta)}
                           className={cn(
-                            "flex min-w-0 flex-1 items-center border-0 bg-transparent p-0",
+                            /* Anula `main button` en globals.css — estética de gráfico, no CTA. */
+                            "est-vtas-barra-btn flex min-w-0 flex-1 items-center border-0 bg-transparent p-0",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
                             activa &&
                               "rounded-full ring-2 ring-primary/70 ring-offset-1 ring-offset-card"
