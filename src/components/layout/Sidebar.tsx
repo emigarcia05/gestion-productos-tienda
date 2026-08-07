@@ -504,17 +504,17 @@ export default function Sidebar({ rol }: { rol: Rol }) {
         )}
       </nav>
       <div className="mt-auto flex flex-col gap-2 px-4 pb-3">
+        <div className="flex justify-center" aria-hidden>
+          <div className="h-px w-[80%] shrink-0 bg-sidebar-foreground/85" />
+        </div>
         <div className="flex flex-col gap-2">
           <SyncStatusIndicator rol={rol} />
           <ImportStatusIndicator pollEnabled={rol === "editor"} />
         </div>
-        <div className="flex justify-center" aria-hidden>
-          <div className="h-px w-[80%] shrink-0 bg-sidebar-foreground/85" />
-        </div>
-        <SidebarMainAppArea />
         <div className="rounded-lg px-2">
           <SidebarAreaSwitcher rolActual={rol} />
         </div>
+        <SidebarMainAppArea />
       </div>
     </aside>
   );
