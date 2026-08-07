@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -17,6 +17,7 @@ import FilterBar, {
   FilterRowSearch,
   FilterRowSelection,
   LimpiarFiltrosButton,
+  SELECT_TRIGGER_FILTER_CLASS,
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -45,11 +46,15 @@ import type { SucursalEstOption } from "@/lib/estPorProdTypes";
 import {
   clavePeriodoEstPorProd,
   clavePeriodoMasRecienteConVentas,
-  etiquetaPeriodoCortoEstPorProd,
+  etiquetaMesCortoEstPorProd,
+  etiquetaMesEstPorProd,
   listarPeriodosCargaEstPorProd,
+  parseClavePeriodoEstPorProd,
 } from "@/lib/estPorProdPeriodo";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
+import { toast } from "sonner";
 
 const FILTRO_TODOS = "none";
 const FILTRO_SIN_COLOR = "__SIN_COLOR__";
@@ -57,6 +62,21 @@ const FILTRO_SIN_TERMINACION = "__SIN_TERMINACION__";
 const FILTRO_SIN_PRESENTACION = "__SIN_PRESENTACION__";
 
 const FOCUS_KEY = "filtros-est-vtas-focus";
+
+const MESES_CALENDARIO: { valor: number; etiqueta: string }[] = [
+  { valor: 1, etiqueta: "ENERO" },
+  { valor: 2, etiqueta: "FEBRERO" },
+  { valor: 3, etiqueta: "MARZO" },
+  { valor: 4, etiqueta: "ABRIL" },
+  { valor: 5, etiqueta: "MAYO" },
+  { valor: 6, etiqueta: "JUNIO" },
+  { valor: 7, etiqueta: "JULIO" },
+  { valor: 8, etiqueta: "AGOSTO" },
+  { valor: 9, etiqueta: "SEPTIEMBRE" },
+  { valor: 10, etiqueta: "OCTUBRE" },
+  { valor: 11, etiqueta: "NOVIEMBRE" },
+  { valor: 12, etiqueta: "DICIEMBRE" },
+];
 
 interface Props {
   filas: EstVtasProductoItem[];
@@ -72,6 +92,32 @@ function opcionesOrdenadas(valores: string[]): string[] {
   );
 }
 
+function mismosNumeros(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort((x, y) => x - y);
+  const sb = [...b].sort((x, y) => x - y);
+  return sa.every((v, i) => v === sb[i]);
+}
+
+function etiquetaAniosSeleccionados(aniosSel: number[]): string {
+  if (aniosSel.length === 0) return "AÑO";
+  const sorted = [...aniosSel].sort((a, b) => a - b);
+  if (sorted.length === 1) return String(sorted[0]);
+  return sorted.join(" · ");
+}
+
+function etiquetaMesesSeleccionados(mesesSel: number[]): string {
+  if (mesesSel.length === 0) return "MES";
+  const sorted = [...mesesSel].sort((a, b) => a - b);
+  if (sorted.length === 1) {
+    return (
+      MESES_CALENDARIO.find((m) => m.valor === sorted[0])?.etiqueta ??
+      etiquetaMesEstPorProd(sorted[0]!).toLocaleUpperCase("es-AR")
+    );
+  }
+  return sorted.map((n) => etiquetaMesCortoEstPorProd(n)).join(" · ");
+}
+
 export default function EstVtasPageClient({
   filas,
   ventas,
@@ -79,14 +125,18 @@ export default function EstVtasPageClient({
   mesActual,
   anioActual,
 }: Props) {
-  const fechaDefault = useMemo(
-    () =>
-      clavePeriodoMasRecienteConVentas(ventas, {
+  const periodoDefault = useMemo(() => {
+    const clave = clavePeriodoMasRecienteConVentas(ventas, {
+      mes: mesActual,
+      anio: anioActual,
+    });
+    return (
+      parseClavePeriodoEstPorProd(clave) ?? {
         mes: mesActual,
         anio: anioActual,
-      }),
-    [ventas, mesActual, anioActual]
-  );
+      }
+    );
+  }, [ventas, mesActual, anioActual]);
 
   const [filtMarca, setFiltMarca] = useState(FILTRO_TODOS);
   const [filtRubro, setFiltRubro] = useState(FILTRO_TODOS);
@@ -95,8 +145,13 @@ export default function EstVtasPageClient({
   const [filtTerminacion, setFiltTerminacion] = useState(FILTRO_TODOS);
   const [filtPresentacion, setFiltPresentacion] = useState(FILTRO_TODOS);
   const [filtSucursalId, setFiltSucursalId] = useState(FILTRO_TODOS);
-  const [filtFecha, setFiltFecha] = useState(fechaDefault);
+  const [filtAnios, setFiltAnios] = useState<number[]>([periodoDefault.anio]);
+  const [filtMeses, setFiltMeses] = useState<number[]>([periodoDefault.mes]);
   const [filtUnidad, setFiltUnidad] = useState<EstVtasModoUnidad>("unidad");
+  const [aniosOpen, setAniosOpen] = useState(false);
+  const [mesesOpen, setMesesOpen] = useState(false);
+  const aniosMultiRef = useRef<HTMLDivElement>(null);
+  const mesesMultiRef = useRef<HTMLDivElement>(null);
   const [dimension1, setDimension1] =
     useState<EstVtasDimensionGrafico>("marca");
   const [desglose1, setDesglose1] = useState<EstVtasDesglose>("ninguno");
@@ -115,6 +170,22 @@ export default function EstVtasPageClient({
     );
     return keys;
   }, [ventas]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const t = e.target as Node;
+      if (aniosMultiRef.current && !aniosMultiRef.current.contains(t)) {
+        setAniosOpen(false);
+      }
+      if (mesesMultiRef.current && !mesesMultiRef.current.contains(t)) {
+        setMesesOpen(false);
+      }
+    }
+    if (aniosOpen || mesesOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [aniosOpen, mesesOpen]);
 
   const {
     q,
@@ -135,6 +206,42 @@ export default function EstVtasPageClient({
     () => listarPeriodosCargaEstPorProd({ mes: mesActual, anio: anioActual }),
     [mesActual, anioActual]
   );
+
+  const aniosOpciones = useMemo(() => {
+    const set = new Set(periodos.map((p) => p.anio));
+    return [...set].sort((a, b) => b - a);
+  }, [periodos]);
+
+  const labelAnios = etiquetaAniosSeleccionados(filtAnios);
+  const labelMeses = etiquetaMesesSeleccionados(filtMeses);
+  const aniosFiltroActivo = !mismosNumeros(filtAnios, [periodoDefault.anio]);
+  const mesesFiltroActivo = !mismosNumeros(filtMeses, [periodoDefault.mes]);
+
+  function toggleAnio(anioValor: number) {
+    const tiene = filtAnios.includes(anioValor);
+    if (tiene && filtAnios.length === 1) {
+      toast.info("Dejá al menos un año seleccionado.");
+      return;
+    }
+    setFiltAnios(
+      tiene
+        ? filtAnios.filter((a) => a !== anioValor)
+        : [...filtAnios, anioValor]
+    );
+  }
+
+  function toggleMes(mesValor: number) {
+    const tiene = filtMeses.includes(mesValor);
+    if (tiene && filtMeses.length === 1) {
+      toast.info("Dejá al menos un mes seleccionado.");
+      return;
+    }
+    setFiltMeses(
+      tiene
+        ? filtMeses.filter((m) => m !== mesValor)
+        : [...filtMeses, mesValor]
+    );
+  }
 
   const marcas = useMemo(
     () => opcionesOrdenadas(filas.map((f) => f.marca)),
@@ -222,7 +329,8 @@ export default function EstVtasPageClient({
         productosFiltrados: filasFiltradas,
         ventas,
         sucursalId: filtSucursalId,
-        fechaClave: filtFecha,
+        anios: filtAnios,
+        meses: filtMeses,
         modoUnidad: filtUnidad,
         ejeY: dimension1,
         sucursales,
@@ -231,7 +339,8 @@ export default function EstVtasPageClient({
       filasFiltradas,
       ventas,
       filtSucursalId,
-      filtFecha,
+      filtAnios,
+      filtMeses,
       filtUnidad,
       dimension1,
       sucursales,
@@ -243,7 +352,8 @@ export default function EstVtasPageClient({
     return agregarUnidadesPorDobleDimension({
       productosFiltrados: filasFiltradas,
       ventas,
-      fechaClave: filtFecha,
+      anios: filtAnios,
+      meses: filtMeses,
       modoUnidad: filtUnidad,
       dimension: dimension1,
       desglose: desglose1,
@@ -253,7 +363,8 @@ export default function EstVtasPageClient({
     desglose1,
     filasFiltradas,
     ventas,
-    filtFecha,
+    filtAnios,
+    filtMeses,
     filtUnidad,
     dimension1,
     sucursales,
@@ -347,7 +458,8 @@ export default function EstVtasPageClient({
       productosFiltrados: filasFiltradas,
       ventas,
       sucursalId: sucursalIdEfectiva,
-      fechaClave: filtFecha,
+      anios: filtAnios,
+      meses: filtMeses,
       modoUnidad: filtUnidad,
       filtros: filtrosDimensionG1,
       topN: 10,
@@ -357,7 +469,8 @@ export default function EstVtasPageClient({
     filasFiltradas,
     ventas,
     sucursalIdEfectiva,
-    filtFecha,
+    filtAnios,
+    filtMeses,
     filtUnidad,
     filtrosDimensionG1,
   ]);
@@ -370,13 +483,13 @@ export default function EstVtasPageClient({
       : null;
 
   const puntosMensuales = useMemo(() => {
-    // G3 ignora FECHA: agrega ENE…DIC de todos los años con los filtros actuales.
+    // G3: ENE…DIC; respeta años seleccionados; ignora filtro Mes de página.
     return agregarUnidadesMensualesAnio({
       productosFiltrados: filasFiltradas,
       ventas,
       sucursalId: sucursalIdEfectiva,
       modoUnidad: filtUnidad,
-      anio: null,
+      anios: filtAnios,
       filtros: filtrosDimensionG1,
       codTienda: seleccionProductoTopValida,
     });
@@ -385,6 +498,7 @@ export default function EstVtasPageClient({
     ventas,
     sucursalIdEfectiva,
     filtUnidad,
+    filtAnios,
     filtrosDimensionG1,
     seleccionProductoTopValida,
   ]);
@@ -429,7 +543,8 @@ export default function EstVtasPageClient({
     setFiltTerminacion(FILTRO_TODOS);
     setFiltPresentacion(FILTRO_TODOS);
     setFiltSucursalId(FILTRO_TODOS);
-    setFiltFecha(fechaDefault);
+    setFiltAnios([periodoDefault.anio]);
+    setFiltMeses([periodoDefault.mes]);
     setFiltUnidad("unidad");
     setQ("");
     setQDebounced("");
@@ -659,66 +774,6 @@ export default function EstVtasPageClient({
               <FilaFiltrosDesplegables>
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtSucursalId !== FILTRO_TODOS}
-                  onLimpiar={() => setFiltSucursalId(FILTRO_TODOS)}
-                >
-                  <Select value={filtSucursalId} onValueChange={setFiltSucursalId}>
-                    <SelectTrigger
-                      className="input-filtro-unificado"
-                      aria-label="Sucursales"
-                    >
-                      <SelectValue placeholder="SUCURSALES" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      <SelectItem value={FILTRO_TODOS}>SUCURSALES</SelectItem>
-                      {sucursales.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FiltroIndividualContainer>
-
-                <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtFecha !== fechaDefault}
-                  onLimpiar={() => setFiltFecha(fechaDefault)}
-                >
-                  <Select value={filtFecha} onValueChange={setFiltFecha}>
-                    <SelectTrigger className="input-filtro-unificado" aria-label="Fecha">
-                      <SelectValue placeholder="FECHA" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      {periodos.map((p) => {
-                        const clave = clavePeriodoEstPorProd(p.mes, p.anio);
-                        const conDatos = periodosConVentas.has(clave);
-                        const etiqueta = etiquetaPeriodoCortoEstPorProd(
-                          p.mes,
-                          p.anio
-                        ).toLocaleUpperCase("es-AR");
-                        return (
-                          <SelectItem key={clave} value={clave}>
-                            {conDatos ? etiqueta : `${etiqueta} (SIN DATOS)`}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </FiltroIndividualContainer>
-
-                <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
                   activo={filtUnidad !== "unidad"}
                   onLimpiar={() => setFiltUnidad("unidad")}
                 >
@@ -726,8 +781,11 @@ export default function EstVtasPageClient({
                     value={filtUnidad}
                     onValueChange={(v) => setFiltUnidad(v as EstVtasModoUnidad)}
                   >
-                    <SelectTrigger className="input-filtro-unificado" aria-label="Unidad">
-                      <SelectValue placeholder="UNIDAD" />
+                    <SelectTrigger
+                      className="input-filtro-unificado"
+                      aria-label="Unidades"
+                    >
+                      <SelectValue placeholder="UNIDADES" />
                     </SelectTrigger>
                     <SelectContent
                       position="popper"
@@ -741,7 +799,160 @@ export default function EstVtasPageClient({
                   </Select>
                 </FiltroIndividualContainer>
 
-                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-2 gap-2")}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={filtSucursalId !== FILTRO_TODOS}
+                  onLimpiar={() => setFiltSucursalId(FILTRO_TODOS)}
+                >
+                  <Select value={filtSucursalId} onValueChange={setFiltSucursalId}>
+                    <SelectTrigger
+                      className="input-filtro-unificado"
+                      aria-label="Sucursal"
+                    >
+                      <SelectValue placeholder="SUCURSAL" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro max-h-60"
+                    >
+                      <SelectItem value={FILTRO_TODOS}>SUCURSAL</SelectItem>
+                      {sucursales.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FiltroIndividualContainer>
+
+                <FiltroIndividualContainer
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={aniosFiltroActivo}
+                  onLimpiar={() => setFiltAnios([periodoDefault.anio])}
+                >
+                  <div className="relative" ref={aniosMultiRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMesesOpen(false);
+                        setAniosOpen((o) => !o);
+                      }}
+                      className={cn(
+                        SELECT_TRIGGER_FILTER_CLASS,
+                        "flex w-full items-center justify-between gap-2 text-left font-semibold"
+                      )}
+                      aria-expanded={aniosOpen}
+                      aria-haspopup="listbox"
+                      aria-label="Año (selección múltiple)"
+                    >
+                      <span className="truncate">{labelAnios}</span>
+                      <ChevronDown
+                        className="h-4 w-4 shrink-0 opacity-50"
+                        aria-hidden
+                      />
+                    </button>
+                    {aniosOpen ? (
+                      <div
+                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                        role="listbox"
+                        aria-multiselectable="true"
+                      >
+                        {aniosOpciones.map((a) => {
+                          const selected = filtAnios.includes(a);
+                          const conDatos = [...periodosConVentas].some((k) =>
+                            k.startsWith(`${a}-`)
+                          );
+                          return (
+                            <label
+                              key={a}
+                              role="option"
+                              aria-selected={selected}
+                              className={cn(
+                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                                selected && "bg-muted"
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleAnio(a)}
+                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                aria-label={String(a)}
+                              />
+                              <span>
+                                {conDatos ? a : `${a} (SIN DATOS)`}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                </FiltroIndividualContainer>
+
+                <FiltroIndividualContainer
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={mesesFiltroActivo}
+                  onLimpiar={() => setFiltMeses([periodoDefault.mes])}
+                >
+                  <div className="relative" ref={mesesMultiRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAniosOpen(false);
+                        setMesesOpen((o) => !o);
+                      }}
+                      className={cn(
+                        SELECT_TRIGGER_FILTER_CLASS,
+                        "flex w-full items-center justify-between gap-2 text-left font-semibold"
+                      )}
+                      aria-expanded={mesesOpen}
+                      aria-haspopup="listbox"
+                      aria-label="Mes (selección múltiple)"
+                    >
+                      <span className="truncate">{labelMeses}</span>
+                      <ChevronDown
+                        className="h-4 w-4 shrink-0 opacity-50"
+                        aria-hidden
+                      />
+                    </button>
+                    {mesesOpen ? (
+                      <div
+                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                        role="listbox"
+                        aria-multiselectable="true"
+                      >
+                        {MESES_CALENDARIO.map((m) => {
+                          const selected = filtMeses.includes(m.valor);
+                          return (
+                            <label
+                              key={m.valor}
+                              role="option"
+                              aria-selected={selected}
+                              className={cn(
+                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                                selected && "bg-muted"
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleMes(m.valor)}
+                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                aria-label={m.etiqueta}
+                              />
+                              <span>{m.etiqueta}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                </FiltroIndividualContainer>
+
+                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "gap-2")}>
                   <span className={FILTER_COUNT_CLASS}>
                     {filasFiltradas.length.toLocaleString("es-AR")} PRODUCTO
                     {filasFiltradas.length === 1 ? "" : "S"}
@@ -787,8 +998,8 @@ export default function EstVtasPageClient({
         />
         <EstVtasGraficoBarrasMensual
           puntos={puntosMensuales}
-          anio={null}
-          mesMarca={null}
+          anio={filtAnios.length === 1 ? filtAnios[0]! : null}
+          mesMarca={filtMeses.length === 1 ? filtMeses[0]! : null}
           sinVentasCargadas={ventas.length === 0}
           className="h-full max-h-full w-[35%] min-w-0 shrink-0 self-start"
         />

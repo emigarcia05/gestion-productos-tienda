@@ -21,6 +21,27 @@ const SIN_MARCA = "SIN MARCA";
 const SIN_RUBRO = "SIN RUBRO";
 const SIN_SUB_RUBRO = "SIN SUB RUBRO";
 
+/** Filtro de periodo: años y meses (multi). Array vacío = sin acotar esa dimensión. */
+export type EstVtasFiltroPeriodo = {
+  anios: readonly number[];
+  meses: readonly number[];
+};
+
+export function cumpleFiltroPeriodo(
+  v: { mes: number; anio: number },
+  periodo: EstVtasFiltroPeriodo
+): boolean {
+  if (periodo.anios.length > 0 && !periodo.anios.includes(v.anio)) return false;
+  if (periodo.meses.length > 0 && !periodo.meses.includes(v.mes)) return false;
+  return true;
+}
+
+function periodoDesdeFechaClave(fechaClave: string): EstVtasFiltroPeriodo | null {
+  const p = parseClavePeriodoEstPorProd(fechaClave);
+  if (!p) return null;
+  return { anios: [p.anio], meses: [p.mes] };
+}
+
 /** Etiqueta de producto para una dimensión del eje Y (incluye placeholders SIN …). */
 export function etiquetaEjeYProducto(
   prod: EstVtasProductoItem,
@@ -72,24 +93,41 @@ function nombreSucursal(
   return nombrePorId.get(sucursalId) ?? sucursalId;
 }
 
+function resolverPeriodo(params: {
+  anios?: readonly number[];
+  meses?: readonly number[];
+  fechaClave?: string;
+}): EstVtasFiltroPeriodo | null {
+  if (params.anios != null || params.meses != null) {
+    return {
+      anios: params.anios ?? [],
+      meses: params.meses ?? [],
+    };
+  }
+  if (params.fechaClave) return periodoDesdeFechaClave(params.fechaClave);
+  return null;
+}
+
 /**
  * Agrega Un. vendidas por la dimensión elegida (producto o sucursal).
- * Respeta filtros de producto ya aplicados, sucursal, periodo y modo unidad/suma.
- * `filtroPadre` acota a productos cuya etiqueta en esa dimensión coincide.
- * Si `ejeY === "sucursal"`, requiere `sucursales` para etiquetas; el filtro
- * global de sucursal sigue aplicando.
+ * Respeta filtros de producto, sucursal, periodo (años/meses) y modo unidad/suma.
  */
 export function agregarUnidadesPorEjeY(params: {
   productosFiltrados: EstVtasProductoItem[];
   ventas: EstVtasVentaItem[];
   sucursalId: string;
-  fechaClave: string;
   modoUnidad: EstVtasModoUnidad;
   ejeY: EstVtasDimensionGrafico;
+  /** Años seleccionados (multi). Preferir sobre `fechaClave`. */
+  anios?: readonly number[];
+  /** Meses 1–12 seleccionados (multi). Preferir sobre `fechaClave`. */
+  meses?: readonly number[];
+  /** @deprecated Usar `anios` + `meses`. */
+  fechaClave?: string;
   filtroPadre?: EstVtasFiltroDimension | null;
   sucursales?: readonly { id: string; nombre: string }[];
 }): EstVtasBarraDimension[] {
-  const periodo = parseClavePeriodoEstPorProd(params.fechaClave);
+  const periodo = resolverPeriodo(params);
   if (!periodo) return [];
 
   const productos = aplicarFiltrosDimension(
@@ -108,7 +146,7 @@ export function agregarUnidadesPorEjeY(params: {
   const totales = new Map<string, { etiqueta: string; unidades: number }>();
 
   for (const v of params.ventas) {
-    if (v.mes !== periodo.mes || v.anio !== periodo.anio) continue;
+    if (!cumpleFiltroPeriodo(v, periodo)) continue;
     if (params.sucursalId !== FILTRO_TODOS && v.sucursalId !== params.sucursalId) {
       continue;
     }
@@ -151,20 +189,19 @@ export function agregarUnidadesPorEjeY(params: {
 }
 
 /**
- * Agrega Un. vendidas por sucursal (desglose del gráfico 1).
- * `filtroPadre` acota a la categoría elegida en el eje Y (ej. RUBRO = LATEX).
- * No aplica el filtro global de sucursal: muestra una barra por cada sucursal con ventas.
  * @deprecated Preferir `agregarUnidadesPorDobleDimension`.
  */
 export function agregarUnidadesPorSucursal(params: {
   productosFiltrados: EstVtasProductoItem[];
   ventas: EstVtasVentaItem[];
-  fechaClave: string;
   modoUnidad: EstVtasModoUnidad;
   filtroPadre: EstVtasFiltroDimension;
   sucursales: readonly { id: string; nombre: string }[];
+  anios?: readonly number[];
+  meses?: readonly number[];
+  fechaClave?: string;
 }): EstVtasBarraDimension[] {
-  const periodo = parseClavePeriodoEstPorProd(params.fechaClave);
+  const periodo = resolverPeriodo(params);
   if (!periodo) return [];
 
   const productos = aplicarFiltrosDimension(params.productosFiltrados, [
@@ -179,7 +216,7 @@ export function agregarUnidadesPorSucursal(params: {
   const totales = new Map<string, number>();
 
   for (const v of params.ventas) {
-    if (v.mes !== periodo.mes || v.anio !== periodo.anio) continue;
+    if (!cumpleFiltroPeriodo(v, periodo)) continue;
     const prod = porCod.get(v.codTienda);
     if (!prod) continue;
 
@@ -200,19 +237,21 @@ export function agregarUnidadesPorSucursal(params: {
 
 /**
  * Desglose genérico del gráfico 1: agrupa por `dimension` y, dentro de cada
- * grupo, barras hijas por `desglose`. No aplica el filtro global de sucursal
- * (para poder ver el cruce completo). `dimension` y `desglose` no deben coincidir.
+ * grupo, barras hijas por `desglose`. No aplica el filtro global de sucursal.
  */
 export function agregarUnidadesPorDobleDimension(params: {
   productosFiltrados: EstVtasProductoItem[];
   ventas: EstVtasVentaItem[];
-  fechaClave: string;
   modoUnidad: EstVtasModoUnidad;
   dimension: EstVtasDimensionGrafico;
   desglose: EstVtasDimensionGrafico;
   sucursales: readonly { id: string; nombre: string }[];
+  anios?: readonly number[];
+  meses?: readonly number[];
+  /** @deprecated Usar `anios` + `meses`. */
+  fechaClave?: string;
 }): EstVtasGrupoDimension[] {
-  const periodo = parseClavePeriodoEstPorProd(params.fechaClave);
+  const periodo = resolverPeriodo(params);
   if (!periodo) return [];
   if (params.dimension === params.desglose) return [];
 
@@ -240,14 +279,13 @@ export function agregarUnidadesPorDobleDimension(params: {
     return { id: etiqueta, etiqueta };
   }
 
-  /** categoriaId → { etiqueta, hijos: hijoId → { etiqueta, unidades } } */
   const porCategoria = new Map<
     string,
     { etiqueta: string; hijos: Map<string, { etiqueta: string; unidades: number }> }
   >();
 
   for (const v of params.ventas) {
-    if (v.mes !== periodo.mes || v.anio !== periodo.anio) continue;
+    if (!cumpleFiltroPeriodo(v, periodo)) continue;
     const prod = porCod.get(v.codTienda);
     if (!prod) continue;
 
@@ -300,52 +338,57 @@ export function agregarUnidadesPorDobleDimension(params: {
 
 /**
  * @deprecated Preferir `agregarUnidadesPorDobleDimension`.
- * Desglose del gráfico 1: categoría del eje Y → sucursales.
  */
 export function agregarUnidadesPorEjeYDesgloseSucursal(params: {
   productosFiltrados: EstVtasProductoItem[];
   ventas: EstVtasVentaItem[];
-  fechaClave: string;
   modoUnidad: EstVtasModoUnidad;
   ejeY: EstVtasEjeY;
   sucursales: readonly { id: string; nombre: string }[];
+  anios?: readonly number[];
+  meses?: readonly number[];
+  fechaClave?: string;
 }): EstVtasGrupoDimension[] {
   return agregarUnidadesPorDobleDimension({
     productosFiltrados: params.productosFiltrados,
     ventas: params.ventas,
-    fechaClave: params.fechaClave,
     modoUnidad: params.modoUnidad,
     dimension: params.ejeY,
     desglose: "sucursal",
     sucursales: params.sucursales,
+    anios: params.anios,
+    meses: params.meses,
+    fechaClave: params.fechaClave,
   });
 }
 
 /**
  * Serie temporal mensual: siempre 12 puntos (ENE…DIC).
- * `anio`: si es un número, acota a ese año; si es `null`/omitido sin `fechaClave`,
- * agrega **todos** los años (el filtro FECHA no afecta).
- * `fechaClave` (opcional): solo si no se pasa `anio`, toma el año de la clave.
- * `filtros` / `codTienda`: categoría G1 y producto Top 10.
+ * `anios`: si hay valores, acota a esos años; vacío/`null` = todos los años.
+ * El filtro de **meses** de página no afecta el eje X (siempre ENE…DIC).
  */
 export function agregarUnidadesMensualesAnio(params: {
   productosFiltrados: EstVtasProductoItem[];
   ventas: EstVtasVentaItem[];
   sucursalId: string;
   modoUnidad: EstVtasModoUnidad;
-  /** Año a graficar. `null` = todos los años (ignora FECHA). */
+  /** @deprecated Preferir `anios`. Un solo año; `null` = todos. */
   anio?: number | null;
-  /** Si no hay `anio`, se usa el año de esta clave. */
+  /** Años a incluir (multi). Tiene prioridad sobre `anio` / `fechaClave`. */
+  anios?: readonly number[] | null;
+  /** @deprecated Solo si no hay `anio`/`anios`. */
   fechaClave?: string;
   filtros?: EstVtasFiltroDimension[] | null;
   codTienda?: string | null;
 }): EstVtasPuntoMensual[] {
-  let anioFiltro: number | null | undefined = params.anio;
-  if (anioFiltro === undefined && params.fechaClave) {
-    anioFiltro = parseClavePeriodoEstPorProd(params.fechaClave)?.anio ?? null;
-  }
-  if (anioFiltro === undefined) {
-    anioFiltro = null;
+  let aniosFiltro: readonly number[] | null = null;
+  if (params.anios != null) {
+    aniosFiltro = params.anios.length > 0 ? params.anios : null;
+  } else if (params.anio !== undefined) {
+    aniosFiltro = params.anio == null ? null : [params.anio];
+  } else if (params.fechaClave) {
+    const a = parseClavePeriodoEstPorProd(params.fechaClave)?.anio;
+    aniosFiltro = a != null ? [a] : null;
   }
 
   let productos = aplicarFiltrosDimension(
@@ -361,7 +404,7 @@ export function agregarUnidadesMensualesAnio(params: {
 
   if (porCod.size > 0) {
     for (const v of params.ventas) {
-      if (anioFiltro != null && v.anio !== anioFiltro) continue;
+      if (aniosFiltro != null && !aniosFiltro.includes(v.anio)) continue;
       if (params.sucursalId !== FILTRO_TODOS && v.sucursalId !== params.sucursalId) {
         continue;
       }
@@ -382,19 +425,22 @@ export function agregarUnidadesMensualesAnio(params: {
 }
 
 /**
- * Top N productos (gráfico 2 · tabla): ranking por TOTAL PERIODO (FECHA)
- * + PROMEDIO MENSUAL (total sin FECHA / periodos mes×año con venta).
+ * Top N productos (gráfico 2 · tabla): ranking por TOTAL PERIODO (años×meses)
+ * + PROMEDIO MENSUAL (total sin periodo / periodos mes×año con venta).
  */
 export function agregarTopProductos(params: {
   productosFiltrados: EstVtasProductoItem[];
   ventas: EstVtasVentaItem[];
   sucursalId: string;
-  fechaClave: string;
   modoUnidad: EstVtasModoUnidad;
+  anios?: readonly number[];
+  meses?: readonly number[];
+  /** @deprecated Usar `anios` + `meses`. */
+  fechaClave?: string;
   filtros?: EstVtasFiltroDimension[] | null;
   topN?: number;
 }): EstVtasBarraProducto[] {
-  const periodo = parseClavePeriodoEstPorProd(params.fechaClave);
+  const periodo = resolverPeriodo(params);
   if (!periodo) return [];
 
   const topN = params.topN ?? 10;
@@ -406,9 +452,7 @@ export function agregarTopProductos(params: {
   if (porCod.size === 0) return [];
 
   const totalPeriodo = new Map<string, number>();
-  /** codTienda → suma de todos los periodos (sin FECHA). */
   const totalAcumulado = new Map<string, number>();
-  /** codTienda → set de claves `anio-mes` con venta. */
   const periodosConVenta = new Map<string, Set<string>>();
 
   for (const v of params.ventas) {
@@ -422,7 +466,7 @@ export function agregarTopProductos(params: {
     const aporte = v.vtasEnUn * factor;
     if (aporte <= 0) continue;
 
-    if (v.mes === periodo.mes && v.anio === periodo.anio) {
+    if (cumpleFiltroPeriodo(v, periodo)) {
       totalPeriodo.set(
         v.codTienda,
         (totalPeriodo.get(v.codTienda) ?? 0) + aporte
@@ -470,8 +514,10 @@ export function agregarUnidadesPorVariante(params: {
   productosFiltrados: EstVtasProductoItem[];
   ventas: EstVtasVentaItem[];
   sucursalId: string;
-  fechaClave: string;
   modoUnidad: EstVtasModoUnidad;
+  anios?: readonly number[];
+  meses?: readonly number[];
+  fechaClave?: string;
 }): EstVtasBarraDimension[] {
   return agregarUnidadesPorEjeY({ ...params, ejeY: "variante" });
 }
