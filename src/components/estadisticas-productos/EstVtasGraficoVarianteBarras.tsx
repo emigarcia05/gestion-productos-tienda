@@ -1,10 +1,24 @@
 "use client";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { EstVtasBarraVariante } from "@/lib/estVtasTypes";
+import {
+  EST_VTAS_EJE_Y_OPTIONS,
+  etiquetaEstVtasEjeY,
+  type EstVtasBarraDimension,
+  type EstVtasEjeY,
+} from "@/lib/estVtasTypes";
 
 interface Props {
-  barras: EstVtasBarraVariante[];
+  barras: EstVtasBarraDimension[];
+  ejeY: EstVtasEjeY;
+  onEjeYChange: (eje: EstVtasEjeY) => void;
   /** True si no hay ninguna fila en `est_por_prod` (nada cargado). */
   sinVentasCargadas?: boolean;
   className?: string;
@@ -18,16 +32,20 @@ function fmtUnidades(n: number): string {
 }
 
 /**
- * Barras horizontales: eje Y = Variante, eje X = Un. vendidas.
+ * Barras horizontales: eje Y = dimensión elegida, eje X = Un. vendidas.
+ * El título es un Select para elegir la dimensión del eje Y.
  * Posición: margen superior izquierdo del dashboard Estadísticas Vtas.
  */
 export default function EstVtasGraficoVarianteBarras({
   barras,
+  ejeY,
+  onEjeYChange,
   sinVentasCargadas = false,
   className,
 }: Props) {
   const max = barras.reduce((m, b) => Math.max(m, b.unidades), 0);
   const vacio = barras.length === 0;
+  const labelEjeY = etiquetaEstVtasEjeY(ejeY);
 
   return (
     <section
@@ -35,14 +53,40 @@ export default function EstVtasGraficoVarianteBarras({
         "flex min-h-[22rem] min-w-0 flex-col gap-3 rounded-md border border-border bg-card p-4 shadow-sm",
         className
       )}
-      aria-label="Unidades vendidas por variante"
+      aria-label={`Unidades vendidas por ${labelEjeY.toLowerCase()}`}
     >
-      <header className="shrink-0 text-center">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-foreground">
-          Un. Vendidas Por Variante
-        </h2>
-        <p className="mt-0.5 text-[10px] text-muted-foreground">
-          Eje Y: Variante · Eje X: Un. Vendidas
+      <header className="flex shrink-0 flex-col items-center gap-0.5">
+        <Select
+          value={ejeY}
+          onValueChange={(v) => onEjeYChange(v as EstVtasEjeY)}
+        >
+          <SelectTrigger
+            size="sm"
+            aria-label="Dimensión del eje Y"
+            className={cn(
+              "h-auto w-auto max-w-full border-0 bg-transparent px-2 py-1 shadow-none",
+              "text-xs font-semibold uppercase tracking-wide text-foreground",
+              "hover:bg-muted/40 focus-visible:ring-1 focus-visible:ring-ring/40",
+              "[&_svg]:opacity-70"
+            )}
+          >
+            <SelectValue placeholder="Un. Vendidas Por Variante" />
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="center"
+            className="select-content-filtro"
+          >
+            {EST_VTAS_EJE_Y_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {`Un. Vendidas Por ${opt.label}`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-[10px] text-muted-foreground">
+          Eje Y: {labelEjeY} · Eje X: Un. Vendidas
         </p>
       </header>
 
@@ -65,24 +109,24 @@ export default function EstVtasGraficoVarianteBarras({
               const widthPct = b.unidades > 0 ? Math.max(pct, 2) : 0;
               return (
                 <div
-                  key={b.variante}
+                  key={b.etiqueta}
                   className="grid grid-cols-[6.5rem_minmax(0,1fr)_3.5rem] items-center gap-2"
                 >
                   <span
                     className="truncate text-right text-[11px] font-medium leading-tight text-foreground"
-                    title={b.variante}
+                    title={b.etiqueta}
                   >
-                    {b.variante}
+                    {b.etiqueta}
                   </span>
                   <div
                     className="h-5 w-full rounded-sm bg-muted/30"
                     role="img"
-                    aria-label={`${b.variante}: ${fmtUnidades(b.unidades)} unidades vendidas`}
+                    aria-label={`${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
                   >
                     <div
                       className={cn(
                         "h-full rounded-sm",
-                        b.unidades > 0 ? "bg-[#0072BB]" : "bg-muted-foreground/20"
+                        b.unidades > 0 ? "bg-primary" : "bg-muted-foreground/20"
                       )}
                       style={{ width: `${widthPct}%` }}
                     />

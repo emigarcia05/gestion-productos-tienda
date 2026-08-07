@@ -22,8 +22,9 @@ import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import EstVtasGraficoVarianteBarras from "@/components/estadisticas-productos/EstVtasGraficoVarianteBarras";
 import { matchByMultiTerm } from "@/lib/busqueda";
-import { agregarUnidadesPorVariante } from "@/lib/estVtasAgregar";
+import { agregarUnidadesPorEjeY } from "@/lib/estVtasAgregar";
 import type {
+  EstVtasEjeY,
   EstVtasModoUnidad,
   EstVtasProductoItem,
   EstVtasVentaItem,
@@ -84,6 +85,7 @@ export default function EstVtasPageClient({
   const [filtSucursalId, setFiltSucursalId] = useState(FILTRO_TODOS);
   const [filtFecha, setFiltFecha] = useState(fechaDefault);
   const [filtUnidad, setFiltUnidad] = useState<EstVtasModoUnidad>("unidad");
+  const [ejeY, setEjeY] = useState<EstVtasEjeY>("variante");
   const [qDebounced, setQDebounced] = useState("");
 
   const periodosConVentas = useMemo(() => {
@@ -191,16 +193,17 @@ export default function EstVtasPageClient({
     qDebounced,
   ]);
 
-  const barrasVariante = useMemo(
+  const barrasDimension = useMemo(
     () =>
-      agregarUnidadesPorVariante({
+      agregarUnidadesPorEjeY({
         productosFiltrados: filasFiltradas,
         ventas,
         sucursalId: filtSucursalId,
         fechaClave: filtFecha,
         modoUnidad: filtUnidad,
+        ejeY,
       }),
-    [filasFiltradas, ventas, filtSucursalId, filtFecha, filtUnidad]
+    [filasFiltradas, ventas, filtSucursalId, filtFecha, filtUnidad, ejeY]
   );
 
   function limpiarFiltros() {
@@ -537,7 +540,9 @@ export default function EstVtasPageClient({
     >
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
         <EstVtasGraficoVarianteBarras
-          barras={barrasVariante}
+          barras={barrasDimension}
+          ejeY={ejeY}
+          onEjeYChange={setEjeY}
           sinVentasCargadas={ventas.length === 0}
           className="h-full max-h-full w-[min(28rem,40%)] shrink-0 self-start"
         />

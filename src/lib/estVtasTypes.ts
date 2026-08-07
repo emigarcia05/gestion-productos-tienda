@@ -3,6 +3,31 @@ import type { EstCategorizacionItem } from "@/lib/estCategorizacionTypes";
 /** Modo de agregación para gráficos de Estadísticas Vtas. */
 export type EstVtasModoUnidad = "unidad" | "suma";
 
+/** Dimensión del eje Y del gráfico Un. Vendidas. */
+export type EstVtasEjeY =
+  | "variante"
+  | "marca"
+  | "rubro"
+  | "subRubro"
+  | "color"
+  | "terminacion";
+
+export const EST_VTAS_EJE_Y_OPTIONS: readonly {
+  value: EstVtasEjeY;
+  label: string;
+}[] = [
+  { value: "variante", label: "VARIANTE" },
+  { value: "marca", label: "MARCA" },
+  { value: "rubro", label: "RUBRO" },
+  { value: "subRubro", label: "SUB RUBRO" },
+  { value: "color", label: "COLOR" },
+  { value: "terminacion", label: "TERMINACION" },
+] as const;
+
+export function etiquetaEstVtasEjeY(eje: EstVtasEjeY): string {
+  return EST_VTAS_EJE_Y_OPTIONS.find((o) => o.value === eje)?.label ?? "VARIANTE";
+}
+
 /** Producto tipado para Estadísticas Vtas (categorización + factor de suma). */
 export type EstVtasProductoItem = EstCategorizacionItem & {
   /**
@@ -21,8 +46,11 @@ export type EstVtasVentaItem = {
   vtasEnUn: number;
 };
 
-/** Punto del gráfico Variante × Un. vendidas. */
-export type EstVtasBarraVariante = {
-  variante: string;
+/** Punto del gráfico dimensión (eje Y) × Un. vendidas (eje X). */
+export type EstVtasBarraDimension = {
+  etiqueta: string;
   unidades: number;
 };
+
+/** @deprecated Usar `EstVtasBarraDimension`. */
+export type EstVtasBarraVariante = EstVtasBarraDimension;
