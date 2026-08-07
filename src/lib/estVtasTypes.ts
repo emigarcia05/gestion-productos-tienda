@@ -15,19 +15,23 @@ export type EstVtasEjeY =
 /** Dimensión usable en gráfico 1 (producto o sucursal). */
 export type EstVtasDimensionGrafico = EstVtasEjeY | "sucursal";
 
+/**
+ * Opciones del eje Y (Dimensión) — orden de producto + sucursal.
+ * `variante` se muestra como PRESENTACION.
+ */
 export const EST_VTAS_EJE_Y_OPTIONS: readonly {
   value: EstVtasEjeY;
   label: string;
 }[] = [
-  { value: "variante", label: "VARIANTE" },
   { value: "marca", label: "MARCA" },
   { value: "rubro", label: "RUBRO" },
   { value: "subRubro", label: "SUB RUBRO" },
   { value: "color", label: "COLOR" },
   { value: "terminacion", label: "TERMINACION" },
+  { value: "variante", label: "PRESENTACION" },
 ] as const;
 
-/** Opciones compartidas por Dimensión y Desglose (gráfico 1). */
+/** Opciones del select Dimensión (eje Y). */
 export const EST_VTAS_DIMENSION_OPTIONS: readonly {
   value: EstVtasDimensionGrafico;
   label: string;
@@ -36,13 +40,34 @@ export const EST_VTAS_DIMENSION_OPTIONS: readonly {
   { value: "sucursal", label: "SUCURSAL" },
 ] as const;
 
+/**
+ * Opciones del Desglose (además de SIN DESGLOSE), en el orden de negocio.
+ * Misma semántica que Dimensión; se excluye la ya elegida en eje Y.
+ */
+export const EST_VTAS_DESGLOSE_DIMENSION_OPTIONS: readonly {
+  value: EstVtasDimensionGrafico;
+  label: string;
+}[] = [
+  { value: "sucursal", label: "SUCURSAL" },
+  { value: "marca", label: "MARCA" },
+  { value: "rubro", label: "RUBRO" },
+  { value: "subRubro", label: "SUB RUBRO" },
+  { value: "color", label: "COLOR" },
+  { value: "terminacion", label: "TERMINACION" },
+  { value: "variante", label: "PRESENTACION" },
+] as const;
+
 export function etiquetaEstVtasEjeY(eje: EstVtasEjeY): string {
-  return EST_VTAS_EJE_Y_OPTIONS.find((o) => o.value === eje)?.label ?? "VARIANTE";
+  return (
+    EST_VTAS_EJE_Y_OPTIONS.find((o) => o.value === eje)?.label ?? "PRESENTACION"
+  );
 }
 
 export function etiquetaEstVtasDimension(d: EstVtasDimensionGrafico): string {
   return (
-    EST_VTAS_DIMENSION_OPTIONS.find((o) => o.value === d)?.label ?? "VARIANTE"
+    EST_VTAS_DESGLOSE_DIMENSION_OPTIONS.find((o) => o.value === d)?.label ??
+    EST_VTAS_DIMENSION_OPTIONS.find((o) => o.value === d)?.label ??
+    "PRESENTACION"
   );
 }
 
@@ -52,7 +77,7 @@ export function esEstVtasEjeY(d: EstVtasDimensionGrafico): d is EstVtasEjeY {
 
 /**
  * Desglose del gráfico 1: sin desglose, o cualquier dimensión distinta
- * de la elegida en el select Dimensión.
+ * de la elegida en el select Dimensión (eje Y).
  */
 export type EstVtasDesglose = "ninguno" | EstVtasDimensionGrafico;
 
@@ -72,11 +97,11 @@ export function opcionesDesgloseEstVtas(
 ): readonly { value: EstVtasDesglose; label: string }[] {
   return [
     EST_VTAS_DESGLOSE_NINGUNO,
-    ...EST_VTAS_DIMENSION_OPTIONS.filter((o) => o.value !== dimension),
+    ...EST_VTAS_DESGLOSE_DIMENSION_OPTIONS.filter((o) => o.value !== dimension),
   ];
 }
 
-/** Opciones de dimensión excluyendo el desglose activo (si no es ninguno). */
+/** Opciones de dimensión (eje Y) excluyendo el desglose activo (si no es ninguno). */
 export function opcionesDimensionEstVtas(
   desglose: EstVtasDesglose
 ): readonly { value: EstVtasDimensionGrafico; label: string }[] {
@@ -156,11 +181,15 @@ export type EstVtasBarraProducto = {
   codTienda: string;
   /** Descripción del producto (columna DESCRIPCION). */
   etiqueta: string;
-  /** Un. vendidas en el periodo FECHA (TOTAL PERIODO). */
+  /**
+   * TO. — total de unidades (o suma) con los filtros activos
+   * (página + selección G1 si hay).
+   */
   totalPeriodo: number;
   /**
-   * Promedio mensual: total acumulado (sin FECHA) / cantidad de periodos
-   * mes×año con ventas &gt; 0.
+   * PM. — `totalPeriodo / cantidadPeriodos`.
+   * `cantidadPeriodos` = años seleccionados × meses seleccionados
+   * (ej. JUN+JUL = 2; 2025+2026 con 12 meses = 24).
    */
   promedioMensual: number;
 };

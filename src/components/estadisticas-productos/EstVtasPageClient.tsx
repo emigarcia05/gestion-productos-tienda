@@ -450,10 +450,7 @@ export default function EstVtasPageClient({
     dimension1,
   ]);
 
-  const haySeleccionG1 = seleccionCategoria1Valida != null;
-
   const barrasTopProductos = useMemo(() => {
-    if (!haySeleccionG1) return [];
     return agregarTopProductos({
       productosFiltrados: filasFiltradas,
       ventas,
@@ -465,7 +462,6 @@ export default function EstVtasPageClient({
       topN: 10,
     });
   }, [
-    haySeleccionG1,
     filasFiltradas,
     ventas,
     sucursalIdEfectiva,
@@ -476,7 +472,6 @@ export default function EstVtasPageClient({
   ]);
 
   const seleccionProductoTopValida =
-    haySeleccionG1 &&
     seleccionProductoTop &&
     barrasTopProductos.some((b) => b.codTienda === seleccionProductoTop)
       ? seleccionProductoTop
@@ -553,10 +548,203 @@ export default function EstVtasPageClient({
   return (
     <ClassicFilteredTableLayout
       title="ESTADÍSTICAS PRODUCTOS"
-      subtitle="Estadísticas Vtas"
+      subtitle="Vtas Por. Prod."
       contentWidth="full"
       filters={
         <div className="flex flex-col gap-2">
+          <FilterBar className="filtros-contenedor-tienda bg-card">
+            <FilterRowSelection className="w-full min-w-0">
+              <FilaFiltrosDesplegables>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={filtUnidad !== "unidad"}
+                  onLimpiar={() => setFiltUnidad("unidad")}
+                >
+                  <Select
+                    value={filtUnidad}
+                    onValueChange={(v) => setFiltUnidad(v as EstVtasModoUnidad)}
+                  >
+                    <SelectTrigger
+                      className="input-filtro-unificado"
+                      aria-label="Unidades"
+                    >
+                      <SelectValue placeholder="UNIDADES" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      <SelectItem value="unidad">UNIDAD</SelectItem>
+                      <SelectItem value="suma">SUMA DE UNIDADES</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FiltroIndividualContainer>
+
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={filtSucursalId !== FILTRO_TODOS}
+                  onLimpiar={() => setFiltSucursalId(FILTRO_TODOS)}
+                >
+                  <Select value={filtSucursalId} onValueChange={setFiltSucursalId}>
+                    <SelectTrigger
+                      className="input-filtro-unificado"
+                      aria-label="Sucursal"
+                    >
+                      <SelectValue placeholder="SUCURSAL" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro max-h-60"
+                    >
+                      <SelectItem value={FILTRO_TODOS}>SUCURSAL</SelectItem>
+                      {sucursales.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FiltroIndividualContainer>
+
+                <FiltroIndividualContainer
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={aniosFiltroActivo}
+                  onLimpiar={() => setFiltAnios([periodoDefault.anio])}
+                >
+                  <div className="relative" ref={aniosMultiRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMesesOpen(false);
+                        setAniosOpen((o) => !o);
+                      }}
+                      className={cn(
+                        SELECT_TRIGGER_FILTER_CLASS,
+                        "flex w-full items-center justify-between gap-2 text-left font-semibold"
+                      )}
+                      aria-expanded={aniosOpen}
+                      aria-haspopup="listbox"
+                      aria-label="Año (selección múltiple)"
+                    >
+                      <span className="truncate">{labelAnios}</span>
+                      <ChevronDown
+                        className="h-4 w-4 shrink-0 opacity-50"
+                        aria-hidden
+                      />
+                    </button>
+                    {aniosOpen ? (
+                      <div
+                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                        role="listbox"
+                        aria-multiselectable="true"
+                      >
+                        {aniosOpciones.map((a) => {
+                          const selected = filtAnios.includes(a);
+                          const conDatos = [...periodosConVentas].some((k) =>
+                            k.startsWith(`${a}-`)
+                          );
+                          return (
+                            <label
+                              key={a}
+                              role="option"
+                              aria-selected={selected}
+                              className={cn(
+                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                                selected && "bg-muted"
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleAnio(a)}
+                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                aria-label={String(a)}
+                              />
+                              <span>
+                                {conDatos ? a : `${a} (SIN DATOS)`}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                </FiltroIndividualContainer>
+
+                <FiltroIndividualContainer
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={mesesFiltroActivo}
+                  onLimpiar={() => setFiltMeses([periodoDefault.mes])}
+                >
+                  <div className="relative" ref={mesesMultiRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAniosOpen(false);
+                        setMesesOpen((o) => !o);
+                      }}
+                      className={cn(
+                        SELECT_TRIGGER_FILTER_CLASS,
+                        "flex w-full items-center justify-between gap-2 text-left font-semibold"
+                      )}
+                      aria-expanded={mesesOpen}
+                      aria-haspopup="listbox"
+                      aria-label="Mes (selección múltiple)"
+                    >
+                      <span className="truncate">{labelMeses}</span>
+                      <ChevronDown
+                        className="h-4 w-4 shrink-0 opacity-50"
+                        aria-hidden
+                      />
+                    </button>
+                    {mesesOpen ? (
+                      <div
+                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                        role="listbox"
+                        aria-multiselectable="true"
+                      >
+                        {MESES_CALENDARIO.map((m) => {
+                          const selected = filtMeses.includes(m.valor);
+                          return (
+                            <label
+                              key={m.valor}
+                              role="option"
+                              aria-selected={selected}
+                              className={cn(
+                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                                selected && "bg-muted"
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleMes(m.valor)}
+                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                aria-label={m.etiqueta}
+                              />
+                              <span>{m.etiqueta}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                </FiltroIndividualContainer>
+
+                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "gap-2")}>
+                  <span className={FILTER_COUNT_CLASS}>
+                    {filasFiltradas.length.toLocaleString("es-AR")} PRODUCTO
+                    {filasFiltradas.length === 1 ? "" : "S"}
+                  </span>
+                </div>
+              </FilaFiltrosDesplegables>
+            </FilterRowSelection>
+          </FilterBar>
+
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilterRowSelection className="w-full min-w-0">
               <FilaFiltrosDesplegables columnas={6}>
@@ -768,199 +956,6 @@ export default function EstVtasPageClient({
               </span>
             </div>
           </FilterBar>
-
-          <FilterBar className="filtros-contenedor-tienda bg-card">
-            <FilterRowSelection className="w-full min-w-0">
-              <FilaFiltrosDesplegables>
-                <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtUnidad !== "unidad"}
-                  onLimpiar={() => setFiltUnidad("unidad")}
-                >
-                  <Select
-                    value={filtUnidad}
-                    onValueChange={(v) => setFiltUnidad(v as EstVtasModoUnidad)}
-                  >
-                    <SelectTrigger
-                      className="input-filtro-unificado"
-                      aria-label="Unidades"
-                    >
-                      <SelectValue placeholder="UNIDADES" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro"
-                    >
-                      <SelectItem value="unidad">UNIDAD</SelectItem>
-                      <SelectItem value="suma">SUMA DE UNIDADES</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FiltroIndividualContainer>
-
-                <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtSucursalId !== FILTRO_TODOS}
-                  onLimpiar={() => setFiltSucursalId(FILTRO_TODOS)}
-                >
-                  <Select value={filtSucursalId} onValueChange={setFiltSucursalId}>
-                    <SelectTrigger
-                      className="input-filtro-unificado"
-                      aria-label="Sucursal"
-                    >
-                      <SelectValue placeholder="SUCURSAL" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      <SelectItem value={FILTRO_TODOS}>SUCURSAL</SelectItem>
-                      {sucursales.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FiltroIndividualContainer>
-
-                <FiltroIndividualContainer
-                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
-                  activo={aniosFiltroActivo}
-                  onLimpiar={() => setFiltAnios([periodoDefault.anio])}
-                >
-                  <div className="relative" ref={aniosMultiRef}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMesesOpen(false);
-                        setAniosOpen((o) => !o);
-                      }}
-                      className={cn(
-                        SELECT_TRIGGER_FILTER_CLASS,
-                        "flex w-full items-center justify-between gap-2 text-left font-semibold"
-                      )}
-                      aria-expanded={aniosOpen}
-                      aria-haspopup="listbox"
-                      aria-label="Año (selección múltiple)"
-                    >
-                      <span className="truncate">{labelAnios}</span>
-                      <ChevronDown
-                        className="h-4 w-4 shrink-0 opacity-50"
-                        aria-hidden
-                      />
-                    </button>
-                    {aniosOpen ? (
-                      <div
-                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
-                        role="listbox"
-                        aria-multiselectable="true"
-                      >
-                        {aniosOpciones.map((a) => {
-                          const selected = filtAnios.includes(a);
-                          const conDatos = [...periodosConVentas].some((k) =>
-                            k.startsWith(`${a}-`)
-                          );
-                          return (
-                            <label
-                              key={a}
-                              role="option"
-                              aria-selected={selected}
-                              className={cn(
-                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
-                                selected && "bg-muted"
-                              )}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={() => toggleAnio(a)}
-                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                                aria-label={String(a)}
-                              />
-                              <span>
-                                {conDatos ? a : `${a} (SIN DATOS)`}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-                  </div>
-                </FiltroIndividualContainer>
-
-                <FiltroIndividualContainer
-                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
-                  activo={mesesFiltroActivo}
-                  onLimpiar={() => setFiltMeses([periodoDefault.mes])}
-                >
-                  <div className="relative" ref={mesesMultiRef}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAniosOpen(false);
-                        setMesesOpen((o) => !o);
-                      }}
-                      className={cn(
-                        SELECT_TRIGGER_FILTER_CLASS,
-                        "flex w-full items-center justify-between gap-2 text-left font-semibold"
-                      )}
-                      aria-expanded={mesesOpen}
-                      aria-haspopup="listbox"
-                      aria-label="Mes (selección múltiple)"
-                    >
-                      <span className="truncate">{labelMeses}</span>
-                      <ChevronDown
-                        className="h-4 w-4 shrink-0 opacity-50"
-                        aria-hidden
-                      />
-                    </button>
-                    {mesesOpen ? (
-                      <div
-                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
-                        role="listbox"
-                        aria-multiselectable="true"
-                      >
-                        {MESES_CALENDARIO.map((m) => {
-                          const selected = filtMeses.includes(m.valor);
-                          return (
-                            <label
-                              key={m.valor}
-                              role="option"
-                              aria-selected={selected}
-                              className={cn(
-                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
-                                selected && "bg-muted"
-                              )}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={() => toggleMes(m.valor)}
-                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                                aria-label={m.etiqueta}
-                              />
-                              <span>{m.etiqueta}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-                  </div>
-                </FiltroIndividualContainer>
-
-                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "gap-2")}>
-                  <span className={FILTER_COUNT_CLASS}>
-                    {filasFiltradas.length.toLocaleString("es-AR")} PRODUCTO
-                    {filasFiltradas.length === 1 ? "" : "S"}
-                  </span>
-                </div>
-              </FilaFiltrosDesplegables>
-            </FilterRowSelection>
-          </FilterBar>
         </div>
       }
     >
@@ -988,11 +983,6 @@ export default function EstVtasPageClient({
           filas={barrasTopProductos}
           seleccionadoCod={seleccionProductoTopValida}
           onSeleccionar={setSeleccionProductoTop}
-          vacioPorDependencia={
-            haySeleccionG1
-              ? null
-              : "Seleccioná una categoría en el gráfico 1 para ver el Top 10."
-          }
           sinVentasCargadas={ventas.length === 0}
           className="h-full max-h-full w-[30%] min-w-0 shrink-0 self-start"
         />
