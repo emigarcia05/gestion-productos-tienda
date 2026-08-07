@@ -1559,6 +1559,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-07): **Sidebar · orden pie** — línea → sync → logo → switcher de módulos (separa los dos botones).
 
+*Última actualización (2026-08-07): **Est. Vtas · sin textos de contexto bajo título** — se quitan las líneas “Desglose / Selección / contexto” bajo la píldora de los 3 gráficos.
+
 *Última actualización (2026-08-07): **Est. Vtas · G3 siempre con filtro actual** — historial mensual visible sin esperar G1/G2; aplica categoría/sucursal/producto cuando hay selección.
 
 *Última actualización (2026-08-07): **Est. Vtas · gráfico 2 Top 10** — `EstVtasGraficoTopProductos` + `agregarTopProductos`; G3 filtra por `codTienda` del producto elegido.

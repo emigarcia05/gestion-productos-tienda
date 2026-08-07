@@ -9,7 +9,6 @@ interface Props {
   seleccionadoCod?: string | null;
   onSeleccionar?: (codTienda: string | null) => void;
   vacioPorDependencia?: string | null;
-  contextoFiltro?: string | null;
   sinVentasCargadas?: boolean;
   className?: string;
 }
@@ -39,7 +38,6 @@ export default function EstVtasGraficoTopProductos({
   seleccionadoCod = null,
   onSeleccionar,
   vacioPorDependencia = null,
-  contextoFiltro = null,
   sinVentasCargadas = false,
   className,
 }: Props) {
@@ -70,23 +68,6 @@ export default function EstVtasGraficoTopProductos({
         >
           Top 10 Productos
         </h2>
-        {seleccionadoCod || contextoFiltro ? (
-          <p className="text-center text-[10px] leading-tight text-muted-foreground">
-            {contextoFiltro ? (
-              <span className="block truncate font-semibold uppercase text-foreground">
-                {contextoFiltro}
-              </span>
-            ) : null}
-            {seleccionadoCod ? (
-              <span className="block truncate font-semibold uppercase text-foreground">
-                {`Selección: ${
-                  barras.find((b) => b.codTienda === seleccionadoCod)?.etiqueta ??
-                  seleccionadoCod
-                }`}
-              </span>
-            ) : null}
-          </p>
-        ) : null}
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">

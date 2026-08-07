@@ -10,8 +10,6 @@ interface Props {
   anio: number | null;
   /** Mes del filtro FECHA (1–12); se marca en el eje X. */
   mesMarca?: number | null;
-  /** Texto de contexto (filtros de gráficos 1 y 2). */
-  contextoFiltro?: string | null;
   /**
    * Mensaje cuando faltan selecciones en gráficos padre.
    * Si no hay, se usan los vacíos de ventas/filtros.
@@ -57,7 +55,6 @@ export default function EstVtasGraficoBarrasMensual({
   puntos,
   anio,
   mesMarca = null,
-  contextoFiltro = null,
   vacioPorDependencia = null,
   sinVentasCargadas = false,
   className,
@@ -105,13 +102,6 @@ export default function EstVtasGraficoBarrasMensual({
         >
           Un. Vendidas Por Mes{anio != null ? ` · ${anio}` : ""}
         </h2>
-        {contextoFiltro ? (
-          <p className="text-center text-[10px] leading-tight text-muted-foreground">
-            <span className="block truncate font-semibold uppercase text-foreground">
-              {contextoFiltro}
-            </span>
-          </p>
-        ) : null}
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">

@@ -39,8 +39,6 @@ interface Props {
    * (gráfico dependiente). Si no hay, se usan los vacíos de ventas/filtros.
    */
   vacioPorDependencia?: string | null;
-  /** Texto de contexto bajo el subtítulo (ej. filtro del gráfico 1). */
-  contextoFiltro?: string | null;
   /** True si no hay ninguna fila en `est_por_prod` (nada cargado). */
   sinVentasCargadas?: boolean;
   /** Aria del Select de dimensión (distinguir gráfico 1 vs 2). */
@@ -112,7 +110,6 @@ export default function EstVtasGraficoVarianteBarras({
   seleccionDesglose = null,
   onSeleccionarDesglose,
   vacioPorDependencia = null,
-  contextoFiltro = null,
   sinVentasCargadas = false,
   ariaLabelDimension = "Dimensión del eje Y",
   desglose = "ninguno",
@@ -261,27 +258,6 @@ export default function EstVtasGraficoVarianteBarras({
               ))}
             </SelectContent>
           </Select>
-        ) : null}
-
-        {seleccionada ||
-        seleccionDesglose ||
-        contextoFiltro ? (
-          <p className="text-center text-[10px] leading-tight text-muted-foreground">
-            {contextoFiltro ? (
-              <span className="block truncate font-semibold uppercase text-foreground">
-                {contextoFiltro}
-              </span>
-            ) : null}
-            {seleccionDesglose ? (
-              <span className="block truncate font-semibold uppercase text-foreground">
-                {`Selección: ${seleccionDesglose.categoria} · ${seleccionDesglose.sucursalEtiqueta}`}
-              </span>
-            ) : seleccionada ? (
-              <span className="block truncate font-semibold uppercase text-foreground">
-                {`Selección: ${seleccionada}`}
-              </span>
-            ) : null}
-          </p>
         ) : null}
       </header>
 

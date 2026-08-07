@@ -38,7 +38,6 @@ import type {
   EstVtasSeleccionDesglose,
   EstVtasVentaItem,
 } from "@/lib/estVtasTypes";
-import { etiquetaEstVtasDesglose, etiquetaEstVtasEjeY } from "@/lib/estVtasTypes";
 import type { SucursalEstOption } from "@/lib/estPorProdTypes";
 import {
   clavePeriodoEstPorProd,
@@ -317,11 +316,6 @@ export default function EstVtasPageClient({
       ? seleccionProductoTop
       : null;
 
-  const productoTopSeleccionado = seleccionProductoTopValida
-    ? barrasTopProductos.find((b) => b.codTienda === seleccionProductoTopValida) ??
-      null
-    : null;
-
   const periodoFiltro = useMemo(
     () => parseClavePeriodoEstPorProd(filtFecha),
     [filtFecha]
@@ -351,27 +345,6 @@ export default function EstVtasPageClient({
     ejeY1,
     seleccionCategoria1Valida,
     seleccionProductoTopValida,
-  ]);
-
-  const contextoFiltroHistorial = useMemo(() => {
-    const partes: string[] = [];
-    if (seleccionCategoria1Valida) {
-      partes.push(
-        `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`
-      );
-    }
-    if (seleccionDesgloseValida) {
-      partes.push(`Sucursal: ${seleccionDesgloseValida.sucursalEtiqueta}`);
-    }
-    if (productoTopSeleccionado) {
-      partes.push(`Producto: ${productoTopSeleccionado.etiqueta}`);
-    }
-    return partes.length > 0 ? partes.join(" · ") : null;
-  }, [
-    ejeY1,
-    seleccionCategoria1Valida,
-    seleccionDesgloseValida,
-    productoTopSeleccionado,
   ]);
 
   function handleEjeY1Change(eje: EstVtasEjeY) {
@@ -750,11 +723,6 @@ export default function EstVtasPageClient({
           onSeleccionarDesglose={
             desgloseSucursalActivo ? handleSeleccionarDesglose1 : undefined
           }
-          contextoFiltro={
-            desgloseSucursalActivo
-              ? `Desglose: ${etiquetaEstVtasDesglose("sucursal")}`
-              : null
-          }
           sinVentasCargadas={ventas.length === 0}
           ariaLabelDimension="Dimensión del eje Y — gráfico 1"
           className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
@@ -768,18 +736,6 @@ export default function EstVtasPageClient({
               ? null
               : "Seleccioná una categoría en el gráfico 1 para ver el Top 10."
           }
-          contextoFiltro={
-            seleccionCategoria1Valida
-              ? [
-                  `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`,
-                  seleccionDesgloseValida
-                    ? `Sucursal: ${seleccionDesgloseValida.sucursalEtiqueta}`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")
-              : null
-          }
           sinVentasCargadas={ventas.length === 0}
           className="h-full max-h-full w-[min(26rem,36%)] shrink-0 self-start"
         />
@@ -787,7 +743,6 @@ export default function EstVtasPageClient({
           puntos={puntosMensuales}
           anio={periodoFiltro?.anio ?? null}
           mesMarca={periodoFiltro?.mes ?? null}
-          contextoFiltro={contextoFiltroHistorial}
           sinVentasCargadas={ventas.length === 0}
           className="h-full max-h-full min-w-0 flex-1 self-start"
         />
