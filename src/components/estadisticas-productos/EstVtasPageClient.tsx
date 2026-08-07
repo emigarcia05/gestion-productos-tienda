@@ -328,16 +328,18 @@ export default function EstVtasPageClient({
   );
 
   const puntosMensuales = useMemo(() => {
-    if (!seleccionCategoria1Valida || !seleccionProductoTopValida) {
-      return Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, unidades: 0 }));
-    }
+    const filtrosDim =
+      seleccionCategoria1Valida != null
+        ? [{ ejeY: ejeY1, etiqueta: seleccionCategoria1Valida }]
+        : null;
+
     return agregarUnidadesMensualesAnio({
       productosFiltrados: filasFiltradas,
       ventas,
       sucursalId: sucursalIdEfectiva,
       fechaClave: filtFecha,
       modoUnidad: filtUnidad,
-      filtros: [{ ejeY: ejeY1, etiqueta: seleccionCategoria1Valida }],
+      filtros: filtrosDim,
       codTienda: seleccionProductoTopValida,
     });
   }, [
@@ -349,6 +351,27 @@ export default function EstVtasPageClient({
     ejeY1,
     seleccionCategoria1Valida,
     seleccionProductoTopValida,
+  ]);
+
+  const contextoFiltroHistorial = useMemo(() => {
+    const partes: string[] = [];
+    if (seleccionCategoria1Valida) {
+      partes.push(
+        `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`
+      );
+    }
+    if (seleccionDesgloseValida) {
+      partes.push(`Sucursal: ${seleccionDesgloseValida.sucursalEtiqueta}`);
+    }
+    if (productoTopSeleccionado) {
+      partes.push(`Producto: ${productoTopSeleccionado.etiqueta}`);
+    }
+    return partes.length > 0 ? partes.join(" · ") : null;
+  }, [
+    ejeY1,
+    seleccionCategoria1Valida,
+    seleccionDesgloseValida,
+    productoTopSeleccionado,
   ]);
 
   function handleEjeY1Change(eje: EstVtasEjeY) {
@@ -764,26 +787,7 @@ export default function EstVtasPageClient({
           puntos={puntosMensuales}
           anio={periodoFiltro?.anio ?? null}
           mesMarca={periodoFiltro?.mes ?? null}
-          vacioPorDependencia={
-            !seleccionCategoria1Valida
-              ? "Seleccioná una categoría en el gráfico 1."
-              : !seleccionProductoTopValida
-                ? "Seleccioná un producto del Top 10 para ver la evolución mensual."
-                : null
-          }
-          contextoFiltro={
-            seleccionCategoria1Valida && productoTopSeleccionado
-              ? [
-                  `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`,
-                  `Producto: ${productoTopSeleccionado.etiqueta}`,
-                  seleccionDesgloseValida
-                    ? `Sucursal: ${seleccionDesgloseValida.sucursalEtiqueta}`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")
-              : null
-          }
+          contextoFiltro={contextoFiltroHistorial}
           sinVentasCargadas={ventas.length === 0}
           className="h-full max-h-full min-w-0 flex-1 self-start"
         />

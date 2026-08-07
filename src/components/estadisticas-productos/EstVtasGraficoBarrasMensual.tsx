@@ -115,14 +115,14 @@ export default function EstVtasGraficoBarrasMensual({
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        {bloqueado || (sinDatos && (sinVentasCargadas || !contextoFiltro)) ? (
+        {bloqueado || (sinDatos && sinVentasCargadas) ? (
           <div className="flex min-h-[14rem] flex-1 items-center justify-center border-l border-b border-border">
             <p className="max-w-[18rem] px-2 text-center text-xs text-muted-foreground">
               {vacioPorDependencia
                 ? vacioPorDependencia
                 : sinVentasCargadas
                   ? "No hay ventas cargadas. Subí datos en Carga de Datos y volvé a abrir este módulo."
-                  : "Seleccioná categorías en los gráficos 1 y 2 para ver la evolución mensual."}
+                  : "No hay ventas para los filtros o el periodo seleccionados."}
             </p>
           </div>
         ) : (
