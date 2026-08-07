@@ -43,9 +43,15 @@ function fmtUnidades(n: number): string {
   });
 }
 
+/** Filas visibles en el viewport del eje Y; el resto scrollea. */
+const EST_VTAS_BARRAS_FILAS_VISIBLES = 8;
+/** Alto de cada fila (barra + aire). */
+const EST_VTAS_BARRAS_FILA_REM = 1.75;
+
 /**
  * Barras horizontales: eje Y = dimensión elegida, eje X = Un. vendidas.
  * Título = Select píldora primary. Solo las barras son clicables (no las etiquetas).
+ * Layout: 15% etiquetas · 85% barras (+ valor); viewport de 8 filas con scroll.
  */
 export default function EstVtasGraficoVarianteBarras({
   barras,
@@ -63,6 +69,7 @@ export default function EstVtasGraficoVarianteBarras({
   const vacio = barras.length === 0;
   const labelEjeY = etiquetaEstVtasEjeY(ejeY);
   const seleccionable = typeof onSeleccionar === "function";
+  const plotHeightRem = EST_VTAS_BARRAS_FILAS_VISIBLES * EST_VTAS_BARRAS_FILA_REM;
 
   function handleBarraClick(etiqueta: string) {
     if (!onSeleccionar) return;
@@ -72,7 +79,7 @@ export default function EstVtasGraficoVarianteBarras({
   return (
     <section
       className={cn(
-        "flex min-h-[22rem] min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-sm",
+        "flex min-h-0 min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-sm",
         className
       )}
       aria-label={`Unidades vendidas por ${labelEjeY.toLowerCase()}`}
@@ -126,9 +133,10 @@ export default function EstVtasGraficoVarianteBarras({
       <div className="flex min-h-0 flex-1 flex-col">
         <div
           className={cn(
-            "flex min-h-[14rem] flex-1 flex-col gap-2.5 overflow-y-auto border-l border-b border-border py-2 pl-3 pr-1",
-            vacio && "items-center justify-center"
+            "overflow-y-auto border-l border-b border-border pl-2 pr-1.5",
+            vacio && "flex items-center justify-center"
           )}
+          style={{ height: `${plotHeightRem}rem` }}
         >
           {vacio ? (
             <p className="max-w-[16rem] px-2 text-center text-xs text-muted-foreground">
@@ -139,66 +147,76 @@ export default function EstVtasGraficoVarianteBarras({
                   : "No hay ventas para los filtros o el periodo seleccionados. Probá otra fecha con datos cargados."}
             </p>
           ) : (
-            barras.map((b) => {
-              const pct = max > 0 ? Math.round((b.unidades / max) * 100) : 0;
-              const widthPct = b.unidades > 0 ? Math.max(pct, 2) : 0;
-              const activa = seleccionada === b.etiqueta;
+            <div className="flex flex-col">
+              {barras.map((b) => {
+                const pct = max > 0 ? Math.round((b.unidades / max) * 100) : 0;
+                const widthPct = b.unidades > 0 ? Math.max(pct, 2) : 0;
+                const activa = seleccionada === b.etiqueta;
 
-              return (
-                <div
-                  key={b.etiqueta}
-                  className="grid grid-cols-[6.5rem_minmax(0,1fr)_3.25rem] items-center gap-2"
-                >
-                  <span
-                    className="truncate text-right text-[11px] font-medium uppercase leading-tight text-foreground"
-                    title={b.etiqueta}
+                return (
+                  <div
+                    key={b.etiqueta}
+                    className="grid grid-cols-[minmax(0,15%)_minmax(0,1fr)] items-center gap-x-2"
+                    style={{ height: `${EST_VTAS_BARRAS_FILA_REM}rem` }}
                   >
-                    {b.etiqueta}
-                  </span>
+                    <span
+                      className="min-w-0 truncate pr-0.5 text-right text-[11px] font-medium uppercase leading-tight text-foreground"
+                      title={b.etiqueta}
+                    >
+                      {b.etiqueta}
+                    </span>
 
-                  {seleccionable ? (
-                    <button
-                      type="button"
-                      aria-pressed={activa}
-                      aria-label={`${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
-                      onClick={() => handleBarraClick(b.etiqueta)}
-                      className={cn(
-                        "relative h-5 w-full rounded-full bg-muted/40 p-0",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
-                        activa && "ring-2 ring-primary/70 ring-offset-1 ring-offset-card"
+                    <div className="flex min-w-0 items-center gap-2">
+                      {seleccionable ? (
+                        <button
+                          type="button"
+                          aria-pressed={activa}
+                          aria-label={`${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
+                          onClick={() => handleBarraClick(b.etiqueta)}
+                          className={cn(
+                            "relative h-5 min-w-0 flex-1 rounded-full bg-muted/40 p-0",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
+                            activa &&
+                              "ring-2 ring-primary/70 ring-offset-1 ring-offset-card"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "absolute inset-y-0 left-0 rounded-full",
+                              b.unidades > 0
+                                ? "bg-primary"
+                                : "bg-muted-foreground/20",
+                              activa && "bg-primary"
+                            )}
+                            style={{ width: `${widthPct}%` }}
+                          />
+                        </button>
+                      ) : (
+                        <div
+                          className="relative h-5 min-w-0 flex-1 rounded-full bg-muted/40"
+                          role="img"
+                          aria-label={`${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
+                        >
+                          <div
+                            className={cn(
+                              "absolute inset-y-0 left-0 rounded-full",
+                              b.unidades > 0
+                                ? "bg-primary"
+                                : "bg-muted-foreground/20"
+                            )}
+                            style={{ width: `${widthPct}%` }}
+                          />
+                        </div>
                       )}
-                    >
-                      <span
-                        className={cn(
-                          "absolute inset-y-0 left-0 rounded-full",
-                          b.unidades > 0 ? "bg-primary" : "bg-muted-foreground/20",
-                          activa && "bg-primary"
-                        )}
-                        style={{ width: `${widthPct}%` }}
-                      />
-                    </button>
-                  ) : (
-                    <div
-                      className="relative h-5 w-full rounded-full bg-muted/40"
-                      role="img"
-                      aria-label={`${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
-                    >
-                      <div
-                        className={cn(
-                          "absolute inset-y-0 left-0 rounded-full",
-                          b.unidades > 0 ? "bg-primary" : "bg-muted-foreground/20"
-                        )}
-                        style={{ width: `${widthPct}%` }}
-                      />
-                    </div>
-                  )}
 
-                  <span className="text-right text-[11px] tabular-nums text-foreground">
-                    {fmtUnidades(b.unidades)}
-                  </span>
-                </div>
-              );
-            })
+                      <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-foreground">
+                        {fmtUnidades(b.unidades)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
         <div className="mt-1.5 flex shrink-0 items-center justify-center gap-1.5">
