@@ -2566,7 +2566,7 @@ main button.est-vtas-desc-btn:active:not(:disabled) {
   gap: 0 !important;
   justify-content: flex-start !important;
   align-items: center !important;
-  white-space: nowrap !important;
+  white-space: normal !important;
   font-size: inherit !important;
   font-weight: inherit !important;
   line-height: inherit !important;

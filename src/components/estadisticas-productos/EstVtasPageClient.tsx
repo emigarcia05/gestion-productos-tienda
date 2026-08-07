@@ -719,7 +719,7 @@ export default function EstVtasPageClient({
           }
           sinVentasCargadas={ventas.length === 0}
           ariaLabelDimension="Dimensión del eje Y — gráfico 1"
-          className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
+          className="h-full max-h-full w-[35%] min-w-0 shrink-0 self-start"
         />
         <EstVtasGraficoTopProductos
           filas={barrasTopProductos}
@@ -731,14 +731,14 @@ export default function EstVtasPageClient({
               : "Seleccioná una categoría en el gráfico 1 para ver el Top 10."
           }
           sinVentasCargadas={ventas.length === 0}
-          className="h-full max-h-full w-[min(28rem,40%)] shrink-0 self-start"
+          className="h-full max-h-full w-[30%] min-w-0 shrink-0 self-start"
         />
         <EstVtasGraficoBarrasMensual
           puntos={puntosMensuales}
           anio={null}
           mesMarca={null}
           sinVentasCargadas={ventas.length === 0}
-          className="h-full max-h-full min-w-0 flex-1 self-start"
+          className="h-full max-h-full w-[35%] min-w-0 shrink-0 self-start"
         />
       </div>
     </ClassicFilteredTableLayout>

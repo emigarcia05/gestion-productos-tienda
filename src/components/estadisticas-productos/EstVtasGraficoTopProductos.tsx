@@ -82,9 +82,9 @@ export default function EstVtasGraficoTopProductos({
           <div className="min-h-0 flex-1 overflow-auto border border-border">
             <Table className="tabla-gestion-compacta w-full table-fixed">
               <colgroup>
-                <col className="w-[50%]" />
-                <col className="w-[25%]" />
-                <col className="w-[25%]" />
+                <col className="w-[80%]" />
+                <col className="w-[10%]" />
+                <col className="w-[10%]" />
               </colgroup>
               <TableHeader>
                 <TableRow>
@@ -108,7 +108,7 @@ export default function EstVtasGraficoTopProductos({
                   const activa = seleccionadoCod === f.codTienda;
                   const desc = (
                     <span
-                      className="block min-w-0 truncate text-left text-[11px] font-medium uppercase leading-tight text-foreground"
+                      className="line-clamp-2 min-w-0 text-left text-[11px] font-medium uppercase leading-tight text-foreground"
                       title={f.etiqueta}
                     >
                       {f.etiqueta}
@@ -118,9 +118,10 @@ export default function EstVtasGraficoTopProductos({
                   return (
                     <TableRow
                       key={f.codTienda}
+                      className="tabla-fila-altura-auto"
                       data-state={activa ? "selected" : undefined}
                     >
-                      <TableCell className="celda-datos min-w-0 !py-1">
+                      <TableCell className="celda-datos min-w-0 align-middle !py-1">
                         {seleccionable ? (
                           <button
                             type="button"
@@ -128,7 +129,7 @@ export default function EstVtasGraficoTopProductos({
                             aria-label={`Seleccionar ${f.etiqueta}`}
                             onClick={() => handleClick(f.codTienda)}
                             className={cn(
-                              "est-vtas-desc-btn block w-full min-w-0 max-w-full truncate text-left",
+                              "est-vtas-desc-btn block w-full min-w-0 max-w-full text-left",
                               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
                               activa &&
                                 "rounded-sm ring-2 ring-primary/70 ring-offset-1 ring-offset-card"
