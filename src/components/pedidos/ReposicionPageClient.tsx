@@ -65,7 +65,7 @@ export default function ReposicionPageClient({
       <ClassicFilteredTableLayout
         title="Mercadería"
         subtitle="Cant. Pedida"
-        subtitleSecondary="Reposicion"
+        subtitleSecondary="Reposición"
       actions={
         <GenerarPedidoToolbarButton
           proveedores={proveedores}

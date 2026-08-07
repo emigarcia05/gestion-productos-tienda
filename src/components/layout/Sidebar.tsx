@@ -101,7 +101,7 @@ const MODULES: NavModule[] = [
           },
           {
             href: GP_ROUTES.pedidoMercaderia.confPedido.reposicion,
-            label: "Reposicion",
+            label: "Reposición",
             icon: <RotateCw className="h-4 w-4 shrink-0" />,
             permiso: PERMISOS.pedidos.acceso,
           },
@@ -115,7 +115,7 @@ const MODULES: NavModule[] = [
       },
       {
         href: GP_ROUTES.pedidoMercaderia.recepcionPedido,
-        label: "Recepcion Pedido",
+        label: "Recepción Pedido",
         icon: <PackageCheck className="h-4 w-4 shrink-0" />,
         permiso: PERMISOS.pedidos.acceso,
       },
@@ -276,7 +276,7 @@ function isSubmoduleGroupActive(sub: SubmoduleItem, pathname: string): boolean {
   );
 }
 
-/** True si el módulo o algún descendiente coincide con la ruta (para data-active del módulo). */
+/** True si el módulo o algún descendiente coincide con la ruta (ancestro / enlace directo). */
 function isNavModuleActive(module: NavModule, pathname: string): boolean {
   if (module.href && isSubmoduleActive(pathname, module.href)) return true;
   function walk(items: SubmoduleItem[]): boolean {
@@ -382,11 +382,8 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               className="group/subcollapsible"
             >
               <CollapsibleTrigger
-                className={cn(
-                  "sidebar-nav-item",
-                  groupActive && "font-semibold"
-                )}
-                data-active={groupActive ? "true" : undefined}
+                className="sidebar-nav-item"
+                data-ancestor={groupActive ? "true" : undefined}
                 aria-expanded={isSubOpen}
               >
                 {sub.icon}
@@ -472,7 +469,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             }
 
             const isOpen = openId === module.id;
-            const moduleActive = isNavModuleActive(module, pathname);
+            const moduleAncestor = isNavModuleActive(module, pathname);
             return (
               <div key={module.id}>
                 {moduleDivider}
@@ -483,7 +480,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 >
                   <CollapsibleTrigger
                     className="sidebar-nav-module"
-                    data-active={moduleActive ? "true" : undefined}
+                    data-ancestor={moduleAncestor ? "true" : undefined}
                     aria-expanded={isOpen}
                   >
                     <span className="h-5 w-5 shrink-0 flex items-center justify-center">

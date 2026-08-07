@@ -122,8 +122,8 @@ function GroupAccordion({
       className="group/adm-group"
     >
       <CollapsibleTrigger
-        className={cn("sidebar-nav-item", "font-semibold")}
-        data-active={groupActive ? "true" : undefined}
+        className="sidebar-nav-item"
+        data-ancestor={groupActive ? "true" : undefined}
         aria-expanded={isOpen}
       >
         <Icon className={subIconClass} aria-hidden />
@@ -238,7 +238,7 @@ function PillarAccordion({
     >
       <CollapsibleTrigger
         className="sidebar-nav-module"
-        data-active={pillarActive ? "true" : undefined}
+        data-ancestor={pillarActive ? "true" : undefined}
         aria-expanded={isOpen}
       >
         <span className="flex h-5 w-5 shrink-0 items-center justify-center">

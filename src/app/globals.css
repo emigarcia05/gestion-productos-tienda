@@ -830,7 +830,7 @@
   /**
    * Separador entre opciones hermanas del sidebar (Vendedor / Administración / Marketing).
    * Fuera del árbol: desde el margen del ícono. Dentro de `.sidebar-nav-tree`:
-   * desde la guía amarilla hasta el borde derecho del hover.
+   * desde la guía hasta el borde derecho del hover.
    */
   .sidebar-nav-divider {
     height: 1px;
@@ -843,8 +843,9 @@
   }
 
   /**
-   * Guía vertical del acordeón: amarillo `--sidebar-indicator` (#ffc107),
-   * alineada al margen izquierdo del hover de cada hijo (`padding-left`).
+   * Guía vertical del acordeón: amarillo tenue (`--sidebar-indicator` ~40 %),
+   * alineada al margen izquierdo del hover (`padding-left`).
+   * No compite con la barra de página actual (`data-active`).
    */
   .sidebar-nav-tree {
     --sidebar-nav-tree-indent: 0.75rem;
@@ -859,12 +860,13 @@
     bottom: 0;
     width: 2px;
     border-radius: 1px;
-    background-color: var(--sidebar-indicator);
+    background-color: color-mix(in oklab, var(--sidebar-indicator) 40%, transparent);
   }
 
   /**
-   * Módulo / pilar de primer nivel (MAYÚSCULAS). Hover y data-active (ruta hija);
-   * íconos siempre blancos; indicador amarillo izquierdo como `.sidebar-nav-item`.
+   * Módulo / pilar de primer nivel (MAYÚSCULAS).
+   * Hover: solo fondo accent. `data-active`: página actual (enlace directo).
+   * `data-ancestor`: contiene la ruta activa (sin accent fuerte ni barra).
    */
   .sidebar-nav-module {
     display: flex;
@@ -889,7 +891,9 @@
   .sidebar-nav-module svg {
     color: var(--sidebar-foreground) !important;
   }
-  .sidebar-container .sidebar-nav-module:hover,
+  .sidebar-container .sidebar-nav-module:hover {
+    background-color: var(--sidebar-accent) !important;
+  }
   .sidebar-container .sidebar-nav-module[data-active="true"],
   .sidebar-container .sidebar-nav-module[data-active="true"]:hover {
     background-color: var(--sidebar-accent) !important;
@@ -897,7 +901,8 @@
   }
   .sidebar-nav-module:hover svg,
   .sidebar-nav-module[data-active="true"] svg,
-  .sidebar-nav-module[data-active="true"]:hover svg {
+  .sidebar-nav-module[data-active="true"]:hover svg,
+  .sidebar-nav-module[data-ancestor="true"] svg {
     color: var(--sidebar-foreground) !important;
   }
   .sidebar-nav-module:focus-visible {
@@ -905,8 +910,9 @@
   }
 
   /**
-   * Fila de navegación del acordeón (submódulo 1 / submódulo 2 / pantallas).
-   * Hover en todo el ancho del panel; íconos siempre blancos.
+   * Fila de navegación (submódulo / pantalla).
+   * Hover: solo fondo accent. `data-active`: página actual (barra amarilla).
+   * `data-ancestor`: agrupador con hijo activo (peso semibold, sin accent).
    */
   .sidebar-nav-item {
     display: flex;
@@ -931,16 +937,23 @@
   .sidebar-nav-item svg {
     color: var(--sidebar-foreground) !important;
   }
-  .sidebar-container .sidebar-nav-item:hover,
+  .sidebar-container .sidebar-nav-item:hover {
+    background-color: var(--sidebar-accent) !important;
+    color: var(--sidebar-foreground);
+  }
   .sidebar-container .sidebar-nav-item[data-active="true"],
   .sidebar-container .sidebar-nav-item[data-active="true"]:hover {
     background-color: var(--sidebar-accent) !important;
     color: var(--sidebar-foreground);
     border-left-color: var(--sidebar-indicator);
   }
+  .sidebar-nav-item[data-ancestor="true"] {
+    font-weight: var(--font-weight-semibold);
+  }
   .sidebar-nav-item:hover svg,
   .sidebar-nav-item[data-active="true"] svg,
-  .sidebar-nav-item[data-active="true"]:hover svg {
+  .sidebar-nav-item[data-active="true"]:hover svg,
+  .sidebar-nav-item[data-ancestor="true"] svg {
     color: var(--sidebar-foreground) !important;
   }
   .sidebar-nav-item:focus-visible {
