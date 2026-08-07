@@ -4,7 +4,7 @@
  *
  * FINANZAS → BALANCE | OPERACIONES → pantallas
  * LISTAS PRECIOS → Vta Por Prod. | ANÁLISIS M.C. → pantallas
- * ESTADÍSTICAS → pantallas (desglose directo)
+ * ESTADÍSTICAS → MEDIACIONES | CONFIGURACION → pantallas
  */
 
 import {
@@ -60,8 +60,7 @@ export interface AdmPillarDef {
   label: string;
   icon: AdmIconId;
   /**
-   * Primer desglose: grupos (acordeón anidado) o pantallas directas
-   * (ESTADÍSTICAS: hojas bajo el pilar).
+   * Primer desglose: grupos (acordeón anidado) o pantallas directas.
    */
   groups?: AdmGroupDef[];
   screens?: AdmScreenDef[];
@@ -205,10 +204,27 @@ const analisisMcScreens: AdmScreenDef[] = [
   },
 ];
 
-const estadisticasScreens: AdmScreenDef[] = [
+const medicionesEstadisticasScreens: AdmScreenDef[] = [
+  {
+    id: "estadisticas-vtas",
+    label: "Vtas Por. Prod.",
+    href: ESTADISTICAS_PRODUCTOS_ROUTES.estadisticasVtas,
+    icon: "line-chart",
+    permiso: PERMISOS.estadisticasProductos.acceso,
+  },
+  {
+    id: "est-para-compra",
+    label: "Est. Para Compra",
+    href: ESTADISTICAS_PRODUCTOS_ROUTES.estParaCompra,
+    icon: "package-search",
+    permiso: PERMISOS.estadisticasProductos.acceso,
+  },
+];
+
+const configuracionEstadisticasScreens: AdmScreenDef[] = [
   {
     id: "carga-de-datos",
-    label: "Carga De Datos",
+    label: "Carga Datos",
     href: ESTADISTICAS_PRODUCTOS_ROUTES.ventasPorProducto,
     icon: "package-search",
     permiso: PERMISOS.estadisticasProductos.acceso,
@@ -218,13 +234,6 @@ const estadisticasScreens: AdmScreenDef[] = [
     label: "Categorizacion",
     href: ESTADISTICAS_PRODUCTOS_ROUTES.categorizacion,
     icon: "tags",
-    permiso: PERMISOS.estadisticasProductos.acceso,
-  },
-  {
-    id: "estadisticas-vtas",
-    label: "Estadísticas Vtas",
-    href: ESTADISTICAS_PRODUCTOS_ROUTES.estadisticasVtas,
-    icon: "line-chart",
     permiso: PERMISOS.estadisticasProductos.acceso,
   },
 ];
@@ -272,7 +281,20 @@ export const ADM_PILLARS: AdmPillarDef[] = [
     id: "estadisticas",
     label: "ESTADÍSTICAS",
     icon: "bar-chart-3",
-    screens: estadisticasScreens,
+    groups: [
+      {
+        id: "mediaciones",
+        label: "MEDIACIONES",
+        icon: "line-chart",
+        screens: medicionesEstadisticasScreens,
+      },
+      {
+        id: "configuracion",
+        label: "CONFIGURACION",
+        icon: "folder-tree",
+        screens: configuracionEstadisticasScreens,
+      },
+    ],
   },
 ];
 

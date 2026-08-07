@@ -8,4 +8,5 @@ export const ESTADISTICAS_PRODUCTOS_ROUTES = {
   ventasPorProducto: "/estadisticas-productos/ventas-por-producto",
   categorizacion: "/estadisticas-productos/categorizacion",
   estadisticasVtas: "/estadisticas-productos/estadisticas-vtas",
+  estParaCompra: "/estadisticas-productos/est-para-compra",
 } as const;

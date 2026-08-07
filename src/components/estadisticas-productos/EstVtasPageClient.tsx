@@ -548,7 +548,7 @@ export default function EstVtasPageClient({
   return (
     <ClassicFilteredTableLayout
       title="ESTADÍSTICAS PRODUCTOS"
-      subtitle="Estadísticas Vtas"
+      subtitle="Vtas Por. Prod."
       contentWidth="full"
       filters={
         <div className="flex flex-col gap-2">

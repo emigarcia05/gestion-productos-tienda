@@ -106,7 +106,7 @@ export default function EstVtasGraficoBarrasMensual({
               {vacioPorDependencia
                 ? vacioPorDependencia
                 : sinVentasCargadas
-                  ? "No hay ventas cargadas. Subí datos en Carga de Datos y volvé a abrir este módulo."
+                  ? "No hay ventas cargadas. Subí datos en Carga Datos y volvé a abrir este módulo."
                   : "No hay ventas para los filtros o el periodo seleccionados."}
             </p>
           </div>
