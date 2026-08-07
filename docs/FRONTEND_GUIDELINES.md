@@ -82,7 +82,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
 10. **Al terminar un cambio**  
    - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
    - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
-    - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`sidebar-nav-scroll`, `pt-3 px-4 pb-2`). Abajo (`mt-auto`, `px-4 pb-3`, **`gap-2` uniforme**): **regla horizontal** (`h-px w-[80%] bg-sidebar-foreground/85`) → **sync/import** → **logo** (`SidebarMainAppArea`, decorativo) → **`SidebarAreaSwitcher`** (wrapper `rounded-lg px-2`). Sin paddings apilados entre bloques.
+    - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`sidebar-nav-scroll`, `pt-3 px-4 pb-2`). Abajo (`mt-auto`, `px-4 pb-3`, **`gap-2`**): **regla horizontal** → **sync/import** → **logo** (`SidebarMainAppArea` con **`my-2`** para aire extra vs. botones) → **`SidebarAreaSwitcher`**. Sin paddings apilados entre bloques salvo el margen del logo.
     - **Progreso import / sync** (`ImportStatusIndicator`, `SyncStatusIndicator`): `ImportStatusIndicator` solo visible con import activa; polling solo si **`pollEnabled`** (`rol === "editor"`). **`SyncStatusIndicator`**: botón fijo **`SINCRONIZAR`** + línea **`Últ. Act.: Hace …`** (más reciente entre productos y compras). **Simple**: click → sync **productos**. **Editor**: click → modal **`SincronizarDuxOpcionesModal`** (**Productos** / **Compras**). Con sync en curso el slot muestra **`SINCRONIZANDO…`** + progreso y ETA en minutos (`formatSyncEta.ts`). Toasts al finalizar productos/compras.
      - Resto de botones de sidebar (navegación, etc.): tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
 
@@ -1550,6 +1550,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-04): **Est. · Gestion Lts** — modal catálogo `est_por_prod_lts_conversion` (texto → litros) en header de Categorizacion.*
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
+
+*Última actualización (2026-08-07): **Sidebar · aire logo** — `my-2` en el logo para separarlo de sync y del switcher de módulos.
 
 *Última actualización (2026-08-07): **Sidebar · orden pie** — línea → sync → logo → switcher de módulos (separa los dos botones).
 

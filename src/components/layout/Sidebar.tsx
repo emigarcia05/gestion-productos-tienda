@@ -511,7 +511,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <SyncStatusIndicator rol={rol} />
           <ImportStatusIndicator pollEnabled={rol === "editor"} />
         </div>
-        <SidebarMainAppArea />
+        <SidebarMainAppArea className="my-2" />
         <div className="rounded-lg px-2">
           <SidebarAreaSwitcher rolActual={rol} />
         </div>
