@@ -1571,12 +1571,15 @@ Antes de entregar código nuevo o modificado, verificar:
 
 ## 6. Organización en Cursor (prompts y reglas persistentes)
 
+- Mapa de guías + **flujo de trabajo canónico** (contrato Zod/`ActionResult` → servicios → actions → UI → docs) y **criterio de hecho**: `docs/README.md`.
 - Archivo recomendado para prompts reutilizables: `.cursor/prompts.md`.
-- `.cursor/prompts.md` incluye el bloque **Dream Team de 5 agentes** con perfiles de arquitectura backend, frontend y auditoría; usar el perfil de backend/auditor backend cuando la tarea afecte `src/actions/`, `src/services/`, Prisma, seguridad o integraciones.
+- `.cursor/prompts.md` incluye el bloque **Dream Team de agentes** (FullStack / Front / Back / Auditoría); usar el perfil de backend/auditor backend cuando la tarea afecte `src/actions/`, `src/services/`, Prisma, seguridad o integraciones. Plantillas: `.cursor/fullstack_promp.md`, `.cursor/front_promp.md`, `.cursor/back_promp.md`, `.cursor/auditoria_promp.md`.
 - Reglas persistentes activas en `.cursor/rules/`:
-  - `manuales-obligatorios.mdc`: exige revisar guías frontend/backend antes de modificar código.
-  - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
-- Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
+  - `manuales-obligatorios.mdc`: exige revisar `docs/README.md` y la guía del área antes de modificar código; sin docs al día la tarea queda incompleta.
+  - `flujo-fullstack-end-to-end.mdc`: ciclo end-to-end con contrato de datos antes de la UI, orden servicios → actions → UI, auth/checklist §1.2.x y criterio de hecho.
+- Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/` y `docs/README.md`.
+
+*Última actualización (2026-08-07): §6 alineada al flujo canónico en `docs/README.md` y reglas `.cursor/rules/` (contrato Zod/`ActionResult`, orden de implementación, criterio de hecho).*
 
 *Última actualización (2026-06-30): **Auditoría backend cerrada** — 17 Server Actions huérfanas eliminadas; servicios/libs legacy de Px Competencia retirados; anti-patrón Action→Action en `vinculos.ts` corregido; Zod en `POST /api/import-lista-precios` y `getPxListasPreciosPageData`. Ver §1.2.8.*
 

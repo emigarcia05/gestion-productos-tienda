@@ -1258,13 +1258,16 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 ## 6. Organización en Cursor (prompts y reglas persistentes)
 
+- Mapa de guías + **flujo de trabajo canónico** (contrato Zod/`ActionResult` → servicios → actions → UI → docs) y **criterio de hecho**: `docs/README.md`.
 - Archivo recomendado para acceso rápido a prompts operativos: `.cursor/prompts.md`.
-- `.cursor/prompts.md` incluye el bloque **Dream Team de 5 agentes** con perfiles de arquitectura frontend/backend y auditoría; para cambios de UI priorizar el perfil frontend o auditor frontend según el objetivo.
+- `.cursor/prompts.md` incluye el bloque **Dream Team de agentes** (FullStack / Front / Back / Auditoría); para cambios de UI priorizar el perfil frontend o auditor frontend según el objetivo. Plantillas por agente: `.cursor/fullstack_promp.md`, `.cursor/front_promp.md`, `.cursor/back_promp.md`, `.cursor/auditoria_promp.md`.
 - Reglas persistentes activas en `.cursor/rules/`:
-  - `manuales-obligatorios.mdc`: obliga lectura de `docs/FRONTEND_GUIDELINES.md` y `docs/BACKEND_GUIDELINES.md` antes de codificar.
-  - `flujo-fullstack-end-to-end.mdc`: define ciclo de implementación end-to-end y cierre con retroalimentación documental.
+  - `manuales-obligatorios.mdc`: obliga lectura de `docs/README.md` y la guía del área (solo secciones relevantes) antes de codificar; la tarea no está completa sin docs al día.
+  - `flujo-fullstack-end-to-end.mdc`: ciclo end-to-end con contrato de datos antes de la UI, orden servicios → actions → UI, reglas técnicas (TS estricto, `cn()`, filtros/tablas, auth) y criterio de hecho.
 - Módulo **Pedido De Mercadería** (`/pedidos/*`): las opciones de **SUCURSAL** deben venir de `global_sucursales` con `pedido = true` (no hardcodear listado fijo). Si una sucursal queda deshabilitada en DB, no debe aparecer en filtros/selectores ni operar por URL.
-- Si se agrega un nuevo patrón visual, clase global, componente compartido o convención de UI, debe actualizarse este documento y mantenerse alineado con las reglas de `.cursor/rules/`.
+- Si se agrega un nuevo patrón visual, clase global, componente compartido o convención de UI, debe actualizarse este documento y mantenerse alineado con las reglas de `.cursor/rules/` y `docs/README.md`.
+
+*Última actualización (2026-08-07): §6 alineada al flujo canónico en `docs/README.md` y reglas `.cursor/rules/` (contrato Zod/`ActionResult`, orden de implementación, criterio de hecho).*
 
 ---
 
