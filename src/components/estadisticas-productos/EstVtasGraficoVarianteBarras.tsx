@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   etiquetaEstVtasDimension,
@@ -18,6 +19,7 @@ import {
   type EstVtasGrupoDimension,
   type EstVtasSeleccionDesglose,
 } from "@/lib/estVtasTypes";
+import { Trash2 } from "lucide-react";
 
 interface Props {
   barras: EstVtasBarraDimension[];
@@ -70,10 +72,10 @@ const EST_VTAS_BARRAS_DESGLOSE_ALTO_CLASS = "h-2.5";
 
 /** Clases de SelectTrigger del título/desglose (anulan `main button` en globals). */
 const EST_VTAS_SELECT_TITULO_CLASS =
-  "est-vtas-select-titulo h-auto w-auto max-w-full rounded-full border-0 bg-primary px-3 text-[11px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring/40 [&_svg]:size-3 [&_svg]:opacity-100 [&_svg]:text-primary-foreground";
+  "est-vtas-select-titulo est-vtas-titulo-pildora h-auto max-w-none rounded-full border-0 bg-primary px-3 text-[11px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring/40 [&_svg]:size-3 [&_svg]:opacity-100 [&_svg]:text-primary-foreground";
 
 const EST_VTAS_SELECT_DESGLOSE_CLASS =
-  "est-vtas-select-desglose h-auto w-auto max-w-full gap-1 border-0 bg-transparent px-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shadow-none hover:bg-muted/40 focus-visible:ring-1 focus-visible:ring-ring/40 [&_svg]:size-3 [&_svg]:opacity-70";
+  "est-vtas-select-desglose h-auto w-auto max-w-full gap-1 rounded-md border border-primary/40 bg-transparent px-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shadow-none hover:bg-primary/5 focus-visible:ring-1 focus-visible:ring-ring/40 [&_svg]:size-3 [&_svg]:opacity-70";
 
 /**
  * Tonos de azul (marca `#0072BB` y vecinos) para distinguir valores del desglose.
@@ -247,30 +249,45 @@ export default function EstVtasGraficoVarianteBarras({
         </Select>
 
         {conDesglose ? (
-          <Select
-            value={desglose}
-            onValueChange={(v) => onDesgloseChange(v as EstVtasDesglose)}
-          >
-            <SelectTrigger
-              size="sm"
-              aria-label="Desglose del gráfico 1"
-              className={EST_VTAS_SELECT_DESGLOSE_CLASS}
+          <div className="flex items-center gap-1">
+            <Select
+              value={desglose}
+              onValueChange={(v) => onDesgloseChange(v as EstVtasDesglose)}
             >
-              <SelectValue placeholder="SIN DESGLOSE" />
-            </SelectTrigger>
-            <SelectContent
-              position="popper"
-              side="bottom"
-              align="center"
-              className="select-content-filtro"
-            >
-              {opcionesDesglose.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectTrigger
+                size="sm"
+                aria-label="Desglose del gráfico 1"
+                className={EST_VTAS_SELECT_DESGLOSE_CLASS}
+              >
+                <SelectValue placeholder="SIN DESGLOSE" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="center"
+                className="select-content-filtro"
+              >
+                {opcionesDesglose.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {desglose !== "ninguno" ? (
+              <Button
+                type="button"
+                variant="primaryIcon"
+                size="icon-lg"
+                aria-label="Quitar desglose"
+                title="Quitar desglose"
+                className="est-vtas-desglose-clear-btn"
+                onClick={() => onDesgloseChange("ninguno")}
+              >
+                <Trash2 aria-hidden />
+              </Button>
+            ) : null}
+          </div>
         ) : null}
       </header>
 

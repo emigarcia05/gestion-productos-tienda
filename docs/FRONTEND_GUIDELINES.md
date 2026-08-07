@@ -307,8 +307,10 @@ import SectionHeader from "@/components/SectionHeader";
 | `.section-header` | Encabezado de sección (título, barra primaria, acciones). Fondo: `var(--card)`. **Módulo** (`.section-header__titulo`): MAYÚSCULAS. **Submódulo 1** (`.section-header__subtitulo-primario`): MAYÚSCULAS + negrita. **Submódulo 2** (`.section-header__subtitulo-secundario`): Title Case + negrita. |
 | `.card-tabla-envoltorio` | **`Card`** que envuelve la tabla principal en páginas con layout estándar cuando se use `Card` (ej. Comp. Proveedores, Generar Pedido): `min-h-0` flex column, `rounded-xl`, `border-border`, `bg-card`, `gap-0`, `py-0`, sombra vía **`--card-tabla-envoltorio-shadow`**. Incluye override específico sobre `Card` base (`[data-slot="card"].card-tabla-envoltorio`) para anular `gap-6 py-6 border-card-border` heredados y evitar espacio extra entre borde, encabezado y cuerpo de tabla. No duplicar la misma cadena de utilidades Tailwind en cada página. |
 | `.est-vtas-barra-btn` | **Est. Vtas**: `<button>` de barra del gráfico. Anula `main button` / `:not([data-variant])` (altura 2.5rem, padding, fondo primary, sombra) para priorizar la estética del gráfico (pista + fill proporcional). |
-| `.est-vtas-select-titulo` | **Est. Vtas**: `SelectTrigger` píldora primary del eje Y. Altura fija **1.5rem** (anula `main button` 2.5rem) para liberar espacio al plot. |
-| `.est-vtas-select-desglose` | **Est. Vtas**: `SelectTrigger` de Desglose. Altura **1.25rem**, fondo transparente (sin look CTA). |
+| `.est-vtas-titulo-pildora` | **Est. Vtas**: píldora de título compartida (Dimensión / Top 10 / Mes). Ancho fijo **11.75rem** (referencia “Un. Vendidas Por Mes”). |
+| `.est-vtas-select-titulo` | **Est. Vtas**: `SelectTrigger` píldora primary del eje Y. Misma altura/ancho que `.est-vtas-titulo-pildora` (anula `main button`). |
+| `.est-vtas-select-desglose` | **Est. Vtas**: `SelectTrigger` de Desglose. Altura **1.25rem**, fondo transparente + **borde suave `primary`**. |
+| `.est-vtas-desglose-clear-btn` | **Est. Vtas**: basura compacta junto al Desglose activo (vuelve a SIN DESGLOSE). |
 | `.est-vtas-link-btn` | **Est. Vtas**: link “Volver A …” bajo el título; anula `main button`. |
 | `.est-vtas-desc-btn` | **Est. Vtas · Top 10**: `<button>` de la celda DESCRIPCION; anula `main button` (se ve como texto de tabla, no CTA). |
 | `.sidebar-nav-scroll` | Scroll del `<nav>` del sidebar: barra **fina** (6px / `scrollbar-width: thin`), thumb redondeado con `sidebar-foreground` semitransparente sobre track transparente; hover del thumb un poco más opaco. |

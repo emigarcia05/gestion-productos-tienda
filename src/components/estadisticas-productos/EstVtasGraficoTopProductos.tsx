@@ -57,14 +57,7 @@ export default function EstVtasGraficoTopProductos({
       aria-label="Top 10 productos por unidades vendidas"
     >
       <header className="flex shrink-0 flex-col items-center gap-0.5">
-        <h2
-          className={cn(
-            "inline-flex h-6 max-w-full items-center rounded-full bg-primary px-3 py-0 shadow-sm",
-            "text-[11px] font-bold uppercase tracking-wide text-primary-foreground"
-          )}
-        >
-          Top 10 Productos
-        </h2>
+        <h2 className="est-vtas-titulo-pildora">Top 10 Productos</h2>
       </header>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

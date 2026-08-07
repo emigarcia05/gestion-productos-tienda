@@ -2465,6 +2465,42 @@ main button.est-vtas-barra-btn:active:not(:disabled) {
 }
 
 /*
+ * Est. Vtas · píldora de título de gráfico (Select Dimensión / h2 Top 10 / h2 Mes).
+ * Ancho fijo = referencia “Un. Vendidas Por Mes” (mismo largo siempre).
+ */
+.est-vtas-titulo-pildora {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 11.75rem;
+  min-width: 11.75rem;
+  max-width: 11.75rem;
+  height: 1.5rem;
+  min-height: 1.5rem;
+  max-height: 1.5rem;
+  padding-inline: 0.75rem;
+  border-radius: 9999px;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px #0000000d;
+}
+
+.est-vtas-titulo-pildora [data-slot="select-value"] {
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
  * Est. Vtas · Select de dimensión (píldora primary): compacto para no robar
  * altura al plot. Anula `main button` (2.5rem).
  */
@@ -2475,6 +2511,9 @@ main button.est-vtas-select-titulo:active:not(:disabled) {
   height: 1.5rem !important;
   min-height: 1.5rem !important;
   max-height: 1.5rem !important;
+  width: 11.75rem !important;
+  min-width: 11.75rem !important;
+  max-width: 11.75rem !important;
   padding: 0 0.75rem !important;
   gap: 0.375rem !important;
   border-radius: 9999px !important;
@@ -2493,7 +2532,7 @@ main button.est-vtas-select-titulo:hover:not(:disabled) {
 }
 
 /*
- * Est. Vtas · Select de desglose: aún más bajo; sin look de CTA.
+ * Est. Vtas · Select de desglose: fondo transparente + contorno suave primary.
  */
 main button.est-vtas-select-desglose,
 main button.est-vtas-select-desglose:hover:not(:disabled),
@@ -2504,7 +2543,7 @@ main button.est-vtas-select-desglose:active:not(:disabled) {
   max-height: 1.25rem !important;
   padding: 0 0.5rem !important;
   gap: 0.25rem !important;
-  border: none !important;
+  border: 1px solid color-mix(in oklab, var(--primary) 40%, transparent) !important;
   border-radius: var(--radius) !important;
   background-color: transparent !important;
   color: var(--muted-foreground) !important;
@@ -2516,7 +2555,40 @@ main button.est-vtas-select-desglose:active:not(:disabled) {
 }
 
 main button.est-vtas-select-desglose:hover:not(:disabled) {
-  background-color: color-mix(in oklab, var(--muted) 40%, transparent) !important;
+  background-color: color-mix(in oklab, var(--primary) 8%, transparent) !important;
+  border-color: color-mix(in oklab, var(--primary) 55%, transparent) !important;
+}
+
+/*
+ * Est. Vtas · basura para quitar desglose activo (compacta junto al select).
+ */
+main button.est-vtas-desglose-clear-btn,
+main button.est-vtas-desglose-clear-btn:hover:not(:disabled),
+main button.est-vtas-desglose-clear-btn:focus-visible,
+main button.est-vtas-desglose-clear-btn:active:not(:disabled) {
+  height: 1.25rem !important;
+  min-height: 1.25rem !important;
+  max-height: 1.25rem !important;
+  width: 1.25rem !important;
+  min-width: 1.25rem !important;
+  max-width: 1.25rem !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: none !important;
+  border-radius: var(--radius) !important;
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  box-shadow: 0 1px 2px #0000000d !important;
+  filter: none !important;
+}
+
+main button.est-vtas-desglose-clear-btn:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+main button.est-vtas-desglose-clear-btn svg {
+  width: 0.75rem !important;
+  height: 0.75rem !important;
 }
 
 /*

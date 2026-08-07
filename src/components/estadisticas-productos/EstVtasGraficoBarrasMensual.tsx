@@ -94,12 +94,7 @@ export default function EstVtasGraficoBarrasMensual({
       }
     >
       <header className="flex shrink-0 flex-col items-center gap-0.5">
-        <h2
-          className={cn(
-            "inline-flex h-6 max-w-full items-center rounded-full bg-primary px-3 py-0 shadow-sm",
-            "text-[11px] font-bold uppercase tracking-wide text-primary-foreground"
-          )}
-        >
+        <h2 className="est-vtas-titulo-pildora">
           Un. Vendidas Por Mes{anio != null ? ` · ${anio}` : ""}
         </h2>
       </header>
