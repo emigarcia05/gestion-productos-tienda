@@ -1558,6 +1558,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
 
+*Última actualización (2026-08-07): **Est. Vtas · G3 totales sobre barras** — valor numérico arriba de cada barra (`fill-foreground` / negro).
+
 *Última actualización (2026-08-07): **Est. Vtas · TO./PM. Top 10** — Total = suma con filtros; Promedio = Total / (años × meses del filtro).
 
 *Última actualización (2026-08-07): **Est. Vtas · Top 10 siempre visible** — G2 ya no exige selección en G1; la selección de G1 solo acota el ranking.

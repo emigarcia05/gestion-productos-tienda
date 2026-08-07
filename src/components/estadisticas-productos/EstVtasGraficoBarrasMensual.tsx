@@ -19,7 +19,7 @@ interface Props {
   className?: string;
 }
 
-const PAD = { top: 16, right: 12, bottom: 28, left: 44 };
+const PAD = { top: 22, right: 12, bottom: 28, left: 44 };
 const VIEW_W = 560;
 const VIEW_H = 240;
 /** Fracción del slot mensual ocupada por la barra (el resto es aire). */
@@ -159,23 +159,36 @@ export default function EstVtasGraficoBarrasMensual({
                 return (
                   <g key={`mes-${p.mes}`}>
                     {barH > 0 ? (
-                      <rect
-                        x={barX}
-                        y={barY}
-                        width={barW}
-                        height={barH}
-                        rx={3}
-                        ry={3}
-                        className={
-                          marcado ? "fill-primary" : "fill-primary/75"
-                        }
-                      >
-                        <title>
-                          {etiquetaMesCortoEstPorProd(p.mes)}
-                          {anio != null ? ` ${anio}` : ""}:{" "}
+                      <>
+                        <rect
+                          x={barX}
+                          y={barY}
+                          width={barW}
+                          height={barH}
+                          rx={3}
+                          ry={3}
+                          className={
+                            marcado ? "fill-primary" : "fill-primary/75"
+                          }
+                        >
+                          <title>
+                            {etiquetaMesCortoEstPorProd(p.mes)}
+                            {anio != null ? ` ${anio}` : ""}:{" "}
+                            {fmtUnidades(p.unidades)}
+                          </title>
+                        </rect>
+                        <text
+                          x={cx}
+                          y={barY - 4}
+                          textAnchor="middle"
+                          dominantBaseline="auto"
+                          className="fill-foreground"
+                          fontSize={9}
+                          fontWeight={600}
+                        >
                           {fmtUnidades(p.unidades)}
-                        </title>
-                      </rect>
+                        </text>
+                      </>
                     ) : null}
                     <text
                       x={cx}
