@@ -237,22 +237,30 @@ export function agregarUnidadesPorEjeYDesgloseSucursal(params: {
 }
 
 /**
- * Serie temporal del año de `fechaClave`: siempre 12 puntos (ENE…DIC).
- * `filtros` acumula las categorías elegidas en los gráficos dimensionales.
- * `codTienda` acota a un producto (Top 10 / gráfico 2).
+ * Serie temporal mensual: siempre 12 puntos (ENE…DIC).
+ * `anio`: si es un número, acota a ese año; si es `null`/omitido sin `fechaClave`,
+ * agrega **todos** los años (el filtro FECHA no afecta).
+ * `fechaClave` (opcional): solo si no se pasa `anio`, toma el año de la clave.
+ * `filtros` / `codTienda`: categoría G1 y producto Top 10.
  */
 export function agregarUnidadesMensualesAnio(params: {
   productosFiltrados: EstVtasProductoItem[];
   ventas: EstVtasVentaItem[];
   sucursalId: string;
-  fechaClave: string;
   modoUnidad: EstVtasModoUnidad;
+  /** Año a graficar. `null` = todos los años (ignora FECHA). */
+  anio?: number | null;
+  /** Si no hay `anio`, se usa el año de esta clave. */
+  fechaClave?: string;
   filtros?: EstVtasFiltroDimension[] | null;
   codTienda?: string | null;
 }): EstVtasPuntoMensual[] {
-  const periodo = parseClavePeriodoEstPorProd(params.fechaClave);
-  if (!periodo) {
-    return Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, unidades: 0 }));
+  let anioFiltro: number | null | undefined = params.anio;
+  if (anioFiltro === undefined && params.fechaClave) {
+    anioFiltro = parseClavePeriodoEstPorProd(params.fechaClave)?.anio ?? null;
+  }
+  if (anioFiltro === undefined) {
+    anioFiltro = null;
   }
 
   let productos = aplicarFiltrosDimension(
@@ -268,7 +276,7 @@ export function agregarUnidadesMensualesAnio(params: {
 
   if (porCod.size > 0) {
     for (const v of params.ventas) {
-      if (v.anio !== periodo.anio) continue;
+      if (anioFiltro != null && v.anio !== anioFiltro) continue;
       if (params.sucursalId !== FILTRO_TODOS && v.sucursalId !== params.sucursalId) {
         continue;
       }

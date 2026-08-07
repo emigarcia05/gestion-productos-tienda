@@ -44,7 +44,6 @@ import {
   clavePeriodoMasRecienteConVentas,
   etiquetaPeriodoCortoEstPorProd,
   listarPeriodosCargaEstPorProd,
-  parseClavePeriodoEstPorProd,
 } from "@/lib/estPorProdPeriodo";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
@@ -316,23 +315,19 @@ export default function EstVtasPageClient({
       ? seleccionProductoTop
       : null;
 
-  const periodoFiltro = useMemo(
-    () => parseClavePeriodoEstPorProd(filtFecha),
-    [filtFecha]
-  );
-
   const puntosMensuales = useMemo(() => {
     const filtrosDim =
       seleccionCategoria1Valida != null
         ? [{ ejeY: ejeY1, etiqueta: seleccionCategoria1Valida }]
         : null;
 
+    // G3 ignora FECHA: agrega ENE…DIC de todos los años con los filtros actuales.
     return agregarUnidadesMensualesAnio({
       productosFiltrados: filasFiltradas,
       ventas,
       sucursalId: sucursalIdEfectiva,
-      fechaClave: filtFecha,
       modoUnidad: filtUnidad,
+      anio: null,
       filtros: filtrosDim,
       codTienda: seleccionProductoTopValida,
     });
@@ -340,7 +335,6 @@ export default function EstVtasPageClient({
     filasFiltradas,
     ventas,
     sucursalIdEfectiva,
-    filtFecha,
     filtUnidad,
     ejeY1,
     seleccionCategoria1Valida,
@@ -741,8 +735,8 @@ export default function EstVtasPageClient({
         />
         <EstVtasGraficoBarrasMensual
           puntos={puntosMensuales}
-          anio={periodoFiltro?.anio ?? null}
-          mesMarca={periodoFiltro?.mes ?? null}
+          anio={null}
+          mesMarca={null}
           sinVentasCargadas={ventas.length === 0}
           className="h-full max-h-full min-w-0 flex-1 self-start"
         />
