@@ -14,7 +14,7 @@ export interface SidebarMainAppAreaProps {
  */
 export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProps) {
   return (
-    <div className={cn("flex w-full min-w-0 flex-col items-center gap-2", className)}>
+    <div className={cn("flex w-full min-w-0 flex-col items-center", className)}>
       <div
         className={cn(
           "flex w-full max-w-[45%] flex-col items-center justify-center rounded-lg p-0",

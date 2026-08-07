@@ -432,7 +432,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   return (
     <aside className="sidebar-container w-60 shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
       <nav
-        className="sidebar-nav-scroll flex min-h-0 flex-col gap-0.5 px-4 pt-3 pb-4"
+        className="sidebar-nav-scroll flex min-h-0 flex-col gap-0.5 px-4 pt-3 pb-2"
         aria-label="Navegación principal"
       >
         {mainAreaId === "finanzas" ? (
@@ -503,21 +503,17 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           </div>
         )}
       </nav>
-      <div className="mt-auto flex flex-col px-4 pb-4">
+      <div className="mt-auto flex flex-col gap-2 px-4 pb-3">
         <div className="flex flex-col gap-2">
           <SyncStatusIndicator rol={rol} />
           <ImportStatusIndicator pollEnabled={rol === "editor"} />
         </div>
-        <div className="flex w-full min-w-0 flex-col gap-3 pt-3">
-          <div className="flex justify-center" aria-hidden>
-            <div className="h-px w-[80%] shrink-0 bg-sidebar-foreground/85" />
-          </div>
-          <div className="flex w-full min-w-0 flex-col pt-2 pb-2">
-            <SidebarMainAppArea className="pt-2" />
-          </div>
-          <div className="rounded-lg px-2 pb-0">
-            <SidebarAreaSwitcher rolActual={rol} />
-          </div>
+        <div className="flex justify-center" aria-hidden>
+          <div className="h-px w-[80%] shrink-0 bg-sidebar-foreground/85" />
+        </div>
+        <SidebarMainAppArea />
+        <div className="rounded-lg px-2">
+          <SidebarAreaSwitcher rolActual={rol} />
         </div>
       </div>
     </aside>
