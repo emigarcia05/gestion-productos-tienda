@@ -101,7 +101,9 @@ function claseAzulDesglose(index: number): string {
 
 /**
  * Barras horizontales: eje Y = dimensión elegida, eje X = Un. vendidas.
- * Título = Select píldora primary. Solo las barras son clicables (no las etiquetas).
+ * Título = Select píldora primary con solo el nombre de la dimensión (MARCA, RUBRO…).
+ * Desglose = Select con el nombre de la variable (SIN DESGLOSE, SUCURSAL…).
+ * Solo las barras son clicables (no las etiquetas).
  * Layout: 15% etiquetas · 85% barras (+ valor); viewport de 9 filas con scroll.
  * Con desglose: grupos categoría → barras hijas (azules distintos + leyenda).
  */
@@ -228,7 +230,7 @@ export default function EstVtasGraficoVarianteBarras({
             aria-label={ariaLabelDimension}
             className={EST_VTAS_SELECT_TITULO_CLASS}
           >
-            <SelectValue placeholder="Un. Vendidas Por Variante" />
+            <SelectValue placeholder="MARCA" />
           </SelectTrigger>
           <SelectContent
             position="popper"
@@ -238,7 +240,7 @@ export default function EstVtasGraficoVarianteBarras({
           >
             {opcionesDimension.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
-                {`Un. Vendidas Por ${opt.label}`}
+                {opt.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -254,7 +256,7 @@ export default function EstVtasGraficoVarianteBarras({
               aria-label="Desglose del gráfico 1"
               className={EST_VTAS_SELECT_DESGLOSE_CLASS}
             >
-              <SelectValue placeholder="Desglose" />
+              <SelectValue placeholder="SIN DESGLOSE" />
             </SelectTrigger>
             <SelectContent
               position="popper"
@@ -264,7 +266,7 @@ export default function EstVtasGraficoVarianteBarras({
             >
               {opcionesDesglose.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
-                  {`Desglose: ${opt.label}`}
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>

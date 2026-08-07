@@ -1556,6 +1556,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
 
+*Última actualización (2026-08-07): **Est. Vtas · selects solo nombre** — Dimensión/Desglose muestran MARCA, RUBRO, SIN DESGLOSE… (sin “Un. Vendidas Por” / “Desglose:”).
+
 *Última actualización (2026-08-07): **Est. Vtas · Top 10 columnas 70/15/15** — DESCRIPCION · TO. (total) · PM. (promedio); tooltips con nombre completo.
 
 *Última actualización (2026-08-07): **Est. Vtas · Dimensión/Desglose sin repetir** — ambas listas comparten todas las dimensiones (incl. SUCURSAL); Desglose suma SIN DESGLOSE; cada select oculta la opción ya elegida en el otro.
