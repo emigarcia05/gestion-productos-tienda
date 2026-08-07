@@ -90,7 +90,7 @@ export default function EstVtasGraficoLineaMensual({
   return (
     <section
       className={cn(
-        "flex min-h-[22rem] min-w-0 flex-col gap-3 rounded-md border border-border bg-card p-4 shadow-sm",
+        "flex min-h-[22rem] min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-sm",
         className
       )}
       aria-label={
@@ -99,14 +99,19 @@ export default function EstVtasGraficoLineaMensual({
           : "Unidades vendidas por mes"
       }
     >
-      <header className="flex shrink-0 flex-col items-center gap-0.5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-foreground">
+      <header className="flex shrink-0 flex-col items-center gap-1">
+        <h2
+          className={cn(
+            "inline-flex h-auto max-w-full items-center rounded-full bg-primary px-4 py-1.5 shadow-sm",
+            "text-[11px] font-bold uppercase tracking-wide text-primary-foreground"
+          )}
+        >
           Un. Vendidas Por Mes{anio != null ? ` · ${anio}` : ""}
         </h2>
-        <p className="text-[10px] text-muted-foreground">
-          Eje X: Meses · Eje Y: Un. Vendidas
+        <p className="text-center text-[10px] leading-tight text-muted-foreground">
+          <span className="block">Eje X: Meses · Eje Y: Un. Vendidas</span>
           {contextoFiltro ? (
-            <span className="block truncate font-medium text-foreground">
+            <span className="block truncate font-semibold uppercase text-foreground">
               {contextoFiltro}
             </span>
           ) : null}
@@ -115,7 +120,7 @@ export default function EstVtasGraficoLineaMensual({
 
       <div className="flex min-h-0 flex-1 flex-col">
         {bloqueado || (sinDatos && (sinVentasCargadas || !contextoFiltro)) ? (
-          <div className="flex min-h-[14rem] flex-1 items-center justify-center border-l-2 border-b-2 border-border">
+          <div className="flex min-h-[14rem] flex-1 items-center justify-center border-l border-b border-border">
             <p className="max-w-[18rem] px-2 text-center text-xs text-muted-foreground">
               {vacioPorDependencia
                 ? vacioPorDependencia
