@@ -112,6 +112,54 @@ export function agregarUnidadesPorEjeY(params: {
 }
 
 /**
+ * Agrega Un. vendidas por sucursal (desglose del gráfico 1).
+ * `filtroPadre` acota a la categoría elegida en el eje Y (ej. RUBRO = LATEX).
+ * No aplica el filtro global de sucursal: muestra una barra por cada sucursal con ventas.
+ */
+export function agregarUnidadesPorSucursal(params: {
+  productosFiltrados: EstVtasProductoItem[];
+  ventas: EstVtasVentaItem[];
+  fechaClave: string;
+  modoUnidad: EstVtasModoUnidad;
+  filtroPadre: EstVtasFiltroDimension;
+  sucursales: readonly { id: string; nombre: string }[];
+}): EstVtasBarraDimension[] {
+  const periodo = parseClavePeriodoEstPorProd(params.fechaClave);
+  if (!periodo) return [];
+
+  const productos = aplicarFiltrosDimension(params.productosFiltrados, [
+    params.filtroPadre,
+  ]);
+  const porCod = new Map(productos.map((p) => [p.codTienda, p] as const));
+  if (porCod.size === 0) return [];
+
+  const nombrePorId = new Map(
+    params.sucursales.map((s) => [s.id, s.nombre.trim() || s.id] as const)
+  );
+  const totales = new Map<string, number>();
+
+  for (const v of params.ventas) {
+    if (v.mes !== periodo.mes || v.anio !== periodo.anio) continue;
+    const prod = porCod.get(v.codTienda);
+    if (!prod) continue;
+
+    const etiqueta =
+      nombrePorId.get(v.sucursalId) ?? v.sucursalId;
+    const factor = params.modoUnidad === "suma" ? prod.factorSuma : 1;
+    const aporte = v.vtasEnUn * factor;
+    totales.set(etiqueta, (totales.get(etiqueta) ?? 0) + aporte);
+  }
+
+  return [...totales.entries()]
+    .map(([etiqueta, unidades]) => ({ etiqueta, unidades }))
+    .filter((r) => r.unidades > 0)
+    .sort(
+      (a, b) =>
+        b.unidades - a.unidades || a.etiqueta.localeCompare(b.etiqueta, "es")
+    );
+}
+
+/**
  * Serie temporal del año de `fechaClave`: siempre 12 puntos (ENE…DIC).
  * `filtros` acumula las categorías elegidas en los gráficos 1 y 2.
  */

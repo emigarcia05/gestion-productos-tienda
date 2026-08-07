@@ -108,14 +108,13 @@ export default function EstVtasGraficoLineaMensual({
         >
           Un. Vendidas Por Mes{anio != null ? ` · ${anio}` : ""}
         </h2>
-        <p className="text-center text-[10px] leading-tight text-muted-foreground">
-          <span className="block">Eje X: Meses · Eje Y: Un. Vendidas</span>
-          {contextoFiltro ? (
+        {contextoFiltro ? (
+          <p className="text-center text-[10px] leading-tight text-muted-foreground">
             <span className="block truncate font-semibold uppercase text-foreground">
               {contextoFiltro}
             </span>
-          ) : null}
-        </p>
+          </p>
+        ) : null}
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">

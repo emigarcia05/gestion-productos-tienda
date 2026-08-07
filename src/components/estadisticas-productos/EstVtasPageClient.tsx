@@ -26,14 +26,16 @@ import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   agregarUnidadesMensualesAnio,
   agregarUnidadesPorEjeY,
+  agregarUnidadesPorSucursal,
 } from "@/lib/estVtasAgregar";
 import type {
+  EstVtasDesglose,
   EstVtasEjeY,
   EstVtasModoUnidad,
   EstVtasProductoItem,
   EstVtasVentaItem,
 } from "@/lib/estVtasTypes";
-import { etiquetaEstVtasEjeY } from "@/lib/estVtasTypes";
+import { etiquetaEstVtasDesglose, etiquetaEstVtasEjeY } from "@/lib/estVtasTypes";
 import type { SucursalEstOption } from "@/lib/estPorProdTypes";
 import {
   clavePeriodoEstPorProd,
@@ -93,7 +95,11 @@ export default function EstVtasPageClient({
   const [filtUnidad, setFiltUnidad] = useState<EstVtasModoUnidad>("unidad");
   const [ejeY1, setEjeY1] = useState<EstVtasEjeY>("marca");
   const [ejeY2, setEjeY2] = useState<EstVtasEjeY>("variante");
+  const [desglose1, setDesglose1] = useState<EstVtasDesglose>("ninguno");
   const [seleccionGrafico1, setSeleccionGrafico1] = useState<string | null>(null);
+  const [seleccionSucursalDesglose, setSeleccionSucursalDesglose] = useState<
+    string | null
+  >(null);
   const [seleccionGrafico2, setSeleccionGrafico2] = useState<string | null>(null);
   const [qDebounced, setQDebounced] = useState("");
 
@@ -202,7 +208,7 @@ export default function EstVtasPageClient({
     qDebounced,
   ]);
 
-  const barrasGrafico1 = useMemo(
+  const barrasCategoria1 = useMemo(
     () =>
       agregarUnidadesPorEjeY({
         productosFiltrados: filasFiltradas,
@@ -215,36 +221,82 @@ export default function EstVtasPageClient({
     [filasFiltradas, ventas, filtSucursalId, filtFecha, filtUnidad, ejeY1]
   );
 
-  const seleccionGrafico1Valida =
+  const seleccionCategoria1Valida =
     seleccionGrafico1 &&
-    barrasGrafico1.some((b) => b.etiqueta === seleccionGrafico1)
+    barrasCategoria1.some((b) => b.etiqueta === seleccionGrafico1)
       ? seleccionGrafico1
       : null;
 
+  const desgloseSucursalActivo =
+    desglose1 === "sucursal" && Boolean(seleccionCategoria1Valida);
+
+  const barrasGrafico1 = useMemo(() => {
+    if (desgloseSucursalActivo && seleccionCategoria1Valida) {
+      return agregarUnidadesPorSucursal({
+        productosFiltrados: filasFiltradas,
+        ventas,
+        fechaClave: filtFecha,
+        modoUnidad: filtUnidad,
+        filtroPadre: { ejeY: ejeY1, etiqueta: seleccionCategoria1Valida },
+        sucursales,
+      });
+    }
+    return barrasCategoria1;
+  }, [
+    desgloseSucursalActivo,
+    seleccionCategoria1Valida,
+    filasFiltradas,
+    ventas,
+    filtFecha,
+    filtUnidad,
+    ejeY1,
+    sucursales,
+    barrasCategoria1,
+  ]);
+
+  const seleccionSucursalDesgloseValida =
+    desgloseSucursalActivo &&
+    seleccionSucursalDesglose &&
+    barrasGrafico1.some((b) => b.etiqueta === seleccionSucursalDesglose)
+      ? seleccionSucursalDesglose
+      : null;
+
+  const sucursalIdDesglose = useMemo(() => {
+    if (!seleccionSucursalDesgloseValida) return null;
+    const match = sucursales.find(
+      (s) =>
+        (s.nombre.trim() || s.id) === seleccionSucursalDesgloseValida ||
+        s.id === seleccionSucursalDesgloseValida
+    );
+    return match?.id ?? null;
+  }, [seleccionSucursalDesgloseValida, sucursales]);
+
+  const sucursalIdEfectiva = sucursalIdDesglose ?? filtSucursalId;
+
   const barrasGrafico2 = useMemo(() => {
-    if (!seleccionGrafico1Valida) return [];
+    if (!seleccionCategoria1Valida) return [];
     return agregarUnidadesPorEjeY({
       productosFiltrados: filasFiltradas,
       ventas,
-      sucursalId: filtSucursalId,
+      sucursalId: sucursalIdEfectiva,
       fechaClave: filtFecha,
       modoUnidad: filtUnidad,
       ejeY: ejeY2,
-      filtroPadre: { ejeY: ejeY1, etiqueta: seleccionGrafico1Valida },
+      filtroPadre: { ejeY: ejeY1, etiqueta: seleccionCategoria1Valida },
     });
   }, [
     filasFiltradas,
     ventas,
-    filtSucursalId,
+    sucursalIdEfectiva,
     filtFecha,
     filtUnidad,
     ejeY1,
     ejeY2,
-    seleccionGrafico1Valida,
+    seleccionCategoria1Valida,
   ]);
 
   const seleccionGrafico2Valida =
-    seleccionGrafico1Valida &&
+    seleccionCategoria1Valida &&
     seleccionGrafico2 &&
     barrasGrafico2.some((b) => b.etiqueta === seleccionGrafico2)
       ? seleccionGrafico2
@@ -256,35 +308,36 @@ export default function EstVtasPageClient({
   );
 
   const puntosMensuales = useMemo(() => {
-    if (!seleccionGrafico1Valida || !seleccionGrafico2Valida) {
+    if (!seleccionCategoria1Valida || !seleccionGrafico2Valida) {
       return Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, unidades: 0 }));
     }
     return agregarUnidadesMensualesAnio({
       productosFiltrados: filasFiltradas,
       ventas,
-      sucursalId: filtSucursalId,
+      sucursalId: sucursalIdEfectiva,
       fechaClave: filtFecha,
       modoUnidad: filtUnidad,
       filtros: [
-        { ejeY: ejeY1, etiqueta: seleccionGrafico1Valida },
+        { ejeY: ejeY1, etiqueta: seleccionCategoria1Valida },
         { ejeY: ejeY2, etiqueta: seleccionGrafico2Valida },
       ],
     });
   }, [
     filasFiltradas,
     ventas,
-    filtSucursalId,
+    sucursalIdEfectiva,
     filtFecha,
     filtUnidad,
     ejeY1,
     ejeY2,
-    seleccionGrafico1Valida,
+    seleccionCategoria1Valida,
     seleccionGrafico2Valida,
   ]);
 
   function handleEjeY1Change(eje: EstVtasEjeY) {
     setEjeY1(eje);
     setSeleccionGrafico1(null);
+    setSeleccionSucursalDesglose(null);
     setSeleccionGrafico2(null);
   }
 
@@ -293,8 +346,25 @@ export default function EstVtasPageClient({
     setSeleccionGrafico2(null);
   }
 
+  function handleDesglose1Change(desglose: EstVtasDesglose) {
+    setDesglose1(desglose);
+    setSeleccionSucursalDesglose(null);
+  }
+
   function handleSeleccionarGrafico1(etiqueta: string | null) {
+    if (desgloseSucursalActivo) {
+      setSeleccionSucursalDesglose(etiqueta);
+      setSeleccionGrafico2(null);
+      return;
+    }
     setSeleccionGrafico1(etiqueta);
+    setSeleccionSucursalDesglose(null);
+    setSeleccionGrafico2(null);
+  }
+
+  function handleVolverCategoria1() {
+    setSeleccionGrafico1(null);
+    setSeleccionSucursalDesglose(null);
     setSeleccionGrafico2(null);
   }
 
@@ -635,8 +705,23 @@ export default function EstVtasPageClient({
           barras={barrasGrafico1}
           ejeY={ejeY1}
           onEjeYChange={handleEjeY1Change}
-          seleccionada={seleccionGrafico1Valida}
+          desglose={desglose1}
+          onDesgloseChange={handleDesglose1Change}
+          desgloseSucursalActivo={desgloseSucursalActivo}
+          onVolverCategoria={handleVolverCategoria1}
+          seleccionada={
+            desgloseSucursalActivo
+              ? seleccionSucursalDesgloseValida
+              : seleccionCategoria1Valida
+          }
           onSeleccionar={handleSeleccionarGrafico1}
+          contextoFiltro={
+            desgloseSucursalActivo && seleccionCategoria1Valida
+              ? `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida} · Desglose: ${etiquetaEstVtasDesglose("sucursal")}`
+              : desglose1 === "sucursal" && !seleccionCategoria1Valida
+                ? "Elegí una categoría para desglosar por sucursal"
+                : null
+          }
           sinVentasCargadas={ventas.length === 0}
           ariaLabelDimension="Dimensión del eje Y — gráfico 1"
           className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
@@ -648,13 +733,20 @@ export default function EstVtasPageClient({
           seleccionada={seleccionGrafico2Valida}
           onSeleccionar={setSeleccionGrafico2}
           vacioPorDependencia={
-            seleccionGrafico1Valida
+            seleccionCategoria1Valida
               ? null
               : "Seleccioná una categoría en el gráfico 1 para ver el desglose."
           }
           contextoFiltro={
-            seleccionGrafico1Valida
-              ? `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionGrafico1Valida}`
+            seleccionCategoria1Valida
+              ? [
+                  `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`,
+                  seleccionSucursalDesgloseValida
+                    ? `Sucursal: ${seleccionSucursalDesgloseValida}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
               : null
           }
           sinVentasCargadas={ventas.length === 0}
@@ -666,15 +758,23 @@ export default function EstVtasPageClient({
           anio={periodoFiltro?.anio ?? null}
           mesMarca={periodoFiltro?.mes ?? null}
           vacioPorDependencia={
-            !seleccionGrafico1Valida
+            !seleccionCategoria1Valida
               ? "Seleccioná una categoría en el gráfico 1."
               : !seleccionGrafico2Valida
                 ? "Seleccioná una categoría en el gráfico 2 para ver la evolución mensual."
                 : null
           }
           contextoFiltro={
-            seleccionGrafico1Valida && seleccionGrafico2Valida
-              ? `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionGrafico1Valida} · ${etiquetaEstVtasEjeY(ejeY2)}: ${seleccionGrafico2Valida}`
+            seleccionCategoria1Valida && seleccionGrafico2Valida
+              ? [
+                  `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`,
+                  `${etiquetaEstVtasEjeY(ejeY2)}: ${seleccionGrafico2Valida}`,
+                  seleccionSucursalDesgloseValida
+                    ? `Sucursal: ${seleccionSucursalDesgloseValida}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
               : null
           }
           sinVentasCargadas={ventas.length === 0}

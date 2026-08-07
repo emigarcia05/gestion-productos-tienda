@@ -28,6 +28,23 @@ export function etiquetaEstVtasEjeY(eje: EstVtasEjeY): string {
   return EST_VTAS_EJE_Y_OPTIONS.find((o) => o.value === eje)?.label ?? "VARIANTE";
 }
 
+/** Desglose opcional del gráfico 1 (tras elegir una categoría del eje Y). */
+export type EstVtasDesglose = "ninguno" | "sucursal";
+
+export const EST_VTAS_DESGLOSE_OPTIONS: readonly {
+  value: EstVtasDesglose;
+  label: string;
+}[] = [
+  { value: "ninguno", label: "SIN DESGLOSE" },
+  { value: "sucursal", label: "SUCURSAL" },
+] as const;
+
+export function etiquetaEstVtasDesglose(d: EstVtasDesglose): string {
+  return (
+    EST_VTAS_DESGLOSE_OPTIONS.find((o) => o.value === d)?.label ?? "SIN DESGLOSE"
+  );
+}
+
 /** Producto tipado para Estadísticas Vtas (categorización + factor de suma). */
 export type EstVtasProductoItem = EstCategorizacionItem & {
   /**
