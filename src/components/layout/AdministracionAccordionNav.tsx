@@ -81,20 +81,14 @@ function ScreenLink({
 function ScreensList({
   screens,
   pathname,
-  /** 2 = pantallas bajo pilar; 3 = pantallas bajo grupo (sin divisor). */
-  dividerLevel = 2,
 }: {
   screens: AdmScreenDef[];
   pathname: string;
-  dividerLevel?: 2 | 3;
 }) {
   return (
     <div className="flex flex-col gap-0.5">
-      {screens.map((screen, index) => (
+      {screens.map((screen) => (
         <div key={screen.id}>
-          {index > 0 && dividerLevel === 2 ? (
-            <SidebarNavDivider level={2} />
-          ) : null}
           <ScreenLink screen={screen} pathname={pathname} />
         </div>
       ))}
@@ -143,11 +137,7 @@ function GroupAccordion({
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className={TREE_PANEL_NESTED}>
-          <ScreensList
-            screens={group.screens}
-            pathname={pathname}
-            dividerLevel={3}
-          />
+          <ScreensList screens={group.screens} pathname={pathname} />
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -195,7 +185,7 @@ export default function AdministracionAccordionNav({ rol }: { rol: Rol }) {
     <div className="flex flex-col">
       {visiblePillars.map((pillar, pillarIndex) => (
         <div key={pillar.id}>
-          {pillarIndex > 0 ? <SidebarNavDivider level={1} /> : null}
+          {pillarIndex > 0 ? <SidebarNavDivider /> : null}
           <PillarAccordion
             pillar={pillar}
             pathname={pathname}
@@ -265,10 +255,9 @@ function PillarAccordion({
       <CollapsibleContent>
         <div className={TREE_PANEL}>
           {groups.length > 0 ? (
-            <div className="flex flex-col">
-              {groups.map((group, index) => (
+            <div className="flex flex-col gap-0.5">
+              {groups.map((group) => (
                 <div key={group.id}>
-                  {index > 0 ? <SidebarNavDivider level={2} /> : null}
                   <GroupAccordion
                     pillarId={pillar.id}
                     group={group}
@@ -280,11 +269,7 @@ function PillarAccordion({
               ))}
             </div>
           ) : (
-            <ScreensList
-              screens={screens}
-              pathname={pathname}
-              dividerLevel={2}
-            />
+            <ScreensList screens={screens} pathname={pathname} />
           )}
         </div>
       </CollapsibleContent>

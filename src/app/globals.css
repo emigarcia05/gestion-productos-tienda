@@ -828,30 +828,17 @@
   }
 
   /**
-   * Separador entre opciones hermanas del sidebar.
-   * Mismo grosor (1px); contraste por nivel de jerarquía (no competir con barra activa).
-   * Empieza en el margen del ícono de *ese* nivel; no atraviesa indent de padres.
+   * Separador solo entre módulos de primera jerarquía (MERCADERÍA / PRECIOS / …).
+   * Dentro del acordeón anidado no hay divisores: indent + chevron + data-active.
    */
   .sidebar-nav-divider {
     height: 1px;
-    margin-right: 0.75rem;
-    flex-shrink: 0;
-  }
-  .sidebar-nav-divider--level-1 {
     margin-left: 0.75rem;
+    margin-right: 0.75rem;
     margin-top: 0.35rem;
     margin-bottom: 0.35rem;
+    flex-shrink: 0;
     background-color: color-mix(in oklab, var(--sidebar-foreground) 32%, transparent);
-  }
-  .sidebar-nav-divider--level-2 {
-    margin-left: 0.75rem;
-    margin-top: 0.125rem;
-    margin-bottom: 0.125rem;
-    background-color: color-mix(in oklab, var(--sidebar-foreground) 16%, transparent);
-  }
-  .sidebar-nav-divider--level-3 {
-    margin-left: 0.75rem;
-    background-color: color-mix(in oklab, var(--sidebar-foreground) 10%, transparent);
   }
 
   /**

@@ -362,22 +362,16 @@ export default function Sidebar({ rol }: { rol: Rol }) {
 
   function renderSubmoduleItems(
     submodules: SubmoduleItem[],
-    moduleId: SidebarModuleId,
-    depth = 0
+    moduleId: SidebarModuleId
   ) {
     const visible = submodules.filter((sub) => submoduleVisible(sub, rol));
-    return visible.map((sub, index) => {
-      // Nivel 2 bajo módulo: divisor suave. Nivel 3 (hojas): sin divisor (indent basta).
-      const divider =
-        index > 0 && depth === 0 ? <SidebarNavDivider level={2} /> : null;
-
+    return visible.map((sub) => {
       if (!sub.href && sub.children?.length) {
         const groupKey = submoduleGroupKey(moduleId, sub.label);
         const isSubOpen = openSubGroups.has(groupKey);
         const groupActive = isSubmoduleGroupActive(sub, pathname);
         return (
           <div key={groupKey}>
-            {divider}
             <Collapsible
               open={isSubOpen}
               onOpenChange={(open) => toggleSubGroup(moduleId, groupKey, open)}
@@ -400,7 +394,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="sidebar-nav-tree sidebar-nav-tree--nested">
-                  {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
+                  {renderSubmoduleItems(sub.children, moduleId)}
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -413,7 +407,6 @@ export default function Sidebar({ rol }: { rol: Rol }) {
       const active = isSubmoduleActive(pathname, sub.href);
       return (
         <div key={sub.href}>
-          {divider}
           <div className="space-y-0">
             <Link
               href={sub.href}
@@ -427,7 +420,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
 
             {sub.children && sub.children.length > 0 ? (
               <div className="sidebar-nav-tree sidebar-nav-tree--nested">
-                {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
+                {renderSubmoduleItems(sub.children, moduleId)}
               </div>
             ) : null}
           </div>
@@ -443,8 +436,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <AdministracionAccordionNav rol={rol} />
         ) : visibleModules.length > 0 ? (
           visibleModules.map((module, moduleIndex) => {
-            const moduleDivider =
-              moduleIndex > 0 ? <SidebarNavDivider level={1} /> : null;
+            const moduleDivider = moduleIndex > 0 ? <SidebarNavDivider /> : null;
 
             if (module.href) {
               const active = isSubmoduleActive(pathname, module.href);
