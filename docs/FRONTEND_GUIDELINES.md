@@ -1559,6 +1559,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-07): **Sidebar · orden pie** — línea → sync → logo → switcher de módulos (separa los dos botones).
 
+*Última actualización (2026-08-07): **Est. Vtas · G3 sin filtro FECHA** — historial ENE–DIC agrega todos los años; FECHA solo afecta G1/G2.
+
 *Última actualización (2026-08-07): **Est. Vtas · desglose más compacto** — filas hijas ~1.15rem / barra `h-2.5`; aire mínimo entre barras de sucursal.
 
 *Última actualización (2026-08-07): **Est. Vtas · sin textos de contexto bajo título** — se quitan las líneas “Desglose / Selección / contexto” bajo la píldora de los 3 gráficos.
