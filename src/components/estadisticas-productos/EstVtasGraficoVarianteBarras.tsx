@@ -19,8 +19,20 @@ interface Props {
   barras: EstVtasBarraDimension[];
   ejeY: EstVtasEjeY;
   onEjeYChange: (eje: EstVtasEjeY) => void;
+  /** Categoría del eje Y seleccionada (clic en fila). */
+  seleccionada?: string | null;
+  onSeleccionar?: (etiqueta: string | null) => void;
+  /**
+   * Mensaje cuando no hay barras por falta de selección en el gráfico padre
+   * (gráfico dependiente). Si no hay, se usan los vacíos de ventas/filtros.
+   */
+  vacioPorDependencia?: string | null;
+  /** Texto de contexto bajo el subtítulo (ej. filtro del gráfico 1). */
+  contextoFiltro?: string | null;
   /** True si no hay ninguna fila en `est_por_prod` (nada cargado). */
   sinVentasCargadas?: boolean;
+  /** Aria del Select de dimensión (distinguir gráfico 1 vs 2). */
+  ariaLabelDimension?: string;
   className?: string;
 }
 
@@ -33,19 +45,29 @@ function fmtUnidades(n: number): string {
 
 /**
  * Barras horizontales: eje Y = dimensión elegida, eje X = Un. vendidas.
- * El título es un Select para elegir la dimensión del eje Y.
- * Posición: margen superior izquierdo del dashboard Estadísticas Vtas.
+ * Título = Select de dimensión. Filas clicables si hay `onSeleccionar`.
  */
 export default function EstVtasGraficoVarianteBarras({
   barras,
   ejeY,
   onEjeYChange,
+  seleccionada = null,
+  onSeleccionar,
+  vacioPorDependencia = null,
+  contextoFiltro = null,
   sinVentasCargadas = false,
+  ariaLabelDimension = "Dimensión del eje Y",
   className,
 }: Props) {
   const max = barras.reduce((m, b) => Math.max(m, b.unidades), 0);
   const vacio = barras.length === 0;
   const labelEjeY = etiquetaEstVtasEjeY(ejeY);
+  const seleccionable = typeof onSeleccionar === "function";
+
+  function handleFilaClick(etiqueta: string) {
+    if (!onSeleccionar) return;
+    onSeleccionar(seleccionada === etiqueta ? null : etiqueta);
+  }
 
   return (
     <section
@@ -62,7 +84,7 @@ export default function EstVtasGraficoVarianteBarras({
         >
           <SelectTrigger
             size="sm"
-            aria-label="Dimensión del eje Y"
+            aria-label={ariaLabelDimension}
             className={cn(
               "h-auto w-auto max-w-full border-0 bg-transparent px-2 py-1 shadow-none",
               "text-xs font-semibold uppercase tracking-wide text-foreground",
@@ -87,6 +109,16 @@ export default function EstVtasGraficoVarianteBarras({
         </Select>
         <p className="text-[10px] text-muted-foreground">
           Eje Y: {labelEjeY} · Eje X: Un. Vendidas
+          {seleccionada ? (
+            <span className="block truncate font-medium text-foreground">
+              Selección: {seleccionada}
+            </span>
+          ) : null}
+          {contextoFiltro ? (
+            <span className="block truncate font-medium text-foreground">
+              {contextoFiltro}
+            </span>
+          ) : null}
         </p>
       </header>
 
@@ -99,19 +131,60 @@ export default function EstVtasGraficoVarianteBarras({
         >
           {vacio ? (
             <p className="max-w-[16rem] px-2 text-center text-xs text-muted-foreground">
-              {sinVentasCargadas
-                ? "No hay ventas cargadas. Subí datos en Carga de Datos y volvé a abrir este módulo."
-                : "No hay ventas para los filtros o el periodo seleccionados. Probá otra fecha con datos cargados."}
+              {vacioPorDependencia
+                ? vacioPorDependencia
+                : sinVentasCargadas
+                  ? "No hay ventas cargadas. Subí datos en Carga de Datos y volvé a abrir este módulo."
+                  : "No hay ventas para los filtros o el periodo seleccionados. Probá otra fecha con datos cargados."}
             </p>
           ) : (
             barras.map((b) => {
               const pct = max > 0 ? Math.round((b.unidades / max) * 100) : 0;
               const widthPct = b.unidades > 0 ? Math.max(pct, 2) : 0;
+              const activa = seleccionada === b.etiqueta;
+              const filaClass = cn(
+                "grid grid-cols-[6.5rem_minmax(0,1fr)_3.5rem] items-center gap-2 rounded-sm px-1 py-0.5",
+                seleccionable &&
+                  "cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                activa && "bg-primary/10"
+              );
+
+              if (seleccionable) {
+                return (
+                  <button
+                    key={b.etiqueta}
+                    type="button"
+                    className={cn(filaClass, "w-full text-left")}
+                    aria-pressed={activa}
+                    onClick={() => handleFilaClick(b.etiqueta)}
+                  >
+                    <span
+                      className="truncate text-right text-[11px] font-medium leading-tight text-foreground"
+                      title={b.etiqueta}
+                    >
+                      {b.etiqueta}
+                    </span>
+                    <div
+                      className="h-5 w-full rounded-sm bg-muted/30"
+                      aria-hidden
+                    >
+                      <div
+                        className={cn(
+                          "h-full rounded-sm",
+                          b.unidades > 0 ? "bg-primary" : "bg-muted-foreground/20"
+                        )}
+                        style={{ width: `${widthPct}%` }}
+                      />
+                    </div>
+                    <span className="text-right text-[11px] tabular-nums text-foreground">
+                      {fmtUnidades(b.unidades)}
+                    </span>
+                  </button>
+                );
+              }
+
               return (
-                <div
-                  key={b.etiqueta}
-                  className="grid grid-cols-[6.5rem_minmax(0,1fr)_3.5rem] items-center gap-2"
-                >
+                <div key={b.etiqueta} className={filaClass}>
                   <span
                     className="truncate text-right text-[11px] font-medium leading-tight text-foreground"
                     title={b.etiqueta}

@@ -15,7 +15,8 @@ const SIN_MARCA = "SIN MARCA";
 const SIN_RUBRO = "SIN RUBRO";
 const SIN_SUB_RUBRO = "SIN SUB RUBRO";
 
-function etiquetaEjeY(
+/** Etiqueta de producto para una dimensión del eje Y (incluye placeholders SIN …). */
+export function etiquetaEjeYProducto(
   prod: EstVtasProductoItem,
   ejeY: EstVtasEjeY
 ): string {
@@ -48,9 +49,15 @@ function etiquetaEjeY(
   }
 }
 
+export type EstVtasFiltroDimension = {
+  ejeY: EstVtasEjeY;
+  etiqueta: string;
+};
+
 /**
  * Agrega Un. vendidas por la dimensión elegida del eje Y.
  * Respeta filtros de producto ya aplicados, sucursal, periodo y modo unidad/suma.
+ * `filtroPadre` acota a productos cuya etiqueta en esa dimensión coincide (gráfico dependiente).
  */
 export function agregarUnidadesPorEjeY(params: {
   productosFiltrados: EstVtasProductoItem[];
@@ -59,13 +66,20 @@ export function agregarUnidadesPorEjeY(params: {
   fechaClave: string;
   modoUnidad: EstVtasModoUnidad;
   ejeY: EstVtasEjeY;
+  filtroPadre?: EstVtasFiltroDimension | null;
 }): EstVtasBarraDimension[] {
   const periodo = parseClavePeriodoEstPorProd(params.fechaClave);
   if (!periodo) return [];
 
-  const porCod = new Map(
-    params.productosFiltrados.map((p) => [p.codTienda, p] as const)
-  );
+  let productos = params.productosFiltrados;
+  if (params.filtroPadre) {
+    const { ejeY: ejePadre, etiqueta } = params.filtroPadre;
+    productos = productos.filter(
+      (p) => etiquetaEjeYProducto(p, ejePadre) === etiqueta
+    );
+  }
+
+  const porCod = new Map(productos.map((p) => [p.codTienda, p] as const));
   if (porCod.size === 0) return [];
 
   const totales = new Map<string, number>();
@@ -78,7 +92,7 @@ export function agregarUnidadesPorEjeY(params: {
     const prod = porCod.get(v.codTienda);
     if (!prod) continue;
 
-    const etiqueta = etiquetaEjeY(prod, params.ejeY);
+    const etiqueta = etiquetaEjeYProducto(prod, params.ejeY);
     const factor = params.modoUnidad === "suma" ? prod.factorSuma : 1;
     const aporte = v.vtasEnUn * factor;
     totales.set(etiqueta, (totales.get(etiqueta) ?? 0) + aporte);
