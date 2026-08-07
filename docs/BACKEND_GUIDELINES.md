@@ -2028,6 +2028,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-07): **Sesión · Administración** — la clave `EDITOR_PASSWORD` se pide al entrar al módulo Administración vía `SidebarAreaSwitcher` (ya no hay switcher de nivel de usuario).
 
+*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — labels Presentacion (`variante`); listas eje Y / desglose con orden propio.
+
 *Última actualización (2026-08-07): **Est. · rutas** — `estParaCompra`; sidebar ESTADÍSTICAS en grupos MEDIACIONES / CONFIGURACION.
 
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — Top 10: `promedioMensual` = total / (`cantidadPeriodosFiltro` = años × meses).
