@@ -535,9 +535,13 @@ interface ReglaDescuentoListaPrecio {
 **Implementaciones actuales:**
 
 - **Sync lista precios tienda** — GET paginado: **50** ítems/página (`fetchItemsPage`, `DUX_API_PAGE_LIMIT`); **`DELAY_MS`** 5 s entre páginas (`syncListaPrecioTienda.service.ts`). Persistencia Neon en chunks aparte (`DUX_SYNC_CHUNK_SIZE`, no confundir con lote DUX).
-- **Reintentos 429 (sync):** backoff en `duxApi.ts` (`fetchItemsPage`).
+- **Timeout por intento HTTP** — `DUX_FETCH_TIMEOUT_MS` (default **30 s**) en `duxApi.ts`: AbortSignal cubre **fetch + body JSON** de un intento. Las esperas de reintento **429** (backoff 10s, 20s, …) quedan **fuera** de ese timeout.
+- **Reintentos 429 (sync):** backoff en `duxApi.ts` (`fetchItemsPage`). **No** envolver `fetchItemsPage` con un `Promise.race` corto (p. ej. 15 s): abortaba el backoff ≥10 s y mostraba *«no respondió a tiempo (15 s)»* aunque DUX solo estuviera rate-limiting.
+- Mensaje de timeout al usuario: *«La petición a DUX no respondió a tiempo (N s)…»* solo cuando un intento HTTP supera `DUX_FETCH_TIMEOUT_MS`.
 
 **Nuevos flujos DUX:** usar las constantes de `duxApiBatchPolicy.ts`; no hardcodear 100 ni intervalos menores a 5 s. Progreso UI en sidebar (`FRONTEND_GUIDELINES` § SSOT progreso API DUX).
+
+*Última actualización (2026-08-07): sync lista precios — eliminado `Promise.race` de 15 s incompatible con reintentos 429; timeout único en `fetchItemsPage` (default 30 s, env `DUX_FETCH_TIMEOUT_MS`).*
 
 ### 1.11 Coeficiente Tintométrico por proveedor
 
@@ -1571,12 +1575,15 @@ Antes de entregar código nuevo o modificado, verificar:
 
 ## 6. Organización en Cursor (prompts y reglas persistentes)
 
+- Mapa de guías + **flujo de trabajo canónico** (contrato Zod/`ActionResult` → servicios → actions → UI → docs) y **criterio de hecho**: `docs/README.md`.
 - Archivo recomendado para prompts reutilizables: `.cursor/prompts.md`.
-- `.cursor/prompts.md` incluye el bloque **Dream Team de 5 agentes** con perfiles de arquitectura backend, frontend y auditoría; usar el perfil de backend/auditor backend cuando la tarea afecte `src/actions/`, `src/services/`, Prisma, seguridad o integraciones.
+- `.cursor/prompts.md` incluye el bloque **Dream Team de agentes** (FullStack / Front / Back / Auditoría); usar el perfil de backend/auditor backend cuando la tarea afecte `src/actions/`, `src/services/`, Prisma, seguridad o integraciones. Plantillas: `.cursor/fullstack_promp.md`, `.cursor/front_promp.md`, `.cursor/back_promp.md`, `.cursor/auditoria_promp.md`.
 - Reglas persistentes activas en `.cursor/rules/`:
-  - `manuales-obligatorios.mdc`: exige revisar guías frontend/backend antes de modificar código.
-  - `flujo-fullstack-end-to-end.mdc`: estandariza ciclo de implementación y cierre con actualización documental.
-- Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/`.
+  - `manuales-obligatorios.mdc`: exige revisar `docs/README.md` y la guía del área antes de modificar código; sin docs al día la tarea queda incompleta.
+  - `flujo-fullstack-end-to-end.mdc`: ciclo end-to-end con contrato de datos antes de la UI, orden servicios → actions → UI, auth/checklist §1.2.x y criterio de hecho.
+- Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/` y `docs/README.md`.
+
+*Última actualización (2026-08-07): §6 alineada al flujo canónico en `docs/README.md` y reglas `.cursor/rules/` (contrato Zod/`ActionResult`, orden de implementación, criterio de hecho).*
 
 *Última actualización (2026-06-30): **Auditoría backend cerrada** — 17 Server Actions huérfanas eliminadas; servicios/libs legacy de Px Competencia retirados; anti-patrón Action→Action en `vinculos.ts` corregido; Zod en `POST /api/import-lista-precios` y `getPxListasPreciosPageData`. Ver §1.2.8.*
 

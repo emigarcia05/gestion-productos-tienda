@@ -5,8 +5,10 @@ alwaysApply: true
 
 # Manuales obligatorios antes de codificar
 
-- Frontend → `docs/FRONTEND_GUIDELINES.md` (**sección del módulo tocado**, no el archivo completo).
-- Backend → `docs/BACKEND_GUIDELINES.md` (**§ del dominio**, no el archivo completo).
+- Antes de codificar: leer `docs/README.md` y la guía del área (**solo secciones relevantes**, no el archivo completo).
+- Frontend → `docs/FRONTEND_GUIDELINES.md` (**sección del módulo tocado**).
+- Backend → `docs/BACKEND_GUIDELINES.md` (**§ del dominio**).
 - IA Diseño / colores / scraper / Asistente IA → `docs/AGENTEIA_GUIDELINES.md`; si afecta el asesor → también `docs/IA_DISEÑO/REGLAS_NEGOCIO.md`.
 - No inventar convenciones que contradigan esas guías. Priorizar la guía del área.
 - Cerrar la tarea documentando cambios relevantes (guía del área, `CHANGELOG` IA Diseño o ADR nuevo si aplica).
+- La tarea **no está completa** si el código cambia y la documentación del área no se actualiza.
