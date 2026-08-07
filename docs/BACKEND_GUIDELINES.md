@@ -2026,11 +2026,9 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-06): **Áreas** — Estadísticas Productos bajo sidebar **Administración** (id `finanzas`); sin macro-área propia. Ver §2.5g.
 
-<<<<<<< HEAD
 *Última actualización (2026-08-07): **Sesión · Administración** — la clave `EDITOR_PASSWORD` se pide al entrar al módulo Administración vía `SidebarAreaSwitcher` (ya no hay switcher de nivel de usuario).
-=======
+
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarUnidadesPorSucursal` (desglose gráfico 1 por sucursal).
->>>>>>> origin/main
 
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarUnidadesMensualesAnio` (serie ENE…DIC del año de `fechaClave`, filtros dimensionales de gráficos 1 y 2).
 

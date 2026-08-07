@@ -1551,19 +1551,17 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
 
-<<<<<<< HEAD
 *Última actualización (2026-08-07): **Sidebar · ritmo pie** — `gap-2` uniforme sync → divisor → logo → switcher; menos padding apilado para dar altura al árbol.
 
 *Última actualización (2026-08-07): **Sidebar · cambio de módulo** — `SidebarAreaSwitcher` (Vendedor/Marketing libres; Administración con clave); sin label de área ni `SelectorRol`; logo decorativo.
 
 *Última actualización (2026-08-07): **Sidebar · scrollbar** — `.sidebar-nav-scroll`: barra fina redondeada con tokens `sidebar-foreground` (sin amarillo de indicador).
-=======
+
 *Última actualización (2026-08-07): **Est. Vtas · desglose sucursal** — gráfico 1: Desglose SUCURSAL tras elegir categoría (ej. LATEX) → una barra por sucursal.
 
 *Última actualización (2026-08-07): **Est. Vtas · barras 15/85 + 8 filas** — etiquetas 15 %, barras 85 %; viewport fijo de 8 filas con scroll.
 
 *Última actualización (2026-08-07): **Est. Vtas · sin leyenda de ejes** — se quita el subtítulo “Eje Y · Eje X” bajo el título píldora; se mantienen selección/contexto.
->>>>>>> origin/main
 
 *Última actualización (2026-08-07): **Est. Vtas · estética gráficos** — título píldora `primary`; etiquetas no clicables; solo barras `rounded-full` son botones; leyenda “Un. Vendidas”.
 
