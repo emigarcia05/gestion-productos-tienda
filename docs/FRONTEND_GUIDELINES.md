@@ -798,7 +798,7 @@ La app se divide en **tres áreas** de alto nivel. El id interno `gestion-produc
 
 ### Slidenav — Cambio de módulo (`src/components/shared/SidebarAreaSwitcher.tsx`)
 
-Botón de **una sola línea** en el pie de la slidenav (**debajo** del logo), superficie **`sidebar-user-switcher-surface`**.
+Botón de **una sola línea** en el pie de la slidenav (**entre** sync y el logo), superficie **`sidebar-user-switcher-surface`**.
 
 - **Texto**: área actual en MAYÚSCULAS; hover → **CAMBIAR MÓDULO**.
 - **Click**: modal **Módulos De La Aplicación** (`MAIN_APP_AREAS`).
