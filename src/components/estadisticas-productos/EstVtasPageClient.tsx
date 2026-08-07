@@ -239,7 +239,7 @@ export default function EstVtasPageClient({
   );
 
   const gruposGrafico1 = useMemo(() => {
-    if (!desgloseActivo || desglose1 === "ninguno") return null;
+    if (desglose1 === "ninguno") return null;
     return agregarUnidadesPorDobleDimension({
       productosFiltrados: filasFiltradas,
       ventas,
@@ -250,7 +250,6 @@ export default function EstVtasPageClient({
       sucursales,
     });
   }, [
-    desgloseActivo,
     desglose1,
     filasFiltradas,
     ventas,
@@ -314,7 +313,7 @@ export default function EstVtasPageClient({
   const filtrosDimensionG1 = useMemo((): EstVtasFiltroDimension[] | null => {
     if (!seleccionCategoria1Valida) return null;
 
-    if (desgloseActivo && seleccionDesgloseValida && desglose1 !== "ninguno") {
+    if (seleccionDesgloseValida && desglose1 !== "ninguno") {
       const out: EstVtasFiltroDimension[] = [];
       const fCat = filtroProductoDesdeDimension(
         dimension1,
@@ -335,7 +334,6 @@ export default function EstVtasPageClient({
     return null;
   }, [
     seleccionCategoria1Valida,
-    desgloseActivo,
     seleccionDesgloseValida,
     desglose1,
     dimension1,
