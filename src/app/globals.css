@@ -828,45 +828,54 @@
   }
 
   /**
-   * Separador entre opciones hermanas del sidebar (Vendedor / Administración / Marketing).
-   * Fuera del árbol: desde el margen del ícono. Dentro de `.sidebar-nav-tree`:
-   * desde la guía hasta el borde derecho del hover.
+   * Separador entre opciones hermanas del sidebar.
+   * Mismo grosor (1px); contraste por nivel de jerarquía (no competir con barra activa).
+   * Empieza en el margen del ícono de *ese* nivel; no atraviesa indent de padres.
    */
   .sidebar-nav-divider {
     height: 1px;
-    margin-left: 0.75rem;
     margin-right: 0.75rem;
-    background-color: color-mix(in oklab, var(--sidebar-foreground) 22%, transparent);
+    flex-shrink: 0;
   }
-  .sidebar-nav-tree .sidebar-nav-divider {
-    margin-left: 0;
+  .sidebar-nav-divider--level-1 {
+    margin-left: 0.75rem;
+    margin-top: 0.35rem;
+    margin-bottom: 0.35rem;
+    background-color: color-mix(in oklab, var(--sidebar-foreground) 32%, transparent);
+  }
+  .sidebar-nav-divider--level-2 {
+    margin-left: 0.75rem;
+    margin-top: 0.125rem;
+    margin-bottom: 0.125rem;
+    background-color: color-mix(in oklab, var(--sidebar-foreground) 16%, transparent);
+  }
+  .sidebar-nav-divider--level-3 {
+    margin-left: 0.75rem;
+    background-color: color-mix(in oklab, var(--sidebar-foreground) 10%, transparent);
   }
 
   /**
-   * Guía vertical del acordeón: amarillo tenue (`--sidebar-indicator` ~40 %),
-   * alineada al margen izquierdo del hover (`padding-left`).
-   * No compite con la barra de página actual (`data-active`).
+   * Panel de hijos del acordeón: solo indentación (sin guía vertical).
+   * La jerarquía la dan tipografía, indent, chevron y `data-active` en la hoja.
    */
   .sidebar-nav-tree {
-    --sidebar-nav-tree-indent: 0.75rem;
-    position: relative;
-    padding-left: var(--sidebar-nav-tree-indent);
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding-left: 0.625rem;
+    margin-top: 0.2rem;
+    padding-top: 0.15rem;
+    padding-bottom: 0.15rem;
   }
-  .sidebar-nav-tree::before {
-    content: "";
-    position: absolute;
-    left: var(--sidebar-nav-tree-indent);
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    border-radius: 1px;
-    background-color: color-mix(in oklab, var(--sidebar-indicator) 40%, transparent);
+  .sidebar-nav-tree--nested {
+    padding-left: 0.75rem;
+    margin-top: 0.15rem;
   }
 
   /**
    * Módulo / pilar de primer nivel (MAYÚSCULAS).
    * Hover: solo fondo accent. `data-active`: página actual (enlace directo).
-   * `data-ancestor`: contiene la ruta activa (sin accent fuerte ni barra).
+   * `data-ancestor`: contiene la ruta activa (sin accent ni barra).
    */
   .sidebar-nav-module {
     display: flex;
@@ -899,6 +908,14 @@
     background-color: var(--sidebar-accent) !important;
     border-left-color: var(--sidebar-indicator);
   }
+  .sidebar-nav-module[aria-expanded="true"] .sidebar-nav-chevron,
+  .sidebar-nav-item[aria-expanded="true"] .sidebar-nav-chevron {
+    opacity: 1;
+  }
+  .sidebar-nav-module .sidebar-nav-chevron,
+  .sidebar-nav-item .sidebar-nav-chevron {
+    opacity: 0.7;
+  }
   .sidebar-nav-module:hover svg,
   .sidebar-nav-module[data-active="true"] svg,
   .sidebar-nav-module[data-active="true"]:hover svg,
@@ -911,8 +928,8 @@
 
   /**
    * Fila de navegación (submódulo / pantalla).
-   * Hover: solo fondo accent. `data-active`: página actual (barra amarilla).
-   * `data-ancestor`: agrupador con hijo activo (peso semibold, sin accent).
+   * Hover: solo fondo accent. `data-active`: página actual (única barra amarilla).
+   * `data-ancestor`: agrupador con hijo activo (semibold, sin accent).
    */
   .sidebar-nav-item {
     display: flex;

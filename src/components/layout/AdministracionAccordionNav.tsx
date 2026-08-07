@@ -30,9 +30,9 @@ import SidebarNavDivider from "@/components/layout/SidebarNavDivider";
 const iconClass = "h-5 w-5 shrink-0";
 const subIconClass = "h-4 w-4 shrink-0";
 
-/** Panel hijo: línea guía alineada al margen izquierdo del hover. */
-const TREE_PANEL = "sidebar-nav-tree mt-0.5 space-y-0 py-1";
-const TREE_PANEL_NESTED = "sidebar-nav-tree mt-0.5 ml-3 space-y-0 py-1";
+/** Panel hijo: solo indentación (sin guía vertical). */
+const TREE_PANEL = "sidebar-nav-tree";
+const TREE_PANEL_NESTED = "sidebar-nav-tree sidebar-nav-tree--nested";
 
 function deriveOpenFromPath(
   pathname: string,
@@ -81,15 +81,20 @@ function ScreenLink({
 function ScreensList({
   screens,
   pathname,
+  /** 2 = pantallas bajo pilar; 3 = pantallas bajo grupo (sin divisor). */
+  dividerLevel = 2,
 }: {
   screens: AdmScreenDef[];
   pathname: string;
+  dividerLevel?: 2 | 3;
 }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-0.5">
       {screens.map((screen, index) => (
         <div key={screen.id}>
-          {index > 0 ? <SidebarNavDivider /> : null}
+          {index > 0 && dividerLevel === 2 ? (
+            <SidebarNavDivider level={2} />
+          ) : null}
           <ScreenLink screen={screen} pathname={pathname} />
         </div>
       ))}
@@ -130,7 +135,7 @@ function GroupAccordion({
         <span className="min-w-0 flex-1 truncate text-left">{group.label}</span>
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+            "sidebar-nav-chevron h-3.5 w-3.5 shrink-0 transition-transform duration-200",
             isOpen && "rotate-180"
           )}
           aria-hidden
@@ -138,7 +143,11 @@ function GroupAccordion({
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className={TREE_PANEL_NESTED}>
-          <ScreensList screens={group.screens} pathname={pathname} />
+          <ScreensList
+            screens={group.screens}
+            pathname={pathname}
+            dividerLevel={3}
+          />
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -186,7 +195,7 @@ export default function AdministracionAccordionNav({ rol }: { rol: Rol }) {
     <div className="flex flex-col">
       {visiblePillars.map((pillar, pillarIndex) => (
         <div key={pillar.id}>
-          {pillarIndex > 0 ? <SidebarNavDivider /> : null}
+          {pillarIndex > 0 ? <SidebarNavDivider level={1} /> : null}
           <PillarAccordion
             pillar={pillar}
             pathname={pathname}
@@ -247,7 +256,7 @@ function PillarAccordion({
         <span className="min-w-0 flex-1 text-left">{pillar.label}</span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 transition-transform duration-200",
+            "sidebar-nav-chevron h-4 w-4 shrink-0 transition-transform duration-200",
             isOpen && "rotate-180"
           )}
           aria-hidden
@@ -259,7 +268,7 @@ function PillarAccordion({
             <div className="flex flex-col">
               {groups.map((group, index) => (
                 <div key={group.id}>
-                  {index > 0 ? <SidebarNavDivider /> : null}
+                  {index > 0 ? <SidebarNavDivider level={2} /> : null}
                   <GroupAccordion
                     pillarId={pillar.id}
                     group={group}
@@ -271,7 +280,11 @@ function PillarAccordion({
               ))}
             </div>
           ) : (
-            <ScreensList screens={screens} pathname={pathname} />
+            <ScreensList
+              screens={screens}
+              pathname={pathname}
+              dividerLevel={2}
+            />
           )}
         </div>
       </CollapsibleContent>

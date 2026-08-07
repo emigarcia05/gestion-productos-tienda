@@ -367,7 +367,9 @@ export default function Sidebar({ rol }: { rol: Rol }) {
   ) {
     const visible = submodules.filter((sub) => submoduleVisible(sub, rol));
     return visible.map((sub, index) => {
-      const divider = index > 0 ? <SidebarNavDivider /> : null;
+      // Nivel 2 bajo módulo: divisor suave. Nivel 3 (hojas): sin divisor (indent basta).
+      const divider =
+        index > 0 && depth === 0 ? <SidebarNavDivider level={2} /> : null;
 
       if (!sub.href && sub.children?.length) {
         const groupKey = submoduleGroupKey(moduleId, sub.label);
@@ -390,19 +392,14 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 <span className="min-w-0 flex-1 truncate text-left">{sub.label}</span>
                 <ChevronDown
                   className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    "sidebar-nav-chevron h-3.5 w-3.5 shrink-0 transition-transform duration-200",
                     isSubOpen && "rotate-180"
                   )}
                   aria-hidden
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div
-                  className={cn(
-                    "sidebar-nav-tree mt-0.5 space-y-0 py-1",
-                    depth === 0 ? "ml-3" : "ml-2"
-                  )}
-                >
+                <div className="sidebar-nav-tree sidebar-nav-tree--nested">
                   {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
                 </div>
               </CollapsibleContent>
@@ -429,7 +426,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
             </Link>
 
             {sub.children && sub.children.length > 0 ? (
-              <div className="sidebar-nav-tree ml-3 mt-0.5 space-y-0 py-1">
+              <div className="sidebar-nav-tree sidebar-nav-tree--nested">
                 {renderSubmoduleItems(sub.children, moduleId, depth + 1)}
               </div>
             ) : null}
@@ -446,7 +443,8 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <AdministracionAccordionNav rol={rol} />
         ) : visibleModules.length > 0 ? (
           visibleModules.map((module, moduleIndex) => {
-            const moduleDivider = moduleIndex > 0 ? <SidebarNavDivider /> : null;
+            const moduleDivider =
+              moduleIndex > 0 ? <SidebarNavDivider level={1} /> : null;
 
             if (module.href) {
               const active = isSubmoduleActive(pathname, module.href);
@@ -488,12 +486,15 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                     </span>
                     <span className="min-w-0 flex-1 text-left">{module.label}</span>
                     <ChevronDown
-                      className={cn("h-4 w-4 shrink-0 transition-transform duration-200", isOpen && "rotate-180")}
+                      className={cn(
+                        "sidebar-nav-chevron h-4 w-4 shrink-0 transition-transform duration-200",
+                        isOpen && "rotate-180"
+                      )}
                       aria-hidden
                     />
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="sidebar-nav-tree mt-0.5 space-y-0 py-1">
+                    <div className="sidebar-nav-tree">
                       {renderSubmoduleItems(module.submodules, module.id)}
                     </div>
                   </CollapsibleContent>
