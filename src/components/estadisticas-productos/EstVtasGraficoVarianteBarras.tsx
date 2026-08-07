@@ -58,10 +58,14 @@ function fmtUnidades(n: number): string {
 
 /** Filas visibles en el viewport del eje Y; el resto scrollea. */
 const EST_VTAS_BARRAS_FILAS_VISIBLES = 9;
-/** Alto de cada fila (barra + aire entre filas). */
+/** Alto de cada fila (barra + aire entre filas) — modo 1 dimensión. */
 const EST_VTAS_BARRAS_FILA_REM = 2;
-/** Alto visual de la barra dentro de la fila. */
+/** Alto visual de la barra dentro de la fila — modo 1 dimensión. */
 const EST_VTAS_BARRAS_ALTO_CLASS = "h-3.5";
+/** Alto de fila en desglose sucursal: aire mínimo entre barras hijas. */
+const EST_VTAS_BARRAS_DESGLOSE_FILA_REM = 1.15;
+/** Alto visual de la barra en desglose. */
+const EST_VTAS_BARRAS_DESGLOSE_ALTO_CLASS = "h-2.5";
 
 /** Clases de SelectTrigger del título/desglose (anulan `main button` en globals). */
 const EST_VTAS_SELECT_TITULO_CLASS =
@@ -177,7 +181,12 @@ export default function EstVtasGraficoVarianteBarras({
     onSeleccionarDesglose(misma ? null : sel);
   }
 
-  function renderPista(widthPct: number, fillClass: string, ariaHidden: boolean) {
+  function renderPista(
+    widthPct: number,
+    fillClass: string,
+    ariaHidden: boolean,
+    altoClass: string = EST_VTAS_BARRAS_ALTO_CLASS
+  ) {
     return (
       <div
         className="min-w-0 flex-1 overflow-hidden rounded-full bg-muted/35"
@@ -186,7 +195,7 @@ export default function EstVtasGraficoVarianteBarras({
         <div
           className={cn(
             "rounded-full transition-[width] duration-200 ease-out",
-            EST_VTAS_BARRAS_ALTO_CLASS,
+            altoClass,
             fillClass
           )}
           style={{ width: `${widthPct}%` }}
@@ -278,7 +287,7 @@ export default function EstVtasGraficoVarianteBarras({
                   : "No hay ventas para los filtros o el periodo seleccionados. Probá otra fecha con datos cargados."}
             </p>
           ) : modoGrupos && grupos ? (
-            <div className="flex flex-col gap-1.5 py-0.5">
+            <div className="flex flex-col gap-1 py-0.5">
               {grupos.map((g) => (
                 <div key={g.etiqueta} className="flex flex-col" role="group" aria-label={g.etiqueta}>
                   {g.sucursales.map((s, rowIdx) => {
@@ -291,14 +300,17 @@ export default function EstVtasGraficoVarianteBarras({
                     const pista = renderPista(
                       widthPct,
                       fillClass,
-                      seleccionableDesglose
+                      seleccionableDesglose,
+                      EST_VTAS_BARRAS_DESGLOSE_ALTO_CLASS
                     );
 
                     return (
                       <div
                         key={`${g.etiqueta}::${s.sucursalId}`}
                         className="grid grid-cols-[minmax(0,15%)_minmax(0,1fr)] items-center gap-x-2"
-                        style={{ height: `${EST_VTAS_BARRAS_FILA_REM}rem` }}
+                        style={{
+                          height: `${EST_VTAS_BARRAS_DESGLOSE_FILA_REM}rem`,
+                        }}
                       >
                         <span
                           className={cn(
