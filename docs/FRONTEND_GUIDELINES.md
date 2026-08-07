@@ -1552,6 +1552,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-04): **Est. · Gestion Conversion / Terminacion** — renombre **Gestion Lts** → **Gestion Conversion**; catálogo `est_por_prod_terminacion` + botón **Gestion Terminacion** + columna TERMINACION.*
 
+*Última actualización (2026-08-07): **Est. Vtas · sin leyenda de ejes** — se quita el subtítulo “Eje Y · Eje X” bajo el título píldora; se mantienen selección/contexto.
+
 *Última actualización (2026-08-07): **Est. Vtas · estética gráficos** — título píldora `primary`; etiquetas no clicables; solo barras `rounded-full` son botones; leyenda “Un. Vendidas”.
 
 *Última actualización (2026-08-07): **Est. Vtas · gráfico 3 (línea temporal)** — `EstVtasGraficoLineaMensual`: eje X = 12 meses del año de FECHA; eje Y = Un. Vendidas filtradas por categorías de gráficos 1 y 2; clic también en gráfico 2.
