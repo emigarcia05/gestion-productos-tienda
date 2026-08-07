@@ -51,9 +51,6 @@ export const SYNC_SECONDS_PER_BATCH = DELAY_MS / 1000 + 1.5;
 /** Timeout (ms) por transacción de persistencia (chunks pequeños + catálogos deduplicados). */
 const TRANSACTION_TIMEOUT_MS = 120_000;
 
-/** Máximo segundos por petición de página; si no hay respuesta, se da por trabado. */
-const PAGINA_TIMEOUT_MS = 15_000;
-
 /** Presupuesto de tiempo por invocación serverless (ms). Default 4 min (< límite Vercel 300 s). */
 export const SYNC_STEP_TIME_BUDGET_MS = Math.max(
   60_000,
@@ -362,15 +359,6 @@ async function persistPaginaDuxYActualizarEstado(
   };
 }
 
-function paginaTimeoutPromise(): Promise<never> {
-  return new Promise((_, reject) =>
-    setTimeout(
-      () => reject(new Error("La petición a DUX no respondió a tiempo (15 s). Reintentá más tarde.")),
-      PAGINA_TIMEOUT_MS
-    )
-  );
-}
-
 async function persistRecordBatch(
   items: RecordProdTienda[],
   meta: SyncDuxWorkerMeta
@@ -516,10 +504,12 @@ export async function syncListaPrecioTiendaRunStep(
   while (Date.now() < deadline) {
     await assertListaPrecioTiendaSyncNotCancelled();
 
-    const { results, total, hasMore } = await Promise.race([
-      fetchItemsPage(worker.fetchOffset, DUX_API_PAGE_LIMIT),
-      paginaTimeoutPromise(),
-    ]);
+    // Timeout y reintentos 429 viven en `fetchItemsPage` (no envolver con Promise.race:
+    // un tope de 15 s abortaba el backoff 429 ≥10 s y mataba syncs que antes funcionaban).
+    const { results, total, hasMore } = await fetchItemsPage(
+      worker.fetchOffset,
+      DUX_API_PAGE_LIMIT
+    );
 
     if (total > 0 && totalApi === 0) totalApi = total;
 

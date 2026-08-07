@@ -535,9 +535,13 @@ interface ReglaDescuentoListaPrecio {
 **Implementaciones actuales:**
 
 - **Sync lista precios tienda** — GET paginado: **50** ítems/página (`fetchItemsPage`, `DUX_API_PAGE_LIMIT`); **`DELAY_MS`** 5 s entre páginas (`syncListaPrecioTienda.service.ts`). Persistencia Neon en chunks aparte (`DUX_SYNC_CHUNK_SIZE`, no confundir con lote DUX).
-- **Reintentos 429 (sync):** backoff en `duxApi.ts` (`fetchItemsPage`).
+- **Timeout por intento HTTP** — `DUX_FETCH_TIMEOUT_MS` (default **30 s**) en `duxApi.ts`: AbortSignal cubre **fetch + body JSON** de un intento. Las esperas de reintento **429** (backoff 10s, 20s, …) quedan **fuera** de ese timeout.
+- **Reintentos 429 (sync):** backoff en `duxApi.ts` (`fetchItemsPage`). **No** envolver `fetchItemsPage` con un `Promise.race` corto (p. ej. 15 s): abortaba el backoff ≥10 s y mostraba *«no respondió a tiempo (15 s)»* aunque DUX solo estuviera rate-limiting.
+- Mensaje de timeout al usuario: *«La petición a DUX no respondió a tiempo (N s)…»* solo cuando un intento HTTP supera `DUX_FETCH_TIMEOUT_MS`.
 
 **Nuevos flujos DUX:** usar las constantes de `duxApiBatchPolicy.ts`; no hardcodear 100 ni intervalos menores a 5 s. Progreso UI en sidebar (`FRONTEND_GUIDELINES` § SSOT progreso API DUX).
+
+*Última actualización (2026-08-07): sync lista precios — eliminado `Promise.race` de 15 s incompatible con reintentos 429; timeout único en `fetchItemsPage` (default 30 s, env `DUX_FETCH_TIMEOUT_MS`).*
 
 ### 1.11 Coeficiente Tintométrico por proveedor
 
