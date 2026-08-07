@@ -2028,6 +2028,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-07): **Sesión · Administración** — la clave `EDITOR_PASSWORD` se pide al entrar al módulo Administración vía `SidebarAreaSwitcher` (ya no hay switcher de nivel de usuario).
 
+*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — Top 10 (`agregarTopProductos`) siempre con filtros de página; `filtros` dimensionales de G1 opcionales.
+
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — periodo G1/G2 con `anios` + `meses` multi; G3 usa `anios` (ignora meses).
 
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarTopProductos` con `totalPeriodo` + `promedioMensual` (tabla G2).

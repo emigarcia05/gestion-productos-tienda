@@ -450,10 +450,7 @@ export default function EstVtasPageClient({
     dimension1,
   ]);
 
-  const haySeleccionG1 = seleccionCategoria1Valida != null;
-
   const barrasTopProductos = useMemo(() => {
-    if (!haySeleccionG1) return [];
     return agregarTopProductos({
       productosFiltrados: filasFiltradas,
       ventas,
@@ -465,7 +462,6 @@ export default function EstVtasPageClient({
       topN: 10,
     });
   }, [
-    haySeleccionG1,
     filasFiltradas,
     ventas,
     sucursalIdEfectiva,
@@ -476,7 +472,6 @@ export default function EstVtasPageClient({
   ]);
 
   const seleccionProductoTopValida =
-    haySeleccionG1 &&
     seleccionProductoTop &&
     barrasTopProductos.some((b) => b.codTienda === seleccionProductoTop)
       ? seleccionProductoTop
@@ -988,11 +983,6 @@ export default function EstVtasPageClient({
           filas={barrasTopProductos}
           seleccionadoCod={seleccionProductoTopValida}
           onSeleccionar={setSeleccionProductoTop}
-          vacioPorDependencia={
-            haySeleccionG1
-              ? null
-              : "Seleccioná una categoría en el gráfico 1 para ver el Top 10."
-          }
           sinVentasCargadas={ventas.length === 0}
           className="h-full max-h-full w-[30%] min-w-0 shrink-0 self-start"
         />
