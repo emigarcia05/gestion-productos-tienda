@@ -28,7 +28,7 @@ export function etiquetaEstVtasEjeY(eje: EstVtasEjeY): string {
   return EST_VTAS_EJE_Y_OPTIONS.find((o) => o.value === eje)?.label ?? "VARIANTE";
 }
 
-/** Desglose opcional del gráfico 1 (tras elegir una categoría del eje Y). */
+/** Desglose opcional del gráfico 1 (agrupa cada categoría por sucursal). */
 export type EstVtasDesglose = "ninguno" | "sucursal";
 
 export const EST_VTAS_DESGLOSE_OPTIONS: readonly {
@@ -67,6 +67,30 @@ export type EstVtasVentaItem = {
 export type EstVtasBarraDimension = {
   etiqueta: string;
   unidades: number;
+};
+
+/** Barra de una sucursal dentro de un grupo (desglose del gráfico 1). */
+export type EstVtasBarraSucursal = {
+  sucursalId: string;
+  etiqueta: string;
+  unidades: number;
+};
+
+/**
+ * Grupo del gráfico 1 con desglose SUCURSAL:
+ * categoría del eje Y + barras hijas por sucursal.
+ */
+export type EstVtasGrupoDimension = {
+  etiqueta: string;
+  unidades: number;
+  sucursales: EstVtasBarraSucursal[];
+};
+
+/** Selección en desglose jerárquico (categoría + sucursal). */
+export type EstVtasSeleccionDesglose = {
+  categoria: string;
+  sucursalEtiqueta: string;
+  sucursalId: string;
 };
 
 /** Filtro dimensional (categoría elegida en un gráfico de barras). */

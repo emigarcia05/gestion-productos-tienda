@@ -26,13 +26,14 @@ import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   agregarUnidadesMensualesAnio,
   agregarUnidadesPorEjeY,
-  agregarUnidadesPorSucursal,
+  agregarUnidadesPorEjeYDesgloseSucursal,
 } from "@/lib/estVtasAgregar";
 import type {
   EstVtasDesglose,
   EstVtasEjeY,
   EstVtasModoUnidad,
   EstVtasProductoItem,
+  EstVtasSeleccionDesglose,
   EstVtasVentaItem,
 } from "@/lib/estVtasTypes";
 import { etiquetaEstVtasDesglose, etiquetaEstVtasEjeY } from "@/lib/estVtasTypes";
@@ -97,9 +98,8 @@ export default function EstVtasPageClient({
   const [ejeY2, setEjeY2] = useState<EstVtasEjeY>("variante");
   const [desglose1, setDesglose1] = useState<EstVtasDesglose>("ninguno");
   const [seleccionGrafico1, setSeleccionGrafico1] = useState<string | null>(null);
-  const [seleccionSucursalDesglose, setSeleccionSucursalDesglose] = useState<
-    string | null
-  >(null);
+  const [seleccionSucursalDesglose, setSeleccionSucursalDesglose] =
+    useState<EstVtasSeleccionDesglose | null>(null);
   const [seleccionGrafico2, setSeleccionGrafico2] = useState<string | null>(null);
   const [qDebounced, setQDebounced] = useState("");
 
@@ -221,55 +221,67 @@ export default function EstVtasPageClient({
     [filasFiltradas, ventas, filtSucursalId, filtFecha, filtUnidad, ejeY1]
   );
 
-  const seleccionCategoria1Valida =
-    seleccionGrafico1 &&
-    barrasCategoria1.some((b) => b.etiqueta === seleccionGrafico1)
-      ? seleccionGrafico1
-      : null;
+  const desgloseSucursalActivo = desglose1 === "sucursal";
 
-  const desgloseSucursalActivo =
-    desglose1 === "sucursal" && Boolean(seleccionCategoria1Valida);
-
-  const barrasGrafico1 = useMemo(() => {
-    if (desgloseSucursalActivo && seleccionCategoria1Valida) {
-      return agregarUnidadesPorSucursal({
-        productosFiltrados: filasFiltradas,
-        ventas,
-        fechaClave: filtFecha,
-        modoUnidad: filtUnidad,
-        filtroPadre: { ejeY: ejeY1, etiqueta: seleccionCategoria1Valida },
-        sucursales,
-      });
-    }
-    return barrasCategoria1;
+  const gruposGrafico1 = useMemo(() => {
+    if (!desgloseSucursalActivo) return null;
+    return agregarUnidadesPorEjeYDesgloseSucursal({
+      productosFiltrados: filasFiltradas,
+      ventas,
+      fechaClave: filtFecha,
+      modoUnidad: filtUnidad,
+      ejeY: ejeY1,
+      sucursales,
+    });
   }, [
     desgloseSucursalActivo,
-    seleccionCategoria1Valida,
     filasFiltradas,
     ventas,
     filtFecha,
     filtUnidad,
     ejeY1,
     sucursales,
+  ]);
+
+  const seleccionCategoria1Valida = useMemo(() => {
+    if (desgloseSucursalActivo) {
+      if (
+        !seleccionSucursalDesglose ||
+        !gruposGrafico1?.some(
+          (g) =>
+            g.etiqueta === seleccionSucursalDesglose.categoria &&
+            g.sucursales.some(
+              (s) => s.sucursalId === seleccionSucursalDesglose.sucursalId
+            )
+        )
+      ) {
+        return null;
+      }
+      return seleccionSucursalDesglose.categoria;
+    }
+    if (
+      seleccionGrafico1 &&
+      barrasCategoria1.some((b) => b.etiqueta === seleccionGrafico1)
+    ) {
+      return seleccionGrafico1;
+    }
+    return null;
+  }, [
+    desgloseSucursalActivo,
+    seleccionSucursalDesglose,
+    gruposGrafico1,
+    seleccionGrafico1,
     barrasCategoria1,
   ]);
 
-  const seleccionSucursalDesgloseValida =
+  const seleccionDesgloseValida =
     desgloseSucursalActivo &&
     seleccionSucursalDesglose &&
-    barrasGrafico1.some((b) => b.etiqueta === seleccionSucursalDesglose)
+    seleccionCategoria1Valida === seleccionSucursalDesglose.categoria
       ? seleccionSucursalDesglose
       : null;
 
-  const sucursalIdDesglose = useMemo(() => {
-    if (!seleccionSucursalDesgloseValida) return null;
-    const match = sucursales.find(
-      (s) =>
-        (s.nombre.trim() || s.id) === seleccionSucursalDesgloseValida ||
-        s.id === seleccionSucursalDesgloseValida
-    );
-    return match?.id ?? null;
-  }, [seleccionSucursalDesgloseValida, sucursales]);
+  const sucursalIdDesglose = seleccionDesgloseValida?.sucursalId ?? null;
 
   const sucursalIdEfectiva = sucursalIdDesglose ?? filtSucursalId;
 
@@ -348,23 +360,20 @@ export default function EstVtasPageClient({
 
   function handleDesglose1Change(desglose: EstVtasDesglose) {
     setDesglose1(desglose);
+    setSeleccionGrafico1(null);
     setSeleccionSucursalDesglose(null);
+    setSeleccionGrafico2(null);
   }
 
   function handleSeleccionarGrafico1(etiqueta: string | null) {
-    if (desgloseSucursalActivo) {
-      setSeleccionSucursalDesglose(etiqueta);
-      setSeleccionGrafico2(null);
-      return;
-    }
     setSeleccionGrafico1(etiqueta);
     setSeleccionSucursalDesglose(null);
     setSeleccionGrafico2(null);
   }
 
-  function handleVolverCategoria1() {
-    setSeleccionGrafico1(null);
-    setSeleccionSucursalDesglose(null);
+  function handleSeleccionarDesglose1(sel: EstVtasSeleccionDesglose | null) {
+    setSeleccionSucursalDesglose(sel);
+    setSeleccionGrafico1(sel?.categoria ?? null);
     setSeleccionGrafico2(null);
   }
 
@@ -702,25 +711,26 @@ export default function EstVtasPageClient({
     >
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
         <EstVtasGraficoVarianteBarras
-          barras={barrasGrafico1}
+          barras={barrasCategoria1}
+          grupos={gruposGrafico1}
           ejeY={ejeY1}
           onEjeYChange={handleEjeY1Change}
           desglose={desglose1}
           onDesgloseChange={handleDesglose1Change}
-          desgloseSucursalActivo={desgloseSucursalActivo}
-          onVolverCategoria={handleVolverCategoria1}
           seleccionada={
-            desgloseSucursalActivo
-              ? seleccionSucursalDesgloseValida
-              : seleccionCategoria1Valida
+            desgloseSucursalActivo ? null : seleccionCategoria1Valida
           }
-          onSeleccionar={handleSeleccionarGrafico1}
+          onSeleccionar={
+            desgloseSucursalActivo ? undefined : handleSeleccionarGrafico1
+          }
+          seleccionDesglose={seleccionDesgloseValida}
+          onSeleccionarDesglose={
+            desgloseSucursalActivo ? handleSeleccionarDesglose1 : undefined
+          }
           contextoFiltro={
-            desgloseSucursalActivo && seleccionCategoria1Valida
-              ? `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida} · Desglose: ${etiquetaEstVtasDesglose("sucursal")}`
-              : desglose1 === "sucursal" && !seleccionCategoria1Valida
-                ? "Elegí una categoría para desglosar por sucursal"
-                : null
+            desgloseSucursalActivo
+              ? `Desglose: ${etiquetaEstVtasDesglose("sucursal")}`
+              : null
           }
           sinVentasCargadas={ventas.length === 0}
           ariaLabelDimension="Dimensión del eje Y — gráfico 1"
@@ -741,8 +751,8 @@ export default function EstVtasPageClient({
             seleccionCategoria1Valida
               ? [
                   `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`,
-                  seleccionSucursalDesgloseValida
-                    ? `Sucursal: ${seleccionSucursalDesgloseValida}`
+                  seleccionDesgloseValida
+                    ? `Sucursal: ${seleccionDesgloseValida.sucursalEtiqueta}`
                     : null,
                 ]
                   .filter(Boolean)
@@ -769,8 +779,8 @@ export default function EstVtasPageClient({
               ? [
                   `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`,
                   `${etiquetaEstVtasEjeY(ejeY2)}: ${seleccionGrafico2Valida}`,
-                  seleccionSucursalDesgloseValida
-                    ? `Sucursal: ${seleccionSucursalDesgloseValida}`
+                  seleccionDesgloseValida
+                    ? `Sucursal: ${seleccionDesgloseValida.sucursalEtiqueta}`
                     : null,
                 ]
                   .filter(Boolean)

@@ -2,6 +2,7 @@ import type {
   EstVtasBarraDimension,
   EstVtasEjeY,
   EstVtasFiltroDimension,
+  EstVtasGrupoDimension,
   EstVtasModoUnidad,
   EstVtasProductoItem,
   EstVtasPuntoMensual,
@@ -115,6 +116,7 @@ export function agregarUnidadesPorEjeY(params: {
  * Agrega Un. vendidas por sucursal (desglose del gráfico 1).
  * `filtroPadre` acota a la categoría elegida en el eje Y (ej. RUBRO = LATEX).
  * No aplica el filtro global de sucursal: muestra una barra por cada sucursal con ventas.
+ * @deprecated Preferir `agregarUnidadesPorEjeYDesgloseSucursal` (grupos categoría → sucursales).
  */
 export function agregarUnidadesPorSucursal(params: {
   productosFiltrados: EstVtasProductoItem[];
@@ -157,6 +159,80 @@ export function agregarUnidadesPorSucursal(params: {
       (a, b) =>
         b.unidades - a.unidades || a.etiqueta.localeCompare(b.etiqueta, "es")
     );
+}
+
+/**
+ * Desglose del gráfico 1: una fila-grupo por categoría del eje Y, con barras
+ * hijas por sucursal. No aplica el filtro global de sucursal.
+ * Grupos ordenados por total; sucursales dentro del grupo por unidades.
+ */
+export function agregarUnidadesPorEjeYDesgloseSucursal(params: {
+  productosFiltrados: EstVtasProductoItem[];
+  ventas: EstVtasVentaItem[];
+  fechaClave: string;
+  modoUnidad: EstVtasModoUnidad;
+  ejeY: EstVtasEjeY;
+  sucursales: readonly { id: string; nombre: string }[];
+}): EstVtasGrupoDimension[] {
+  const periodo = parseClavePeriodoEstPorProd(params.fechaClave);
+  if (!periodo) return [];
+
+  const porCod = new Map(
+    params.productosFiltrados.map((p) => [p.codTienda, p] as const)
+  );
+  if (porCod.size === 0) return [];
+
+  const nombrePorId = new Map(
+    params.sucursales.map((s) => [s.id, s.nombre.trim() || s.id] as const)
+  );
+
+  /** categoria → (sucursalId → unidades) */
+  const porCategoria = new Map<string, Map<string, number>>();
+
+  for (const v of params.ventas) {
+    if (v.mes !== periodo.mes || v.anio !== periodo.anio) continue;
+    const prod = porCod.get(v.codTienda);
+    if (!prod) continue;
+
+    const categoria = etiquetaEjeYProducto(prod, params.ejeY);
+    const factor = params.modoUnidad === "suma" ? prod.factorSuma : 1;
+    const aporte = v.vtasEnUn * factor;
+    if (aporte <= 0) continue;
+
+    let porSuc = porCategoria.get(categoria);
+    if (!porSuc) {
+      porSuc = new Map();
+      porCategoria.set(categoria, porSuc);
+    }
+    porSuc.set(v.sucursalId, (porSuc.get(v.sucursalId) ?? 0) + aporte);
+  }
+
+  const grupos: EstVtasGrupoDimension[] = [];
+
+  for (const [etiqueta, porSuc] of porCategoria) {
+    const sucursales = [...porSuc.entries()]
+      .map(([sucursalId, unidades]) => ({
+        sucursalId,
+        etiqueta: nombrePorId.get(sucursalId) ?? sucursalId,
+        unidades,
+      }))
+      .filter((s) => s.unidades > 0)
+      .sort(
+        (a, b) =>
+          b.unidades - a.unidades ||
+          a.etiqueta.localeCompare(b.etiqueta, "es")
+      );
+
+    if (sucursales.length === 0) continue;
+
+    const unidades = sucursales.reduce((acc, s) => acc + s.unidades, 0);
+    grupos.push({ etiqueta, unidades, sucursales });
+  }
+
+  return grupos.sort(
+    (a, b) =>
+      b.unidades - a.unidades || a.etiqueta.localeCompare(b.etiqueta, "es")
+  );
 }
 
 /**

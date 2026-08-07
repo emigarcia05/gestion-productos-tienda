@@ -15,15 +15,25 @@ import {
   type EstVtasBarraDimension,
   type EstVtasDesglose,
   type EstVtasEjeY,
+  type EstVtasGrupoDimension,
+  type EstVtasSeleccionDesglose,
 } from "@/lib/estVtasTypes";
 
 interface Props {
   barras: EstVtasBarraDimension[];
+  /**
+   * Desglose jerárquico del gráfico 1 (categoría → sucursales).
+   * Si hay grupos, se renderizan en lugar de `barras` planas.
+   */
+  grupos?: EstVtasGrupoDimension[] | null;
   ejeY: EstVtasEjeY;
   onEjeYChange: (eje: EstVtasEjeY) => void;
-  /** Categoría del eje Y seleccionada (clic en la barra). */
+  /** Categoría del eje Y seleccionada (modo 1 dimensión). */
   seleccionada?: string | null;
   onSeleccionar?: (etiqueta: string | null) => void;
+  /** Selección categoría + sucursal (modo desglose). */
+  seleccionDesglose?: EstVtasSeleccionDesglose | null;
+  onSeleccionarDesglose?: (sel: EstVtasSeleccionDesglose | null) => void;
   /**
    * Mensaje cuando no hay barras por falta de selección en el gráfico padre
    * (gráfico dependiente). Si no hay, se usan los vacíos de ventas/filtros.
@@ -38,13 +48,6 @@ interface Props {
   /** Desglose del gráfico 1 (`ninguno` | `sucursal`). Solo si se pasa `onDesgloseChange`. */
   desglose?: EstVtasDesglose;
   onDesgloseChange?: (desglose: EstVtasDesglose) => void;
-  /**
-   * True cuando el gráfico 1 está mostrando barras por sucursal
-   * (categoría del eje Y ya elegida + desglose = sucursal).
-   */
-  desgloseSucursalActivo?: boolean;
-  /** Volver del desglose por sucursal a la lista de categorías. */
-  onVolverCategoria?: () => void;
   className?: string;
 }
 
@@ -71,7 +74,7 @@ const EST_VTAS_SELECT_DESGLOSE_CLASS =
 
 /**
  * Tonos de azul (marca `#0072BB` y vecinos) para distinguir sucursales
- * cuando el desglose del gráfico 1 está activo. Se ciclan por índice.
+ * cuando el desglose del gráfico 1 está activo. Índice estable por sucursal.
  */
 const EST_VTAS_AZULES_SUCURSAL = [
   "bg-[#0072BB]",
@@ -86,48 +89,113 @@ const EST_VTAS_AZULES_SUCURSAL = [
 
 function anchoBarraPct(unidades: number, max: number): number {
   if (max <= 0 || unidades <= 0) return 0;
-  // Proporción exacta al valor; mínimo visual 2 % solo si hay unidades > 0.
   return Math.max((unidades / max) * 100, 2);
 }
 
-function claseAzulBarra(index: number, desgloseSucursal: boolean): string {
-  if (!desgloseSucursal) return "bg-primary";
+function claseAzulSucursal(index: number): string {
   return EST_VTAS_AZULES_SUCURSAL[index % EST_VTAS_AZULES_SUCURSAL.length]!;
 }
 
 /**
  * Barras horizontales: eje Y = dimensión elegida, eje X = Un. vendidas.
  * Título = Select píldora primary. Solo las barras son clicables (no las etiquetas).
- * Layout: 15% etiquetas · 85% barras (+ valor); viewport de 8 filas con scroll.
- * Ancho de cada barra = proporción de unidades respecto al máximo del set.
- * Con desglose por sucursal, cada barra usa un tono de azul distinto.
+ * Layout: 15% etiquetas · 85% barras (+ valor); viewport de 9 filas con scroll.
+ * Con desglose SUCURSAL: grupos categoría → barras hijas por sucursal (azules distintos).
  */
 export default function EstVtasGraficoVarianteBarras({
   barras,
+  grupos = null,
   ejeY,
   onEjeYChange,
   seleccionada = null,
   onSeleccionar,
+  seleccionDesglose = null,
+  onSeleccionarDesglose,
   vacioPorDependencia = null,
   contextoFiltro = null,
   sinVentasCargadas = false,
   ariaLabelDimension = "Dimensión del eje Y",
   desglose = "ninguno",
   onDesgloseChange,
-  desgloseSucursalActivo = false,
-  onVolverCategoria,
   className,
 }: Props) {
-  const max = barras.reduce((m, b) => Math.max(m, b.unidades), 0);
-  const vacio = barras.length === 0;
+  const modoGrupos = Boolean(grupos && grupos.length > 0);
+  const filasPlanas = modoGrupos ? [] : barras;
+  const max = modoGrupos
+    ? (grupos ?? []).reduce(
+        (m, g) =>
+          Math.max(m, ...g.sucursales.map((s) => s.unidades), 0),
+        0
+      )
+    : filasPlanas.reduce((m, b) => Math.max(m, b.unidades), 0);
+  const vacio = modoGrupos
+    ? !grupos || grupos.length === 0
+    : filasPlanas.length === 0;
   const labelEjeY = etiquetaEstVtasEjeY(ejeY);
-  const seleccionable = typeof onSeleccionar === "function";
+  const seleccionablePlano = typeof onSeleccionar === "function";
+  const seleccionableDesglose = typeof onSeleccionarDesglose === "function";
   const plotHeightRem = EST_VTAS_BARRAS_FILAS_VISIBLES * EST_VTAS_BARRAS_FILA_REM;
   const conDesglose = typeof onDesgloseChange === "function";
 
-  function handleBarraClick(etiqueta: string) {
+  /** Índice de color estable por sucursalId (orden de primera aparición). */
+  const colorPorSucursalId = (() => {
+    const map = new Map<string, number>();
+    if (!grupos) return map;
+    for (const g of grupos) {
+      for (const s of g.sucursales) {
+        if (!map.has(s.sucursalId)) map.set(s.sucursalId, map.size);
+      }
+    }
+    return map;
+  })();
+
+  const leyendaSucursales = (() => {
+    if (!grupos) return [];
+    const seen = new Map<string, { id: string; etiqueta: string; index: number }>();
+    for (const g of grupos) {
+      for (const s of g.sucursales) {
+        if (!seen.has(s.sucursalId)) {
+          seen.set(s.sucursalId, {
+            id: s.sucursalId,
+            etiqueta: s.etiqueta,
+            index: colorPorSucursalId.get(s.sucursalId) ?? 0,
+          });
+        }
+      }
+    }
+    return [...seen.values()].sort((a, b) => a.index - b.index);
+  })();
+
+  function handleBarraPlanaClick(etiqueta: string) {
     if (!onSeleccionar) return;
     onSeleccionar(seleccionada === etiqueta ? null : etiqueta);
+  }
+
+  function handleBarraDesgloseClick(sel: EstVtasSeleccionDesglose) {
+    if (!onSeleccionarDesglose) return;
+    const misma =
+      seleccionDesglose &&
+      seleccionDesglose.categoria === sel.categoria &&
+      seleccionDesglose.sucursalId === sel.sucursalId;
+    onSeleccionarDesglose(misma ? null : sel);
+  }
+
+  function renderPista(widthPct: number, fillClass: string, ariaHidden: boolean) {
+    return (
+      <div
+        className="min-w-0 flex-1 overflow-hidden rounded-full bg-muted/35"
+        aria-hidden={ariaHidden ? true : undefined}
+      >
+        <div
+          className={cn(
+            "rounded-full transition-[width] duration-200 ease-out",
+            EST_VTAS_BARRAS_ALTO_CLASS,
+            fillClass
+          )}
+          style={{ width: `${widthPct}%` }}
+        />
+      </div>
+    );
   }
 
   return (
@@ -137,8 +205,8 @@ export default function EstVtasGraficoVarianteBarras({
         className
       )}
       aria-label={
-        desgloseSucursalActivo
-          ? `Unidades vendidas por sucursal — ${labelEjeY.toLowerCase()}`
+        modoGrupos
+          ? `Unidades vendidas por ${labelEjeY.toLowerCase()} desglosadas por sucursal`
           : `Unidades vendidas por ${labelEjeY.toLowerCase()}`
       }
     >
@@ -195,28 +263,23 @@ export default function EstVtasGraficoVarianteBarras({
           </Select>
         ) : null}
 
-        {seleccionada || contextoFiltro || desgloseSucursalActivo ? (
+        {seleccionada ||
+        seleccionDesglose ||
+        contextoFiltro ? (
           <p className="text-center text-[10px] leading-tight text-muted-foreground">
             {contextoFiltro ? (
               <span className="block truncate font-semibold uppercase text-foreground">
                 {contextoFiltro}
               </span>
             ) : null}
-            {seleccionada ? (
+            {seleccionDesglose ? (
               <span className="block truncate font-semibold uppercase text-foreground">
-                {desgloseSucursalActivo
-                  ? `Sucursal: ${seleccionada}`
-                  : `Selección: ${seleccionada}`}
+                {`Selección: ${seleccionDesglose.categoria} · ${seleccionDesglose.sucursalEtiqueta}`}
               </span>
-            ) : null}
-            {desgloseSucursalActivo && onVolverCategoria ? (
-              <button
-                type="button"
-                onClick={onVolverCategoria}
-                className="est-vtas-link-btn mt-0.5 uppercase tracking-wide underline-offset-2"
-              >
-                Volver A {labelEjeY}
-              </button>
+            ) : seleccionada ? (
+              <span className="block truncate font-semibold uppercase text-foreground">
+                {`Selección: ${seleccionada}`}
+              </span>
             ) : null}
           </p>
         ) : null}
@@ -238,30 +301,92 @@ export default function EstVtasGraficoVarianteBarras({
                   ? "No hay ventas cargadas. Subí datos en Carga de Datos y volvé a abrir este módulo."
                   : "No hay ventas para los filtros o el periodo seleccionados. Probá otra fecha con datos cargados."}
             </p>
+          ) : modoGrupos && grupos ? (
+            <div className="flex flex-col gap-1.5 py-0.5">
+              {grupos.map((g) => (
+                <div key={g.etiqueta} className="flex flex-col" role="group" aria-label={g.etiqueta}>
+                  {g.sucursales.map((s, rowIdx) => {
+                    const widthPct = anchoBarraPct(s.unidades, max);
+                    const colorIdx = colorPorSucursalId.get(s.sucursalId) ?? 0;
+                    const fillClass = claseAzulSucursal(colorIdx);
+                    const activa =
+                      seleccionDesglose?.categoria === g.etiqueta &&
+                      seleccionDesglose.sucursalId === s.sucursalId;
+                    const pista = renderPista(
+                      widthPct,
+                      fillClass,
+                      seleccionableDesglose
+                    );
+
+                    return (
+                      <div
+                        key={`${g.etiqueta}::${s.sucursalId}`}
+                        className="grid grid-cols-[minmax(0,15%)_minmax(0,1fr)] items-center gap-x-2"
+                        style={{ height: `${EST_VTAS_BARRAS_FILA_REM}rem` }}
+                      >
+                        <span
+                          className={cn(
+                            "min-w-0 truncate pr-0.5 text-right text-[11px] font-medium uppercase leading-tight text-foreground",
+                            rowIdx !== 0 && "invisible"
+                          )}
+                          title={rowIdx === 0 ? g.etiqueta : undefined}
+                          aria-hidden={rowIdx !== 0}
+                        >
+                          {g.etiqueta}
+                        </span>
+
+                        <div className="flex min-w-0 items-center gap-2">
+                          {seleccionableDesglose ? (
+                            <button
+                              type="button"
+                              aria-pressed={activa}
+                              aria-label={`${g.etiqueta}, ${s.etiqueta}: ${fmtUnidades(s.unidades)} unidades vendidas`}
+                              title={`${s.etiqueta}: ${fmtUnidades(s.unidades)}`}
+                              onClick={() =>
+                                handleBarraDesgloseClick({
+                                  categoria: g.etiqueta,
+                                  sucursalEtiqueta: s.etiqueta,
+                                  sucursalId: s.sucursalId,
+                                })
+                              }
+                              className={cn(
+                                "est-vtas-barra-btn flex min-w-0 flex-1 items-center border-0 bg-transparent p-0",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
+                                activa &&
+                                  "rounded-full ring-2 ring-primary/70 ring-offset-1 ring-offset-card"
+                              )}
+                            >
+                              {pista}
+                            </button>
+                          ) : (
+                            <div
+                              className="flex min-w-0 flex-1 items-center"
+                              role="img"
+                              aria-label={`${g.etiqueta}, ${s.etiqueta}: ${fmtUnidades(s.unidades)} unidades vendidas`}
+                              title={`${s.etiqueta}: ${fmtUnidades(s.unidades)}`}
+                            >
+                              {pista}
+                            </div>
+                          )}
+
+                          <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-foreground">
+                            {fmtUnidades(s.unidades)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="flex flex-col">
-              {barras.map((b, index) => {
+              {filasPlanas.map((b) => {
                 const widthPct = anchoBarraPct(b.unidades, max);
                 const activa = seleccionada === b.etiqueta;
-                const azul = claseAzulBarra(index, desgloseSucursalActivo);
                 const fillClass =
-                  b.unidades > 0 ? azul : "bg-muted-foreground/20";
-
-                const pista = (
-                  <div
-                    className="min-w-0 flex-1 overflow-hidden rounded-full bg-muted/35"
-                    aria-hidden={seleccionable ? true : undefined}
-                  >
-                    <div
-                      className={cn(
-                        "rounded-full transition-[width] duration-200 ease-out",
-                        EST_VTAS_BARRAS_ALTO_CLASS,
-                        fillClass
-                      )}
-                      style={{ width: `${widthPct}%` }}
-                    />
-                  </div>
-                );
+                  b.unidades > 0 ? "bg-primary" : "bg-muted-foreground/20";
+                const pista = renderPista(widthPct, fillClass, seleccionablePlano);
 
                 return (
                   <div
@@ -277,14 +402,13 @@ export default function EstVtasGraficoVarianteBarras({
                     </span>
 
                     <div className="flex min-w-0 items-center gap-2">
-                      {seleccionable ? (
+                      {seleccionablePlano ? (
                         <button
                           type="button"
                           aria-pressed={activa}
                           aria-label={`${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
-                          onClick={() => handleBarraClick(b.etiqueta)}
+                          onClick={() => handleBarraPlanaClick(b.etiqueta)}
                           className={cn(
-                            /* Anula `main button` en globals.css — estética de gráfico, no CTA. */
                             "est-vtas-barra-btn flex min-w-0 flex-1 items-center border-0 bg-transparent p-0",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
                             activa &&
@@ -313,11 +437,35 @@ export default function EstVtasGraficoVarianteBarras({
             </div>
           )}
         </div>
-        <div className="mt-1.5 flex shrink-0 items-center justify-center gap-1.5">
-          <span className="h-0.5 w-5 rounded-full bg-primary" aria-hidden />
-          <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-            Un. Vendidas
-          </span>
+        <div className="mt-1.5 flex shrink-0 flex-col items-center gap-1">
+          {modoGrupos && leyendaSucursales.length > 0 ? (
+            <ul className="flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-1">
+              {leyendaSucursales.map((s) => (
+                <li
+                  key={s.id}
+                  className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-wide text-muted-foreground"
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-2 w-2 shrink-0 rounded-sm",
+                      claseAzulSucursal(s.index)
+                    )}
+                    aria-hidden
+                  />
+                  <span className="max-w-[5.5rem] truncate" title={s.etiqueta}>
+                    {s.etiqueta}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="flex items-center justify-center gap-1.5">
+              <span className="h-0.5 w-5 rounded-full bg-primary" aria-hidden />
+              <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                Un. Vendidas
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </section>
