@@ -1,10 +1,18 @@
 "use client";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { EstVtasBarraProducto } from "@/lib/estVtasTypes";
 
 interface Props {
-  barras: EstVtasBarraProducto[];
+  filas: EstVtasBarraProducto[];
   /** `codTienda` del producto seleccionado. */
   seleccionadoCod?: string | null;
   onSeleccionar?: (codTienda: string | null) => void;
@@ -20,31 +28,20 @@ function fmtUnidades(n: number): string {
   });
 }
 
-const EST_VTAS_TOP_FILAS = 10;
-const EST_VTAS_TOP_FILA_REM = 2;
-const EST_VTAS_TOP_ALTO_CLASS = "h-3.5";
-
-function anchoBarraPct(unidades: number, max: number): number {
-  if (max <= 0 || unidades <= 0) return 0;
-  return Math.max((unidades / max) * 100, 2);
-}
-
 /**
- * Top 10 productos (barras horizontales): etiqueta = descripción, eje X = Un. vendidas.
- * Título fijo píldora primary. Solo las barras son clicables.
+ * Top 10 productos en tabla: DESCRIPCION (clicable) · TOTAL PERIODO · PROMEDIO MENSUAL.
+ * La celda DESCRIPCION es un `<button>` sin formato CTA (`est-vtas-desc-btn`).
  */
 export default function EstVtasGraficoTopProductos({
-  barras,
+  filas,
   seleccionadoCod = null,
   onSeleccionar,
   vacioPorDependencia = null,
   sinVentasCargadas = false,
   className,
 }: Props) {
-  const max = barras.reduce((m, b) => Math.max(m, b.unidades), 0);
-  const vacio = barras.length === 0;
+  const vacio = filas.length === 0;
   const seleccionable = typeof onSeleccionar === "function";
-  const plotHeightRem = EST_VTAS_TOP_FILAS * EST_VTAS_TOP_FILA_REM;
 
   function handleClick(codTienda: string) {
     if (!onSeleccionar) return;
@@ -70,15 +67,9 @@ export default function EstVtasGraficoTopProductos({
         </h2>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div
-          className={cn(
-            "overflow-y-auto border-l border-b border-border pl-2 pr-1.5",
-            vacio && "flex items-center justify-center"
-          )}
-          style={{ height: `${plotHeightRem}rem` }}
-        >
-          {vacio ? (
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        {vacio ? (
+          <div className="flex min-h-[14rem] flex-1 items-center justify-center border-l border-b border-border">
             <p className="max-w-[16rem] px-2 text-center text-xs text-muted-foreground">
               {vacioPorDependencia
                 ? vacioPorDependencia
@@ -86,87 +77,82 @@ export default function EstVtasGraficoTopProductos({
                   ? "No hay ventas cargadas. Subí datos en Carga de Datos y volvé a abrir este módulo."
                   : "No hay ventas para los filtros o el periodo seleccionados. Probá otra fecha con datos cargados."}
             </p>
-          ) : (
-            <div className="flex flex-col">
-              {barras.map((b, index) => {
-                const widthPct = anchoBarraPct(b.unidades, max);
-                const activa = seleccionadoCod === b.codTienda;
-                const fillClass =
-                  b.unidades > 0 ? "bg-primary" : "bg-muted-foreground/20";
-                const rank = index + 1;
-
-                const pista = (
-                  <div
-                    className="min-w-0 flex-1 overflow-hidden rounded-full bg-muted/35"
-                    aria-hidden={seleccionable ? true : undefined}
-                  >
-                    <div
-                      className={cn(
-                        "rounded-full transition-[width] duration-200 ease-out",
-                        EST_VTAS_TOP_ALTO_CLASS,
-                        fillClass
-                      )}
-                      style={{ width: `${widthPct}%` }}
-                    />
-                  </div>
-                );
-
-                return (
-                  <div
-                    key={b.codTienda}
-                    className="grid grid-cols-[minmax(0,42%)_minmax(0,1fr)] items-center gap-x-2"
-                    style={{ height: `${EST_VTAS_TOP_FILA_REM}rem` }}
-                  >
-                    <span
-                      className="min-w-0 truncate pr-0.5 text-right text-[10px] font-medium uppercase leading-tight text-foreground"
-                      title={`${rank}. ${b.etiqueta}`}
-                    >
-                      <span className="text-muted-foreground">{rank}. </span>
-                      {b.etiqueta}
+          </div>
+        ) : (
+          <div className="min-h-0 flex-1 overflow-auto border border-border">
+            <Table className="tabla-gestion-compacta w-full table-fixed">
+              <colgroup>
+                <col className="w-[50%]" />
+                <col className="w-[25%]" />
+                <col className="w-[25%]" />
+              </colgroup>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-left">DESCRIPCION</TableHead>
+                  <TableHead className="text-center">
+                    <span className="flex flex-col items-center leading-tight">
+                      <span>TOTAL</span>
+                      <span>PERIODO</span>
                     </span>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <span className="flex flex-col items-center leading-tight">
+                      <span>PROMEDIO</span>
+                      <span>MENSUAL</span>
+                    </span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filas.map((f) => {
+                  const activa = seleccionadoCod === f.codTienda;
+                  const desc = (
+                    <span
+                      className="block min-w-0 truncate text-left text-[11px] font-medium uppercase leading-tight text-foreground"
+                      title={f.etiqueta}
+                    >
+                      {f.etiqueta}
+                    </span>
+                  );
 
-                    <div className="flex min-w-0 items-center gap-2">
-                      {seleccionable ? (
-                        <button
-                          type="button"
-                          aria-pressed={activa}
-                          aria-label={`${rank}. ${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
-                          onClick={() => handleClick(b.codTienda)}
-                          className={cn(
-                            "est-vtas-barra-btn flex min-w-0 flex-1 items-center border-0 bg-transparent p-0",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
-                            activa &&
-                              "rounded-full ring-2 ring-primary/70 ring-offset-1 ring-offset-card"
-                          )}
-                        >
-                          {pista}
-                        </button>
-                      ) : (
-                        <div
-                          className="flex min-w-0 flex-1 items-center"
-                          role="img"
-                          aria-label={`${rank}. ${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
-                        >
-                          {pista}
-                        </div>
-                      )}
-
-                      <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-foreground">
-                        {fmtUnidades(b.unidades)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-        <div className="mt-1.5 flex shrink-0 items-center justify-center gap-1.5">
-          <span className="h-0.5 w-5 rounded-full bg-primary" aria-hidden />
-          <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-            Un. Vendidas
-          </span>
-        </div>
+                  return (
+                    <TableRow
+                      key={f.codTienda}
+                      data-state={activa ? "selected" : undefined}
+                    >
+                      <TableCell className="celda-datos min-w-0 !py-1">
+                        {seleccionable ? (
+                          <button
+                            type="button"
+                            aria-pressed={activa}
+                            aria-label={`Seleccionar ${f.etiqueta}`}
+                            onClick={() => handleClick(f.codTienda)}
+                            className={cn(
+                              "est-vtas-desc-btn block w-full min-w-0 max-w-full truncate text-left",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
+                              activa &&
+                                "rounded-sm ring-2 ring-primary/70 ring-offset-1 ring-offset-card"
+                            )}
+                          >
+                            {desc}
+                          </button>
+                        ) : (
+                          desc
+                        )}
+                      </TableCell>
+                      <TableCell className="celda-datos text-center text-[11px] tabular-nums !py-1">
+                        {fmtUnidades(f.totalPeriodo)}
+                      </TableCell>
+                      <TableCell className="celda-datos text-center text-[11px] tabular-nums !py-1">
+                        {fmtUnidades(f.promedioMensual)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
     </section>
   );

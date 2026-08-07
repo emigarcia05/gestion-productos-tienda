@@ -310,6 +310,7 @@ import SectionHeader from "@/components/SectionHeader";
 | `.est-vtas-select-titulo` | **Est. Vtas**: `SelectTrigger` píldora primary del eje Y. Altura fija **1.5rem** (anula `main button` 2.5rem) para liberar espacio al plot. |
 | `.est-vtas-select-desglose` | **Est. Vtas**: `SelectTrigger` de Desglose. Altura **1.25rem**, fondo transparente (sin look CTA). |
 | `.est-vtas-link-btn` | **Est. Vtas**: link “Volver A …” bajo el título; anula `main button`. |
+| `.est-vtas-desc-btn` | **Est. Vtas · Top 10**: `<button>` de la celda DESCRIPCION; anula `main button` (se ve como texto de tabla, no CTA). |
 | `.sidebar-nav-scroll` | Scroll del `<nav>` del sidebar: barra **fina** (6px / `scrollbar-width: thin`), thumb redondeado con `sidebar-foreground` semitransparente sobre track transparente; hover del thumb un poco más opaco. |
 | `.sidebar-nav-divider` / `SidebarNavDivider` | Separador **solo entre módulos de primera jerarquía** (`1px`, ~32 % `sidebar-foreground`, márgenes al ícono). No usar dentro de paneles anidados. |
 | `.sidebar-nav-tree` / `--nested` | Panel de hijos del acordeón: **solo indentación** (`padding-left`), **sin** guía vertical ni divisores horizontales. `--nested` = segundo nivel de indent. |

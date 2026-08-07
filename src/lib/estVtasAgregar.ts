@@ -297,8 +297,8 @@ export function agregarUnidadesMensualesAnio(params: {
 }
 
 /**
- * Top N productos por Un. vendidas (gráfico 2), respetando filtros de producto,
- * sucursal, periodo, modo unidad y filtros dimensionales del gráfico 1.
+ * Top N productos (gráfico 2 · tabla): ranking por TOTAL PERIODO (FECHA)
+ * + PROMEDIO MENSUAL (total sin FECHA / periodos mes×año con venta).
  */
 export function agregarTopProductos(params: {
   productosFiltrados: EstVtasProductoItem[];
@@ -320,10 +320,13 @@ export function agregarTopProductos(params: {
   const porCod = new Map(productos.map((p) => [p.codTienda, p] as const));
   if (porCod.size === 0) return [];
 
-  const totales = new Map<string, number>();
+  const totalPeriodo = new Map<string, number>();
+  /** codTienda → suma de todos los periodos (sin FECHA). */
+  const totalAcumulado = new Map<string, number>();
+  /** codTienda → set de claves `anio-mes` con venta. */
+  const periodosConVenta = new Map<string, Set<string>>();
 
   for (const v of params.ventas) {
-    if (v.mes !== periodo.mes || v.anio !== periodo.anio) continue;
     if (params.sucursalId !== FILTRO_TODOS && v.sucursalId !== params.sucursalId) {
       continue;
     }
@@ -333,23 +336,44 @@ export function agregarTopProductos(params: {
     const factor = params.modoUnidad === "suma" ? prod.factorSuma : 1;
     const aporte = v.vtasEnUn * factor;
     if (aporte <= 0) continue;
-    totales.set(v.codTienda, (totales.get(v.codTienda) ?? 0) + aporte);
+
+    if (v.mes === periodo.mes && v.anio === periodo.anio) {
+      totalPeriodo.set(
+        v.codTienda,
+        (totalPeriodo.get(v.codTienda) ?? 0) + aporte
+      );
+    }
+
+    totalAcumulado.set(
+      v.codTienda,
+      (totalAcumulado.get(v.codTienda) ?? 0) + aporte
+    );
+    let set = periodosConVenta.get(v.codTienda);
+    if (!set) {
+      set = new Set();
+      periodosConVenta.set(v.codTienda, set);
+    }
+    set.add(`${v.anio}-${v.mes}`);
   }
 
-  return [...totales.entries()]
-    .map(([codTienda, unidades]) => {
+  return [...totalPeriodo.entries()]
+    .map(([codTienda, total]) => {
       const prod = porCod.get(codTienda);
       const desc = prod?.descripcionTienda.trim() ?? "";
+      const acumulado = totalAcumulado.get(codTienda) ?? 0;
+      const nPeriodos = periodosConVenta.get(codTienda)?.size ?? 0;
+      const promedioMensual = nPeriodos > 0 ? acumulado / nPeriodos : 0;
       return {
         codTienda,
         etiqueta: desc !== "" ? desc : codTienda,
-        unidades,
+        totalPeriodo: total,
+        promedioMensual,
       };
     })
-    .filter((r) => r.unidades > 0)
+    .filter((r) => r.totalPeriodo > 0)
     .sort(
       (a, b) =>
-        b.unidades - a.unidades ||
+        b.totalPeriodo - a.totalPeriodo ||
         a.etiqueta.localeCompare(b.etiqueta, "es") ||
         a.codTienda.localeCompare(b.codTienda, "es")
     )

@@ -105,11 +105,18 @@ export type EstVtasPuntoMensual = {
   unidades: number;
 };
 
-/** Barra del Top productos (gráfico 2). */
+/** Fila del Top 10 productos (gráfico 2 · tabla). */
 export type EstVtasBarraProducto = {
   codTienda: string;
+  /** Descripción del producto (columna DESCRIPCION). */
   etiqueta: string;
-  unidades: number;
+  /** Un. vendidas en el periodo FECHA (TOTAL PERIODO). */
+  totalPeriodo: number;
+  /**
+   * Promedio mensual: total acumulado (sin FECHA) / cantidad de periodos
+   * mes×año con ventas &gt; 0.
+   */
+  promedioMensual: number;
 };
 
 /** @deprecated Usar `EstVtasBarraDimension`. */

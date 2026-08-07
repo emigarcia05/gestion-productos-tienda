@@ -722,7 +722,7 @@ export default function EstVtasPageClient({
           className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
         />
         <EstVtasGraficoTopProductos
-          barras={barrasTopProductos}
+          filas={barrasTopProductos}
           seleccionadoCod={seleccionProductoTopValida}
           onSeleccionar={setSeleccionProductoTop}
           vacioPorDependencia={
@@ -731,7 +731,7 @@ export default function EstVtasPageClient({
               : "Seleccioná una categoría en el gráfico 1 para ver el Top 10."
           }
           sinVentasCargadas={ventas.length === 0}
-          className="h-full max-h-full w-[min(26rem,36%)] shrink-0 self-start"
+          className="h-full max-h-full w-[min(28rem,40%)] shrink-0 self-start"
         />
         <EstVtasGraficoBarrasMensual
           puntos={puntosMensuales}
