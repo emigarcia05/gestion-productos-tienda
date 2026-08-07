@@ -214,6 +214,12 @@ export default function EstVtasGraficoLineaMensual({
             ) : null}
           </div>
         )}
+        <div className="mt-1.5 flex shrink-0 items-center justify-center gap-1.5">
+          <span className="h-0.5 w-5 rounded-full bg-primary" aria-hidden />
+          <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+            Un. Vendidas
+          </span>
+        </div>
       </div>
     </section>
   );
