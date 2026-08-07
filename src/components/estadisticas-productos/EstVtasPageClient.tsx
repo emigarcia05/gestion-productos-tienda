@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -17,35 +17,44 @@ import FilterBar, {
   FilterRowSearch,
   FilterRowSelection,
   LimpiarFiltrosButton,
+  SELECT_TRIGGER_FILTER_CLASS,
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import EstVtasGraficoLineaMensual from "@/components/estadisticas-productos/EstVtasGraficoLineaMensual";
+import EstVtasGraficoBarrasMensual from "@/components/estadisticas-productos/EstVtasGraficoBarrasMensual";
+import EstVtasGraficoTopProductos from "@/components/estadisticas-productos/EstVtasGraficoTopProductos";
 import EstVtasGraficoVarianteBarras from "@/components/estadisticas-productos/EstVtasGraficoVarianteBarras";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
+  agregarTopProductos,
   agregarUnidadesMensualesAnio,
+  agregarUnidadesPorDobleDimension,
   agregarUnidadesPorEjeY,
-  agregarUnidadesPorSucursal,
+  filtroProductoDesdeDimension,
 } from "@/lib/estVtasAgregar";
-import type {
-  EstVtasDesglose,
-  EstVtasEjeY,
-  EstVtasModoUnidad,
-  EstVtasProductoItem,
-  EstVtasVentaItem,
+import {
+  esEstVtasEjeY,
+  type EstVtasDesglose,
+  type EstVtasDimensionGrafico,
+  type EstVtasFiltroDimension,
+  type EstVtasModoUnidad,
+  type EstVtasProductoItem,
+  type EstVtasSeleccionDesglose,
+  type EstVtasVentaItem,
 } from "@/lib/estVtasTypes";
-import { etiquetaEstVtasDesglose, etiquetaEstVtasEjeY } from "@/lib/estVtasTypes";
 import type { SucursalEstOption } from "@/lib/estPorProdTypes";
 import {
   clavePeriodoEstPorProd,
   clavePeriodoMasRecienteConVentas,
-  etiquetaPeriodoCortoEstPorProd,
+  etiquetaMesCortoEstPorProd,
+  etiquetaMesEstPorProd,
   listarPeriodosCargaEstPorProd,
   parseClavePeriodoEstPorProd,
 } from "@/lib/estPorProdPeriodo";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
+import { toast } from "sonner";
 
 const FILTRO_TODOS = "none";
 const FILTRO_SIN_COLOR = "__SIN_COLOR__";
@@ -53,6 +62,21 @@ const FILTRO_SIN_TERMINACION = "__SIN_TERMINACION__";
 const FILTRO_SIN_PRESENTACION = "__SIN_PRESENTACION__";
 
 const FOCUS_KEY = "filtros-est-vtas-focus";
+
+const MESES_CALENDARIO: { valor: number; etiqueta: string }[] = [
+  { valor: 1, etiqueta: "ENERO" },
+  { valor: 2, etiqueta: "FEBRERO" },
+  { valor: 3, etiqueta: "MARZO" },
+  { valor: 4, etiqueta: "ABRIL" },
+  { valor: 5, etiqueta: "MAYO" },
+  { valor: 6, etiqueta: "JUNIO" },
+  { valor: 7, etiqueta: "JULIO" },
+  { valor: 8, etiqueta: "AGOSTO" },
+  { valor: 9, etiqueta: "SEPTIEMBRE" },
+  { valor: 10, etiqueta: "OCTUBRE" },
+  { valor: 11, etiqueta: "NOVIEMBRE" },
+  { valor: 12, etiqueta: "DICIEMBRE" },
+];
 
 interface Props {
   filas: EstVtasProductoItem[];
@@ -68,6 +92,32 @@ function opcionesOrdenadas(valores: string[]): string[] {
   );
 }
 
+function mismosNumeros(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort((x, y) => x - y);
+  const sb = [...b].sort((x, y) => x - y);
+  return sa.every((v, i) => v === sb[i]);
+}
+
+function etiquetaAniosSeleccionados(aniosSel: number[]): string {
+  if (aniosSel.length === 0) return "AÑO";
+  const sorted = [...aniosSel].sort((a, b) => a - b);
+  if (sorted.length === 1) return String(sorted[0]);
+  return sorted.join(" · ");
+}
+
+function etiquetaMesesSeleccionados(mesesSel: number[]): string {
+  if (mesesSel.length === 0) return "MES";
+  const sorted = [...mesesSel].sort((a, b) => a - b);
+  if (sorted.length === 1) {
+    return (
+      MESES_CALENDARIO.find((m) => m.valor === sorted[0])?.etiqueta ??
+      etiquetaMesEstPorProd(sorted[0]!).toLocaleUpperCase("es-AR")
+    );
+  }
+  return sorted.map((n) => etiquetaMesCortoEstPorProd(n)).join(" · ");
+}
+
 export default function EstVtasPageClient({
   filas,
   ventas,
@@ -75,14 +125,18 @@ export default function EstVtasPageClient({
   mesActual,
   anioActual,
 }: Props) {
-  const fechaDefault = useMemo(
-    () =>
-      clavePeriodoMasRecienteConVentas(ventas, {
+  const periodoDefault = useMemo(() => {
+    const clave = clavePeriodoMasRecienteConVentas(ventas, {
+      mes: mesActual,
+      anio: anioActual,
+    });
+    return (
+      parseClavePeriodoEstPorProd(clave) ?? {
         mes: mesActual,
         anio: anioActual,
-      }),
-    [ventas, mesActual, anioActual]
-  );
+      }
+    );
+  }, [ventas, mesActual, anioActual]);
 
   const [filtMarca, setFiltMarca] = useState(FILTRO_TODOS);
   const [filtRubro, setFiltRubro] = useState(FILTRO_TODOS);
@@ -91,16 +145,23 @@ export default function EstVtasPageClient({
   const [filtTerminacion, setFiltTerminacion] = useState(FILTRO_TODOS);
   const [filtPresentacion, setFiltPresentacion] = useState(FILTRO_TODOS);
   const [filtSucursalId, setFiltSucursalId] = useState(FILTRO_TODOS);
-  const [filtFecha, setFiltFecha] = useState(fechaDefault);
+  const [filtAnios, setFiltAnios] = useState<number[]>([periodoDefault.anio]);
+  const [filtMeses, setFiltMeses] = useState<number[]>([periodoDefault.mes]);
   const [filtUnidad, setFiltUnidad] = useState<EstVtasModoUnidad>("unidad");
-  const [ejeY1, setEjeY1] = useState<EstVtasEjeY>("marca");
-  const [ejeY2, setEjeY2] = useState<EstVtasEjeY>("variante");
+  const [aniosOpen, setAniosOpen] = useState(false);
+  const [mesesOpen, setMesesOpen] = useState(false);
+  const aniosMultiRef = useRef<HTMLDivElement>(null);
+  const mesesMultiRef = useRef<HTMLDivElement>(null);
+  const [dimension1, setDimension1] =
+    useState<EstVtasDimensionGrafico>("marca");
   const [desglose1, setDesglose1] = useState<EstVtasDesglose>("ninguno");
   const [seleccionGrafico1, setSeleccionGrafico1] = useState<string | null>(null);
-  const [seleccionSucursalDesglose, setSeleccionSucursalDesglose] = useState<
-    string | null
-  >(null);
-  const [seleccionGrafico2, setSeleccionGrafico2] = useState<string | null>(null);
+  const [seleccionDesglose1, setSeleccionDesglose1] =
+    useState<EstVtasSeleccionDesglose | null>(null);
+  /** `codTienda` del producto elegido en el Top 10. */
+  const [seleccionProductoTop, setSeleccionProductoTop] = useState<string | null>(
+    null
+  );
   const [qDebounced, setQDebounced] = useState("");
 
   const periodosConVentas = useMemo(() => {
@@ -109,6 +170,22 @@ export default function EstVtasPageClient({
     );
     return keys;
   }, [ventas]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const t = e.target as Node;
+      if (aniosMultiRef.current && !aniosMultiRef.current.contains(t)) {
+        setAniosOpen(false);
+      }
+      if (mesesMultiRef.current && !mesesMultiRef.current.contains(t)) {
+        setMesesOpen(false);
+      }
+    }
+    if (aniosOpen || mesesOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [aniosOpen, mesesOpen]);
 
   const {
     q,
@@ -129,6 +206,42 @@ export default function EstVtasPageClient({
     () => listarPeriodosCargaEstPorProd({ mes: mesActual, anio: anioActual }),
     [mesActual, anioActual]
   );
+
+  const aniosOpciones = useMemo(() => {
+    const set = new Set(periodos.map((p) => p.anio));
+    return [...set].sort((a, b) => b - a);
+  }, [periodos]);
+
+  const labelAnios = etiquetaAniosSeleccionados(filtAnios);
+  const labelMeses = etiquetaMesesSeleccionados(filtMeses);
+  const aniosFiltroActivo = !mismosNumeros(filtAnios, [periodoDefault.anio]);
+  const mesesFiltroActivo = !mismosNumeros(filtMeses, [periodoDefault.mes]);
+
+  function toggleAnio(anioValor: number) {
+    const tiene = filtAnios.includes(anioValor);
+    if (tiene && filtAnios.length === 1) {
+      toast.info("Dejá al menos un año seleccionado.");
+      return;
+    }
+    setFiltAnios(
+      tiene
+        ? filtAnios.filter((a) => a !== anioValor)
+        : [...filtAnios, anioValor]
+    );
+  }
+
+  function toggleMes(mesValor: number) {
+    const tiene = filtMeses.includes(mesValor);
+    if (tiene && filtMeses.length === 1) {
+      toast.info("Dejá al menos un mes seleccionado.");
+      return;
+    }
+    setFiltMeses(
+      tiene
+        ? filtMeses.filter((m) => m !== mesValor)
+        : [...filtMeses, mesValor]
+    );
+  }
 
   const marcas = useMemo(
     () => opcionesOrdenadas(filas.map((f) => f.marca)),
@@ -208,164 +321,218 @@ export default function EstVtasPageClient({
     qDebounced,
   ]);
 
+  const desgloseActivo = desglose1 !== "ninguno";
+
   const barrasCategoria1 = useMemo(
     () =>
       agregarUnidadesPorEjeY({
         productosFiltrados: filasFiltradas,
         ventas,
         sucursalId: filtSucursalId,
-        fechaClave: filtFecha,
+        anios: filtAnios,
+        meses: filtMeses,
         modoUnidad: filtUnidad,
-        ejeY: ejeY1,
+        ejeY: dimension1,
+        sucursales,
       }),
-    [filasFiltradas, ventas, filtSucursalId, filtFecha, filtUnidad, ejeY1]
+    [
+      filasFiltradas,
+      ventas,
+      filtSucursalId,
+      filtAnios,
+      filtMeses,
+      filtUnidad,
+      dimension1,
+      sucursales,
+    ]
   );
 
-  const seleccionCategoria1Valida =
-    seleccionGrafico1 &&
-    barrasCategoria1.some((b) => b.etiqueta === seleccionGrafico1)
-      ? seleccionGrafico1
-      : null;
-
-  const desgloseSucursalActivo =
-    desglose1 === "sucursal" && Boolean(seleccionCategoria1Valida);
-
-  const barrasGrafico1 = useMemo(() => {
-    if (desgloseSucursalActivo && seleccionCategoria1Valida) {
-      return agregarUnidadesPorSucursal({
-        productosFiltrados: filasFiltradas,
-        ventas,
-        fechaClave: filtFecha,
-        modoUnidad: filtUnidad,
-        filtroPadre: { ejeY: ejeY1, etiqueta: seleccionCategoria1Valida },
-        sucursales,
-      });
-    }
-    return barrasCategoria1;
+  const gruposGrafico1 = useMemo(() => {
+    if (desglose1 === "ninguno") return null;
+    return agregarUnidadesPorDobleDimension({
+      productosFiltrados: filasFiltradas,
+      ventas,
+      anios: filtAnios,
+      meses: filtMeses,
+      modoUnidad: filtUnidad,
+      dimension: dimension1,
+      desglose: desglose1,
+      sucursales,
+    });
   }, [
-    desgloseSucursalActivo,
-    seleccionCategoria1Valida,
+    desglose1,
     filasFiltradas,
     ventas,
-    filtFecha,
+    filtAnios,
+    filtMeses,
     filtUnidad,
-    ejeY1,
+    dimension1,
     sucursales,
+  ]);
+
+  const seleccionDesgloseValida = useMemo(() => {
+    if (!desgloseActivo || !seleccionDesglose1 || !gruposGrafico1) return null;
+    const ok = gruposGrafico1.some(
+      (g) =>
+        g.id === seleccionDesglose1.categoriaId &&
+        g.hijos.some((h) => h.id === seleccionDesglose1.hijoId)
+    );
+    return ok ? seleccionDesglose1 : null;
+  }, [desgloseActivo, seleccionDesglose1, gruposGrafico1]);
+
+  const seleccionCategoria1Valida = useMemo(() => {
+    if (desgloseActivo) {
+      return seleccionDesgloseValida?.categoria ?? null;
+    }
+    if (
+      seleccionGrafico1 &&
+      barrasCategoria1.some((b) => b.etiqueta === seleccionGrafico1)
+    ) {
+      return seleccionGrafico1;
+    }
+    return null;
+  }, [
+    desgloseActivo,
+    seleccionDesgloseValida,
+    seleccionGrafico1,
     barrasCategoria1,
   ]);
 
-  const seleccionSucursalDesgloseValida =
-    desgloseSucursalActivo &&
-    seleccionSucursalDesglose &&
-    barrasGrafico1.some((b) => b.etiqueta === seleccionSucursalDesglose)
-      ? seleccionSucursalDesglose
-      : null;
+  /** Sucursal efectiva: selección G1 (plano o desglose) o filtro global. */
+  const sucursalIdEfectiva = useMemo(() => {
+    if (desgloseActivo && seleccionDesgloseValida) {
+      if (dimension1 === "sucursal") return seleccionDesgloseValida.categoriaId;
+      if (desglose1 === "sucursal") return seleccionDesgloseValida.hijoId;
+    } else if (!desgloseActivo && seleccionCategoria1Valida && dimension1 === "sucursal") {
+      const barra = barrasCategoria1.find(
+        (b) => b.etiqueta === seleccionCategoria1Valida
+      );
+      if (barra?.id) return barra.id;
+    }
+    return filtSucursalId;
+  }, [
+    desgloseActivo,
+    seleccionDesgloseValida,
+    dimension1,
+    desglose1,
+    seleccionCategoria1Valida,
+    barrasCategoria1,
+    filtSucursalId,
+  ]);
 
-  const sucursalIdDesglose = useMemo(() => {
-    if (!seleccionSucursalDesgloseValida) return null;
-    const match = sucursales.find(
-      (s) =>
-        (s.nombre.trim() || s.id) === seleccionSucursalDesgloseValida ||
-        s.id === seleccionSucursalDesgloseValida
-    );
-    return match?.id ?? null;
-  }, [seleccionSucursalDesgloseValida, sucursales]);
+  /** Filtros de producto derivados de la selección del gráfico 1. */
+  const filtrosDimensionG1 = useMemo((): EstVtasFiltroDimension[] | null => {
+    if (!seleccionCategoria1Valida) return null;
 
-  const sucursalIdEfectiva = sucursalIdDesglose ?? filtSucursalId;
+    if (seleccionDesgloseValida && desglose1 !== "ninguno") {
+      const out: EstVtasFiltroDimension[] = [];
+      const fCat = filtroProductoDesdeDimension(
+        dimension1,
+        seleccionDesgloseValida.categoria
+      );
+      if (fCat) out.push(fCat);
+      const fHijo = filtroProductoDesdeDimension(
+        desglose1,
+        seleccionDesgloseValida.hijoEtiqueta
+      );
+      if (fHijo) out.push(fHijo);
+      return out.length > 0 ? out : null;
+    }
 
-  const barrasGrafico2 = useMemo(() => {
-    if (!seleccionCategoria1Valida) return [];
-    return agregarUnidadesPorEjeY({
+    if (esEstVtasEjeY(dimension1)) {
+      return [{ ejeY: dimension1, etiqueta: seleccionCategoria1Valida }];
+    }
+    return null;
+  }, [
+    seleccionCategoria1Valida,
+    seleccionDesgloseValida,
+    desglose1,
+    dimension1,
+  ]);
+
+  const haySeleccionG1 = seleccionCategoria1Valida != null;
+
+  const barrasTopProductos = useMemo(() => {
+    if (!haySeleccionG1) return [];
+    return agregarTopProductos({
       productosFiltrados: filasFiltradas,
       ventas,
       sucursalId: sucursalIdEfectiva,
-      fechaClave: filtFecha,
+      anios: filtAnios,
+      meses: filtMeses,
       modoUnidad: filtUnidad,
-      ejeY: ejeY2,
-      filtroPadre: { ejeY: ejeY1, etiqueta: seleccionCategoria1Valida },
+      filtros: filtrosDimensionG1,
+      topN: 10,
     });
   }, [
+    haySeleccionG1,
     filasFiltradas,
     ventas,
     sucursalIdEfectiva,
-    filtFecha,
+    filtAnios,
+    filtMeses,
     filtUnidad,
-    ejeY1,
-    ejeY2,
-    seleccionCategoria1Valida,
+    filtrosDimensionG1,
   ]);
 
-  const seleccionGrafico2Valida =
-    seleccionCategoria1Valida &&
-    seleccionGrafico2 &&
-    barrasGrafico2.some((b) => b.etiqueta === seleccionGrafico2)
-      ? seleccionGrafico2
+  const seleccionProductoTopValida =
+    haySeleccionG1 &&
+    seleccionProductoTop &&
+    barrasTopProductos.some((b) => b.codTienda === seleccionProductoTop)
+      ? seleccionProductoTop
       : null;
 
-  const periodoFiltro = useMemo(
-    () => parseClavePeriodoEstPorProd(filtFecha),
-    [filtFecha]
-  );
-
   const puntosMensuales = useMemo(() => {
-    if (!seleccionCategoria1Valida || !seleccionGrafico2Valida) {
-      return Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, unidades: 0 }));
-    }
+    // G3: ENE…DIC; respeta años seleccionados; ignora filtro Mes de página.
     return agregarUnidadesMensualesAnio({
       productosFiltrados: filasFiltradas,
       ventas,
       sucursalId: sucursalIdEfectiva,
-      fechaClave: filtFecha,
       modoUnidad: filtUnidad,
-      filtros: [
-        { ejeY: ejeY1, etiqueta: seleccionCategoria1Valida },
-        { ejeY: ejeY2, etiqueta: seleccionGrafico2Valida },
-      ],
+      anios: filtAnios,
+      filtros: filtrosDimensionG1,
+      codTienda: seleccionProductoTopValida,
     });
   }, [
     filasFiltradas,
     ventas,
     sucursalIdEfectiva,
-    filtFecha,
     filtUnidad,
-    ejeY1,
-    ejeY2,
-    seleccionCategoria1Valida,
-    seleccionGrafico2Valida,
+    filtAnios,
+    filtrosDimensionG1,
+    seleccionProductoTopValida,
   ]);
 
-  function handleEjeY1Change(eje: EstVtasEjeY) {
-    setEjeY1(eje);
+  function handleDimension1Change(dim: EstVtasDimensionGrafico) {
+    setDimension1(dim);
+    if (desglose1 === dim) {
+      setDesglose1("ninguno");
+    }
     setSeleccionGrafico1(null);
-    setSeleccionSucursalDesglose(null);
-    setSeleccionGrafico2(null);
-  }
-
-  function handleEjeY2Change(eje: EstVtasEjeY) {
-    setEjeY2(eje);
-    setSeleccionGrafico2(null);
+    setSeleccionDesglose1(null);
+    setSeleccionProductoTop(null);
   }
 
   function handleDesglose1Change(desglose: EstVtasDesglose) {
-    setDesglose1(desglose);
-    setSeleccionSucursalDesglose(null);
+    // Opciones de UI ya excluyen la dimensión activa; defensivo si coinciden.
+    setDesglose1(
+      desglose !== "ninguno" && desglose === dimension1 ? "ninguno" : desglose
+    );
+    setSeleccionGrafico1(null);
+    setSeleccionDesglose1(null);
+    setSeleccionProductoTop(null);
   }
 
   function handleSeleccionarGrafico1(etiqueta: string | null) {
-    if (desgloseSucursalActivo) {
-      setSeleccionSucursalDesglose(etiqueta);
-      setSeleccionGrafico2(null);
-      return;
-    }
     setSeleccionGrafico1(etiqueta);
-    setSeleccionSucursalDesglose(null);
-    setSeleccionGrafico2(null);
+    setSeleccionDesglose1(null);
+    setSeleccionProductoTop(null);
   }
 
-  function handleVolverCategoria1() {
-    setSeleccionGrafico1(null);
-    setSeleccionSucursalDesglose(null);
-    setSeleccionGrafico2(null);
+  function handleSeleccionarDesglose1(sel: EstVtasSeleccionDesglose | null) {
+    setSeleccionDesglose1(sel);
+    setSeleccionGrafico1(sel?.categoria ?? null);
+    setSeleccionProductoTop(null);
   }
 
   function limpiarFiltros() {
@@ -376,7 +543,8 @@ export default function EstVtasPageClient({
     setFiltTerminacion(FILTRO_TODOS);
     setFiltPresentacion(FILTRO_TODOS);
     setFiltSucursalId(FILTRO_TODOS);
-    setFiltFecha(fechaDefault);
+    setFiltAnios([periodoDefault.anio]);
+    setFiltMeses([periodoDefault.mes]);
     setFiltUnidad("unidad");
     setQ("");
     setQDebounced("");
@@ -606,66 +774,6 @@ export default function EstVtasPageClient({
               <FilaFiltrosDesplegables>
                 <FiltroIndividualContainer
                   className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtSucursalId !== FILTRO_TODOS}
-                  onLimpiar={() => setFiltSucursalId(FILTRO_TODOS)}
-                >
-                  <Select value={filtSucursalId} onValueChange={setFiltSucursalId}>
-                    <SelectTrigger
-                      className="input-filtro-unificado"
-                      aria-label="Sucursales"
-                    >
-                      <SelectValue placeholder="SUCURSALES" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      <SelectItem value={FILTRO_TODOS}>SUCURSALES</SelectItem>
-                      {sucursales.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FiltroIndividualContainer>
-
-                <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtFecha !== fechaDefault}
-                  onLimpiar={() => setFiltFecha(fechaDefault)}
-                >
-                  <Select value={filtFecha} onValueChange={setFiltFecha}>
-                    <SelectTrigger className="input-filtro-unificado" aria-label="Fecha">
-                      <SelectValue placeholder="FECHA" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      {periodos.map((p) => {
-                        const clave = clavePeriodoEstPorProd(p.mes, p.anio);
-                        const conDatos = periodosConVentas.has(clave);
-                        const etiqueta = etiquetaPeriodoCortoEstPorProd(
-                          p.mes,
-                          p.anio
-                        ).toLocaleUpperCase("es-AR");
-                        return (
-                          <SelectItem key={clave} value={clave}>
-                            {conDatos ? etiqueta : `${etiqueta} (SIN DATOS)`}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </FiltroIndividualContainer>
-
-                <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
                   activo={filtUnidad !== "unidad"}
                   onLimpiar={() => setFiltUnidad("unidad")}
                 >
@@ -673,8 +781,11 @@ export default function EstVtasPageClient({
                     value={filtUnidad}
                     onValueChange={(v) => setFiltUnidad(v as EstVtasModoUnidad)}
                   >
-                    <SelectTrigger className="input-filtro-unificado" aria-label="Unidad">
-                      <SelectValue placeholder="UNIDAD" />
+                    <SelectTrigger
+                      className="input-filtro-unificado"
+                      aria-label="Unidades"
+                    >
+                      <SelectValue placeholder="UNIDADES" />
                     </SelectTrigger>
                     <SelectContent
                       position="popper"
@@ -688,7 +799,160 @@ export default function EstVtasPageClient({
                   </Select>
                 </FiltroIndividualContainer>
 
-                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-2 gap-2")}>
+                <FiltroIndividualContainer
+                  className={FILTER_SELECT_WRAPPER_CLASS}
+                  activo={filtSucursalId !== FILTRO_TODOS}
+                  onLimpiar={() => setFiltSucursalId(FILTRO_TODOS)}
+                >
+                  <Select value={filtSucursalId} onValueChange={setFiltSucursalId}>
+                    <SelectTrigger
+                      className="input-filtro-unificado"
+                      aria-label="Sucursal"
+                    >
+                      <SelectValue placeholder="SUCURSAL" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro max-h-60"
+                    >
+                      <SelectItem value={FILTRO_TODOS}>SUCURSAL</SelectItem>
+                      {sucursales.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FiltroIndividualContainer>
+
+                <FiltroIndividualContainer
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={aniosFiltroActivo}
+                  onLimpiar={() => setFiltAnios([periodoDefault.anio])}
+                >
+                  <div className="relative" ref={aniosMultiRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMesesOpen(false);
+                        setAniosOpen((o) => !o);
+                      }}
+                      className={cn(
+                        SELECT_TRIGGER_FILTER_CLASS,
+                        "flex w-full items-center justify-between gap-2 text-left font-semibold"
+                      )}
+                      aria-expanded={aniosOpen}
+                      aria-haspopup="listbox"
+                      aria-label="Año (selección múltiple)"
+                    >
+                      <span className="truncate">{labelAnios}</span>
+                      <ChevronDown
+                        className="h-4 w-4 shrink-0 opacity-50"
+                        aria-hidden
+                      />
+                    </button>
+                    {aniosOpen ? (
+                      <div
+                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                        role="listbox"
+                        aria-multiselectable="true"
+                      >
+                        {aniosOpciones.map((a) => {
+                          const selected = filtAnios.includes(a);
+                          const conDatos = [...periodosConVentas].some((k) =>
+                            k.startsWith(`${a}-`)
+                          );
+                          return (
+                            <label
+                              key={a}
+                              role="option"
+                              aria-selected={selected}
+                              className={cn(
+                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                                selected && "bg-muted"
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleAnio(a)}
+                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                aria-label={String(a)}
+                              />
+                              <span>
+                                {conDatos ? a : `${a} (SIN DATOS)`}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                </FiltroIndividualContainer>
+
+                <FiltroIndividualContainer
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={mesesFiltroActivo}
+                  onLimpiar={() => setFiltMeses([periodoDefault.mes])}
+                >
+                  <div className="relative" ref={mesesMultiRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAniosOpen(false);
+                        setMesesOpen((o) => !o);
+                      }}
+                      className={cn(
+                        SELECT_TRIGGER_FILTER_CLASS,
+                        "flex w-full items-center justify-between gap-2 text-left font-semibold"
+                      )}
+                      aria-expanded={mesesOpen}
+                      aria-haspopup="listbox"
+                      aria-label="Mes (selección múltiple)"
+                    >
+                      <span className="truncate">{labelMeses}</span>
+                      <ChevronDown
+                        className="h-4 w-4 shrink-0 opacity-50"
+                        aria-hidden
+                      />
+                    </button>
+                    {mesesOpen ? (
+                      <div
+                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                        role="listbox"
+                        aria-multiselectable="true"
+                      >
+                        {MESES_CALENDARIO.map((m) => {
+                          const selected = filtMeses.includes(m.valor);
+                          return (
+                            <label
+                              key={m.valor}
+                              role="option"
+                              aria-selected={selected}
+                              className={cn(
+                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                                selected && "bg-muted"
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleMes(m.valor)}
+                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                aria-label={m.etiqueta}
+                              />
+                              <span>{m.etiqueta}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                </FiltroIndividualContainer>
+
+                <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "gap-2")}>
                   <span className={FILTER_COUNT_CLASS}>
                     {filasFiltradas.length.toLocaleString("es-AR")} PRODUCTO
                     {filasFiltradas.length === 1 ? "" : "S"}
@@ -702,83 +966,42 @@ export default function EstVtasPageClient({
     >
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
         <EstVtasGraficoVarianteBarras
-          barras={barrasGrafico1}
-          ejeY={ejeY1}
-          onEjeYChange={handleEjeY1Change}
+          barras={barrasCategoria1}
+          grupos={gruposGrafico1}
+          dimension={dimension1}
+          onDimensionChange={handleDimension1Change}
           desglose={desglose1}
           onDesgloseChange={handleDesglose1Change}
-          desgloseSucursalActivo={desgloseSucursalActivo}
-          onVolverCategoria={handleVolverCategoria1}
-          seleccionada={
-            desgloseSucursalActivo
-              ? seleccionSucursalDesgloseValida
-              : seleccionCategoria1Valida
+          seleccionada={desgloseActivo ? null : seleccionCategoria1Valida}
+          onSeleccionar={
+            desgloseActivo ? undefined : handleSeleccionarGrafico1
           }
-          onSeleccionar={handleSeleccionarGrafico1}
-          contextoFiltro={
-            desgloseSucursalActivo && seleccionCategoria1Valida
-              ? `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida} · Desglose: ${etiquetaEstVtasDesglose("sucursal")}`
-              : desglose1 === "sucursal" && !seleccionCategoria1Valida
-                ? "Elegí una categoría para desglosar por sucursal"
-                : null
+          seleccionDesglose={seleccionDesgloseValida}
+          onSeleccionarDesglose={
+            desgloseActivo ? handleSeleccionarDesglose1 : undefined
           }
           sinVentasCargadas={ventas.length === 0}
           ariaLabelDimension="Dimensión del eje Y — gráfico 1"
-          className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
+          className="h-full max-h-full w-[35%] min-w-0 shrink-0 self-start"
         />
-        <EstVtasGraficoVarianteBarras
-          barras={barrasGrafico2}
-          ejeY={ejeY2}
-          onEjeYChange={handleEjeY2Change}
-          seleccionada={seleccionGrafico2Valida}
-          onSeleccionar={setSeleccionGrafico2}
+        <EstVtasGraficoTopProductos
+          filas={barrasTopProductos}
+          seleccionadoCod={seleccionProductoTopValida}
+          onSeleccionar={setSeleccionProductoTop}
           vacioPorDependencia={
-            seleccionCategoria1Valida
+            haySeleccionG1
               ? null
-              : "Seleccioná una categoría en el gráfico 1 para ver el desglose."
-          }
-          contextoFiltro={
-            seleccionCategoria1Valida
-              ? [
-                  `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`,
-                  seleccionSucursalDesgloseValida
-                    ? `Sucursal: ${seleccionSucursalDesgloseValida}`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")
-              : null
+              : "Seleccioná una categoría en el gráfico 1 para ver el Top 10."
           }
           sinVentasCargadas={ventas.length === 0}
-          ariaLabelDimension="Dimensión del eje Y — gráfico 2"
-          className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
+          className="h-full max-h-full w-[30%] min-w-0 shrink-0 self-start"
         />
-        <EstVtasGraficoLineaMensual
+        <EstVtasGraficoBarrasMensual
           puntos={puntosMensuales}
-          anio={periodoFiltro?.anio ?? null}
-          mesMarca={periodoFiltro?.mes ?? null}
-          vacioPorDependencia={
-            !seleccionCategoria1Valida
-              ? "Seleccioná una categoría en el gráfico 1."
-              : !seleccionGrafico2Valida
-                ? "Seleccioná una categoría en el gráfico 2 para ver la evolución mensual."
-                : null
-          }
-          contextoFiltro={
-            seleccionCategoria1Valida && seleccionGrafico2Valida
-              ? [
-                  `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionCategoria1Valida}`,
-                  `${etiquetaEstVtasEjeY(ejeY2)}: ${seleccionGrafico2Valida}`,
-                  seleccionSucursalDesgloseValida
-                    ? `Sucursal: ${seleccionSucursalDesgloseValida}`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")
-              : null
-          }
+          anio={filtAnios.length === 1 ? filtAnios[0]! : null}
+          mesMarca={filtMeses.length === 1 ? filtMeses[0]! : null}
           sinVentasCargadas={ventas.length === 0}
-          className="h-full max-h-full min-w-0 flex-1 self-start"
+          className="h-full max-h-full w-[35%] min-w-0 shrink-0 self-start"
         />
       </div>
     </ClassicFilteredTableLayout>

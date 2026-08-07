@@ -3,7 +3,7 @@ import type { EstCategorizacionItem } from "@/lib/estCategorizacionTypes";
 /** Modo de agregación para gráficos de Estadísticas Vtas. */
 export type EstVtasModoUnidad = "unidad" | "suma";
 
-/** Dimensión del eje Y del gráfico Un. Vendidas. */
+/** Dimensiones de producto del eje Y. */
 export type EstVtasEjeY =
   | "variante"
   | "marca"
@@ -11,6 +11,9 @@ export type EstVtasEjeY =
   | "subRubro"
   | "color"
   | "terminacion";
+
+/** Dimensión usable en gráfico 1 (producto o sucursal). */
+export type EstVtasDimensionGrafico = EstVtasEjeY | "sucursal";
 
 export const EST_VTAS_EJE_Y_OPTIONS: readonly {
   value: EstVtasEjeY;
@@ -24,25 +27,61 @@ export const EST_VTAS_EJE_Y_OPTIONS: readonly {
   { value: "terminacion", label: "TERMINACION" },
 ] as const;
 
+/** Opciones compartidas por Dimensión y Desglose (gráfico 1). */
+export const EST_VTAS_DIMENSION_OPTIONS: readonly {
+  value: EstVtasDimensionGrafico;
+  label: string;
+}[] = [
+  ...EST_VTAS_EJE_Y_OPTIONS,
+  { value: "sucursal", label: "SUCURSAL" },
+] as const;
+
 export function etiquetaEstVtasEjeY(eje: EstVtasEjeY): string {
   return EST_VTAS_EJE_Y_OPTIONS.find((o) => o.value === eje)?.label ?? "VARIANTE";
 }
 
-/** Desglose opcional del gráfico 1 (tras elegir una categoría del eje Y). */
-export type EstVtasDesglose = "ninguno" | "sucursal";
+export function etiquetaEstVtasDimension(d: EstVtasDimensionGrafico): string {
+  return (
+    EST_VTAS_DIMENSION_OPTIONS.find((o) => o.value === d)?.label ?? "VARIANTE"
+  );
+}
 
-export const EST_VTAS_DESGLOSE_OPTIONS: readonly {
-  value: EstVtasDesglose;
-  label: string;
-}[] = [
-  { value: "ninguno", label: "SIN DESGLOSE" },
-  { value: "sucursal", label: "SUCURSAL" },
-] as const;
+export function esEstVtasEjeY(d: EstVtasDimensionGrafico): d is EstVtasEjeY {
+  return d !== "sucursal";
+}
+
+/**
+ * Desglose del gráfico 1: sin desglose, o cualquier dimensión distinta
+ * de la elegida en el select Dimensión.
+ */
+export type EstVtasDesglose = "ninguno" | EstVtasDimensionGrafico;
+
+export const EST_VTAS_DESGLOSE_NINGUNO = {
+  value: "ninguno" as const,
+  label: "SIN DESGLOSE",
+};
 
 export function etiquetaEstVtasDesglose(d: EstVtasDesglose): string {
-  return (
-    EST_VTAS_DESGLOSE_OPTIONS.find((o) => o.value === d)?.label ?? "SIN DESGLOSE"
-  );
+  if (d === "ninguno") return EST_VTAS_DESGLOSE_NINGUNO.label;
+  return etiquetaEstVtasDimension(d);
+}
+
+/** Opciones de desglose excluyendo la dimensión ya elegida (sin repetir). */
+export function opcionesDesgloseEstVtas(
+  dimension: EstVtasDimensionGrafico
+): readonly { value: EstVtasDesglose; label: string }[] {
+  return [
+    EST_VTAS_DESGLOSE_NINGUNO,
+    ...EST_VTAS_DIMENSION_OPTIONS.filter((o) => o.value !== dimension),
+  ];
+}
+
+/** Opciones de dimensión excluyendo el desglose activo (si no es ninguno). */
+export function opcionesDimensionEstVtas(
+  desglose: EstVtasDesglose
+): readonly { value: EstVtasDimensionGrafico; label: string }[] {
+  if (desglose === "ninguno") return EST_VTAS_DIMENSION_OPTIONS;
+  return EST_VTAS_DIMENSION_OPTIONS.filter((o) => o.value !== desglose);
 }
 
 /** Producto tipado para Estadísticas Vtas (categorización + factor de suma). */
@@ -67,9 +106,40 @@ export type EstVtasVentaItem = {
 export type EstVtasBarraDimension = {
   etiqueta: string;
   unidades: number;
+  /** Id estable (p. ej. sucursalId); si falta, se usa la etiqueta. */
+  id?: string;
 };
 
-/** Filtro dimensional (categoría elegida en un gráfico de barras). */
+/** Barra hija dentro de un grupo (desglose del gráfico 1). */
+export type EstVtasBarraHija = {
+  id: string;
+  etiqueta: string;
+  unidades: number;
+};
+
+/**
+ * Grupo del gráfico 1 con desglose:
+ * categoría de la dimensión + barras hijas del desglose.
+ */
+export type EstVtasGrupoDimension = {
+  etiqueta: string;
+  id: string;
+  unidades: number;
+  hijos: EstVtasBarraHija[];
+};
+
+/** @deprecated Usar `EstVtasBarraHija`. */
+export type EstVtasBarraSucursal = EstVtasBarraHija;
+
+/** Selección en desglose jerárquico (dimensión + valor de desglose). */
+export type EstVtasSeleccionDesglose = {
+  categoria: string;
+  categoriaId: string;
+  hijoEtiqueta: string;
+  hijoId: string;
+};
+
+/** Filtro dimensional de producto (categoría elegida en un gráfico). */
 export type EstVtasFiltroDimension = {
   ejeY: EstVtasEjeY;
   etiqueta: string;
@@ -79,6 +149,20 @@ export type EstVtasFiltroDimension = {
 export type EstVtasPuntoMensual = {
   mes: number;
   unidades: number;
+};
+
+/** Fila del Top 10 productos (gráfico 2 · tabla). */
+export type EstVtasBarraProducto = {
+  codTienda: string;
+  /** Descripción del producto (columna DESCRIPCION). */
+  etiqueta: string;
+  /** Un. vendidas en el periodo FECHA (TOTAL PERIODO). */
+  totalPeriodo: number;
+  /**
+   * Promedio mensual: total acumulado (sin FECHA) / cantidad de periodos
+   * mes×año con ventas &gt; 0.
+   */
+  promedioMensual: number;
 };
 
 /** @deprecated Usar `EstVtasBarraDimension`. */

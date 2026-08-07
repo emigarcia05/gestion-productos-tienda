@@ -10,8 +10,6 @@ interface Props {
   anio: number | null;
   /** Mes del filtro FECHA (1–12); se marca en el eje X. */
   mesMarca?: number | null;
-  /** Texto de contexto (filtros de gráficos 1 y 2). */
-  contextoFiltro?: string | null;
   /**
    * Mensaje cuando faltan selecciones en gráficos padre.
    * Si no hay, se usan los vacíos de ventas/filtros.
@@ -24,6 +22,8 @@ interface Props {
 const PAD = { top: 16, right: 12, bottom: 28, left: 44 };
 const VIEW_W = 560;
 const VIEW_H = 240;
+/** Fracción del slot mensual ocupada por la barra (el resto es aire). */
+const BAR_SLOT_RATIO = 0.58;
 
 function fmtUnidades(n: number): string {
   return n.toLocaleString("es-AR", {
@@ -48,14 +48,13 @@ function ticksEjeY(maxVal: number): number[] {
 }
 
 /**
- * Línea temporal: eje X = 12 meses del año, eje Y = Un. vendidas
+ * Barras verticales temporales: eje X = 12 meses del año, eje Y = Un. vendidas
  * (filtradas por categorías de los gráficos 1 y 2).
  */
-export default function EstVtasGraficoLineaMensual({
+export default function EstVtasGraficoBarrasMensual({
   puntos,
   anio,
   mesMarca = null,
-  contextoFiltro = null,
   vacioPorDependencia = null,
   sinVentasCargadas = false,
   className,
@@ -73,16 +72,11 @@ export default function EstVtasGraficoLineaMensual({
   const yMax = yTicks[yTicks.length - 1] ?? 1;
   const plotW = VIEW_W - PAD.left - PAD.right;
   const plotH = VIEW_H - PAD.top - PAD.bottom;
+  const slotW = plotW / 12;
+  const barW = slotW * BAR_SLOT_RATIO;
 
-  const xPx = (mes: number) => PAD.left + ((mes - 1) / 11) * plotW;
+  const xCenter = (mes: number) => PAD.left + (mes - 0.5) * slotW;
   const yPx = (u: number) => PAD.top + plotH - (u / yMax) * plotH;
-
-  const pathD = serie
-    .map((p, i) => {
-      const cmd = i === 0 ? "M" : "L";
-      return `${cmd}${xPx(p.mes).toFixed(2)},${yPx(p.unidades).toFixed(2)}`;
-    })
-    .join(" ");
 
   const bloqueado = Boolean(vacioPorDependencia);
   const sinDatos = !bloqueado && maxData <= 0;
@@ -90,7 +84,7 @@ export default function EstVtasGraficoLineaMensual({
   return (
     <section
       className={cn(
-        "flex min-h-[22rem] min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-sm",
+        "flex min-h-[22rem] min-w-0 flex-col gap-2 rounded-lg border border-border bg-card p-4 shadow-sm",
         className
       )}
       aria-label={
@@ -99,33 +93,21 @@ export default function EstVtasGraficoLineaMensual({
           : "Unidades vendidas por mes"
       }
     >
-      <header className="flex shrink-0 flex-col items-center gap-1">
-        <h2
-          className={cn(
-            "inline-flex h-auto max-w-full items-center rounded-full bg-primary px-4 py-1.5 shadow-sm",
-            "text-[11px] font-bold uppercase tracking-wide text-primary-foreground"
-          )}
-        >
+      <header className="flex shrink-0 flex-col items-center gap-0.5">
+        <h2 className="est-vtas-titulo-pildora">
           Un. Vendidas Por Mes{anio != null ? ` · ${anio}` : ""}
         </h2>
-        {contextoFiltro ? (
-          <p className="text-center text-[10px] leading-tight text-muted-foreground">
-            <span className="block truncate font-semibold uppercase text-foreground">
-              {contextoFiltro}
-            </span>
-          </p>
-        ) : null}
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        {bloqueado || (sinDatos && (sinVentasCargadas || !contextoFiltro)) ? (
+        {bloqueado || (sinDatos && sinVentasCargadas) ? (
           <div className="flex min-h-[14rem] flex-1 items-center justify-center border-l border-b border-border">
             <p className="max-w-[18rem] px-2 text-center text-xs text-muted-foreground">
               {vacioPorDependencia
                 ? vacioPorDependencia
                 : sinVentasCargadas
                   ? "No hay ventas cargadas. Subí datos en Carga de Datos y volvé a abrir este módulo."
-                  : "Seleccioná categorías en los gráficos 1 y 2 para ver la evolución mensual."}
+                  : "No hay ventas para los filtros o el periodo seleccionados."}
             </p>
           </div>
         ) : (
@@ -136,8 +118,8 @@ export default function EstVtasGraficoLineaMensual({
               role="img"
               aria-label={
                 anio
-                  ? `Evolución mensual de unidades vendidas en ${anio}`
-                  : "Evolución mensual de unidades vendidas"
+                  ? `Barras mensuales de unidades vendidas en ${anio}`
+                  : "Barras mensuales de unidades vendidas"
               }
             >
               {yTicks.map((t) => (
@@ -156,7 +138,7 @@ export default function EstVtasGraficoLineaMensual({
                     y={yPx(t)}
                     textAnchor="end"
                     dominantBaseline="middle"
-                    className="fill-muted-foreground"
+                    className="fill-foreground"
                     fontSize={9}
                   >
                     {fmtUnidades(t)}
@@ -166,45 +148,51 @@ export default function EstVtasGraficoLineaMensual({
 
               {serie.map((p) => {
                 const marcado = mesMarca === p.mes;
+                const cx = xCenter(p.mes);
+                const barH =
+                  p.unidades > 0
+                    ? Math.max((p.unidades / yMax) * plotH, 2)
+                    : 0;
+                const barY = PAD.top + plotH - barH;
+                const barX = cx - barW / 2;
+
                 return (
-                  <text
-                    key={`x-${p.mes}`}
-                    x={xPx(p.mes)}
-                    y={VIEW_H - 8}
-                    textAnchor="middle"
-                    className={
-                      marcado ? "fill-foreground font-semibold" : "fill-muted-foreground"
-                    }
-                    fontSize={9}
-                  >
-                    {etiquetaMesCortoEstPorProd(p.mes)}
-                  </text>
+                  <g key={`mes-${p.mes}`}>
+                    {barH > 0 ? (
+                      <rect
+                        x={barX}
+                        y={barY}
+                        width={barW}
+                        height={barH}
+                        rx={3}
+                        ry={3}
+                        className={
+                          marcado ? "fill-primary" : "fill-primary/75"
+                        }
+                      >
+                        <title>
+                          {etiquetaMesCortoEstPorProd(p.mes)}
+                          {anio != null ? ` ${anio}` : ""}:{" "}
+                          {fmtUnidades(p.unidades)}
+                        </title>
+                      </rect>
+                    ) : null}
+                    <text
+                      x={cx}
+                      y={VIEW_H - 8}
+                      textAnchor="middle"
+                      className={
+                        marcado
+                          ? "fill-foreground font-semibold"
+                          : "fill-foreground"
+                      }
+                      fontSize={9}
+                    >
+                      {etiquetaMesCortoEstPorProd(p.mes)}
+                    </text>
+                  </g>
                 );
               })}
-
-              <path
-                d={pathD}
-                fill="none"
-                className="stroke-primary"
-                strokeWidth={2}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-
-              {serie.map((p) => (
-                <circle
-                  key={`pt-${p.mes}`}
-                  cx={xPx(p.mes)}
-                  cy={yPx(p.unidades)}
-                  r={mesMarca === p.mes ? 4 : 3}
-                  className="fill-primary"
-                >
-                  <title>
-                    {etiquetaMesCortoEstPorProd(p.mes)}
-                    {anio != null ? ` ${anio}` : ""}: {fmtUnidades(p.unidades)}
-                  </title>
-                </circle>
-              ))}
             </svg>
             {sinDatos ? (
               <p className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 text-center text-xs text-muted-foreground">
@@ -214,7 +202,10 @@ export default function EstVtasGraficoLineaMensual({
           </div>
         )}
         <div className="mt-1.5 flex shrink-0 items-center justify-center gap-1.5">
-          <span className="h-0.5 w-5 rounded-full bg-primary" aria-hidden />
+          <span
+            className="inline-block h-2.5 w-1.5 rounded-sm bg-primary"
+            aria-hidden
+          />
           <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
             Un. Vendidas
           </span>

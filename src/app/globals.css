@@ -2433,6 +2433,231 @@ main button.proceso-paso-imagen-btn:active:not(:disabled) {
   transition: none !important;
 }
 
+/*
+ * Est. Vtas · barra del gráfico: anula `main button` / `:not([data-variant])`
+ * (altura 2.5rem, padding 1rem, fondo primary, sombra). Prioridad a la estética
+ * del gráfico: pista transparente + fill proporcional.
+ */
+main button.est-vtas-barra-btn,
+main button.est-vtas-barra-btn:hover:not(:disabled),
+main button.est-vtas-barra-btn:focus-visible,
+main button.est-vtas-barra-btn:active:not(:disabled) {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  flex: 1 1 0% !important;
+  width: auto !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  white-space: normal !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: inherit !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transition: box-shadow 0.15s !important;
+}
+
+/*
+ * Est. Vtas · píldora de título de gráfico (Select Dimensión / h2 Top 10 / h2 Mes).
+ * Ancho fijo = referencia “Un. Vendidas Por Mes” (mismo largo siempre).
+ */
+.est-vtas-titulo-pildora {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 11.75rem;
+  min-width: 11.75rem;
+  max-width: 11.75rem;
+  height: 1.5rem;
+  min-height: 1.5rem;
+  max-height: 1.5rem;
+  padding-inline: 0.75rem;
+  border-radius: 9999px;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px #0000000d;
+}
+
+.est-vtas-titulo-pildora [data-slot="select-value"] {
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * Est. Vtas · Select de dimensión (píldora primary): compacto para no robar
+ * altura al plot. Anula `main button` (2.5rem).
+ */
+main button.est-vtas-select-titulo,
+main button.est-vtas-select-titulo:hover:not(:disabled),
+main button.est-vtas-select-titulo:focus-visible,
+main button.est-vtas-select-titulo:active:not(:disabled) {
+  height: 1.5rem !important;
+  min-height: 1.5rem !important;
+  max-height: 1.5rem !important;
+  width: 11.75rem !important;
+  min-width: 11.75rem !important;
+  max-width: 11.75rem !important;
+  padding: 0 0.75rem !important;
+  gap: 0.375rem !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  font-size: 0.6875rem !important; /* 11px */
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 2px #0000000d !important;
+}
+
+main button.est-vtas-select-titulo:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+/*
+ * Est. Vtas · Select de desglose: fondo transparente + contorno suave primary.
+ */
+main button.est-vtas-select-desglose,
+main button.est-vtas-select-desglose:hover:not(:disabled),
+main button.est-vtas-select-desglose:focus-visible,
+main button.est-vtas-select-desglose:active:not(:disabled) {
+  height: 1.25rem !important;
+  min-height: 1.25rem !important;
+  max-height: 1.25rem !important;
+  padding: 0 0.5rem !important;
+  gap: 0.25rem !important;
+  border: 1px solid color-mix(in oklab, var(--primary) 40%, transparent) !important;
+  border-radius: var(--radius) !important;
+  background-color: transparent !important;
+  color: var(--muted-foreground) !important;
+  font-size: 0.625rem !important; /* 10px */
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+main button.est-vtas-select-desglose:hover:not(:disabled) {
+  background-color: color-mix(in oklab, var(--primary) 8%, transparent) !important;
+  border-color: color-mix(in oklab, var(--primary) 55%, transparent) !important;
+}
+
+/*
+ * Est. Vtas · basura para quitar desglose activo (compacta junto al select).
+ */
+main button.est-vtas-desglose-clear-btn,
+main button.est-vtas-desglose-clear-btn:hover:not(:disabled),
+main button.est-vtas-desglose-clear-btn:focus-visible,
+main button.est-vtas-desglose-clear-btn:active:not(:disabled) {
+  height: 1.25rem !important;
+  min-height: 1.25rem !important;
+  max-height: 1.25rem !important;
+  width: 1.25rem !important;
+  min-width: 1.25rem !important;
+  max-width: 1.25rem !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: none !important;
+  border-radius: var(--radius) !important;
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  box-shadow: 0 1px 2px #0000000d !important;
+  filter: none !important;
+}
+
+main button.est-vtas-desglose-clear-btn:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+main button.est-vtas-desglose-clear-btn svg {
+  width: 0.75rem !important;
+  height: 0.75rem !important;
+}
+
+/*
+ * Est. Vtas · link “Volver A …” bajo el título: no heredar CTA de main button.
+ */
+main button.est-vtas-link-btn,
+main button.est-vtas-link-btn:hover:not(:disabled),
+main button.est-vtas-link-btn:focus-visible,
+main button.est-vtas-link-btn:active:not(:disabled) {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--primary) !important;
+  font-size: 0.625rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-decoration-line: none;
+}
+
+main button.est-vtas-link-btn:hover:not(:disabled) {
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+}
+
+/*
+ * Est. Vtas · celda DESCRIPCION del Top 10: anula `main button` (CTA).
+ * Debe verse como texto de tabla, no como botón azul.
+ */
+main button.est-vtas-desc-btn,
+main button.est-vtas-desc-btn:hover:not(:disabled),
+main button.est-vtas-desc-btn:focus-visible,
+main button.est-vtas-desc-btn:active:not(:disabled) {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  white-space: normal !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: inherit !important;
+  border: none !important;
+  border-radius: 0.125rem !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-align: left !important;
+  display: block !important;
+}
+
+main button.est-vtas-desc-btn:hover:not(:disabled) {
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+}
+
 /* Input/select de filtro: SSOT en @layer components (.input-filtro-unificado, .input-filtro-custom). */
 
 /* Tokens de marca: usar en componentes vía Tailwind (bg-primary, text-accent2, etc.) */
