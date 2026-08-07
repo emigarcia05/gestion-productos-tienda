@@ -52,5 +52,17 @@ export type EstVtasBarraDimension = {
   unidades: number;
 };
 
+/** Filtro dimensional (categoría elegida en un gráfico de barras). */
+export type EstVtasFiltroDimension = {
+  ejeY: EstVtasEjeY;
+  etiqueta: string;
+};
+
+/** Punto del gráfico temporal: mes (1–12) × Un. vendidas. */
+export type EstVtasPuntoMensual = {
+  mes: number;
+  unidades: number;
+};
+
 /** @deprecated Usar `EstVtasBarraDimension`. */
 export type EstVtasBarraVariante = EstVtasBarraDimension;

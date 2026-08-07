@@ -20,9 +20,13 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import EstVtasGraficoLineaMensual from "@/components/estadisticas-productos/EstVtasGraficoLineaMensual";
 import EstVtasGraficoVarianteBarras from "@/components/estadisticas-productos/EstVtasGraficoVarianteBarras";
 import { matchByMultiTerm } from "@/lib/busqueda";
-import { agregarUnidadesPorEjeY } from "@/lib/estVtasAgregar";
+import {
+  agregarUnidadesMensualesAnio,
+  agregarUnidadesPorEjeY,
+} from "@/lib/estVtasAgregar";
 import type {
   EstVtasEjeY,
   EstVtasModoUnidad,
@@ -36,6 +40,7 @@ import {
   clavePeriodoMasRecienteConVentas,
   etiquetaPeriodoCortoEstPorProd,
   listarPeriodosCargaEstPorProd,
+  parseClavePeriodoEstPorProd,
 } from "@/lib/estPorProdPeriodo";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
@@ -89,6 +94,7 @@ export default function EstVtasPageClient({
   const [ejeY1, setEjeY1] = useState<EstVtasEjeY>("marca");
   const [ejeY2, setEjeY2] = useState<EstVtasEjeY>("variante");
   const [seleccionGrafico1, setSeleccionGrafico1] = useState<string | null>(null);
+  const [seleccionGrafico2, setSeleccionGrafico2] = useState<string | null>(null);
   const [qDebounced, setQDebounced] = useState("");
 
   const periodosConVentas = useMemo(() => {
@@ -237,9 +243,59 @@ export default function EstVtasPageClient({
     seleccionGrafico1Valida,
   ]);
 
+  const seleccionGrafico2Valida =
+    seleccionGrafico1Valida &&
+    seleccionGrafico2 &&
+    barrasGrafico2.some((b) => b.etiqueta === seleccionGrafico2)
+      ? seleccionGrafico2
+      : null;
+
+  const periodoFiltro = useMemo(
+    () => parseClavePeriodoEstPorProd(filtFecha),
+    [filtFecha]
+  );
+
+  const puntosMensuales = useMemo(() => {
+    if (!seleccionGrafico1Valida || !seleccionGrafico2Valida) {
+      return Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, unidades: 0 }));
+    }
+    return agregarUnidadesMensualesAnio({
+      productosFiltrados: filasFiltradas,
+      ventas,
+      sucursalId: filtSucursalId,
+      fechaClave: filtFecha,
+      modoUnidad: filtUnidad,
+      filtros: [
+        { ejeY: ejeY1, etiqueta: seleccionGrafico1Valida },
+        { ejeY: ejeY2, etiqueta: seleccionGrafico2Valida },
+      ],
+    });
+  }, [
+    filasFiltradas,
+    ventas,
+    filtSucursalId,
+    filtFecha,
+    filtUnidad,
+    ejeY1,
+    ejeY2,
+    seleccionGrafico1Valida,
+    seleccionGrafico2Valida,
+  ]);
+
   function handleEjeY1Change(eje: EstVtasEjeY) {
     setEjeY1(eje);
     setSeleccionGrafico1(null);
+    setSeleccionGrafico2(null);
+  }
+
+  function handleEjeY2Change(eje: EstVtasEjeY) {
+    setEjeY2(eje);
+    setSeleccionGrafico2(null);
+  }
+
+  function handleSeleccionarGrafico1(etiqueta: string | null) {
+    setSeleccionGrafico1(etiqueta);
+    setSeleccionGrafico2(null);
   }
 
   function limpiarFiltros() {
@@ -580,7 +636,7 @@ export default function EstVtasPageClient({
           ejeY={ejeY1}
           onEjeYChange={handleEjeY1Change}
           seleccionada={seleccionGrafico1Valida}
-          onSeleccionar={setSeleccionGrafico1}
+          onSeleccionar={handleSeleccionarGrafico1}
           sinVentasCargadas={ventas.length === 0}
           ariaLabelDimension="Dimensión del eje Y — gráfico 1"
           className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
@@ -588,7 +644,9 @@ export default function EstVtasPageClient({
         <EstVtasGraficoVarianteBarras
           barras={barrasGrafico2}
           ejeY={ejeY2}
-          onEjeYChange={setEjeY2}
+          onEjeYChange={handleEjeY2Change}
+          seleccionada={seleccionGrafico2Valida}
+          onSeleccionar={setSeleccionGrafico2}
           vacioPorDependencia={
             seleccionGrafico1Valida
               ? null
@@ -603,7 +661,25 @@ export default function EstVtasPageClient({
           ariaLabelDimension="Dimensión del eje Y — gráfico 2"
           className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
         />
-        <div className="min-h-0 min-w-0 flex-1 rounded-md border border-border border-dashed bg-card/40" />
+        <EstVtasGraficoLineaMensual
+          puntos={puntosMensuales}
+          anio={periodoFiltro?.anio ?? null}
+          mesMarca={periodoFiltro?.mes ?? null}
+          vacioPorDependencia={
+            !seleccionGrafico1Valida
+              ? "Seleccioná una categoría en el gráfico 1."
+              : !seleccionGrafico2Valida
+                ? "Seleccioná una categoría en el gráfico 2 para ver la evolución mensual."
+                : null
+          }
+          contextoFiltro={
+            seleccionGrafico1Valida && seleccionGrafico2Valida
+              ? `${etiquetaEstVtasEjeY(ejeY1)}: ${seleccionGrafico1Valida} · ${etiquetaEstVtasEjeY(ejeY2)}: ${seleccionGrafico2Valida}`
+              : null
+          }
+          sinVentasCargadas={ventas.length === 0}
+          className="h-full max-h-full min-w-0 flex-1 self-start"
+        />
       </div>
     </ClassicFilteredTableLayout>
   );

@@ -22,6 +22,26 @@ export function etiquetaMesEstPorProd(mes: number): string {
   return MESES_TITULO[mes] ?? String(mes);
 }
 
+const MESES_CORTO: Record<number, string> = {
+  1: "ENE",
+  2: "FEB",
+  3: "MAR",
+  4: "ABR",
+  5: "MAY",
+  6: "JUN",
+  7: "JUL",
+  8: "AGO",
+  9: "SEP",
+  10: "OCT",
+  11: "NOV",
+  12: "DIC",
+};
+
+/** Ej.: `ENE` … `DIC` (eje X de gráficos temporales). */
+export function etiquetaMesCortoEstPorProd(mes: number): string {
+  return MESES_CORTO[mes] ?? String(mes);
+}
+
 /** Ej.: `Enero 2026` */
 export function etiquetaPeriodoCortoEstPorProd(mes: number, anio: number): string {
   return `${etiquetaMesEstPorProd(mes)} ${anio}`;
