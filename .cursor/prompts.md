@@ -2,7 +2,7 @@
 
 Stack: **Next.js 16** + **React 19** + **Tailwind 4** + **shadcn/ui** + **Zod** + **iron-session** + **Prisma**.
 
-Índice de documentación (fuente de verdad): [`docs/README.md`](../docs/README.md).
+Índice de documentación (fuente de verdad): [`docs/README.md`](../docs/README.md) — incluye el **flujo full stack canónico**, reglas técnicas resumidas y **criterio de hecho**.
 
 | Documento | Cuándo |
 |-----------|--------|
@@ -10,6 +10,8 @@ Stack: **Next.js 16** + **React 19** + **Tailwind 4** + **shadcn/ui** + **Zod** 
 | [`docs/BACKEND_GUIDELINES.md`](../docs/BACKEND_GUIDELINES.md) | Actions, servicios, Prisma — **buscar el § del dominio** |
 | [`docs/AGENTEIA_GUIDELINES.md`](../docs/AGENTEIA_GUIDELINES.md) | IA Diseño, CSV, scraper, Asistente IA |
 | [`docs/IA_DISEÑO/`](../docs/IA_DISEÑO/) | Reglas de negocio, ADRs, CHANGELOG, prompt GPT |
+
+Reglas persistentes: `.cursor/rules/manuales-obligatorios.mdc`, `.cursor/rules/flujo-fullstack-end-to-end.mdc`.
 
 ---
 
