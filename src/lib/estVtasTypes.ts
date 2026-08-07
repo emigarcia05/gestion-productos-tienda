@@ -156,11 +156,15 @@ export type EstVtasBarraProducto = {
   codTienda: string;
   /** Descripción del producto (columna DESCRIPCION). */
   etiqueta: string;
-  /** Un. vendidas en el periodo FECHA (TOTAL PERIODO). */
+  /**
+   * TO. — total de unidades (o suma) con los filtros activos
+   * (página + selección G1 si hay).
+   */
   totalPeriodo: number;
   /**
-   * Promedio mensual: total acumulado (sin FECHA) / cantidad de periodos
-   * mes×año con ventas &gt; 0.
+   * PM. — `totalPeriodo / cantidadPeriodos`.
+   * `cantidadPeriodos` = años seleccionados × meses seleccionados
+   * (ej. JUN+JUL = 2; 2025+2026 con 12 meses = 24).
    */
   promedioMensual: number;
 };

@@ -29,8 +29,8 @@ function fmtUnidades(n: number): string {
 }
 
 /**
- * Top 10 productos en tabla: DESCRIPCION (clicable) · TO. (total periodo) · PM. (promedio mensual).
- * Columnas: 70 % / 15 % / 15 %. La celda DESCRIPCION es un `<button>` sin formato CTA (`est-vtas-desc-btn`).
+ * Top 10 productos en tabla: DESCRIPCION · TO. (total con filtros) · PM. (total / periodos).
+ * Periodos = años seleccionados × meses seleccionados. Columnas 70 % / 15 % / 15 %.
  */
 export default function EstVtasGraficoTopProductos({
   filas,
@@ -82,10 +82,13 @@ export default function EstVtasGraficoTopProductos({
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-left">DESCRIPCION</TableHead>
-                  <TableHead className="text-center" title="Total Periodo">
+                  <TableHead className="text-center" title="Total (filtros activos)">
                     TO.
                   </TableHead>
-                  <TableHead className="text-center" title="Promedio Mensual">
+                  <TableHead
+                    className="text-center"
+                    title="Promedio = Total / (años × meses filtrados)"
+                  >
                     PM.
                   </TableHead>
                 </TableRow>
