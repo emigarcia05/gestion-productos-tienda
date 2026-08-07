@@ -29,8 +29,8 @@ function fmtUnidades(n: number): string {
 }
 
 /**
- * Top 10 productos en tabla: DESCRIPCION (clicable) · TOTAL PERIODO · PROMEDIO MENSUAL.
- * La celda DESCRIPCION es un `<button>` sin formato CTA (`est-vtas-desc-btn`).
+ * Top 10 productos en tabla: DESCRIPCION (clicable) · TO. (total periodo) · PM. (promedio mensual).
+ * Columnas: 70 % / 15 % / 15 %. La celda DESCRIPCION es un `<button>` sin formato CTA (`est-vtas-desc-btn`).
  */
 export default function EstVtasGraficoTopProductos({
   filas,
@@ -82,24 +82,18 @@ export default function EstVtasGraficoTopProductos({
           <div className="min-h-0 flex-1 overflow-auto border border-border">
             <Table className="tabla-gestion-compacta w-full table-fixed">
               <colgroup>
-                <col className="w-[80%]" />
-                <col className="w-[10%]" />
-                <col className="w-[10%]" />
+                <col className="w-[70%]" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
               </colgroup>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-left">DESCRIPCION</TableHead>
-                  <TableHead className="text-center">
-                    <span className="flex flex-col items-center leading-tight">
-                      <span>TOTAL</span>
-                      <span>PERIODO</span>
-                    </span>
+                  <TableHead className="text-center" title="Total Periodo">
+                    TO.
                   </TableHead>
-                  <TableHead className="text-center">
-                    <span className="flex flex-col items-center leading-tight">
-                      <span>PROMEDIO</span>
-                      <span>MENSUAL</span>
-                    </span>
+                  <TableHead className="text-center" title="Promedio Mensual">
+                    PM.
                   </TableHead>
                 </TableRow>
               </TableHeader>
