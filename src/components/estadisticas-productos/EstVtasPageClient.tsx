@@ -20,7 +20,7 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import EstVtasGraficoLineaMensual from "@/components/estadisticas-productos/EstVtasGraficoLineaMensual";
+import EstVtasGraficoBarrasMensual from "@/components/estadisticas-productos/EstVtasGraficoBarrasMensual";
 import EstVtasGraficoVarianteBarras from "@/components/estadisticas-productos/EstVtasGraficoVarianteBarras";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
@@ -753,7 +753,7 @@ export default function EstVtasPageClient({
           ariaLabelDimension="Dimensión del eje Y — gráfico 2"
           className="h-full max-h-full w-[min(22rem,32%)] shrink-0 self-start"
         />
-        <EstVtasGraficoLineaMensual
+        <EstVtasGraficoBarrasMensual
           puntos={puntosMensuales}
           anio={periodoFiltro?.anio ?? null}
           mesMarca={periodoFiltro?.mes ?? null}
