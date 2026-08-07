@@ -9,9 +9,11 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
+  EST_VTAS_DESGLOSE_OPTIONS,
   EST_VTAS_EJE_Y_OPTIONS,
   etiquetaEstVtasEjeY,
   type EstVtasBarraDimension,
+  type EstVtasDesglose,
   type EstVtasEjeY,
 } from "@/lib/estVtasTypes";
 
@@ -33,6 +35,16 @@ interface Props {
   sinVentasCargadas?: boolean;
   /** Aria del Select de dimensión (distinguir gráfico 1 vs 2). */
   ariaLabelDimension?: string;
+  /** Desglose del gráfico 1 (`ninguno` | `sucursal`). Solo si se pasa `onDesgloseChange`. */
+  desglose?: EstVtasDesglose;
+  onDesgloseChange?: (desglose: EstVtasDesglose) => void;
+  /**
+   * True cuando el gráfico 1 está mostrando barras por sucursal
+   * (categoría del eje Y ya elegida + desglose = sucursal).
+   */
+  desgloseSucursalActivo?: boolean;
+  /** Volver del desglose por sucursal a la lista de categorías. */
+  onVolverCategoria?: () => void;
   className?: string;
 }
 
@@ -63,6 +75,10 @@ export default function EstVtasGraficoVarianteBarras({
   contextoFiltro = null,
   sinVentasCargadas = false,
   ariaLabelDimension = "Dimensión del eje Y",
+  desglose = "ninguno",
+  onDesgloseChange,
+  desgloseSucursalActivo = false,
+  onVolverCategoria,
   className,
 }: Props) {
   const max = barras.reduce((m, b) => Math.max(m, b.unidades), 0);
@@ -70,6 +86,7 @@ export default function EstVtasGraficoVarianteBarras({
   const labelEjeY = etiquetaEstVtasEjeY(ejeY);
   const seleccionable = typeof onSeleccionar === "function";
   const plotHeightRem = EST_VTAS_BARRAS_FILAS_VISIBLES * EST_VTAS_BARRAS_FILA_REM;
+  const conDesglose = typeof onDesgloseChange === "function";
 
   function handleBarraClick(etiqueta: string) {
     if (!onSeleccionar) return;
@@ -82,7 +99,11 @@ export default function EstVtasGraficoVarianteBarras({
         "flex min-h-0 min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-sm",
         className
       )}
-      aria-label={`Unidades vendidas por ${labelEjeY.toLowerCase()}`}
+      aria-label={
+        desgloseSucursalActivo
+          ? `Unidades vendidas por sucursal — ${labelEjeY.toLowerCase()}`
+          : `Unidades vendidas por ${labelEjeY.toLowerCase()}`
+      }
     >
       <header className="flex shrink-0 flex-col items-center gap-1">
         <Select
@@ -114,17 +135,61 @@ export default function EstVtasGraficoVarianteBarras({
             ))}
           </SelectContent>
         </Select>
-        {seleccionada || contextoFiltro ? (
+
+        {conDesglose ? (
+          <Select
+            value={desglose}
+            onValueChange={(v) => onDesgloseChange(v as EstVtasDesglose)}
+          >
+            <SelectTrigger
+              size="sm"
+              aria-label="Desglose del gráfico 1"
+              className={cn(
+                "h-auto w-auto max-w-full gap-1 border-0 bg-transparent px-2 py-0.5 shadow-none",
+                "text-[10px] font-semibold uppercase tracking-wide text-muted-foreground",
+                "hover:bg-muted/40 focus-visible:ring-1 focus-visible:ring-ring/40",
+                "[&_svg]:size-3 [&_svg]:opacity-70"
+              )}
+            >
+              <SelectValue placeholder="Desglose" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              side="bottom"
+              align="center"
+              className="select-content-filtro"
+            >
+              {EST_VTAS_DESGLOSE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {`Desglose: ${opt.label}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
+
+        {seleccionada || contextoFiltro || desgloseSucursalActivo ? (
           <p className="text-center text-[10px] leading-tight text-muted-foreground">
-            {seleccionada ? (
-              <span className="block truncate font-semibold uppercase text-foreground">
-                Selección: {seleccionada}
-              </span>
-            ) : null}
             {contextoFiltro ? (
               <span className="block truncate font-semibold uppercase text-foreground">
                 {contextoFiltro}
               </span>
+            ) : null}
+            {seleccionada ? (
+              <span className="block truncate font-semibold uppercase text-foreground">
+                {desgloseSucursalActivo
+                  ? `Sucursal: ${seleccionada}`
+                  : `Selección: ${seleccionada}`}
+              </span>
+            ) : null}
+            {desgloseSucursalActivo && onVolverCategoria ? (
+              <button
+                type="button"
+                onClick={onVolverCategoria}
+                className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-primary underline-offset-2 hover:underline"
+              >
+                Volver A {labelEjeY}
+              </button>
             ) : null}
           </p>
         ) : null}
