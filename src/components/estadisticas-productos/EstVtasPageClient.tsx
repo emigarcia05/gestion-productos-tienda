@@ -536,12 +536,12 @@ export default function EstVtasPageClient({
       }
     >
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
-        <div className="min-h-0 min-w-0 flex-1 rounded-md border border-border border-dashed bg-card/40" />
         <EstVtasGraficoVarianteBarras
           barras={barrasVariante}
           sinVentasCargadas={ventas.length === 0}
           className="h-full max-h-full w-[min(28rem,40%)] shrink-0 self-start"
         />
+        <div className="min-h-0 min-w-0 flex-1 rounded-md border border-border border-dashed bg-card/40" />
       </div>
     </ClassicFilteredTableLayout>
   );

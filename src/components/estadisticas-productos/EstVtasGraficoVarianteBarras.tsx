@@ -19,7 +19,7 @@ function fmtUnidades(n: number): string {
 
 /**
  * Barras horizontales: eje Y = Variante, eje X = Un. vendidas.
- * Posición típica: margen superior derecho del dashboard Estadísticas Vtas.
+ * Posición: margen superior izquierdo del dashboard Estadísticas Vtas.
  */
 export default function EstVtasGraficoVarianteBarras({
   barras,
