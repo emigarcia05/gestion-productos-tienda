@@ -90,7 +90,7 @@ export default function EstVtasGraficoLineaMensual({
   return (
     <section
       className={cn(
-        "flex min-h-[22rem] min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-sm",
+        "flex min-h-[22rem] min-w-0 flex-col gap-2 rounded-lg border border-border bg-card p-4 shadow-sm",
         className
       )}
       aria-label={
@@ -99,10 +99,10 @@ export default function EstVtasGraficoLineaMensual({
           : "Unidades vendidas por mes"
       }
     >
-      <header className="flex shrink-0 flex-col items-center gap-1">
+      <header className="flex shrink-0 flex-col items-center gap-0.5">
         <h2
           className={cn(
-            "inline-flex h-auto max-w-full items-center rounded-full bg-primary px-4 py-1.5 shadow-sm",
+            "inline-flex h-6 max-w-full items-center rounded-full bg-primary px-3 py-0 shadow-sm",
             "text-[11px] font-bold uppercase tracking-wide text-primary-foreground"
           )}
         >

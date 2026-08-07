@@ -56,11 +56,18 @@ function fmtUnidades(n: number): string {
 }
 
 /** Filas visibles en el viewport del eje Y; el resto scrollea. */
-const EST_VTAS_BARRAS_FILAS_VISIBLES = 8;
+const EST_VTAS_BARRAS_FILAS_VISIBLES = 9;
 /** Alto de cada fila (barra + aire entre filas). */
 const EST_VTAS_BARRAS_FILA_REM = 2;
 /** Alto visual de la barra dentro de la fila. */
 const EST_VTAS_BARRAS_ALTO_CLASS = "h-3.5";
+
+/** Clases de SelectTrigger del título/desglose (anulan `main button` en globals). */
+const EST_VTAS_SELECT_TITULO_CLASS =
+  "est-vtas-select-titulo h-auto w-auto max-w-full rounded-full border-0 bg-primary px-3 text-[11px] font-bold uppercase tracking-wide text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring/40 [&_svg]:size-3 [&_svg]:opacity-100 [&_svg]:text-primary-foreground";
+
+const EST_VTAS_SELECT_DESGLOSE_CLASS =
+  "est-vtas-select-desglose h-auto w-auto max-w-full gap-1 border-0 bg-transparent px-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shadow-none hover:bg-muted/40 focus-visible:ring-1 focus-visible:ring-ring/40 [&_svg]:size-3 [&_svg]:opacity-70";
 
 /**
  * Tonos de azul (marca `#0072BB` y vecinos) para distinguir sucursales
@@ -126,7 +133,7 @@ export default function EstVtasGraficoVarianteBarras({
   return (
     <section
       className={cn(
-        "flex min-h-0 min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-sm",
+        "flex min-h-0 min-w-0 flex-col gap-2 rounded-lg border border-border bg-card p-4 shadow-sm",
         className
       )}
       aria-label={
@@ -135,7 +142,7 @@ export default function EstVtasGraficoVarianteBarras({
           : `Unidades vendidas por ${labelEjeY.toLowerCase()}`
       }
     >
-      <header className="flex shrink-0 flex-col items-center gap-1">
+      <header className="flex shrink-0 flex-col items-center gap-0.5">
         <Select
           value={ejeY}
           onValueChange={(v) => onEjeYChange(v as EstVtasEjeY)}
@@ -143,12 +150,7 @@ export default function EstVtasGraficoVarianteBarras({
           <SelectTrigger
             size="sm"
             aria-label={ariaLabelDimension}
-            className={cn(
-              "h-auto w-auto max-w-full gap-1.5 rounded-full border-0 bg-primary px-4 py-1.5 shadow-sm",
-              "text-[11px] font-bold uppercase tracking-wide text-primary-foreground",
-              "hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring/40",
-              "[&_svg]:size-3.5 [&_svg]:opacity-100 [&_svg]:text-primary-foreground"
-            )}
+            className={EST_VTAS_SELECT_TITULO_CLASS}
           >
             <SelectValue placeholder="Un. Vendidas Por Variante" />
           </SelectTrigger>
@@ -174,12 +176,7 @@ export default function EstVtasGraficoVarianteBarras({
             <SelectTrigger
               size="sm"
               aria-label="Desglose del gráfico 1"
-              className={cn(
-                "h-auto w-auto max-w-full gap-1 border-0 bg-transparent px-2 py-0.5 shadow-none",
-                "text-[10px] font-semibold uppercase tracking-wide text-muted-foreground",
-                "hover:bg-muted/40 focus-visible:ring-1 focus-visible:ring-ring/40",
-                "[&_svg]:size-3 [&_svg]:opacity-70"
-              )}
+              className={EST_VTAS_SELECT_DESGLOSE_CLASS}
             >
               <SelectValue placeholder="Desglose" />
             </SelectTrigger>
@@ -216,7 +213,7 @@ export default function EstVtasGraficoVarianteBarras({
               <button
                 type="button"
                 onClick={onVolverCategoria}
-                className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-primary underline-offset-2 hover:underline"
+                className="est-vtas-link-btn mt-0.5 uppercase tracking-wide underline-offset-2"
               >
                 Volver A {labelEjeY}
               </button>

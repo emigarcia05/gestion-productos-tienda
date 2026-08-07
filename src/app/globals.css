@@ -2464,6 +2464,92 @@ main button.est-vtas-barra-btn:active:not(:disabled) {
   transition: box-shadow 0.15s !important;
 }
 
+/*
+ * Est. Vtas · Select de dimensión (píldora primary): compacto para no robar
+ * altura al plot. Anula `main button` (2.5rem).
+ */
+main button.est-vtas-select-titulo,
+main button.est-vtas-select-titulo:hover:not(:disabled),
+main button.est-vtas-select-titulo:focus-visible,
+main button.est-vtas-select-titulo:active:not(:disabled) {
+  height: 1.5rem !important;
+  min-height: 1.5rem !important;
+  max-height: 1.5rem !important;
+  padding: 0 0.75rem !important;
+  gap: 0.375rem !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  font-size: 0.6875rem !important; /* 11px */
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 2px #0000000d !important;
+}
+
+main button.est-vtas-select-titulo:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+/*
+ * Est. Vtas · Select de desglose: aún más bajo; sin look de CTA.
+ */
+main button.est-vtas-select-desglose,
+main button.est-vtas-select-desglose:hover:not(:disabled),
+main button.est-vtas-select-desglose:focus-visible,
+main button.est-vtas-select-desglose:active:not(:disabled) {
+  height: 1.25rem !important;
+  min-height: 1.25rem !important;
+  max-height: 1.25rem !important;
+  padding: 0 0.5rem !important;
+  gap: 0.25rem !important;
+  border: none !important;
+  border-radius: var(--radius) !important;
+  background-color: transparent !important;
+  color: var(--muted-foreground) !important;
+  font-size: 0.625rem !important; /* 10px */
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+main button.est-vtas-select-desglose:hover:not(:disabled) {
+  background-color: color-mix(in oklab, var(--muted) 40%, transparent) !important;
+}
+
+/*
+ * Est. Vtas · link “Volver A …” bajo el título: no heredar CTA de main button.
+ */
+main button.est-vtas-link-btn,
+main button.est-vtas-link-btn:hover:not(:disabled),
+main button.est-vtas-link-btn:focus-visible,
+main button.est-vtas-link-btn:active:not(:disabled) {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--primary) !important;
+  font-size: 0.625rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+  filter: none !important;
+  text-decoration-line: none;
+}
+
+main button.est-vtas-link-btn:hover:not(:disabled) {
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+}
+
 /* Input/select de filtro: SSOT en @layer components (.input-filtro-unificado, .input-filtro-custom). */
 
 /* Tokens de marca: usar en componentes vía Tailwind (bg-primary, text-accent2, etc.) */
