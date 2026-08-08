@@ -1711,6 +1711,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-04): **Est. Por Prod · mapeo** — **PRIMERA FILA** muestra nombres de encabezado (1.ª fila; `FILAS_OMITIR_INICIO_EST_POR_PROD = 0`).*
 
+*Última actualización (2026-08-03): **Diseñar Colores · layout** — sin foto; 2 columnas (preguntas | opciones de la activa); respondida vs sin respuesta (`CheckCircle2` / `Circle`).*
+
 *Última actualización (2026-08-03): **Diseñar Colores · acordeón** — orden 1 Modo → 2 Objetivo → 3 Estilo → 4 Luz Natural → 5 Luz Artificial → 6 Combinar → 7 Superficie A Pintar.*
 
 *Última actualización (2026-08-03): **GESTION DISEÑO · catálogo unificado** — UI sin cambios de API; persistencia `prod_ia_diseno_catalogo` por `kind`.*
