@@ -1604,11 +1604,22 @@
   background-color: color-mix(in srgb, var(--accent2) 22%, var(--tabla-row-bg, var(--card)));
 }
 
-/* Bloque desplazable: PX + PORC. UTILIDAD por lista. */
+/* Bloque desplazable: REF. (solo 1 - GENERAL) + PX + PORC. UTILIDAD por lista. */
 .tabla-px-listas-precios tbody td.celda-px-lista-col,
 .tabla-px-listas-precios tbody td.celda-marcacion-col,
+.tabla-px-listas-precios tbody td.celda-px-lista-ref-col,
 .tabla-px-listas-precios thead th.tabla-px-listas-col-lista {
   min-width: 2.75rem;
+}
+.tabla-px-listas-precios tbody td.celda-px-lista-ref-col {
+  min-width: 5.5rem;
+  padding: var(--tabla-body-cell-padding-y) var(--tabla-body-cell-padding-x) !important;
+}
+.tabla-px-listas-precios tbody td.celda-px-lista-ref-col [data-slot="select-trigger"] {
+  max-height: 1.75rem !important;
+  height: 1.75rem !important;
+  font-size: 0.75rem !important;
+  font-weight: normal !important;
 }
 
 /*

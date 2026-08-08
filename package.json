@@ -30,6 +30,7 @@
     "db:recalc-desc-especial": "tsx scripts/recalc-desc-especial.ts",
     "db:purge-lista-precio-sin-vinculo": "tsx scripts/purge-lista-precio-proveedor-sin-vinculo-tienda.ts",
     "db:purge-huerfanos-prod-tienda": "tsx scripts/purge-huerfanos-prod-tienda.ts",
+    "db:seed-px-listas-ref-mer-gar": "tsx scripts/seed-px-listas-ref-mer-gar.ts",
     "db:audit-schema": "node scripts/audit-schema-usage.mjs",
     "db:audit-schema-columns": "node scripts/audit-schema-columns.mjs",
     "test:aplanar-pdf-matriz": "tsx scripts/test-aplanar-pdf-matriz.ts",

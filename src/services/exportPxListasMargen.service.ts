@@ -1,5 +1,6 @@
 import { calcMargenSinIvaPct } from "@/lib/calculos";
 import { roundPorcUtilidadPxListaExport } from "@/lib/pxListasPreciosFormat";
+import { sincronizarTodosPxGeneralDesdeCompetenciaRef } from "@/services/pxListasCompetenciaRef.service";
 import { type ClavePrecioListaEdicion } from "@/services/pxListasPrecioEdicion.service";
 import { prisma } from "@/lib/prisma";
 
@@ -40,6 +41,9 @@ export function clavesDesdeGruposExportPxListas(
 export async function listarExportPxListasMargenPorLista(): Promise<
   ExportPxListaMargenGrupo[]
 > {
+  /** Re-aplica PX de competencia en GENERAL (PORC. UTILIDAD = f(PX, costo)). */
+  await sincronizarTodosPxGeneralDesdeCompetenciaRef();
+
   const listas = await prisma.prodTiendaListaPrecio.findMany({
     orderBy: [{ idLista: "asc" }],
     select: { idLista: true, nombreLista: true },

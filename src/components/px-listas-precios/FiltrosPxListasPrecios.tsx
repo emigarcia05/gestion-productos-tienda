@@ -19,6 +19,7 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
+import type { OpcionFiltroPxVinculado } from "@/lib/pxListasCompetenciaRef";
 import { cn } from "@/lib/utils";
 
 const FOCUS_KEY = "filtros-px-listas-precios-focus";
@@ -27,24 +28,28 @@ interface Props {
   marcas: string[];
   rubros: string[];
   subRubros: string[];
+  opcionesPxVinculado: OpcionFiltroPxVinculado[];
   totalItems: number;
   qActual: string;
   marcaActual: string;
   rubroActual: string;
   subRubroActual: string;
   actualizarActual: string;
+  pxVinculadoActual: string;
 }
 
 export default function FiltrosPxListasPrecios({
   marcas,
   rubros,
   subRubros,
+  opcionesPxVinculado,
   totalItems,
   qActual,
   marcaActual,
   rubroActual,
   subRubroActual,
   actualizarActual,
+  pxVinculadoActual,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -72,6 +77,7 @@ export default function FiltrosPxListasPrecios({
     rubro?: string;
     subRubro?: string;
     actualizar?: string;
+    pxVinculado?: string;
   }) {
     const p = new URLSearchParams();
     const qVal = updates.q !== undefined ? updates.q : q;
@@ -81,11 +87,16 @@ export default function FiltrosPxListasPrecios({
       updates.subRubro !== undefined ? updates.subRubro : subRubroActual;
     const actualizarVal =
       updates.actualizar !== undefined ? updates.actualizar : actualizarActual;
+    const pxVinculadoVal =
+      updates.pxVinculado !== undefined
+        ? updates.pxVinculado
+        : pxVinculadoActual;
     if (qVal) p.set("q", qVal);
     if (marcaVal) p.set("marca", marcaVal);
     if (rubroVal) p.set("rubro", rubroVal);
     if (subRubroVal) p.set("subRubro", subRubroVal);
     if (actualizarVal) p.set("actualizar", actualizarVal);
+    if (pxVinculadoVal) p.set("pxVinculado", pxVinculadoVal);
     const query = p.toString();
     router.push(query ? `${pathname}?${query}` : pathname);
   }
@@ -100,6 +111,10 @@ export default function FiltrosPxListasPrecios({
 
   function handleSubRubro(value: string) {
     navigate({ subRubro: value });
+  }
+
+  function handlePxVinculado(value: string) {
+    navigate({ pxVinculado: value });
   }
 
   function handleActualizar(value: string) {
@@ -199,6 +214,40 @@ export default function FiltrosPxListasPrecios({
                 {subRubros.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(pxVinculadoActual)}
+            onLimpiar={() => handlePxVinculado("")}
+          >
+            <Select
+              value={pxVinculadoActual || undefined}
+              onValueChange={(v) => handlePxVinculado(v)}
+            >
+              <SelectTrigger
+                id="filtro-px-listas-precios-px-vinculado"
+                className="input-filtro-unificado"
+              >
+                <SelectValue placeholder="PX VINCULADO" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                {opcionesPxVinculado.map((op) => (
+                  <SelectItem
+                    key={op.competenciaId}
+                    value={op.competenciaId}
+                    title={op.nombre}
+                  >
+                    {op.etiqueta}
                   </SelectItem>
                 ))}
               </SelectContent>

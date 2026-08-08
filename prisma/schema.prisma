@@ -901,16 +901,20 @@ model ProdTienda {
   esProductoPropio Boolean @default(false) @map("es_producto_propio")
   /// Incluido en Px Competencia (`/gestion-productos/tienda/cx-px-tienda`); el sync DUX no modifica este flag.
   compararCompetencia Boolean @default(false) @map("comparar_competencia")
+  /// Competidor de referencia para PX de **1 - GENERAL** (Px Listas). Sync DUX no modifica.
+  competenciaIdPxListaGeneral String? @map("competencia_id_px_lista_general")
 
   marcaRelation           Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // vínculos por prod_precios_provee.cod_tienda → esta PK
   costoListaProveedor     ListaPrecioProveedor?  @relation("CostoListaEnTienda", fields: [costoCompraCodExt], references: [codExt], onDelete: SetNull)
+  competenciaPxListaGeneral ProdCompetencia? @relation("PxListaGeneralCompRef", fields: [competenciaIdPxListaGeneral], references: [id], onDelete: SetNull)
   preciosCompetencia      ProdPrecioCompetencia[]
   preciosLista            ProdTiendaPrecio[]
   preciosListaEdicion     ProdTiendaPrecioEdicion[]
   stocks                  ProdTiendaStock[]
   estPorProd              EstPorProd[]
 
+  @@index([competenciaIdPxListaGeneral], map: "prod_tienda_competencia_id_px_lista_general_idx")
   @@map("prod_tienda")
 }
 
@@ -931,6 +935,7 @@ model ProdCompetencia {
 
   proveedor Proveedor? @relation(fields: [idProveedor], references: [id], onDelete: SetNull)
   precios ProdPrecioCompetencia[]
+  tiendasPxListaGeneral ProdTienda[] @relation("PxListaGeneralCompRef")
 
   @@index([idProveedor], map: "prod_competencia_id_proveedor_idx")
   @@map("prod_competencia")

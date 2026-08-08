@@ -6,8 +6,17 @@ import { revalidatePath } from "next/cache";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
-import { guardarPxListaMargenEdicionSchema, guardarPxListaPrecioEdicionSchema, getPxListasPreciosPageParamsSchema } from "@/lib/validations/pxListasPrecios";
+import {
+  guardarPxListaCompetenciaRefSchema,
+  guardarPxListaMargenEdicionSchema,
+  guardarPxListaPrecioEdicionSchema,
+  getPxListasPreciosPageParamsSchema,
+} from "@/lib/validations/pxListasPrecios";
 import { getPxListasPreciosPageDataFromDb } from "@/services/pxListasPreciosPage.service";
+import {
+  guardarCompetenciaRefPxListaGeneral,
+  limpiarCompetenciaRefSiListaGeneral,
+} from "@/services/pxListasCompetenciaRef.service";
 import {
   guardarPrecioListaEdicionDesdeMargen,
   guardarPrecioListaEdicionDesdePx,
@@ -77,6 +86,8 @@ export async function guardarPxListaMargenEdicionAction(
     if (!res.success) {
       return { ok: false, error: res.error };
     }
+    /** Edición manual de PORC. en GENERAL → quita FK de competidor. */
+    await limpiarCompetenciaRefSiListaGeneral(codTienda, idLista);
     revalidatePxListasPaths();
     return {
       ok: true,
@@ -127,6 +138,8 @@ export async function guardarPxListaPrecioEdicionAction(
     if (!res.success) {
       return { ok: false, error: res.error };
     }
+    /** Edición manual de PX en GENERAL → quita FK de competidor. */
+    await limpiarCompetenciaRefSiListaGeneral(codTienda, idLista);
     revalidatePxListasPaths();
     return {
       ok: true,
@@ -140,6 +153,55 @@ export async function guardarPxListaPrecioEdicionAction(
     return {
       ok: false,
       error: e instanceof Error ? e.message : "No se pudo guardar el precio.",
+    };
+  }
+}
+
+/**
+ * Persiste competidor de referencia para **1 - GENERAL**.
+ * `"-"` / null solo limpia FK; competidor válido copia PX a staging.
+ */
+export async function guardarPxListaCompetenciaRefAction(
+  raw: unknown
+): Promise<
+  ActionResult<{
+    competenciaIdPxListaGeneral: string | null;
+    pxActualizado: boolean;
+    pxEdicion: number | null;
+    pxEfectivo: number | null;
+    margenManual: number | null;
+  }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+
+  const parsed = guardarPxListaCompetenciaRefSchema.safeParse(raw);
+  if (!parsed.success) {
+    const msg = parsed.error.flatten().fieldErrors;
+    const first =
+      Object.values(msg).flat()[0] ?? "Datos de competidor inválidos.";
+    return { ok: false, error: first };
+  }
+
+  try {
+    const res = await guardarCompetenciaRefPxListaGeneral(
+      parsed.data.codTienda,
+      parsed.data.competenciaId
+    );
+    if (!res.success) {
+      return { ok: false, error: res.error };
+    }
+    revalidatePxListasPaths();
+    return { ok: true, data: res.data };
+  } catch (e) {
+    return {
+      ok: false,
+      error:
+        e instanceof Error
+          ? e.message
+          : "No se pudo guardar el competidor de referencia.",
     };
   }
 }
