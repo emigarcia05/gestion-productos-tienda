@@ -352,7 +352,7 @@ export function isAdmPillarActive(pathname: string, pillar: AdmPillarDef): boole
       pathname.startsWith("/estadisticas-productos/")
     );
   }
-  // FINANZAS: /finanzas/* excepto analisis-mc (está en LISTAS PRECIOS)
+  // FINANZAS: /finanzas/* excepto analisis-mc (está en LISTA PRECIOS)
   if (pathname.startsWith("/finanzas/analisis-mc")) return false;
   return (
     pathname === "/finanzas" ||
