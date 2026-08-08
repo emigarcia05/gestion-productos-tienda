@@ -26,7 +26,7 @@ export const GP_ROUTES = {
     },
     calcLitros: `${GP}/ayuda-vendedor/calc-litros`,
     cargarGasto: `${GP}/ayuda-vendedor/cargar-gasto`,
-    /** Sin entrada en sidebar Vendedor; ruta canónica conservada. */
+    /** Enlace directo en sidebar Vendedor (`CONTROL STOCK`). */
     controlStock: `${GP}/ayuda-vendedor/control-stock`,
   },
   analisisPrecios: {

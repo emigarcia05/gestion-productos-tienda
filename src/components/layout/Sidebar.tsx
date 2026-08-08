@@ -16,6 +16,7 @@ import {
   CircleDollarSign,
   ListChecks,
   PackageCheck,
+  Boxes,
   Megaphone,
   CalendarRange,
   Lightbulb,
@@ -48,6 +49,7 @@ const iconClass = "h-5 w-5 shrink-0";
 
 type ModuleId =
   | "pedidos"
+  | "control-stock"
   | "asistencia-precios"
   | "calcular-lts"
   | "cargar-gastos"
@@ -120,6 +122,14 @@ const MODULES: NavModule[] = [
         permiso: PERMISOS.pedidos.acceso,
       },
     ],
+  },
+  {
+    id: "control-stock",
+    label: "CONTROL STOCK",
+    icon: <Boxes className={iconClass} />,
+    href: GP_ROUTES.ayudaVendedor.controlStock,
+    permiso: PERMISOS.stock.acceso,
+    submodules: [],
   },
   {
     id: "asistencia-precios",
@@ -232,7 +242,7 @@ function getOpenModule(pathname: string): SidebarModuleId | null {
     return "base-multimedia";
   }
   const gpModule = getGpSidebarModule(pathname);
-  if (gpModule === "analisis-precios" || gpModule === "control-stock") {
+  if (gpModule === "analisis-precios") {
     return null;
   }
   return gpModule;
