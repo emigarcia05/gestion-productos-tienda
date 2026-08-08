@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { filtroTexto } from "@/lib/busqueda";
 import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
 import { PAGE_SIZE } from "@/lib/pagination";
+import type { OpcionCompetenciaRefPxListas } from "@/lib/pxListasCompetenciaRef";
 import type {
   ItemPxListasPreciosTabla,
   ListaPrecioPxListasColumna,
@@ -18,6 +19,11 @@ import {
 } from "@/lib/pxListasPreciosFiltros";
 import { prisma } from "@/lib/prisma";
 import { getPxListasPreciosPageParamsSchema } from "@/lib/validations/pxListasPrecios";
+import {
+  asegurarOpcionCompetenciaRefSeleccionada,
+  listarOpcionesCompetenciaRefPorCodTiendas,
+  sincronizarPxGeneralDesdeCompetenciaRef,
+} from "@/services/pxListasCompetenciaRef.service";
 import { listarFinAnaMcCategorias } from "@/services/finAnaMcCategorias.service";
 
 export type PxListasPreciosPageData = {
@@ -109,16 +115,20 @@ function buildItemDesdeFila(
     codTienda: string;
     descripcionTienda: string | null;
     costoCompra: { toString(): string };
+    competenciaIdPxListaGeneral: string | null;
   },
   listas: ListaPrecioPxListasColumna[],
   duxMap: Map<string, number>,
-  pxEdicionMap: Map<string, number>
+  pxEdicionMap: Map<string, number>,
+  opcionesPorCod: Map<string, OpcionCompetenciaRefPxListas[]>
 ): ItemPxListasPreciosTabla {
   const costoCompra = Number(row.costoCompra);
   return {
     codTienda: row.codTienda,
     descripcion: row.descripcionTienda ?? "",
     costoCompra,
+    competenciaIdPxListaGeneral: row.competenciaIdPxListaGeneral,
+    opcionesCompetenciaRef: opcionesPorCod.get(row.codTienda) ?? [],
     preciosPorLista: listas.map((lista) => {
       const key = `${row.codTienda}:${lista.idLista}`;
       return armarCeldaPrecioPxListas({
@@ -129,6 +139,28 @@ function buildItemDesdeFila(
       });
     }),
   };
+}
+
+async function enriquecerItemsPxListas(
+  rows: Array<{
+    codTienda: string;
+    descripcionTienda: string | null;
+    costoCompra: { toString(): string };
+    competenciaIdPxListaGeneral: string | null;
+  }>,
+  listas: ListaPrecioPxListasColumna[],
+  idListas: number[]
+): Promise<ItemPxListasPreciosTabla[]> {
+  const codTiendas = rows.map((r) => r.codTienda);
+  await sincronizarPxGeneralDesdeCompetenciaRef(codTiendas);
+  const [{ duxMap, pxEdicionMap }, opcionesPorCod] = await Promise.all([
+    cargarMapsPreciosYEdicion(codTiendas, idListas),
+    listarOpcionesCompetenciaRefPorCodTiendas(codTiendas),
+  ]);
+  await asegurarOpcionCompetenciaRefSeleccionada(opcionesPorCod, rows);
+  return rows.map((row) =>
+    buildItemDesdeFila(row, listas, duxMap, pxEdicionMap, opcionesPorCod)
+  );
 }
 
 async function getEmptyPage(q: string): Promise<PxListasPreciosPageData> {
@@ -191,21 +223,14 @@ async function listarItemsConFiltroActualizar(
       codTienda: true,
       descripcionTienda: true,
       costoCompra: true,
+      competenciaIdPxListaGeneral: true,
     },
     orderBy: [{ descripcionTienda: "asc" }],
   });
 
-  const codTiendas = rows.map((r) => r.codTienda);
-  const { duxMap, pxEdicionMap } = await cargarMapsPreciosYEdicion(
-    codTiendas,
-    opts.idListas
+  const items = (await enriquecerItemsPxListas(rows, opts.listas, opts.idListas)).filter(
+    (item) => filtrarItemPorActualizar(item, opts.actualizar)
   );
-
-  const items = rows
-    .map((row) =>
-      buildItemDesdeFila(row, opts.listas, duxMap, pxEdicionMap)
-    )
-    .filter((item) => filtrarItemPorActualizar(item, opts.actualizar));
 
   const total = items.length;
   const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
@@ -312,6 +337,7 @@ export async function getPxListasPreciosPageDataFromDb(params: {
         codTienda: true,
         descripcionTienda: true,
         costoCompra: true,
+        competenciaIdPxListaGeneral: true,
       },
       orderBy: [{ descripcionTienda: "asc" }],
       skip,
@@ -320,14 +346,10 @@ export async function getPxListasPreciosPageDataFromDb(params: {
     prisma.prodTienda.count({ where }),
   ]);
 
-  const codTiendas = rows.map((r) => r.codTienda);
-  const { duxMap, pxEdicionMap } = await cargarMapsPreciosYEdicion(
-    codTiendas,
+  const items: ItemPxListasPreciosTabla[] = await enriquecerItemsPxListas(
+    rows,
+    listas,
     idListas
-  );
-
-  const items: ItemPxListasPreciosTabla[] = rows.map((row) =>
-    buildItemDesdeFila(row, listas, duxMap, pxEdicionMap)
   );
 
   const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);

@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
+import { PX_LISTAS_COMP_REF_NINGUNO } from "@/lib/pxListasCompetenciaRef";
+import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
 
 /** Parámetros de URL del listado Px Listas (`/gestion-productos/tienda/px-listas`). */
 export const getPxListasPreciosPageParamsSchema = z.object({
@@ -34,4 +35,14 @@ export const guardarPxListaPrecioEdicionSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
   idLista: z.coerce.number().int().positive("Lista inválida."),
   pxEdicion: z.union([pxListaEdicionSchema, z.null()]),
+});
+
+/** Competidor de referencia para **1 - GENERAL**. `"-"` / null = sin referencia (no toca PX). */
+export const guardarPxListaCompetenciaRefSchema = z.object({
+  codTienda: listaPreciosCodTiendaSchema,
+  competenciaId: z.union([
+    prismaCuidSchema,
+    z.literal(PX_LISTAS_COMP_REF_NINGUNO),
+    z.null(),
+  ]),
 });

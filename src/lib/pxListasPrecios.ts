@@ -1,3 +1,5 @@
+import type { OpcionCompetenciaRefPxListas } from "@/lib/pxListasCompetenciaRef";
+
 /** Catálogo de lista DUX para columnas dinámicas en Px Listas. */
 export type ListaPrecioPxListasColumna = {
   idLista: number;
@@ -28,4 +30,8 @@ export type ItemPxListasPreciosTabla = {
   descripcion: string;
   costoCompra: number;
   preciosPorLista: PrecioListaPxListasCelda[];
+  /** Competidor de referencia para **1 - GENERAL** (`null` = "-"). */
+  competenciaIdPxListaGeneral: string | null;
+  /** Opciones con precio de referencia (sugerido o scraping) para este producto. */
+  opcionesCompetenciaRef: OpcionCompetenciaRefPxListas[];
 };

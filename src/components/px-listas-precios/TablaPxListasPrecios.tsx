@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type ReactElement,
+} from "react";
 import { toast } from "sonner";
 import {
   Table,
@@ -12,11 +19,19 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import {
+  guardarPxListaCompetenciaRefAction,
   guardarPxListaMargenEdicionAction,
   guardarPxListaPrecioEdicionAction,
 } from "@/actions/pxListasPrecios";
 import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import PxListaEnteroInput from "@/components/shared/PxListaEnteroInput";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   calcPxListaDesdeMargenSinIvaPct,
 } from "@/lib/calculos";
@@ -24,6 +39,7 @@ import {
   parsePorcentajeCentNormalized,
   porcentajeCentFromNumber,
 } from "@/lib/porcentajeCentMask";
+import { PX_LISTAS_COMP_REF_NINGUNO } from "@/lib/pxListasCompetenciaRef";
 import {
   margenDesdePrecioDux,
   armarCeldaPrecioPxListas,
@@ -65,10 +81,12 @@ type DraftCeldaPxListas = {
 
 const PX_LISTAS_PCT_DESCRIPCION = 42;
 const PX_LISTAS_PCT_CATEGORIA_MC = 8;
-/** Resto de la grilla (listas PX + PORC. UTILIDAD); 40 % indicado en UX (42 + 8 + 40 = 90 %; el 10 % restante lo reparte el navegador). */
+/** Resto de la grilla (listas: REF en GENERAL + PX + PORC.); 40 % UX. */
 const PX_LISTAS_PCT_LISTAS = 40;
-/** Ancho mínimo por par PX / PORC. cuando hay muchas listas (scroll horizontal). */
-const PX_LISTAS_MIN_ANCHO_PAR_LISTA_REM = 5;
+/** Ancho mínimo por subcolumna de lista (scroll horizontal). */
+const PX_LISTAS_MIN_ANCHO_SUBCOL_REM = 2.75;
+/** Ancho mínimo de la columna REF (competidor) en 1 - GENERAL. */
+const PX_LISTAS_MIN_ANCHO_REF_REM = 5.5;
 
 function actualizarCeldaEnItem(
   item: ItemPxListasPreciosTabla,
@@ -433,6 +451,94 @@ function CeldaMargenLista({
   );
 }
 
+function CeldaCompetenciaRefGeneral({
+  item,
+  puedeEditar,
+  idListaGeneral,
+  onItemChange,
+}: {
+  item: ItemPxListasPreciosTabla;
+  puedeEditar: boolean;
+  idListaGeneral: number;
+  onItemChange: (item: ItemPxListasPreciosTabla) => void;
+}) {
+  const [saving, startTransition] = useTransition();
+  const value =
+    item.competenciaIdPxListaGeneral ?? PX_LISTAS_COMP_REF_NINGUNO;
+
+  function handleChange(next: string) {
+    startTransition(async () => {
+      const res = await guardarPxListaCompetenciaRefAction({
+        codTienda: item.codTienda,
+        competenciaId: next === PX_LISTAS_COMP_REF_NINGUNO ? null : next,
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+
+      const competenciaId = res.data.competenciaIdPxListaGeneral;
+      let nextItem: ItemPxListasPreciosTabla = {
+        ...item,
+        competenciaIdPxListaGeneral: competenciaId,
+      };
+
+      if (res.data.pxActualizado) {
+        nextItem = actualizarCeldaEnItem(
+          nextItem,
+          idListaGeneral,
+          armarCeldaPrecioPxListas({
+            idLista: idListaGeneral,
+            costoCompra: item.costoCompra,
+            pxDux:
+              item.preciosPorLista.find((c) => c.idLista === idListaGeneral)
+                ?.pxDux ?? null,
+            pxEdicion: res.data.pxEdicion,
+          })
+        );
+      }
+
+      onItemChange(nextItem);
+    });
+  }
+
+  if (!puedeEditar) {
+    const nombre =
+      item.opcionesCompetenciaRef.find((o) => o.competenciaId === value)
+        ?.nombre ?? PX_LISTAS_COMP_REF_NINGUNO;
+    return (
+      <span className="block truncate text-xs" title={nombre}>
+        {nombre}
+      </span>
+    );
+  }
+
+  return (
+    <Select value={value} onValueChange={handleChange} disabled={saving}>
+      <SelectTrigger
+        className="input-filtro-unificado h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-h-0 w-full min-w-0 px-1.5 text-xs"
+        aria-label="Competidor de referencia"
+        size="sm"
+      >
+        <SelectValue placeholder="-" />
+      </SelectTrigger>
+      <SelectContent
+        position="popper"
+        side="bottom"
+        align="start"
+        className="select-content-filtro"
+      >
+        <SelectItem value={PX_LISTAS_COMP_REF_NINGUNO}>-</SelectItem>
+        {item.opcionesCompetenciaRef.map((op) => (
+          <SelectItem key={op.competenciaId} value={op.competenciaId}>
+            {op.nombre.toUpperCase()}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function FilaPxListasPrecios({
   item,
   puedeEditar,
@@ -492,7 +598,13 @@ function FilaPxListasPrecios({
     patch: Partial<PrecioListaPxListasCelda>
   ) => {
     limpiarDraft(idLista);
-    onItemChange(actualizarCeldaEnItem(item, idLista, patch));
+    const updated = actualizarCeldaEnItem(item, idLista, patch);
+    /** Edición manual en GENERAL → select vuelve a "-". */
+    if (idListaGeneral != null && idLista === idListaGeneral) {
+      onItemChange({ ...updated, competenciaIdPxListaGeneral: null });
+      return;
+    }
+    onItemChange(updated);
   };
 
   const celdaGeneral =
@@ -534,12 +646,36 @@ function FilaPxListasPrecios({
         const draft = draftPorLista[celda.idLista];
         const celdaVista = aplicarDraftCelda(celda, draft);
         const listaActualizar = celda.requiereActualizar;
+        const esGeneral =
+          idListaGeneral != null && celda.idLista === idListaGeneral;
 
-        return [
+        const celdas: ReactElement[] = [];
+
+        if (esGeneral && idListaGeneral != null) {
+          celdas.push(
+            <TableCell
+              key={`${item.codTienda}-${celda.idLista}-ref`}
+              className={cn(
+                "celda-datos celda-px-lista-ref-col border-l border-border",
+                listaActualizar && "celda-px-listas-actualizar"
+              )}
+            >
+              <CeldaCompetenciaRefGeneral
+                item={item}
+                puedeEditar={puedeEditar}
+                idListaGeneral={idListaGeneral}
+                onItemChange={onItemChange}
+              />
+            </TableCell>
+          );
+        }
+
+        celdas.push(
           <TableCell
             key={`${item.codTienda}-${celda.idLista}-px`}
             className={cn(
-              "celda-datos celda-numero celda-px-lista-col border-l border-border",
+              "celda-datos celda-numero celda-px-lista-col",
+              !esGeneral && "border-l border-border",
               listaActualizar && "celda-px-listas-actualizar"
             )}
           >
@@ -571,8 +707,10 @@ function FilaPxListasPrecios({
               onDraft={handleMargenDraft}
               onSaved={handleCeldaSaved}
             />
-          </TableCell>,
-        ];
+          </TableCell>
+        );
+
+        return celdas;
       })}
     </TableRow>
   );
@@ -599,10 +737,16 @@ export default function TablaPxListasPrecios({
     );
   }, []);
 
-  const colCount = 2 + listas.length * 2;
+  const tieneGeneral =
+    idListaGeneral != null &&
+    listas.some((l) => l.idLista === idListaGeneral);
+  const subcolCount = listas.length * 2 + (tieneGeneral ? 1 : 0);
+  const colCount = 2 + subcolCount;
   const pctSubcolLista =
-    listas.length > 0 ? PX_LISTAS_PCT_LISTAS / (listas.length * 2) : 0;
-  const tablasListasMinWidthRem = listas.length * PX_LISTAS_MIN_ANCHO_PAR_LISTA_REM;
+    subcolCount > 0 ? PX_LISTAS_PCT_LISTAS / subcolCount : 0;
+  const tablasListasMinWidthRem =
+    listas.length * PX_LISTAS_MIN_ANCHO_SUBCOL_REM * 2 +
+    (tieneGeneral ? PX_LISTAS_MIN_ANCHO_REF_REM : 0);
 
   return (
     <Table
@@ -618,10 +762,33 @@ export default function TablaPxListasPrecios({
       <colgroup>
         <col className="col-px-listas-desc" />
         <col className="col-px-listas-cat" />
-        {listas.flatMap((lista) => [
-          <col key={`${lista.idLista}-px`} className="col-px-listas-lista" style={{ width: `${pctSubcolLista}%` }} />,
-          <col key={`${lista.idLista}-mg`} className="col-px-listas-lista" style={{ width: `${pctSubcolLista}%` }} />,
-        ])}
+        {listas.flatMap((lista) => {
+          const esGeneral =
+            idListaGeneral != null && lista.idLista === idListaGeneral;
+          const cols: ReactElement[] = [];
+          if (esGeneral) {
+            cols.push(
+              <col
+                key={`${lista.idLista}-ref`}
+                className="col-px-listas-lista col-px-listas-ref"
+                style={{ width: `${pctSubcolLista}%` }}
+              />
+            );
+          }
+          cols.push(
+            <col
+              key={`${lista.idLista}-px`}
+              className="col-px-listas-lista"
+              style={{ width: `${pctSubcolLista}%` }}
+            />,
+            <col
+              key={`${lista.idLista}-mg`}
+              className="col-px-listas-lista"
+              style={{ width: `${pctSubcolLista}%` }}
+            />
+          );
+          return cols;
+        })}
       </colgroup>
       <TableHeader>
         <TableRow>
@@ -637,31 +804,54 @@ export default function TablaPxListasPrecios({
           >
             CATEGORÍA M.C
           </TableHead>
-          {listas.map((lista) => (
-            <TableHead
-              key={lista.idLista}
-              colSpan={2}
-              className="text-center border-l border-primary-foreground/25 tabla-px-listas-col-lista"
-            >
-              {lista.nombreLista.toUpperCase()}
-            </TableHead>
-          ))}
+          {listas.map((lista) => {
+            const esGeneral =
+              idListaGeneral != null && lista.idLista === idListaGeneral;
+            return (
+              <TableHead
+                key={lista.idLista}
+                colSpan={esGeneral ? 3 : 2}
+                className="text-center border-l border-primary-foreground/25 tabla-px-listas-col-lista"
+              >
+                {lista.nombreLista.toUpperCase()}
+              </TableHead>
+            );
+          })}
         </TableRow>
         <TableRow>
-          {listas.flatMap((lista) => [
-            <TableHead
-              key={`${lista.idLista}-px-h`}
-              className="text-center border-l border-primary-foreground/25 tabla-px-listas-col-lista"
-            >
-              PX
-            </TableHead>,
-            <TableHead
-              key={`${lista.idLista}-mg-h`}
-              className="text-center tabla-px-listas-col-lista"
-            >
-              PORC. UTILIDAD
-            </TableHead>,
-          ])}
+          {listas.flatMap((lista) => {
+            const esGeneral =
+              idListaGeneral != null && lista.idLista === idListaGeneral;
+            const heads: ReactElement[] = [];
+            if (esGeneral) {
+              heads.push(
+                <TableHead
+                  key={`${lista.idLista}-ref-h`}
+                  className="text-center border-l border-primary-foreground/25 tabla-px-listas-col-lista"
+                >
+                  REF.
+                </TableHead>
+              );
+            }
+            heads.push(
+              <TableHead
+                key={`${lista.idLista}-px-h`}
+                className={cn(
+                  "text-center tabla-px-listas-col-lista",
+                  !esGeneral && "border-l border-primary-foreground/25"
+                )}
+              >
+                PX
+              </TableHead>,
+              <TableHead
+                key={`${lista.idLista}-mg-h`}
+                className="text-center tabla-px-listas-col-lista"
+              >
+                PORC. UTILIDAD
+              </TableHead>
+            );
+            return heads;
+          })}
         </TableRow>
       </TableHeader>
       <TableBody>
