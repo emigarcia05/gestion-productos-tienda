@@ -3,7 +3,7 @@
  * de decisiones en acordeón vertical (`AdministracionAccordionNav`).
  *
  * FINANZAS → BALANCE | OPERACIONES → pantallas
- * LISTAS PRECIOS → Vta Por Prod. | ANÁLISIS M.C. → pantallas
+ * LISTA PRECIOS → PX TIENDA | PROVEEDORES | ANÁLISIS M.C. → pantallas
  * ESTADÍSTICAS → MEDIACIONES | CONFIGURACION → pantallas
  */
 
@@ -142,48 +142,51 @@ const operacionesScreens: AdmScreenDef[] = [
   },
 ];
 
-const vtaPorProdScreens: AdmScreenDef[] = [
-  {
-    id: "lista-precios",
-    label: "Lista Precios",
-    href: GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios,
-    icon: "file-search",
-    permiso: PERMISOS.proveedores.listaPrecios,
-  },
-  {
-    id: "lista-proveedores",
-    label: "Lista Proveedores",
-    href: GP_ROUTES.analisisPrecios.listaProveedores.lista,
-    icon: "list",
-    permiso: PERMISOS.proveedores.lista,
-  },
+const pxTiendaScreens: AdmScreenDef[] = [
   {
     id: "cx-compra",
-    label: "Cx Compra",
+    label: "Cx. Compra",
     href: GP_ROUTES.analisisPrecios.cxYPxTienda.cxCompra,
     icon: "link-2",
     permiso: PERMISOS.tienda.acceso,
   },
   {
     id: "px-listas",
-    label: "Px Listas",
+    label: "Px. Listas",
     href: GP_ROUTES.analisisPrecios.cxYPxTienda.pxListas,
     icon: "circle-dollar",
     permiso: PERMISOS.cxPxTienda.acceso,
   },
   {
     id: "px-competencia",
-    label: "Px Competencia",
+    label: "Px. Competencia",
     href: GP_ROUTES.analisisPrecios.pxCompetencia,
     icon: "circle-dollar",
     permiso: PERMISOS.cxPxTienda.acceso,
   },
   {
     id: "categorias",
-    label: "Categorias",
+    label: "Analisis Por Cat.",
     href: GP_ROUTES.analisisPrecios.compCategorias.comparacion,
     icon: "folder-tree",
     permiso: PERMISOS.comparacionCategorias.acceso,
+  },
+];
+
+const proveedoresScreens: AdmScreenDef[] = [
+  {
+    id: "lista-precios",
+    label: "Listas Px Prov.",
+    href: GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios,
+    icon: "file-search",
+    permiso: PERMISOS.proveedores.listaPrecios,
+  },
+  {
+    id: "lista-proveedores",
+    label: "Lista Prov.",
+    href: GP_ROUTES.analisisPrecios.listaProveedores.lista,
+    icon: "list",
+    permiso: PERMISOS.proveedores.lista,
   },
 ];
 
@@ -197,7 +200,7 @@ const analisisMcScreens: AdmScreenDef[] = [
   },
   {
     id: "costos-financieros",
-    label: "Costos Financieros",
+    label: "Cx. Financieros",
     href: "/finanzas/analisis-mc/costos-financieros",
     icon: "circle-dollar",
     permiso: PERMISOS.finanzas.acceso,
@@ -260,14 +263,20 @@ export const ADM_PILLARS: AdmPillarDef[] = [
   },
   {
     id: "listas-precios",
-    label: "LISTAS PRECIOS",
+    label: "LISTA PRECIOS",
     icon: "handshake",
     groups: [
       {
-        id: "vta-por-prod",
-        label: "Vta Por Prod.",
+        id: "px-tienda",
+        label: "PX TIENDA",
         icon: "circle-dollar",
-        screens: vtaPorProdScreens,
+        screens: pxTiendaScreens,
+      },
+      {
+        id: "proveedores",
+        label: "PROVEEDORES",
+        icon: "list",
+        screens: proveedoresScreens,
       },
       {
         id: "analisis-mc",
@@ -343,7 +352,7 @@ export function isAdmPillarActive(pathname: string, pillar: AdmPillarDef): boole
       pathname.startsWith("/estadisticas-productos/")
     );
   }
-  // FINANZAS: /finanzas/* excepto analisis-mc (está en LISTAS PRECIOS)
+  // FINANZAS: /finanzas/* excepto analisis-mc (está en LISTA PRECIOS)
   if (pathname.startsWith("/finanzas/analisis-mc")) return false;
   return (
     pathname === "/finanzas" ||
