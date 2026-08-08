@@ -503,12 +503,13 @@ function CeldaCompetenciaRefGeneral({
   }
 
   if (!puedeEditar) {
-    const nombre =
-      item.opcionesCompetenciaRef.find((o) => o.competenciaId === value)
-        ?.nombre ?? PX_LISTAS_COMP_REF_NINGUNO;
+    const op = item.opcionesCompetenciaRef.find(
+      (o) => o.competenciaId === value
+    );
+    const label = op?.etiqueta ?? PX_LISTAS_COMP_REF_NINGUNO;
     return (
-      <span className="block truncate text-xs" title={nombre}>
-        {nombre}
+      <span className="block truncate text-xs" title={op?.nombre ?? label}>
+        {label}
       </span>
     );
   }
@@ -530,8 +531,12 @@ function CeldaCompetenciaRefGeneral({
       >
         <SelectItem value={PX_LISTAS_COMP_REF_NINGUNO}>-</SelectItem>
         {item.opcionesCompetenciaRef.map((op) => (
-          <SelectItem key={op.competenciaId} value={op.competenciaId}>
-            {op.nombre.toUpperCase()}
+          <SelectItem
+            key={op.competenciaId}
+            value={op.competenciaId}
+            title={op.nombre}
+          >
+            {op.etiqueta}
           </SelectItem>
         ))}
       </SelectContent>

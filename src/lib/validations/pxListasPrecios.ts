@@ -9,6 +9,8 @@ export const getPxListasPreciosPageParamsSchema = z.object({
   marca: z.string().max(200).optional(),
   subRubro: z.string().max(200).optional(),
   actualizar: z.string().max(8).optional(),
+  /** Competidor de referencia en 1 - GENERAL (`competencia_id_px_lista_general`). */
+  pxVinculado: z.string().max(64).optional(),
   pagina: z.string().max(20).optional(),
 });
 

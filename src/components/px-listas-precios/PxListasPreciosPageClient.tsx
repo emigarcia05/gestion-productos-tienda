@@ -8,6 +8,7 @@ import TablaPxListasPrecios from "@/components/px-listas-precios/TablaPxListasPr
 import ActPxListasButton from "@/components/px-listas-precios/ActPxListasButton";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
+import type { OpcionFiltroPxVinculado } from "@/lib/pxListasCompetenciaRef";
 import type { ItemPxListasPreciosTabla, ListaPrecioPxListasColumna } from "@/lib/pxListasPrecios";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
@@ -23,12 +24,14 @@ interface Props {
   marcas: Array<{ marca: string }>;
   rubros: Array<{ rubro: string }>;
   subRubros: Array<{ subRubro: string }>;
+  opcionesPxVinculado: OpcionFiltroPxVinculado[];
   rol: Rol;
   q: string;
   rubro: string;
   marca: string;
   subRubro: string;
   actualizar: string;
+  pxVinculado: string;
   paginaNum: number;
 }
 
@@ -42,12 +45,14 @@ export default function PxListasPreciosPageClient({
   marcas,
   rubros,
   subRubros,
+  opcionesPxVinculado,
   rol,
   q,
   rubro,
   marca,
   subRubro,
   actualizar,
+  pxVinculado,
   paginaNum,
 }: Props) {
   const puedeEditar = puede(rol, PERMISOS.cxPxTienda.acceso);
@@ -61,12 +66,14 @@ export default function PxListasPreciosPageClient({
             marcas={marcas.map((m) => m.marca)}
             rubros={rubros.map((r) => r.rubro)}
             subRubros={subRubros.map((s) => s.subRubro)}
+            opcionesPxVinculado={opcionesPxVinculado}
             totalItems={total}
             qActual={q}
             marcaActual={marca}
             rubroActual={rubro}
             subRubroActual={subRubro}
             actualizarActual={actualizar}
+            pxVinculadoActual={pxVinculado}
           />
         }
         actions={
@@ -91,7 +98,7 @@ export default function PxListasPreciosPageClient({
             <div className="flex shrink-0 justify-end pt-2">
               <PaginacionTabla
                 basePath={BASE_PATH}
-                params={{ q, rubro, marca, subRubro, actualizar }}
+                params={{ q, rubro, marca, subRubro, actualizar, pxVinculado }}
                 paginaActual={paginaNum}
                 totalPaginas={totalPaginas}
                 total={total}

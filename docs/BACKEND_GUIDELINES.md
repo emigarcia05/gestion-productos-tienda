@@ -543,6 +543,8 @@ interface ReglaDescuentoListaPrecio {
 
 **Nuevos flujos DUX:** usar las constantes de `duxApiBatchPolicy.ts`; no hardcodear 100 ni intervalos menores a 5 s. Progreso UI en sidebar (`FRONTEND_GUIDELINES` § SSOT progreso API DUX).
 
+*Última actualización (2026-08-08): **Px Listas · filtro pxVinculado** — query filtra por `competencia_id_px_lista_general`; UI con etiqueta prefijo/abrev. 3 letras.
+
 *Última actualización (2026-08-08): **Px Listas · competencia_id_px_lista_general** — FK en `prod_tienda` para REF. de **1 - GENERAL**; sync PX desde sugerido/scraping; Act. Px recalcula PORC. UTILIDAD.
 
 *Última actualización (2026-08-07): sync lista precios — eliminado `Promise.race` de 15 s incompatible con reintentos 429; timeout único en `fetchItemsPage` (default 30 s, env `DUX_FETCH_TIMEOUT_MS`).*

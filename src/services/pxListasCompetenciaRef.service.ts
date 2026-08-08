@@ -1,7 +1,9 @@
 import { encontrarIdListaGeneralPxListas } from "@/lib/pxListasPreciosCategoria";
 import {
   PX_LISTAS_COMP_REF_NINGUNO,
+  etiquetaAbrevCompetenciaPxListas,
   type OpcionCompetenciaRefPxListas,
+  type OpcionFiltroPxVinculado,
 } from "@/lib/pxListasCompetenciaRef";
 import { preciosPxListaEnterosIguales, roundPxListaEntero } from "@/lib/pxListasPreciosFormat";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +13,53 @@ import {
   obtenerPxVtaSugeridoPorCompetenciaId,
 } from "@/services/competenciaPxSugerido.service";
 import { guardarPrecioListaEdicionDesdePx } from "@/services/pxListasPrecioEdicion.service";
+
+type CompetenciaEtiquetaRow = {
+  id: string;
+  nombre: string;
+  etiqueta: string;
+};
+
+async function cargarMapCompetenciasConEtiqueta(
+  ids?: string[]
+): Promise<Map<string, CompetenciaEtiquetaRow>> {
+  const rows = await prisma.prodCompetencia.findMany({
+    where: ids && ids.length > 0 ? { id: { in: ids } } : undefined,
+    select: {
+      id: true,
+      nombre: true,
+      proveedor: { select: { prefijo: true } },
+    },
+    orderBy: { nombre: "asc" },
+  });
+  return new Map(
+    rows.map((c) => [
+      c.id,
+      {
+        id: c.id,
+        nombre: c.nombre,
+        etiqueta: etiquetaAbrevCompetenciaPxListas(
+          c.proveedor?.prefijo,
+          c.nombre
+        ),
+      },
+    ])
+  );
+}
+
+/** Catálogo para el filtro **PX VINCULADO** (prefijo / abrev. 3 letras). */
+export async function listarOpcionesFiltroPxVinculado(): Promise<
+  OpcionFiltroPxVinculado[]
+> {
+  const map = await cargarMapCompetenciasConEtiqueta();
+  return [...map.values()]
+    .map((c) => ({
+      competenciaId: c.id,
+      etiqueta: c.etiqueta,
+      nombre: c.nombre,
+    }))
+    .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"));
+}
 
 export type ResultadoGuardarCompRefPxListas = {
   competenciaIdPxListaGeneral: string | null;
@@ -63,7 +112,7 @@ export async function listarOpcionesCompetenciaRefPorCodTiendas(
 
   for (const cod of codTiendas) map.set(cod, []);
 
-  const [sugeridos, scrapRows, nombres] = await Promise.all([
+  const [sugeridos, scrapRows, competenciasMap] = await Promise.all([
     listarCompetenciasConPxSugeridoPorCodTiendas(codTiendas),
     prisma.prodPrecioCompetencia.findMany({
       where: {
@@ -76,13 +125,9 @@ export async function listarOpcionesCompetenciaRefPorCodTiendas(
         pxCompetencia: true,
       },
     }),
-    prisma.prodCompetencia.findMany({
-      select: { id: true, nombre: true },
-      orderBy: { nombre: "asc" },
-    }),
+    cargarMapCompetenciasConEtiqueta(),
   ]);
 
-  const nombrePorId = new Map(nombres.map((c) => [c.id, c.nombre]));
   const seen = new Set<string>();
 
   for (const s of sugeridos) {
@@ -91,9 +136,13 @@ export async function listarOpcionesCompetenciaRefPorCodTiendas(
     seen.add(key);
     const list = map.get(s.codTienda);
     if (!list) continue;
+    const meta = competenciasMap.get(s.competenciaId);
     list.push({
       competenciaId: s.competenciaId,
-      nombre: s.competenciaNombre,
+      nombre: meta?.nombre ?? s.competenciaNombre,
+      etiqueta:
+        meta?.etiqueta ??
+        etiquetaAbrevCompetenciaPxListas(null, s.competenciaNombre),
       px: s.px,
     });
   }
@@ -103,20 +152,21 @@ export async function listarOpcionesCompetenciaRefPorCodTiendas(
     if (seen.has(key)) continue;
     const px = Number(row.pxCompetencia);
     if (!Number.isFinite(px) || px <= 0) continue;
-    const nombre = nombrePorId.get(row.competenciaId);
-    if (!nombre) continue;
+    const meta = competenciasMap.get(row.competenciaId);
+    if (!meta) continue;
     seen.add(key);
     const list = map.get(row.codTienda);
     if (!list) continue;
     list.push({
       competenciaId: row.competenciaId,
-      nombre,
+      nombre: meta.nombre,
+      etiqueta: meta.etiqueta,
       px: roundPxListaEntero(px),
     });
   }
 
   for (const [cod, list] of map) {
-    list.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    list.sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"));
     map.set(cod, list);
   }
 
@@ -145,23 +195,24 @@ export async function asegurarOpcionCompetenciaRefSeleccionada(
   if (faltantes.length === 0) return;
 
   const ids = [...new Set(faltantes.map((f) => f.competenciaId))];
-  const comps = await prisma.prodCompetencia.findMany({
-    where: { id: { in: ids } },
-    select: { id: true, nombre: true },
-  });
-  const nombrePorId = new Map(comps.map((c) => [c.id, c.nombre]));
+  const comps = await cargarMapCompetenciasConEtiqueta(ids);
 
   for (const f of faltantes) {
-    const nombre = nombrePorId.get(f.competenciaId);
-    if (!nombre) continue;
+    const meta = comps.get(f.competenciaId);
+    if (!meta) continue;
     const list = opcionesPorCod.get(f.codTienda) ?? [];
     const px =
       (await resolverPxReferenciaCompetenciaPxListas(
         f.codTienda,
         f.competenciaId
       )) ?? 0;
-    list.push({ competenciaId: f.competenciaId, nombre, px });
-    list.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    list.push({
+      competenciaId: f.competenciaId,
+      nombre: meta.nombre,
+      etiqueta: meta.etiqueta,
+      px,
+    });
+    list.sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"));
     opcionesPorCod.set(f.codTienda, list);
   }
 }

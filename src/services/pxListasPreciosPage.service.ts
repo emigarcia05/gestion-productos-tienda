@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { filtroTexto } from "@/lib/busqueda";
 import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
 import { PAGE_SIZE } from "@/lib/pagination";
-import type { OpcionCompetenciaRefPxListas } from "@/lib/pxListasCompetenciaRef";
+import type { OpcionCompetenciaRefPxListas, OpcionFiltroPxVinculado } from "@/lib/pxListasCompetenciaRef";
 import type {
   ItemPxListasPreciosTabla,
   ListaPrecioPxListasColumna,
@@ -22,6 +22,7 @@ import { getPxListasPreciosPageParamsSchema } from "@/lib/validations/pxListasPr
 import {
   asegurarOpcionCompetenciaRefSeleccionada,
   listarOpcionesCompetenciaRefPorCodTiendas,
+  listarOpcionesFiltroPxVinculado,
   sincronizarPxGeneralDesdeCompetenciaRef,
 } from "@/services/pxListasCompetenciaRef.service";
 import { listarFinAnaMcCategorias } from "@/services/finAnaMcCategorias.service";
@@ -34,6 +35,8 @@ export type PxListasPreciosPageData = {
   marcas: Array<{ marca: string }>;
   rubros: Array<{ rubro: string }>;
   subRubros: Array<{ subRubro: string }>;
+  /** Opciones del filtro PX VINCULADO (etiqueta = prefijo/abrev. 3 letras). */
+  opcionesPxVinculado: OpcionFiltroPxVinculado[];
   /** Rangos `fin_ana_mc_cat` para CATEGORÍA MARGEN (PORC. UTILIDAD de 1 - GENERAL). */
   categoriasMc: FinAnaMcCategoriaItem[];
   /** `idLista` de **1 - GENERAL**; `null` si no existe en el catálogo. */
@@ -44,6 +47,7 @@ function buildWhere(params: {
   rubro: string;
   marca: string;
   subRubro: string;
+  pxVinculado: string;
 }): Prisma.ProdTiendaWhereInput {
   const andParts: Prisma.ProdTiendaWhereInput[] = [];
   const textFilter = filtroTexto(params.q, ["descripcionTienda", "codTienda"]);
@@ -51,6 +55,9 @@ function buildWhere(params: {
   if (params.rubro) andParts.push({ rubro: params.rubro });
   if (params.marca) andParts.push({ marca: params.marca });
   if (params.subRubro) andParts.push({ subRubro: params.subRubro });
+  if (params.pxVinculado) {
+    andParts.push({ competenciaIdPxListaGeneral: params.pxVinculado });
+  }
   return andParts.length ? { AND: andParts } : {};
 }
 
@@ -164,9 +171,10 @@ async function enriquecerItemsPxListas(
 }
 
 async function getEmptyPage(q: string): Promise<PxListasPreciosPageData> {
-  const [listas, categoriasMc] = await Promise.all([
+  const [listas, categoriasMc, opcionesPxVinculado] = await Promise.all([
     listarColumnasListas(),
     listarFinAnaMcCategorias(),
+    listarOpcionesFiltroPxVinculado(),
   ]);
   const [marcasDistinct, rubrosDistinct, subRubrosDistinct] = await Promise.all([
     prisma.prodTienda.findMany({
@@ -203,6 +211,7 @@ async function getEmptyPage(q: string): Promise<PxListasPreciosPageData> {
     subRubros: subRubrosDistinct
       .filter((s) => s.subRubro != null)
       .map((s) => ({ subRubro: s.subRubro! })),
+    opcionesPxVinculado,
     categoriasMc,
     idListaGeneral: encontrarIdListaGeneralPxListas(listas),
   };
@@ -249,6 +258,7 @@ export async function getPxListasPreciosPageDataFromDb(params: {
   marca?: string;
   subRubro?: string;
   actualizar?: string;
+  pxVinculado?: string;
   pagina?: string;
 }): Promise<PxListasPreciosPageData> {
   const parsed = getPxListasPreciosPageParamsSchema.safeParse(params);
@@ -262,6 +272,7 @@ export async function getPxListasPreciosPageDataFromDb(params: {
     marca = "",
     subRubro = "",
     actualizar: actualizarRaw = "",
+    pxVinculado = "",
     pagina = "1",
   } = parsed.data;
 
@@ -271,13 +282,14 @@ export async function getPxListasPreciosPageDataFromDb(params: {
     ? actualizarRaw
     : "";
 
-  const where = buildWhere({ q, rubro, marca, subRubro });
+  const where = buildWhere({ q, rubro, marca, subRubro, pxVinculado });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
   const postProceso = requierePostProcesoActualizarPxListas({ actualizar });
 
-  const [listas, categoriasMc] = await Promise.all([
+  const [listas, categoriasMc, opcionesPxVinculado] = await Promise.all([
     listarColumnasListas(),
     listarFinAnaMcCategorias(),
+    listarOpcionesFiltroPxVinculado(),
   ]);
   const idListas = listas.map((l) => l.idLista);
   const idListaGeneral = encontrarIdListaGeneralPxListas(listas);
@@ -303,6 +315,22 @@ export async function getPxListasPreciosPageDataFromDb(params: {
     }),
   ]);
 
+  const metaFiltros = {
+    listas,
+    marcas: marcasDistinct
+      .filter((m) => m.marca != null)
+      .map((m) => ({ marca: m.marca! })),
+    rubros: rubrosDistinct
+      .filter((r) => r.rubro != null)
+      .map((r) => ({ rubro: r.rubro! })),
+    subRubros: subRubrosDistinct
+      .filter((s) => s.subRubro != null)
+      .map((s) => ({ subRubro: s.subRubro! })),
+    opcionesPxVinculado,
+    categoriasMc,
+    idListaGeneral,
+  };
+
   if (postProceso && actualizar) {
     const { items, total, totalPaginas } = await listarItemsConFiltroActualizar(
       where,
@@ -313,18 +341,7 @@ export async function getPxListasPreciosPageDataFromDb(params: {
       items,
       total,
       totalPaginas,
-      listas,
-      marcas: marcasDistinct
-        .filter((m) => m.marca != null)
-        .map((m) => ({ marca: m.marca! })),
-      rubros: rubrosDistinct
-        .filter((r) => r.rubro != null)
-        .map((r) => ({ rubro: r.rubro! })),
-      subRubros: subRubrosDistinct
-        .filter((s) => s.subRubro != null)
-        .map((s) => ({ subRubro: s.subRubro! })),
-      categoriasMc,
-      idListaGeneral,
+      ...metaFiltros,
     };
   }
 
@@ -358,17 +375,6 @@ export async function getPxListasPreciosPageDataFromDb(params: {
     items,
     total,
     totalPaginas,
-    listas,
-    marcas: marcasDistinct
-      .filter((m) => m.marca != null)
-      .map((m) => ({ marca: m.marca! })),
-    rubros: rubrosDistinct
-      .filter((r) => r.rubro != null)
-      .map((r) => ({ rubro: r.rubro! })),
-    subRubros: subRubrosDistinct
-      .filter((s) => s.subRubro != null)
-      .map((s) => ({ subRubro: s.subRubro! })),
-    categoriasMc,
-    idListaGeneral,
+    ...metaFiltros,
   };
 }
