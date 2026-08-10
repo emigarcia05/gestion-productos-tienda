@@ -26,6 +26,8 @@ interface Props {
     whatsapp?: string | null;
     coeficienteTintometrico?: number;
     plazosPagos?: string | null;
+    /** Tiempo de entrega en días; null = no configurado. */
+    tiempoEntregaEnDias?: number | null;
     /** Flag "Proveedor Mercadería" (solo edición: precarga SI/NO). */
     proveedorMercaderia?: boolean;
     /** Política IVA persistida (solo edición: precarga SIEMPRE/NUNCA/PREGUNTA). */
@@ -238,6 +240,22 @@ export default function ProveedorForm({
           placeholder="EJ: 30, 60 O 90, 120, 150"
           defaultValue={proveedor?.plazosPagos ?? ""}
           disabled={pending}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="tiempoEntregaEnDias">TIEMPO ENTREGA (DÍAS)</Label>
+        <Input
+          id="tiempoEntregaEnDias"
+          name="tiempoEntregaEnDias"
+          placeholder="EJ: 7"
+          defaultValue={
+            proveedor?.tiempoEntregaEnDias != null
+              ? String(proveedor.tiempoEntregaEnDias)
+              : ""
+          }
+          disabled={pending}
+          inputMode="numeric"
         />
       </div>
 

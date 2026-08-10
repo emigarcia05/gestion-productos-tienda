@@ -84,6 +84,8 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
     coeficienteTintometrico:
       (formData.get("coeficienteTintometrico") as string) ?? "",
     plazosPagos: (formData.get("plazosPagos") as string) ?? "",
+    tiempoEntregaEnDias:
+      (formData.get("tiempoEntregaEnDias") as string) ?? "",
     proveedorMercaderia:
       (formData.get("proveedorMercaderia") as string | null) ?? "",
     iva: (formData.get("iva") as string | null) ?? "",
@@ -98,6 +100,7 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
       first.whatsapp?.[0] ??
       first.coeficienteTintometrico?.[0] ??
       first.plazosPagos?.[0] ??
+      first.tiempoEntregaEnDias?.[0] ??
       first.iva?.[0] ??
       "Datos inválidos.";
     return { ok: false, error: msg };
@@ -144,6 +147,8 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
     coeficienteTintometrico:
       (formData.get("coeficienteTintometrico") as string) ?? "",
     plazosPagos: (formData.get("plazosPagos") as string) ?? "",
+    tiempoEntregaEnDias:
+      (formData.get("tiempoEntregaEnDias") as string) ?? "",
     proveedorMercaderia:
       (formData.get("proveedorMercaderia") as string | null) ?? "",
     iva: (formData.get("iva") as string | null) ?? "",
@@ -158,6 +163,7 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
       first.whatsapp?.[0] ??
       first.coeficienteTintometrico?.[0] ??
       first.plazosPagos?.[0] ??
+      first.tiempoEntregaEnDias?.[0] ??
       first.iva?.[0] ??
       "Datos inválidos.";
     return { ok: false, error: msg };

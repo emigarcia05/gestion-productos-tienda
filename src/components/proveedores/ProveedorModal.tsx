@@ -20,6 +20,8 @@ export interface ProveedorParaModal {
   whatsapp?: string | null;
   coeficienteTintometrico?: number;
   plazosPagos?: string | null;
+  /** Tiempo de entrega en días; null = no configurado. */
+  tiempoEntregaEnDias?: number | null;
   /** Flag "Proveedor Mercadería" (edición). */
   proveedorMercaderia?: boolean;
   /** Política IVA persistida (edición). */

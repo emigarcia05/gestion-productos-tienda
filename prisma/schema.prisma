@@ -64,6 +64,11 @@ model Proveedor {
   /** Días de vencimiento separados por coma (ej. 30,60). Solo valores 30, 60, 90, 120, 150; orden creciente. */
   plazosPagos     String?  @map("plazos_pagos")
   /**
+   * Tiempo de entrega del proveedor en días enteros (≥ 0).
+   * Null = no configurado.
+   */
+  tiempoEntregaEnDias Int? @map("tiempo_entrega_en_dias")
+  /**
    * Flag que marca al proveedor como "de mercadería".
    * Solo los TRUE se listan en /gestion-productos/proveedores/lista.
    * Default DB: false (nuevos proveedores son opt-in). Los proveedores existentes

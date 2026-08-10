@@ -547,6 +547,8 @@ interface ReglaDescuentoListaPrecio {
 
 *Última actualización (2026-08-08): **Px Listas · filtro pxVinculado** — query filtra por `competencia_id_px_lista_general`; UI con etiqueta prefijo/abrev. 3 letras.
 
+*Última actualización (2026-08-10): **global_proveedores.tiempo_entrega_en_dias** — INTEGER nullable (días de entrega); ver §1.11e.
+
 *Última actualización (2026-08-08): **Px Listas · competencia_id_px_lista_general** — FK en `prod_tienda` para REF. de **1 - GENERAL**; sync PX desde sugerido/scraping; Act. Px recalcula PORC. UTILIDAD.
 
 *Última actualización (2026-08-07): sync lista precios — eliminado `Promise.race` de 15 s incompatible con reintentos 429; timeout único en `fetchItemsPage` (default 30 s, env `DUX_FETCH_TIMEOUT_MS`).*
@@ -600,6 +602,17 @@ interface ReglaDescuentoListaPrecio {
   - **Prefijo**: opcional. `prefijoProveedorOpcionalSchema`: vacío → `null` en BD; si hay texto, exactamente 3 letras A-Z. Migración `20260421180000_global_proveedores_prefijo_nullable`: `prefijo` nullable; trigger `trg_lista_precios_set_cod_ext` usa `COALESCE(NULLIF(trim(p.prefijo), ''), p.codigo_unico)` para armar `cod_ext` cuando no hay prefijo.
   - Servicio `createProveedor` / `updateProveedor`: `CreateProveedorInput` / `UpdateProveedorInput` exigen **`proveedorMercaderia: boolean`**; si no hay prefijo, se genera `codigoUnico` interno único y se persiste `prefijo: null` (salvo colisión P2002 en `codigo_unico` → `PROVEEDOR_ERROR.CODIGO_UNICO_DUPLICADO`). Los listados (`listarProveedoresInterno`) exponen `prefijo: string` en UI como `p.prefijo ?? ""`.
   - Actions `crearProveedor` / `editarProveedor`: leen `formData`, validan con Zod y delegan al servicio; orden de mensajes de error de validación prioriza **nombre** y **proveedor mercadería** antes que prefijo.
+
+
+### 1.11e Tiempo de entrega en días (`global_proveedores.tiempo_entrega_en_dias`)
+
+- Persistencia: `global_proveedores.tiempo_entrega_en_dias` (`INTEGER`, **nullable**). Prisma: `tiempoEntregaEnDias Int? @map("tiempo_entrega_en_dias")`.
+- Semántica: días enteros de entrega del proveedor (**≥ 0** y **≤ 999** en validación de formulario). **`NULL`** = no configurado.
+- Migración `20260810120000_global_proveedores_tiempo_entrega_en_dias` (idempotente): `ALTER TABLE "global_proveedores" ADD COLUMN IF NOT EXISTS "tiempo_entrega_en_dias" INTEGER`.
+- Validación Zod: `tiempoEntregaEnDiasSchema` en `@/lib/validations/proveedor.ts` (string de form → `number | null`); incluido en `createProveedorSchema` / `updateProveedorSchema`.
+- Servicio `proveedor.service.ts`: `CreateProveedorInput` / `UpdateProveedorInput` / `ProveedorListItem` / `getProveedorById` exponen `tiempoEntregaEnDias`; `createProveedor` / `updateProveedor` lo persisten.
+- Actions `crearProveedor` / `editarProveedor`: leen `formData.get("tiempoEntregaEnDias")`.
+- UI: campo **TIEMPO ENTREGA (DÍAS)** en `ProveedorForm` (opcional; vacío → `NULL`).
 
 ### 1.11d Política de IVA por proveedor (`global_proveedores.iva`)
 
