@@ -626,6 +626,7 @@ interface ReglaDescuentoListaPrecio {
 - Servicio / actions: `CreateProveedorInput` / `UpdateProveedorInput` / `ProveedorListItem` exponen `esFabrica`; `crearProveedor` / `editarProveedor` leen `formData.get("esFabrica")`.
 - UI: Select **ES FÁBRICA** (SI/NO) en `ProveedorForm` (alta default **NO**; edición precarga valor).
 - Lectura filtrada: `getProveedoresFabrica()` en `proveedor.service.ts` (`where: { esFabrica: true }`) + action `getProveedoresFabrica` (`PERMISOS.estadisticasProductos.acceso`) para el selector de **Pedido A Fábrica**.
+- **Productos del proveedor fábrica** (`src/services/pedidoAFabrica.service.ts`): `listarProductosPorProveedorFabrica(proveedorId, pagina)` — exige `es_fabrica = true`; lee `prod_precios_provee` con `habilitado = true`; expone `codExt` + `descripcion` (`descripcion_proveedor`); orden A–Z por descripción; paginación `PAGE_SIZE` (100). Action `getProductosPedidoAFabricaAction` (`src/actions/pedidoAFabrica.ts`) con Zod `productosPedidoAFabricaFiltrosSchema` (`proveedorId` CUID + `pagina`); mismo gate `PERMISOS.estadisticasProductos.acceso`.
 
 ### 1.11d Política de IVA por proveedor (`global_proveedores.iva`)
 
@@ -2064,6 +2065,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — labels Presentacion (`variante`); listas eje Y / desglose con orden propio.
 
 *Última actualización (2026-08-10): **Pedido A Fábrica** — ruta canónica `/pedido-a-fabrica` (`pedidoAFabricaRoutes.ts`); legacy `est-para-compra` redirige. Sidebar Administración: 5 pilares (PEDIDO A FÁBRICA / ESTADÍSTICAS / CONFIGURACION separados).
+
+*Última actualización (2026-08-10): **Pedido A Fábrica** — `listarProductosPorProveedorFabrica` / `getProductosPedidoAFabricaAction` (productos `prod_precios_provee` del proveedor con `es_fabrica`).
 
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 
