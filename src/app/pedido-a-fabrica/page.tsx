@@ -22,6 +22,7 @@ export default async function PedidoAFabricaPage() {
     id: p.id,
     nombre: p.nombre,
     prefijo: p.prefijo,
+    tiempoEntregaEnDias: p.tiempoEntregaEnDias ?? null,
   }));
 
   return (

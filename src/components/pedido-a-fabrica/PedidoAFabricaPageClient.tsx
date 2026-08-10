@@ -32,6 +32,8 @@ export type ProveedorFabricaOption = {
   id: string;
   nombre: string;
   prefijo: string;
+  /** `global_proveedores.tiempo_entrega_en_dias` (nullable). */
+  tiempoEntregaEnDias: number | null;
 };
 
 interface Props {
@@ -40,21 +42,22 @@ interface Props {
 }
 
 /** Solo dígitos (enteros ≥ 0); vacío permitido. */
-function sanitizeTiempoStockInput(raw: string): string {
+function sanitizeTiempoStockeoInput(raw: string): string {
   return raw.replace(/\D/g, "");
 }
 
 /**
  * Módulo **Pedido A Fáb.** (pilar sidebar Administración).
- * Filtros: **PROVEEDOR** (`es_fabrica = true`) + **TIEMPO STOCK** (enteros).
+ * Filtros: **PROVEEDOR** (`es_fabrica = true`) + **TIEMPO STOCKEO** (enteros).
  * Tabla: **DESCRIPCIÓN** + por sucursal `pedido = true`: **STOCK ACTUAL** | **PROM. VTA.**
+ * + **TOTAL**: **CANT. SUGERIDA** | **CANT. A PEDIR** | tilde.
  */
 export default function PedidoAFabricaPageClient({
   proveedoresFabrica,
   sucursalesPedido,
 }: Props) {
   const [proveedorId, setProveedorId] = useState<string>("");
-  const [tiempoStock, setTiempoStock] = useState<string>("");
+  const [tiempoStockeo, setTiempoStockeo] = useState<string>("");
   const [pagina, setPagina] = useState(1);
   const [sucursales, setSucursales] =
     useState<SucursalPedidoAFabrica[]>(sucursalesPedido);
@@ -62,13 +65,24 @@ export default function PedidoAFabricaPageClient({
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [loading, setLoading] = useState(false);
   const [infoPromedioOpen, setInfoPromedioOpen] = useState(false);
+  const [cantAPedirByCodExt, setCantAPedirByCodExt] = useState<
+    Record<string, string>
+  >({});
 
   const proveedorActivo = proveedorId !== "";
-  const tiempoStockActivo = tiempoStock !== "";
+  const tiempoStockeoActivo = tiempoStockeo !== "";
+  const proveedorSeleccionado = proveedoresFabrica.find(
+    (p) => p.id === proveedorId
+  );
+  const tiempoEntregaEnDias =
+    proveedorSeleccionado?.tiempoEntregaEnDias ?? null;
+  const tiempoStockeoNumero =
+    tiempoStockeo === "" ? null : Number(tiempoStockeo);
 
   function handleProveedorChange(value: string) {
     setProveedorId(value);
     setPagina(1);
+    setCantAPedirByCodExt({});
   }
 
   function handleLimpiarProveedor() {
@@ -77,10 +91,30 @@ export default function PedidoAFabricaPageClient({
     setProductos([]);
     setTotalPaginas(0);
     setSucursales(sucursalesPedido);
+    setCantAPedirByCodExt({});
   }
 
-  function handleTiempoStockChange(raw: string) {
-    setTiempoStock(sanitizeTiempoStockInput(raw));
+  function handleTiempoStockeoChange(raw: string) {
+    setTiempoStockeo(sanitizeTiempoStockeoInput(raw));
+  }
+
+  function handleCantAPedirChange(codExt: string, value: string) {
+    setCantAPedirByCodExt((prev) => {
+      if (value === "") {
+        if (!(codExt in prev)) return prev;
+        const next = { ...prev };
+        delete next[codExt];
+        return next;
+      }
+      return { ...prev, [codExt]: value };
+    });
+  }
+
+  function handleAplicarCantSugerida(codExt: string, cantSugerida: number) {
+    setCantAPedirByCodExt((prev) => ({
+      ...prev,
+      [codExt]: String(cantSugerida),
+    }));
   }
 
   useEffect(() => {
@@ -169,17 +203,17 @@ export default function PedidoAFabricaPageClient({
                 </FiltroIndividualContainer>
 
                 <FiltroIndividualContainer
-                  activo={tiempoStockActivo}
-                  onLimpiar={() => setTiempoStock("")}
+                  activo={tiempoStockeoActivo}
+                  onLimpiar={() => setTiempoStockeo("")}
                 >
                   <Input
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    placeholder="TIEMPO STOCK"
-                    aria-label="TIEMPO STOCK"
-                    value={tiempoStock}
-                    onChange={(e) => handleTiempoStockChange(e.target.value)}
+                    placeholder="TIEMPO STOCKEO"
+                    aria-label="TIEMPO STOCKEO"
+                    value={tiempoStockeo}
+                    onChange={(e) => handleTiempoStockeoChange(e.target.value)}
                     className={cn(INPUT_FILTER_CLASS, "w-full")}
                   />
                 </FiltroIndividualContainer>
@@ -197,6 +231,16 @@ export default function PedidoAFabricaPageClient({
             onPaginaChange={setPagina}
             loading={loading}
             emptyMessage="Este proveedor no tiene productos en la lista de precios."
+            tiempoEntregaEnDias={tiempoEntregaEnDias}
+            tiempoStockeo={
+              tiempoStockeoNumero != null &&
+              Number.isFinite(tiempoStockeoNumero)
+                ? tiempoStockeoNumero
+                : null
+            }
+            cantAPedirByCodExt={cantAPedirByCodExt}
+            onCantAPedirChange={handleCantAPedirChange}
+            onAplicarCantSugerida={handleAplicarCantSugerida}
           />
         ) : (
           <div className="flex min-h-[12rem] flex-1 items-center justify-center rounded-lg border border-border bg-card p-6 shadow-sm">

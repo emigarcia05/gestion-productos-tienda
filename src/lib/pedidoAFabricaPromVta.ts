@@ -59,3 +59,74 @@ export function calcularPromVtaDiariaDesdeTotal(totalDosMeses: number): number {
   if (!Number.isFinite(totalDosMeses) || totalDosMeses <= 0) return 0;
   return Math.round(totalDosMeses / PEDIDO_A_FABRICA_DIAS_PROM_VTA);
 }
+
+export type InputsCantSugeridaPedidoAFabrica = {
+  /** Stock actual total (suma sucursales `pedido`). */
+  stockActual: number;
+  /** Promedio de venta diario total (suma sucursales). */
+  promVtaTotal: number;
+  /** Días de entrega del proveedor (`tiempo_entrega_en_dias`); null/undefined → 0. */
+  tiempoEntregaEnDias: number | null | undefined;
+  /** Días de stockeo (filtro **TIEMPO STOCKEO**); null/undefined/negativo → sin cálculo. */
+  tiempoStockeo: number | null | undefined;
+};
+
+export type ResultadoCantSugeridaPedidoAFabrica = {
+  /** Stock proyectado al llegar el pedido: stock − (entrega × prom). */
+  stockAFechaLlegadaPedido: number;
+  /** Cobertura deseada al stockear: stockeo × prom. */
+  stockParaTiempoStockeo: number;
+  /**
+   * Cantidad sugerida a pedir (≥ 0, redondeada).
+   * Si stock a llegada ≤ 0 → stock para stockeo;
+   * si stock a llegada > 0 → stockeo − stock a llegada (piso 0).
+   */
+  cantSugerida: number;
+};
+
+/**
+ * Cant. sugerida Pedido A Fáb. (TOTAL).
+ *
+ * - Fecha Llegada Pedido = hoy + `tiempo_entrega_en_dias`
+ * - Fecha Stockeo = Fecha Llegada + Tiempo Stockeo
+ * - Stock a Fecha Llegada = Stock Actual − (entrega × prom vta. total)
+ * - Stock Para Tiempo Stockeo = Tiempo Stockeo × prom vta. total
+ */
+export function calcularCantSugeridaPedidoAFabrica(
+  input: InputsCantSugeridaPedidoAFabrica
+): ResultadoCantSugeridaPedidoAFabrica | null {
+  const { stockActual, promVtaTotal, tiempoEntregaEnDias, tiempoStockeo } =
+    input;
+
+  if (
+    tiempoStockeo == null ||
+    !Number.isFinite(tiempoStockeo) ||
+    tiempoStockeo < 0 ||
+    !Number.isFinite(stockActual) ||
+    !Number.isFinite(promVtaTotal)
+  ) {
+    return null;
+  }
+
+  const entrega =
+    tiempoEntregaEnDias != null && Number.isFinite(tiempoEntregaEnDias)
+      ? Math.max(0, tiempoEntregaEnDias)
+      : 0;
+  const stockeo = Math.max(0, tiempoStockeo);
+  const prom = Math.max(0, promVtaTotal);
+  const stock = Math.max(0, stockActual);
+
+  const stockAFechaLlegadaPedido = stock - entrega * prom;
+  const stockParaTiempoStockeo = stockeo * prom;
+
+  const crudo =
+    stockAFechaLlegadaPedido <= 0
+      ? stockParaTiempoStockeo
+      : stockParaTiempoStockeo - stockAFechaLlegadaPedido;
+
+  return {
+    stockAFechaLlegadaPedido,
+    stockParaTiempoStockeo,
+    cantSugerida: Math.max(0, Math.round(crudo)),
+  };
+}

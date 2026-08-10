@@ -1,5 +1,8 @@
 "use client";
 
+import { Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -11,6 +14,8 @@ import {
 import PaginacionClient from "@/components/shared/PaginacionClient";
 import { cn } from "@/lib/utils";
 import { fmtNumero } from "@/lib/format";
+import { TABLE_ROW_ACTION_ICON_CLASS } from "@/lib/ui-classes";
+import { calcularCantSugeridaPedidoAFabrica } from "@/lib/pedidoAFabricaPromVta";
 import type {
   DatosSucursalProductoPedidoAFabrica,
   ProductoPedidoAFabricaItem,
@@ -25,9 +30,22 @@ interface Props {
   onPaginaChange: (pagina: number) => void;
   loading?: boolean;
   emptyMessage: string;
+  /** Días de entrega del proveedor seleccionado (`tiempo_entrega_en_dias`). */
+  tiempoEntregaEnDias: number | null;
+  /** Días de stockeo del filtro **TIEMPO STOCKEO** (null si vacío). */
+  tiempoStockeo: number | null;
+  /** Cant. a pedir por `codExt` (texto; solo dígitos). */
+  cantAPedirByCodExt: Record<string, string>;
+  onCantAPedirChange: (codExt: string, value: string) => void;
+  onAplicarCantSugerida: (codExt: string, cantSugerida: number) => void;
 }
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
+
+/** Solo dígitos (enteros ≥ 0); vacío permitido. */
+function sanitizeCantAPedirInput(raw: string): string {
+  return raw.replace(/\D/g, "");
+}
 
 /** Suma de STOCK ACTUAL y PROM. VTA. de todas las sucursales de la fila. */
 function totalPorSucursales(
@@ -57,7 +75,7 @@ function totalPorSucursales(
 /**
  * Grilla Pedido A Fáb.
  * **DESCRIPCIÓN** + por cada sucursal `pedido = true`: **STOCK ACTUAL** | **PROM. VTA.**
- * + grupo **TOTAL** (misma subdivisión = suma de sucursales).
+ * + grupo **TOTAL**: **CANT. SUGERIDA** | **CANT. A PEDIR** | tilde (copia sugerida → a pedir).
  */
 export default function TablaPedidoAFabrica({
   sucursales,
@@ -67,13 +85,20 @@ export default function TablaPedidoAFabrica({
   onPaginaChange,
   loading = false,
   emptyMessage,
+  tiempoEntregaEnDias,
+  tiempoStockeo,
+  cantAPedirByCodExt,
+  onCantAPedirChange,
+  onAplicarCantSugerida,
 }: Props) {
   const nSuc = sucursales.length;
-  const nGrupos = nSuc > 0 ? nSuc + 1 : 0; // sucursales + TOTAL
-  const colCount = 1 + nGrupos * 2;
-  /** DESCRIPCIÓN ~36 %; resto entre subcolumnas de sucursal + TOTAL. */
-  const pctDesc = nGrupos > 0 ? 36 : 100;
-  const pctSub = nGrupos > 0 ? (100 - pctDesc) / (nGrupos * 2) : 0;
+  const nSubSuc = nSuc * 2;
+  const nSubTotal = nSuc > 0 ? 3 : 0;
+  const nSub = nSubSuc + nSubTotal;
+  const colCount = 1 + nSub;
+  /** DESCRIPCIÓN ~36 %; resto entre subcolumnas de sucursal + TOTAL (3). */
+  const pctDesc = nSub > 0 ? 36 : 100;
+  const pctSub = nSub > 0 ? (100 - pctDesc) / nSub : 0;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-0.5">
@@ -87,8 +112,9 @@ export default function TablaPedidoAFabrica({
             ])}
             {nSuc > 0 ? (
               <>
-                <col key="total-stock" style={{ width: `${pctSub}%` }} />
-                <col key="total-prom" style={{ width: `${pctSub}%` }} />
+                <col key="total-sugerida" style={{ width: `${pctSub}%` }} />
+                <col key="total-a-pedir" style={{ width: `${pctSub}%` }} />
+                <col key="total-tilde" style={{ width: `${pctSub}%` }} />
               </>
             ) : null}
           </colgroup>
@@ -113,7 +139,7 @@ export default function TablaPedidoAFabrica({
               ))}
               {nSuc > 0 ? (
                 <TableHead
-                  colSpan={2}
+                  colSpan={3}
                   className="text-center align-middle tabla-bloque-secundario-head-divider"
                 >
                   TOTAL
@@ -143,10 +169,21 @@ export default function TablaPedidoAFabrica({
               {nSuc > 0 ? (
                 <>
                   <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                    STOCK ACTUAL
+                    CANT. SUGERIDA
                   </TableHead>
                   <TableHead className="text-center tabla-bloque-secundario-head">
-                    PROM. VTA.
+                    CANT. A PEDIR
+                  </TableHead>
+                  <TableHead
+                    className="text-center tabla-bloque-secundario-head"
+                    aria-label="Aplicar cantidad sugerida"
+                  >
+                    <div className="flex w-full items-center justify-center">
+                      <Check
+                        className={TABLE_ROW_ACTION_ICON_CLASS}
+                        aria-hidden
+                      />
+                    </div>
                   </TableHead>
                 </>
               ) : null}
@@ -174,6 +211,21 @@ export default function TablaPedidoAFabrica({
             ) : (
               productos.map((p) => {
                 const total = totalPorSucursales(p, sucursales);
+                const stockActual = total.stockActual ?? 0;
+                const promVtaTotal = total.promVta ?? 0;
+                const calc = calcularCantSugeridaPedidoAFabrica({
+                  stockActual,
+                  promVtaTotal,
+                  tiempoEntregaEnDias,
+                  tiempoStockeo,
+                });
+                const cantSugerida = calc?.cantSugerida ?? null;
+                const cantAPedirRaw = cantAPedirByCodExt[p.codExt] ?? "";
+                const tildeActivo =
+                  cantSugerida != null &&
+                  cantAPedirRaw !== "" &&
+                  Number(cantAPedirRaw) === cantSugerida;
+
                 return (
                   <TableRow key={p.codExt}>
                     <TableCell className="celda-datos min-w-0">
@@ -199,27 +251,75 @@ export default function TablaPedidoAFabrica({
                           key={`${p.codExt}-${s.id}-prom`}
                           className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
                         >
-                        {fmtNumero(datos?.promVta)}
-                      </TableCell>,
-                    ];
-                  })}
-                  {nSuc > 0 ? (
-                    <>
-                      <TableCell
-                        className={cn(
-                          TD_NUM,
-                          "tabla-bloque-secundario-cell-divider"
-                        )}
-                      >
-                        {fmtNumero(total.stockActual)}
-                      </TableCell>
-                      <TableCell
-                        className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
-                      >
-                        {fmtNumero(total.promVta)}
-                      </TableCell>
-                    </>
-                  ) : null}
+                          {fmtNumero(datos?.promVta)}
+                        </TableCell>,
+                      ];
+                    })}
+                    {nSuc > 0 ? (
+                      <>
+                        <TableCell
+                          className={cn(
+                            TD_NUM,
+                            "tabla-bloque-secundario-cell-divider"
+                          )}
+                        >
+                          {cantSugerida != null
+                            ? fmtNumero(cantSugerida)
+                            : ""}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "celda-datos celda-datos--flush-left celda-datos--flush-right tabla-bloque-secundario-cell p-0"
+                          )}
+                        >
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={cantAPedirRaw}
+                            onChange={(e) =>
+                              onCantAPedirChange(
+                                p.codExt,
+                                sanitizeCantAPedirInput(e.target.value)
+                              )
+                            }
+                            aria-label={`Cantidad a pedir ${p.descripcion}`}
+                            className="h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-h-0 w-full min-w-0 rounded-none border-0 bg-transparent px-1.5 text-center text-xs shadow-none focus-visible:ring-0"
+                          />
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "celda-datos celda-datos--accion-relleno-fila text-center tabla-bloque-secundario-cell"
+                          )}
+                        >
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={cantSugerida == null}
+                              onClick={() => {
+                                if (cantSugerida == null) return;
+                                onAplicarCantSugerida(p.codExt, cantSugerida);
+                              }}
+                              className={cn(
+                                "tabla-check-toggle tabla-check-toggle--alto-fila shrink-0 !bg-background",
+                                tildeActivo && "[&_svg]:!text-[#0072bb]"
+                              )}
+                              aria-pressed={tildeActivo}
+                              aria-label={`Aplicar cantidad sugerida a pedir: ${p.descripcion}`}
+                            >
+                              {tildeActivo ? (
+                                <Check
+                                  className={TABLE_ROW_ACTION_ICON_CLASS}
+                                  aria-hidden
+                                />
+                              ) : null}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </>
+                    ) : null}
                   </TableRow>
                 );
               })
