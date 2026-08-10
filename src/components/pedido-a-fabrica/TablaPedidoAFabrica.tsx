@@ -14,7 +14,11 @@ import {
 import PaginacionClient from "@/components/shared/PaginacionClient";
 import { cn } from "@/lib/utils";
 import { fmtNumero } from "@/lib/format";
-import { TABLE_ROW_ACTION_ICON_CLASS } from "@/lib/ui-classes";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
 import { calcularCantSugeridaPedidoAFabrica } from "@/lib/pedidoAFabricaPromVta";
 import type {
   DatosSucursalProductoPedidoAFabrica,
@@ -41,6 +45,14 @@ interface Props {
 }
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
+
+/** Anchos fijos (suma 100 % con 2 sucursales `pedido`). */
+const PCT_DESC = 35;
+const PCT_CANT_SUGERIDA = 8;
+const PCT_CANT_A_PEDIR = 8;
+const PCT_BOTON = 4;
+const PCT_STOCK_SUCURSAL = 10;
+const PCT_PROM_SUCURSAL = 10;
 
 /** Solo dígitos (enteros ≥ 0); vacío permitido. */
 function sanitizeCantAPedirInput(raw: string): string {
@@ -74,8 +86,8 @@ function totalPorSucursales(
 
 /**
  * Grilla Pedido A Fáb.
- * **DESCRIPCIÓN** + por cada sucursal `pedido = true`: **STOCK ACTUAL** | **PROM. VTA.**
- * + grupo **TOTAL**: **CANT. SUGERIDA** | **CANT. A PEDIR** | tilde (copia sugerida → a pedir).
+ * Orden: **DESCRIPCIÓN** (35 %) · **TOTAL** (25 % = 8+8+4) · sucursales (20 % c/u = 10+10).
+ * Botón brand con **Check** copia **CANT. SUGERIDA** → **CANT. A PEDIR**.
  */
 export default function TablaPedidoAFabrica({
   sucursales,
@@ -92,37 +104,45 @@ export default function TablaPedidoAFabrica({
   onAplicarCantSugerida,
 }: Props) {
   const nSuc = sucursales.length;
-  const nSubSuc = nSuc * 2;
-  const nSubTotal = nSuc > 0 ? 3 : 0;
-  const nSub = nSubSuc + nSubTotal;
-  const colCount = 1 + nSub;
-  /** DESCRIPCIÓN ~36 %; resto entre subcolumnas de sucursal + TOTAL (3). */
-  const pctDesc = nSub > 0 ? 36 : 100;
-  const pctSub = nSub > 0 ? (100 - pctDesc) / nSub : 0;
+  const colCount = nSuc > 0 ? 1 + 3 + nSuc * 2 : 1;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-0.5">
       <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
         <Table variant="compact" scrollX={false}>
           <colgroup>
-            <col style={{ width: `${pctDesc}%` }} />
-            {sucursales.flatMap((s) => [
-              <col key={`${s.id}-stock`} style={{ width: `${pctSub}%` }} />,
-              <col key={`${s.id}-prom`} style={{ width: `${pctSub}%` }} />,
-            ])}
+            <col style={{ width: `${nSuc > 0 ? PCT_DESC : 100}%` }} />
             {nSuc > 0 ? (
               <>
-                <col key="total-sugerida" style={{ width: `${pctSub}%` }} />
-                <col key="total-a-pedir" style={{ width: `${pctSub}%` }} />
-                <col key="total-tilde" style={{ width: `${pctSub}%` }} />
+                <col style={{ width: `${PCT_CANT_SUGERIDA}%` }} />
+                <col style={{ width: `${PCT_CANT_A_PEDIR}%` }} />
+                <col style={{ width: `${PCT_BOTON}%` }} />
               </>
             ) : null}
+            {sucursales.flatMap((s) => [
+              <col
+                key={`${s.id}-stock`}
+                style={{ width: `${PCT_STOCK_SUCURSAL}%` }}
+              />,
+              <col
+                key={`${s.id}-prom`}
+                style={{ width: `${PCT_PROM_SUCURSAL}%` }}
+              />,
+            ])}
           </colgroup>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead rowSpan={2} className="min-w-0 align-middle">
                 DESCRIPCIÓN
               </TableHead>
+              {nSuc > 0 ? (
+                <TableHead
+                  colSpan={3}
+                  className="text-center align-middle tabla-bloque-secundario-head-divider"
+                >
+                  TOTAL
+                </TableHead>
+              ) : null}
               {sucursales.map((s, i) => (
                 <TableHead
                   key={s.id}
@@ -137,35 +157,8 @@ export default function TablaPedidoAFabrica({
                   {s.nombre.toLocaleUpperCase("es")}
                 </TableHead>
               ))}
-              {nSuc > 0 ? (
-                <TableHead
-                  colSpan={3}
-                  className="text-center align-middle tabla-bloque-secundario-head-divider"
-                >
-                  TOTAL
-                </TableHead>
-              ) : null}
             </TableRow>
             <TableRow className="hover:bg-transparent">
-              {sucursales.flatMap((s, i) => [
-                <TableHead
-                  key={`${s.id}-stock-h`}
-                  className={cn(
-                    "text-center",
-                    i === 0
-                      ? "tabla-bloque-secundario-head-divider"
-                      : "tabla-bloque-secundario-head"
-                  )}
-                >
-                  STOCK ACTUAL
-                </TableHead>,
-                <TableHead
-                  key={`${s.id}-prom-h`}
-                  className="text-center tabla-bloque-secundario-head"
-                >
-                  PROM. VTA.
-                </TableHead>,
-              ])}
               {nSuc > 0 ? (
                 <>
                   <TableHead className="text-center tabla-bloque-secundario-head-divider">
@@ -187,6 +180,25 @@ export default function TablaPedidoAFabrica({
                   </TableHead>
                 </>
               ) : null}
+              {sucursales.flatMap((s, i) => [
+                <TableHead
+                  key={`${s.id}-stock-h`}
+                  className={cn(
+                    "text-center",
+                    i === 0
+                      ? "tabla-bloque-secundario-head-divider"
+                      : "tabla-bloque-secundario-head"
+                  )}
+                >
+                  STOCK ACTUAL
+                </TableHead>,
+                <TableHead
+                  key={`${s.id}-prom-h`}
+                  className="text-center tabla-bloque-secundario-head"
+                >
+                  PROM. VTA.
+                </TableHead>,
+              ])}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -221,10 +233,6 @@ export default function TablaPedidoAFabrica({
                 });
                 const cantSugerida = calc?.cantSugerida ?? null;
                 const cantAPedirRaw = cantAPedirByCodExt[p.codExt] ?? "";
-                const tildeActivo =
-                  cantSugerida != null &&
-                  cantAPedirRaw !== "" &&
-                  Number(cantAPedirRaw) === cantSugerida;
 
                 return (
                   <TableRow key={p.codExt}>
@@ -233,28 +241,6 @@ export default function TablaPedidoAFabrica({
                         {p.descripcion}
                       </span>
                     </TableCell>
-                    {sucursales.flatMap((s, i) => {
-                      const datos = p.porSucursal[s.id];
-                      return [
-                        <TableCell
-                          key={`${p.codExt}-${s.id}-stock`}
-                          className={cn(
-                            TD_NUM,
-                            i === 0
-                              ? "tabla-bloque-secundario-cell-divider"
-                              : "tabla-bloque-secundario-cell"
-                          )}
-                        >
-                          {fmtNumero(datos?.stockActual)}
-                        </TableCell>,
-                        <TableCell
-                          key={`${p.codExt}-${s.id}-prom`}
-                          className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
-                        >
-                          {fmtNumero(datos?.promVta)}
-                        </TableCell>,
-                      ];
-                    })}
                     {nSuc > 0 ? (
                       <>
                         <TableCell
@@ -287,12 +273,8 @@ export default function TablaPedidoAFabrica({
                             className="h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-h-0 w-full min-w-0 rounded-none border-0 bg-transparent px-1.5 text-center text-xs shadow-none focus-visible:ring-0"
                           />
                         </TableCell>
-                        <TableCell
-                          className={cn(
-                            "celda-datos celda-datos--accion-relleno-fila text-center tabla-bloque-secundario-cell"
-                          )}
-                        >
-                          <div className="flex h-full w-full items-center justify-center">
+                        <TableCell className="celda-datos celda-datos--accion-relleno-fila text-center tabla-bloque-secundario-cell">
+                          <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                             <Button
                               type="button"
                               variant="ghost"
@@ -302,24 +284,40 @@ export default function TablaPedidoAFabrica({
                                 if (cantSugerida == null) return;
                                 onAplicarCantSugerida(p.codExt, cantSugerida);
                               }}
-                              className={cn(
-                                "tabla-check-toggle tabla-check-toggle--alto-fila shrink-0 !bg-background",
-                                tildeActivo && "[&_svg]:!text-[#0072bb]"
-                              )}
-                              aria-pressed={tildeActivo}
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                               aria-label={`Aplicar cantidad sugerida a pedir: ${p.descripcion}`}
                             >
-                              {tildeActivo ? (
-                                <Check
-                                  className={TABLE_ROW_ACTION_ICON_CLASS}
-                                  aria-hidden
-                                />
-                              ) : null}
+                              <Check
+                                className={TABLE_ROW_ACTION_ICON_CLASS}
+                                aria-hidden
+                              />
                             </Button>
                           </div>
                         </TableCell>
                       </>
                     ) : null}
+                    {sucursales.flatMap((s, i) => {
+                      const datos = p.porSucursal[s.id];
+                      return [
+                        <TableCell
+                          key={`${p.codExt}-${s.id}-stock`}
+                          className={cn(
+                            TD_NUM,
+                            i === 0
+                              ? "tabla-bloque-secundario-cell-divider"
+                              : "tabla-bloque-secundario-cell"
+                          )}
+                        >
+                          {fmtNumero(datos?.stockActual)}
+                        </TableCell>,
+                        <TableCell
+                          key={`${p.codExt}-${s.id}-prom`}
+                          className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
+                        >
+                          {fmtNumero(datos?.promVta)}
+                        </TableCell>,
+                      ];
+                    })}
                   </TableRow>
                 );
               })
