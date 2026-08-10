@@ -211,7 +211,7 @@ export default function EstCategorizacionPageClient({
     <>
       <ClassicFilteredTableLayout
         title="ESTADÍSTICAS PRODUCTOS"
-        subtitle="Categorizacion"
+        subtitle="Configuracion"
         contentWidth="full"
       actions={
         esEditor ? (

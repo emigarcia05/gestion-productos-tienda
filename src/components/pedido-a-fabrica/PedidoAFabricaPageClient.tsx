@@ -31,7 +31,7 @@ interface Props {
 }
 
 /**
- * Módulo **Pedido A Fábrica** (pilar sidebar Administración).
+ * Módulo **Pedido A Fáb.** (pilar sidebar Administración).
  * Primer control: **PROVEEDOR** (solo `es_fabrica = true`).
  * Al seleccionar: tabla con **DESCRIPCIÓN** de productos de ese proveedor.
  */
@@ -91,8 +91,8 @@ export default function PedidoAFabricaPageClient({
 
   return (
     <ClassicFilteredTableLayout
-      title="PEDIDO A FÁBRICA"
-      subtitle="Pedido A Fábrica"
+      title="PEDIDO A FÁB."
+      subtitle="Pedido A Fáb."
       contentWidth="full"
       filters={
         <FilterBar className="filtros-contenedor-tienda bg-card">

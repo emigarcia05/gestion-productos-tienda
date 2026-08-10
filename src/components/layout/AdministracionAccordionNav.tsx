@@ -254,23 +254,22 @@ function PillarAccordion({
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className={TREE_PANEL}>
-          {groups.length > 0 ? (
-            <div className="flex flex-col gap-0.5">
-              {groups.map((group) => (
-                <div key={group.id}>
-                  <GroupAccordion
-                    pillarId={pillar.id}
-                    group={group}
-                    pathname={pathname}
-                    openGroupId={openGroupId}
-                    onOpenChange={onGroupOpenChange}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <ScreensList screens={screens} pathname={pathname} />
-          )}
+          <div className="flex flex-col gap-0.5">
+            {screens.length > 0 ? (
+              <ScreensList screens={screens} pathname={pathname} />
+            ) : null}
+            {groups.map((group) => (
+              <div key={group.id}>
+                <GroupAccordion
+                  pillarId={pillar.id}
+                  group={group}
+                  pathname={pathname}
+                  openGroupId={openGroupId}
+                  onOpenChange={onGroupOpenChange}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </CollapsibleContent>
     </Collapsible>

@@ -3,7 +3,7 @@
  * **Vendedor** (id `gestion-productos`): pedidos, ayuda vendedor, asistente IA.
  * **Administración** (id `finanzas`): balance, tesorería, análisis M.C., Análisis de Precios
  * (URLs de análisis aún bajo `/gestion-productos/analisis-precios/...`), Estadísticas Productos
- * (URLs bajo `/estadisticas-productos/...`) y **Pedido A Fábrica** (`/pedido-a-fabrica`).
+ * (URLs bajo `/estadisticas-productos/...`) y **Pedido A Fáb.** (`/pedido-a-fabrica`).
  * **Marketing** (id `marketing`).
  */
 
@@ -72,7 +72,7 @@ export function getMainAppAreaIdFromPathname(pathname: string): MainAppAreaId {
   ) {
     return "finanzas";
   }
-  // Pedido A Fábrica (Administración).
+  // Pedido A Fáb. (Administración).
   if (pathname === "/pedido-a-fabrica" || pathname.startsWith("/pedido-a-fabrica/")) {
     return "finanzas";
   }

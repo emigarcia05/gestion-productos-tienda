@@ -1,12 +1,11 @@
 /**
- * Navegación del área **Administración**: 5 pilares en sidebar + árbol
+ * Navegación del área **Administración**: 4 pilares en sidebar + árbol
  * de decisiones en acordeón vertical (`AdministracionAccordionNav`).
  *
  * FINANZAS → BALANCE | OPERACIONES → pantallas
  * LISTA PRECIOS → PX TIENDA | PROVEEDORES | ANÁLISIS M.C. → pantallas
- * PEDIDO A FÁBRICA → pantallas
- * ESTADÍSTICAS → pantallas
- * CONFIGURACION → pantallas
+ * PEDIDO A FÁB. → pantallas
+ * ESTADÍSTICAS → VENTAS (pantalla) | CONFIGURACION → pantallas
  */
 
 import {
@@ -25,8 +24,7 @@ export type AdmPillarId =
   | "finanzas"
   | "listas-precios"
   | "pedido-a-fabrica"
-  | "estadisticas"
-  | "configuracion";
+  | "estadisticas";
 
 export type AdmIconId =
   | "landmark"
@@ -73,7 +71,8 @@ export interface AdmPillarDef {
   label: string;
   icon: AdmIconId;
   /**
-   * Primer desglose: grupos (acordeón anidado) o pantallas directas.
+   * Primer desglose: grupos (acordeón anidado) y/o pantallas directas.
+   * Si hay ambos, se renderizan pantallas y luego grupos.
    */
   groups?: AdmGroupDef[];
   screens?: AdmScreenDef[];
@@ -223,34 +222,35 @@ const analisisMcScreens: AdmScreenDef[] = [
 const pedidoAFabricaScreens: AdmScreenDef[] = [
   {
     id: "pedido-a-fabrica",
-    label: "Pedido A Fábrica",
+    label: "Pedido A Fáb.",
     href: PEDIDO_A_FABRICA_ROUTES.defaultEntry,
     icon: "factory",
     permiso: PERMISOS.estadisticasProductos.acceso,
   },
 ];
 
-const estadisticasScreens: AdmScreenDef[] = [
+/** Pantalla directa bajo ESTADÍSTICAS (sin grupo intermedio). */
+const estadisticasVentasScreens: AdmScreenDef[] = [
   {
     id: "estadisticas-vtas",
-    label: "Vtas Por. Prod.",
+    label: "VENTAS",
     href: ESTADISTICAS_PRODUCTOS_ROUTES.estadisticasVtas,
     icon: "line-chart",
     permiso: PERMISOS.estadisticasProductos.acceso,
   },
 ];
 
-const configuracionScreens: AdmScreenDef[] = [
+const estadisticasConfiguracionScreens: AdmScreenDef[] = [
   {
     id: "carga-de-datos",
-    label: "Carga Datos",
+    label: "Carga De Datos",
     href: ESTADISTICAS_PRODUCTOS_ROUTES.ventasPorProducto,
     icon: "package-search",
     permiso: PERMISOS.estadisticasProductos.acceso,
   },
   {
     id: "categorizacion",
-    label: "Categorizacion",
+    label: "Configuracion",
     href: ESTADISTICAS_PRODUCTOS_ROUTES.categorizacion,
     icon: "tags",
     permiso: PERMISOS.estadisticasProductos.acceso,
@@ -304,7 +304,7 @@ export const ADM_PILLARS: AdmPillarDef[] = [
   },
   {
     id: "pedido-a-fabrica",
-    label: "PEDIDO A FÁBRICA",
+    label: "PEDIDO A FÁB.",
     icon: "factory",
     screens: pedidoAFabricaScreens,
   },
@@ -312,13 +312,15 @@ export const ADM_PILLARS: AdmPillarDef[] = [
     id: "estadisticas",
     label: "ESTADÍSTICAS",
     icon: "bar-chart-3",
-    screens: estadisticasScreens,
-  },
-  {
-    id: "configuracion",
-    label: "CONFIGURACION",
-    icon: "settings",
-    screens: configuracionScreens,
+    screens: estadisticasVentasScreens,
+    groups: [
+      {
+        id: "configuracion",
+        label: "CONFIGURACION",
+        icon: "settings",
+        screens: estadisticasConfiguracionScreens,
+      },
+    ],
   },
 ];
 
@@ -343,8 +345,9 @@ function pathnameMatchesScreen(pathname: string, href: string): boolean {
 }
 
 function collectPillarScreens(pillar: AdmPillarDef): AdmScreenDef[] {
-  if (pillar.screens?.length) return pillar.screens;
-  return pillar.groups?.flatMap((g) => g.screens) ?? [];
+  const fromScreens = pillar.screens ?? [];
+  const fromGroups = pillar.groups?.flatMap((g) => g.screens) ?? [];
+  return [...fromScreens, ...fromGroups];
 }
 
 export function isAdmScreenActive(pathname: string, screen: AdmScreenDef): boolean {
@@ -377,11 +380,17 @@ export function isAdmPillarActive(pathname: string, pillar: AdmPillarDef): boole
       pathname.startsWith(`${PEDIDO_A_FABRICA_LEGACY_PATH}/`)
     );
   }
-  if (pillar.id === "configuracion") {
-    return collectPillarScreens(pillar).some((s) => isAdmScreenActive(pathname, s));
-  }
   if (pillar.id === "estadisticas") {
-    return collectPillarScreens(pillar).some((s) => isAdmScreenActive(pathname, s));
+    if (
+      pathname === PEDIDO_A_FABRICA_LEGACY_PATH ||
+      pathname.startsWith(`${PEDIDO_A_FABRICA_LEGACY_PATH}/`)
+    ) {
+      return false;
+    }
+    return (
+      pathname.startsWith("/estadisticas-productos") ||
+      collectPillarScreens(pillar).some((s) => isAdmScreenActive(pathname, s))
+    );
   }
   // FINANZAS: /finanzas/* excepto analisis-mc (está en LISTA PRECIOS)
   if (pathname.startsWith("/finanzas/analisis-mc")) return false;

@@ -2,7 +2,8 @@
  * Rutas canónicas del módulo Estadísticas Productos (área **Administración**).
  * Prefijo: `/estadisticas-productos/{submódulo}`.
  *
- * **Pedido A Fábrica** ya no vive aquí: ver `pedidoAFabricaRoutes.ts`.
+ * Sidebar: **ESTADÍSTICAS** → **VENTAS** + grupo **CONFIGURACION**
+ * (Carga De Datos · Configuracion). **Pedido A Fáb.**: `pedidoAFabricaRoutes.ts`.
  */
 
 export const ESTADISTICAS_PRODUCTOS_ROUTES = {

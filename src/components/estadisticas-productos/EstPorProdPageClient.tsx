@@ -148,7 +148,7 @@ export default function EstPorProdPageClient({
     <>
       <ClassicFilteredTableLayout
         title="ESTADÍSTICAS PRODUCTOS"
-        subtitle="Carga Datos"
+        subtitle="Carga De Datos"
         contentWidth="full"
       >
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

@@ -620,12 +620,12 @@ interface ReglaDescuentoListaPrecio {
 ### 1.11f Flag "Es Fábrica" (`global_proveedores.es_fabrica`)
 
 - Persistencia: `global_proveedores.es_fabrica` (`BOOLEAN`, **`NOT NULL`**, **default DB `false`**). Prisma: `esFabrica Boolean @default(false) @map("es_fabrica")`. Índice `global_proveedores_es_fabrica_idx`.
-- Semántica: marca al proveedor como **fábrica** (módulo **Pedido A Fábrica**). Default `false` (opt-in).
+- Semántica: marca al proveedor como **fábrica** (módulo **Pedido A Fáb.**). Default `false` (opt-in).
 - Migración `20260810140000_global_proveedores_es_fabrica` (idempotente): `ADD COLUMN IF NOT EXISTS "es_fabrica" BOOLEAN NOT NULL DEFAULT false` + índice.
 - Validación Zod: `esFabricaFormSchema` en `@/lib/validations/proveedor.ts` (`si`/`no` → boolean); incluido en `createProveedorSchema` / `updateProveedorSchema`.
 - Servicio / actions: `CreateProveedorInput` / `UpdateProveedorInput` / `ProveedorListItem` exponen `esFabrica`; `crearProveedor` / `editarProveedor` leen `formData.get("esFabrica")`.
 - UI: Select **ES FÁBRICA** (SI/NO) en `ProveedorForm` (alta default **NO**; edición precarga valor).
-- Lectura filtrada: `getProveedoresFabrica()` en `proveedor.service.ts` (`where: { esFabrica: true }`) + action `getProveedoresFabrica` (`PERMISOS.estadisticasProductos.acceso`) para el selector de **Pedido A Fábrica**.
+- Lectura filtrada: `getProveedoresFabrica()` en `proveedor.service.ts` (`where: { esFabrica: true }`) + action `getProveedoresFabrica` (`PERMISOS.estadisticasProductos.acceso`) para el selector de **Pedido A Fáb.**.
 - **Productos del proveedor fábrica** (`src/services/pedidoAFabrica.service.ts`): `listarProductosPorProveedorFabrica(proveedorId, pagina)` — exige `es_fabrica = true`; lee `prod_precios_provee` con `habilitado = true`; expone `codExt` + `descripcion` (`descripcion_proveedor`); orden A–Z por descripción; paginación `PAGE_SIZE` (100). Action `getProductosPedidoAFabricaAction` (`src/actions/pedidoAFabrica.ts`) con Zod `productosPedidoAFabricaFiltrosSchema` (`proveedorId` CUID + `pagina`); mismo gate `PERMISOS.estadisticasProductos.acceso`.
 
 ### 1.11d Política de IVA por proveedor (`global_proveedores.iva`)
@@ -974,8 +974,8 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 ### 2.5g Estadísticas por producto (`/estadisticas-productos`, `est_por_prod`)
 
 - **Área UI**: módulo del sidebar **Administración** (id `finanzas` en `MAIN_APP_AREAS`); no es macro-área propia. URLs siguen bajo `/estadisticas-productos/...`.
-- **Rutas SSOT**: `src/lib/estadisticasProductosRoutes.ts` — `ventasPorProducto` (UI **Carga Datos**), `categorizacion`, `estadisticasVtas` (**Vtas Por. Prod.**); `/estadisticas-productos` redirige a carga. **Pedido A Fábrica**: `src/lib/pedidoAFabricaRoutes.ts` (`/pedido-a-fabrica`; legacy `est-para-compra` → redirect).
-- **Carga de Datos** (URL `/estadisticas-productos/ventas-por-producto`): `page.tsx` → **`EstPorProdPageClient`** (grilla periodo × sucursal). Permiso: **`PERMISOS.estadisticasProductos.acceso`** (`simple` y `editor` lectura; mutaciones con **`esEditor()`**).
+- **Rutas SSOT**: `src/lib/estadisticasProductosRoutes.ts` — `ventasPorProducto` (UI **Carga De Datos**), `categorizacion` (UI **Configuracion**), `estadisticasVtas` (**VENTAS**); `/estadisticas-productos` redirige a Carga De Datos. Sidebar **ESTADÍSTICAS**: pantalla **VENTAS** + grupo **CONFIGURACION**. **Pedido A Fáb.**: `src/lib/pedidoAFabricaRoutes.ts` (`/pedido-a-fabrica`; legacy `est-para-compra` → redirect).
+- **Carga De Datos** (URL `/estadisticas-productos/ventas-por-producto`): `page.tsx` → **`EstPorProdPageClient`** (grilla periodo × sucursal). Permiso: **`PERMISOS.estadisticasProductos.acceso`** (`simple` y `editor` lectura; mutaciones con **`esEditor()`**).
 - **Tabla `est_por_prod`** (Prisma `EstPorProd`): ventas en unidades importadas por **`sucursal_id` + `mes` + `anio` + `cod_tienda`**. Columnas: `id` (`cuid`), `mes` (1–12), `anio`, `sucursal_id` → `global_sucursales`, `cod_tienda` → `prod_tienda.cod_tienda` (texto; código numérico DUX normalizado en import), `vtas_en_un` (`DECIMAL(14,4)`). **`@@unique([sucursalId, mes, anio, codTienda])`** (`est_por_prod_sucursal_periodo_cod_ux`). Migración **`20260706120000_add_est_por_prod`**.
 - **Regla de sucursal**: solo sucursales con **`genera_est = true`** — `listarSucursalesParaEstPorProd()`; distinto de `fin_bal_vtas` (`genera_balance`) y del texto `deposito` (exportaciones). Flag en `global_sucursales` (Prisma `Sucursal.generaEst`, `BOOLEAN NOT NULL DEFAULT FALSE`); sin UI de edición — seed / `UPDATE` manual. Migración **`20260805160000_add_genera_est_global_sucursales`** (backfill: `true` donde `deposito` no vacío, para no vaciar la grilla existente).
 - **Servicio** (`src/services/estPorProd.service.ts`): `listarEstPorProd`, `listarEstPorProdCeldasCargadas` (`groupBy` sucursal+mes+anio), **`importarEstPorProd`** (unidad = **periodo × sucursal**: siempre `deleteMany` del bloque y luego `createMany` de la planilla; omite `cod_tienda` inexistentes en `prod_tienda`; si el periodo ya tiene datos exige `reemplazarPeriodo`; exige `genera_est`), `eliminarEstPorProdPorPeriodo` (borra todo el bloque), `eliminarEstPorProd` (por id; **no** usado en la UI de Carga de Datos). Periodos de grilla: `listarPeriodosCargaEstPorProd` / `EST_POR_PROD_CARGA_DESDE` (**Mayo 2026** → mes actual AR).
@@ -2067,6 +2067,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-10): **Pedido A Fábrica** — ruta canónica `/pedido-a-fabrica` (`pedidoAFabricaRoutes.ts`); legacy `est-para-compra` redirige. Sidebar Administración: 5 pilares (PEDIDO A FÁBRICA / ESTADÍSTICAS / CONFIGURACION separados).
 
 *Última actualización (2026-08-10): **Pedido A Fábrica** — `listarProductosPorProveedorFabrica` / `getProductosPedidoAFabricaAction` (productos `prod_precios_provee` del proveedor con `es_fabrica`).
+
+*Última actualización (2026-08-10): **Sidebar · Administración** — 4 pilares; ESTADÍSTICAS agrupa VENTAS + CONFIGURACION; PEDIDO A FÁB.
 
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 

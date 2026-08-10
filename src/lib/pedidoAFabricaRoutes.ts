@@ -1,5 +1,5 @@
 /**
- * Rutas canónicas del módulo **Pedido A Fábrica** (área Administración).
+ * Rutas canónicas del módulo **Pedido A Fáb.** (área Administración).
  * Prefijo: `/pedido-a-fabrica`.
  */
 
