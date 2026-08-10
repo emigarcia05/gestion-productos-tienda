@@ -947,7 +947,7 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 ### 2.5g Estadísticas por producto (`/estadisticas-productos`, `est_por_prod`)
 
 - **Área UI**: módulo del sidebar **Administración** (id `finanzas` en `MAIN_APP_AREAS`); no es macro-área propia. URLs siguen bajo `/estadisticas-productos/...`.
-- **Rutas SSOT**: `src/lib/estadisticasProductosRoutes.ts` — `ventasPorProducto` (UI **Carga Datos**), `categorizacion`, `estadisticasVtas` (**Vtas Por. Prod.**), `estParaCompra`; `/estadisticas-productos` redirige a carga.
+- **Rutas SSOT**: `src/lib/estadisticasProductosRoutes.ts` — `ventasPorProducto` (UI **Carga Datos**), `categorizacion`, `estadisticasVtas` (**Vtas Por. Prod.**); `/estadisticas-productos` redirige a carga. **Pedido A Fábrica**: `src/lib/pedidoAFabricaRoutes.ts` (`/pedido-a-fabrica`; legacy `est-para-compra` → redirect).
 - **Carga de Datos** (URL `/estadisticas-productos/ventas-por-producto`): `page.tsx` → **`EstPorProdPageClient`** (grilla periodo × sucursal). Permiso: **`PERMISOS.estadisticasProductos.acceso`** (`simple` y `editor` lectura; mutaciones con **`esEditor()`**).
 - **Tabla `est_por_prod`** (Prisma `EstPorProd`): ventas en unidades importadas por **`sucursal_id` + `mes` + `anio` + `cod_tienda`**. Columnas: `id` (`cuid`), `mes` (1–12), `anio`, `sucursal_id` → `global_sucursales`, `cod_tienda` → `prod_tienda.cod_tienda` (texto; código numérico DUX normalizado en import), `vtas_en_un` (`DECIMAL(14,4)`). **`@@unique([sucursalId, mes, anio, codTienda])`** (`est_por_prod_sucursal_periodo_cod_ux`). Migración **`20260706120000_add_est_por_prod`**.
 - **Regla de sucursal**: solo sucursales con **`genera_est = true`** — `listarSucursalesParaEstPorProd()`; distinto de `fin_bal_vtas` (`genera_balance`) y del texto `deposito` (exportaciones). Flag en `global_sucursales` (Prisma `Sucursal.generaEst`, `BOOLEAN NOT NULL DEFAULT FALSE`); sin UI de edición — seed / `UPDATE` manual. Migración **`20260805160000_add_genera_est_global_sucursales`** (backfill: `true` donde `deposito` no vacío, para no vaciar la grilla existente).
@@ -2037,7 +2037,9 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — labels Presentacion (`variante`); listas eje Y / desglose con orden propio.
 
-*Última actualización (2026-08-07): **Est. · rutas** — `estParaCompra`; sidebar ESTADÍSTICAS en grupos MEDIACIONES / CONFIGURACION.
+*Última actualización (2026-08-10): **Pedido A Fábrica** — ruta canónica `/pedido-a-fabrica` (`pedidoAFabricaRoutes.ts`); legacy `est-para-compra` redirige. Sidebar Administración: 5 pilares (PEDIDO A FÁBRICA / ESTADÍSTICAS / CONFIGURACION separados).
+
+*Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — Top 10: `promedioMensual` = total / (`cantidadPeriodosFiltro` = años × meses).
 
