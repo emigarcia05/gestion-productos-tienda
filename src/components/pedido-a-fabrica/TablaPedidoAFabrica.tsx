@@ -12,6 +12,7 @@ import PaginacionClient from "@/components/shared/PaginacionClient";
 import { cn } from "@/lib/utils";
 import { fmtNumero } from "@/lib/format";
 import type {
+  DatosSucursalProductoPedidoAFabrica,
   ProductoPedidoAFabricaItem,
   SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
@@ -36,10 +37,35 @@ function fmtPromVta(n: number | null | undefined): string {
   });
 }
 
+/** Suma de STOCK ACTUAL y PROM. VTA. de todas las sucursales de la fila. */
+function totalPorSucursales(
+  producto: ProductoPedidoAFabricaItem,
+  sucursales: SucursalPedidoAFabrica[]
+): DatosSucursalProductoPedidoAFabrica {
+  if (!producto.codTienda || sucursales.length === 0) {
+    return { stockActual: null, promVta: null };
+  }
+  let stock = 0;
+  let prom = 0;
+  let tieneProm = false;
+  for (const s of sucursales) {
+    const d = producto.porSucursal[s.id];
+    stock += d?.stockActual ?? 0;
+    if (d?.promVta != null && !Number.isNaN(d.promVta)) {
+      prom += d.promVta;
+      tieneProm = true;
+    }
+  }
+  return {
+    stockActual: stock,
+    promVta: tieneProm ? prom : null,
+  };
+}
+
 /**
  * Grilla Pedido A Fáb.
  * **DESCRIPCIÓN** + por cada sucursal `pedido = true`: **STOCK ACTUAL** | **PROM. VTA.**
- * (cabecera de 2 filas, patrón `TablaPxListasPrecios`).
+ * + grupo **TOTAL** (misma subdivisión = suma de sucursales).
  */
 export default function TablaPedidoAFabrica({
   sucursales,
@@ -51,10 +77,11 @@ export default function TablaPedidoAFabrica({
   emptyMessage,
 }: Props) {
   const nSuc = sucursales.length;
-  const colCount = 1 + nSuc * 2;
-  /** DESCRIPCIÓN ~40 %; el resto repartido entre subcolumnas de sucursal. */
-  const pctDesc = nSuc > 0 ? 40 : 100;
-  const pctSub = nSuc > 0 ? (100 - pctDesc) / (nSuc * 2) : 0;
+  const nGrupos = nSuc > 0 ? nSuc + 1 : 0; // sucursales + TOTAL
+  const colCount = 1 + nGrupos * 2;
+  /** DESCRIPCIÓN ~36 %; resto entre subcolumnas de sucursal + TOTAL. */
+  const pctDesc = nGrupos > 0 ? 36 : 100;
+  const pctSub = nGrupos > 0 ? (100 - pctDesc) / (nGrupos * 2) : 0;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-0.5">
@@ -66,6 +93,12 @@ export default function TablaPedidoAFabrica({
               <col key={`${s.id}-stock`} style={{ width: `${pctSub}%` }} />,
               <col key={`${s.id}-prom`} style={{ width: `${pctSub}%` }} />,
             ])}
+            {nSuc > 0 ? (
+              <>
+                <col key="total-stock" style={{ width: `${pctSub}%` }} />
+                <col key="total-prom" style={{ width: `${pctSub}%` }} />
+              </>
+            ) : null}
           </colgroup>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -86,6 +119,14 @@ export default function TablaPedidoAFabrica({
                   {s.nombre.toLocaleUpperCase("es")}
                 </TableHead>
               ))}
+              {nSuc > 0 ? (
+                <TableHead
+                  colSpan={2}
+                  className="text-center align-middle tabla-bloque-secundario-head-divider"
+                >
+                  TOTAL
+                </TableHead>
+              ) : null}
             </TableRow>
             <TableRow className="hover:bg-transparent">
               {sucursales.flatMap((s, i) => [
@@ -107,6 +148,16 @@ export default function TablaPedidoAFabrica({
                   PROM. VTA.
                 </TableHead>,
               ])}
+              {nSuc > 0 ? (
+                <>
+                  <TableHead className="text-center tabla-bloque-secundario-head-divider">
+                    STOCK ACTUAL
+                  </TableHead>
+                  <TableHead className="text-center tabla-bloque-secundario-head">
+                    PROM. VTA.
+                  </TableHead>
+                </>
+              ) : null}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -129,37 +180,57 @@ export default function TablaPedidoAFabrica({
                 </TableCell>
               </TableRow>
             ) : (
-              productos.map((p) => (
-                <TableRow key={p.codExt}>
-                  <TableCell className="celda-datos min-w-0">
-                    <span className="block truncate" title={p.descripcion}>
-                      {p.descripcion}
-                    </span>
-                  </TableCell>
-                  {sucursales.flatMap((s, i) => {
-                    const datos = p.porSucursal[s.id];
-                    return [
-                      <TableCell
-                        key={`${p.codExt}-${s.id}-stock`}
-                        className={cn(
-                          TD_NUM,
-                          i === 0
-                            ? "tabla-bloque-secundario-cell-divider"
-                            : "tabla-bloque-secundario-cell"
-                        )}
-                      >
-                        {fmtNumero(datos?.stockActual)}
-                      </TableCell>,
-                      <TableCell
-                        key={`${p.codExt}-${s.id}-prom`}
-                        className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
-                      >
-                        {fmtPromVta(datos?.promVta)}
-                      </TableCell>,
-                    ];
-                  })}
-                </TableRow>
-              ))
+              productos.map((p) => {
+                const total = totalPorSucursales(p, sucursales);
+                return (
+                  <TableRow key={p.codExt}>
+                    <TableCell className="celda-datos min-w-0">
+                      <span className="block truncate" title={p.descripcion}>
+                        {p.descripcion}
+                      </span>
+                    </TableCell>
+                    {sucursales.flatMap((s, i) => {
+                      const datos = p.porSucursal[s.id];
+                      return [
+                        <TableCell
+                          key={`${p.codExt}-${s.id}-stock`}
+                          className={cn(
+                            TD_NUM,
+                            i === 0
+                              ? "tabla-bloque-secundario-cell-divider"
+                              : "tabla-bloque-secundario-cell"
+                          )}
+                        >
+                          {fmtNumero(datos?.stockActual)}
+                        </TableCell>,
+                        <TableCell
+                          key={`${p.codExt}-${s.id}-prom`}
+                          className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
+                        >
+                          {fmtPromVta(datos?.promVta)}
+                        </TableCell>,
+                      ];
+                    })}
+                    {nSuc > 0 ? (
+                      <>
+                        <TableCell
+                          className={cn(
+                            TD_NUM,
+                            "tabla-bloque-secundario-cell-divider"
+                          )}
+                        >
+                          {fmtNumero(total.stockActual)}
+                        </TableCell>
+                        <TableCell
+                          className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
+                        >
+                          {fmtPromVta(total.promVta)}
+                        </TableCell>
+                      </>
+                    ) : null}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
