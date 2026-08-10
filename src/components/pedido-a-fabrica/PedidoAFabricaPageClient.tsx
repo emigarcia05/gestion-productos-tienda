@@ -19,7 +19,10 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { getProductosPedidoAFabricaAction } from "@/actions/pedidoAFabrica";
-import type { ProductoPedidoAFabricaItem } from "@/services/pedidoAFabrica.service";
+import type {
+  ProductoPedidoAFabricaItem,
+  SucursalPedidoAFabrica,
+} from "@/services/pedidoAFabrica.service";
 import TablaPedidoAFabrica from "@/components/pedido-a-fabrica/TablaPedidoAFabrica";
 
 export type ProveedorFabricaOption = {
@@ -30,6 +33,7 @@ export type ProveedorFabricaOption = {
 
 interface Props {
   proveedoresFabrica: ProveedorFabricaOption[];
+  sucursalesPedido: SucursalPedidoAFabrica[];
 }
 
 /** Solo dígitos (enteros ≥ 0); vacío permitido. */
@@ -40,14 +44,17 @@ function sanitizeTiempoStockInput(raw: string): string {
 /**
  * Módulo **Pedido A Fáb.** (pilar sidebar Administración).
  * Filtros: **PROVEEDOR** (`es_fabrica = true`) + **TIEMPO STOCK** (enteros).
- * Al seleccionar proveedor: tabla con **DESCRIPCIÓN** de productos.
+ * Tabla: **DESCRIPCIÓN** + por sucursal `pedido = true`: **STOCK ACTUAL** | **PROM. VTA.**
  */
 export default function PedidoAFabricaPageClient({
   proveedoresFabrica,
+  sucursalesPedido,
 }: Props) {
   const [proveedorId, setProveedorId] = useState<string>("");
   const [tiempoStock, setTiempoStock] = useState<string>("");
   const [pagina, setPagina] = useState(1);
+  const [sucursales, setSucursales] =
+    useState<SucursalPedidoAFabrica[]>(sucursalesPedido);
   const [productos, setProductos] = useState<ProductoPedidoAFabricaItem[]>([]);
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -65,6 +72,7 @@ export default function PedidoAFabricaPageClient({
     setPagina(1);
     setProductos([]);
     setTotalPaginas(0);
+    setSucursales(sucursalesPedido);
   }
 
   function handleTiempoStockChange(raw: string) {
@@ -77,6 +85,7 @@ export default function PedidoAFabricaPageClient({
         setProductos([]);
         setTotalPaginas(0);
         setLoading(false);
+        setSucursales(sucursalesPedido);
       });
       return;
     }
@@ -91,6 +100,9 @@ export default function PedidoAFabricaPageClient({
           pagina,
         });
         if (cancelled) return;
+        setSucursales(
+          res.sucursales.length > 0 ? res.sucursales : sucursalesPedido
+        );
         setProductos(res.productos);
         setTotalPaginas(res.totalPaginas);
         setLoading(false);
@@ -100,7 +112,7 @@ export default function PedidoAFabricaPageClient({
     return () => {
       cancelled = true;
     };
-  }, [proveedorId, pagina]);
+  }, [proveedorId, pagina, sucursalesPedido]);
 
   return (
     <ClassicFilteredTableLayout
@@ -164,6 +176,7 @@ export default function PedidoAFabricaPageClient({
     >
       {proveedorActivo ? (
         <TablaPedidoAFabrica
+          sucursales={sucursales}
           productos={productos}
           pagina={pagina}
           totalPaginas={totalPaginas}

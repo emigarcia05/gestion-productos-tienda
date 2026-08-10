@@ -5,17 +5,32 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { productosPedidoAFabricaFiltrosSchema } from "@/lib/validations/pedidoAFabrica";
 import {
   listarProductosPorProveedorFabrica,
+  listarSucursalesParaPedidoAFabrica,
   type ProductosPedidoAFabricaResult,
+  type SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
 
 const VACIO: ProductosPedidoAFabricaResult = {
+  sucursales: [],
   productos: [],
   total: 0,
   totalPaginas: 0,
 };
 
 /**
- * Productos de lista de precios del proveedor fábrica (`es_fabrica = true`).
+ * Sucursales con `pedido = true` para columnas de Pedido A Fáb.
+ */
+export async function getSucursalesPedidoAFabricaAction(): Promise<
+  SucursalPedidoAFabrica[]
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) return [];
+  return listarSucursalesParaPedidoAFabrica();
+}
+
+/**
+ * Productos de lista de precios del proveedor fábrica (`es_fabrica = true`),
+ * con **STOCK ACTUAL** y **PROM. VTA.** por sucursal `pedido = true`.
  * Gate: `PERMISOS.estadisticasProductos.acceso`.
  */
 export async function getProductosPedidoAFabricaAction(

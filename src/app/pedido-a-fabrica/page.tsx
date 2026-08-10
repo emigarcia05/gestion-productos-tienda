@@ -3,6 +3,7 @@ import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { getProveedoresFabrica } from "@/actions/proveedores";
+import { getSucursalesPedidoAFabricaAction } from "@/actions/pedidoAFabrica";
 import PedidoAFabricaPageClient from "@/components/pedido-a-fabrica/PedidoAFabricaPageClient";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,10 @@ export default async function PedidoAFabricaPage() {
     redirect(GP_ROUTES.defaultEntry);
   }
 
-  const proveedores = await getProveedoresFabrica();
+  const [proveedores, sucursalesPedido] = await Promise.all([
+    getProveedoresFabrica(),
+    getSucursalesPedidoAFabricaAction(),
+  ]);
   const proveedoresFabrica = proveedores.map((p) => ({
     id: p.id,
     nombre: p.nombre,
@@ -22,7 +26,10 @@ export default async function PedidoAFabricaPage() {
 
   return (
     <div className="area-page-shell">
-      <PedidoAFabricaPageClient proveedoresFabrica={proveedoresFabrica} />
+      <PedidoAFabricaPageClient
+        proveedoresFabrica={proveedoresFabrica}
+        sucursalesPedido={sucursalesPedido}
+      />
     </div>
   );
 }
