@@ -244,7 +244,9 @@ export default function ProveedorForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="tiempoEntregaEnDias">TIEMPO ENTREGA (DÍAS)</Label>
+        <Label htmlFor="tiempoEntregaEnDias">
+          TIEMPO ENTREGA MERCADERÍA EN DÍAS
+        </Label>
         <Input
           id="tiempoEntregaEnDias"
           name="tiempoEntregaEnDias"
