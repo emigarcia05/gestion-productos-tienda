@@ -252,6 +252,7 @@ export default function FinBalGastosCatalogoPageClient({
         plazosPagos: p.plazosPagos ?? undefined,
         tiempoEntregaEnDias: p.tiempoEntregaEnDias ?? undefined,
         proveedorMercaderia: p.proveedorMercaderia,
+        esFabrica: p.esFabrica,
         iva: p.iva,
       },
     });

@@ -547,6 +547,8 @@ interface ReglaDescuentoListaPrecio {
 
 *Última actualización (2026-08-08): **Px Listas · filtro pxVinculado** — query filtra por `competencia_id_px_lista_general`; UI con etiqueta prefijo/abrev. 3 letras.
 
+*Última actualización (2026-08-10): **global_proveedores.es_fabrica** — BOOLEAN NOT NULL default false; ver §1.11f.
+
 *Última actualización (2026-08-10): **global_proveedores.tiempo_entrega_en_dias** — INTEGER nullable (días de entrega); ver §1.11e.
 
 *Última actualización (2026-08-08): **Px Listas · competencia_id_px_lista_general** — FK en `prod_tienda` para REF. de **1 - GENERAL**; sync PX desde sugerido/scraping; Act. Px recalcula PORC. UTILIDAD.
@@ -613,6 +615,16 @@ interface ReglaDescuentoListaPrecio {
 - Servicio `proveedor.service.ts`: `CreateProveedorInput` / `UpdateProveedorInput` / `ProveedorListItem` / `getProveedorById` exponen `tiempoEntregaEnDias`; `createProveedor` / `updateProveedor` lo persisten.
 - Actions `crearProveedor` / `editarProveedor`: leen `formData.get("tiempoEntregaEnDias")`.
 - UI: campo **TIEMPO ENTREGA MERCADERÍA EN DÍAS** en `ProveedorForm` (opcional; vacío → `NULL`).
+
+
+### 1.11f Flag "Es Fábrica" (`global_proveedores.es_fabrica`)
+
+- Persistencia: `global_proveedores.es_fabrica` (`BOOLEAN`, **`NOT NULL`**, **default DB `false`**). Prisma: `esFabrica Boolean @default(false) @map("es_fabrica")`. Índice `global_proveedores_es_fabrica_idx`.
+- Semántica: marca al proveedor como **fábrica** (módulo **Pedido A Fábrica**). Default `false` (opt-in).
+- Migración `20260810140000_global_proveedores_es_fabrica` (idempotente): `ADD COLUMN IF NOT EXISTS "es_fabrica" BOOLEAN NOT NULL DEFAULT false` + índice.
+- Validación Zod: `esFabricaFormSchema` en `@/lib/validations/proveedor.ts` (`si`/`no` → boolean); incluido en `createProveedorSchema` / `updateProveedorSchema`.
+- Servicio / actions: `CreateProveedorInput` / `UpdateProveedorInput` / `ProveedorListItem` exponen `esFabrica`; `crearProveedor` / `editarProveedor` leen `formData.get("esFabrica")`.
+- UI: Select **ES FÁBRICA** (SI/NO) en `ProveedorForm` (alta default **NO**; edición precarga valor).
 
 ### 1.11d Política de IVA por proveedor (`global_proveedores.iva`)
 

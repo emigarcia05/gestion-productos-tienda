@@ -34,6 +34,7 @@ export default function TablaProveedoresGestion({ proveedores }: Props) {
       plazosPagos: prov.plazosPagos ?? undefined,
       tiempoEntregaEnDias: prov.tiempoEntregaEnDias ?? undefined,
       proveedorMercaderia: prov.proveedorMercaderia,
+      esFabrica: prov.esFabrica,
       iva: prov.iva,
     });
     setModalOpen(true);

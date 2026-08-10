@@ -21,6 +21,8 @@ export interface CreateProveedorInput {
   tiempoEntregaEnDias?: number | null;
   /** Obligatorio en alta (formulario SI/NO). */
   proveedorMercaderia: boolean;
+  /** Flag fábrica (Pedido A Fábrica); formulario SI/NO. */
+  esFabrica: boolean;
   /** Política IVA: SIEMPRE | NUNCA | PREGUNTA (default DB: PREGUNTA). */
   iva: IvaProveedor;
 }
@@ -38,6 +40,8 @@ export interface UpdateProveedorInput {
   tiempoEntregaEnDias?: number | null;
   /** Obligatorio en edición desde el formulario. */
   proveedorMercaderia: boolean;
+  /** Flag fábrica (Pedido A Fábrica); formulario SI/NO. */
+  esFabrica: boolean;
   /** Política IVA: SIEMPRE | NUNCA | PREGUNTA. */
   iva: IvaProveedor;
 }
@@ -67,6 +71,8 @@ export interface ProveedorListItem {
    * /gestion-productos/proveedores/lista (ver `getProveedoresMercaderia`).
    */
   proveedorMercaderia: boolean;
+  /** True si el proveedor es fábrica (Pedido A Fábrica). */
+  esFabrica: boolean;
   /** Política IVA: SIEMPRE | NUNCA | PREGUNTA (default BD: PREGUNTA). */
   iva: IvaProveedor;
   /** Cantidad de ítems en prod_precios_provee. */
@@ -159,6 +165,7 @@ async function listarProveedoresInterno(
     plazosPagos: p.plazosPagos ?? null,
     tiempoEntregaEnDias: p.tiempoEntregaEnDias ?? null,
     proveedorMercaderia: p.proveedorMercaderia,
+    esFabrica: p.esFabrica,
     iva: p.iva,
     cantProductos: p._count.listaPrecios,
     cantVinculados: vinculadosMap.get(p.id) ?? 0,
@@ -229,6 +236,7 @@ export async function createProveedor(
       plazosPagos: input.plazosPagos ?? null,
       tiempoEntregaEnDias: input.tiempoEntregaEnDias ?? null,
       proveedorMercaderia: input.proveedorMercaderia,
+      esFabrica: input.esFabrica,
       iva: input.iva,
     },
   });
@@ -257,6 +265,7 @@ export async function updateProveedor(
       plazosPagos: input.plazosPagos ?? null,
       tiempoEntregaEnDias: input.tiempoEntregaEnDias ?? null,
       proveedorMercaderia: input.proveedorMercaderia,
+      esFabrica: input.esFabrica,
       iva: input.iva,
     },
   });

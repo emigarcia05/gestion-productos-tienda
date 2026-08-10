@@ -77,6 +77,11 @@ model Proveedor {
    */
   proveedorMercaderia Boolean @default(false) @map("proveedor_mercaderia")
   /**
+   * Indica si el proveedor es fábrica (Pedido A Fábrica).
+   * Default DB: false.
+   */
+  esFabrica Boolean @default(false) @map("es_fabrica")
+  /**
    * Política de IVA del proveedor. Default DB `PREGUNTA` (la UI debe pedir
    * decisión al operador caso por caso hasta que se registre la política).
    */
@@ -95,6 +100,7 @@ model Proveedor {
   reglasDescEspecialListaPrecio ProdPrecioDescEspecialRegla[]
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
+  @@index([esFabrica], map: "global_proveedores_es_fabrica_idx")
   @@map("global_proveedores")
 }
 

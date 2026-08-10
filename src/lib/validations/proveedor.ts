@@ -74,6 +74,16 @@ export const proveedorMercaderiaFormSchema = z
   .transform((s) => s === "si");
 
 /**
+ * Flag "Es Fábrica" desde el form (hidden `si` / `no`).
+ * Obligatorio en alta y edición.
+ */
+export const esFabricaFormSchema = z
+  .string()
+  .transform((s) => (s ?? "").trim().toLowerCase())
+  .refine((s) => s === "si" || s === "no", "Seleccioná SI o NO en Es Fábrica.")
+  .transform((s) => s === "si");
+
+/**
  * Política de IVA del proveedor desde el form. Reutiliza el módulo
  * compartido `@/lib/validations/iva` (la fuente de verdad para los 3
  * valores del enum Postgres `IvaProveedor`); acá se mantienen los aliases
@@ -140,6 +150,7 @@ export const createProveedorSchema = z.object({
   plazosPagos: plazosPagosSchema,
   tiempoEntregaEnDias: tiempoEntregaEnDiasSchema,
   proveedorMercaderia: proveedorMercaderiaFormSchema,
+  esFabrica: esFabricaFormSchema,
   iva: ivaProveedorFormSchema,
 });
 

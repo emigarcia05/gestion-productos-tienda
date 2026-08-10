@@ -88,6 +88,7 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
       (formData.get("tiempoEntregaEnDias") as string) ?? "",
     proveedorMercaderia:
       (formData.get("proveedorMercaderia") as string | null) ?? "",
+    esFabrica: (formData.get("esFabrica") as string | null) ?? "",
     iva: (formData.get("iva") as string | null) ?? "",
   };
   const parsed = createProveedorSchema.safeParse(raw);
@@ -96,6 +97,7 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
     const msg =
       first.nombre?.[0] ??
       first.proveedorMercaderia?.[0] ??
+      first.esFabrica?.[0] ??
       first.prefijo?.[0] ??
       first.whatsapp?.[0] ??
       first.coeficienteTintometrico?.[0] ??
@@ -151,6 +153,7 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
       (formData.get("tiempoEntregaEnDias") as string) ?? "",
     proveedorMercaderia:
       (formData.get("proveedorMercaderia") as string | null) ?? "",
+    esFabrica: (formData.get("esFabrica") as string | null) ?? "",
     iva: (formData.get("iva") as string | null) ?? "",
   };
   const parsed = updateProveedorSchema.safeParse(raw);
@@ -159,6 +162,7 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
     const msg =
       first.nombre?.[0] ??
       first.proveedorMercaderia?.[0] ??
+      first.esFabrica?.[0] ??
       first.prefijo?.[0] ??
       first.whatsapp?.[0] ??
       first.coeficienteTintometrico?.[0] ??

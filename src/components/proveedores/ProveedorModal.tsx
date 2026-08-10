@@ -24,6 +24,8 @@ export interface ProveedorParaModal {
   tiempoEntregaEnDias?: number | null;
   /** Flag "Proveedor Mercadería" (edición). */
   proveedorMercaderia?: boolean;
+  /** Flag fábrica (edición). */
+  esFabrica?: boolean;
   /** Política IVA persistida (edición). */
   iva?: "SIEMPRE" | "NUNCA" | "PREGUNTA";
 }

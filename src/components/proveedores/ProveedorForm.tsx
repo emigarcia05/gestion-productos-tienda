@@ -30,6 +30,8 @@ interface Props {
     tiempoEntregaEnDias?: number | null;
     /** Flag "Proveedor Mercadería" (solo edición: precarga SI/NO). */
     proveedorMercaderia?: boolean;
+    /** Flag fábrica (solo edición: precarga SI/NO). */
+    esFabrica?: boolean;
     /** Política IVA persistida (solo edición: precarga SIEMPRE/NUNCA/PREGUNTA). */
     iva?: IvaProveedorValue;
   };
@@ -68,6 +70,7 @@ export default function ProveedorForm({
   const isEdit = !!proveedor;
 
   type ProveedorMercaderiaSel = "si" | "no" | "";
+  type EsFabricaSel = "si" | "no";
 
   /**
    * SI/NO de `proveedorMercaderia`. Controlled + hidden `name="proveedorMercaderia"`.
@@ -78,6 +81,15 @@ export default function ProveedorForm({
     if (!proveedor) return "";
     return proveedor.proveedorMercaderia === false ? "no" : "si";
   });
+
+  /**
+   * SI/NO de `esFabrica`. Controlled + hidden `name="esFabrica"`.
+   * Alta: default `no` (mismo default DB `false`).
+   * Edición: precarga el valor persistido.
+   */
+  const [esFabrica, setEsFabrica] = useState<EsFabricaSel>(() =>
+    proveedor?.esFabrica === true ? "si" : "no"
+  );
 
   /**
    * Política IVA. Controlled + hidden `name="iva"`.
@@ -92,8 +104,10 @@ export default function ProveedorForm({
     if (!modalOpen) return;
     if (!proveedor) {
       setProveedorMercaderia("");
+      setEsFabrica("no");
     } else {
       setProveedorMercaderia(proveedor.proveedorMercaderia === false ? "no" : "si");
+      setEsFabrica(proveedor.esFabrica === true ? "si" : "no");
     }
   }, [modalOpen, proveedor]);
 
@@ -188,6 +202,24 @@ export default function ProveedorForm({
           </SelectContent>
         </Select>
         <input type="hidden" name="proveedorMercaderia" value={proveedorMercaderia} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="esFabrica">ES FÁBRICA</Label>
+        <Select
+          value={esFabrica}
+          onValueChange={(v) => setEsFabrica(v as EsFabricaSel)}
+          disabled={pending}
+        >
+          <SelectTrigger id="esFabrica" className="w-full">
+            <SelectValue placeholder="SELECCIONAR SI O NO" />
+          </SelectTrigger>
+          <SelectContent position="popper" side="bottom" align="start">
+            <SelectItem value="si">SI</SelectItem>
+            <SelectItem value="no">NO</SelectItem>
+          </SelectContent>
+        </Select>
+        <input type="hidden" name="esFabrica" value={esFabrica} />
       </div>
 
       <div className="space-y-1.5">
