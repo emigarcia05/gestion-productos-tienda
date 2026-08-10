@@ -250,7 +250,9 @@ export default function FinBalGastosCatalogoPageClient({
         whatsapp: p.whatsapp ?? undefined,
         coeficienteTintometrico: p.coeficienteTintometrico,
         plazosPagos: p.plazosPagos ?? undefined,
+        tiempoEntregaEnDias: p.tiempoEntregaEnDias ?? undefined,
         proveedorMercaderia: p.proveedorMercaderia,
+        esFabrica: p.esFabrica,
         iva: p.iva,
       },
     });

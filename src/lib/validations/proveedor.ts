@@ -74,6 +74,16 @@ export const proveedorMercaderiaFormSchema = z
   .transform((s) => s === "si");
 
 /**
+ * Flag "Es Fábrica" desde el form (hidden `si` / `no`).
+ * Obligatorio en alta y edición.
+ */
+export const esFabricaFormSchema = z
+  .string()
+  .transform((s) => (s ?? "").trim().toLowerCase())
+  .refine((s) => s === "si" || s === "no", "Seleccioná SI o NO en Es Fábrica.")
+  .transform((s) => s === "si");
+
+/**
  * Política de IVA del proveedor desde el form. Reutiliza el módulo
  * compartido `@/lib/validations/iva` (la fuente de verdad para los 3
  * valores del enum Postgres `IvaProveedor`); acá se mantienen los aliases
@@ -99,6 +109,35 @@ export const prefijoProveedorOpcionalSchema = z
   .transform((s) => (s === "" ? null : s))
   .refine((s) => s === null || /^[A-Z]{3}$/.test(s), "Si completás prefijo, deben ser exactamente 3 letras (A-Z).");
 
+/**
+ * Tiempo de entrega en días desde el form.
+ * Vacío → `null`; si hay valor, entero ≥ 0 y ≤ 999.
+ */
+export const tiempoEntregaEnDiasSchema = z
+  .string()
+  .optional()
+  .default("")
+  .transform((s) => (s ?? "").trim())
+  .transform((s) => (s === "" ? null : s))
+  .superRefine((s, ctx) => {
+    if (s === null) return;
+    if (!/^\d+$/.test(s)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Tiempo de entrega: solo números enteros (días).",
+      });
+      return;
+    }
+    const n = Number.parseInt(s, 10);
+    if (!Number.isFinite(n) || n < 0 || n > 999) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Tiempo de entrega: entre 0 y 999 días.",
+      });
+    }
+  })
+  .transform((s) => (s === null ? null : Number.parseInt(s, 10)));
+
 export const createProveedorSchema = z.object({
   nombre: z
     .string()
@@ -109,7 +148,9 @@ export const createProveedorSchema = z.object({
   whatsapp: whatsappSchema,
   coeficienteTintometrico: coeficienteTintometricoSchema,
   plazosPagos: plazosPagosSchema,
+  tiempoEntregaEnDias: tiempoEntregaEnDiasSchema,
   proveedorMercaderia: proveedorMercaderiaFormSchema,
+  esFabrica: esFabricaFormSchema,
   iva: ivaProveedorFormSchema,
 });
 
