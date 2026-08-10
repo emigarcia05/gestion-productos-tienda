@@ -612,7 +612,7 @@ interface ReglaDescuentoListaPrecio {
 - Validación Zod: `tiempoEntregaEnDiasSchema` en `@/lib/validations/proveedor.ts` (string de form → `number | null`); incluido en `createProveedorSchema` / `updateProveedorSchema`.
 - Servicio `proveedor.service.ts`: `CreateProveedorInput` / `UpdateProveedorInput` / `ProveedorListItem` / `getProveedorById` exponen `tiempoEntregaEnDias`; `createProveedor` / `updateProveedor` lo persisten.
 - Actions `crearProveedor` / `editarProveedor`: leen `formData.get("tiempoEntregaEnDias")`.
-- UI: campo **TIEMPO ENTREGA (DÍAS)** en `ProveedorForm` (opcional; vacío → `NULL`).
+- UI: campo **TIEMPO ENTREGA MERCADERÍA EN DÍAS** en `ProveedorForm` (opcional; vacío → `NULL`).
 
 ### 1.11d Política de IVA por proveedor (`global_proveedores.iva`)
 

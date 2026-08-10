@@ -960,7 +960,7 @@ Pasada de consistencia **desktop-only** y tokens/`AppModal` / `ModalMicroLabel`:
 - **`AppModal`:** no duplicar **`max-w-*`** de **`size`**; **`ConfirmarComprobanteFiscalModal`** (`size="sm"`), **`CrearEditarFinBalGastoFinalModal`** ancho **`size="lg"`** (`max-w-xl`).
 - **`CrearEditarFinBalGastoFinalModal`:** campos con **`ModalMicroLabel`**; **GENERA IVA CRÉDITO** (`SIEMPRE` / `NUNCA` / `PREGUNTA`) ubicado debajo de **PLAZO DE PAGO** (columna `fin_bal_gasto_final.iva`). En **Nuevo Gasto Final**, todos los selects obligatorios deben elegirse explícitamente (sin default: tipo, sucursal, proveedor, IVA; si **MENSUAL**, día devengado y plazo). **COMENTARIOS** es el único campo opcional. **EVENTUAL** exceptúa **DÍA DEVENGADO** y **PLAZO DE PAGO** (bloqueados, `null` al guardar; en **editar**, `hasChanges` no compara día/plazo salvo que tipo siga siendo **MENSUAL** en origen y destino).
 - **`FinBalGastosCatalogoPageClient`:** **`TableEmptyState`** en el wrapper **`EmptyState`**; modal proveedores: prefijo vacío sin **`—`**.
-- **`ProveedorModal` / `ProveedorForm`:** **Editar Proveedor**, **Guardar Cambios** (title case). Campo opcional **TIEMPO ENTREGA (DÍAS)** (`tiempoEntregaEnDias` → `global_proveedores.tiempo_entrega_en_dias`; entero 0–999 o vacío = `NULL`).
+- **`ProveedorModal` / `ProveedorForm`:** **Editar Proveedor**, **Guardar Cambios** (title case). Campo opcional **TIEMPO ENTREGA MERCADERÍA EN DÍAS** (`tiempoEntregaEnDias` → `global_proveedores.tiempo_entrega_en_dias`; entero 0–999 o vacío = `NULL`).
 
 ### Correcciones ya aplicadas
 
@@ -1797,7 +1797,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-08): **Sidebar · Vendedor** — enlace directo **CONTROL STOCK** (`GP_ROUTES.ayudaVendedor.controlStock`, `PERMISOS.stock.acceso`) tras **MERCADERÍA**; orden: MERCADERÍA → CONTROL STOCK → PRECIOS → CALCULAR LTS → CARGAR GASTOS → ASISTENTE IA.
 
-*Última actualización (2026-08-10): **ProveedorForm** — campo **TIEMPO ENTREGA (DÍAS)** (`tiempo_entrega_en_dias`).
+*Última actualización (2026-08-10): **ProveedorForm** — campo **TIEMPO ENTREGA MERCADERÍA EN DÍAS** (`tiempo_entrega_en_dias`).
 
 ---
 
