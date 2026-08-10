@@ -26,7 +26,10 @@ export default async function ListaProveedoresPage() {
   return (
     <div className="area-page-shell">
       <ClassicFilteredTableLayout title="Lista Proveedores" subtitle="Proveedores" actions={actions}>
-        <TablaProveedoresLista proveedores={proveedores} />
+        <TablaProveedoresLista
+          proveedores={proveedores}
+          puedeMutar={puede(rol, p.acciones.nuevoProveedor)}
+        />
       </ClassicFilteredTableLayout>
     </div>
   );
