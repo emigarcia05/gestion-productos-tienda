@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, startTransition } from "react";
+import { Info } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FilterBar, {
   FilaFiltrosDesplegables,
@@ -17,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ToolbarActionButton from "@/components/shared/ToolbarActionButton";
 import { cn } from "@/lib/utils";
 import { getProductosPedidoAFabricaAction } from "@/actions/pedidoAFabrica";
 import type {
@@ -24,6 +26,7 @@ import type {
   SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
 import TablaPedidoAFabrica from "@/components/pedido-a-fabrica/TablaPedidoAFabrica";
+import InfoPromedioPedidoAFabricaModal from "@/components/pedido-a-fabrica/InfoPromedioPedidoAFabricaModal";
 
 export type ProveedorFabricaOption = {
   id: string;
@@ -58,6 +61,7 @@ export default function PedidoAFabricaPageClient({
   const [productos, setProductos] = useState<ProductoPedidoAFabricaItem[]>([]);
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [infoPromedioOpen, setInfoPromedioOpen] = useState(false);
 
   const proveedorActivo = proveedorId !== "";
   const tiempoStockActivo = tiempoStock !== "";
@@ -115,82 +119,98 @@ export default function PedidoAFabricaPageClient({
   }, [proveedorId, pagina, sucursalesPedido]);
 
   return (
-    <ClassicFilteredTableLayout
-      title="PEDIDO A FÁB."
-      subtitle="Pedido A Fáb."
-      contentWidth="full"
-      filters={
-        <FilterBar className="filtros-contenedor-tienda bg-card">
-          <FilterRowSelection>
-            <FilaFiltrosDesplegables columnas={5}>
-              <FiltroIndividualContainer
-                activo={proveedorActivo}
-                onLimpiar={handleLimpiarProveedor}
-              >
-                <Select
-                  value={proveedorId || undefined}
-                  onValueChange={handleProveedorChange}
+    <>
+      <ClassicFilteredTableLayout
+        title="PEDIDO A FÁB."
+        subtitle="Pedido A Fáb."
+        contentWidth="full"
+        actions={
+          <ToolbarActionButton
+            type="button"
+            label="Info Promedio"
+            icon={<Info aria-hidden />}
+            className="h-10 px-4"
+            onClick={() => setInfoPromedioOpen(true)}
+          />
+        }
+        filters={
+          <FilterBar className="filtros-contenedor-tienda bg-card">
+            <FilterRowSelection>
+              <FilaFiltrosDesplegables columnas={5}>
+                <FiltroIndividualContainer
+                  activo={proveedorActivo}
+                  onLimpiar={handleLimpiarProveedor}
                 >
-                  <SelectTrigger
-                    className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
-                    aria-label="PROVEEDOR"
+                  <Select
+                    value={proveedorId || undefined}
+                    onValueChange={handleProveedorChange}
                   >
-                    <SelectValue placeholder="PROVEEDOR" />
-                  </SelectTrigger>
-                  <SelectContent
-                    position="popper"
-                    side="bottom"
-                    align="start"
-                    className="select-content-filtro"
-                  >
-                    {proveedoresFabrica.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.prefijo
-                          ? `[${p.prefijo}] ${p.nombre}`.toLocaleUpperCase("es")
-                          : p.nombre.toLocaleUpperCase("es")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FiltroIndividualContainer>
+                    <SelectTrigger
+                      className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
+                      aria-label="PROVEEDOR"
+                    >
+                      <SelectValue placeholder="PROVEEDOR" />
+                    </SelectTrigger>
+                    <SelectContent
+                      position="popper"
+                      side="bottom"
+                      align="start"
+                      className="select-content-filtro"
+                    >
+                      {proveedoresFabrica.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.prefijo
+                            ? `[${p.prefijo}] ${p.nombre}`.toLocaleUpperCase("es")
+                            : p.nombre.toLocaleUpperCase("es")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FiltroIndividualContainer>
 
-              <FiltroIndividualContainer
-                activo={tiempoStockActivo}
-                onLimpiar={() => setTiempoStock("")}
-              >
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="TIEMPO STOCK"
-                  aria-label="TIEMPO STOCK"
-                  value={tiempoStock}
-                  onChange={(e) => handleTiempoStockChange(e.target.value)}
-                  className={cn(INPUT_FILTER_CLASS, "w-full")}
-                />
-              </FiltroIndividualContainer>
-            </FilaFiltrosDesplegables>
-          </FilterRowSelection>
-        </FilterBar>
-      }
-    >
-      {proveedorActivo ? (
-        <TablaPedidoAFabrica
-          sucursales={sucursales}
-          productos={productos}
-          pagina={pagina}
-          totalPaginas={totalPaginas}
-          onPaginaChange={setPagina}
-          loading={loading}
-          emptyMessage="Este proveedor no tiene productos en la lista de precios."
-        />
-      ) : (
-        <div className="flex min-h-[12rem] flex-1 items-center justify-center rounded-lg border border-border bg-card p-6 shadow-sm">
-          <p className="max-w-md text-center text-sm text-muted-foreground">
-            Seleccioná un proveedor de fábrica para ver sus productos.
-          </p>
-        </div>
-      )}
-    </ClassicFilteredTableLayout>
+                <FiltroIndividualContainer
+                  activo={tiempoStockActivo}
+                  onLimpiar={() => setTiempoStock("")}
+                >
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="TIEMPO STOCK"
+                    aria-label="TIEMPO STOCK"
+                    value={tiempoStock}
+                    onChange={(e) => handleTiempoStockChange(e.target.value)}
+                    className={cn(INPUT_FILTER_CLASS, "w-full")}
+                  />
+                </FiltroIndividualContainer>
+              </FilaFiltrosDesplegables>
+            </FilterRowSelection>
+          </FilterBar>
+        }
+      >
+        {proveedorActivo ? (
+          <TablaPedidoAFabrica
+            sucursales={sucursales}
+            productos={productos}
+            pagina={pagina}
+            totalPaginas={totalPaginas}
+            onPaginaChange={setPagina}
+            loading={loading}
+            emptyMessage="Este proveedor no tiene productos en la lista de precios."
+          />
+        ) : (
+          <div className="flex min-h-[12rem] flex-1 items-center justify-center rounded-lg border border-border bg-card p-6 shadow-sm">
+            <p className="max-w-md text-center text-sm text-muted-foreground">
+              Seleccioná un proveedor de fábrica para ver sus productos.
+            </p>
+          </div>
+        )}
+      </ClassicFilteredTableLayout>
+
+      <InfoPromedioPedidoAFabricaModal
+        open={infoPromedioOpen}
+        onOpenChange={setInfoPromedioOpen}
+      />
+    </>
   );
 }

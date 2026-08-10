@@ -29,14 +29,6 @@ interface Props {
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
-function fmtPromVta(n: number | null | undefined): string {
-  if (n == null || Number.isNaN(n)) return "";
-  return n.toLocaleString("es-AR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 1,
-  });
-}
-
 /** Suma de STOCK ACTUAL y PROM. VTA. de todas las sucursales de la fila. */
 function totalPorSucursales(
   producto: ProductoPedidoAFabricaItem,
@@ -207,27 +199,27 @@ export default function TablaPedidoAFabrica({
                           key={`${p.codExt}-${s.id}-prom`}
                           className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
                         >
-                          {fmtPromVta(datos?.promVta)}
-                        </TableCell>,
-                      ];
-                    })}
-                    {nSuc > 0 ? (
-                      <>
-                        <TableCell
-                          className={cn(
-                            TD_NUM,
-                            "tabla-bloque-secundario-cell-divider"
-                          )}
-                        >
-                          {fmtNumero(total.stockActual)}
-                        </TableCell>
-                        <TableCell
-                          className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
-                        >
-                          {fmtPromVta(total.promVta)}
-                        </TableCell>
-                      </>
-                    ) : null}
+                        {fmtNumero(datos?.promVta)}
+                      </TableCell>,
+                    ];
+                  })}
+                  {nSuc > 0 ? (
+                    <>
+                      <TableCell
+                        className={cn(
+                          TD_NUM,
+                          "tabla-bloque-secundario-cell-divider"
+                        )}
+                      >
+                        {fmtNumero(total.stockActual)}
+                      </TableCell>
+                      <TableCell
+                        className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
+                      >
+                        {fmtNumero(total.promVta)}
+                      </TableCell>
+                    </>
+                  ) : null}
                   </TableRow>
                 );
               })

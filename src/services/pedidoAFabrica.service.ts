@@ -4,7 +4,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
-import { EST_POR_PROD_CARGA_DESDE } from "@/lib/estPorProdPeriodo";
+import {
+  calcularPromVtaDiariaDesdeTotal,
+  periodosUltimosDosMesesCompletos,
+} from "@/lib/pedidoAFabricaPromVta";
 import {
   buildMapStockPorDeposito,
   getIdDepositoPorSucursalCodigo,
@@ -19,7 +22,10 @@ export type SucursalPedidoAFabrica = {
 export type DatosSucursalProductoPedidoAFabrica = {
   /** `stock_real` del depósito principal de la sucursal; `null` si el ítem no tiene `cod_tienda`. */
   stockActual: number | null;
-  /** Promedio mensual de `est_por_prod.vtas_en_un` (periodos con datos desde carga); `null` sin vínculo / sin ventas. */
+  /**
+   * Promedio diario de venta (entero): suma `est_por_prod` de los 2 meses previos / 48
+   * (24 días × 2), redondeado. `null` sin vínculo tienda.
+   */
   promVta: number | null;
 };
 
@@ -68,35 +74,36 @@ function emptyPorSucursal(
 }
 
 /**
- * Promedio mensual de ventas por (`cod_tienda`, `sucursal_id`) desde `EST_POR_PROD_CARGA_DESDE`.
+ * PROM. VTA. diario por (`cod_tienda`, `sucursal_id`):
+ * suma de ventas de los 2 meses calendario previos / 48, redondeado.
  */
-async function buildMapPromVtaMensual(
+async function buildMapPromVtaDiaria(
   codTiendas: string[],
   sucursalIds: string[]
 ): Promise<Map<string, number>> {
   const map = new Map<string, number>();
   if (codTiendas.length === 0 || sucursalIds.length === 0) return map;
 
-  const { mes: mesMin, anio: anioMin } = EST_POR_PROD_CARGA_DESDE;
+  const { anterior, reciente } = periodosUltimosDosMesesCompletos();
   const rows = await prisma.estPorProd.findMany({
     where: {
       codTienda: { in: codTiendas },
       sucursalId: { in: sucursalIds },
-      OR: [{ anio: { gt: anioMin } }, { anio: anioMin, mes: { gte: mesMin } }],
+      OR: [
+        { anio: anterior.anio, mes: anterior.mes },
+        { anio: reciente.anio, mes: reciente.mes },
+      ],
     },
     select: { codTienda: true, sucursalId: true, vtasEnUn: true },
   });
 
-  const acc = new Map<string, { sum: number; n: number }>();
+  const sumas = new Map<string, number>();
   for (const r of rows) {
     const key = `${r.codTienda}\0${r.sucursalId}`;
-    const prev = acc.get(key) ?? { sum: 0, n: 0 };
-    prev.sum += Number(r.vtasEnUn);
-    prev.n += 1;
-    acc.set(key, prev);
+    sumas.set(key, (sumas.get(key) ?? 0) + Number(r.vtasEnUn));
   }
-  for (const [key, { sum, n }] of acc) {
-    if (n > 0) map.set(key, sum / n);
+  for (const [key, total] of sumas) {
+    map.set(key, calcularPromVtaDiariaDesdeTotal(total));
   }
   return map;
 }
@@ -147,7 +154,9 @@ export async function listarProductosPorProveedorFabrica(
   ];
 
   const stockMapsByCodigo = new Map<string, Map<string, number>>();
-  const codigosUnicos = [...new Set(sucursales.map((s) => s.codigo.trim().toLowerCase()))];
+  const codigosUnicos = [
+    ...new Set(sucursales.map((s) => s.codigo.trim().toLowerCase())),
+  ];
   await Promise.all(
     codigosUnicos.map(async (codigo) => {
       const idDeposito = getIdDepositoPorSucursalCodigo(codigo);
@@ -156,7 +165,7 @@ export async function listarProductosPorProveedorFabrica(
     })
   );
 
-  const promMap = await buildMapPromVtaMensual(
+  const promMap = await buildMapPromVtaDiaria(
     codTiendas,
     sucursales.map((s) => s.id)
   );
@@ -169,7 +178,8 @@ export async function listarProductosPorProveedorFabrica(
         const codigo = s.codigo.trim().toLowerCase();
         const stockMap = stockMapsByCodigo.get(codigo);
         const stockActual = stockMap?.get(codTienda) ?? 0;
-        const promVta = promMap.get(`${codTienda}\0${s.id}`) ?? null;
+        const key = `${codTienda}\0${s.id}`;
+        const promVta = promMap.has(key) ? (promMap.get(key) as number) : 0;
         porSucursal[s.id] = { stockActual, promVta };
       }
     }

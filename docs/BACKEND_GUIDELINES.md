@@ -626,7 +626,7 @@ interface ReglaDescuentoListaPrecio {
 - Servicio / actions: `CreateProveedorInput` / `UpdateProveedorInput` / `ProveedorListItem` exponen `esFabrica`; `crearProveedor` / `editarProveedor` leen `formData.get("esFabrica")`.
 - UI: Select **ES FÁBRICA** (SI/NO) en `ProveedorForm` (alta default **NO**; edición precarga valor).
 - Lectura filtrada: `getProveedoresFabrica()` en `proveedor.service.ts` (`where: { esFabrica: true }`) + action `getProveedoresFabrica` (`PERMISOS.estadisticasProductos.acceso`) para el selector de **Pedido A Fáb.**.
-- **Productos del proveedor fábrica** (`src/services/pedidoAFabrica.service.ts`): `listarProductosPorProveedorFabrica(proveedorId, pagina)` — exige `es_fabrica = true`; lee `prod_precios_provee` con `habilitado = true`; expone `codExt`, `descripcion` (`descripcion_proveedor`), `codTienda` (`cod_tienda` vínculo) y `porSucursal`. Sucursales: `listarSucursalesParaPedidoAFabrica()` (`pedido = true`). Por sucursal: **STOCK ACTUAL** = `stock_real` del depósito (`getIdDepositoPorSucursalCodigo` + `buildMapStockPorDeposito`); **PROM. VTA.** = promedio de `est_por_prod.vtas_en_un` por periodo con datos desde `EST_POR_PROD_CARGA_DESDE`. Paginación `PAGE_SIZE` (100). Actions: `getProductosPedidoAFabricaAction`, `getSucursalesPedidoAFabricaAction` (`src/actions/pedidoAFabrica.ts`) con Zod `productosPedidoAFabricaFiltrosSchema`; gate `PERMISOS.estadisticasProductos.acceso`.
+- **Productos del proveedor fábrica** (`src/services/pedidoAFabrica.service.ts`): `listarProductosPorProveedorFabrica(proveedorId, pagina)` — exige `es_fabrica = true`; lee `prod_precios_provee` con `habilitado = true`; expone `codExt`, `descripcion` (`descripcion_proveedor`), `codTienda` (`cod_tienda` vínculo) y `porSucursal`. Sucursales: `listarSucursalesParaPedidoAFabrica()` (`pedido = true`). Por sucursal: **STOCK ACTUAL** = `stock_real` del depósito (`getIdDepositoPorSucursalCodigo` + `buildMapStockPorDeposito`); **PROM. VTA.** = suma `est_por_prod.vtas_en_un` de los **2 meses calendario previos** (AR) / **48** (24 días × 2), `Math.round` (`@/lib/pedidoAFabricaPromVta`). Paginación `PAGE_SIZE` (100). Actions: `getProductosPedidoAFabricaAction`, `getSucursalesPedidoAFabricaAction` (`src/actions/pedidoAFabrica.ts`) con Zod `productosPedidoAFabricaFiltrosSchema`; gate `PERMISOS.estadisticasProductos.acceso`.
 
 ### 1.11d Política de IVA por proveedor (`global_proveedores.iva`)
 
@@ -2071,6 +2071,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-10): **Sidebar · Administración** — 4 pilares; ESTADÍSTICAS agrupa VENTAS + CONFIGURACION; PEDIDO A FÁB.
 
 *Última actualización (2026-08-10): **Pedido A Fáb.** — métricas por sucursal `pedido=true` (stock_real + prom. vta. `est_por_prod`).
+
+*Última actualización (2026-08-10): **Pedido A Fáb.** — PROM. VTA. diario = 2 meses previos / 48 días (redondeo).
 
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 
