@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
+import { getProveedoresFabrica } from "@/actions/proveedores";
 import PedidoAFabricaPageClient from "@/components/pedido-a-fabrica/PedidoAFabricaPageClient";
 
 export const dynamic = "force-dynamic";
@@ -12,9 +13,16 @@ export default async function PedidoAFabricaPage() {
     redirect(GP_ROUTES.defaultEntry);
   }
 
+  const proveedores = await getProveedoresFabrica();
+  const proveedoresFabrica = proveedores.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    prefijo: p.prefijo,
+  }));
+
   return (
     <div className="area-page-shell">
-      <PedidoAFabricaPageClient />
+      <PedidoAFabricaPageClient proveedoresFabrica={proveedoresFabrica} />
     </div>
   );
 }

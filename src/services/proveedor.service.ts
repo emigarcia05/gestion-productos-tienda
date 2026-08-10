@@ -133,9 +133,18 @@ export async function getProveedoresNoMercaderia(): Promise<ProveedorListItem[]>
   return listarProveedoresInterno({ proveedorMercaderia: false });
 }
 
+/**
+ * Lista únicamente los proveedores con `es_fabrica = true`.
+ * Alimenta el selector **PROVEEDOR** de **Pedido A Fábrica**.
+ * Usa el índice `global_proveedores_es_fabrica_idx`.
+ */
+export async function getProveedoresFabrica(): Promise<ProveedorListItem[]> {
+  return listarProveedoresInterno({ esFabrica: true });
+}
+
 /** Implementación compartida: arma el payload con conteos en una sola pasada. */
 async function listarProveedoresInterno(
-  where: { proveedorMercaderia?: boolean } | null
+  where: { proveedorMercaderia?: boolean; esFabrica?: boolean } | null
 ): Promise<ProveedorListItem[]> {
   const [rows, vinculadosByProveedor] = await Promise.all([
     prisma.proveedor.findMany({

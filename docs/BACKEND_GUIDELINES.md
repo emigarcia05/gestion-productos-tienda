@@ -625,6 +625,7 @@ interface ReglaDescuentoListaPrecio {
 - Validación Zod: `esFabricaFormSchema` en `@/lib/validations/proveedor.ts` (`si`/`no` → boolean); incluido en `createProveedorSchema` / `updateProveedorSchema`.
 - Servicio / actions: `CreateProveedorInput` / `UpdateProveedorInput` / `ProveedorListItem` exponen `esFabrica`; `crearProveedor` / `editarProveedor` leen `formData.get("esFabrica")`.
 - UI: Select **ES FÁBRICA** (SI/NO) en `ProveedorForm` (alta default **NO**; edición precarga valor).
+- Lectura filtrada: `getProveedoresFabrica()` en `proveedor.service.ts` (`where: { esFabrica: true }`) + action `getProveedoresFabrica` (`PERMISOS.estadisticasProductos.acceso`) para el selector de **Pedido A Fábrica**.
 
 ### 1.11d Política de IVA por proveedor (`global_proveedores.iva`)
 

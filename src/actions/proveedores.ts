@@ -37,6 +37,16 @@ export async function getProveedoresMercaderia() {
 }
 
 /**
+ * Lista únicamente los proveedores con `es_fabrica = true`.
+ * Usada por Pedido A Fábrica (selector PROVEEDOR).
+ */
+export async function getProveedoresFabrica() {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) return [];
+  return proveedorService.getProveedoresFabrica();
+}
+
+/**
  * Datos para `/proveedores`: proveedores + productos filtrados desde `prod_precios_provee`.
  * Sin filtros activos no se cargan productos (misma regla que lista-precios).
  */
