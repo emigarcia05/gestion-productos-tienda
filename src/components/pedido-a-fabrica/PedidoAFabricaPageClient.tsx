@@ -6,8 +6,10 @@ import FilterBar, {
   FilaFiltrosDesplegables,
   FilterRowSelection,
   FiltroIndividualContainer,
+  INPUT_FILTER_CLASS,
   SELECT_TRIGGER_FILTER_CLASS,
 } from "@/components/FilterBar";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -30,21 +32,28 @@ interface Props {
   proveedoresFabrica: ProveedorFabricaOption[];
 }
 
+/** Solo dígitos (enteros ≥ 0); vacío permitido. */
+function sanitizeTiempoStockInput(raw: string): string {
+  return raw.replace(/\D/g, "");
+}
+
 /**
  * Módulo **Pedido A Fáb.** (pilar sidebar Administración).
- * Primer control: **PROVEEDOR** (solo `es_fabrica = true`).
- * Al seleccionar: tabla con **DESCRIPCIÓN** de productos de ese proveedor.
+ * Filtros: **PROVEEDOR** (`es_fabrica = true`) + **TIEMPO STOCK** (enteros).
+ * Al seleccionar proveedor: tabla con **DESCRIPCIÓN** de productos.
  */
 export default function PedidoAFabricaPageClient({
   proveedoresFabrica,
 }: Props) {
   const [proveedorId, setProveedorId] = useState<string>("");
+  const [tiempoStock, setTiempoStock] = useState<string>("");
   const [pagina, setPagina] = useState(1);
   const [productos, setProductos] = useState<ProductoPedidoAFabricaItem[]>([]);
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [loading, setLoading] = useState(false);
 
   const proveedorActivo = proveedorId !== "";
+  const tiempoStockActivo = tiempoStock !== "";
 
   function handleProveedorChange(value: string) {
     setProveedorId(value);
@@ -56,6 +65,10 @@ export default function PedidoAFabricaPageClient({
     setPagina(1);
     setProductos([]);
     setTotalPaginas(0);
+  }
+
+  function handleTiempoStockChange(raw: string) {
+    setTiempoStock(sanitizeTiempoStockInput(raw));
   }
 
   useEffect(() => {
@@ -127,6 +140,22 @@ export default function PedidoAFabricaPageClient({
                     ))}
                   </SelectContent>
                 </Select>
+              </FiltroIndividualContainer>
+
+              <FiltroIndividualContainer
+                activo={tiempoStockActivo}
+                onLimpiar={() => setTiempoStock("")}
+              >
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="TIEMPO STOCK"
+                  aria-label="TIEMPO STOCK"
+                  value={tiempoStock}
+                  onChange={(e) => handleTiempoStockChange(e.target.value)}
+                  className={cn(INPUT_FILTER_CLASS, "w-full")}
+                />
               </FiltroIndividualContainer>
             </FilaFiltrosDesplegables>
           </FilterRowSelection>
