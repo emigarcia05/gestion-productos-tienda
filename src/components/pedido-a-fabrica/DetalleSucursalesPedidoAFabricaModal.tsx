@@ -1,16 +1,19 @@
 "use client";
 
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import AppModal from "@/components/shared/AppModal";
+import { totalPorSucursalesPedidoAFabrica } from "@/components/pedido-a-fabrica/TablaPedidoAFabrica";
 import { cn } from "@/lib/utils";
 import { fmtNumero } from "@/lib/format";
 import {
@@ -34,9 +37,18 @@ interface Props {
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
+interface FilaSucursalDetalle {
+  id: string;
+  nombre: string;
+  stockUnidades: number | null;
+  stockDias: number | null;
+  stockHastaLlegada: number | null;
+  sugerida: number | null;
+}
+
 /**
  * Detalle por sucursal de un ítem Pedido A Fáb.:
- * Stock Actual · Stock hasta llegada · Compra sugerida.
+ * Stock Actual · Stock hasta llegada · Compra sugerida + fila **TOTAL**.
  * (PROM. VTA. alimenta los cálculos pero no se muestra como columna.)
  */
 export default function DetalleSucursalesPedidoAFabricaModal({
@@ -50,6 +62,70 @@ export default function DetalleSucursalesPedidoAFabricaModal({
   const titulo = producto?.descripcion?.trim()
     ? producto.descripcion
     : "Detalle por sucursal";
+
+  const { filas, total } = useMemo(() => {
+    if (!producto || sucursales.length === 0) {
+      return { filas: [] as FilaSucursalDetalle[], total: null };
+    }
+
+    const filasCalc: FilaSucursalDetalle[] = sucursales.map((s) => {
+      const datos = producto.porSucursal[s.id];
+      const stockUnidades = datos?.stockActual ?? null;
+      const promVta = datos?.promVta ?? null;
+      const stockDias = calcularStockEnDiasPedidoAFabrica(
+        stockUnidades,
+        promVta
+      );
+      const stockHastaLlegada = calcularStockAFechaLlegadaPedidoAFabrica(
+        stockUnidades,
+        promVta,
+        tiempoEntregaEnDias
+      );
+      const calc = calcularCantSugeridaPedidoAFabrica({
+        stockActual: stockUnidades ?? 0,
+        promVtaTotal: promVta ?? 0,
+        tiempoEntregaEnDias,
+        tiempoStockeo,
+      });
+      return {
+        id: s.id,
+        nombre: s.nombre.toLocaleUpperCase("es"),
+        stockUnidades,
+        stockDias,
+        stockHastaLlegada,
+        sugerida: calc?.cantSugerida ?? null,
+      };
+    });
+
+    /** Totales = misma lógica que la grilla (suma stock/prom → métricas derivadas). */
+    const agg = totalPorSucursalesPedidoAFabrica(producto, sucursales);
+    const stockUnidades = agg.stockActual;
+    const stockDias = calcularStockEnDiasPedidoAFabrica(
+      stockUnidades,
+      agg.promVta
+    );
+    const stockHastaLlegada = calcularStockAFechaLlegadaPedidoAFabrica(
+      stockUnidades,
+      agg.promVta,
+      tiempoEntregaEnDias
+    );
+    const calcTotal = calcularCantSugeridaPedidoAFabrica({
+      stockActual: stockUnidades ?? 0,
+      promVtaTotal: agg.promVta ?? 0,
+      tiempoEntregaEnDias,
+      tiempoStockeo,
+    });
+
+    return {
+      filas: filasCalc,
+      total: {
+        stockUnidades,
+        stockDias,
+        stockHastaLlegada,
+        sugerida: calcTotal?.cantSugerida ?? null,
+      },
+    };
+  }, [producto, sucursales, tiempoEntregaEnDias, tiempoStockeo]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -111,68 +187,86 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sucursales.map((s) => {
-                  const datos = producto.porSucursal[s.id];
-                  const stockUnidades = datos?.stockActual ?? null;
-                  const promVta = datos?.promVta ?? null;
-                  const stockDias = calcularStockEnDiasPedidoAFabrica(
-                    stockUnidades,
-                    promVta
-                  );
-                  const stockHastaLlegada =
-                    calcularStockAFechaLlegadaPedidoAFabrica(
-                      stockUnidades,
-                      promVta,
-                      tiempoEntregaEnDias
-                    );
-                  const calc = calcularCantSugeridaPedidoAFabrica({
-                    stockActual: stockUnidades ?? 0,
-                    promVtaTotal: promVta ?? 0,
-                    tiempoEntregaEnDias,
-                    tiempoStockeo,
-                  });
-                  const sugerida = calc?.cantSugerida ?? null;
-
-                  return (
-                    <TableRow key={s.id}>
-                      <TableCell className="celda-datos min-w-0">
-                        <span className="block truncate" title={s.nombre}>
-                          {s.nombre.toLocaleUpperCase("es")}
-                        </span>
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          TD_NUM,
-                          "tabla-bloque-secundario-cell-divider"
-                        )}
-                      >
-                        {fmtNumero(stockUnidades)}
-                      </TableCell>
-                      <TableCell
-                        className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
-                      >
-                        {fmtNumero(stockDias)}
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          TD_NUM,
-                          "tabla-bloque-secundario-cell-divider"
-                        )}
-                      >
-                        {fmtNumero(stockHastaLlegada)}
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          TD_NUM,
-                          "tabla-bloque-secundario-cell-divider"
-                        )}
-                      >
-                        {sugerida != null ? fmtNumero(sugerida) : ""}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {filas.map((f) => (
+                  <TableRow key={f.id}>
+                    <TableCell className="celda-datos min-w-0">
+                      <span className="block truncate" title={f.nombre}>
+                        {f.nombre}
+                      </span>
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        TD_NUM,
+                        "tabla-bloque-secundario-cell-divider"
+                      )}
+                    >
+                      {fmtNumero(f.stockUnidades)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
+                    >
+                      {fmtNumero(f.stockDias)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        TD_NUM,
+                        "tabla-bloque-secundario-cell-divider"
+                      )}
+                    >
+                      {fmtNumero(f.stockHastaLlegada)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        TD_NUM,
+                        "tabla-bloque-secundario-cell-divider"
+                      )}
+                    >
+                      {f.sugerida != null ? fmtNumero(f.sugerida) : ""}
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
+              {total ? (
+                <TableFooter>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50 border-t-2 border-border">
+                    <TableCell className="celda-datos min-w-0 font-bold uppercase">
+                      TOTAL
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        TD_NUM,
+                        "font-bold tabla-bloque-secundario-cell-divider"
+                      )}
+                    >
+                      {fmtNumero(total.stockUnidades)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        TD_NUM,
+                        "font-bold tabla-bloque-secundario-cell"
+                      )}
+                    >
+                      {fmtNumero(total.stockDias)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        TD_NUM,
+                        "font-bold tabla-bloque-secundario-cell-divider"
+                      )}
+                    >
+                      {fmtNumero(total.stockHastaLlegada)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        TD_NUM,
+                        "font-bold tabla-bloque-secundario-cell-divider"
+                      )}
+                    >
+                      {total.sugerida != null ? fmtNumero(total.sugerida) : ""}
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              ) : null}
             </Table>
           </div>
         )}
