@@ -111,6 +111,10 @@ export default function InfoPromedioPedidoAFabricaModal({
             </h3>
             <ul className="list-none space-y-1 pl-0">
               <FormulaLine
+                left="Stock Actual En Días"
+                right="Stock Actual En Unidades / Prom. Vta. P/ Día (redondeo; vacío si prom = 0)"
+              />
+              <FormulaLine
                 left="Stock a Fecha Llegada Pedido"
                 right="Stock Actual − (tiempo_entrega_en_dias × Prom. Vta. total)"
               />

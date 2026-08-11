@@ -627,12 +627,14 @@ interface ReglaDescuentoListaPrecio {
 - UI: Select **ES FÁBRICA** (SI/NO) en `ProveedorForm` (alta default **NO**; edición precarga valor).
 - Lectura filtrada: `getProveedoresFabrica()` en `proveedor.service.ts` (`where: { esFabrica: true }`) + action `getProveedoresFabrica` (`PERMISOS.estadisticasProductos.acceso`) para el selector de **Pedido A Fáb.**.
 - **Productos del proveedor fábrica** (`src/services/pedidoAFabrica.service.ts`): `listarProductosPorProveedorFabrica(proveedorId, filtros)` — exige `es_fabrica = true`; lee `prod_precios_provee` con `habilitado = true`; expone `codExt`, **`descripcion`** = `prod_tienda.descripcion_tienda` (vía `cod_tienda` / `prodTienda`) con fallback a `descripcion_proveedor`, `codTienda` y `porSucursal`. Filtros opcionales sobre tienda vinculada: **`marca`**, **`rubro`**, **`subRubro`** + **`q`** (tokens en `descripcion_tienda` **o** `descripcion_proveedor`). Devuelve opciones dinámicas `marcas` / `rubros` / `subRubros` (distinct de `prod_tienda` de ítems vinculados del proveedor, excluyendo la dimensión activa). Sucursales: `listarSucursalesParaPedidoAFabrica()` (`pedido = true`). Por sucursal: **STOCK ACTUAL** = `stock_real` del depósito (`getIdDepositoPorSucursalCodigo` + `buildMapStockPorDeposito`); **PROM. VTA.** = suma `est_por_prod.vtas_en_un` de los **2 meses calendario previos** (AR) / **48** (24 días × 2), `Math.round` (`@/lib/pedidoAFabricaPromVta`). Paginación `PAGE_SIZE` (100). Actions: `getProductosPedidoAFabricaAction`, `getSucursalesPedidoAFabricaAction` (`src/actions/pedidoAFabrica.ts`) con Zod `productosPedidoAFabricaFiltrosSchema`; gate `PERMISOS.estadisticasProductos.acceso`.
-- **Cant. sugerida (TOTAL · Pedido A Fáb.)** — SSOT `calcularCantSugeridaPedidoAFabrica` en `@/lib/pedidoAFabricaPromVta` (cálculo en cliente; inputs: stock/prom totales de la fila + `tiempoEntregaEnDias` del proveedor + filtro **TIEMPO STOCKEO**):
-  - Fecha Llegada Pedido = hoy + `tiempo_entrega_en_dias` (null → 0).
-  - Fecha Stockeo = Fecha Llegada Pedido + Tiempo Stockeo.
-  - Stock a Fecha Llegada Pedido = Stock Actual − (`tiempo_entrega_en_dias` × prom vta. total).
-  - Stock Para Tiempo Stockeo = Tiempo Stockeo × prom vta. total.
-  - **Cant. sugerida**: si Stock a Fecha Llegada ≤ 0 → Stock Para Tiempo Stockeo; si > 0 → Stock Para Tiempo Stockeo − Stock a Fecha Llegada; resultado `Math.max(0, Math.round(...))`. Sin Tiempo Stockeo → sin sugerencia.
+- **Stock en días / Cant. sugerida (Pedido A Fáb.)** — SSOT en `@/lib/pedidoAFabricaPromVta` (cliente):
+  - **`calcularStockEnDiasPedidoAFabrica(stock, promVta)`** = `Math.round(stock / promVta)` si `promVta > 0`; si no → `null` (celda vacía). Aplica a totales de grilla y al detalle por sucursal.
+  - **`calcularCantSugeridaPedidoAFabrica`** (inputs: stock/prom de la fila o de la sucursal + `tiempoEntregaEnDias` + filtro **TIEMPO STOCKEO**):
+    - Fecha Llegada Pedido = hoy + `tiempo_entrega_en_dias` (null → 0).
+    - Fecha Stockeo = Fecha Llegada Pedido + Tiempo Stockeo.
+    - Stock a Fecha Llegada Pedido = Stock Actual − (`tiempo_entrega_en_dias` × prom vta.).
+    - Stock Para Tiempo Stockeo = Tiempo Stockeo × prom vta.
+    - **Cant. sugerida**: si Stock a Fecha Llegada ≤ 0 → Stock Para Tiempo Stockeo; si > 0 → Stock Para Tiempo Stockeo − Stock a Fecha Llegada; resultado `Math.max(0, Math.round(...))`. Sin Tiempo Stockeo → sin sugerencia.
 
 ### 1.11d Política de IVA por proveedor (`global_proveedores.iva`)
 
@@ -2083,6 +2085,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-10): **Pedido A Fáb.** — `calcularCantSugeridaPedidoAFabrica` (stock a llegada / stockeo → cant. sugerida).
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — descripción tienda→proveedor; filtros marca/rubro/subRubro + q.
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — `calcularStockEnDiasPedidoAFabrica` (stock / prom. vta.).
 
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 

@@ -60,6 +60,26 @@ export function calcularPromVtaDiariaDesdeTotal(totalDosMeses: number): number {
   return Math.round(totalDosMeses / PEDIDO_A_FABRICA_DIAS_PROM_VTA);
 }
 
+/**
+ * Stock actual expresado en días de venta: stock / prom. vta. diario.
+ * `null` si no hay promedio positivo.
+ */
+export function calcularStockEnDiasPedidoAFabrica(
+  stockActual: number | null | undefined,
+  promVta: number | null | undefined
+): number | null {
+  if (
+    stockActual == null ||
+    promVta == null ||
+    !Number.isFinite(stockActual) ||
+    !Number.isFinite(promVta) ||
+    promVta <= 0
+  ) {
+    return null;
+  }
+  return Math.round(stockActual / promVta);
+}
+
 export type InputsCantSugeridaPedidoAFabrica = {
   /** Stock actual total (suma sucursales `pedido`). */
   stockActual: number;
