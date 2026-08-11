@@ -1,7 +1,13 @@
-import { redirect } from "next/navigation";
-import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+import type { Metadata } from "next";
 
-/** Entrada por defecto: área Vendedor, vista alineada al rol vendedor/`simple` (Px. Vta. Sugeridos). */
+export const metadata: Metadata = {
+  title: "TiendaColor — Gestión",
+};
+
+/**
+ * Entrada de la app / hub del área Vendedor: panel central vacío.
+ * El contenido aparece al elegir una ruta hoja en el sidenav.
+ */
 export default function HomePage() {
-  redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
+  return null;
 }

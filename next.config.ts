@@ -108,11 +108,6 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      {
-        source: "/",
-        destination: R.defaultEntry,
-        permanent: true,
-      },
       ...legacyGestionProductosRedirects(),
       {
         source: "/proveedores",
