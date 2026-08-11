@@ -631,8 +631,9 @@ interface ReglaDescuentoListaPrecio {
   - **`calcularStockEnDiasPedidoAFabrica(stock, promVta)`** = `Math.round(stock / promVta)` si `promVta > 0`; si no → `null` (celda vacía). Aplica a totales de grilla y al detalle por sucursal.
   - **`calcularStockAFechaLlegadaPedidoAFabrica(stock, promVta, tiempoEntregaEnDias)`** = stock − (`tiempo_entrega_en_dias` × prom); no requiere **TIEMPO STOCKEO**. Columna UI **STOCK HASTA LLEGADA DE PEDIDO** (grilla TOTAL + modal por sucursal). `null` si no hay stock numérico.
   - **`calcularCantSugeridaPedidoAFabrica`** (inputs: stock/prom de la fila o de la sucursal + `tiempoEntregaEnDias` + filtro **TIEMPO STOCKEO**):
-    - Fecha Llegada Pedido = hoy + `tiempo_entrega_en_dias` (null → 0).
-    - Fecha Stockeo = Fecha Llegada Pedido + Tiempo Stockeo.
+    - **Fecha Pedido** = filtro UI **FECHA PEDIDO** (`YYYY-MM-DD`, default hoy AR; SSOT `normalizarFechaPedidoPedidoAFabrica`).
+    - Fecha Llegada Pedido = Fecha Pedido + `tiempo_entrega_en_dias` (null → 0) — `calcularFechaLlegadaPedidoIso`.
+    - Fecha Stockeo = Fecha Llegada Pedido + Tiempo Stockeo — `calcularFechaStockeoPedidoIso`.
     - Stock a Fecha Llegada Pedido = `calcularStockAFechaLlegadaPedidoAFabrica(...)`.
     - Stock Para Tiempo Stockeo = Tiempo Stockeo × prom vta.
     - **Cant. sugerida**: si Stock a Fecha Llegada ≤ 0 → Stock Para Tiempo Stockeo; si > 0 → Stock Para Tiempo Stockeo − Stock a Fecha Llegada; resultado `Math.max(0, Math.round(...))`. Sin Tiempo Stockeo → sin sugerencia.
@@ -2092,6 +2093,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-11): **Pedido A Fáb.** — `calcularPromVtaDiariaDesdeTotal` usa **`Math.ceil`** (1,01→2; 2,01→3).
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — `calcularStockAFechaLlegadaPedidoAFabrica` + columna **STOCK HASTA LLEGADA DE PEDIDO**.
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — **FECHA PEDIDO** + `calcularFechaLlegadaPedidoIso` / `calcularFechaStockeoPedidoIso`.
 
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 

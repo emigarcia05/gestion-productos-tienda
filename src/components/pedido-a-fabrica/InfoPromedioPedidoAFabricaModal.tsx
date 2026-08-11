@@ -4,16 +4,24 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
+import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import {
   PEDIDO_A_FABRICA_DIAS_VENTA_POR_MES,
   PEDIDO_A_FABRICA_MESES_PROM_VTA,
+  calcularFechaLlegadaPedidoIso,
+  calcularFechaStockeoPedidoIso,
   etiquetaPeriodoMesAnio,
+  normalizarFechaPedidoPedidoAFabrica,
   periodosUltimosDosMesesCompletos,
 } from "@/lib/pedidoAFabricaPromVta";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** `YYYY-MM-DD` del filtro **FECHA PEDIDO** (simula el día del pedido). */
+  fechaPedidoIso: string;
+  tiempoEntregaEnDias?: number | null;
+  tiempoStockeo?: number | null;
 }
 
 function FormulaLine({
@@ -37,8 +45,21 @@ function FormulaLine({
 export default function InfoPromedioPedidoAFabricaModal({
   open,
   onOpenChange,
+  fechaPedidoIso,
+  tiempoEntregaEnDias = null,
+  tiempoStockeo = null,
 }: Props) {
   const { anterior, reciente, actual } = periodosUltimosDosMesesCompletos();
+  const fechaPedido = normalizarFechaPedidoPedidoAFabrica(fechaPedidoIso);
+  const fechaLlegada = calcularFechaLlegadaPedidoIso(
+    fechaPedido,
+    tiempoEntregaEnDias
+  );
+  const fechaStockeo = calcularFechaStockeoPedidoIso(
+    fechaPedido,
+    tiempoEntregaEnDias,
+    tiempoStockeo
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -90,12 +111,35 @@ export default function InfoPromedioPedidoAFabricaModal({
             </h3>
             <ul className="list-none space-y-1 pl-0">
               <FormulaLine
+                left="Fecha Pedido"
+                right={
+                  <>
+                    filtro FECHA PEDIDO (
+                    {formatIsoYmdDdMmYyyyArgentina(fechaPedido)})
+                  </>
+                }
+              />
+              <FormulaLine
                 left="Fecha Llegada Pedido"
-                right="hoy + tiempo_entrega_en_dias"
+                right={
+                  <>
+                    Fecha Pedido + tiempo_entrega_en_dias (
+                    {formatIsoYmdDdMmYyyyArgentina(fechaLlegada)})
+                  </>
+                }
               />
               <FormulaLine
                 left="Fecha Stockeo"
-                right="Fecha Llegada Pedido + Tiempo Stockeo"
+                right={
+                  fechaStockeo != null ? (
+                    <>
+                      Fecha Llegada Pedido + Tiempo Stockeo (
+                      {formatIsoYmdDdMmYyyyArgentina(fechaStockeo)})
+                    </>
+                  ) : (
+                    "Fecha Llegada Pedido + Tiempo Stockeo"
+                  )
+                }
               />
             </ul>
           </section>

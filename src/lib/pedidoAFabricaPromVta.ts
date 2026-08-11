@@ -5,7 +5,10 @@
  * divididas por **48** (24 días de venta × 2 meses) y redondeadas **siempre hacia arriba** (techo).
  */
 
-import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import {
+  addDaysToIsoYmdArgentina,
+  dateToIsoYmdArgentina,
+} from "@/lib/fechaArgentina";
 import { etiquetaMesEstPorProd } from "@/lib/estPorProdPeriodo";
 
 /** Días de venta contables por mes. */
@@ -49,6 +52,55 @@ export function periodosUltimosDosMesesCompletos(
 /** Etiqueta legible: «Junio 2026». */
 export function etiquetaPeriodoMesAnio(p: PeriodoMesAnio): string {
   return `${etiquetaMesEstPorProd(p.mes)} ${p.anio}`;
+}
+
+/** Normaliza `YYYY-MM-DD` de FECHA PEDIDO; vacío/inválido → hoy (AR). */
+export function normalizarFechaPedidoPedidoAFabrica(
+  fechaPedidoIso: string | null | undefined,
+  ahora: Date = new Date()
+): string {
+  const t = fechaPedidoIso?.trim() ?? "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  return dateToIsoYmdArgentina(ahora);
+}
+
+/**
+ * Fecha Llegada Pedido = FECHA PEDIDO + `tiempo_entrega_en_dias` (null → 0).
+ * Devuelve `YYYY-MM-DD` (AR).
+ */
+export function calcularFechaLlegadaPedidoIso(
+  fechaPedidoIso: string,
+  tiempoEntregaEnDias: number | null | undefined
+): string {
+  const base = normalizarFechaPedidoPedidoAFabrica(fechaPedidoIso);
+  const entrega =
+    tiempoEntregaEnDias != null && Number.isFinite(tiempoEntregaEnDias)
+      ? Math.max(0, Math.trunc(tiempoEntregaEnDias))
+      : 0;
+  return addDaysToIsoYmdArgentina(base, entrega);
+}
+
+/**
+ * Fecha Stockeo = Fecha Llegada + Tiempo Stockeo.
+ * `null` si no hay Tiempo Stockeo válido.
+ */
+export function calcularFechaStockeoPedidoIso(
+  fechaPedidoIso: string,
+  tiempoEntregaEnDias: number | null | undefined,
+  tiempoStockeo: number | null | undefined
+): string | null {
+  if (
+    tiempoStockeo == null ||
+    !Number.isFinite(tiempoStockeo) ||
+    tiempoStockeo < 0
+  ) {
+    return null;
+  }
+  const llegada = calcularFechaLlegadaPedidoIso(
+    fechaPedidoIso,
+    tiempoEntregaEnDias
+  );
+  return addDaysToIsoYmdArgentina(llegada, Math.trunc(tiempoStockeo));
 }
 
 /**
@@ -127,7 +179,7 @@ export type ResultadoCantSugeridaPedidoAFabrica = {
 /**
  * Cant. sugerida Pedido A Fáb. (TOTAL).
  *
- * - Fecha Llegada Pedido = hoy + `tiempo_entrega_en_dias`
+ * - Fecha Llegada Pedido = FECHA PEDIDO + `tiempo_entrega_en_dias`
  * - Fecha Stockeo = Fecha Llegada + Tiempo Stockeo
  * - Stock a Fecha Llegada = Stock Actual − (entrega × prom vta. total)
  * - Stock Para Tiempo Stockeo = Tiempo Stockeo × prom vta. total

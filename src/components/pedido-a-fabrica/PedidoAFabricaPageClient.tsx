@@ -26,6 +26,7 @@ import {
 import ToolbarActionButton from "@/components/shared/ToolbarActionButton";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
+import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import { getProductosPedidoAFabricaAction } from "@/actions/pedidoAFabrica";
 import type {
   ProductoPedidoAFabricaItem,
@@ -33,6 +34,7 @@ import type {
 } from "@/services/pedidoAFabrica.service";
 import TablaPedidoAFabrica from "@/components/pedido-a-fabrica/TablaPedidoAFabrica";
 import InfoPromedioPedidoAFabricaModal from "@/components/pedido-a-fabrica/InfoPromedioPedidoAFabricaModal";
+import { normalizarFechaPedidoPedidoAFabrica } from "@/lib/pedidoAFabricaPromVta";
 
 export type ProveedorFabricaOption = {
   id: string;
@@ -57,14 +59,16 @@ function sanitizeTiempoStockeoInput(raw: string): string {
 
 /**
  * Módulo **Pedido A Fáb.** (pilar sidebar Administración).
- * Filtros 1: **PROVEEDOR** + **TIEMPO STOCKEO**.
+ * Filtros 1: **PROVEEDOR** + **FECHA PEDIDO** + **TIEMPO STOCKEO**.
  * Filtros 2: **MARCA** | **RUBRO** | **SUB-RUBRO** + buscar por descripción.
  */
 export default function PedidoAFabricaPageClient({
   proveedoresFabrica,
   sucursalesPedido,
 }: Props) {
+  const hoyIso = dateToIsoYmdArgentina(new Date());
   const [proveedorId, setProveedorId] = useState<string>("");
+  const [fechaPedido, setFechaPedido] = useState<string>(hoyIso);
   const [tiempoStockeo, setTiempoStockeo] = useState<string>("");
   const [marca, setMarca] = useState(FILTRO_TODOS);
   const [rubro, setRubro] = useState(FILTRO_TODOS);
@@ -101,6 +105,8 @@ export default function PedidoAFabricaPageClient({
   });
 
   const proveedorActivo = proveedorId !== "";
+  const fechaPedidoNormalizada = normalizarFechaPedidoPedidoAFabrica(fechaPedido);
+  const fechaPedidoActiva = fechaPedidoNormalizada !== hoyIso;
   const tiempoStockeoActivo = tiempoStockeo !== "";
   const marcaActiva = marca !== FILTRO_TODOS;
   const rubroActivo = rubro !== FILTRO_TODOS;
@@ -148,6 +154,14 @@ export default function PedidoAFabricaPageClient({
 
   function handleTiempoStockeoChange(raw: string) {
     setTiempoStockeo(sanitizeTiempoStockeoInput(raw));
+  }
+
+  function handleFechaPedidoChange(raw: string) {
+    setFechaPedido(raw);
+  }
+
+  function handleLimpiarFechaPedido() {
+    setFechaPedido(dateToIsoYmdArgentina(new Date()));
   }
 
   function handleMarcaChange(value: string) {
@@ -301,6 +315,22 @@ export default function PedidoAFabricaPageClient({
                         ))}
                       </SelectContent>
                     </Select>
+                  </FiltroIndividualContainer>
+
+                  <FiltroIndividualContainer
+                    activo={fechaPedidoActiva}
+                    onLimpiar={handleLimpiarFechaPedido}
+                  >
+                    <Input
+                      type="date"
+                      aria-label="FECHA PEDIDO"
+                      title="FECHA PEDIDO"
+                      value={fechaPedidoNormalizada}
+                      onChange={(e) =>
+                        handleFechaPedidoChange(e.target.value)
+                      }
+                      className={cn(INPUT_FILTER_CLASS, "w-full")}
+                    />
                   </FiltroIndividualContainer>
 
                   <FiltroIndividualContainer
@@ -494,6 +524,13 @@ export default function PedidoAFabricaPageClient({
       <InfoPromedioPedidoAFabricaModal
         open={infoPromedioOpen}
         onOpenChange={setInfoPromedioOpen}
+        fechaPedidoIso={fechaPedidoNormalizada}
+        tiempoEntregaEnDias={tiempoEntregaEnDias}
+        tiempoStockeo={
+          tiempoStockeoNumero != null && Number.isFinite(tiempoStockeoNumero)
+            ? tiempoStockeoNumero
+            : null
+        }
       />
     </>
   );
