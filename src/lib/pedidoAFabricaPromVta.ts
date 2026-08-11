@@ -152,6 +152,28 @@ export function calcularStockAFechaLlegadaPedidoAFabrica(
   return Math.max(0, stockActual) - entrega * prom;
 }
 
+/** STOCK QUEBRADO: stock hasta llegada de pedido ≤ 0. */
+export function esStockQuebradoPedidoAFabrica(
+  stockHastaLlegada: number | null | undefined
+): boolean {
+  return (
+    stockHastaLlegada != null &&
+    Number.isFinite(stockHastaLlegada) &&
+    stockHastaLlegada <= 0
+  );
+}
+
+/** PEDIDO SUGERIDO: cant. sugerida calculada &gt; 0 (requiere TIEMPO STOCKEO). */
+export function tienePedidoSugeridoPedidoAFabrica(
+  cantSugerida: number | null | undefined
+): boolean {
+  return (
+    cantSugerida != null &&
+    Number.isFinite(cantSugerida) &&
+    cantSugerida > 0
+  );
+}
+
 export type InputsCantSugeridaPedidoAFabrica = {
   /** Stock actual total (suma sucursales `pedido`). */
   stockActual: number;

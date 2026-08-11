@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, startTransition } from "react";
+import { useEffect, useMemo, useRef, useState, startTransition } from "react";
 import { CalendarDays, Info } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FilterBar, {
@@ -38,8 +38,17 @@ import type {
   ProductoPedidoAFabricaItem,
   SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
-import TablaPedidoAFabrica from "@/components/pedido-a-fabrica/TablaPedidoAFabrica";
+import TablaPedidoAFabrica, {
+  totalPorSucursalesPedidoAFabrica,
+  type FiltroSiNoPedidoAFabrica,
+} from "@/components/pedido-a-fabrica/TablaPedidoAFabrica";
 import InfoPromedioPedidoAFabricaModal from "@/components/pedido-a-fabrica/InfoPromedioPedidoAFabricaModal";
+import {
+  calcularCantSugeridaPedidoAFabrica,
+  calcularStockAFechaLlegadaPedidoAFabrica,
+  esStockQuebradoPedidoAFabrica,
+  tienePedidoSugeridoPedidoAFabrica,
+} from "@/lib/pedidoAFabricaPromVta";
 
 export type ProveedorFabricaOption = {
   id: string;
@@ -73,7 +82,7 @@ function abrirSelectorFechaPedidoNativo(el: HTMLInputElement | null) {
 
 /**
  * Módulo **Pedido A Fáb.** (pilar sidebar Administración).
- * Filtros 1: **PROVEEDOR** + **FECHA DE PEDIDO** + **TIEMPO STOCKEO**.
+ * Filtros 1: **PROVEEDOR** + **FECHA DE PEDIDO** + **TIEMPO STOCKEO** + **PEDIDO SUGERIDO** + **STOCK QUEBRADO**.
  * Filtros 2: **MARCA** | **RUBRO** | **SUB-RUBRO** + buscar por descripción.
  */
 export default function PedidoAFabricaPageClient({
@@ -85,6 +94,10 @@ export default function PedidoAFabricaPageClient({
   /** Display `dd/mm/aaaa` del filtro **FECHA DE PEDIDO** (vacío = sin valor). */
   const [fechaPedidoDdMm, setFechaPedidoDdMm] = useState<string>("");
   const [tiempoStockeo, setTiempoStockeo] = useState<string>("");
+  const [pedidoSugerido, setPedidoSugerido] =
+    useState<FiltroSiNoPedidoAFabrica>("");
+  const [stockQuebrado, setStockQuebrado] =
+    useState<FiltroSiNoPedidoAFabrica>("");
   const [marca, setMarca] = useState(FILTRO_TODOS);
   const [rubro, setRubro] = useState(FILTRO_TODOS);
   const [subRubro, setSubRubro] = useState(FILTRO_TODOS);
@@ -123,6 +136,8 @@ export default function PedidoAFabricaPageClient({
   const fechaPedidoIsoParseada = parseDdMmYyyyToIsoYmdArgentina(fechaPedidoDdMm);
   const fechaPedidoActiva = fechaPedidoDdMm !== "";
   const tiempoStockeoActivo = tiempoStockeo !== "";
+  const pedidoSugeridoActivo = pedidoSugerido !== "";
+  const stockQuebradoActivo = stockQuebrado !== "";
   const marcaActiva = marca !== FILTRO_TODOS;
   const rubroActivo = rubro !== FILTRO_TODOS;
   const subRubroActivo = subRubro !== FILTRO_TODOS;
@@ -137,8 +152,51 @@ export default function PedidoAFabricaPageClient({
     proveedorSeleccionado?.tiempoEntregaEnDias ?? null;
   const tiempoStockeoNumero =
     tiempoStockeo === "" ? null : Number(tiempoStockeo);
+  const tiempoStockeoValor =
+    tiempoStockeoNumero != null && Number.isFinite(tiempoStockeoNumero)
+      ? tiempoStockeoNumero
+      : null;
   const isoPickerFechaPedido =
     fechaPedidoIsoParseada || dateToIsoYmdArgentina(new Date());
+
+  const productosVisibles = useMemo(() => {
+    if (!pedidoSugerido && !stockQuebrado) return productos;
+    return productos.filter((p) => {
+      const total = totalPorSucursalesPedidoAFabrica(p, sucursales);
+      const stockHasta = calcularStockAFechaLlegadaPedidoAFabrica(
+        total.stockActual,
+        total.promVta,
+        tiempoEntregaEnDias
+      );
+      const calc = calcularCantSugeridaPedidoAFabrica({
+        stockActual: total.stockActual ?? 0,
+        promVtaTotal: total.promVta ?? 0,
+        tiempoEntregaEnDias,
+        tiempoStockeo: tiempoStockeoValor,
+      });
+      const quebrado = esStockQuebradoPedidoAFabrica(stockHasta);
+      const sugerido = tienePedidoSugeridoPedidoAFabrica(
+        calc?.cantSugerida ?? null
+      );
+      if (stockQuebrado === "si" && !quebrado) return false;
+      if (stockQuebrado === "no" && quebrado) return false;
+      if (pedidoSugerido === "si" && !sugerido) return false;
+      if (pedidoSugerido === "no" && sugerido) return false;
+      return true;
+    });
+  }, [
+    productos,
+    sucursales,
+    tiempoEntregaEnDias,
+    tiempoStockeoValor,
+    pedidoSugerido,
+    stockQuebrado,
+  ]);
+
+  const contadorProductos =
+    pedidoSugeridoActivo || stockQuebradoActivo
+      ? productosVisibles.length
+      : total;
 
   function resetFiltrosCatalogo() {
     setMarca(FILTRO_TODOS);
@@ -410,6 +468,64 @@ export default function PedidoAFabricaPageClient({
                       className={cn(INPUT_FILTER_CLASS, "w-full")}
                     />
                   </FiltroIndividualContainer>
+
+                  <FiltroIndividualContainer
+                    className={FILTER_SELECT_WRAPPER_CLASS}
+                    activo={pedidoSugeridoActivo}
+                    onLimpiar={() => setPedidoSugerido("")}
+                  >
+                    <Select
+                      value={pedidoSugerido || undefined}
+                      onValueChange={(v) =>
+                        setPedidoSugerido(v as FiltroSiNoPedidoAFabrica)
+                      }
+                    >
+                      <SelectTrigger
+                        className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
+                        aria-label="PEDIDO SUGERIDO"
+                      >
+                        <SelectValue placeholder="PEDIDO SUGERIDO" />
+                      </SelectTrigger>
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        className="select-content-filtro"
+                      >
+                        <SelectItem value="si">SI</SelectItem>
+                        <SelectItem value="no">NO</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FiltroIndividualContainer>
+
+                  <FiltroIndividualContainer
+                    className={FILTER_SELECT_WRAPPER_CLASS}
+                    activo={stockQuebradoActivo}
+                    onLimpiar={() => setStockQuebrado("")}
+                  >
+                    <Select
+                      value={stockQuebrado || undefined}
+                      onValueChange={(v) =>
+                        setStockQuebrado(v as FiltroSiNoPedidoAFabrica)
+                      }
+                    >
+                      <SelectTrigger
+                        className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
+                        aria-label="STOCK QUEBRADO"
+                      >
+                        <SelectValue placeholder="STOCK QUEBRADO" />
+                      </SelectTrigger>
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        className="select-content-filtro"
+                      >
+                        <SelectItem value="si">SI</SelectItem>
+                        <SelectItem value="no">NO</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FiltroIndividualContainer>
                 </FilaFiltrosDesplegables>
               </FilterRowSelection>
             </FilterBar>
@@ -544,8 +660,8 @@ export default function PedidoAFabricaPageClient({
                   onClick={limpiarFiltrosCatalogo}
                 />
                 <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-                  {total.toLocaleString("es-AR")} PRODUCTO
-                  {total === 1 ? "" : "S"}
+                  {contadorProductos.toLocaleString("es-AR")} PRODUCTO
+                  {contadorProductos === 1 ? "" : "S"}
                 </span>
               </div>
             </FilterBar>
@@ -562,12 +678,9 @@ export default function PedidoAFabricaPageClient({
             loading={loading}
             emptyMessage="Este proveedor no tiene productos en la lista de precios."
             tiempoEntregaEnDias={tiempoEntregaEnDias}
-            tiempoStockeo={
-              tiempoStockeoNumero != null &&
-              Number.isFinite(tiempoStockeoNumero)
-                ? tiempoStockeoNumero
-                : null
-            }
+            tiempoStockeo={tiempoStockeoValor}
+            filtroPedidoSugerido={pedidoSugerido}
+            filtroStockQuebrado={stockQuebrado}
             cantAPedirByCodExt={cantAPedirByCodExt}
             onCantAPedirChange={handleCantAPedirChange}
             onAplicarCantSugerida={handleAplicarCantSugerida}
@@ -586,11 +699,7 @@ export default function PedidoAFabricaPageClient({
         onOpenChange={setInfoPromedioOpen}
         fechaPedidoIso={fechaPedidoIsoParseada}
         tiempoEntregaEnDias={tiempoEntregaEnDias}
-        tiempoStockeo={
-          tiempoStockeoNumero != null && Number.isFinite(tiempoStockeoNumero)
-            ? tiempoStockeoNumero
-            : null
-        }
+        tiempoStockeo={tiempoStockeoValor}
       />
     </>
   );

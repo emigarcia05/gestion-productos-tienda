@@ -630,6 +630,8 @@ interface ReglaDescuentoListaPrecio {
 - **Stock en días / Cant. sugerida (Pedido A Fáb.)** — SSOT en `@/lib/pedidoAFabricaPromVta` (cliente):
   - **`calcularStockEnDiasPedidoAFabrica(stock, promVta)`** = `Math.round(stock / promVta)` si `promVta > 0`; si no → `null` (celda vacía). Aplica a totales de grilla y al detalle por sucursal.
   - **`calcularStockAFechaLlegadaPedidoAFabrica(stock, promVta, tiempoEntregaEnDias)`** = stock − (`tiempo_entrega_en_dias` × prom); no requiere **TIEMPO STOCKEO**. Columna UI **STOCK HASTA LLEGADA DE PEDIDO** (grilla TOTAL + modal por sucursal). `null` si no hay stock numérico.
+  - **`esStockQuebradoPedidoAFabrica`**: stock hasta llegada ≤ 0. Filtro UI **STOCK QUEBRADO** SI/NO; aviso `TriangleAlert` en DESCRIPCIÓN.
+  - **`tienePedidoSugeridoPedidoAFabrica`**: cant. sugerida &gt; 0. Filtro UI **PEDIDO SUGERIDO** SI/NO.
   - **`calcularCantSugeridaPedidoAFabrica`** (inputs: stock/prom de la fila o de la sucursal + `tiempoEntregaEnDias` + filtro **TIEMPO STOCKEO**):
     - **Fecha Pedido** = filtro UI **FECHA DE PEDIDO** (`dd/mm/aaaa` → `YYYY-MM-DD`; **sin default** en UI; vacío/inválido → hoy AR vía `normalizarFechaPedidoPedidoAFabrica`).
     - Fecha Llegada Pedido = Fecha Pedido + `tiempo_entrega_en_dias` (null → 0) — `calcularFechaLlegadaPedidoIso`.
@@ -2095,6 +2097,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-11): **Pedido A Fáb.** — `calcularStockAFechaLlegadaPedidoAFabrica` + columna **STOCK HASTA LLEGADA DE PEDIDO**.
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — **FECHA PEDIDO** + `calcularFechaLlegadaPedidoIso` / `calcularFechaStockeoPedidoIso`.
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — `esStockQuebradoPedidoAFabrica` / `tienePedidoSugeridoPedidoAFabrica`.
 
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 

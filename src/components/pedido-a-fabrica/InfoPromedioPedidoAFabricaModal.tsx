@@ -168,6 +168,14 @@ export default function InfoPromedioPedidoAFabricaModal({
                 right="Stock Actual − (tiempo_entrega_en_dias × Prom. Vta.) — columna grilla/modal; no requiere Tiempo Stockeo"
               />
               <FormulaLine
+                left="Stock Quebrado"
+                right="Stock Hasta Llegada De Pedido ≤ 0 (filtro SI/NO; aviso TriangleAlert en DESCRIPCIÓN)"
+              />
+              <FormulaLine
+                left="Pedido Sugerido"
+                right="Cant. Sugerida > 0 (filtro SI/NO; requiere Tiempo Stockeo)"
+              />
+              <FormulaLine
                 left="Stock Para Tiempo Stockeo"
                 right="Tiempo Stockeo × Prom. Vta. total"
               />

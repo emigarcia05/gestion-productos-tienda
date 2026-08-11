@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Info } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, Info, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,17 +20,22 @@ import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+  TEXT_WARNING_CLASS,
 } from "@/lib/ui-classes";
 import {
   calcularCantSugeridaPedidoAFabrica,
   calcularStockAFechaLlegadaPedidoAFabrica,
   calcularStockEnDiasPedidoAFabrica,
+  esStockQuebradoPedidoAFabrica,
+  tienePedidoSugeridoPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
 import type {
   DatosSucursalProductoPedidoAFabrica,
   ProductoPedidoAFabricaItem,
   SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
+
+export type FiltroSiNoPedidoAFabrica = "" | "si" | "no";
 
 interface Props {
   sucursales: SucursalPedidoAFabrica[];
@@ -44,6 +49,10 @@ interface Props {
   tiempoEntregaEnDias: number | null;
   /** Días de stockeo del filtro **TIEMPO STOCKEO** (null si vacío). */
   tiempoStockeo: number | null;
+  /** Filtro **PEDIDO SUGERIDO** (cant. sugerida > 0). */
+  filtroPedidoSugerido: FiltroSiNoPedidoAFabrica;
+  /** Filtro **STOCK QUEBRADO** (stock hasta llegada ≤ 0). */
+  filtroStockQuebrado: FiltroSiNoPedidoAFabrica;
   /** Cant. a pedir por `codExt` (texto; solo dígitos). */
   cantAPedirByCodExt: Record<string, string>;
   onCantAPedirChange: (codExt: string, value: string) => void;
@@ -71,7 +80,7 @@ function sanitizeCantAPedirInput(raw: string): string {
 }
 
 /** Suma de STOCK ACTUAL y PROM. VTA. de todas las sucursales de la fila. */
-function totalPorSucursales(
+export function totalPorSucursalesPedidoAFabrica(
   producto: ProductoPedidoAFabricaItem,
   sucursales: SucursalPedidoAFabrica[]
 ): DatosSucursalProductoPedidoAFabrica {
@@ -95,11 +104,43 @@ function totalPorSucursales(
   };
 }
 
+function productoPasaFiltrosDerivados(
+  producto: ProductoPedidoAFabricaItem,
+  sucursales: SucursalPedidoAFabrica[],
+  tiempoEntregaEnDias: number | null,
+  tiempoStockeo: number | null,
+  filtroPedidoSugerido: FiltroSiNoPedidoAFabrica,
+  filtroStockQuebrado: FiltroSiNoPedidoAFabrica
+): boolean {
+  if (!filtroPedidoSugerido && !filtroStockQuebrado) return true;
+
+  const total = totalPorSucursalesPedidoAFabrica(producto, sucursales);
+  const stockHastaLlegada = calcularStockAFechaLlegadaPedidoAFabrica(
+    total.stockActual,
+    total.promVta,
+    tiempoEntregaEnDias
+  );
+  const calc = calcularCantSugeridaPedidoAFabrica({
+    stockActual: total.stockActual ?? 0,
+    promVtaTotal: total.promVta ?? 0,
+    tiempoEntregaEnDias,
+    tiempoStockeo,
+  });
+  const cantSugerida = calc?.cantSugerida ?? null;
+  const quebrado = esStockQuebradoPedidoAFabrica(stockHastaLlegada);
+  const sugerido = tienePedidoSugeridoPedidoAFabrica(cantSugerida);
+
+  if (filtroStockQuebrado === "si" && !quebrado) return false;
+  if (filtroStockQuebrado === "no" && quebrado) return false;
+  if (filtroPedidoSugerido === "si" && !sugerido) return false;
+  if (filtroPedidoSugerido === "no" && sugerido) return false;
+  return true;
+}
+
 /**
  * Grilla Pedido A Fáb.
- * **DESCRIPCIÓN** · **STOCK ACTUAL** (EN UNIDADES | EN DÍAS) · **PROM. VTA. P/ DÍA**
- * · **STOCK HASTA LLEGADA DE PEDIDO** · **COMPRA** (CANT. SUGERIDA | CANT. PEDIR)
- * · tilde · Info.
+ * **DESCRIPCIÓN** (aviso stock quebrado) · **STOCK ACTUAL** · **PROM. VTA. P/ DÍA**
+ * · **STOCK HASTA LLEGADA DE PEDIDO** · **COMPRA** · tilde · Info.
  */
 export default function TablaPedidoAFabrica({
   sucursales,
@@ -111,12 +152,45 @@ export default function TablaPedidoAFabrica({
   emptyMessage,
   tiempoEntregaEnDias,
   tiempoStockeo,
+  filtroPedidoSugerido,
+  filtroStockQuebrado,
   cantAPedirByCodExt,
   onCantAPedirChange,
   onAplicarCantSugerida,
 }: Props) {
   const [detalleProducto, setDetalleProducto] =
     useState<ProductoPedidoAFabricaItem | null>(null);
+
+  const productosFiltrados = useMemo(
+    () =>
+      productos.filter((p) =>
+        productoPasaFiltrosDerivados(
+          p,
+          sucursales,
+          tiempoEntregaEnDias,
+          tiempoStockeo,
+          filtroPedidoSugerido,
+          filtroStockQuebrado
+        )
+      ),
+    [
+      productos,
+      sucursales,
+      tiempoEntregaEnDias,
+      tiempoStockeo,
+      filtroPedidoSugerido,
+      filtroStockQuebrado,
+    ]
+  );
+
+  const hayFiltrosDerivados =
+    filtroPedidoSugerido !== "" || filtroStockQuebrado !== "";
+  const mensajeVacio =
+    productos.length > 0 &&
+    productosFiltrados.length === 0 &&
+    hayFiltrosDerivados
+      ? "Ningún producto coincide con PEDIDO SUGERIDO / STOCK QUEBRADO."
+      : emptyMessage;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-0.5">
@@ -206,18 +280,18 @@ export default function TablaPedidoAFabrica({
                   Cargando productos…
                 </TableCell>
               </TableRow>
-            ) : productos.length === 0 ? (
+            ) : productosFiltrados.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={COL_COUNT}
                   className="celda-datos text-center text-muted-foreground"
                 >
-                  {emptyMessage}
+                  {mensajeVacio}
                 </TableCell>
               </TableRow>
             ) : (
-              productos.map((p) => {
-                const total = totalPorSucursales(p, sucursales);
+              productosFiltrados.map((p) => {
+                const total = totalPorSucursalesPedidoAFabrica(p, sucursales);
                 const stockUnidades = total.stockActual;
                 const promVtaTotal = total.promVta;
                 const stockDias = calcularStockEnDiasPedidoAFabrica(
@@ -230,6 +304,8 @@ export default function TablaPedidoAFabrica({
                     promVtaTotal,
                     tiempoEntregaEnDias
                   );
+                const stockQuebrado =
+                  esStockQuebradoPedidoAFabrica(stockHastaLlegada);
                 const calc = calcularCantSugeridaPedidoAFabrica({
                   stockActual: stockUnidades ?? 0,
                   promVtaTotal: promVtaTotal ?? 0,
@@ -242,9 +318,29 @@ export default function TablaPedidoAFabrica({
                 return (
                   <TableRow key={p.codExt}>
                     <TableCell className="celda-datos min-w-0">
-                      <span className="block truncate" title={p.descripcion}>
-                        {p.descripcion}
-                      </span>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        {stockQuebrado ? (
+                          <TriangleAlert
+                            className={cn(
+                              "size-4 shrink-0",
+                              TEXT_WARNING_CLASS
+                            )}
+                            aria-label="Stock quebrado"
+                            title="Stock quebrado: stock hasta llegada de pedido ≤ 0"
+                          />
+                        ) : (
+                          <span
+                            className="inline-block size-4 shrink-0"
+                            aria-hidden
+                          />
+                        )}
+                        <span
+                          className="block min-w-0 flex-1 truncate"
+                          title={p.descripcion}
+                        >
+                          {p.descripcion}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell
                       className={cn(
