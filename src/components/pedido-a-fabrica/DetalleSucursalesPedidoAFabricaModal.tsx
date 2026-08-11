@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { fmtNumero } from "@/lib/format";
 import {
   calcularCantSugeridaPedidoAFabrica,
+  calcularStockAFechaLlegadaPedidoAFabrica,
   calcularStockEnDiasPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
 import type {
@@ -35,7 +36,7 @@ const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
 /**
  * Detalle por sucursal de un ítem Pedido A Fáb.:
- * Stock Actual (unidades / días) · Prom. Vta P/ Día · Compra sugerida.
+ * Stock Actual · Prom. Vta · Stock hasta llegada · Compra sugerida.
  */
 export default function DetalleSucursalesPedidoAFabricaModal({
   open,
@@ -69,11 +70,12 @@ export default function DetalleSucursalesPedidoAFabricaModal({
           <div className="contenedor-tabla-gestion no-scroll-x min-h-0">
             <Table variant="compact" scrollX={false}>
               <colgroup>
+                <col style={{ width: "18%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "14%" }} />
                 <col style={{ width: "24%" }} />
-                <col style={{ width: "16%" }} />
-                <col style={{ width: "16%" }} />
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "22%" }} />
+                <col style={{ width: "20%" }} />
               </colgroup>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -91,6 +93,12 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                     className="text-center align-middle tabla-bloque-secundario-head-divider"
                   >
                     PROM. VTA. P/ DÍA
+                  </TableHead>
+                  <TableHead
+                    rowSpan={2}
+                    className="text-center align-middle leading-tight tabla-bloque-secundario-head-divider"
+                  >
+                    STOCK HASTA LLEGADA DE PEDIDO
                   </TableHead>
                   <TableHead className="text-center align-middle tabla-bloque-secundario-head-divider">
                     COMPRA
@@ -117,6 +125,12 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                     stockUnidades,
                     promVta
                   );
+                  const stockHastaLlegada =
+                    calcularStockAFechaLlegadaPedidoAFabrica(
+                      stockUnidades,
+                      promVta,
+                      tiempoEntregaEnDias
+                    );
                   const calc = calcularCantSugeridaPedidoAFabrica({
                     stockActual: stockUnidades ?? 0,
                     promVtaTotal: promVta ?? 0,
@@ -152,6 +166,14 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                         )}
                       >
                         {fmtNumero(promVta)}
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          TD_NUM,
+                          "tabla-bloque-secundario-cell-divider"
+                        )}
+                      >
+                        {fmtNumero(stockHastaLlegada)}
                       </TableCell>
                       <TableCell
                         className={cn(

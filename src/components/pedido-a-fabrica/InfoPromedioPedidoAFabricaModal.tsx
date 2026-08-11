@@ -115,8 +115,8 @@ export default function InfoPromedioPedidoAFabricaModal({
                 right="Stock Actual En Unidades / Prom. Vta. P/ Día (redondeo; vacío si prom = 0)"
               />
               <FormulaLine
-                left="Stock a Fecha Llegada Pedido"
-                right="Stock Actual − (tiempo_entrega_en_dias × Prom. Vta. total)"
+                left="Stock Hasta Llegada De Pedido"
+                right="Stock Actual − (tiempo_entrega_en_dias × Prom. Vta.) — columna grilla/modal; no requiere Tiempo Stockeo"
               />
               <FormulaLine
                 left="Stock Para Tiempo Stockeo"

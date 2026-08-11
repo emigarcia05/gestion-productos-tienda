@@ -81,6 +81,25 @@ export function calcularStockEnDiasPedidoAFabrica(
   return Math.round(stockActual / promVta);
 }
 
+/**
+ * Stock proyectado al llegar el pedido: stock − (entrega × prom).
+ * No requiere **TIEMPO STOCKEO**. `null` si no hay stock numérico.
+ */
+export function calcularStockAFechaLlegadaPedidoAFabrica(
+  stockActual: number | null | undefined,
+  promVta: number | null | undefined,
+  tiempoEntregaEnDias: number | null | undefined
+): number | null {
+  if (stockActual == null || !Number.isFinite(stockActual)) return null;
+  const prom =
+    promVta != null && Number.isFinite(promVta) ? Math.max(0, promVta) : 0;
+  const entrega =
+    tiempoEntregaEnDias != null && Number.isFinite(tiempoEntregaEnDias)
+      ? Math.max(0, tiempoEntregaEnDias)
+      : 0;
+  return Math.max(0, stockActual) - entrega * prom;
+}
+
 export type InputsCantSugeridaPedidoAFabrica = {
   /** Stock actual total (suma sucursales `pedido`). */
   stockActual: number;
@@ -129,15 +148,14 @@ export function calcularCantSugeridaPedidoAFabrica(
     return null;
   }
 
-  const entrega =
-    tiempoEntregaEnDias != null && Number.isFinite(tiempoEntregaEnDias)
-      ? Math.max(0, tiempoEntregaEnDias)
-      : 0;
   const stockeo = Math.max(0, tiempoStockeo);
   const prom = Math.max(0, promVtaTotal);
-  const stock = Math.max(0, stockActual);
-
-  const stockAFechaLlegadaPedido = stock - entrega * prom;
+  const stockAFechaLlegadaPedido =
+    calcularStockAFechaLlegadaPedidoAFabrica(
+      stockActual,
+      promVtaTotal,
+      tiempoEntregaEnDias
+    ) ?? 0;
   const stockParaTiempoStockeo = stockeo * prom;
 
   const crudo =
