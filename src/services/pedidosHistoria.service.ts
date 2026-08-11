@@ -22,9 +22,12 @@ function logServiceError(scope: string, err: unknown): void {
   console.error(`${LOG_TAG}[${scope}]`, msg);
 }
 
-/** Retención por estado (días): purga automática en cada escritura del historial. */
-const DIAS_RETENCION_PEDIDOS_PENDIENTE = 4;
-const DIAS_RETENCION_PEDIDOS_RECEPCIONADO = 30;
+/**
+ * Retención por `global_proveedores.es_fabrica` (días desde `generado_at`):
+ * purga automática en cada escritura del historial.
+ */
+const DIAS_RETENCION_PEDIDOS_FABRICA = 60;
+const DIAS_RETENCION_PEDIDOS_NO_FABRICA = 14;
 
 function fechaHaceDias(dias: number): Date {
   const d = new Date();
@@ -33,27 +36,27 @@ function fechaHaceDias(dias: number): Date {
 }
 
 /**
- * Elimina cabeceras de `prod_ped_historial` por antigüedad según estado:
- * - PENDIENTE: >= 4 días
- * - RECEPCIONADO: >= 30 días
+ * Elimina cabeceras de `prod_ped_historial` por antigüedad según el proveedor:
+ * - `es_fabrica = true`: >= 60 días
+ * - `es_fabrica = false`: >= 14 días
  * Los ítems en `prod_ped_historial_merc` se borran en cascada (FK).
  * Sin cron ni triggers: se invoca al inicio de cada mutación del historial en este servicio.
  */
 async function purgarPedidosHistoriaExpirados(
   db: Pick<typeof prisma, "pedidoHistoria">
 ): Promise<void> {
-  const limitePendiente = fechaHaceDias(DIAS_RETENCION_PEDIDOS_PENDIENTE);
-  const limiteRecepcionado = fechaHaceDias(DIAS_RETENCION_PEDIDOS_RECEPCIONADO);
+  const limiteFabrica = fechaHaceDias(DIAS_RETENCION_PEDIDOS_FABRICA);
+  const limiteNoFabrica = fechaHaceDias(DIAS_RETENCION_PEDIDOS_NO_FABRICA);
   await db.pedidoHistoria.deleteMany({
     where: {
       OR: [
         {
-          estado: { in: ["PENDIENTE", "SIN RECEPCION"] },
-          generadoAt: { lte: limitePendiente },
+          proveedor: { esFabrica: true },
+          generadoAt: { lte: limiteFabrica },
         },
         {
-          estado: "RECEPCIONADO",
-          generadoAt: { lte: limiteRecepcionado },
+          proveedor: { esFabrica: false },
+          generadoAt: { lte: limiteNoFabrica },
         },
       ],
     },

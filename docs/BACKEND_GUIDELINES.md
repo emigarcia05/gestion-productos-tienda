@@ -914,10 +914,10 @@ Constraint:
 - Índices: además de `(sucursal_id, generado_at)` y `(proveedor_id, generado_at)`, se agrega índice sobre `generado_at` para listar por fecha con buen rendimiento.
 
 **Retención automática (sin triggers ni cron)**
-- Regla: se eliminan filas de `prod_ped_historial` según estado (evaluado por `generado_at`):
-  - `PENDIENTE` (incluye legado `SIN RECEPCION`): **4 días o más**.
-  - `RECEPCIONADO`: **30 días o más**.
-- Implementación en `purgarPedidosHistoriaExpirados` (`src/services/pedidosHistoria.service.ts`) con ventanas por días (`Date.setDate`).
+- Regla: se eliminan filas de `prod_ped_historial` según `global_proveedores.es_fabrica` del proveedor del pedido (evaluado por `generado_at`):
+  - `es_fabrica = true`: **60 días o más**.
+  - `es_fabrica = false`: **14 días o más**.
+- Implementación en `purgarPedidosHistoriaExpirados` (`src/services/pedidosHistoria.service.ts`) con ventanas por días (`Date.setDate`) y filtro por relación `proveedor.esFabrica`.
 - Las filas de `prod_ped_historial_merc` asociadas se borran por **FK `ON DELETE CASCADE`**; no hace falta borrar la tabla de ítems por separado.
 - La purga se ejecuta **al inicio de cada mutación** del historial en `pedidosHistoria.service.ts` (`crearPedidoHistoriaSnapshot`, `agregarPedidoHistoriaItem`, `actualizarPedidoHistoriaItemCantRecibida`, `marcarPedidoHistoriaRegistrado`, `reabrirPedidoHistoriaRecepcion`, `eliminarPedidoHistoria`). **No** corre en lecturas (`listar`, `getDetalle`, PDF): si no hay escrituras durante mucho tiempo, el dato antiguo permanece hasta la próxima escritura.
 
@@ -1376,7 +1376,7 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 7. `eliminarPedidoHistoria({ pedidoHistoriaId })`
    - Borra la fila `PedidoHistoria`; los `PedidoHistoriaItem` se eliminan en cascada (`onDelete: Cascade`).
 
-8. **Purge por antigüedad** (interno, no exportado): `purgarPedidosHistoriaExpirados` — antes de las mutaciones anteriores elimina cabeceras por estado (`PENDIENTE` >= 4 días, `RECEPCIONADO` >= 30 días); ítems en cascada. Ver bloque “Retención automática” en §2.5.
+8. **Purge por antigüedad** (interno, no exportado): `purgarPedidosHistoriaExpirados` — antes de las mutaciones anteriores elimina cabeceras según `global_proveedores.es_fabrica` (`true` >= 60 días, `false` >= 14 días desde `generado_at`); ítems en cascada. Ver bloque “Retención automática” en §2.5.
 
 ---
 
@@ -2102,6 +2102,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-11): **Pedido A Fáb.** — `esStockQuebradoPedidoAFabrica` / `tienePedidoSugeridoPedidoAFabrica`.
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — `tipo_de_pedido = A FÁBRICA` en `prod_ped_merc` + PDF/historial.
+
+*Última actualización (2026-08-11): **Historial pedidos** — retención por `es_fabrica` (60 días fábrica / 14 días resto); reemplaza la regla por estado 4/30. Ver §2.5.
 
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 
