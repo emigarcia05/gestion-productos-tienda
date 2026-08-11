@@ -320,14 +320,19 @@ export default function TablaPedidoAFabrica({
                     <TableCell className="celda-datos min-w-0">
                       <div className="flex min-w-0 items-center gap-1.5">
                         {stockQuebrado ? (
-                          <TriangleAlert
-                            className={cn(
-                              "size-4 shrink-0",
-                              TEXT_WARNING_CLASS
-                            )}
-                            aria-label="Stock quebrado"
+                          <span
+                            className="inline-flex shrink-0"
                             title="Stock quebrado: stock hasta llegada de pedido ≤ 0"
-                          />
+                            aria-label="Stock quebrado"
+                          >
+                            <TriangleAlert
+                              className={cn(
+                                "size-4 shrink-0",
+                                TEXT_WARNING_CLASS
+                              )}
+                              aria-hidden
+                            />
+                          </span>
                         ) : (
                           <span
                             className="inline-block size-4 shrink-0"
