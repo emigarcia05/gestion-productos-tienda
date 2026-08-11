@@ -627,7 +627,7 @@ interface ReglaDescuentoListaPrecio {
 - UI: Select **ES FÁBRICA** (SI/NO) en `ProveedorForm` (alta default **NO**; edición precarga valor).
 - Lectura filtrada: `getProveedoresFabrica()` en `proveedor.service.ts` (`where: { esFabrica: true }`) + action `getProveedoresFabrica` (`PERMISOS.estadisticasProductos.acceso`) para el selector de **Pedido A Fáb.**.
 - **Retención historial** (`prod_ped_historial` / `prod_ped_historial_merc`): si `es_fabrica = true` → **60 días**; si `false` → **14 días** (desde `generado_at`). Ver §2.5.
-- **Productos del proveedor fábrica** (`src/services/pedidoAFabrica.service.ts`): `listarProductosPorProveedorFabrica(proveedorId, filtros)` — exige `es_fabrica = true`; lee `prod_precios_provee` con `habilitado = true`; expone `codExt`, **`descripcion`** = `prod_tienda.descripcion_tienda` (vía `cod_tienda` / `prodTienda`) con fallback a `descripcion_proveedor`, `codTienda` y `porSucursal`. Filtros opcionales sobre tienda vinculada: **`marca`**, **`rubro`**, **`subRubro`** + **`q`** (tokens en `descripcion_tienda` **o** `descripcion_proveedor`). Devuelve opciones dinámicas `marcas` / `rubros` / `subRubros` (distinct de `prod_tienda` de ítems vinculados del proveedor, excluyendo la dimensión activa). Sucursales: `listarSucursalesParaPedidoAFabrica()` (`pedido = true`). Por sucursal: **STOCK ACTUAL** = `stock_real` del depósito (`getIdDepositoPorSucursalCodigo` + `buildMapStockPorDeposito`); **PROM. VTA.** = suma `est_por_prod.vtas_en_un` de los **2 meses calendario previos** (AR) / **48** (24 días × 2), redondeo **hacia arriba** (`Math.ceil` en `calcularPromVtaDiariaDesdeTotal` de `@/lib/pedidoAFabricaPromVta`; UI: `fmtNumero`). Paginación `PAGE_SIZE` (100). Actions: `getProductosPedidoAFabricaAction`, `getSucursalesPedidoAFabricaAction` (`src/actions/pedidoAFabrica.ts`) con Zod `productosPedidoAFabricaFiltrosSchema`; gate `PERMISOS.estadisticasProductos.acceso`.
+- **Productos del proveedor fábrica** (`src/services/pedidoAFabrica.service.ts`): `listarProductosPorProveedorFabrica(proveedorId, filtros)` — exige `es_fabrica = true`; lee `prod_precios_provee` con `habilitado = true`; expone `codExt`, **`descripcion`** = `prod_tienda.descripcion_tienda` (vía `cod_tienda` / `prodTienda`) con fallback a `descripcion_proveedor`, `codTienda` y `porSucursal`. Filtros opcionales sobre tienda vinculada: **`marca`**, **`rubro`**, **`subRubro`** + **`q`** (tokens en `descripcion_tienda` **o** `descripcion_proveedor`). Devuelve opciones dinámicas `marcas` / `rubros` / `subRubros` (distinct de `prod_tienda` de ítems vinculados del proveedor, excluyendo la dimensión activa). Sucursales: `listarSucursalesParaPedidoAFabrica()` (`genera_est = true`; distinto de pedidos mercadería que usan `pedido`). Por sucursal: **STOCK ACTUAL** = `stock_real` del depósito (`getIdDepositoPorSucursalCodigo` + `buildMapStockPorDeposito`); **PROM. VTA.** = suma `est_por_prod.vtas_en_un` de los **2 meses calendario previos** (AR) / **48** (24 días × 2), redondeo **hacia arriba** (`Math.ceil` en `calcularPromVtaDiariaDesdeTotal` de `@/lib/pedidoAFabricaPromVta`; UI: `fmtNumero`). Paginación `PAGE_SIZE` (100). Actions: `getProductosPedidoAFabricaAction`, `getSucursalesPedidoAFabricaAction` (`src/actions/pedidoAFabrica.ts`) con Zod `productosPedidoAFabricaFiltrosSchema`; gate `PERMISOS.estadisticasProductos.acceso`.
 - **Stock en días / Cant. sugerida (Pedido A Fáb.)** — SSOT en `@/lib/pedidoAFabricaPromVta` (cliente):
   - **`calcularStockEnDiasPedidoAFabrica(stock, promVta)`** = `Math.round(stock / promVta)` si `promVta > 0`; si no → `null` (celda vacía). Aplica a totales de grilla y al detalle por sucursal.
   - **`calcularStockAFechaLlegadaPedidoAFabrica(stock, promVta, tiempoEntregaEnDias)`** = stock − (`tiempo_entrega_en_dias` × prom); no requiere **TIEMPO STOCKEO**. Columna UI **STOCK HASTA LLEGADA DE PEDIDO** (grilla TOTAL + modal por sucursal). `null` si no hay stock numérico.
@@ -2084,7 +2084,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-10): **Sidebar · Administración** — 4 pilares; ESTADÍSTICAS agrupa VENTAS + CONFIGURACION; PEDIDO A FÁB.
 
-*Última actualización (2026-08-10): **Pedido A Fáb.** — métricas por sucursal `pedido=true` (stock_real + prom. vta. `est_por_prod`).
+*Última actualización (2026-08-10): **Pedido A Fáb.** — métricas por sucursal `genera_est=true` (stock_real + prom. vta. `est_por_prod`).
 
 *Última actualización (2026-08-10): **Pedido A Fáb.** — PROM. VTA. diario = 2 meses previos / 48 días (techo).
 
@@ -2107,6 +2107,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-11): **Historial pedidos** — retención por `es_fabrica` (60 días fábrica / 14 días resto); reemplaza la regla por estado 4/30. Ver §2.5.
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — UI sin columna **PROM. VTA. P/ DÍA** (el cálculo sigue alimentando stock/días/sugerida).
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — sucursales de métricas/modal = `genera_est = true` (`listarSucursalesParaPedidoAFabrica`).
 
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 

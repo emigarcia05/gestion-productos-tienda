@@ -25,7 +25,7 @@ const VACIO: ProductosPedidoAFabricaResult = {
 };
 
 /**
- * Sucursales con `pedido = true` para columnas de Pedido A Fáb.
+ * Sucursales con `genera_est = true` para columnas / modal de Pedido A Fáb.
  */
 export async function getSucursalesPedidoAFabricaAction(): Promise<
   SucursalPedidoAFabrica[]
@@ -37,7 +37,7 @@ export async function getSucursalesPedidoAFabricaAction(): Promise<
 
 /**
  * Productos de lista de precios del proveedor fábrica (`es_fabrica = true`),
- * con **STOCK ACTUAL** y **PROM. VTA.** por sucursal `pedido = true`,
+ * con **STOCK ACTUAL** y **PROM. VTA.** por sucursal `genera_est = true`,
  * más cantidades **A FÁBRICA** persistidas en `prod_ped_merc`.
  * Gate: `PERMISOS.estadisticasProductos.acceso`.
  */

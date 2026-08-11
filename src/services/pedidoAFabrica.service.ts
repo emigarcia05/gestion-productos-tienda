@@ -77,12 +77,12 @@ const VACIO: ProductosPedidoAFabricaResult = {
 
 type CampoFiltroTienda = "marca" | "rubro" | "subRubro";
 
-/** Sucursales habilitadas para pedido (`pedido = true`), orden por nombre. */
+/** Sucursales con `genera_est = true` (métricas / modal Pedido A Fáb.), orden por nombre. */
 export async function listarSucursalesParaPedidoAFabrica(): Promise<
   SucursalPedidoAFabrica[]
 > {
   const rows = await prisma.sucursal.findMany({
-    where: { pedido: true },
+    where: { generaEst: true },
     select: { id: true, codigo: true, nombre: true },
     orderBy: { nombre: "asc" },
   });
@@ -218,7 +218,7 @@ async function opcionesCampoTienda(
  * Lista productos de `prod_precios_provee` del proveedor, solo si `es_fabrica = true`.
  * Descripción: `descripcion_tienda` (vínculo) → fallback `descripcion_proveedor`.
  * Solo filas `habilitado = true`. Filtros opcionales: marca / rubro / sub_rubro (tienda) + q.
- * Por cada sucursal `pedido = true`: **STOCK ACTUAL** + **PROM. VTA.**
+ * Por cada sucursal `genera_est = true`: **STOCK ACTUAL** + **PROM. VTA.**
  */
 export async function listarProductosPorProveedorFabrica(
   proveedorId: string,
