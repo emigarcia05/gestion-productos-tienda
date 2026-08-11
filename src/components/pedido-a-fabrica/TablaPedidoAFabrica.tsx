@@ -62,15 +62,15 @@ interface Props {
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
 /** Anchos fijos (suma 100 %). */
-const PCT_DESC = 60;
-const PCT_STOCK_UNIDADES = 5;
-const PCT_STOCK_DIAS = 5;
-const PCT_PROM_VTA = 5;
-const PCT_STOCK_HASTA_LLEGADA = 5;
-const PCT_CANT_SUGERIDA = 5;
-const PCT_CANT_PEDIR = 5;
-const PCT_TILDE = 5;
-const PCT_INFO = 5;
+const PCT_DESC = 52;
+const PCT_STOCK_UNIDADES = 7;
+const PCT_STOCK_DIAS = 7;
+const PCT_PROM_VTA = 7;
+const PCT_STOCK_HASTA_LLEGADA = 7;
+const PCT_CANT_SUGERIDA = 7;
+const PCT_CANT_PEDIR = 7;
+const PCT_TILDE = 3;
+const PCT_INFO = 3;
 
 const COL_COUNT = 9;
 
