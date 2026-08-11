@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import AppModal from "@/components/shared/AppModal";
 import { cn } from "@/lib/utils";
-import { fmtNumero, fmtPromVtaDiaria } from "@/lib/format";
+import { fmtNumero } from "@/lib/format";
 import {
   calcularCantSugeridaPedidoAFabrica,
   calcularStockEnDiasPedidoAFabrica,
@@ -151,7 +151,7 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                           "tabla-bloque-secundario-cell-divider"
                         )}
                       >
-                        {fmtPromVtaDiaria(promVta)}
+                        {fmtNumero(promVta)}
                       </TableCell>
                       <TableCell
                         className={cn(

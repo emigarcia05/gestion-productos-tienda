@@ -2,7 +2,7 @@
  * Cálculo de **PROM. VTA.** (Pedido A Fáb.).
  *
  * Ventas de los **2 meses calendario completos** anteriores al mes actual (AR),
- * divididas por **48** (24 días de venta × 2 meses) y redondeadas a **2 decimales**.
+ * divididas por **48** (24 días de venta × 2 meses) y redondeadas **siempre hacia arriba** (techo).
  */
 
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
@@ -52,15 +52,13 @@ export function etiquetaPeriodoMesAnio(p: PeriodoMesAnio): string {
 }
 
 /**
- * Promedio diario: total vendido en los 2 meses / 48, redondeado a 2 decimales.
- * Ej.: 65 / 48 ≈ 1,354 → 1,35; 40 / 48 ≈ 0,833 → 0,83.
- * (El redondeo a entero ocultaba diferencias reales entre sucursales.)
+ * Promedio diario: total vendido en los 2 meses / 48, redondeo **hacia arriba**.
+ * Ej.: 1,01 → 2; 1,99 → 2; 2,01 → 3; 65/48 ≈ 1,35 → 2; 40/48 ≈ 0,83 → 1.
+ * Si el cociente es entero exacto, se conserva (p. ej. 96/48 → 2).
  */
 export function calcularPromVtaDiariaDesdeTotal(totalDosMeses: number): number {
   if (!Number.isFinite(totalDosMeses) || totalDosMeses <= 0) return 0;
-  return (
-    Math.round((totalDosMeses / PEDIDO_A_FABRICA_DIAS_PROM_VTA) * 100) / 100
-  );
+  return Math.ceil(totalDosMeses / PEDIDO_A_FABRICA_DIAS_PROM_VTA);
 }
 
 /**

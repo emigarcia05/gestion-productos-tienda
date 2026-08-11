@@ -12,15 +12,6 @@ export function fmtNumero(n: number | null | undefined): string {
   return Math.round(n).toLocaleString("es-AR", OPCIONES_ENTERO);
 }
 
-/** PROM. VTA. P/ DÍA (Pedido A Fáb.): 2 decimales, es-AR. Vacío/null → "". */
-export function fmtPromVtaDiaria(n: number | null | undefined): string {
-  if (n == null || Number.isNaN(n)) return "";
-  return n.toLocaleString("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
 /** Valor para celda: si está vacío o es nulo, devuelve "" (vacío); si no, String(val). */
 export function fmtCelda<T>(val: T | null | undefined): string {
   if (val === null || val === undefined) return "";
