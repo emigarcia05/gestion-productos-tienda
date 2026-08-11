@@ -13,6 +13,7 @@ import {
   buildMapStockPorDeposito,
   getIdDepositoPorSucursalCodigo,
 } from "@/services/prodTiendaStock.service";
+import { buildMapCantAPedirAFabricaPorProveedor } from "@/services/pedidosEnvio.service";
 
 export type SucursalPedidoAFabrica = {
   id: string;
@@ -59,6 +60,8 @@ export type ProductosPedidoAFabricaResult = {
   marcas: string[];
   rubros: string[];
   subRubros: string[];
+  /** Cantidades `A FÁBRICA` persistidas en `prod_ped_merc` (`cod_ext` → cant). */
+  cantAPedirByCodExt: Record<string, number>;
 };
 
 const VACIO: ProductosPedidoAFabricaResult = {
@@ -69,6 +72,7 @@ const VACIO: ProductosPedidoAFabricaResult = {
   marcas: [],
   rubros: [],
   subRubros: [],
+  cantAPedirByCodExt: {},
 };
 
 type CampoFiltroTienda = "marca" | "rubro" | "subRubro";
@@ -234,7 +238,8 @@ export async function listarProductosPorProveedorFabrica(
   const whereRubros = buildWhereLista(proveedorId, filtros, "rubro");
   const whereSubRubros = buildWhereLista(proveedorId, filtros, "subRubro");
 
-  const [total, filas, marcas, rubros, subRubros] = await Promise.all([
+  const [total, filas, marcas, rubros, subRubros, cantAPedirByCodExt] =
+    await Promise.all([
     prisma.listaPrecioProveedor.count({ where: whereItems }),
     prisma.listaPrecioProveedor.findMany({
       where: whereItems,
@@ -253,6 +258,7 @@ export async function listarProductosPorProveedorFabrica(
     opcionesCampoTienda(whereMarcas, "marca"),
     opcionesCampoTienda(whereRubros, "rubro"),
     opcionesCampoTienda(whereSubRubros, "subRubro"),
+    buildMapCantAPedirAFabricaPorProveedor(proveedorId),
   ]);
 
   const codTiendas = [
@@ -311,5 +317,6 @@ export async function listarProductosPorProveedorFabrica(
     marcas,
     rubros,
     subRubros,
+    cantAPedirByCodExt,
   };
 }

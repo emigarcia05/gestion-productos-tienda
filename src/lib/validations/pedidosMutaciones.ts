@@ -76,6 +76,12 @@ export const upsertPedidoUrgenteItemSchema = z.object({
   cant: z.number().int().min(0),
 });
 
+/** Pedido A Fáb.: cantidad total a pedir (`cod_ext` de lista del proveedor fábrica). */
+export const upsertPedidoAFabricaItemSchema = z.object({
+  listaPrecioProveedorId: listaPreciosCodExtSchema,
+  cant: z.number().int().min(0),
+});
+
 export const pedidoTintometricoItemSchema = z.object({
   sucursalCodigo: sucursalPedidoCodigoSchema,
   proveedorId: proveedorIdPedidoSchema,

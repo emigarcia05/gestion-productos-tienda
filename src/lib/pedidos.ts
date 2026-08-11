@@ -10,8 +10,21 @@ export const SUCURSAL_LABEL_PEDIDO: Record<SucursalPedido, string> = {
   maipu: "Maipú",
 };
 
-export const TIPOS_PEDIDO = ["URGENTE", "TINTOMETRICO", "REPOSICION"] as const;
+export const TIPOS_PEDIDO = [
+  "URGENTE",
+  "TINTOMETRICO",
+  "REPOSICION",
+  "A FÁBRICA",
+] as const;
 export type TipoPedido = (typeof TIPOS_PEDIDO)[number];
+
+/** Etiqueta legible para UI / PDF. */
+export const TIPO_PEDIDO_LABEL: Record<TipoPedido, string> = {
+  URGENTE: "Urgente",
+  TINTOMETRICO: "Tintométrico",
+  REPOSICION: "Reposición",
+  "A FÁBRICA": "A Fábrica",
+};
 
 /** Parsea el query param "tipo" (valores separados por coma) a array de TipoPedido. */
 export function parseTiposParam(param: string): TipoPedido[] {

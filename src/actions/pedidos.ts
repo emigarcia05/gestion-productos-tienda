@@ -411,6 +411,7 @@ const TIPO_LABEL: Record<string, string> = {
   URGENTE: "Urgente",
   TINTOMETRICO: "Tintométrico",
   REPOSICION: "Reposición",
+  "A FÁBRICA": "A Fábrica",
 };
 
 export async function upsertPedidoTintometricoItemsAction(

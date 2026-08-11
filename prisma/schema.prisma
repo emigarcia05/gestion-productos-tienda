@@ -995,7 +995,7 @@ model ImportProgress {
 }
 
 /**
- * Pedidos de mercadería (REPOSICION | URGENTE | TINTOMETRICO). Tabla física `prod_ped_merc`.
+ * Pedidos de mercadería (REPOSICION | URGENTE | TINTOMETRICO | A FÁBRICA). Tabla física `prod_ped_merc`.
  * `tipo_de_pedido`: CHECK en migraciones SQL.
  */
 model ProdPedMerc2 {

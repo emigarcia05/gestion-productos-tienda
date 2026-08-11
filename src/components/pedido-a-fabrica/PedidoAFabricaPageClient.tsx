@@ -33,7 +33,7 @@ import {
   maskDigitsToDdMmYyyyDisplay,
   parseDdMmYyyyToIsoYmdArgentina,
 } from "@/lib/fechaArgentina";
-import { getProductosPedidoAFabricaAction } from "@/actions/pedidoAFabrica";
+import { getProductosPedidoAFabricaAction, upsertPedidoAFabricaItemAction } from "@/actions/pedidoAFabrica";
 import type {
   ProductoPedidoAFabricaItem,
   SucursalPedidoAFabrica,
@@ -43,12 +43,15 @@ import TablaPedidoAFabrica, {
   type FiltroSiNoPedidoAFabrica,
 } from "@/components/pedido-a-fabrica/TablaPedidoAFabrica";
 import InfoPromedioPedidoAFabricaModal from "@/components/pedido-a-fabrica/InfoPromedioPedidoAFabricaModal";
+import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import {
   calcularCantSugeridaPedidoAFabrica,
   calcularStockAFechaLlegadaPedidoAFabrica,
   esStockQuebradoPedidoAFabrica,
   tienePedidoSugeridoPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
+import type { SucursalPedido } from "@/lib/pedidos";
+import { toast } from "sonner";
 
 export type ProveedorFabricaOption = {
   id: string;
@@ -65,6 +68,13 @@ interface Props {
 
 const FILTRO_TODOS = "none";
 const DEBOUNCE_BUSQUEDA_MS = 350;
+const DEBOUNCE_CANT_PEDIR_MS = 400;
+
+function codigoASucursalPedido(codigo: string): SucursalPedido | "" {
+  const c = codigo.trim().toLowerCase();
+  if (c === "guaymallen" || c === "maipu") return c;
+  return "";
+}
 
 /** Solo dígitos (enteros ≥ 0); vacío permitido. */
 function sanitizeTiempoStockeoInput(raw: string): string {
@@ -116,6 +126,9 @@ export default function PedidoAFabricaPageClient({
   const [cantAPedirByCodExt, setCantAPedirByCodExt] = useState<
     Record<string, string>
   >({});
+  const cantPersistTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>(
+    {}
+  );
 
   const {
     q,
@@ -262,6 +275,24 @@ export default function PedidoAFabricaPageClient({
     setPagina(1);
   }
 
+  function persistCantAPedir(codExt: string, value: string) {
+    const prev = cantPersistTimersRef.current[codExt];
+    if (prev) clearTimeout(prev);
+    cantPersistTimersRef.current[codExt] = setTimeout(() => {
+      void (async () => {
+        const cant = value === "" ? 0 : Number(value);
+        if (!Number.isFinite(cant) || cant < 0) return;
+        const res = await upsertPedidoAFabricaItemAction({
+          listaPrecioProveedorId: codExt,
+          cant: Math.floor(cant),
+        });
+        if (!res.ok) {
+          toast.error(res.error || "No se pudo guardar la cantidad.");
+        }
+      })();
+    }, DEBOUNCE_CANT_PEDIR_MS);
+  }
+
   function handleCantAPedirChange(codExt: string, value: string) {
     setCantAPedirByCodExt((prev) => {
       if (value === "") {
@@ -272,13 +303,20 @@ export default function PedidoAFabricaPageClient({
       }
       return { ...prev, [codExt]: value };
     });
+    persistCantAPedir(codExt, value);
   }
 
   function handleAplicarCantSugerida(codExt: string, cantSugerida: number) {
+    const value = String(cantSugerida);
     setCantAPedirByCodExt((prev) => ({
       ...prev,
-      [codExt]: String(cantSugerida),
+      [codExt]: value,
     }));
+    persistCantAPedir(codExt, value);
+  }
+
+  function handleGeneradoPedidoExito() {
+    setCantAPedirByCodExt({});
   }
 
   useEffect(() => {
@@ -292,6 +330,7 @@ export default function PedidoAFabricaPageClient({
         setMarcas([]);
         setRubros([]);
         setSubRubros([]);
+        setCantAPedirByCodExt({});
       });
       return;
     }
@@ -319,6 +358,11 @@ export default function PedidoAFabricaPageClient({
         setMarcas(res.marcas);
         setRubros(res.rubros);
         setSubRubros(res.subRubros);
+        const nextCant: Record<string, string> = {};
+        for (const [cod, n] of Object.entries(res.cantAPedirByCodExt ?? {})) {
+          if (n > 0) nextCant[cod] = String(n);
+        }
+        setCantAPedirByCodExt(nextCant);
         setLoading(false);
       })();
     });
@@ -339,6 +383,10 @@ export default function PedidoAFabricaPageClient({
     sucursalesPedido,
   ]);
 
+  const defaultSucursalGenerar =
+    codigoASucursalPedido(sucursales[0]?.codigo ?? "") ||
+    codigoASucursalPedido(sucursalesPedido[0]?.codigo ?? "");
+
   return (
     <>
       <ClassicFilteredTableLayout
@@ -346,13 +394,35 @@ export default function PedidoAFabricaPageClient({
         subtitle="Pedido A Fáb."
         contentWidth="full"
         actions={
-          <ToolbarActionButton
-            type="button"
-            label="Info Formulas"
-            icon={<Info aria-hidden />}
-            className="h-10 px-4"
-            onClick={() => setInfoPromedioOpen(true)}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <GenerarPedidoToolbarButton
+              proveedores={
+                proveedorSeleccionado
+                  ? [
+                      {
+                        id: proveedorSeleccionado.id,
+                        nombre: proveedorSeleccionado.nombre,
+                        prefijo: proveedorSeleccionado.prefijo,
+                      },
+                    ]
+                  : []
+              }
+              defaultSucursal={defaultSucursalGenerar}
+              defaultProveedor={proveedorId}
+              defaultTipos={["A FÁBRICA"]}
+              modulo="a-fabrica"
+              triggerClassName="h-10 px-4"
+              triggerSize="default"
+              onGeneradoExito={handleGeneradoPedidoExito}
+            />
+            <ToolbarActionButton
+              type="button"
+              label="Info Formulas"
+              icon={<Info aria-hidden />}
+              className="h-10 px-4"
+              onClick={() => setInfoPromedioOpen(true)}
+            />
+          </div>
         }
         filters={
           <div className="flex flex-col gap-2">
