@@ -15,7 +15,7 @@ import {
 import PaginacionClient from "@/components/shared/PaginacionClient";
 import DetalleSucursalesPedidoAFabricaModal from "@/components/pedido-a-fabrica/DetalleSucursalesPedidoAFabricaModal";
 import { cn } from "@/lib/utils";
-import { fmtNumero } from "@/lib/format";
+import { fmtNumero, fmtPromVtaDiaria } from "@/lib/format";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -249,7 +249,7 @@ export default function TablaPedidoAFabrica({
                         "tabla-bloque-secundario-cell-divider"
                       )}
                     >
-                      {fmtNumero(promVtaTotal)}
+                      {fmtPromVtaDiaria(promVtaTotal)}
                     </TableCell>
                     <TableCell
                       className={cn(

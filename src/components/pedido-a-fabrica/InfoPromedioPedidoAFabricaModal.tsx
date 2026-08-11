@@ -68,7 +68,7 @@ export default function InfoPromedioPedidoAFabricaModal({
                   <>
                     (Cantidad Vendida últimos {PEDIDO_A_FABRICA_MESES_PROM_VTA}{" "}
                     meses) / (Días en Mes × {PEDIDO_A_FABRICA_MESES_PROM_VTA}),
-                    redondeado al entero
+                    redondeado a 2 decimales
                   </>
                 }
               />
