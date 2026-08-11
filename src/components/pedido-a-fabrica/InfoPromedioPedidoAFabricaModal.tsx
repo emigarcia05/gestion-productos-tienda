@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -15,8 +16,23 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+function FormulaLine({
+  left,
+  right,
+}: {
+  left: ReactNode;
+  right: ReactNode;
+}) {
+  return (
+    <li className="flex flex-wrap gap-x-1">
+      <span className="font-semibold shrink-0">{left}</span>
+      <span className="font-normal text-foreground">= {right}</span>
+    </li>
+  );
+}
+
 /**
- * Resume fórmulas de Pedido A Fáb.: **PROM. VTA.**, fechas de llegada/stockeo y cant. sugerida.
+ * Modal **Info Sobre Fórmulas** (Pedido A Fáb.): PROM. VTA., fechas y cant. sugerida.
  */
 export default function InfoPromedioPedidoAFabricaModal({
   open,
@@ -29,7 +45,7 @@ export default function InfoPromedioPedidoAFabricaModal({
       <AppModal
         size="md"
         padding="sm"
-        title="Info Promedio"
+        title="Info Sobre Fórmulas"
         actions={
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cerrar
@@ -37,75 +53,92 @@ export default function InfoPromedioPedidoAFabricaModal({
         }
       >
         <div className="flex flex-col gap-4 text-sm text-foreground">
-          <section className="flex flex-col gap-2">
-            <h3 className="font-semibold">PROM. VTA.</h3>
+          <section className="flex flex-col gap-2" aria-labelledby="info-formulas-prom-vta">
+            <h3 id="info-formulas-prom-vta" className="font-semibold tracking-wide">
+              PROM. VTA.
+            </h3>
             <ul className="list-none space-y-1 pl-0">
-              <li>
-                Días en Mes ={" "}
-                <span className="font-semibold">
-                  {PEDIDO_A_FABRICA_DIAS_VENTA_POR_MES}
-                </span>
-              </li>
-              <li>
-                Prom. Vta P/ Día ={" "}
-                <span className="font-semibold">
-                  (Cantidad Vendida últimos {PEDIDO_A_FABRICA_MESES_PROM_VTA}{" "}
-                  meses) / (Días en Mes × {PEDIDO_A_FABRICA_MESES_PROM_VTA})
-                </span>
-                , redondeado al entero.
-              </li>
+              <FormulaLine
+                left="Días en Mes"
+                right={PEDIDO_A_FABRICA_DIAS_VENTA_POR_MES}
+              />
+              <FormulaLine
+                left="Prom. Vta P/ Día"
+                right={
+                  <>
+                    (Cantidad Vendida últimos {PEDIDO_A_FABRICA_MESES_PROM_VTA}{" "}
+                    meses) / (Días en Mes × {PEDIDO_A_FABRICA_MESES_PROM_VTA}),
+                    redondeado al entero
+                  </>
+                }
+              />
             </ul>
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
-              Hoy (AR) ={" "}
-              <span className="font-semibold">{etiquetaPeriodoMesAnio(actual)}</span>
-              . Ventas de{" "}
-              <span className="font-semibold">{etiquetaPeriodoMesAnio(anterior)}</span>{" "}
-              y{" "}
-              <span className="font-semibold">{etiquetaPeriodoMesAnio(reciente)}</span>.
+              <span className="font-semibold">Hoy (AR)</span>
+              {" = "}
+              {etiquetaPeriodoMesAnio(actual)}. Ventas de{" "}
+              {etiquetaPeriodoMesAnio(anterior)} y{" "}
+              {etiquetaPeriodoMesAnio(reciente)}.
             </p>
           </section>
 
-          <section className="flex flex-col gap-2">
-            <h3 className="font-semibold">Fechas</h3>
+          <hr className="border-border" />
+
+          <section className="flex flex-col gap-2" aria-labelledby="info-formulas-fechas">
+            <h3 id="info-formulas-fechas" className="font-semibold tracking-wide">
+              FECHAS
+            </h3>
             <ul className="list-none space-y-1 pl-0">
-              <li>
-                Fecha Llegada Pedido ={" "}
-                <span className="font-semibold">hoy + tiempo_entrega_en_dias</span>
-              </li>
-              <li>
-                Fecha Stockeo ={" "}
-                <span className="font-semibold">
-                  Fecha Llegada Pedido + Tiempo Stockeo
-                </span>
-              </li>
+              <FormulaLine
+                left="Fecha Llegada Pedido"
+                right="hoy + tiempo_entrega_en_dias"
+              />
+              <FormulaLine
+                left="Fecha Stockeo"
+                right="Fecha Llegada Pedido + Tiempo Stockeo"
+              />
             </ul>
           </section>
 
-          <section className="flex flex-col gap-2">
-            <h3 className="font-semibold">Stock y Cant. Sugerida</h3>
+          <hr className="border-border" />
+
+          <section
+            className="flex flex-col gap-2"
+            aria-labelledby="info-formulas-stock"
+          >
+            <h3 id="info-formulas-stock" className="font-semibold tracking-wide">
+              STOCK Y CANT. SUGERIDA
+            </h3>
             <ul className="list-none space-y-1 pl-0">
-              <li>
-                Stock a Fecha Llegada Pedido ={" "}
-                <span className="font-semibold">
-                  Stock Actual − (tiempo_entrega_en_dias × Prom. Vta. total)
-                </span>
-              </li>
-              <li>
-                Stock Para Tiempo Stockeo ={" "}
-                <span className="font-semibold">
-                  Tiempo Stockeo × Prom. Vta. total
-                </span>
-              </li>
-              <li>
-                Cant. Sugerida: si Stock a Fecha Llegada ≤ 0 →{" "}
-                <span className="font-semibold">Stock Para Tiempo Stockeo</span>;
-                si &gt; 0 →{" "}
-                <span className="font-semibold">
-                  Stock Para Tiempo Stockeo − Stock a Fecha Llegada
-                </span>{" "}
-                (piso 0, redondeo).
-              </li>
+              <FormulaLine
+                left="Stock a Fecha Llegada Pedido"
+                right="Stock Actual − (tiempo_entrega_en_dias × Prom. Vta. total)"
+              />
+              <FormulaLine
+                left="Stock Para Tiempo Stockeo"
+                right="Tiempo Stockeo × Prom. Vta. total"
+              />
             </ul>
+            <div className="flex flex-col gap-1">
+              <p className="font-semibold">Cant. Sugerida:</p>
+              <ul className="list-none space-y-1 pl-4">
+                <li>
+                  <span className="font-semibold">
+                    Si Stock a Fecha Llegada ≤ 0
+                  </span>
+                  {" → "}
+                  Stock Para Tiempo Stockeo
+                </li>
+                <li>
+                  <span className="font-semibold">
+                    Si Stock a Fecha Llegada &gt; 0
+                  </span>
+                  {" → "}
+                  Stock Para Tiempo Stockeo − Stock a Fecha Llegada (piso 0,
+                  redondeo)
+                </li>
+              </ul>
+            </div>
           </section>
         </div>
       </AppModal>
