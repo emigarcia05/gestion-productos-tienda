@@ -18,7 +18,7 @@ import {
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** `YYYY-MM-DD` del filtro **FECHA PEDIDO** (simula el día del pedido). */
+  /** `YYYY-MM-DD` del filtro **FECHA DE PEDIDO** (vacío → hoy AR en fórmulas). */
   fechaPedidoIso: string;
   tiempoEntregaEnDias?: number | null;
   tiempoStockeo?: number | null;
@@ -114,8 +114,13 @@ export default function InfoPromedioPedidoAFabricaModal({
                 left="Fecha Pedido"
                 right={
                   <>
-                    filtro FECHA PEDIDO (
-                    {formatIsoYmdDdMmYyyyArgentina(fechaPedido)})
+                    filtro FECHA DE PEDIDO (
+                    {formatIsoYmdDdMmYyyyArgentina(fechaPedido)}
+                    {fechaPedidoIso.trim() === "" ||
+                    !/^\d{4}-\d{2}-\d{2}$/.test(fechaPedidoIso.trim())
+                      ? "; vacío → hoy AR"
+                      : ""}
+                    )
                   </>
                 }
               />

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, startTransition } from "react";
-import { Info } from "lucide-react";
+import { useEffect, useRef, useState, startTransition } from "react";
+import { CalendarDays, Info } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FilterBar, {
   FilaFiltrosDesplegables,
@@ -16,6 +16,7 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -26,7 +27,12 @@ import {
 import ToolbarActionButton from "@/components/shared/ToolbarActionButton";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
-import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import {
+  dateToIsoYmdArgentina,
+  formatIsoYmdDdMmYyyyArgentina,
+  maskDigitsToDdMmYyyyDisplay,
+  parseDdMmYyyyToIsoYmdArgentina,
+} from "@/lib/fechaArgentina";
 import { getProductosPedidoAFabricaAction } from "@/actions/pedidoAFabrica";
 import type {
   ProductoPedidoAFabricaItem,
@@ -34,7 +40,6 @@ import type {
 } from "@/services/pedidoAFabrica.service";
 import TablaPedidoAFabrica from "@/components/pedido-a-fabrica/TablaPedidoAFabrica";
 import InfoPromedioPedidoAFabricaModal from "@/components/pedido-a-fabrica/InfoPromedioPedidoAFabricaModal";
-import { normalizarFechaPedidoPedidoAFabrica } from "@/lib/pedidoAFabricaPromVta";
 
 export type ProveedorFabricaOption = {
   id: string;
@@ -57,18 +62,28 @@ function sanitizeTiempoStockeoInput(raw: string): string {
   return raw.replace(/\D/g, "");
 }
 
+function abrirSelectorFechaPedidoNativo(el: HTMLInputElement | null) {
+  if (!el) return;
+  try {
+    void el.showPicker?.();
+  } catch {
+    el.click();
+  }
+}
+
 /**
  * Módulo **Pedido A Fáb.** (pilar sidebar Administración).
- * Filtros 1: **PROVEEDOR** + **FECHA PEDIDO** + **TIEMPO STOCKEO**.
+ * Filtros 1: **PROVEEDOR** + **FECHA DE PEDIDO** + **TIEMPO STOCKEO**.
  * Filtros 2: **MARCA** | **RUBRO** | **SUB-RUBRO** + buscar por descripción.
  */
 export default function PedidoAFabricaPageClient({
   proveedoresFabrica,
   sucursalesPedido,
 }: Props) {
-  const hoyIso = dateToIsoYmdArgentina(new Date());
+  const fechaPedidoPickerRef = useRef<HTMLInputElement>(null);
   const [proveedorId, setProveedorId] = useState<string>("");
-  const [fechaPedido, setFechaPedido] = useState<string>(hoyIso);
+  /** Display `dd/mm/aaaa` del filtro **FECHA DE PEDIDO** (vacío = sin valor). */
+  const [fechaPedidoDdMm, setFechaPedidoDdMm] = useState<string>("");
   const [tiempoStockeo, setTiempoStockeo] = useState<string>("");
   const [marca, setMarca] = useState(FILTRO_TODOS);
   const [rubro, setRubro] = useState(FILTRO_TODOS);
@@ -105,8 +120,8 @@ export default function PedidoAFabricaPageClient({
   });
 
   const proveedorActivo = proveedorId !== "";
-  const fechaPedidoNormalizada = normalizarFechaPedidoPedidoAFabrica(fechaPedido);
-  const fechaPedidoActiva = fechaPedidoNormalizada !== hoyIso;
+  const fechaPedidoIsoParseada = parseDdMmYyyyToIsoYmdArgentina(fechaPedidoDdMm);
+  const fechaPedidoActiva = fechaPedidoDdMm !== "";
   const tiempoStockeoActivo = tiempoStockeo !== "";
   const marcaActiva = marca !== FILTRO_TODOS;
   const rubroActivo = rubro !== FILTRO_TODOS;
@@ -122,6 +137,8 @@ export default function PedidoAFabricaPageClient({
     proveedorSeleccionado?.tiempoEntregaEnDias ?? null;
   const tiempoStockeoNumero =
     tiempoStockeo === "" ? null : Number(tiempoStockeo);
+  const isoPickerFechaPedido =
+    fechaPedidoIsoParseada || dateToIsoYmdArgentina(new Date());
 
   function resetFiltrosCatalogo() {
     setMarca(FILTRO_TODOS);
@@ -156,12 +173,12 @@ export default function PedidoAFabricaPageClient({
     setTiempoStockeo(sanitizeTiempoStockeoInput(raw));
   }
 
-  function handleFechaPedidoChange(raw: string) {
-    setFechaPedido(raw);
+  function handleFechaPedidoDdMmChange(raw: string) {
+    setFechaPedidoDdMm(maskDigitsToDdMmYyyyDisplay(raw));
   }
 
   function handleLimpiarFechaPedido() {
-    setFechaPedido(dateToIsoYmdArgentina(new Date()));
+    setFechaPedidoDdMm("");
   }
 
   function handleMarcaChange(value: string) {
@@ -321,16 +338,59 @@ export default function PedidoAFabricaPageClient({
                     activo={fechaPedidoActiva}
                     onLimpiar={handleLimpiarFechaPedido}
                   >
-                    <Input
-                      type="date"
-                      aria-label="FECHA PEDIDO"
-                      title="FECHA PEDIDO"
-                      value={fechaPedidoNormalizada}
-                      onChange={(e) =>
-                        handleFechaPedidoChange(e.target.value)
-                      }
-                      className={cn(INPUT_FILTER_CLASS, "w-full")}
-                    />
+                    <div className="relative w-full min-w-0">
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        placeholder="FECHA DE PEDIDO"
+                        aria-label="FECHA DE PEDIDO"
+                        title="FECHA DE PEDIDO — dd/mm/aaaa o ícono de calendario"
+                        value={fechaPedidoDdMm}
+                        onChange={(e) =>
+                          handleFechaPedidoDdMmChange(e.target.value)
+                        }
+                        onDoubleClick={(e) => {
+                          e.preventDefault();
+                          abrirSelectorFechaPedidoNativo(
+                            fechaPedidoPickerRef.current
+                          );
+                        }}
+                        className={cn(INPUT_FILTER_CLASS, "w-full pr-10")}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-9 w-9 shrink-0 rounded-r-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          abrirSelectorFechaPedidoNativo(
+                            fechaPedidoPickerRef.current
+                          );
+                        }}
+                        aria-label="Abrir calendario para fecha de pedido"
+                        title="Abrir calendario"
+                      >
+                        <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
+                      </Button>
+                      <input
+                        ref={fechaPedidoPickerRef}
+                        type="date"
+                        tabIndex={-1}
+                        aria-hidden
+                        className="sr-only"
+                        value={isoPickerFechaPedido}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v) {
+                            setFechaPedidoDdMm(
+                              formatIsoYmdDdMmYyyyArgentina(v)
+                            );
+                          }
+                        }}
+                      />
+                    </div>
                   </FiltroIndividualContainer>
 
                   <FiltroIndividualContainer
@@ -524,7 +584,7 @@ export default function PedidoAFabricaPageClient({
       <InfoPromedioPedidoAFabricaModal
         open={infoPromedioOpen}
         onOpenChange={setInfoPromedioOpen}
-        fechaPedidoIso={fechaPedidoNormalizada}
+        fechaPedidoIso={fechaPedidoIsoParseada}
         tiempoEntregaEnDias={tiempoEntregaEnDias}
         tiempoStockeo={
           tiempoStockeoNumero != null && Number.isFinite(tiempoStockeoNumero)

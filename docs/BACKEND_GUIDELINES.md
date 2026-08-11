@@ -631,7 +631,7 @@ interface ReglaDescuentoListaPrecio {
   - **`calcularStockEnDiasPedidoAFabrica(stock, promVta)`** = `Math.round(stock / promVta)` si `promVta > 0`; si no → `null` (celda vacía). Aplica a totales de grilla y al detalle por sucursal.
   - **`calcularStockAFechaLlegadaPedidoAFabrica(stock, promVta, tiempoEntregaEnDias)`** = stock − (`tiempo_entrega_en_dias` × prom); no requiere **TIEMPO STOCKEO**. Columna UI **STOCK HASTA LLEGADA DE PEDIDO** (grilla TOTAL + modal por sucursal). `null` si no hay stock numérico.
   - **`calcularCantSugeridaPedidoAFabrica`** (inputs: stock/prom de la fila o de la sucursal + `tiempoEntregaEnDias` + filtro **TIEMPO STOCKEO**):
-    - **Fecha Pedido** = filtro UI **FECHA PEDIDO** (`YYYY-MM-DD`, default hoy AR; SSOT `normalizarFechaPedidoPedidoAFabrica`).
+    - **Fecha Pedido** = filtro UI **FECHA DE PEDIDO** (`dd/mm/aaaa` → `YYYY-MM-DD`; **sin default** en UI; vacío/inválido → hoy AR vía `normalizarFechaPedidoPedidoAFabrica`).
     - Fecha Llegada Pedido = Fecha Pedido + `tiempo_entrega_en_dias` (null → 0) — `calcularFechaLlegadaPedidoIso`.
     - Fecha Stockeo = Fecha Llegada Pedido + Tiempo Stockeo — `calcularFechaStockeoPedidoIso`.
     - Stock a Fecha Llegada Pedido = `calcularStockAFechaLlegadaPedidoAFabrica(...)`.
