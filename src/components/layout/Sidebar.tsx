@@ -124,14 +124,6 @@ const MODULES: NavModule[] = [
     ],
   },
   {
-    id: "control-stock",
-    label: "CONTROL STOCK",
-    icon: <Boxes className={iconClass} />,
-    href: GP_ROUTES.ayudaVendedor.controlStock,
-    permiso: PERMISOS.stock.acceso,
-    submodules: [],
-  },
-  {
     id: "asistencia-precios",
     label: "PRECIOS",
     icon: <CircleDollarSign className={iconClass} />,
@@ -156,6 +148,14 @@ const MODULES: NavModule[] = [
     icon: <Droplets className={iconClass} />,
     href: GP_ROUTES.ayudaVendedor.calcLitros,
     permiso: PERMISOS.tienda.tintoLts,
+    submodules: [],
+  },
+  {
+    id: "control-stock",
+    label: "CONTROL STOCK",
+    icon: <Boxes className={iconClass} />,
+    href: GP_ROUTES.ayudaVendedor.controlStock,
+    permiso: PERMISOS.stock.acceso,
     submodules: [],
   },
   {
