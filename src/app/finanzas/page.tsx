@@ -1,8 +1,7 @@
-import { permanentRedirect } from "next/navigation";
-
 /**
- * La entrada del módulo Finanzas es Tesorería; no hay página de resumen en `/finanzas`.
+ * Hub del área Administración: panel central vacío hasta elegir una ruta hoja
+ * en el sidenav (Tesorería, Balance, Pedido A Fáb., etc.).
  */
 export default function FinanzasPage() {
-  permanentRedirect("/finanzas/tesoreria");
+  return null;
 }

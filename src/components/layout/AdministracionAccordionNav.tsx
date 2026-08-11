@@ -34,28 +34,6 @@ const subIconClass = "h-4 w-4 shrink-0";
 const TREE_PANEL = "sidebar-nav-tree";
 const TREE_PANEL_NESTED = "sidebar-nav-tree sidebar-nav-tree--nested";
 
-function deriveOpenFromPath(
-  pathname: string,
-  rol: Rol
-): { pillarId: AdmPillarId | null; groupId: string | null } {
-  const puedeFn = (permiso: { simple: boolean; editor: boolean }) =>
-    puede(rol, permiso);
-  const activePillar = ADM_PILLARS.find(
-    (p) => pillarHasVisibleItems(p, puedeFn) && isAdmPillarActive(pathname, p)
-  );
-  if (!activePillar) return { pillarId: null, groupId: null };
-
-  if (!activePillar.groups?.length) {
-    return { pillarId: activePillar.id, groupId: null };
-  }
-  const groups = filterVisibleGroups(activePillar.groups, puedeFn);
-  const activeGroup = groups.find((g) => isAdmGroupActive(pathname, g));
-  return {
-    pillarId: activePillar.id,
-    groupId: activeGroup ? `${activePillar.id}:${activeGroup.id}` : null,
-  };
-}
-
 function ScreenLink({
   screen,
   pathname,
@@ -96,6 +74,29 @@ function ScreensList({
   );
 }
 
+function getSoleNavigableHrefForPillar(
+  pillar: AdmPillarDef,
+  puedeFn: (permiso: { simple: boolean; editor: boolean }) => boolean
+): string | null {
+  const screens = pillar.screens
+    ? filterVisibleScreens(pillar.screens, puedeFn)
+    : [];
+  const groups = pillar.groups
+    ? filterVisibleGroups(pillar.groups, puedeFn)
+    : [];
+  const allScreens = [
+    ...screens,
+    ...groups.flatMap((g) => g.screens),
+  ];
+  if (allScreens.length === 1) return allScreens[0]!.href;
+  return null;
+}
+
+function getSoleScreenHrefForGroup(group: AdmGroupDef): string | null {
+  if (group.screens.length === 1) return group.screens[0]!.href;
+  return null;
+}
+
 function GroupAccordion({
   pillarId,
   group,
@@ -111,6 +112,25 @@ function GroupAccordion({
 }) {
   const Icon = ADM_ICON_MAP[group.icon];
   const groupKey = `${pillarId}:${group.id}`;
+  const soleHref = getSoleScreenHrefForGroup(group);
+  if (soleHref) {
+    const active = isAdmScreenActive(pathname, {
+      ...group.screens[0]!,
+      href: soleHref,
+    });
+    return (
+      <Link
+        href={soleHref}
+        className="sidebar-nav-item"
+        data-active={active ? "true" : undefined}
+        aria-current={active ? "page" : undefined}
+      >
+        <Icon className={subIconClass} aria-hidden />
+        <span className="min-w-0 truncate">{group.label}</span>
+      </Link>
+    );
+  }
+
   const isOpen = openGroupId === groupKey;
   const groupActive = isAdmGroupActive(pathname, group);
 
@@ -147,6 +167,7 @@ function GroupAccordion({
 /**
  * Sidebar Administración: árbol de decisiones en acordeón vertical
  * (pilares → grupos → pantallas), SSOT `administracionNav.ts`.
+ * Arranca con todos los pilares/grupos cerrados; un solo destino → navegación directa.
  */
 export default function AdministracionAccordionNav({ rol }: { rol: Rol }) {
   const pathname = usePathname();
@@ -157,21 +178,8 @@ export default function AdministracionAccordionNav({ rol }: { rol: Rol }) {
     pillarHasVisibleItems(p, puedeFn)
   );
 
-  const derived = deriveOpenFromPath(pathname, rol);
-  const syncKey = `${pathname}::${rol}`;
-  const [pathKey, setPathKey] = useState(syncKey);
-  const [openPillarId, setOpenPillarId] = useState<AdmPillarId | null>(
-    () => derived.pillarId
-  );
-  const [openGroupId, setOpenGroupId] = useState<string | null>(
-    () => derived.groupId
-  );
-
-  if (syncKey !== pathKey) {
-    setPathKey(syncKey);
-    setOpenPillarId(derived.pillarId);
-    setOpenGroupId(derived.groupId);
-  }
+  const [openPillarId, setOpenPillarId] = useState<AdmPillarId | null>(null);
+  const [openGroupId, setOpenGroupId] = useState<string | null>(null);
 
   if (visiblePillars.length === 0) {
     return (
@@ -191,7 +199,10 @@ export default function AdministracionAccordionNav({ rol }: { rol: Rol }) {
             pathname={pathname}
             puedeFn={puedeFn}
             openPillarId={openPillarId}
-            onPillarOpenChange={setOpenPillarId}
+            onPillarOpenChange={(id) => {
+              setOpenPillarId(id);
+              if (id == null) setOpenGroupId(null);
+            }}
             openGroupId={openGroupId}
             onGroupOpenChange={setOpenGroupId}
           />
@@ -219,7 +230,6 @@ function PillarAccordion({
   onGroupOpenChange: (id: string | null) => void;
 }) {
   const Icon = ADM_ICON_MAP[pillar.icon];
-  const isOpen = openPillarId === pillar.id;
   const pillarActive = isAdmPillarActive(pathname, pillar);
 
   const groups = pillar.groups
@@ -228,6 +238,31 @@ function PillarAccordion({
   const screens = pillar.screens
     ? filterVisibleScreens(pillar.screens, puedeFn)
     : [];
+
+  const soleHref = getSoleNavigableHrefForPillar(pillar, puedeFn);
+  if (soleHref) {
+    const soleScreen = [...screens, ...groups.flatMap((g) => g.screens)].find(
+      (s) => s.href === soleHref
+    );
+    const screenActive = soleScreen
+      ? isAdmScreenActive(pathname, soleScreen)
+      : isAdmPillarActive(pathname, pillar);
+    return (
+      <Link
+        href={soleHref}
+        className="sidebar-nav-module"
+        data-active={screenActive ? "true" : undefined}
+        aria-current={screenActive ? "page" : undefined}
+      >
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+          <Icon className={iconClass} aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1 text-left">{pillar.label}</span>
+      </Link>
+    );
+  }
+
+  const isOpen = openPillarId === pillar.id;
 
   return (
     <Collapsible
@@ -254,23 +289,22 @@ function PillarAccordion({
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className={TREE_PANEL}>
-          {groups.length > 0 ? (
-            <div className="flex flex-col gap-0.5">
-              {groups.map((group) => (
-                <div key={group.id}>
-                  <GroupAccordion
-                    pillarId={pillar.id}
-                    group={group}
-                    pathname={pathname}
-                    openGroupId={openGroupId}
-                    onOpenChange={onGroupOpenChange}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <ScreensList screens={screens} pathname={pathname} />
-          )}
+          <div className="flex flex-col gap-0.5">
+            {screens.length > 0 ? (
+              <ScreensList screens={screens} pathname={pathname} />
+            ) : null}
+            {groups.map((group) => (
+              <div key={group.id}>
+                <GroupAccordion
+                  pillarId={pillar.id}
+                  group={group}
+                  pathname={pathname}
+                  openGroupId={openGroupId}
+                  onOpenChange={onGroupOpenChange}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </CollapsibleContent>
     </Collapsible>

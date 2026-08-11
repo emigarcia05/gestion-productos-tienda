@@ -7,6 +7,7 @@ export const tipoPedidoMercaderiaSchema = z.enum([
   "URGENTE",
   "TINTOMETRICO",
   "REPOSICION",
+  "A FÁBRICA",
 ]);
 
 export const tiposPedidoMercaderiaSchema = z

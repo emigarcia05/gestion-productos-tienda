@@ -9,7 +9,8 @@
 const GP = "/gestion-productos";
 
 export const GP_ROUTES = {
-  defaultEntry: `${GP}/ayuda-vendedor/px-venta/px-vta-sugerido`,
+  /** Hub Vendedor / inicio: panel vacío hasta elegir una ruta hoja en el sidenav. */
+  defaultEntry: `/`,
   pedidoMercaderia: {
     generarPedido: `${GP}/pedido-mercaderia/generar-pedido`,
     confPedido: {

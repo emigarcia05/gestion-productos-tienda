@@ -64,6 +64,11 @@ model Proveedor {
   /** Días de vencimiento separados por coma (ej. 30,60). Solo valores 30, 60, 90, 120, 150; orden creciente. */
   plazosPagos     String?  @map("plazos_pagos")
   /**
+   * Tiempo de entrega del proveedor en días enteros (≥ 0).
+   * Null = no configurado.
+   */
+  tiempoEntregaEnDias Int? @map("tiempo_entrega_en_dias")
+  /**
    * Flag que marca al proveedor como "de mercadería".
    * Solo los TRUE se listan en /gestion-productos/proveedores/lista.
    * Default DB: false (nuevos proveedores son opt-in). Los proveedores existentes
@@ -71,6 +76,11 @@ model Proveedor {
    * comportamiento previo de la lista.
    */
   proveedorMercaderia Boolean @default(false) @map("proveedor_mercaderia")
+  /**
+   * Indica si el proveedor es fábrica (Pedido A Fábrica).
+   * Default DB: false.
+   */
+  esFabrica Boolean @default(false) @map("es_fabrica")
   /**
    * Política de IVA del proveedor. Default DB `PREGUNTA` (la UI debe pedir
    * decisión al operador caso por caso hasta que se registre la política).
@@ -90,6 +100,7 @@ model Proveedor {
   reglasDescEspecialListaPrecio ProdPrecioDescEspecialRegla[]
 
   @@index([proveedorMercaderia], map: "global_proveedores_proveedor_mercaderia_idx")
+  @@index([esFabrica], map: "global_proveedores_es_fabrica_idx")
   @@map("global_proveedores")
 }
 
@@ -984,7 +995,7 @@ model ImportProgress {
 }
 
 /**
- * Pedidos de mercadería (REPOSICION | URGENTE | TINTOMETRICO). Tabla física `prod_ped_merc`.
+ * Pedidos de mercadería (REPOSICION | URGENTE | TINTOMETRICO | A FÁBRICA). Tabla física `prod_ped_merc`.
  * `tipo_de_pedido`: CHECK en migraciones SQL.
  */
 model ProdPedMerc2 {

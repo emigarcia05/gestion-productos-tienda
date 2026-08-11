@@ -547,6 +547,10 @@ interface ReglaDescuentoListaPrecio {
 
 *Última actualización (2026-08-08): **Px Listas · filtro pxVinculado** — query filtra por `competencia_id_px_lista_general`; UI con etiqueta prefijo/abrev. 3 letras.
 
+*Última actualización (2026-08-10): **global_proveedores.es_fabrica** — BOOLEAN NOT NULL default false; ver §1.11f.
+
+*Última actualización (2026-08-10): **global_proveedores.tiempo_entrega_en_dias** — INTEGER nullable (días de entrega); ver §1.11e.
+
 *Última actualización (2026-08-08): **Px Listas · competencia_id_px_lista_general** — FK en `prod_tienda` para REF. de **1 - GENERAL**; sync PX desde sugerido/scraping; Act. Px recalcula PORC. UTILIDAD.
 
 *Última actualización (2026-08-07): sync lista precios — eliminado `Promise.race` de 15 s incompatible con reintentos 429; timeout único en `fetchItemsPage` (default 30 s, env `DUX_FETCH_TIMEOUT_MS`).*
@@ -600,6 +604,42 @@ interface ReglaDescuentoListaPrecio {
   - **Prefijo**: opcional. `prefijoProveedorOpcionalSchema`: vacío → `null` en BD; si hay texto, exactamente 3 letras A-Z. Migración `20260421180000_global_proveedores_prefijo_nullable`: `prefijo` nullable; trigger `trg_lista_precios_set_cod_ext` usa `COALESCE(NULLIF(trim(p.prefijo), ''), p.codigo_unico)` para armar `cod_ext` cuando no hay prefijo.
   - Servicio `createProveedor` / `updateProveedor`: `CreateProveedorInput` / `UpdateProveedorInput` exigen **`proveedorMercaderia: boolean`**; si no hay prefijo, se genera `codigoUnico` interno único y se persiste `prefijo: null` (salvo colisión P2002 en `codigo_unico` → `PROVEEDOR_ERROR.CODIGO_UNICO_DUPLICADO`). Los listados (`listarProveedoresInterno`) exponen `prefijo: string` en UI como `p.prefijo ?? ""`.
   - Actions `crearProveedor` / `editarProveedor`: leen `formData`, validan con Zod y delegan al servicio; orden de mensajes de error de validación prioriza **nombre** y **proveedor mercadería** antes que prefijo.
+
+
+### 1.11e Tiempo de entrega en días (`global_proveedores.tiempo_entrega_en_dias`)
+
+- Persistencia: `global_proveedores.tiempo_entrega_en_dias` (`INTEGER`, **nullable**). Prisma: `tiempoEntregaEnDias Int? @map("tiempo_entrega_en_dias")`.
+- Semántica: días enteros de entrega del proveedor (**≥ 0** y **≤ 999** en validación de formulario). **`NULL`** = no configurado.
+- Migración `20260810120000_global_proveedores_tiempo_entrega_en_dias` (idempotente): `ALTER TABLE "global_proveedores" ADD COLUMN IF NOT EXISTS "tiempo_entrega_en_dias" INTEGER`.
+- Validación Zod: `tiempoEntregaEnDiasSchema` en `@/lib/validations/proveedor.ts` (string de form → `number | null`); incluido en `createProveedorSchema` / `updateProveedorSchema`.
+- Servicio `proveedor.service.ts`: `CreateProveedorInput` / `UpdateProveedorInput` / `ProveedorListItem` / `getProveedorById` exponen `tiempoEntregaEnDias`; `createProveedor` / `updateProveedor` lo persisten.
+- Actions `crearProveedor` / `editarProveedor`: leen `formData.get("tiempoEntregaEnDias")`.
+- UI: campo **TIEMPO ENTREGA MERCADERÍA EN DÍAS** en `ProveedorForm` (opcional; vacío → `NULL`).
+
+
+### 1.11f Flag "Es Fábrica" (`global_proveedores.es_fabrica`)
+
+- Persistencia: `global_proveedores.es_fabrica` (`BOOLEAN`, **`NOT NULL`**, **default DB `false`**). Prisma: `esFabrica Boolean @default(false) @map("es_fabrica")`. Índice `global_proveedores_es_fabrica_idx`.
+- Semántica: marca al proveedor como **fábrica** (módulo **Pedido A Fáb.**). Default `false` (opt-in).
+- Migración `20260810140000_global_proveedores_es_fabrica` (idempotente): `ADD COLUMN IF NOT EXISTS "es_fabrica" BOOLEAN NOT NULL DEFAULT false` + índice.
+- Validación Zod: `esFabricaFormSchema` en `@/lib/validations/proveedor.ts` (`si`/`no` → boolean); incluido en `createProveedorSchema` / `updateProveedorSchema`.
+- Servicio / actions: `CreateProveedorInput` / `UpdateProveedorInput` / `ProveedorListItem` exponen `esFabrica`; `crearProveedor` / `editarProveedor` leen `formData.get("esFabrica")`.
+- UI: Select **ES FÁBRICA** (SI/NO) en `ProveedorForm` (alta default **NO**; edición precarga valor).
+- Lectura filtrada: `getProveedoresFabrica()` en `proveedor.service.ts` (`where: { esFabrica: true }`) + action `getProveedoresFabrica` (`PERMISOS.estadisticasProductos.acceso`) para el selector de **Pedido A Fáb.**.
+- **Retención historial** (`prod_ped_historial` / `prod_ped_historial_merc`): si `es_fabrica = true` → **60 días**; si `false` → **14 días** (desde `generado_at`). Ver §2.5.
+- **Productos del proveedor fábrica** (`src/services/pedidoAFabrica.service.ts`): `listarProductosPorProveedorFabrica(proveedorId, filtros)` — exige `es_fabrica = true`; lee `prod_precios_provee` con `habilitado = true`; expone `codExt`, **`descripcion`** = `prod_tienda.descripcion_tienda` (vía `cod_tienda` / `prodTienda`) con fallback a `descripcion_proveedor`, `codTienda` y `porSucursal`. Filtros opcionales sobre tienda vinculada: **`marca`**, **`rubro`**, **`subRubro`** + **`q`** (tokens en `descripcion_tienda` **o** `descripcion_proveedor`). Devuelve opciones dinámicas `marcas` / `rubros` / `subRubros` (distinct de `prod_tienda` de ítems vinculados del proveedor, excluyendo la dimensión activa). Sucursales: `listarSucursalesParaPedidoAFabrica()` (`genera_est = true`; distinto de pedidos mercadería que usan `pedido`). Por sucursal: **STOCK ACTUAL** = `stock_real` del depósito (`getIdDepositoPorSucursalCodigo` + `buildMapStockPorDeposito`); **PROM. VTA.** = suma `est_por_prod.vtas_en_un` de los **2 meses calendario previos** (AR) / **48** (24 días × 2), redondeo **hacia arriba** (`Math.ceil` en `calcularPromVtaDiariaDesdeTotal` de `@/lib/pedidoAFabricaPromVta`; UI: `fmtNumero`). Paginación `PAGE_SIZE` (100). Actions: `getProductosPedidoAFabricaAction`, `getSucursalesPedidoAFabricaAction` (`src/actions/pedidoAFabrica.ts`) con Zod `productosPedidoAFabricaFiltrosSchema`; gate `PERMISOS.estadisticasProductos.acceso`.
+- **Stock en días / Cant. sugerida (Pedido A Fáb.)** — SSOT en `@/lib/pedidoAFabricaPromVta` (cliente):
+  - **`calcularStockEnDiasPedidoAFabrica(stock, promVta)`** = `Math.round(stock / promVta)` si `promVta > 0`; si no → `null` (celda vacía). Aplica a totales de grilla y al detalle por sucursal.
+  - **`calcularStockAFechaLlegadaPedidoAFabrica(stock, promVta, tiempoEntregaEnDias)`** = stock − (`tiempo_entrega_en_dias` × prom); no requiere **TIEMPO STOCKEO**. Columna UI **STOCK HASTA LLEGADA DE PEDIDO** (grilla TOTAL + modal por sucursal). `null` si no hay stock numérico.
+  - **`esStockQuebradoPedidoAFabrica`**: stock hasta llegada ≤ 0. Filtro UI **STOCK QUEBRADO** SI/NO; aviso `TriangleAlert` en DESCRIPCIÓN.
+  - **`tienePedidoSugeridoPedidoAFabrica`**: cant. sugerida &gt; 0. Filtro UI **PEDIDO SUGERIDO** SI/NO.
+  - **`calcularCantSugeridaPedidoAFabrica`** (inputs: stock/prom de la fila o de la sucursal + `tiempoEntregaEnDias` + filtro **TIEMPO STOCKEO**):
+    - **Fecha Pedido** = filtro UI **FECHA DE PEDIDO** (`dd/mm/aaaa` → `YYYY-MM-DD`; **sin default** en UI; vacío/inválido → hoy AR vía `normalizarFechaPedidoPedidoAFabrica`).
+    - Fecha Llegada Pedido = Fecha Pedido + `tiempo_entrega_en_dias` (null → 0) — `calcularFechaLlegadaPedidoIso`.
+    - Fecha Stockeo = Fecha Llegada Pedido + Tiempo Stockeo — `calcularFechaStockeoPedidoIso`.
+    - Stock a Fecha Llegada Pedido = `calcularStockAFechaLlegadaPedidoAFabrica(...)`.
+    - Stock Para Tiempo Stockeo = Tiempo Stockeo × prom vta.
+    - **Cant. sugerida**: si Stock a Fecha Llegada ≤ 0 → Stock Para Tiempo Stockeo; si > 0 → Stock Para Tiempo Stockeo − Stock a Fecha Llegada; resultado `Math.max(0, Math.round(...))`. Sin Tiempo Stockeo → sin sugerencia.
 
 ### 1.11d Política de IVA por proveedor (`global_proveedores.iva`)
 
@@ -875,10 +915,10 @@ Constraint:
 - Índices: además de `(sucursal_id, generado_at)` y `(proveedor_id, generado_at)`, se agrega índice sobre `generado_at` para listar por fecha con buen rendimiento.
 
 **Retención automática (sin triggers ni cron)**
-- Regla: se eliminan filas de `prod_ped_historial` según estado (evaluado por `generado_at`):
-  - `PENDIENTE` (incluye legado `SIN RECEPCION`): **4 días o más**.
-  - `RECEPCIONADO`: **30 días o más**.
-- Implementación en `purgarPedidosHistoriaExpirados` (`src/services/pedidosHistoria.service.ts`) con ventanas por días (`Date.setDate`).
+- Regla: se eliminan filas de `prod_ped_historial` según `global_proveedores.es_fabrica` del proveedor del pedido (evaluado por `generado_at`):
+  - `es_fabrica = true`: **60 días o más**.
+  - `es_fabrica = false`: **14 días o más**.
+- Implementación en `purgarPedidosHistoriaExpirados` (`src/services/pedidosHistoria.service.ts`) con ventanas por días (`Date.setDate`) y filtro por relación `proveedor.esFabrica`.
 - Las filas de `prod_ped_historial_merc` asociadas se borran por **FK `ON DELETE CASCADE`**; no hace falta borrar la tabla de ítems por separado.
 - La purga se ejecuta **al inicio de cada mutación** del historial en `pedidosHistoria.service.ts` (`crearPedidoHistoriaSnapshot`, `agregarPedidoHistoriaItem`, `actualizarPedidoHistoriaItemCantRecibida`, `marcarPedidoHistoriaRegistrado`, `reabrirPedidoHistoriaRecepcion`, `eliminarPedidoHistoria`). **No** corre en lecturas (`listar`, `getDetalle`, PDF): si no hay escrituras durante mucho tiempo, el dato antiguo permanece hasta la próxima escritura.
 
@@ -947,8 +987,8 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
 ### 2.5g Estadísticas por producto (`/estadisticas-productos`, `est_por_prod`)
 
 - **Área UI**: módulo del sidebar **Administración** (id `finanzas` en `MAIN_APP_AREAS`); no es macro-área propia. URLs siguen bajo `/estadisticas-productos/...`.
-- **Rutas SSOT**: `src/lib/estadisticasProductosRoutes.ts` — `ventasPorProducto` (UI **Carga Datos**), `categorizacion`, `estadisticasVtas` (**Vtas Por. Prod.**), `estParaCompra`; `/estadisticas-productos` redirige a carga.
-- **Carga de Datos** (URL `/estadisticas-productos/ventas-por-producto`): `page.tsx` → **`EstPorProdPageClient`** (grilla periodo × sucursal). Permiso: **`PERMISOS.estadisticasProductos.acceso`** (`simple` y `editor` lectura; mutaciones con **`esEditor()`**).
+- **Rutas SSOT**: `src/lib/estadisticasProductosRoutes.ts` — `ventasPorProducto` (UI **Carga De Datos**), `categorizacion` (UI **Configuracion**), `estadisticasVtas` (**VENTAS**); `/estadisticas-productos` redirige a Carga De Datos. Sidebar **ESTADÍSTICAS**: pantalla **VENTAS** + grupo **CONFIGURACION**. **Pedido A Fáb.**: `src/lib/pedidoAFabricaRoutes.ts` (`/pedido-a-fabrica`; legacy `est-para-compra` → redirect).
+- **Carga De Datos** (URL `/estadisticas-productos/ventas-por-producto`): `page.tsx` → **`EstPorProdPageClient`** (grilla periodo × sucursal). Permiso: **`PERMISOS.estadisticasProductos.acceso`** (`simple` y `editor` lectura; mutaciones con **`esEditor()`**).
 - **Tabla `est_por_prod`** (Prisma `EstPorProd`): ventas en unidades importadas por **`sucursal_id` + `mes` + `anio` + `cod_tienda`**. Columnas: `id` (`cuid`), `mes` (1–12), `anio`, `sucursal_id` → `global_sucursales`, `cod_tienda` → `prod_tienda.cod_tienda` (texto; código numérico DUX normalizado en import), `vtas_en_un` (`DECIMAL(14,4)`). **`@@unique([sucursalId, mes, anio, codTienda])`** (`est_por_prod_sucursal_periodo_cod_ux`). Migración **`20260706120000_add_est_por_prod`**.
 - **Regla de sucursal**: solo sucursales con **`genera_est = true`** — `listarSucursalesParaEstPorProd()`; distinto de `fin_bal_vtas` (`genera_balance`) y del texto `deposito` (exportaciones). Flag en `global_sucursales` (Prisma `Sucursal.generaEst`, `BOOLEAN NOT NULL DEFAULT FALSE`); sin UI de edición — seed / `UPDATE` manual. Migración **`20260805160000_add_genera_est_global_sucursales`** (backfill: `true` donde `deposito` no vacío, para no vaciar la grilla existente).
 - **Servicio** (`src/services/estPorProd.service.ts`): `listarEstPorProd`, `listarEstPorProdCeldasCargadas` (`groupBy` sucursal+mes+anio), **`importarEstPorProd`** (unidad = **periodo × sucursal**: siempre `deleteMany` del bloque y luego `createMany` de la planilla; omite `cod_tienda` inexistentes en `prod_tienda`; si el periodo ya tiene datos exige `reemplazarPeriodo`; exige `genera_est`), `eliminarEstPorProdPorPeriodo` (borra todo el bloque), `eliminarEstPorProd` (por id; **no** usado en la UI de Carga de Datos). Periodos de grilla: `listarPeriodosCargaEstPorProd` / `EST_POR_PROD_CARGA_DESDE` (**Mayo 2026** → mes actual AR).
@@ -1223,8 +1263,9 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 
 - **Tintométrico**: varias líneas pueden compartir `cod_tienda` y diferir por código de fórmula. El correlato con `cod_ext` de la era legada vive en **`urgente_cod_ext`** (`buildCodExtTintometrico` en `src/lib/pedidosTintometrico.ts`). Borrado: `deletePedidoTintometricoItem` por `id` o por `(sucursal, proveedor, cod_ext persistido)`. Para recepción/historial, `getItemsYProveedorParaEnviar` resuelve `cod_tienda` desde ese `cod_ext` (`parseCodTiendaFromCodExtTintometrico`) y lo valida contra `prod_precios_tienda`.
 - **Migraciones**: `20260429183000_add_prod_ped_merc_2` (crea `prod_ped_merc_2`); `20260429200000_copy_prod_ped_merc_to_prod_ped_merc_2` (copia desde el legado); `20260430103000_drop_prod_ped_merc_legacy` (borra el legado homónimo); `20260430120000_rename_prod_ped_merc_2_to_prod_ped_merc` (nombre final `prod_ped_merc`).
-- **Propósito**: única tabla de ítems de pedido de mercadería en runtime (`REPOSICION` \| `URGENTE` \| `TINTOMETRICO`).
-- **Columnas**: `id` (TEXT, default `gen_random_uuid()::text`), `tipo_de_pedido` (CHECK: `REPOSICION` \| `URGENTE` \| `TINTOMETRICO`), `sucursal_id` → FK `global_sucursales.id` (`ON DELETE RESTRICT`), `urgente_cod_ext`, `urgente_cant_pedir`, `tintometrico_descripcion`, `tintometrio_cant_pedir`, **`tintometrico_proveedor`**, `reposicion_forma_pedido`, `reposicion_punto_pedido`, `reposicion_cant_conf`, **`reposicion_cant_pedir`**, **`reposicion_cod_tienda`**. (Migraciones previas hicieron backfill desde la tabla legada `prod_ped_merc` antes de `20260430103000_drop_prod_ped_merc_legacy`.)
+- **Propósito**: única tabla de ítems de pedido de mercadería en runtime (`REPOSICION` \| `URGENTE` \| `TINTOMETRICO` \| **`A FÁBRICA`**).
+- **Columnas**: `id` (TEXT, default `gen_random_uuid()::text`), `tipo_de_pedido` (CHECK: `REPOSICION` \| `URGENTE` \| `TINTOMETRICO` \| **`A FÁBRICA`**), `sucursal_id` → FK `global_sucursales.id` (`ON DELETE RESTRICT`), `urgente_cod_ext`, `urgente_cant_pedir`, `tintometrico_descripcion`, `tintometrio_cant_pedir`, **`tintometrico_proveedor`**, `reposicion_forma_pedido`, `reposicion_punto_pedido`, `reposicion_cant_conf`, **`reposicion_cant_pedir`**, **`reposicion_cod_tienda`**. (Migraciones previas hicieron backfill desde la tabla legada `prod_ped_merc` antes de `20260430103000_drop_prod_ped_merc_legacy`.)
+- **A FÁBRICA** (Pedido A Fáb.): mismo patrón de persistencia que URGENTE (`urgente_cod_ext` = `cod_ext` de lista, `urgente_cant_pedir` = CANT. PEDIR). Se escribe en **todas** las sucursales `pedido = true` con la misma cantidad (pedido total a fábrica). Migración `20260811200000_prod_ped_merc_tipo_a_fabrica`. Upsert: `upsertPedidoMercaderiaAFabricaItem` / `upsertPedidoAFabricaItemAction`. Tras PDF: `limpiarPedidoMercaderiaTrasGenerarPdf` borra filas `A FÁBRICA` del proveedor en **todas** las sucursales. Snapshot historial / recepción: mismo flujo que Generar Pedido (`crearPedidoHistoriaSnapshot` → `prod_ped_historial` + `prod_ped_historial_merc`).
 - **Índices**: `(sucursal_id, tipo_de_pedido)`; `(reposicion_cod_tienda)`.
 - **Prisma**: `ProdPedMerc2` → `@@map("prod_ped_merc")`; relación inversa en `Sucursal.itemsProdPedMerc2`. **Lectura en app**: la tabla previa **Generar Pedido** (`getItemsTablaEnviarPedido` en `pedidosEnvio.service.ts`) arma filas desde `prod_ped_merc` con resolución de proveedor/descripción/cantidad por tipo (incluye `habilitado = true` en `prod_precios_provee` para cruces por `cod_ext`; reposición: misma regla de stock que `upsertPedidoMercaderiaReposicionConfig`, `stock <= punto`).
 
@@ -1336,7 +1377,7 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 7. `eliminarPedidoHistoria({ pedidoHistoriaId })`
    - Borra la fila `PedidoHistoria`; los `PedidoHistoriaItem` se eliminan en cascada (`onDelete: Cascade`).
 
-8. **Purge por antigüedad** (interno, no exportado): `purgarPedidosHistoriaExpirados` — antes de las mutaciones anteriores elimina cabeceras por estado (`PENDIENTE` >= 4 días, `RECEPCIONADO` >= 30 días); ítems en cascada. Ver bloque “Retención automática” en §2.5.
+8. **Purge por antigüedad** (interno, no exportado): `purgarPedidosHistoriaExpirados` — antes de las mutaciones anteriores elimina cabeceras según `global_proveedores.es_fabrica` (`true` >= 60 días, `false` >= 14 días desde `generado_at`); ítems en cascada. Ver bloque “Retención automática” en §2.5.
 
 ---
 
@@ -2037,7 +2078,39 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — labels Presentacion (`variante`); listas eje Y / desglose con orden propio.
 
-*Última actualización (2026-08-07): **Est. · rutas** — `estParaCompra`; sidebar ESTADÍSTICAS en grupos MEDIACIONES / CONFIGURACION.
+*Última actualización (2026-08-10): **Pedido A Fábrica** — ruta canónica `/pedido-a-fabrica` (`pedidoAFabricaRoutes.ts`); legacy `est-para-compra` redirige. Sidebar Administración: 5 pilares (PEDIDO A FÁBRICA / ESTADÍSTICAS / CONFIGURACION separados).
+
+*Última actualización (2026-08-10): **Pedido A Fábrica** — `listarProductosPorProveedorFabrica` / `getProductosPedidoAFabricaAction` (productos `prod_precios_provee` del proveedor con `es_fabrica`).
+
+*Última actualización (2026-08-10): **Sidebar · Administración** — 4 pilares; ESTADÍSTICAS agrupa VENTAS + CONFIGURACION; PEDIDO A FÁB.
+
+*Última actualización (2026-08-10): **Pedido A Fáb.** — métricas por sucursal `genera_est=true` (stock_real + prom. vta. `est_por_prod`).
+
+*Última actualización (2026-08-10): **Pedido A Fáb.** — PROM. VTA. diario = 2 meses previos / 48 días (techo).
+
+*Última actualización (2026-08-10): **Pedido A Fáb.** — `calcularCantSugeridaPedidoAFabrica` (stock a llegada / stockeo → cant. sugerida).
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — descripción tienda→proveedor; filtros marca/rubro/subRubro + q.
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — `calcularStockEnDiasPedidoAFabrica` (stock / prom. vta.).
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — `calcularPromVtaDiariaDesdeTotal` usa **`Math.ceil`** (1,01→2; 2,01→3).
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — `calcularStockAFechaLlegadaPedidoAFabrica` + columna **STOCK HASTA LLEGADA DE PEDIDO**.
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — **FECHA PEDIDO** + `calcularFechaLlegadaPedidoIso` / `calcularFechaStockeoPedidoIso`.
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — `esStockQuebradoPedidoAFabrica` / `tienePedidoSugeridoPedidoAFabrica`.
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — `tipo_de_pedido = A FÁBRICA` en `prod_ped_merc` + PDF/historial.
+
+*Última actualización (2026-08-11): **Historial pedidos** — retención por `es_fabrica` (60 días fábrica / 14 días resto); reemplaza la regla por estado 4/30. Ver §2.5.
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — UI sin columna **PROM. VTA. P/ DÍA** (el cálculo sigue alimentando stock/días/sugerida).
+
+*Última actualización (2026-08-11): **Pedido A Fáb.** — sucursales de métricas/modal = `genera_est = true` (`listarSucursalesParaPedidoAFabrica`).
+
+*Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — Top 10: `promedioMensual` = total / (`cantidadPeriodosFiltro` = años × meses).
 

@@ -2,8 +2,8 @@
  * Áreas principales de la aplicación (macro-secciones).
  * **Vendedor** (id `gestion-productos`): pedidos, ayuda vendedor, asistente IA.
  * **Administración** (id `finanzas`): balance, tesorería, análisis M.C., Análisis de Precios
- * (URLs de análisis aún bajo `/gestion-productos/analisis-precios/...`) y Estadísticas Productos
- * (URLs bajo `/estadisticas-productos/...`).
+ * (URLs de análisis aún bajo `/gestion-productos/analisis-precios/...`), Estadísticas Productos
+ * (URLs bajo `/estadisticas-productos/...`) y **Pedido A Fáb.** (`/pedido-a-fabrica`).
  * **Marketing** (id `marketing`).
  */
 
@@ -11,7 +11,6 @@ import {
   GP_ROUTES,
   isAnalisisPreciosPathname,
 } from "@/lib/gestionProductosRoutes";
-import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 
 export type MainAppAreaId =
   | "gestion-productos"
@@ -38,6 +37,7 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
     id: "gestion-productos",
     label: "Vendedor",
     statusLabel: "Terminada",
+    /** Hub vacío; el usuario elige una ruta hoja en el sidenav. */
     href: GP_ROUTES.defaultEntry,
     requierePassword: false,
   },
@@ -45,14 +45,16 @@ export const MAIN_APP_AREAS: MainAppAreaDefinition[] = [
     id: "finanzas",
     label: "Administración",
     statusLabel: "A construir",
-    href: "/finanzas/tesoreria",
+    /** Hub vacío; no redirige a Tesorería automáticamente. */
+    href: "/finanzas",
     requierePassword: true,
   },
   {
     id: "marketing",
     label: "Marketing",
     statusLabel: "A construir",
-    href: MARKETING_ROUTES.defaultEntry,
+    /** Hub vacío; no redirige a Calendario automáticamente. */
+    href: "/marketing",
     requierePassword: false,
   },
 ];
@@ -70,6 +72,10 @@ export function getMainAppAreaIdFromPathname(pathname: string): MainAppAreaId {
     pathname === "/estadisticas-productos" ||
     pathname.startsWith("/estadisticas-productos/")
   ) {
+    return "finanzas";
+  }
+  // Pedido A Fáb. (Administración).
+  if (pathname === "/pedido-a-fabrica" || pathname.startsWith("/pedido-a-fabrica/")) {
     return "finanzas";
   }
   if (pathname === "/marketing" || pathname.startsWith("/marketing/")) {

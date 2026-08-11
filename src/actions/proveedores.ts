@@ -37,6 +37,16 @@ export async function getProveedoresMercaderia() {
 }
 
 /**
+ * Lista únicamente los proveedores con `es_fabrica = true`.
+ * Usada por Pedido A Fábrica (selector PROVEEDOR).
+ */
+export async function getProveedoresFabrica() {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) return [];
+  return proveedorService.getProveedoresFabrica();
+}
+
+/**
  * Datos para `/proveedores`: proveedores + productos filtrados desde `prod_precios_provee`.
  * Sin filtros activos no se cargan productos (misma regla que lista-precios).
  */
@@ -84,8 +94,11 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
     coeficienteTintometrico:
       (formData.get("coeficienteTintometrico") as string) ?? "",
     plazosPagos: (formData.get("plazosPagos") as string) ?? "",
+    tiempoEntregaEnDias:
+      (formData.get("tiempoEntregaEnDias") as string) ?? "",
     proveedorMercaderia:
       (formData.get("proveedorMercaderia") as string | null) ?? "",
+    esFabrica: (formData.get("esFabrica") as string | null) ?? "",
     iva: (formData.get("iva") as string | null) ?? "",
   };
   const parsed = createProveedorSchema.safeParse(raw);
@@ -94,10 +107,12 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
     const msg =
       first.nombre?.[0] ??
       first.proveedorMercaderia?.[0] ??
+      first.esFabrica?.[0] ??
       first.prefijo?.[0] ??
       first.whatsapp?.[0] ??
       first.coeficienteTintometrico?.[0] ??
       first.plazosPagos?.[0] ??
+      first.tiempoEntregaEnDias?.[0] ??
       first.iva?.[0] ??
       "Datos inválidos.";
     return { ok: false, error: msg };
@@ -144,8 +159,11 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
     coeficienteTintometrico:
       (formData.get("coeficienteTintometrico") as string) ?? "",
     plazosPagos: (formData.get("plazosPagos") as string) ?? "",
+    tiempoEntregaEnDias:
+      (formData.get("tiempoEntregaEnDias") as string) ?? "",
     proveedorMercaderia:
       (formData.get("proveedorMercaderia") as string | null) ?? "",
+    esFabrica: (formData.get("esFabrica") as string | null) ?? "",
     iva: (formData.get("iva") as string | null) ?? "",
   };
   const parsed = updateProveedorSchema.safeParse(raw);
@@ -154,10 +172,12 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
     const msg =
       first.nombre?.[0] ??
       first.proveedorMercaderia?.[0] ??
+      first.esFabrica?.[0] ??
       first.prefijo?.[0] ??
       first.whatsapp?.[0] ??
       first.coeficienteTintometrico?.[0] ??
       first.plazosPagos?.[0] ??
+      first.tiempoEntregaEnDias?.[0] ??
       first.iva?.[0] ??
       "Datos inválidos.";
     return { ok: false, error: msg };

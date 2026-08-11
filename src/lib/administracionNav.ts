@@ -1,10 +1,11 @@
 /**
- * Navegación del área **Administración**: 3 pilares en sidebar + árbol
+ * Navegación del área **Administración**: 4 pilares en sidebar + árbol
  * de decisiones en acordeón vertical (`AdministracionAccordionNav`).
  *
  * FINANZAS → BALANCE | OPERACIONES → pantallas
  * LISTA PRECIOS → PX TIENDA | PROVEEDORES | ANÁLISIS M.C. → pantallas
- * ESTADÍSTICAS → MEDIACIONES | CONFIGURACION → pantallas
+ * PEDIDO A FÁB. → pantallas
+ * ESTADÍSTICAS → VENTAS (pantalla) | CONFIGURACION → pantallas
  */
 
 import {
@@ -13,14 +14,24 @@ import {
   isGpRouteActive,
 } from "@/lib/gestionProductosRoutes";
 import { ESTADISTICAS_PRODUCTOS_ROUTES } from "@/lib/estadisticasProductosRoutes";
+import {
+  PEDIDO_A_FABRICA_LEGACY_PATH,
+  PEDIDO_A_FABRICA_ROUTES,
+} from "@/lib/pedidoAFabricaRoutes";
 import { PERMISOS } from "@/lib/permisos";
 
-export type AdmPillarId = "finanzas" | "listas-precios" | "estadisticas";
+export type AdmPillarId =
+  | "finanzas"
+  | "listas-precios"
+  | "pedido-a-fabrica"
+  | "estadisticas";
 
 export type AdmIconId =
   | "landmark"
   | "handshake"
   | "bar-chart-3"
+  | "factory"
+  | "settings"
   | "scale"
   | "receipt"
   | "folder-tree"
@@ -60,7 +71,8 @@ export interface AdmPillarDef {
   label: string;
   icon: AdmIconId;
   /**
-   * Primer desglose: grupos (acordeón anidado) o pantallas directas.
+   * Primer desglose: grupos (acordeón anidado) y/o pantallas directas.
+   * Si hay ambos, se renderizan pantallas y luego grupos.
    */
   groups?: AdmGroupDef[];
   screens?: AdmScreenDef[];
@@ -207,34 +219,38 @@ const analisisMcScreens: AdmScreenDef[] = [
   },
 ];
 
-const medicionesEstadisticasScreens: AdmScreenDef[] = [
+const pedidoAFabricaScreens: AdmScreenDef[] = [
   {
-    id: "estadisticas-vtas",
-    label: "Vtas Por. Prod.",
-    href: ESTADISTICAS_PRODUCTOS_ROUTES.estadisticasVtas,
-    icon: "line-chart",
-    permiso: PERMISOS.estadisticasProductos.acceso,
-  },
-  {
-    id: "est-para-compra",
-    label: "Est. Para Compra",
-    href: ESTADISTICAS_PRODUCTOS_ROUTES.estParaCompra,
-    icon: "package-search",
+    id: "pedido-a-fabrica",
+    label: "Pedido A Fáb.",
+    href: PEDIDO_A_FABRICA_ROUTES.defaultEntry,
+    icon: "factory",
     permiso: PERMISOS.estadisticasProductos.acceso,
   },
 ];
 
-const configuracionEstadisticasScreens: AdmScreenDef[] = [
+/** Pantalla directa bajo ESTADÍSTICAS (sin grupo intermedio). */
+const estadisticasVentasScreens: AdmScreenDef[] = [
+  {
+    id: "estadisticas-vtas",
+    label: "VENTAS",
+    href: ESTADISTICAS_PRODUCTOS_ROUTES.estadisticasVtas,
+    icon: "line-chart",
+    permiso: PERMISOS.estadisticasProductos.acceso,
+  },
+];
+
+const estadisticasConfiguracionScreens: AdmScreenDef[] = [
   {
     id: "carga-de-datos",
-    label: "Carga Datos",
+    label: "Carga De Datos",
     href: ESTADISTICAS_PRODUCTOS_ROUTES.ventasPorProducto,
     icon: "package-search",
     permiso: PERMISOS.estadisticasProductos.acceso,
   },
   {
     id: "categorizacion",
-    label: "Categorizacion",
+    label: "Configuracion",
     href: ESTADISTICAS_PRODUCTOS_ROUTES.categorizacion,
     icon: "tags",
     permiso: PERMISOS.estadisticasProductos.acceso,
@@ -287,21 +303,22 @@ export const ADM_PILLARS: AdmPillarDef[] = [
     ],
   },
   {
+    id: "pedido-a-fabrica",
+    label: "PEDIDO A FÁB.",
+    icon: "factory",
+    screens: pedidoAFabricaScreens,
+  },
+  {
     id: "estadisticas",
     label: "ESTADÍSTICAS",
     icon: "bar-chart-3",
+    screens: estadisticasVentasScreens,
     groups: [
-      {
-        id: "mediaciones",
-        label: "MEDIACIONES",
-        icon: "line-chart",
-        screens: medicionesEstadisticasScreens,
-      },
       {
         id: "configuracion",
         label: "CONFIGURACION",
-        icon: "folder-tree",
-        screens: configuracionEstadisticasScreens,
+        icon: "settings",
+        screens: estadisticasConfiguracionScreens,
       },
     ],
   },
@@ -315,13 +332,22 @@ function pathnameMatchesScreen(pathname: string, href: string): boolean {
   ) {
     return isGpRouteActive(pathname, href);
   }
+  if (href === PEDIDO_A_FABRICA_ROUTES.defaultEntry) {
+    return (
+      pathname === PEDIDO_A_FABRICA_ROUTES.defaultEntry ||
+      pathname.startsWith(`${PEDIDO_A_FABRICA_ROUTES.defaultEntry}/`) ||
+      pathname === PEDIDO_A_FABRICA_LEGACY_PATH ||
+      pathname.startsWith(`${PEDIDO_A_FABRICA_LEGACY_PATH}/`)
+    );
+  }
   if (pathname === href) return true;
   return pathname.startsWith(`${href}/`);
 }
 
 function collectPillarScreens(pillar: AdmPillarDef): AdmScreenDef[] {
-  if (pillar.screens?.length) return pillar.screens;
-  return pillar.groups?.flatMap((g) => g.screens) ?? [];
+  const fromScreens = pillar.screens ?? [];
+  const fromGroups = pillar.groups?.flatMap((g) => g.screens) ?? [];
+  return [...fromScreens, ...fromGroups];
 }
 
 export function isAdmScreenActive(pathname: string, screen: AdmScreenDef): boolean {
@@ -346,10 +372,24 @@ export function isAdmPillarActive(pathname: string, pillar: AdmPillarDef): boole
     if (pathname.startsWith("/finanzas/analisis-mc")) return true;
     return collectPillarScreens(pillar).some((s) => isAdmScreenActive(pathname, s));
   }
-  if (pillar.id === "estadisticas") {
+  if (pillar.id === "pedido-a-fabrica") {
     return (
-      pathname === "/estadisticas-productos" ||
-      pathname.startsWith("/estadisticas-productos/")
+      pathname === PEDIDO_A_FABRICA_ROUTES.defaultEntry ||
+      pathname.startsWith(`${PEDIDO_A_FABRICA_ROUTES.defaultEntry}/`) ||
+      pathname === PEDIDO_A_FABRICA_LEGACY_PATH ||
+      pathname.startsWith(`${PEDIDO_A_FABRICA_LEGACY_PATH}/`)
+    );
+  }
+  if (pillar.id === "estadisticas") {
+    if (
+      pathname === PEDIDO_A_FABRICA_LEGACY_PATH ||
+      pathname.startsWith(`${PEDIDO_A_FABRICA_LEGACY_PATH}/`)
+    ) {
+      return false;
+    }
+    return (
+      pathname.startsWith("/estadisticas-productos") ||
+      collectPillarScreens(pillar).some((s) => isAdmScreenActive(pathname, s))
     );
   }
   // FINANZAS: /finanzas/* excepto analisis-mc (está en LISTA PRECIOS)

@@ -32,7 +32,9 @@ export default function TablaProveedoresLista({ proveedores }: Props) {
       whatsapp: prov.whatsapp ?? undefined,
       coeficienteTintometrico: prov.coeficienteTintometrico,
       plazosPagos: prov.plazosPagos ?? undefined,
+      tiempoEntregaEnDias: prov.tiempoEntregaEnDias ?? undefined,
       proveedorMercaderia: prov.proveedorMercaderia,
+      esFabrica: prov.esFabrica,
       iva: prov.iva,
     });
     setModalOpen(true);

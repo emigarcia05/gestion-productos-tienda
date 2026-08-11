@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -40,7 +40,7 @@ import SidebarMainAppArea from "@/components/shared/SidebarMainAppArea";
 import type { Rol } from "@/lib/permisos";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getMainAppAreaIdFromPathname } from "@/lib/main-app-areas";
-import { GP_ROUTES, getGpSidebarModule, isGpRouteActive } from "@/lib/gestionProductosRoutes";
+import { GP_ROUTES, isGpRouteActive } from "@/lib/gestionProductosRoutes";
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 import AdministracionAccordionNav from "@/components/layout/AdministracionAccordionNav";
 import SidebarNavDivider from "@/components/layout/SidebarNavDivider";
@@ -124,14 +124,6 @@ const MODULES: NavModule[] = [
     ],
   },
   {
-    id: "control-stock",
-    label: "CONTROL STOCK",
-    icon: <Boxes className={iconClass} />,
-    href: GP_ROUTES.ayudaVendedor.controlStock,
-    permiso: PERMISOS.stock.acceso,
-    submodules: [],
-  },
-  {
     id: "asistencia-precios",
     label: "PRECIOS",
     icon: <CircleDollarSign className={iconClass} />,
@@ -156,6 +148,14 @@ const MODULES: NavModule[] = [
     icon: <Droplets className={iconClass} />,
     href: GP_ROUTES.ayudaVendedor.calcLitros,
     permiso: PERMISOS.tienda.tintoLts,
+    submodules: [],
+  },
+  {
+    id: "control-stock",
+    label: "CONTROL STOCK",
+    icon: <Boxes className={iconClass} />,
+    href: GP_ROUTES.ayudaVendedor.controlStock,
+    permiso: PERMISOS.stock.acceso,
     submodules: [],
   },
   {
@@ -234,20 +234,6 @@ const MARKETING_MODULES: NavModule[] = [
   },
 ];
 
-function getOpenModule(pathname: string): SidebarModuleId | null {
-  if (pathname.startsWith("/marketing/publicaciones") || pathname === "/marketing") {
-    return "publicaciones";
-  }
-  if (pathname.startsWith("/marketing/base-multimedia")) {
-    return "base-multimedia";
-  }
-  const gpModule = getGpSidebarModule(pathname);
-  if (gpModule === "analisis-precios") {
-    return null;
-  }
-  return gpModule;
-}
-
 function isSubmoduleActive(pathname: string, href: string): boolean {
   if (href.startsWith("/gestion-productos") || href.startsWith("/asistente-ia")) {
     return isGpRouteActive(pathname, href);
@@ -303,12 +289,37 @@ function submoduleGroupKey(moduleId: SidebarModuleId, label: string): string {
   return `${moduleId}:${label}`;
 }
 
+/**
+ * Si el módulo tiene exactamente un destino navegable visible, lo devuelve.
+ * Grupos con un solo hijo también cuentan (abre ese hijo directo).
+ */
+function getSoleNavigableHref(module: NavModule, rol: Rol): string | null {
+  const visible = module.submodules.filter((sub) => submoduleVisible(sub, rol));
+  if (visible.length !== 1) return null;
+  const only = visible[0]!;
+  if (only.href && (!only.children || only.children.length === 0)) {
+    return only.href;
+  }
+  if (!only.href && only.children?.length) {
+    const kids = only.children.filter((c) => submoduleVisible(c, rol));
+    if (kids.length === 1 && kids[0]?.href) return kids[0].href;
+  }
+  return null;
+}
+
 export default function Sidebar({ rol }: { rol: Rol }) {
   const pathname = usePathname();
-  const pathModule = getOpenModule(pathname);
   const mainAreaId = getMainAppAreaIdFromPathname(pathname);
-  const [openId, setOpenId] = useState<SidebarModuleId | null>(() => pathModule);
+  /** Acordeón: arranca cerrado; solo se abre por acción del usuario (no por ruta). */
+  const [openId, setOpenId] = useState<SidebarModuleId | null>(null);
   const [openSubGroups, setOpenSubGroups] = useState<Set<string>>(() => new Set());
+  const [areaKey, setAreaKey] = useState(mainAreaId);
+
+  if (areaKey !== mainAreaId) {
+    setAreaKey(mainAreaId);
+    setOpenId(null);
+    setOpenSubGroups(new Set());
+  }
 
   const modulesForArea: NavModule[] =
     mainAreaId === "gestion-productos"
@@ -321,38 +332,6 @@ export default function Sidebar({ rol }: { rol: Rol }) {
     if (module.href && module.permiso && puede(rol, module.permiso)) return true;
     return module.submodules.some((sub) => submoduleVisible(sub, rol));
   });
-
-  useEffect(() => {
-    setOpenId(pathModule);
-  }, [pathModule]);
-
-  useEffect(() => {
-    const areaModules =
-      mainAreaId === "gestion-productos"
-        ? MODULES
-        : mainAreaId === "marketing"
-          ? MARKETING_MODULES
-          : [];
-    const autoOpenByModule = new Map<SidebarModuleId, string>();
-    for (const navModule of areaModules) {
-      for (const sub of navModule.submodules) {
-        if (!sub.href && sub.children?.length && isSubmoduleGroupActive(sub, pathname)) {
-          autoOpenByModule.set(navModule.id, submoduleGroupKey(navModule.id, sub.label));
-        }
-      }
-    }
-    if (autoOpenByModule.size === 0) return;
-    setOpenSubGroups((prev) => {
-      const next = new Set(prev);
-      for (const [moduleId, key] of autoOpenByModule) {
-        for (const k of [...next]) {
-          if (k.startsWith(`${moduleId}:`)) next.delete(k);
-        }
-        next.add(key);
-      }
-      return next;
-    });
-  }, [pathname, mainAreaId]);
 
   function toggleSubGroup(moduleId: SidebarModuleId, key: string, open: boolean) {
     setOpenSubGroups((prev) => {
@@ -370,6 +349,35 @@ export default function Sidebar({ rol }: { rol: Rol }) {
     });
   }
 
+  function handleModuleOpenChange(module: NavModule, open: boolean) {
+    if (!open) {
+      setOpenId(null);
+      setOpenSubGroups((prev) => {
+        const next = new Set(prev);
+        for (const k of [...next]) {
+          if (k.startsWith(`${module.id}:`)) next.delete(k);
+        }
+        return next;
+      });
+      return;
+    }
+    setOpenId(module.id);
+    // Si hay un agrupador activo por ruta, abrirlo junto con el módulo.
+    for (const sub of module.submodules) {
+      if (!sub.href && sub.children?.length && isSubmoduleGroupActive(sub, pathname)) {
+        setOpenSubGroups((prev) => {
+          const next = new Set(prev);
+          for (const k of [...next]) {
+            if (k.startsWith(`${module.id}:`)) next.delete(k);
+          }
+          next.add(submoduleGroupKey(module.id, sub.label));
+          return next;
+        });
+        break;
+      }
+    }
+  }
+
   function renderSubmoduleItems(
     submodules: SubmoduleItem[],
     moduleId: SidebarModuleId
@@ -378,6 +386,28 @@ export default function Sidebar({ rol }: { rol: Rol }) {
     return visible.map((sub) => {
       if (!sub.href && sub.children?.length) {
         const groupKey = submoduleGroupKey(moduleId, sub.label);
+        const kids = sub.children.filter((c) => submoduleVisible(c, rol));
+        const soleChildHref =
+          kids.length === 1 && kids[0]?.href ? kids[0].href : null;
+        if (soleChildHref) {
+          const active = isSubmoduleActive(pathname, soleChildHref);
+          return (
+            <div key={groupKey}>
+              <Link
+                href={soleChildHref}
+                className={cn(
+                  "sidebar-nav-item",
+                  kids[0]?.isUrgente && "relative"
+                )}
+                data-active={active ? "true" : undefined}
+                aria-current={active ? "page" : undefined}
+              >
+                {sub.icon}
+                <span className="min-w-0 truncate">{sub.label}</span>
+              </Link>
+            </div>
+          );
+        }
         const isSubOpen = openSubGroups.has(groupKey);
         const groupActive = isSubmoduleGroupActive(sub, pathname);
         return (
@@ -471,6 +501,27 @@ export default function Sidebar({ rol }: { rol: Rol }) {
               );
             }
 
+            const soleHref = getSoleNavigableHref(module, rol);
+            if (soleHref) {
+              const active = isSubmoduleActive(pathname, soleHref);
+              return (
+                <div key={module.id}>
+                  {moduleDivider}
+                  <Link
+                    href={soleHref}
+                    className="sidebar-nav-module"
+                    data-active={active ? "true" : undefined}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                      {module.icon}
+                    </span>
+                    <span className="min-w-0 flex-1 text-left">{module.label}</span>
+                  </Link>
+                </div>
+              );
+            }
+
             const isOpen = openId === module.id;
             const moduleAncestor = isNavModuleActive(module, pathname);
             return (
@@ -478,7 +529,7 @@ export default function Sidebar({ rol }: { rol: Rol }) {
                 {moduleDivider}
                 <Collapsible
                   open={isOpen}
-                  onOpenChange={(open) => setOpenId(open ? module.id : null)}
+                  onOpenChange={(open) => handleModuleOpenChange(module, open)}
                   className="group/collapsible"
                 >
                   <CollapsibleTrigger

@@ -63,13 +63,15 @@ const OPCIONES_TIPO: { value: TipoPedido; label: string }[] = [
   { value: "URGENTE", label: "URGENTE" },
   { value: "TINTOMETRICO", label: "TINTOMÉTRICO" },
   { value: "REPOSICION", label: "REPOSICIÓN" },
+  { value: "A FÁBRICA", label: "A FÁBRICA" },
 ];
 
 export type ModuloGenerarPedidoOrigen =
   | "enviar"
   | "urgente"
   | "tintometrico"
-  | "reposicion";
+  | "reposicion"
+  | "a-fabrica";
 
 export interface ProveedorGenerarPedidoOpcion {
   id: string;
@@ -85,6 +87,7 @@ function tiposInicialesParaModulo(
   if (modulo === "urgente") set.add("URGENTE");
   if (modulo === "tintometrico") set.add("TINTOMETRICO");
   if (modulo === "reposicion") set.add("REPOSICION");
+  if (modulo === "a-fabrica") return ["A FÁBRICA"];
   return TIPOS_PEDIDO.filter((t) => set.has(t));
 }
 
@@ -549,7 +552,10 @@ export default function GenerarPedidoToolbarButton({
                     sideOffset={4}
                     collisionPadding={8}
                   >
-                    {OPCIONES_TIPO.map((opt) => {
+                    {(modulo === "a-fabrica"
+                      ? OPCIONES_TIPO.filter((o) => o.value === "A FÁBRICA")
+                      : OPCIONES_TIPO
+                    ).map((opt) => {
                       const selected = tipos.includes(opt.value);
                       return (
                         <DropdownMenu.Item

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Boxes,
@@ -34,6 +34,9 @@ interface Props {
   rolActual: Rol;
 }
 
+/** Sesión de navegador: el usuario ya eligió un módulo de la app al menos una vez. */
+const STORAGE_AREA_ELEGIDA = "main-app-area-elegida";
+
 const areaOptionVariants = cva(
   "w-full rounded-lg border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
   {
@@ -55,14 +58,32 @@ const areaIcons: Record<MainAppAreaId, LucideIcon> = {
   marketing: Megaphone,
 };
 
+function marcarAreaElegida(): void {
+  try {
+    sessionStorage.setItem(STORAGE_AREA_ELEGIDA, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+function yaEligioArea(): boolean {
+  try {
+    return sessionStorage.getItem(STORAGE_AREA_ELEGIDA) === "1";
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Botón inferior de la slidenav: navega entre módulos/áreas (Vendedor, Administración, Marketing).
  * Administración pide clave (`EDITOR_PASSWORD`) si la sesión aún es `simple`.
+ * En la primera apertura de la app fuerza elegir un módulo (modal no descartable).
  */
 export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [areasOpen, setAreasOpen] = useState(false);
+  const [forceChooseArea, setForceChooseArea] = useState(false);
   const [claveOpen, setClaveOpen] = useState(false);
   const [clave, setClave] = useState("");
   const [mostrarClave, setMostrarClave] = useState(false);
@@ -74,8 +95,18 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const current = getMainAppAreaById(currentId);
   const labelActual = areaLabelMayusculas(current.label);
 
+  useEffect(() => {
+    if (yaEligioArea()) return;
+    queueMicrotask(() => {
+      setForceChooseArea(true);
+      setAreasOpen(true);
+    });
+  }, []);
+
   function goToArea(id: MainAppAreaId) {
     const area = getMainAppAreaById(id);
+    marcarAreaElegida();
+    setForceChooseArea(false);
     router.push(area.href);
     setAreasOpen(false);
     setClaveOpen(false);
@@ -83,7 +114,13 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   }
 
   function handleSelectArea(id: MainAppAreaId) {
-    if (id === currentId) {
+    if (id === currentId && !forceChooseArea) {
+      setAreasOpen(false);
+      return;
+    }
+    if (id === currentId && forceChooseArea) {
+      marcarAreaElegida();
+      setForceChooseArea(false);
       setAreasOpen(false);
       return;
     }
@@ -116,6 +153,14 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     });
   }
 
+  function handleAreasOpenChange(open: boolean) {
+    if (!open && forceChooseArea) {
+      setAreasOpen(true);
+      return;
+    }
+    setAreasOpen(open);
+  }
+
   return (
     <>
       <button
@@ -138,7 +183,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
             CAMBIAR MÓDULO
           </span>
           <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-100 group-hover:opacity-0">
-            {labelActual}
+            {forceChooseArea ? "ELEGIR MÓDULO" : labelActual}
           </span>
           <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-0 group-hover:opacity-100">
             CAMBIAR MÓDULO
@@ -146,21 +191,33 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
         </span>
       </button>
 
-      <Dialog open={areasOpen} onOpenChange={setAreasOpen}>
+      <Dialog open={areasOpen} onOpenChange={handleAreasOpenChange}>
         <AppModal
           size="sm"
           title="Módulos De La Aplicación"
           padding="sm"
+          showCloseButton={!forceChooseArea}
           actions={
-            <Button type="button" variant="ghost" onClick={() => setAreasOpen(false)}>
-              Cerrar
-            </Button>
+            forceChooseArea ? (
+              <p className="w-full text-center text-xs text-muted-foreground">
+                Elegí un módulo para empezar a navegar.
+              </p>
+            ) : (
+              <Button type="button" variant="ghost" onClick={() => setAreasOpen(false)}>
+                Cerrar
+              </Button>
+            )
           }
         >
           <div className="flex w-full min-w-0 flex-col gap-2">
+            {forceChooseArea ? (
+              <p className="mb-1 text-sm text-foreground">
+                Seleccioná un módulo para comenzar.
+              </p>
+            ) : null}
             {MAIN_APP_AREAS.map((area) => {
               const Icon = areaIcons[area.id];
-              const esActual = area.id === currentId;
+              const esActual = area.id === currentId && !forceChooseArea;
               return (
                 <button
                   key={area.id}
@@ -197,7 +254,12 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
         open={claveOpen}
         onOpenChange={(open) => {
           setClaveOpen(open);
-          if (!open) setPendingAreaId(null);
+          if (!open) {
+            setPendingAreaId(null);
+            if (forceChooseArea || !yaEligioArea()) {
+              setAreasOpen(true);
+            }
+          }
         }}
       >
         <AppModal
@@ -215,6 +277,9 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
                 onClick={() => {
                   setClaveOpen(false);
                   setPendingAreaId(null);
+                  if (forceChooseArea || !yaEligioArea()) {
+                    setAreasOpen(true);
+                  }
                 }}
                 disabled={pending}
               >

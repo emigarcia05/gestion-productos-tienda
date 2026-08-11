@@ -1,20 +1,7 @@
-import { redirect } from "next/navigation";
-import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
-import { PERMISOS, puede } from "@/lib/permisos";
-import { getRol } from "@/lib/sesion";
-import EstParaCompraPageClient from "@/components/estadisticas-productos/EstParaCompraPageClient";
+import { permanentRedirect } from "next/navigation";
+import { PEDIDO_A_FABRICA_ROUTES } from "@/lib/pedidoAFabricaRoutes";
 
-export const dynamic = "force-dynamic";
-
-export default async function EstParaCompraPage() {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) {
-    redirect(GP_ROUTES.defaultEntry);
-  }
-
-  return (
-    <div className="area-page-shell">
-      <EstParaCompraPageClient />
-    </div>
-  );
+/** Compatibilidad: Est. Para Compra → Pedido A Fábrica. */
+export default function EstParaCompraLegacyRedirectPage() {
+  permanentRedirect(PEDIDO_A_FABRICA_ROUTES.defaultEntry);
 }
