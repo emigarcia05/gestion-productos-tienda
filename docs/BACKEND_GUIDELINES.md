@@ -2106,6 +2106,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-11): **Historial pedidos** — retención por `es_fabrica` (60 días fábrica / 14 días resto); reemplaza la regla por estado 4/30. Ver §2.5.
 
+*Última actualización (2026-08-11): **Pedido A Fáb.** — UI sin columna **PROM. VTA. P/ DÍA** (el cálculo sigue alimentando stock/días/sugerida).
+
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — Top 10: `promedioMensual` = total / (`cantidadPeriodosFiltro` = años × meses).

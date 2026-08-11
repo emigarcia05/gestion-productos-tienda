@@ -36,7 +36,8 @@ const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
 /**
  * Detalle por sucursal de un ítem Pedido A Fáb.:
- * Stock Actual · Prom. Vta · Stock hasta llegada · Compra sugerida.
+ * Stock Actual · Stock hasta llegada · Compra sugerida.
+ * (PROM. VTA. alimenta los cálculos pero no se muestra como columna.)
  */
 export default function DetalleSucursalesPedidoAFabricaModal({
   open,
@@ -70,12 +71,11 @@ export default function DetalleSucursalesPedidoAFabricaModal({
           <div className="contenedor-tabla-gestion no-scroll-x min-h-0">
             <Table variant="compact" scrollX={false}>
               <colgroup>
-                <col style={{ width: "18%" }} />
-                <col style={{ width: "12%" }} />
-                <col style={{ width: "12%" }} />
+                <col style={{ width: "22%" }} />
                 <col style={{ width: "14%" }} />
-                <col style={{ width: "24%" }} />
-                <col style={{ width: "20%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "28%" }} />
+                <col style={{ width: "22%" }} />
               </colgroup>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -87,12 +87,6 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                     className="text-center align-middle tabla-bloque-secundario-head-divider"
                   >
                     STOCK ACTUAL
-                  </TableHead>
-                  <TableHead
-                    rowSpan={2}
-                    className="text-center align-middle tabla-bloque-secundario-head-divider"
-                  >
-                    PROM. VTA. P/ DÍA
                   </TableHead>
                   <TableHead
                     rowSpan={2}
@@ -158,14 +152,6 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                         className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
                       >
                         {fmtNumero(stockDias)}
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          TD_NUM,
-                          "tabla-bloque-secundario-cell-divider"
-                        )}
-                      >
-                        {fmtNumero(promVta)}
                       </TableCell>
                       <TableCell
                         className={cn(

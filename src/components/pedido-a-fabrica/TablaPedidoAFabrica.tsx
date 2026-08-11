@@ -62,17 +62,16 @@ interface Props {
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
 /** Anchos fijos (suma 100 %). */
-const PCT_DESC = 52;
+const PCT_DESC = 59;
 const PCT_STOCK_UNIDADES = 7;
 const PCT_STOCK_DIAS = 7;
-const PCT_PROM_VTA = 7;
 const PCT_STOCK_HASTA_LLEGADA = 7;
 const PCT_CANT_SUGERIDA = 7;
 const PCT_CANT_PEDIR = 7;
 const PCT_TILDE = 3;
 const PCT_INFO = 3;
 
-const COL_COUNT = 9;
+const COL_COUNT = 8;
 
 /** Solo dígitos (enteros ≥ 0); vacío permitido. */
 function sanitizeCantAPedirInput(raw: string): string {
@@ -139,8 +138,9 @@ function productoPasaFiltrosDerivados(
 
 /**
  * Grilla Pedido A Fáb.
- * **DESCRIPCIÓN** (aviso stock quebrado) · **STOCK ACTUAL** · **PROM. VTA. P/ DÍA**
+ * **DESCRIPCIÓN** (aviso stock quebrado) · **STOCK ACTUAL**
  * · **STOCK HASTA LLEGADA DE PEDIDO** · **COMPRA** · tilde · Info.
+ * (PROM. VTA. se calcula en backend/cliente pero no se muestra como columna.)
  */
 export default function TablaPedidoAFabrica({
   sucursales,
@@ -200,7 +200,6 @@ export default function TablaPedidoAFabrica({
             <col style={{ width: `${PCT_DESC}%` }} />
             <col style={{ width: `${PCT_STOCK_UNIDADES}%` }} />
             <col style={{ width: `${PCT_STOCK_DIAS}%` }} />
-            <col style={{ width: `${PCT_PROM_VTA}%` }} />
             <col style={{ width: `${PCT_STOCK_HASTA_LLEGADA}%` }} />
             <col style={{ width: `${PCT_CANT_SUGERIDA}%` }} />
             <col style={{ width: `${PCT_CANT_PEDIR}%` }} />
@@ -217,12 +216,6 @@ export default function TablaPedidoAFabrica({
                 className="text-center align-middle tabla-bloque-secundario-head-divider"
               >
                 STOCK ACTUAL
-              </TableHead>
-              <TableHead
-                rowSpan={2}
-                className="text-center align-middle tabla-bloque-secundario-head-divider"
-              >
-                PROM. VTA. P/ DÍA
               </TableHead>
               <TableHead
                 rowSpan={2}
@@ -359,14 +352,6 @@ export default function TablaPedidoAFabrica({
                       className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
                     >
                       {fmtNumero(stockDias)}
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        TD_NUM,
-                        "tabla-bloque-secundario-cell-divider"
-                      )}
-                    >
-                      {fmtNumero(promVtaTotal)}
                     </TableCell>
                     <TableCell
                       className={cn(
