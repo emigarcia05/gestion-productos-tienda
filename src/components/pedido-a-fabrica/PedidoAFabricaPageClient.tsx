@@ -259,7 +259,7 @@ export default function PedidoAFabricaPageClient({
         actions={
           <ToolbarActionButton
             type="button"
-            label="Info Sobre Fórmulas"
+            label="Info Formulas"
             icon={<Info aria-hidden />}
             className="h-10 px-4"
             onClick={() => setInfoPromedioOpen(true)}
