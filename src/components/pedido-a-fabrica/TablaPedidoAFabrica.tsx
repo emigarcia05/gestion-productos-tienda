@@ -386,7 +386,7 @@ export default function TablaPedidoAFabrica({
                     </TableCell>
                     <TableCell
                       className={cn(
-                        "celda-datos celda-datos--flush-left celda-datos--flush-right tabla-bloque-secundario-cell p-0"
+                        "celda-datos tabla-bloque-secundario-cell"
                       )}
                     >
                       <Input
@@ -401,7 +401,7 @@ export default function TablaPedidoAFabrica({
                           )
                         }
                         aria-label={`Cantidad a pedir ${p.descripcion}`}
-                        className="h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-h-0 w-full min-w-0 rounded-none border-0 bg-transparent px-1.5 text-center text-xs shadow-none focus-visible:ring-0"
+                        className="h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-h-0 w-full min-w-0 rounded-sm border-0 bg-transparent px-1 text-center text-xs shadow-none focus-visible:ring-0"
                       />
                     </TableCell>
                     <TableCell className="celda-datos celda-datos--accion-relleno-fila text-center tabla-bloque-secundario-cell-divider">
