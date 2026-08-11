@@ -52,15 +52,16 @@ interface Props {
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
 /** Anchos fijos (suma 100 %). */
-const PCT_DESC = 40;
-const PCT_STOCK_UNIDADES = 12;
-const PCT_STOCK_DIAS = 12;
+const PCT_DESC = 34;
+const PCT_STOCK_UNIDADES = 10;
+const PCT_STOCK_DIAS = 10;
+const PCT_PROM_VTA = 10;
 const PCT_CANT_SUGERIDA = 12;
 const PCT_CANT_PEDIR = 12;
 const PCT_TILDE = 6;
 const PCT_INFO = 6;
 
-const COL_COUNT = 7;
+const COL_COUNT = 8;
 
 /** Solo dígitos (enteros ≥ 0); vacío permitido. */
 function sanitizeCantAPedirInput(raw: string): string {
@@ -94,8 +95,8 @@ function totalPorSucursales(
 
 /**
  * Grilla Pedido A Fáb.
- * **DESCRIPCIÓN** · **STOCK ACTUAL** (EN UNIDADES | EN DÍAS) · **COMPRA**
- * (CANT. SUGERIDA | CANT. PEDIR) · tilde (confirma sugerida → pedir) · Info (modal sucursales).
+ * **DESCRIPCIÓN** · **STOCK ACTUAL** (EN UNIDADES | EN DÍAS) · **PROM. VTA. P/ DÍA**
+ * (suma sucursales) · **COMPRA** (CANT. SUGERIDA | CANT. PEDIR) · tilde · Info.
  */
 export default function TablaPedidoAFabrica({
   sucursales,
@@ -122,6 +123,7 @@ export default function TablaPedidoAFabrica({
             <col style={{ width: `${PCT_DESC}%` }} />
             <col style={{ width: `${PCT_STOCK_UNIDADES}%` }} />
             <col style={{ width: `${PCT_STOCK_DIAS}%` }} />
+            <col style={{ width: `${PCT_PROM_VTA}%` }} />
             <col style={{ width: `${PCT_CANT_SUGERIDA}%` }} />
             <col style={{ width: `${PCT_CANT_PEDIR}%` }} />
             <col style={{ width: `${PCT_TILDE}%` }} />
@@ -137,6 +139,12 @@ export default function TablaPedidoAFabrica({
                 className="text-center align-middle tabla-bloque-secundario-head-divider"
               >
                 STOCK ACTUAL
+              </TableHead>
+              <TableHead
+                rowSpan={2}
+                className="text-center align-middle tabla-bloque-secundario-head-divider"
+              >
+                PROM. VTA. P/ DÍA
               </TableHead>
               <TableHead
                 colSpan={2}
@@ -234,6 +242,14 @@ export default function TablaPedidoAFabrica({
                       className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
                     >
                       {fmtNumero(stockDias)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        TD_NUM,
+                        "tabla-bloque-secundario-cell-divider"
+                      )}
+                    >
+                      {fmtNumero(promVtaTotal)}
                     </TableCell>
                     <TableCell
                       className={cn(
