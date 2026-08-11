@@ -32,7 +32,7 @@ function FormulaLine({
 }
 
 /**
- * Modal **Info Sobre Fórmulas** (Pedido A Fáb.): PROM. VTA., fechas y cant. sugerida.
+ * Modal **Info Formulas** (Pedido A Fáb.): PROM. VTA., fechas y cant. sugerida.
  */
 export default function InfoPromedioPedidoAFabricaModal({
   open,
@@ -45,7 +45,7 @@ export default function InfoPromedioPedidoAFabricaModal({
       <AppModal
         size="md"
         padding="sm"
-        title="Info Sobre Fórmulas"
+        title="Info Formulas"
         actions={
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cerrar
