@@ -15,6 +15,9 @@ const VACIO: ProductosPedidoAFabricaResult = {
   productos: [],
   total: 0,
   totalPaginas: 0,
+  marcas: [],
+  rubros: [],
+  subRubros: [],
 };
 
 /**
@@ -31,6 +34,7 @@ export async function getSucursalesPedidoAFabricaAction(): Promise<
 /**
  * Productos de lista de precios del proveedor fábrica (`es_fabrica = true`),
  * con **STOCK ACTUAL** y **PROM. VTA.** por sucursal `pedido = true`.
+ * Filtros opcionales: marca / rubro / subRubro (tienda) + q (descripción).
  * Gate: `PERMISOS.estadisticasProductos.acceso`.
  */
 export async function getProductosPedidoAFabricaAction(
@@ -42,8 +46,12 @@ export async function getProductosPedidoAFabricaAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) return VACIO;
 
-  return listarProductosPorProveedorFabrica(
-    parsed.data.proveedorId,
-    parsed.data.pagina
-  );
+  const { proveedorId, pagina, marca, rubro, subRubro, q } = parsed.data;
+  return listarProductosPorProveedorFabrica(proveedorId, {
+    pagina,
+    marca,
+    rubro,
+    subRubro,
+    q,
+  });
 }

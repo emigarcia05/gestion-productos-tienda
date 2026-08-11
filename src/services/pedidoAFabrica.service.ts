@@ -2,6 +2,7 @@
  * Pedido A Fáb. — productos de lista del proveedor fábrica + métricas por sucursal.
  */
 
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
 import {
@@ -31,10 +32,22 @@ export type DatosSucursalProductoPedidoAFabrica = {
 
 export type ProductoPedidoAFabricaItem = {
   codExt: string;
+  /**
+   * Prioridad: `prod_tienda.descripcion_tienda` (vía `cod_tienda`) →
+   * fallback `prod_precios_provee.descripcion_proveedor`.
+   */
   descripcion: string;
   codTienda: string | null;
   /** Clave = `sucursal.id`. */
   porSucursal: Record<string, DatosSucursalProductoPedidoAFabrica>;
+};
+
+export type FiltrosProductosPedidoAFabrica = {
+  marca?: string;
+  rubro?: string;
+  subRubro?: string;
+  q?: string;
+  pagina?: number;
 };
 
 export type ProductosPedidoAFabricaResult = {
@@ -42,6 +55,10 @@ export type ProductosPedidoAFabricaResult = {
   productos: ProductoPedidoAFabricaItem[];
   total: number;
   totalPaginas: number;
+  /** Opciones dinámicas (prod_tienda vía vínculo del proveedor). */
+  marcas: string[];
+  rubros: string[];
+  subRubros: string[];
 };
 
 const VACIO: ProductosPedidoAFabricaResult = {
@@ -49,7 +66,12 @@ const VACIO: ProductosPedidoAFabricaResult = {
   productos: [],
   total: 0,
   totalPaginas: 0,
+  marcas: [],
+  rubros: [],
+  subRubros: [],
 };
+
+type CampoFiltroTienda = "marca" | "rubro" | "subRubro";
 
 /** Sucursales habilitadas para pedido (`pedido = true`), orden por nombre. */
 export async function listarSucursalesParaPedidoAFabrica(): Promise<
@@ -108,14 +130,95 @@ async function buildMapPromVtaDiaria(
   return map;
 }
 
+/** Búsqueda por descripción tienda (vínculo) o descripción proveedor. */
+function filtroTextoDescripcion(
+  q: string
+): Prisma.ListaPrecioProveedorWhereInput | undefined {
+  const tokens = q.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return undefined;
+  return {
+    AND: tokens.map((token) => ({
+      OR: [
+        {
+          descripcionProveedor: {
+            contains: token,
+            mode: "insensitive" as const,
+          },
+        },
+        {
+          prodTienda: {
+            is: {
+              descripcionTienda: {
+                contains: token,
+                mode: "insensitive" as const,
+              },
+            },
+          },
+        },
+      ],
+    })),
+  };
+}
+
+function buildWhereLista(
+  proveedorId: string,
+  filtros: FiltrosProductosPedidoAFabrica,
+  exclude?: CampoFiltroTienda
+): Prisma.ListaPrecioProveedorWhereInput {
+  const parts: Prisma.ListaPrecioProveedorWhereInput[] = [
+    { idProveedor: proveedorId, habilitado: true },
+  ];
+
+  const tiendaAnd: Prisma.ProdTiendaWhereInput[] = [];
+  const marca = filtros.marca?.trim() ?? "";
+  const rubro = filtros.rubro?.trim() ?? "";
+  const subRubro = filtros.subRubro?.trim() ?? "";
+  if (exclude !== "marca" && marca) tiendaAnd.push({ marca });
+  if (exclude !== "rubro" && rubro) tiendaAnd.push({ rubro });
+  if (exclude !== "subRubro" && subRubro) tiendaAnd.push({ subRubro });
+  if (tiendaAnd.length > 0) {
+    parts.push({ prodTienda: { is: { AND: tiendaAnd } } });
+  }
+
+  const texto = filtroTextoDescripcion(filtros.q ?? "");
+  if (texto) parts.push(texto);
+
+  return parts.length === 1 ? parts[0]! : { AND: parts };
+}
+
+async function opcionesCampoTienda(
+  whereLista: Prisma.ListaPrecioProveedorWhereInput,
+  campo: CampoFiltroTienda
+): Promise<string[]> {
+  const rows = await prisma.listaPrecioProveedor.findMany({
+    where: {
+      AND: [
+        whereLista,
+        { codTiendaVinculo: { not: null } },
+        { prodTienda: { is: { [campo]: { not: null } } } },
+      ],
+    },
+    select: {
+      prodTienda: { select: { marca: true, rubro: true, subRubro: true } },
+    },
+  });
+  const set = new Set<string>();
+  for (const r of rows) {
+    const v = r.prodTienda?.[campo]?.trim();
+    if (v) set.add(v);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, "es"));
+}
+
 /**
  * Lista productos de `prod_precios_provee` del proveedor, solo si `es_fabrica = true`.
- * Descripción = `descripcion_proveedor`. Solo filas `habilitado = true`.
+ * Descripción: `descripcion_tienda` (vínculo) → fallback `descripcion_proveedor`.
+ * Solo filas `habilitado = true`. Filtros opcionales: marca / rubro / sub_rubro (tienda) + q.
  * Por cada sucursal `pedido = true`: **STOCK ACTUAL** + **PROM. VTA.**
  */
 export async function listarProductosPorProveedorFabrica(
   proveedorId: string,
-  pagina: number = 1
+  filtros: FiltrosProductosPedidoAFabrica = {}
 ): Promise<ProductosPedidoAFabricaResult> {
   const proveedor = await prisma.proveedor.findFirst({
     where: { id: proveedorId, esFabrica: true },
@@ -123,26 +226,33 @@ export async function listarProductosPorProveedorFabrica(
   });
   if (!proveedor) return VACIO;
 
+  const pagina = filtros.pagina ?? 1;
   const sucursales = await listarSucursalesParaPedidoAFabrica();
 
-  const where = {
-    idProveedor: proveedorId,
-    habilitado: true,
-  } as const;
+  const whereItems = buildWhereLista(proveedorId, filtros);
+  const whereMarcas = buildWhereLista(proveedorId, filtros, "marca");
+  const whereRubros = buildWhereLista(proveedorId, filtros, "rubro");
+  const whereSubRubros = buildWhereLista(proveedorId, filtros, "subRubro");
 
-  const [total, filas] = await Promise.all([
-    prisma.listaPrecioProveedor.count({ where }),
+  const [total, filas, marcas, rubros, subRubros] = await Promise.all([
+    prisma.listaPrecioProveedor.count({ where: whereItems }),
     prisma.listaPrecioProveedor.findMany({
-      where,
+      where: whereItems,
       select: {
         codExt: true,
         descripcionProveedor: true,
         codTiendaVinculo: true,
+        prodTienda: {
+          select: { descripcionTienda: true },
+        },
       },
       orderBy: { descripcionProveedor: "asc" },
       skip: skipForPagina(pagina),
       take: PAGE_SIZE,
     }),
+    opcionesCampoTienda(whereMarcas, "marca"),
+    opcionesCampoTienda(whereRubros, "rubro"),
+    opcionesCampoTienda(whereSubRubros, "subRubro"),
   ]);
 
   const codTiendas = [
@@ -172,6 +282,8 @@ export async function listarProductosPorProveedorFabrica(
 
   const productos: ProductoPedidoAFabricaItem[] = filas.map((f) => {
     const codTienda = f.codTiendaVinculo?.trim() || null;
+    const descTienda = f.prodTienda?.descripcionTienda?.trim() || "";
+    const descripcion = descTienda || f.descripcionProveedor;
     const porSucursal = emptyPorSucursal(sucursales);
     if (codTienda) {
       for (const s of sucursales) {
@@ -185,7 +297,7 @@ export async function listarProductosPorProveedorFabrica(
     }
     return {
       codExt: f.codExt,
-      descripcion: f.descripcionProveedor,
+      descripcion,
       codTienda,
       porSucursal,
     };
@@ -196,5 +308,8 @@ export async function listarProductosPorProveedorFabrica(
     productos,
     total,
     totalPaginas: totalPaginasFromTotal(total),
+    marcas,
+    rubros,
+    subRubros,
   };
 }
