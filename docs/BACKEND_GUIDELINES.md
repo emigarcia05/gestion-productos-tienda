@@ -279,8 +279,8 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 - **Tabla** `prod_stock_transf_dep` (Prisma `ProdStockTransfDep`; migración **`20260812160000_prod_stock_transf_dep`**): registro de cada **marca de control** en **Trans. Depósitos** (no mueve stock en DUX).
 - Campos: `id` (cuid), `cod_tienda` (FK → `prod_tienda` ON DELETE CASCADE), `origen_codigo` / `destino_codigo` (códigos `guaymallen` \| `maipu`), `cantidad` (`INT`), `created_at`.
-- **Anti-duplicado (grilla)**: ventana **`TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS = 7`**. Duplicado = mismo `cod_tienda` + origen + destino + cantidad; UI muestra `AlertTriangle` (solo lectura).
-- **Historial (modal CONTROL)**: ventana **`TRANSF_DEPOSITOS_VENTANA_HISTORIAL_DIAS = 14`**. `listarHistorialTransfDepositosPorProducto(codTienda)` agrupa por par origen→destino (secciones con FECHA / CANTIDAD). Action: `listarHistorialTransfDepositosProductoAction`.
+- **Anti-duplicado (grilla) / historial**: ventana única **`TRANSF_DEPOSITOS_VENTANA_HISTORIAL_DIAS = 14`** (`TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS` es alias). Duplicado = mismo `cod_tienda` + origen + destino + cantidad; UI muestra `AlertTriangle` en **ACCIONES**.
+- **Historial (modal)**: `listarHistorialTransfDepositosPorProducto(codTienda)` agrupa por par origen→destino (FECHA / CANTIDAD). Action: `listarHistorialTransfDepositosProductoAction`.
 - **Servicio** `src/services/transfDepositos.service.ts`: listados + `registrarControlTransfDepositos` (**reservado** para export Excel).
 - **Zod**: `@/lib/validations/transfDepositos.ts` (`registrarControlTransfDepositosSchema`, `listarHistorialTransfDepositosProductoSchema`).
 
@@ -1577,7 +1577,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/components/proveedores/ImportarModal.tsx` | Manejo de respuesta: comprueba `res.ok` y usa `res.data` o `res.error` según corresponda. |
 | **Fase 2 (cierre de auditoría)** | |
 | `src/actions/pedidos.ts` | `getPedidoUrgenteData`: comprobación `getRol()` + `puede(rol, PERMISOS.pedidos.acceso)`; si no hay acceso se devuelve estructura vacía (proveedores mock, productos [], total 0). |
-| `src/actions/stock.ts` | `getControlStock`: … **`getTransfDepositos(origen, destino, params)`**: catálogo + `controlesRecientes` (7 días, par actual). **`listarHistorialTransfDepositosProductoAction`**: historial 14 días por producto (secciones origen→destino). **`registrarControlTransfDepositosAction`**: reservado para export Excel. |
+| `src/actions/stock.ts` | `getControlStock`: … **`getTransfDepositos(origen, destino, params)`**: catálogo + `controlesRecientes` (14 días, par actual). **`listarHistorialTransfDepositosProductoAction`**: historial 14 días por producto (secciones origen→destino). **`registrarControlTransfDepositosAction`**: reservado para export Excel. |
 | `src/actions/vinculos.ts` | `vincularProducto` / `desvincularProducto`: `listaPreciosCodTiendaSchema` + `listaPreciosCodExtSchema` (`@/lib/validations/common`). `desvincularProducto` limpia `costo_compra_cod_ext` si apuntaba al `cod_ext` desvinculado; no bloquea por proveedor oficial DUX. |
 | `src/actions/productos.ts` | `editarProducto`: validación con `editarProductoSchema` (id + campos). `aplicarCampoMasivo`: validación con `aplicarCampoMasivoSchema` (proveedorId, campo, valor, q). |
 | `src/actions/comparacionCategorias.ts` | Acciones `ActionResult<T>`; Zod (`comparacionCategorias.ts` + `listaPreciosCodExtSchema`); presentaciones: **`ref_cod_tienda` + `ref_competencia_id`** → `prod_precios_competencia`; costo objetivo solo **`costo_compra_objetivo`** (sin FK legacy `prod_ref_cod_ext`); DTO extra: `listaPrecioProveedorId` validado como `cod_ext`. |

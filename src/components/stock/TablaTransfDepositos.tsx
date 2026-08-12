@@ -32,13 +32,12 @@ import {
   TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS,
 } from "@/lib/transfDepositosControl";
 
-/** Bloque transferencia centrado; CONTROL última a la derecha. */
+/** DESCRIPCIÓN · origen · flecha · destino · ACCIONES (borrar / historial / aviso). */
 const PCT_DESC = 44;
 const PCT_ORIGEN = 16;
 const PCT_FLECHA = 6;
 const PCT_DESTINO = 16;
-const PCT_ACCIONES = 8;
-const PCT_CONTROL = 10;
+const PCT_ACCIONES = 18;
 
 interface Props {
   data: TransfDepositosData;
@@ -48,7 +47,7 @@ interface Props {
 
 /**
  * Grilla **Trans. Depósitos**:
- * DESCRIPCIÓN · {origen} · → · {destino} · ACCIONES · CONTROL (historial modal).
+ * DESCRIPCIÓN · {origen} · → · {destino} · ACCIONES (Trash2, Check historial, AlertTriangle).
  */
 export default function TablaTransfDepositos({ data, origen, destino }: Props) {
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
@@ -119,7 +118,6 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
           <col style={{ width: `${PCT_FLECHA}%` }} />
           <col style={{ width: `${PCT_DESTINO}%` }} />
           <col style={{ width: `${PCT_ACCIONES}%` }} />
-          <col style={{ width: `${PCT_CONTROL}%` }} />
         </colgroup>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -135,21 +133,13 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
               {destinoLabel}
             </TableHead>
             <TableHead className="text-center align-middle">ACCIONES</TableHead>
-            <TableHead
-              className="text-center align-middle"
-              aria-label="Historial de transferencias"
-            >
-              <div className="flex w-full items-center justify-center">
-                <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-              </div>
-            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.items.length === 0 && (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={5}
                 className={cn(
                   tableEmptyStateContainerVariants({
                     placement: "tableCellTall",
@@ -230,22 +220,6 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
                         aria-hidden
                       />
                     </Button>
-                  </div>
-                </TableCell>
-                <TableCell className="celda-datos celda-datos--accion-relleno-fila">
-                  <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                    {dup ? (
-                      <span
-                        className={ICON_WARNING_INTERACTIVE_CLASS}
-                        title={`Transferencia igual en los últimos ${TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS} días (${formatDdMmHhMmArgentina(new Date(dup.createdAtIso))})`}
-                      >
-                        <AlertTriangle
-                          className={TABLE_ROW_ACTION_ICON_CLASS}
-                          aria-hidden
-                        />
-                        <span className="sr-only">Duplicado reciente</span>
-                      </span>
-                    ) : null}
                     <Button
                       type="button"
                       variant="ghost"
@@ -265,6 +239,26 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
                         aria-hidden
                       />
                     </Button>
+                    <span
+                      className={cn(
+                        ICON_WARNING_INTERACTIVE_CLASS,
+                        !dup && "invisible"
+                      )}
+                      title={
+                        dup
+                          ? `Transferencia igual en los últimos ${TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS} días (${formatDdMmHhMmArgentina(new Date(dup.createdAtIso))})`
+                          : undefined
+                      }
+                      aria-hidden={!dup}
+                    >
+                      <AlertTriangle
+                        className={TABLE_ROW_ACTION_ICON_CLASS}
+                        aria-hidden
+                      />
+                      {dup ? (
+                        <span className="sr-only">Duplicado reciente</span>
+                      ) : null}
+                    </span>
                   </div>
                 </TableCell>
               </TableRow>
