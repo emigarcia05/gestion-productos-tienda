@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from "react";
 import { ArrowRight, AlertTriangle, Check, Trash2 } from "lucide-react";
 import {
   Table,
@@ -45,29 +51,51 @@ interface Props {
   destino: Sucursal | null;
 }
 
+export type ItemCantidadTransfTabla = {
+  codTienda: string;
+  cantidad: number;
+};
+
+export type TablaTransfDepositosHandle = {
+  getItemsConCantidad: () => ItemCantidadTransfTabla[];
+  clearCantidades: () => void;
+};
+
 /**
  * Grilla **Trans. Depósitos**:
  * DESCRIPCIÓN · {origen} · → · {destino} · ACCIONES (Trash2, Check historial, AlertTriangle).
+ * Cantidades se conservan al paginar; se limpian al cambiar origen/destino.
  */
-export default function TablaTransfDepositos({ data, origen, destino }: Props) {
+const TablaTransfDepositos = forwardRef<TablaTransfDepositosHandle, Props>(
+  function TablaTransfDepositos({ data, origen, destino }, ref) {
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
   const [historial, setHistorial] = useState<{
     codTienda: string;
     descripcion: string;
   } | null>(null);
 
-  const idsKey = data.items.map((i) => i.id).join("|");
+  useImperativeHandle(
+    ref,
+    () => ({
+      getItemsConCantidad: () =>
+        Object.entries(cantidades)
+          .map(([codTienda, raw]) => ({
+            codTienda,
+            cantidad: Number.parseInt(raw, 10),
+          }))
+          .filter(
+            (item) => Number.isInteger(item.cantidad) && item.cantidad > 0
+          ),
+      clearCantidades: () => setCantidades({}),
+    }),
+    [cantidades]
+  );
+
   useEffect(() => {
     queueMicrotask(() => {
-      setCantidades((prev) => {
-        const next: Record<string, string> = {};
-        for (const item of data.items) {
-          if (prev[item.id] !== undefined) next[item.id] = prev[item.id];
-        }
-        return next;
-      });
+      setCantidades({});
     });
-  }, [idsKey, data.items]);
+  }, [origen, destino]);
 
   const origenSeleccionado = origen !== null;
   const destinoSeleccionado = destino !== null;
@@ -279,4 +307,6 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
       ) : null}
     </>
   );
-}
+});
+
+export default TablaTransfDepositos;

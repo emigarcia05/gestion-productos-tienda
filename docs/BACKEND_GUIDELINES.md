@@ -277,12 +277,18 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 ### 1.4.6 Control transferencias entre depósitos (`prod_stock_transf_dep`)
 
-- **Tabla** `prod_stock_transf_dep` (Prisma `ProdStockTransfDep`; migración **`20260812160000_prod_stock_transf_dep`**): registro de cada **marca de control** en **Trans. Depósitos** (no mueve stock en DUX).
-- Campos: `id` (cuid), `cod_tienda` (FK → `prod_tienda` ON DELETE CASCADE), `origen_codigo` / `destino_codigo` (códigos `guaymallen` \| `maipu`), `cantidad` (`INT`), `created_at`.
+- **Tabla** `prod_stock_transf_dep` (Prisma `ProdStockTransfDep`; migraciones **`20260812160000_prod_stock_transf_dep`** + **`20260812210000_prod_stock_transf_dep_export_flags`**): registro de transferencias en **Trans. Depósitos** (no mueve stock en DUX; el Excel se importa luego en DUX).
+- Campos: `id` (cuid), `cod_tienda` (FK → `prod_tienda` ON DELETE CASCADE), `origen_codigo` / `destino_codigo` (`guaymallen` \| `maipu`), `cantidad` (`INT`), `created_at`, **`exportado_origen_at`** / **`exportado_destino_at`** (`NULL` = pendiente de Excel para ese lado).
 - **Anti-duplicado (grilla) / historial**: ventana única **`TRANSF_DEPOSITOS_VENTANA_HISTORIAL_DIAS = 14`** (`TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS` es alias). Duplicado = mismo `cod_tienda` + origen + destino + cantidad; UI muestra `AlertTriangle` en **ACCIONES**.
 - **Historial (modal)**: `listarHistorialTransfDepositosPorProducto(codTienda)` agrupa por par origen→destino (FECHA / CANTIDAD). Action: `listarHistorialTransfDepositosProductoAction`.
-- **Servicio** `src/services/transfDepositos.service.ts`: listados + `registrarControlTransfDepositos` (**reservado** para export Excel).
-- **Zod**: `@/lib/validations/transfDepositos.ts` (`registrarControlTransfDepositosSchema`, `listarHistorialTransfDepositosProductoSchema`).
+- **Excel DUX (Importar Transferencias)**:
+  - `encolarTransferenciasPendientes` — persiste ítems de la grilla con ambos flags `NULL`.
+  - `listarPendientesExportTransfDepositos` — resumen por sucursal (EGRESO u INGRESO sin exportar).
+  - `exportarPendientesTransfDepositosPorSucursal` — filas `COD.` / `TIPO MOVIMIENTO` (`EGRESO` origen · `INGRESO` destino) / `CANTIDAD DISPONIBLE`; marca el lado correspondiente y deja de listarse como pendiente.
+  - Actions: `encolarTransferenciasPendientesAction`, `listarPendientesExportTransfDepositosAction`, `exportarPendientesTransfDepositosAction`.
+  - Backfill de la migración de flags: filas históricas se marcan exportadas para no aparecer como pendientes.
+- **Servicio** `src/services/transfDepositos.service.ts`: listados, historial, encolar/export pendientes; `registrarControlTransfDepositos` queda disponible para confirmación puntual.
+- **Zod**: `@/lib/validations/transfDepositos.ts` (`registrarControlTransfDepositosSchema`, `listarHistorialTransfDepositosProductoSchema`, `encolarTransferenciasPendientesSchema`, `exportarPendientesTransfDepositosSchema`).
 
 ### 1.4.4 Purga de esquema — auditoría 2026-06-04
 
@@ -1499,7 +1505,7 @@ Objetivo: preparar `RecepcionCompraDatosPreparados` para el POST DUX v2/compras 
 | `@/lib/validations/pedidosMutaciones.ts` | Mutaciones/envío: `proveedorIdPedidoSchema` (`prismaCuidSchema`), `listarProveedoresConPedidoActivoSchema`, `comprobarItemsParaGenerarPedidoSchema`, `generarPdfEnviarPedidoSchema` (`idItemPedidoEnvio` → `uuidSchema` / `prod_ped_merc`), `getSobreStockReposicionParaModalSchema`, `upsertPedidoUrgenteItemSchema`, `upsertPedidoTintometricoItemsSchema`, `deleteTintometricoItemSchema`. |
 | `@/lib/validations/reposicion.ts` | `sucursalReposicionSchema`, `reposicionFormaPedidoSchema` (`CANT_FIJA` \| `CANT_MAXIMA`), `getReposicionParamsSchema`, `productosReposicionSelectorSchema`. |
 | `@/lib/validations/stock.ts` | `getControlStockParamsSchema`. |
-| `@/lib/validations/transfDepositos.ts` | `registrarControlTransfDepositosSchema`; `listarHistorialTransfDepositosProductoSchema`. |
+| `@/lib/validations/transfDepositos.ts` | `registrarControlTransfDepositosSchema`; `listarHistorialTransfDepositosProductoSchema`; `encolarTransferenciasPendientesSchema`; `exportarPendientesTransfDepositosSchema`. |
 | `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `@/lib/validations/cajasTesoreria.ts` | `crearCajaTesoreriaSchema`, `editarCajaTesoreriaSchema` (`entidadId` `prismaCuidOrUuidSchema`, `tipoValor`, `disponibilidad`), `eliminarCajaTesoreriaSchema`; catálogo entidades: `crearFinTesoreriaEntidadSchema`, `editarFinTesoreriaEntidadSchema`, `eliminarFinTesoreriaEntidadSchema`; `tipoCajaTesoreriaSchema`, `tipoValorTesoreriaSchema`, `disponibilidadCajaTesoreriaSchema`. |
 | `@/lib/validations/finBalGastosCatalogo.ts` | CRUD de la jerarquía `fin_bal_gasto_tipo / rubro / gasto` + `fin_bal_gasto_final`: `crear*Schema`, `editar*Schema`, `eliminar*Schema` (incluye `*FinBalGastoFinal*`). `nombre` con `trim + toUpperCase`; jerarquía con `prismaCuidSchema`; gasto final: `gastoId`/`proveedorId` con `prismaCuidOrUuidSchema`; **`sucursalId`** con `globalSucursalIdSchema` solo si `gastoMensual === true`, si no se normaliza a `null`; `gastoMensual` boolean; `diaDevengado` / `vencimiento` condicionales al tipo; `iva` (`ivaPoliticaFormSchema`). |
@@ -2119,6 +2125,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-11): **Pedido A Fáb.** — UI sin columna **PROM. VTA. P/ DÍA** (el cálculo sigue alimentando stock/días/sugerida).
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — sucursales de métricas/modal = `genera_est = true` (`listarSucursalesParaPedidoAFabrica`).
+
+*Última actualización (2026-08-12): **Stock · Trans. Depósitos** — Excel Importar Transferencias (EGRESO/INGRESO) con `exportado_origen_at` / `exportado_destino_at`.*
 
 *Última actualización (2026-08-12): **Stock · Trans. Depósitos** — aviso duplicado y historial unificados a 14 días; ACCIONES = borrar + historial + advertencia.*
 

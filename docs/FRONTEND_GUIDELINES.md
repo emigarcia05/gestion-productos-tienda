@@ -885,7 +885,7 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
 
 - Sidebar Vendedor: módulo **STOCK** (antes enlace directo **CONTROL STOCK**) con dos hojas: **Control Stock** y **Trans. Depósitos**.
 - **Control Stock**: sin cambios de negocio; header `title="Stock"` / `subtitle="Control Stock"`; ruta canónica `GP_ROUTES.ayudaVendedor.controlStock`.
-- **Trans. Depósitos** (`GP_ROUTES.ayudaVendedor.transfDepositos` → rewrite `/transf-depositos`): **Fila 1** `FilterBar` con **SUCURSAL ORIGEN** / **SUCURSAL DESTINO** (query `origen` / `destino`; **siempre distintas**). **Fila 2** **MARCA** / **RUBRO** + búsqueda. Header `Stock` / `Trans. Depósitos`. Grilla (`TablaTransfDepositos`, `colgroup` 60/10/3/10/17): **DESCRIPCIÓN** · nombre origen (`Input` centrado) · flecha centrada (solo con cantidad) · nombre destino (lectura centrada) · **ACCIONES** (última columna): **Borrar** (`Trash2`) · **Historial** (`Check` → **`HistorialTransfDepositosModal`**, 14 días, secciones origen→destino) · **Advertencia** (`AlertTriangle`, slot `invisible` si no hay match) si la cantidad coincide con un control del par actual en los **últimos 14 días**. Persistencia al export Excel: pendiente.
+- **Trans. Depósitos** (`GP_ROUTES.ayudaVendedor.transfDepositos` → rewrite `/transf-depositos`): **Fila 1** `FilterBar` con **SUCURSAL ORIGEN** / **SUCURSAL DESTINO** (query `origen` / `destino`; **siempre distintas**). **Fila 2** **MARCA** / **RUBRO** + búsqueda. Header `Stock` / `Trans. Depósitos`. **`actions`**: **Importar Transferencias** (`FileDown`, `h-10 px-4`) → **`ImportarTransferenciasModal`**: al abrir, si hay origen+destino y cantidades en grilla, encola con `encolarTransferenciasPendientesAction` y limpia inputs; tabla **SUCURSAL** · **REGISTRO PENDIENTE** · **FECHA** · **ACCIONES** (`Download`); descarga Excel (`descargarExcelTransfDepositos`: columnas **COD.** · **TIPO MOVIMIENTO** · **CANTIDAD DISPONIBLE**) vía `exportarPendientesTransfDepositosAction` y la fila desaparece de pendientes. Grilla (`TablaTransfDepositos` + `forwardRef` `getItemsConCantidad`/`clearCantidades`; cantidades se conservan al paginar, se limpian al cambiar origen/destino; `colgroup` 60/10/3/10/17): **DESCRIPCIÓN** · nombre origen (`Input` centrado) · flecha centrada (solo con cantidad) · nombre destino (lectura centrada) · **ACCIONES**: **Borrar** (`Trash2`) · **Historial** (`Check` → **`HistorialTransfDepositosModal`**, 14 días) · **Advertencia** (`AlertTriangle`, slot `invisible` si no hay match) si la cantidad coincide con un control del par actual en los **últimos 14 días**.
 
 ### Stock — Acciones del encabezado (Control Stock)
 
@@ -1810,6 +1810,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-11): **Entrada app** — `/`, `/finanzas` y `/marketing` son hubs vacíos; datos solo al elegir ruta hoja (sin redirect a Px Sugeridos/Tesorería/Calendario).
 
 *Última actualización (2026-08-12): **Sidebar · STOCK** — módulo **STOCK** con **Control Stock** + **Trans. Depósitos** (`transf-depositos`); filtros sin STOCK/ORDEN + **SUCURSAL ORIGEN** / **SUCURSAL DESTINO**.
+
+*Última actualización (2026-08-12): **Trans. Depósitos** — header **Importar Transferencias** + modal pendientes + Excel EGRESO/INGRESO.*
 
 *Última actualización (2026-08-12): **Trans. Depósitos** — ACCIONES con Borrar + Historial + advertencia duplicado (14 días); sin columna CONTROL aparte.*
 

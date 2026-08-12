@@ -943,11 +943,23 @@ model ProdStockTransfDep {
   destinoCodigo String   @map("destino_codigo")
   cantidad      Int
   createdAt     DateTime @default(now()) @map("created_at")
+  /**
+   * Cuando se descargó el Excel de la sucursal origen (movimientos EGRESO).
+   * `null` = pendiente de exportar para origen.
+   */
+  exportadoOrigenAt  DateTime? @map("exportado_origen_at")
+  /**
+   * Cuando se descargó el Excel de la sucursal destino (movimientos INGRESO).
+   * `null` = pendiente de exportar para destino.
+   */
+  exportadoDestinoAt DateTime? @map("exportado_destino_at")
 
   prodTienda ProdTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
 
   @@index([codTienda, origenCodigo, destinoCodigo, cantidad, createdAt], map: "prod_stock_transf_dep_dup_idx")
   @@index([origenCodigo, destinoCodigo, createdAt], map: "prod_stock_transf_dep_par_fecha_idx")
+  @@index([origenCodigo, exportadoOrigenAt], map: "prod_stock_transf_dep_origen_export_idx")
+  @@index([destinoCodigo, exportadoDestinoAt], map: "prod_stock_transf_dep_destino_export_idx")
   @@map("prod_stock_transf_dep")
 }
 

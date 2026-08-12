@@ -12,6 +12,8 @@ import { PAGE_SIZE } from "@/lib/pagination";
 import { getControlStockParamsSchema } from "@/lib/validations/stock";
 import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import {
+  encolarTransferenciasPendientesSchema,
+  exportarPendientesTransfDepositosSchema,
   listarHistorialTransfDepositosProductoSchema,
   registrarControlTransfDepositosSchema,
 } from "@/lib/validations/transfDepositos";
@@ -216,6 +218,19 @@ export type HistorialTransfDepositosSeccionDto = {
   destinoCodigo: Sucursal;
   titulo: string;
   items: HistorialTransfDepositosItemDto[];
+};
+
+export type PendienteExportTransfDepositosDto = {
+  sucursal: Sucursal;
+  label: string;
+  cantidadRegistros: number;
+  fechaIso: string;
+};
+
+export type FilaExcelTransfDepositosDto = {
+  cod: string;
+  tipoMovimiento: "EGRESO" | "INGRESO";
+  cantidad: number;
 };
 
 export interface TransfDepositosData {
@@ -432,6 +447,84 @@ export async function listarHistorialTransfDepositosProductoAction(
     console.error("[listarHistorialTransfDepositosProductoAction]", e);
     return { ok: false, error: "Error al cargar historial." };
   }
+}
+
+/**
+ * Persiste cantidades de la grilla como transferencias pendientes de Excel
+ * (EGRESO origen / INGRESO destino aún no exportados).
+ */
+export async function encolarTransferenciasPendientesAction(
+  raw: unknown
+): Promise<ActionResult<{ creados: number }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.stock.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  const parsed = encolarTransferenciasPendientesSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  const { encolarTransferenciasPendientes } = await import(
+    "@/services/transfDepositos.service"
+  );
+  const result = await encolarTransferenciasPendientes(parsed.data);
+  if (!result.success) {
+    return { ok: false, error: result.error };
+  }
+  revalidatePath(GP_ROUTES.ayudaVendedor.transfDepositos);
+  revalidatePath(GP_INTERNAL.ayudaVendedor.transfDepositos);
+  return { ok: true, data: result.data };
+}
+
+/** Listado de sucursales con registros pendientes de exportar a Excel. */
+export async function listarPendientesExportTransfDepositosAction(): Promise<
+  ActionResult<PendienteExportTransfDepositosDto[]>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.stock.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  try {
+    const { listarPendientesExportTransfDepositos } = await import(
+      "@/services/transfDepositos.service"
+    );
+    const data = await listarPendientesExportTransfDepositos();
+    return { ok: true, data };
+  } catch (e) {
+    console.error("[listarPendientesExportTransfDepositosAction]", e);
+    return { ok: false, error: "Error al listar pendientes." };
+  }
+}
+
+/**
+ * Obtiene filas Excel de una sucursal y marca esos movimientos como exportados
+ * (desaparecen de pendientes).
+ */
+export async function exportarPendientesTransfDepositosAction(
+  raw: unknown
+): Promise<
+  ActionResult<{ filas: FilaExcelTransfDepositosDto[]; marcados: number }>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.stock.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  const parsed = exportarPendientesTransfDepositosSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  const { exportarPendientesTransfDepositosPorSucursal } = await import(
+    "@/services/transfDepositos.service"
+  );
+  const result = await exportarPendientesTransfDepositosPorSucursal(
+    parsed.data.sucursal
+  );
+  if (!result.success) {
+    return { ok: false, error: result.error };
+  }
+  revalidatePath(GP_ROUTES.ayudaVendedor.transfDepositos);
+  revalidatePath(GP_INTERNAL.ayudaVendedor.transfDepositos);
+  return { ok: true, data: result.data };
 }
 
 const codTiendasExcelSchema = z.array(listaPreciosCodTiendaSchema).optional().default([]);

@@ -24,3 +24,26 @@ export type RegistrarControlTransfDepositosInput = z.infer<
 export const listarHistorialTransfDepositosProductoSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
 });
+
+export const encolarTransferenciasPendientesSchema = z
+  .object({
+    origen: sucursalCodigoSchema,
+    destino: sucursalCodigoSchema,
+    items: z
+      .array(
+        z.object({
+          codTienda: listaPreciosCodTiendaSchema,
+          cantidad: z.coerce.number().int().positive().max(1_000_000),
+        })
+      )
+      .min(1)
+      .max(500),
+  })
+  .refine((v) => v.origen !== v.destino, {
+    message: "Origen y destino deben ser distintos.",
+    path: ["destino"],
+  });
+
+export const exportarPendientesTransfDepositosSchema = z.object({
+  sucursal: sucursalCodigoSchema,
+});
