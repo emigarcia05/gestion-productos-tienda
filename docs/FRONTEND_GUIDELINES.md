@@ -885,7 +885,7 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
 
 - Sidebar Vendedor: módulo **STOCK** (antes enlace directo **CONTROL STOCK**) con dos hojas: **Control Stock** y **Trans. Depósitos**.
 - **Control Stock**: sin cambios de negocio; header `title="Stock"` / `subtitle="Control Stock"`; ruta canónica `GP_ROUTES.ayudaVendedor.controlStock`.
-- **Trans. Depósitos** (`GP_ROUTES.ayudaVendedor.transfDepositos` → rewrite `/transf-depositos`): **Fila 1** `FilterBar` con **SUCURSAL ORIGEN** / **SUCURSAL DESTINO** (query `origen` / `destino`); **Fila 2** **MARCA** / **RUBRO** + búsqueda (sin desplegable **SUCURSAL**; marca/rubro/búsqueda se habilitan con origen). Header `Stock` / `Trans. Depósitos`. Grilla (`TablaTransfDepositos`): **DESCRIPCIÓN** · **SUCURSAL ORIGEN** · **SUCURSAL DESTINO** (`stock_real` de cada depósito; destino `—` si no hay destino). Export Excel DUX: pendiente.
+- **Trans. Depósitos** (`GP_ROUTES.ayudaVendedor.transfDepositos` → rewrite `/transf-depositos`): **Fila 1** `FilterBar` con **SUCURSAL ORIGEN** / **SUCURSAL DESTINO** (query `origen` / `destino`); **Fila 2** **MARCA** / **RUBRO** + búsqueda (sin desplegable **SUCURSAL**; marca/rubro/búsqueda se habilitan con origen). Header `Stock` / `Trans. Depósitos`. Grilla (`TablaTransfDepositos`, `colgroup`): **DESCRIPCIÓN** **50%** · **SUCURSAL ORIGEN** (cabecera en 2 líneas: título + nombre de la sucursal del filtro; celda = `Input` numérico de cantidad a transferir) · columna flecha **`ArrowRight`** · **SUCURSAL DESTINO** (cabecera 2 líneas con nombre del filtro; celda = misma cantidad en solo lectura) · **ACCIONES** (`Trash2` + `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS` limpia el input de la fila). Sin destino: input deshabilitado y destino `—`. Export Excel DUX: pendiente.
 
 ### Stock — Acciones del encabezado (Control Stock)
 
@@ -1811,7 +1811,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-12): **Sidebar · STOCK** — módulo **STOCK** con **Control Stock** + **Trans. Depósitos** (`transf-depositos`); filtros sin STOCK/ORDEN + **SUCURSAL ORIGEN** / **SUCURSAL DESTINO**.
 
-*Última actualización (2026-08-12): **Trans. Depósitos** — orden filtros: origen/destino primero; sin SUCURSAL; grilla 3 columnas DESCRIPCIÓN / SUCURSAL ORIGEN / SUCURSAL DESTINO.*
+*Última actualización (2026-08-12): **Trans. Depósitos** — orden filtros: origen/destino primero; sin SUCURSAL; grilla DESCRIPCIÓN 50% / ORIGEN (input) / flecha / DESTINO (lectura) / ACCIONES (borrar).*
 
 *Última actualización (2026-08-10): **Sidebar · Administración** — 5 pilares: FINANZAS · LISTA PRECIOS · PEDIDO A FÁBRICA · ESTADÍSTICAS · CONFIGURACION; Est. Para Compra → `/pedido-a-fabrica`.
 
