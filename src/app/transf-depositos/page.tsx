@@ -47,13 +47,20 @@ export default async function TransfDepositosPage({ searchParams }: Props) {
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
   const data = origenValido
-    ? await getTransfDepositos(origenValido, {
+    ? await getTransfDepositos(origenValido, destinoValido, {
         q,
         marca,
         rubro,
         pagina: paginaNum,
       })
-    : { items: [], total: 0, totalPaginas: 0, marcas: [], rubros: [] };
+    : {
+        items: [],
+        total: 0,
+        totalPaginas: 0,
+        marcas: [],
+        rubros: [],
+        controlesRecientes: [],
+      };
 
   return (
     <TransfDepositosPageClient

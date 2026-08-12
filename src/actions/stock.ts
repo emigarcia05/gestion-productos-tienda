@@ -1,6 +1,7 @@
 "use server";
 
 import type { Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
 import { getRol } from "@/lib/sesion";
@@ -10,6 +11,8 @@ import { z } from "zod";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { getControlStockParamsSchema } from "@/lib/validations/stock";
 import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
+import { registrarControlTransfDepositosSchema } from "@/lib/validations/transfDepositos";
+import { GP_INTERNAL, GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import {
   getIdDepositoPorSucursalCodigo,
   whereProdTiendaStockeable,
@@ -194,12 +197,20 @@ export interface ItemTransfDepositos {
   rubro: string | null;
 }
 
+export type ControlTransfDepositosRecienteDto = {
+  codTienda: string;
+  cantidad: number;
+  createdAtIso: string;
+};
+
 export interface TransfDepositosData {
   items: ItemTransfDepositos[];
   total: number;
   totalPaginas: number;
   marcas: string[];
   rubros: string[];
+  /** Controles del par origen→destino en la ventana anti-duplicado. */
+  controlesRecientes: ControlTransfDepositosRecienteDto[];
 }
 
 export interface GetTransfDepositosParams {
@@ -215,15 +226,18 @@ const emptyTransfDepositos: TransfDepositosData = {
   totalPaginas: 0,
   marcas: [],
   rubros: [],
+  controlesRecientes: [],
 };
 
 /**
  * Listado para **Trans. Depósitos**: catálogo stockeable (descripción / filtros).
  * **No** expone `stock_real`: la UI solo captura cantidades a transferir.
+ * Con origen+destino distintos, adjunta controles recientes (anti-duplicado).
  * Requiere permiso `PERMISOS.stock.acceso` y sucursal origen.
  */
 export async function getTransfDepositos(
   origen: Sucursal | null,
+  destino: Sucursal | null = null,
   params: GetTransfDepositosParams = {}
 ): Promise<TransfDepositosData> {
   const rol = await getRol();
@@ -233,6 +247,12 @@ export async function getTransfDepositos(
   if (!origen || !z.enum(["guaymallen", "maipu"]).safeParse(origen).success) {
     return emptyTransfDepositos;
   }
+  const destinoOk =
+    destino !== null &&
+    z.enum(["guaymallen", "maipu"]).safeParse(destino).success &&
+    destino !== origen
+      ? destino
+      : null;
 
   const parsedParams = getControlStockParamsSchema.safeParse(params);
   if (!parsedParams.success) {
@@ -309,17 +329,65 @@ export async function getTransfDepositos(
 
     const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
 
+    let controlesRecientes: ControlTransfDepositosRecienteDto[] = [];
+    if (destinoOk && items.length > 0) {
+      const { listarControlesRecientesTransfDepositos } = await import(
+        "@/services/transfDepositos.service"
+      );
+      controlesRecientes = await listarControlesRecientesTransfDepositos(
+        origen,
+        destinoOk,
+        items.map((i) => i.id)
+      );
+    }
+
     return {
       items,
       total,
       totalPaginas,
       marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => m.marca!),
       rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => r.rubro!),
+      controlesRecientes,
     };
   } catch (e) {
     console.error("[getTransfDepositos]", e);
     return emptyTransfDepositos;
   }
+}
+
+/**
+ * Marca un control de transferencia (anti-duplicado).
+ * Si hay registro igual reciente y `forzar` es false → `requiereConfirmacion`.
+ */
+export async function registrarControlTransfDepositosAction(
+  raw: unknown
+): Promise<
+  ActionResult<
+    | { id: string; createdAtIso: string; eraDuplicado: boolean }
+    | { requiereConfirmacion: true; ultimoCreatedAtIso: string }
+  >
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.stock.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  const parsed = registrarControlTransfDepositosSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  const { registrarControlTransfDepositos } = await import(
+    "@/services/transfDepositos.service"
+  );
+  const result = await registrarControlTransfDepositos(parsed.data);
+  if (!result.success) {
+    return { ok: false, error: result.error };
+  }
+  if ("requiereConfirmacion" in result.data) {
+    return { ok: true, data: result.data };
+  }
+  revalidatePath(GP_ROUTES.ayudaVendedor.transfDepositos);
+  revalidatePath(GP_INTERNAL.ayudaVendedor.transfDepositos);
+  return { ok: true, data: result.data };
 }
 
 const codTiendasExcelSchema = z.array(listaPreciosCodTiendaSchema).optional().default([]);

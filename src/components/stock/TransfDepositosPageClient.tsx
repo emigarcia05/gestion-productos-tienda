@@ -21,7 +21,7 @@ interface Props {
 
 /**
  * Pantalla **Stock · Trans. Depósitos**: origen/destino → marca/rubro/búsqueda;
- * grilla DESCRIPCIÓN / {origen} (input+flecha) / {destino} / ACCIONES.
+ * grilla DESCRIPCIÓN / {origen} / {destino} / CONTROL / ACCIONES.
  */
 export default function TransfDepositosPageClient({
   data,

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ArrowRight, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { ArrowRight, AlertTriangle, Check, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -12,7 +13,11 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Sucursal, TransfDepositosData } from "@/actions/stock";
+import {
+  registrarControlTransfDepositosAction,
+  type Sucursal,
+  type TransfDepositosData,
+} from "@/actions/stock";
 import {
   TableEmptyState,
   tableEmptyStateContainerVariants,
@@ -20,20 +25,23 @@ import {
 } from "@/components/shared/TableEmptyState";
 import { cn } from "@/lib/utils";
 import {
+  ICON_WARNING_INTERACTIVE_CLASS,
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
+import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
+import { TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS } from "@/lib/transfDepositosControl";
 
 const SUCURSAL_LABEL: Record<Sucursal, string> = {
   guaymallen: "GUAYMALLÉN",
   maipu: "MAIPÚ",
 };
 
-/** DESCRIPCIÓN 50%; bloque transferencia compacto; ACCIONES al final. */
-const PCT_DESC = 50;
-const PCT_ORIGEN = 22;
-const PCT_DESTINO = 18;
+const PCT_DESC = 46;
+const PCT_ORIGEN = 18;
+const PCT_DESTINO = 14;
+const PCT_CONTROL = 12;
 const PCT_ACCIONES = 10;
 
 interface Props {
@@ -44,11 +52,16 @@ interface Props {
 
 /**
  * Grilla **Trans. Depósitos**:
- * DESCRIPCIÓN · {nombre origen} (input + flecha si hay cantidad) · {nombre destino} (lectura) · ACCIONES.
- * La flecha vive en la columna de origen para mantener el bloque origen→destino pegado.
+ * DESCRIPCIÓN · {origen} (input+flecha) · {destino} · CONTROL (Check) · ACCIONES.
  */
 export default function TablaTransfDepositos({ data, origen, destino }: Props) {
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
+  const [confirmados, setConfirmados] = useState<Record<string, boolean>>({});
+  const [pendienteForzar, setPendienteForzar] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [controles, setControles] = useState(data.controlesRecientes);
+  const [isPending, startTransition] = useTransition();
 
   const idsKey = data.items.map((i) => i.id).join("|");
   useEffect(() => {
@@ -60,16 +73,35 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
         }
         return next;
       });
+      setControles(data.controlesRecientes);
     });
-  }, [idsKey, data.items]);
+  }, [idsKey, data.items, data.controlesRecientes]);
 
   const origenSeleccionado = origen !== null;
+  const destinoSeleccionado = destino !== null;
   const origenLabel = origen ? SUCURSAL_LABEL[origen] : "—";
   const destinoLabel = destino ? SUCURSAL_LABEL[destino] : "—";
+
+  const controlesPorClave = useMemo(() => {
+    const map = new Map<string, { cantidad: number; createdAtIso: string }>();
+    for (const c of controles) {
+      const key = `${c.codTienda}|${c.cantidad}`;
+      if (!map.has(key)) {
+        map.set(key, { cantidad: c.cantidad, createdAtIso: c.createdAtIso });
+      }
+    }
+    return map;
+  }, [controles]);
 
   function handleCantidad(id: string, raw: string) {
     const limpio = raw.replace(/[^\d]/g, "");
     setCantidades((prev) => ({ ...prev, [id]: limpio }));
+    setPendienteForzar((prev) => {
+      if (!prev[id]) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   }
 
   function limpiarFila(id: string) {
@@ -77,6 +109,66 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
       const next = { ...prev };
       delete next[id];
       return next;
+    });
+    setPendienteForzar((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+
+  function marcarControl(itemId: string, forzar: boolean) {
+    if (!origen || !destino) return;
+    const raw = cantidades[itemId] ?? "";
+    const cantidad = Number(raw);
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      toast.error("Ingresá una cantidad válida.");
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await registrarControlTransfDepositosAction({
+        codTienda: itemId,
+        origen,
+        destino,
+        cantidad,
+        forzar,
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      if ("requiereConfirmacion" in res.data) {
+        const cuando = formatDdMmHhMmArgentina(
+          new Date(res.data.ultimoCreatedAtIso)
+        );
+        toast.warning(
+          `Ya hay una transferencia igual (${cuando}). Volvé a marcar CONTROL para confirmar.`,
+          { duration: 6000 }
+        );
+        setPendienteForzar((prev) => ({ ...prev, [itemId]: true }));
+        return;
+      }
+      const registrado = res.data;
+      setConfirmados((prev) => ({ ...prev, [itemId]: true }));
+      setPendienteForzar((prev) => {
+        const next = { ...prev };
+        delete next[itemId];
+        return next;
+      });
+      setControles((prev) => [
+        {
+          codTienda: itemId,
+          cantidad,
+          createdAtIso: registrado.createdAtIso,
+        },
+        ...prev,
+      ]);
+      if (registrado.eraDuplicado) {
+        toast.success("Control registrado (duplicado confirmado).");
+      } else {
+        toast.success("Control registrado.");
+      }
     });
   }
 
@@ -97,6 +189,7 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
         <col style={{ width: `${PCT_DESC}%` }} />
         <col style={{ width: `${PCT_ORIGEN}%` }} />
         <col style={{ width: `${PCT_DESTINO}%` }} />
+        <col style={{ width: `${PCT_CONTROL}%` }} />
         <col style={{ width: `${PCT_ACCIONES}%` }} />
       </colgroup>
       <TableHeader>
@@ -108,6 +201,14 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
           <TableHead className="text-center align-middle">
             {destinoLabel}
           </TableHead>
+          <TableHead
+            className="text-center align-middle"
+            aria-label="Control de transferencia"
+          >
+            <div className="flex w-full items-center justify-center">
+              <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+            </div>
+          </TableHead>
           <TableHead className="text-center align-middle">ACCIONES</TableHead>
         </TableRow>
       </TableHeader>
@@ -115,7 +216,7 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
         {data.items.length === 0 && (
           <TableRow>
             <TableCell
-              colSpan={4}
+              colSpan={5}
               className={cn(
                 tableEmptyStateContainerVariants({
                   placement: "tableCellTall",
@@ -136,6 +237,14 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
         {data.items.map((item) => {
           const cantidad = cantidades[item.id] ?? "";
           const tieneCantidad = cantidad !== "";
+          const cantidadNum = Number(cantidad);
+          const dup =
+            tieneCantidad && Number.isFinite(cantidadNum)
+              ? controlesPorClave.get(`${item.id}|${cantidadNum}`)
+              : undefined;
+          const confirmado = !!confirmados[item.id];
+          const forzar = !!pendienteForzar[item.id];
+
           return (
             <TableRow key={item.id}>
               <TableCell className="celda-datos min-w-0 overflow-hidden">
@@ -150,7 +259,7 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
                     onChange={(e) => handleCantidad(item.id, e.target.value)}
                     className="h-6 w-14 shrink-0 self-center text-center text-sm font-normal tabular-nums"
                     aria-label={`Cantidad a transferir desde ${origenLabel}`}
-                    disabled={destino === null}
+                    disabled={!destinoSeleccionado}
                   />
                   <span
                     className={cn(
@@ -168,8 +277,56 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
               </TableCell>
               <TableCell className="celda-datos celda-datos--flush-left text-left tabular-nums">
                 <span className="pl-1">
-                  {destino === null ? "—" : tieneCantidad ? cantidad : "—"}
+                  {!destinoSeleccionado || !tieneCantidad ? "—" : cantidad}
                 </span>
+              </TableCell>
+              <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                  {dup ? (
+                    <span
+                      className={ICON_WARNING_INTERACTIVE_CLASS}
+                      title={`Transferencia igual en los últimos ${TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS} días (${formatDdMmHhMmArgentina(new Date(dup.createdAtIso))})`}
+                    >
+                      <AlertTriangle
+                        className={TABLE_ROW_ACTION_ICON_CLASS}
+                        aria-hidden
+                      />
+                      <span className="sr-only">Duplicado reciente</span>
+                    </span>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                      confirmado && "ring-2 ring-primary ring-offset-1"
+                    )}
+                    aria-label={
+                      forzar
+                        ? "Confirmar transferencia duplicada"
+                        : "Marcar control de transferencia"
+                    }
+                    title={
+                      forzar
+                        ? "Confirmar duplicado"
+                        : "Marcar control"
+                    }
+                    aria-pressed={confirmado}
+                    disabled={
+                      !destinoSeleccionado ||
+                      !tieneCantidad ||
+                      isPending ||
+                      confirmado
+                    }
+                    onClick={() => marcarControl(item.id, forzar)}
+                  >
+                    <Check
+                      className={TABLE_ROW_ACTION_ICON_CLASS}
+                      aria-hidden
+                    />
+                  </Button>
+                </div>
               </TableCell>
               <TableCell className="celda-datos celda-datos--accion-relleno-fila">
                 <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
@@ -180,7 +337,7 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
                     className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                     aria-label="Limpiar cantidad"
                     title="Limpiar cantidad"
-                    disabled={!tieneCantidad}
+                    disabled={!tieneCantidad || isPending}
                     onClick={() => limpiarFila(item.id)}
                   >
                     <Trash2

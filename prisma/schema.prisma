@@ -924,9 +924,31 @@ model ProdTienda {
   preciosListaEdicion     ProdTiendaPrecioEdicion[]
   stocks                  ProdTiendaStock[]
   estPorProd              EstPorProd[]
+  transfDepositosControles ProdStockTransfDep[]
 
   @@index([competenciaIdPxListaGeneral], map: "prod_tienda_competencia_id_px_lista_general_idx")
   @@map("prod_tienda")
+}
+
+/**
+ * Control de transferencias entre depósitos (Trans. Depósitos).
+ * Persiste cada marca del usuario para detectar duplicados recientes
+ * (mismo `cod_tienda` + origen + destino + cantidad dentro de la ventana).
+ */
+model ProdStockTransfDep {
+  id            String   @id @default(cuid())
+  codTienda     String   @map("cod_tienda")
+  /** Código estable `global_sucursales.codigo` (guaymallen | maipu). */
+  origenCodigo  String   @map("origen_codigo")
+  destinoCodigo String   @map("destino_codigo")
+  cantidad      Int
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  prodTienda ProdTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+
+  @@index([codTienda, origenCodigo, destinoCodigo, cantidad, createdAt], map: "prod_stock_transf_dep_dup_idx")
+  @@index([origenCodigo, destinoCodigo, createdAt], map: "prod_stock_transf_dep_par_fecha_idx")
+  @@map("prod_stock_transf_dep")
 }
 
 /// Competidores externos (nombre + URLs del sitio para búsqueda de precios).
