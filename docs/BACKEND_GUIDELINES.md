@@ -2110,7 +2110,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — sucursales de métricas/modal = `genera_est = true` (`listarSucursalesParaPedidoAFabrica`).
 
-*Última actualización (2026-08-12): **Stock · Trans. Depósitos** — `getTransfDepositos(origen, destino, params)`: listado stockeable con `stock_real` origen + destino; query `origen`/`destino` (sin persistencia DUX aún).
+*Última actualización (2026-08-12): **Stock · Trans. Depósitos** — `getTransfDepositos(origen, params)` lista catálogo stockeable **sin** `stock_real`; UI exige origen ≠ destino (query sanitizada).
 
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 
