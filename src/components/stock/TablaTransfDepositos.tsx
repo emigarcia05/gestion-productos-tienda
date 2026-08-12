@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, AlertTriangle, Check, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -13,11 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  registrarControlTransfDepositosAction,
-  type Sucursal,
-  type TransfDepositosData,
-} from "@/actions/stock";
+import type { Sucursal, TransfDepositosData } from "@/actions/stock";
 import {
   TableEmptyState,
   tableEmptyStateContainerVariants,
@@ -52,16 +47,11 @@ interface Props {
 
 /**
  * Grilla **Trans. Depósitos**:
- * DESCRIPCIÓN · {origen} (input+flecha) · {destino} · CONTROL (Check) · ACCIONES.
+ * DESCRIPCIÓN · {origen} (input+flecha) · {destino} · CONTROL (solo lectura) · ACCIONES.
+ * La persistencia del control se hará al exportar Excel (pendiente).
  */
 export default function TablaTransfDepositos({ data, origen, destino }: Props) {
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
-  const [confirmados, setConfirmados] = useState<Record<string, boolean>>({});
-  const [pendienteForzar, setPendienteForzar] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [controles, setControles] = useState(data.controlesRecientes);
-  const [isPending, startTransition] = useTransition();
 
   const idsKey = data.items.map((i) => i.id).join("|");
   useEffect(() => {
@@ -73,9 +63,8 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
         }
         return next;
       });
-      setControles(data.controlesRecientes);
     });
-  }, [idsKey, data.items, data.controlesRecientes]);
+  }, [idsKey, data.items]);
 
   const origenSeleccionado = origen !== null;
   const destinoSeleccionado = destino !== null;
@@ -84,24 +73,18 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
 
   const controlesPorClave = useMemo(() => {
     const map = new Map<string, { cantidad: number; createdAtIso: string }>();
-    for (const c of controles) {
+    for (const c of data.controlesRecientes) {
       const key = `${c.codTienda}|${c.cantidad}`;
       if (!map.has(key)) {
         map.set(key, { cantidad: c.cantidad, createdAtIso: c.createdAtIso });
       }
     }
     return map;
-  }, [controles]);
+  }, [data.controlesRecientes]);
 
   function handleCantidad(id: string, raw: string) {
     const limpio = raw.replace(/[^\d]/g, "");
     setCantidades((prev) => ({ ...prev, [id]: limpio }));
-    setPendienteForzar((prev) => {
-      if (!prev[id]) return prev;
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
   }
 
   function limpiarFila(id: string) {
@@ -109,66 +92,6 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
       const next = { ...prev };
       delete next[id];
       return next;
-    });
-    setPendienteForzar((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-  }
-
-  function marcarControl(itemId: string, forzar: boolean) {
-    if (!origen || !destino) return;
-    const raw = cantidades[itemId] ?? "";
-    const cantidad = Number(raw);
-    if (!Number.isFinite(cantidad) || cantidad <= 0) {
-      toast.error("Ingresá una cantidad válida.");
-      return;
-    }
-
-    startTransition(async () => {
-      const res = await registrarControlTransfDepositosAction({
-        codTienda: itemId,
-        origen,
-        destino,
-        cantidad,
-        forzar,
-      });
-      if (!res.ok) {
-        toast.error(res.error);
-        return;
-      }
-      if ("requiereConfirmacion" in res.data) {
-        const cuando = formatDdMmHhMmArgentina(
-          new Date(res.data.ultimoCreatedAtIso)
-        );
-        toast.warning(
-          `Ya hay una transferencia igual (${cuando}). Volvé a marcar CONTROL para confirmar.`,
-          { duration: 6000 }
-        );
-        setPendienteForzar((prev) => ({ ...prev, [itemId]: true }));
-        return;
-      }
-      const registrado = res.data;
-      setConfirmados((prev) => ({ ...prev, [itemId]: true }));
-      setPendienteForzar((prev) => {
-        const next = { ...prev };
-        delete next[itemId];
-        return next;
-      });
-      setControles((prev) => [
-        {
-          codTienda: itemId,
-          cantidad,
-          createdAtIso: registrado.createdAtIso,
-        },
-        ...prev,
-      ]);
-      if (registrado.eraDuplicado) {
-        toast.success("Control registrado (duplicado confirmado).");
-      } else {
-        toast.success("Control registrado.");
-      }
     });
   }
 
@@ -242,8 +165,6 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
             tieneCantidad && Number.isFinite(cantidadNum)
               ? controlesPorClave.get(`${item.id}|${cantidadNum}`)
               : undefined;
-          const confirmado = !!confirmados[item.id];
-          const forzar = !!pendienteForzar[item.id];
 
           return (
             <TableRow key={item.id}>
@@ -294,38 +215,6 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
                       <span className="sr-only">Duplicado reciente</span>
                     </span>
                   ) : null}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-                      confirmado && "ring-2 ring-primary ring-offset-1"
-                    )}
-                    aria-label={
-                      forzar
-                        ? "Confirmar transferencia duplicada"
-                        : "Marcar control de transferencia"
-                    }
-                    title={
-                      forzar
-                        ? "Confirmar duplicado"
-                        : "Marcar control"
-                    }
-                    aria-pressed={confirmado}
-                    disabled={
-                      !destinoSeleccionado ||
-                      !tieneCantidad ||
-                      isPending ||
-                      confirmado
-                    }
-                    onClick={() => marcarControl(item.id, forzar)}
-                  >
-                    <Check
-                      className={TABLE_ROW_ACTION_ICON_CLASS}
-                      aria-hidden
-                    />
-                  </Button>
                 </div>
               </TableCell>
               <TableCell className="celda-datos celda-datos--accion-relleno-fila">
@@ -337,7 +226,7 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
                     className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                     aria-label="Limpiar cantidad"
                     title="Limpiar cantidad"
-                    disabled={!tieneCantidad || isPending}
+                    disabled={!tieneCantidad}
                     onClick={() => limpiarFila(item.id)}
                   >
                     <Trash2
