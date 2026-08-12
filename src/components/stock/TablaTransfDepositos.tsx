@@ -30,11 +30,11 @@ const SUCURSAL_LABEL: Record<Sucursal, string> = {
   maipu: "MAIPÚ",
 };
 
+/** DESCRIPCIÓN 50%; bloque transferencia compacto; ACCIONES al final. */
 const PCT_DESC = 50;
-const PCT_ORIGEN = 18;
-const PCT_FLECHA = 6;
+const PCT_ORIGEN = 22;
 const PCT_DESTINO = 18;
-const PCT_ACCIONES = 8;
+const PCT_ACCIONES = 10;
 
 interface Props {
   data: TransfDepositosData;
@@ -44,8 +44,8 @@ interface Props {
 
 /**
  * Grilla **Trans. Depósitos**:
- * DESCRIPCIÓN (50%) · SUCURSAL ORIGEN (input) · → · SUCURSAL DESTINO (lectura) · ACCIONES.
- * Cabeceras origen/destino: título + nombre de sucursal del filtro.
+ * DESCRIPCIÓN · {nombre origen} (input + flecha si hay cantidad) · {nombre destino} (lectura) · ACCIONES.
+ * La flecha vive en la columna de origen para mantener el bloque origen→destino pegado.
  */
 export default function TablaTransfDepositos({ data, origen, destino }: Props) {
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
@@ -96,32 +96,17 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
       <colgroup>
         <col style={{ width: `${PCT_DESC}%` }} />
         <col style={{ width: `${PCT_ORIGEN}%` }} />
-        <col style={{ width: `${PCT_FLECHA}%` }} />
         <col style={{ width: `${PCT_DESTINO}%` }} />
         <col style={{ width: `${PCT_ACCIONES}%` }} />
       </colgroup>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <TableHead className="min-w-0 align-middle">DESCRIPCIÓN</TableHead>
-          <TableHead className="text-center align-middle leading-tight">
-            <span className="block">SUCURSAL ORIGEN</span>
-            <span className="block font-semibold text-primary">
-              {origenLabel}
-            </span>
+          <TableHead className="text-center align-middle">
+            {origenLabel}
           </TableHead>
-          <TableHead
-            className="text-center align-middle"
-            aria-label="Transferir hacia"
-          >
-            <div className="flex w-full items-center justify-center">
-              <ArrowRight className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-            </div>
-          </TableHead>
-          <TableHead className="text-center align-middle leading-tight">
-            <span className="block">SUCURSAL DESTINO</span>
-            <span className="block font-semibold text-primary">
-              {destinoLabel}
-            </span>
+          <TableHead className="text-center align-middle">
+            {destinoLabel}
           </TableHead>
           <TableHead className="text-center align-middle">ACCIONES</TableHead>
         </TableRow>
@@ -130,7 +115,7 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
         {data.items.length === 0 && (
           <TableRow>
             <TableCell
-              colSpan={5}
+              colSpan={4}
               className={cn(
                 tableEmptyStateContainerVariants({
                   placement: "tableCellTall",
@@ -156,29 +141,35 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
               <TableCell className="celda-datos min-w-0 overflow-hidden">
                 {item.descripcion}
               </TableCell>
-              <TableCell className="celda-datos">
-                <div className="flex w-full items-center justify-center">
+              <TableCell className="celda-datos celda-datos--flush-right">
+                <div className="flex w-full items-center justify-end gap-1 pr-1">
                   <Input
                     type="text"
                     inputMode="numeric"
                     value={cantidad}
                     onChange={(e) => handleCantidad(item.id, e.target.value)}
-                    className="h-6 w-16 self-center text-center text-sm font-normal tabular-nums"
+                    className="h-6 w-14 shrink-0 self-center text-center text-sm font-normal tabular-nums"
                     aria-label={`Cantidad a transferir desde ${origenLabel}`}
                     disabled={destino === null}
                   />
+                  <span
+                    className={cn(
+                      "inline-flex size-4 shrink-0 items-center justify-center text-muted-foreground",
+                      !tieneCantidad && "invisible"
+                    )}
+                    aria-hidden={!tieneCantidad}
+                  >
+                    <ArrowRight
+                      className={TABLE_ROW_ACTION_ICON_CLASS}
+                      aria-hidden
+                    />
+                  </span>
                 </div>
               </TableCell>
-              <TableCell className="celda-datos text-center">
-                <div className="flex w-full items-center justify-center text-muted-foreground">
-                  <ArrowRight
-                    className={TABLE_ROW_ACTION_ICON_CLASS}
-                    aria-hidden
-                  />
-                </div>
-              </TableCell>
-              <TableCell className="celda-datos text-center tabular-nums">
-                {destino === null ? "—" : tieneCantidad ? cantidad : "—"}
+              <TableCell className="celda-datos celda-datos--flush-left text-left tabular-nums">
+                <span className="pl-1">
+                  {destino === null ? "—" : tieneCantidad ? cantidad : "—"}
+                </span>
               </TableCell>
               <TableCell className="celda-datos celda-datos--accion-relleno-fila">
                 <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
