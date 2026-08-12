@@ -33,11 +33,11 @@ import {
 } from "@/lib/transfDepositosControl";
 
 /** DESCRIPCIÓN · origen · flecha · destino · ACCIONES (borrar / historial / aviso). */
-const PCT_DESC = 44;
-const PCT_ORIGEN = 16;
-const PCT_FLECHA = 6;
-const PCT_DESTINO = 16;
-const PCT_ACCIONES = 18;
+const PCT_DESC = 60;
+const PCT_ORIGEN = 10;
+const PCT_FLECHA = 3;
+const PCT_DESTINO = 10;
+const PCT_ACCIONES = 17;
 
 interface Props {
   data: TransfDepositosData;
