@@ -16,7 +16,6 @@ import { listarHistorialTransfDepositosProductoAction } from "@/actions/stock";
 import type { HistorialTransfDepositosSeccionDto } from "@/actions/stock";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 import { TRANSF_DEPOSITOS_VENTANA_HISTORIAL_DIAS } from "@/lib/transfDepositosControl";
-import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -75,17 +74,18 @@ export default function HistorialTransfDepositosModal({
           </Button>
         }
       >
-        <p className="text-sm text-muted-foreground line-clamp-2" title={descripcion}>
+        <p
+          className="text-sm font-medium text-foreground text-center line-clamp-2"
+          title={descripcion}
+        >
           {descripcion}
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs font-medium text-foreground text-center">
           Últimos {TRANSF_DEPOSITOS_VENTANA_HISTORIAL_DIAS} días
         </p>
 
         {loading ? (
-          <p className="text-sm text-muted-foreground py-6 text-center">
-            Cargando…
-          </p>
+          <p className="text-sm text-foreground py-6 text-center">Cargando…</p>
         ) : null}
 
         {!loading && error ? (
@@ -93,7 +93,7 @@ export default function HistorialTransfDepositosModal({
         ) : null}
 
         {!loading && !error && secciones.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6 text-center">
+          <p className="text-sm text-foreground py-6 text-center">
             Sin transferencias en los últimos{" "}
             {TRANSF_DEPOSITOS_VENTANA_HISTORIAL_DIAS} días.
           </p>
@@ -103,11 +103,7 @@ export default function HistorialTransfDepositosModal({
           !error &&
           secciones.map((sec) => (
             <section key={sec.titulo} className="space-y-2">
-              <h3
-                className={cn(
-                  "text-xs font-bold uppercase tracking-wide text-foreground"
-                )}
-              >
+              <h3 className="text-xs font-bold uppercase tracking-wide text-foreground text-center">
                 {sec.titulo}
               </h3>
               <Table variant="compact">
