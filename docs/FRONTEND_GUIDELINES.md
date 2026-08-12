@@ -1811,7 +1811,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-12): **Sidebar · STOCK** — módulo **STOCK** con **Control Stock** + **Trans. Depósitos** (`transf-depositos`); filtros sin STOCK/ORDEN + **SUCURSAL ORIGEN** / **SUCURSAL DESTINO**.
 
-*Última actualización (2026-08-12): **Trans. Depósitos** — CONTROL última columna; click abre modal historial 14 días por secciones origen→destino.*
+*Última actualización (2026-08-12): **Trans. Depósitos** — ACCIONES con Borrar + Historial + advertencia duplicado (14 días); sin columna CONTROL aparte.*
 
 *Última actualización (2026-08-10): **Sidebar · Administración** — 5 pilares: FINANZAS · LISTA PRECIOS · PEDIDO A FÁBRICA · ESTADÍSTICAS · CONFIGURACION; Est. Para Compra → `/pedido-a-fabrica`.
 

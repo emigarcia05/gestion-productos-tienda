@@ -2120,7 +2120,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — sucursales de métricas/modal = `genera_est = true` (`listarSucursalesParaPedidoAFabrica`).
 
-*Última actualización (2026-08-12): **Stock · Trans. Depósitos** — historial modal 14 días (`listarHistorialTransfDepositosProductoAction`); CONTROL última columna.*
+*Última actualización (2026-08-12): **Stock · Trans. Depósitos** — aviso duplicado y historial unificados a 14 días; ACCIONES = borrar + historial + advertencia.*
 
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 
