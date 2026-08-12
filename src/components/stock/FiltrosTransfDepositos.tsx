@@ -20,7 +20,7 @@ import FilterBar, {
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
-import type { ControlStockData, Sucursal } from "@/actions/stock";
+import type { Sucursal, TransfDepositosData } from "@/actions/stock";
 
 const SUCURSALES: { value: Sucursal; label: string }[] = [
   { value: "guaymallen", label: "GUAYMALLÉN" },
@@ -28,8 +28,7 @@ const SUCURSALES: { value: Sucursal; label: string }[] = [
 ];
 
 interface Props {
-  data: ControlStockData;
-  sucursalActual: Sucursal | null;
+  data: TransfDepositosData;
   origenActual: Sucursal | null;
   destinoActual: Sucursal | null;
   qActual: string;
@@ -39,12 +38,12 @@ interface Props {
 }
 
 /**
- * Filtros de **Trans. Depósitos**: mismos desplegables que Control Stock
- * (sin STOCK ni ORDEN) + fila **SUCURSAL ORIGEN** / **SUCURSAL DESTINO**.
+ * Filtros de **Trans. Depósitos**:
+ * 1) **SUCURSAL ORIGEN** / **SUCURSAL DESTINO**
+ * 2) **MARCA** / **RUBRO** + búsqueda (sin desplegable SUCURSAL)
  */
 export default function FiltrosTransfDepositos({
   data,
-  sucursalActual,
   origenActual,
   destinoActual,
   qActual,
@@ -76,7 +75,6 @@ export default function FiltrosTransfDepositos({
   );
 
   function buildParams(updates: {
-    sucursal?: Sucursal | null;
     origen?: Sucursal | null;
     destino?: Sucursal | null;
     q?: string;
@@ -84,8 +82,6 @@ export default function FiltrosTransfDepositos({
     rubro?: string;
   }): URLSearchParams {
     const p = new URLSearchParams();
-    const sucursal =
-      updates.sucursal !== undefined ? updates.sucursal : sucursalActual;
     const origen =
       updates.origen !== undefined ? updates.origen : origenActual;
     const destino =
@@ -94,7 +90,6 @@ export default function FiltrosTransfDepositos({
     const marcaVal = updates.marca !== undefined ? updates.marca : marcaActual;
     const rubroVal = updates.rubro !== undefined ? updates.rubro : rubroActual;
 
-    if (sucursal) p.set("sucursal", sucursal);
     if (origen) p.set("origen", origen);
     if (destino) p.set("destino", destino);
     if (qVal) p.set("q", qVal);
@@ -104,7 +99,6 @@ export default function FiltrosTransfDepositos({
   }
 
   function navigate(updates: {
-    sucursal?: Sucursal | null;
     origen?: Sucursal | null;
     destino?: Sucursal | null;
     q?: string;
@@ -116,20 +110,26 @@ export default function FiltrosTransfDepositos({
     router.push(query ? `${pathname}?${query}` : pathname);
   }
 
-  function handleSucursal(value: string) {
+  function handleOrigen(value: string) {
     if (!value) {
       navigate({
-        sucursal: null,
+        origen: null,
         marca: "",
         rubro: "",
+        q: "",
       });
+      setQ("");
       return;
     }
     navigate({
-      sucursal: value as Sucursal,
+      origen: value as Sucursal,
       marca: "",
       rubro: "",
     });
+  }
+
+  function handleDestino(value: string) {
+    navigate({ destino: value ? (value as Sucursal) : null });
   }
 
   function handleMarca(value: string) {
@@ -139,140 +139,19 @@ export default function FiltrosTransfDepositos({
     navigate({ rubro: value });
   }
 
-  function handleOrigen(value: string) {
-    navigate({ origen: value ? (value as Sucursal) : null });
-  }
-
-  function handleDestino(value: string) {
-    navigate({ destino: value ? (value as Sucursal) : null });
-  }
-
   function limpiarFiltros() {
     setQ("");
     const p = new URLSearchParams();
-    if (sucursalActual) p.set("sucursal", sucursalActual);
+    if (origenActual) p.set("origen", origenActual);
+    if (destinoActual) p.set("destino", destinoActual);
     const query = p.toString();
     router.push(query ? `${pathname}?${query}` : pathname);
   }
 
-  const sucursalSeleccionada = sucursalActual !== null;
+  const origenSeleccionado = origenActual !== null;
 
   return (
     <div className="flex flex-col gap-2">
-      <FilterBar className="filtros-contenedor-tienda bg-card">
-        <FilterRowSelection>
-          <FilaFiltrosDesplegables>
-            <FiltroIndividualContainer
-              className={FILTER_SELECT_WRAPPER_CLASS}
-              activo={sucursalActual !== null}
-              onLimpiar={() => handleSucursal("")}
-            >
-              <Select
-                value={sucursalActual ?? undefined}
-                onValueChange={(v) => handleSucursal(v)}
-              >
-                <SelectTrigger
-                  id="filtro-transf-sucursal"
-                  className="input-filtro-unificado"
-                >
-                  <SelectValue placeholder="SUCURSAL" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  {SUCURSALES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FiltroIndividualContainer>
-            <FiltroIndividualContainer
-              className={FILTER_SELECT_WRAPPER_CLASS}
-              activo={Boolean(marcaActual)}
-              onLimpiar={() => handleMarca("")}
-            >
-              <Select
-                value={marcaActual || undefined}
-                onValueChange={(v) => handleMarca(v)}
-                disabled={!sucursalSeleccionada}
-              >
-                <SelectTrigger
-                  id="filtro-transf-marca"
-                  className="input-filtro-unificado"
-                >
-                  <SelectValue placeholder="MARCA" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  {data.marcas.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FiltroIndividualContainer>
-            <FiltroIndividualContainer
-              className={FILTER_SELECT_WRAPPER_CLASS}
-              activo={Boolean(rubroActual)}
-              onLimpiar={() => handleRubro("")}
-            >
-              <Select
-                value={rubroActual || undefined}
-                onValueChange={(v) => handleRubro(v)}
-                disabled={!sucursalSeleccionada}
-              >
-                <SelectTrigger
-                  id="filtro-transf-rubro"
-                  className="input-filtro-unificado"
-                >
-                  <SelectValue placeholder="RUBRO" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  {data.rubros.map((r) => (
-                    <SelectItem key={r} value={r}>
-                      {r}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FiltroIndividualContainer>
-          </FilaFiltrosDesplegables>
-        </FilterRowSelection>
-        <div className="flex items-center gap-3">
-          <FilterRowSearch className="flex-1">
-            <FiltroBusquedaInput
-              id="filtro-transf-busqueda"
-              placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
-              value={q}
-              onChange={handleQChange}
-              isDebouncing={isDebouncing}
-              inputRef={inputRef}
-              disabled={!sucursalSeleccionada}
-            />
-          </FilterRowSearch>
-          <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
-          <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
-            {totalItems.toLocaleString("es-AR")} ÍTEM
-            {totalItems !== 1 ? "S" : ""}
-          </span>
-        </div>
-      </FilterBar>
-
       <FilterBar className="filtros-contenedor-tienda bg-card">
         <FilterRowSelection>
           <FilaFiltrosDesplegables>
@@ -336,6 +215,91 @@ export default function FiltrosTransfDepositos({
             </FiltroIndividualContainer>
           </FilaFiltrosDesplegables>
         </FilterRowSelection>
+      </FilterBar>
+
+      <FilterBar className="filtros-contenedor-tienda bg-card">
+        <FilterRowSelection>
+          <FilaFiltrosDesplegables>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(marcaActual)}
+              onLimpiar={() => handleMarca("")}
+            >
+              <Select
+                value={marcaActual || undefined}
+                onValueChange={(v) => handleMarca(v)}
+                disabled={!origenSeleccionado}
+              >
+                <SelectTrigger
+                  id="filtro-transf-marca"
+                  className="input-filtro-unificado"
+                >
+                  <SelectValue placeholder="MARCA" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {data.marcas.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {m}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FiltroIndividualContainer>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(rubroActual)}
+              onLimpiar={() => handleRubro("")}
+            >
+              <Select
+                value={rubroActual || undefined}
+                onValueChange={(v) => handleRubro(v)}
+                disabled={!origenSeleccionado}
+              >
+                <SelectTrigger
+                  id="filtro-transf-rubro"
+                  className="input-filtro-unificado"
+                >
+                  <SelectValue placeholder="RUBRO" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {data.rubros.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FiltroIndividualContainer>
+          </FilaFiltrosDesplegables>
+        </FilterRowSelection>
+        <div className="flex items-center gap-3">
+          <FilterRowSearch className="flex-1">
+            <FiltroBusquedaInput
+              id="filtro-transf-busqueda"
+              placeholder="BUSCAR POR DESCRIPCIÓN O CÓDIGO..."
+              value={q}
+              onChange={handleQChange}
+              isDebouncing={isDebouncing}
+              inputRef={inputRef}
+              disabled={!origenSeleccionado}
+            />
+          </FilterRowSearch>
+          <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+          <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
+            {totalItems.toLocaleString("es-AR")} ÍTEM
+            {totalItems !== 1 ? "S" : ""}
+          </span>
+        </div>
       </FilterBar>
     </div>
   );

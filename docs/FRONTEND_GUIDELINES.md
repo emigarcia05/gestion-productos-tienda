@@ -885,7 +885,7 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
 
 - Sidebar Vendedor: módulo **STOCK** (antes enlace directo **CONTROL STOCK**) con dos hojas: **Control Stock** y **Trans. Depósitos**.
 - **Control Stock**: sin cambios de negocio; header `title="Stock"` / `subtitle="Control Stock"`; ruta canónica `GP_ROUTES.ayudaVendedor.controlStock`.
-- **Trans. Depósitos** (`GP_ROUTES.ayudaVendedor.transfDepositos` → rewrite `/transf-depositos`): mismos filtros que Control Stock **excepto** desplegables **STOCK** y **ORDEN**; segunda `FilterBar` con **SUCURSAL ORIGEN** y **SUCURSAL DESTINO** (query `origen` / `destino`). Header `Stock` / `Trans. Depósitos`. Grilla/export Excel DUX: pendiente.
+- **Trans. Depósitos** (`GP_ROUTES.ayudaVendedor.transfDepositos` → rewrite `/transf-depositos`): **Fila 1** `FilterBar` con **SUCURSAL ORIGEN** / **SUCURSAL DESTINO** (query `origen` / `destino`); **Fila 2** **MARCA** / **RUBRO** + búsqueda (sin desplegable **SUCURSAL**; marca/rubro/búsqueda se habilitan con origen). Header `Stock` / `Trans. Depósitos`. Grilla (`TablaTransfDepositos`): **DESCRIPCIÓN** · **SUCURSAL ORIGEN** · **SUCURSAL DESTINO** (`stock_real` de cada depósito; destino `—` si no hay destino). Export Excel DUX: pendiente.
 
 ### Stock — Acciones del encabezado (Control Stock)
 
@@ -1810,6 +1810,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-11): **Entrada app** — `/`, `/finanzas` y `/marketing` son hubs vacíos; datos solo al elegir ruta hoja (sin redirect a Px Sugeridos/Tesorería/Calendario).
 
 *Última actualización (2026-08-12): **Sidebar · STOCK** — módulo **STOCK** con **Control Stock** + **Trans. Depósitos** (`transf-depositos`); filtros sin STOCK/ORDEN + **SUCURSAL ORIGEN** / **SUCURSAL DESTINO**.
+
+*Última actualización (2026-08-12): **Trans. Depósitos** — orden filtros: origen/destino primero; sin SUCURSAL; grilla 3 columnas DESCRIPCIÓN / SUCURSAL ORIGEN / SUCURSAL DESTINO.*
 
 *Última actualización (2026-08-10): **Sidebar · Administración** — 5 pilares: FINANZAS · LISTA PRECIOS · PEDIDO A FÁBRICA · ESTADÍSTICAS · CONFIGURACION; Est. Para Compra → `/pedido-a-fabrica`.
 

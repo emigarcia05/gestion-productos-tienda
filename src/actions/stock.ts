@@ -185,6 +185,170 @@ export async function getControlStock(
   }
 }
 
+export interface ItemTransfDepositos {
+  /** `cod_tienda` (`prod_tienda`); clave estable para tabla. */
+  id: string;
+  codItem: string;
+  descripcion: string;
+  marca: string | null;
+  rubro: string | null;
+  stockOrigen: number;
+  /** `null` si aún no hay sucursal destino seleccionada. */
+  stockDestino: number | null;
+}
+
+export interface TransfDepositosData {
+  items: ItemTransfDepositos[];
+  total: number;
+  totalPaginas: number;
+  marcas: string[];
+  rubros: string[];
+}
+
+export interface GetTransfDepositosParams {
+  q?: string;
+  marca?: string;
+  rubro?: string;
+  pagina?: number;
+}
+
+const emptyTransfDepositos: TransfDepositosData = {
+  items: [],
+  total: 0,
+  totalPaginas: 0,
+  marcas: [],
+  rubros: [],
+};
+
+/**
+ * Listado para **Trans. Depósitos**: catálogo stockeable con
+ * `stock_real` del depósito **origen** y, si hay, del **destino**.
+ * Requiere permiso `PERMISOS.stock.acceso` y sucursal origen.
+ */
+export async function getTransfDepositos(
+  origen: Sucursal | null,
+  destino: Sucursal | null,
+  params: GetTransfDepositosParams = {}
+): Promise<TransfDepositosData> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.stock.acceso)) {
+    return emptyTransfDepositos;
+  }
+  if (!origen || !z.enum(["guaymallen", "maipu"]).safeParse(origen).success) {
+    return emptyTransfDepositos;
+  }
+  if (
+    destino !== null &&
+    !z.enum(["guaymallen", "maipu"]).safeParse(destino).success
+  ) {
+    return emptyTransfDepositos;
+  }
+
+  const parsedParams = getControlStockParamsSchema.safeParse(params);
+  if (!parsedParams.success) {
+    return emptyTransfDepositos;
+  }
+  const {
+    q = "",
+    marca = "",
+    rubro = "",
+    pagina: paginaNum = 1,
+  } = parsedParams.data;
+  const skip = (paginaNum - 1) * PAGE_SIZE;
+
+  const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
+  const idDepositoOrigen = getIdDepositoPorSucursalCodigo(origen);
+  const idDepositoDestino =
+    destino !== null ? getIdDepositoPorSucursalCodigo(destino) : null;
+  const depositosIds = idDepositoDestino
+    ? [idDepositoOrigen, idDepositoDestino]
+    : [idDepositoOrigen];
+
+  function baseWhere(exclude?: "marca" | "rubro"): Prisma.ProdTiendaWhereInput[] {
+    const parts: Prisma.ProdTiendaWhereInput[] = [whereProdTiendaStockeable()];
+    if (textFilter.AND?.length) parts.push(textFilter);
+    if (exclude !== "marca" && marca) parts.push({ marca });
+    if (exclude !== "rubro" && rubro) parts.push({ rubro });
+    return parts;
+  }
+
+  const toWhereWithNotNull = (
+    exclude: "marca" | "rubro"
+  ): Prisma.ProdTiendaWhereInput => {
+    const parts = baseWhere(exclude);
+    const key = exclude;
+    const notNull = { [key]: { not: null } } as Prisma.ProdTiendaWhereInput;
+    return parts.length > 0 ? { AND: [...parts, notNull] } : notNull;
+  };
+
+  const whereItems: Prisma.ProdTiendaWhereInput =
+    baseWhere().length > 0 ? { AND: baseWhere() } : {};
+  const whereMarcas = toWhereWithNotNull("marca");
+  const whereRubros = toWhereWithNotNull("rubro");
+
+  try {
+    const [rows, total, marcasDistinct, rubrosDistinct] = await Promise.all([
+      prisma.prodTienda.findMany({
+        where: whereItems,
+        orderBy: { descripcionTienda: "asc" },
+        skip,
+        take: PAGE_SIZE,
+        include: {
+          stocks: {
+            where: { idDeposito: { in: depositosIds } },
+            select: { idDeposito: true, stockReal: true },
+          },
+        },
+      }),
+      prisma.prodTienda.count({ where: whereItems }),
+      prisma.prodTienda.findMany({
+        select: { marca: true },
+        distinct: ["marca"],
+        where: whereMarcas,
+        orderBy: { marca: "asc" },
+      }),
+      prisma.prodTienda.findMany({
+        select: { rubro: true },
+        distinct: ["rubro"],
+        where: whereRubros,
+        orderBy: { rubro: "asc" },
+      }),
+    ]);
+
+    const items: ItemTransfDepositos[] = rows.map((r) => {
+      const stockOrigen =
+        r.stocks.find((s) => s.idDeposito === idDepositoOrigen)?.stockReal ?? 0;
+      const stockDestino =
+        idDepositoDestino == null
+          ? null
+          : (r.stocks.find((s) => s.idDeposito === idDepositoDestino)
+              ?.stockReal ?? 0);
+      return {
+        id: r.codTienda,
+        codItem: r.codTienda,
+        descripcion: r.descripcionTienda ?? "",
+        marca: r.marca,
+        rubro: r.rubro,
+        stockOrigen,
+        stockDestino,
+      };
+    });
+
+    const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
+
+    return {
+      items,
+      total,
+      totalPaginas,
+      marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => m.marca!),
+      rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => r.rubro!),
+    };
+  } catch (e) {
+    console.error("[getTransfDepositos]", e);
+    return emptyTransfDepositos;
+  }
+}
+
 const codTiendasExcelSchema = z.array(listaPreciosCodTiendaSchema).optional().default([]);
 
 /**

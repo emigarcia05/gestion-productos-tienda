@@ -2,14 +2,13 @@ import { redirect } from "next/navigation";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
-import { getControlStock, type Sucursal } from "@/actions/stock";
+import { getTransfDepositos, type Sucursal } from "@/actions/stock";
 import TransfDepositosPageClient from "@/components/stock/TransfDepositosPageClient";
 
 export const dynamic = "force-dynamic";
 
 interface Props {
   searchParams: Promise<{
-    sucursal?: string;
     origen?: string;
     destino?: string;
     q?: string;
@@ -30,7 +29,6 @@ export default async function TransfDepositosPage({ searchParams }: Props) {
   }
 
   const {
-    sucursal,
     origen,
     destino,
     q = "",
@@ -39,13 +37,12 @@ export default async function TransfDepositosPage({ searchParams }: Props) {
     pagina = "1",
   } = await searchParams;
 
-  const sucursalValida = parseSucursal(sucursal);
   const origenValido = parseSucursal(origen);
   const destinoValido = parseSucursal(destino);
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
-  const data = sucursalValida
-    ? await getControlStock(sucursalValida, {
+  const data = origenValido
+    ? await getTransfDepositos(origenValido, destinoValido, {
         q,
         marca,
         rubro,
@@ -56,12 +53,19 @@ export default async function TransfDepositosPage({ searchParams }: Props) {
   return (
     <TransfDepositosPageClient
       data={data}
-      sucursalValida={sucursalValida}
       origen={origenValido}
       destino={destinoValido}
       q={q}
       marca={marca}
       rubro={rubro}
+      paginaNum={paginaNum}
+      paramsPagina={{
+        origen: origenValido ?? "",
+        destino: destinoValido ?? "",
+        q,
+        marca,
+        rubro,
+      }}
     />
   );
 }
