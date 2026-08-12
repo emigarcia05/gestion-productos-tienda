@@ -885,7 +885,7 @@ La sincronización se inicia solo desde los botones existentes (header y/o slide
 
 - Sidebar Vendedor: módulo **STOCK** (antes enlace directo **CONTROL STOCK**) con dos hojas: **Control Stock** y **Trans. Depósitos**.
 - **Control Stock**: sin cambios de negocio; header `title="Stock"` / `subtitle="Control Stock"`; ruta canónica `GP_ROUTES.ayudaVendedor.controlStock`.
-- **Trans. Depósitos** (`GP_ROUTES.ayudaVendedor.transfDepositos` → rewrite `/transf-depositos`): **Fila 1** `FilterBar` con **SUCURSAL ORIGEN** / **SUCURSAL DESTINO** (query `origen` / `destino`; **siempre distintas** — cada Select excluye la otra; si se igualan se limpia destino). **Fila 2** **MARCA** / **RUBRO** + búsqueda (sin desplegable **SUCURSAL**; marca/rubro/búsqueda se habilitan con origen). Header `Stock` / `Trans. Depósitos`. Grilla (`TablaTransfDepositos`, `colgroup` 44/16/6/16/10/8): **DESCRIPCIÓN** · cabecera = **solo nombre** origen (`Input` **centrado** bajo el título) · columna flecha **`ArrowRight`** (vacía en cabecera; ícono centrado, visible solo con cantidad) · cabecera = **solo nombre** destino (cantidad solo lectura **centrada**) · **CONTROL** (cabecera `Check`; solo lectura — `AlertTriangle` si duplicado reciente en `prod_stock_transf_dep` / 7 días; persistencia al export Excel pendiente) · **ACCIONES** (`Trash2`). Sin destino: input deshabilitado. Sin stock actual.
+- **Trans. Depósitos** (`GP_ROUTES.ayudaVendedor.transfDepositos` → rewrite `/transf-depositos`): **Fila 1** `FilterBar` con **SUCURSAL ORIGEN** / **SUCURSAL DESTINO** (query `origen` / `destino`; **siempre distintas**). **Fila 2** **MARCA** / **RUBRO** + búsqueda. Header `Stock` / `Trans. Depósitos`. Grilla (`TablaTransfDepositos`, `colgroup` 44/16/6/16/8/10): **DESCRIPCIÓN** · nombre origen (`Input` centrado) · flecha centrada (solo con cantidad) · nombre destino (lectura centrada) · **ACCIONES** (`Trash2`) · **CONTROL** (última columna; botón `Check` abre **`HistorialTransfDepositosModal`**: transferencias del producto en **14 días**, una sección por par origen→destino con tabla **FECHA** / **CANTIDAD**; `AlertTriangle` si hay duplicado del par actual en 7 días). Persistencia de controles al export Excel: pendiente.
 
 ### Stock — Acciones del encabezado (Control Stock)
 
@@ -1811,7 +1811,7 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 
 *Última actualización (2026-08-12): **Sidebar · STOCK** — módulo **STOCK** con **Control Stock** + **Trans. Depósitos** (`transf-depositos`); filtros sin STOCK/ORDEN + **SUCURSAL ORIGEN** / **SUCURSAL DESTINO**.
 
-*Última actualización (2026-08-12): **Trans. Depósitos** — columna flecha aparte; input/flecha/destino centrados bajo títulos.*
+*Última actualización (2026-08-12): **Trans. Depósitos** — CONTROL última columna; click abre modal historial 14 días por secciones origen→destino.*
 
 *Última actualización (2026-08-10): **Sidebar · Administración** — 5 pilares: FINANZAS · LISTA PRECIOS · PEDIDO A FÁBRICA · ESTADÍSTICAS · CONFIGURACION; Est. Para Compra → `/pedido-a-fabrica`.
 

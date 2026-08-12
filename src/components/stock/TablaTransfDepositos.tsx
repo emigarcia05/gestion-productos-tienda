@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Sucursal, TransfDepositosData } from "@/actions/stock";
+import HistorialTransfDepositosModal from "@/components/stock/HistorialTransfDepositosModal";
 import {
   TableEmptyState,
   tableEmptyStateContainerVariants,
@@ -26,20 +27,18 @@ import {
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
-import { TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS } from "@/lib/transfDepositosControl";
+import {
+  SUCURSAL_LABEL_TRANSF,
+  TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS,
+} from "@/lib/transfDepositosControl";
 
-const SUCURSAL_LABEL: Record<Sucursal, string> = {
-  guaymallen: "GUAYMALLÉN",
-  maipu: "MAIPÚ",
-};
-
-/** Bloque transferencia centrado: origen | flecha | destino. */
+/** Bloque transferencia centrado; CONTROL última a la derecha. */
 const PCT_DESC = 44;
 const PCT_ORIGEN = 16;
 const PCT_FLECHA = 6;
 const PCT_DESTINO = 16;
-const PCT_CONTROL = 10;
 const PCT_ACCIONES = 8;
+const PCT_CONTROL = 10;
 
 interface Props {
   data: TransfDepositosData;
@@ -49,11 +48,14 @@ interface Props {
 
 /**
  * Grilla **Trans. Depósitos**:
- * DESCRIPCIÓN · {origen} · → · {destino} · CONTROL · ACCIONES.
- * Input / flecha / valor centrados bajo sus columnas.
+ * DESCRIPCIÓN · {origen} · → · {destino} · ACCIONES · CONTROL (historial modal).
  */
 export default function TablaTransfDepositos({ data, origen, destino }: Props) {
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
+  const [historial, setHistorial] = useState<{
+    codTienda: string;
+    descripcion: string;
+  } | null>(null);
 
   const idsKey = data.items.map((i) => i.id).join("|");
   useEffect(() => {
@@ -70,8 +72,8 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
 
   const origenSeleccionado = origen !== null;
   const destinoSeleccionado = destino !== null;
-  const origenLabel = origen ? SUCURSAL_LABEL[origen] : "—";
-  const destinoLabel = destino ? SUCURSAL_LABEL[destino] : "—";
+  const origenLabel = origen ? SUCURSAL_LABEL_TRANSF[origen] : "—";
+  const destinoLabel = destino ? SUCURSAL_LABEL_TRANSF[destino] : "—";
 
   const controlesPorClave = useMemo(() => {
     const map = new Map<string, { cantidad: number; createdAtIso: string }>();
@@ -109,146 +111,178 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
   }
 
   return (
-    <Table variant="compact">
-      <colgroup>
-        <col style={{ width: `${PCT_DESC}%` }} />
-        <col style={{ width: `${PCT_ORIGEN}%` }} />
-        <col style={{ width: `${PCT_FLECHA}%` }} />
-        <col style={{ width: `${PCT_DESTINO}%` }} />
-        <col style={{ width: `${PCT_CONTROL}%` }} />
-        <col style={{ width: `${PCT_ACCIONES}%` }} />
-      </colgroup>
-      <TableHeader>
-        <TableRow className="hover:bg-transparent">
-          <TableHead className="min-w-0 align-middle">DESCRIPCIÓN</TableHead>
-          <TableHead className="text-center align-middle">
-            {origenLabel}
-          </TableHead>
-          <TableHead
-            className="text-center align-middle"
-            aria-label="Transferir hacia"
-          />
-          <TableHead className="text-center align-middle">
-            {destinoLabel}
-          </TableHead>
-          <TableHead
-            className="text-center align-middle"
-            aria-label="Control de transferencia"
-          >
-            <div className="flex w-full items-center justify-center">
-              <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-            </div>
-          </TableHead>
-          <TableHead className="text-center align-middle">ACCIONES</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.items.length === 0 && (
-          <TableRow>
-            <TableCell
-              colSpan={6}
-              className={cn(
-                tableEmptyStateContainerVariants({
-                  placement: "tableCellTall",
-                  textSize: "xs",
-                })
-              )}
+    <>
+      <Table variant="compact">
+        <colgroup>
+          <col style={{ width: `${PCT_DESC}%` }} />
+          <col style={{ width: `${PCT_ORIGEN}%` }} />
+          <col style={{ width: `${PCT_FLECHA}%` }} />
+          <col style={{ width: `${PCT_DESTINO}%` }} />
+          <col style={{ width: `${PCT_ACCIONES}%` }} />
+          <col style={{ width: `${PCT_CONTROL}%` }} />
+        </colgroup>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="min-w-0 align-middle">DESCRIPCIÓN</TableHead>
+            <TableHead className="text-center align-middle">
+              {origenLabel}
+            </TableHead>
+            <TableHead
+              className="text-center align-middle"
+              aria-label="Transferir hacia"
+            />
+            <TableHead className="text-center align-middle">
+              {destinoLabel}
+            </TableHead>
+            <TableHead className="text-center align-middle">ACCIONES</TableHead>
+            <TableHead
+              className="text-center align-middle"
+              aria-label="Historial de transferencias"
             >
-              <span
-                className={tableEmptyStateMessageVariants({
-                  maxWidth: "full",
-                })}
-              >
-                Sin resultados
-              </span>
-            </TableCell>
+              <div className="flex w-full items-center justify-center">
+                <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+              </div>
+            </TableHead>
           </TableRow>
-        )}
-        {data.items.map((item) => {
-          const cantidad = cantidades[item.id] ?? "";
-          const tieneCantidad = cantidad !== "";
-          const cantidadNum = Number(cantidad);
-          const dup =
-            tieneCantidad && Number.isFinite(cantidadNum)
-              ? controlesPorClave.get(`${item.id}|${cantidadNum}`)
-              : undefined;
+        </TableHeader>
+        <TableBody>
+          {data.items.length === 0 && (
+            <TableRow>
+              <TableCell
+                colSpan={6}
+                className={cn(
+                  tableEmptyStateContainerVariants({
+                    placement: "tableCellTall",
+                    textSize: "xs",
+                  })
+                )}
+              >
+                <span
+                  className={tableEmptyStateMessageVariants({
+                    maxWidth: "full",
+                  })}
+                >
+                  Sin resultados
+                </span>
+              </TableCell>
+            </TableRow>
+          )}
+          {data.items.map((item) => {
+            const cantidad = cantidades[item.id] ?? "";
+            const tieneCantidad = cantidad !== "";
+            const cantidadNum = Number(cantidad);
+            const dup =
+              tieneCantidad && Number.isFinite(cantidadNum)
+                ? controlesPorClave.get(`${item.id}|${cantidadNum}`)
+                : undefined;
 
-          return (
-            <TableRow key={item.id}>
-              <TableCell className="celda-datos min-w-0 overflow-hidden">
-                {item.descripcion}
-              </TableCell>
-              <TableCell className="celda-datos text-center">
-                <div className="flex w-full items-center justify-center">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    value={cantidad}
-                    onChange={(e) => handleCantidad(item.id, e.target.value)}
-                    className="h-6 w-14 shrink-0 self-center text-center text-sm font-normal tabular-nums"
-                    aria-label={`Cantidad a transferir desde ${origenLabel}`}
-                    disabled={!destinoSeleccionado}
-                  />
-                </div>
-              </TableCell>
-              <TableCell className="celda-datos text-center">
-                <div className="flex w-full items-center justify-center text-muted-foreground">
-                  <span
-                    className={cn(
-                      "inline-flex size-4 shrink-0 items-center justify-center",
-                      !tieneCantidad && "invisible"
-                    )}
-                    aria-hidden={!tieneCantidad}
-                  >
-                    <ArrowRight
-                      className={TABLE_ROW_ACTION_ICON_CLASS}
-                      aria-hidden
+            return (
+              <TableRow key={item.id}>
+                <TableCell className="celda-datos min-w-0 overflow-hidden">
+                  {item.descripcion}
+                </TableCell>
+                <TableCell className="celda-datos text-center">
+                  <div className="flex w-full items-center justify-center">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      value={cantidad}
+                      onChange={(e) => handleCantidad(item.id, e.target.value)}
+                      className="h-6 w-14 shrink-0 self-center text-center text-sm font-normal tabular-nums"
+                      aria-label={`Cantidad a transferir desde ${origenLabel}`}
+                      disabled={!destinoSeleccionado}
                     />
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell className="celda-datos text-center tabular-nums">
-                {!destinoSeleccionado || !tieneCantidad ? "—" : cantidad}
-              </TableCell>
-              <TableCell className="celda-datos celda-datos--accion-relleno-fila">
-                <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                  {dup ? (
+                  </div>
+                </TableCell>
+                <TableCell className="celda-datos text-center">
+                  <div className="flex w-full items-center justify-center text-muted-foreground">
                     <span
-                      className={ICON_WARNING_INTERACTIVE_CLASS}
-                      title={`Transferencia igual en los últimos ${TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS} días (${formatDdMmHhMmArgentina(new Date(dup.createdAtIso))})`}
+                      className={cn(
+                        "inline-flex size-4 shrink-0 items-center justify-center",
+                        !tieneCantidad && "invisible"
+                      )}
+                      aria-hidden={!tieneCantidad}
                     >
-                      <AlertTriangle
+                      <ArrowRight
                         className={TABLE_ROW_ACTION_ICON_CLASS}
                         aria-hidden
                       />
-                      <span className="sr-only">Duplicado reciente</span>
                     </span>
-                  ) : null}
-                </div>
-              </TableCell>
-              <TableCell className="celda-datos celda-datos--accion-relleno-fila">
-                <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                    aria-label="Limpiar cantidad"
-                    title="Limpiar cantidad"
-                    disabled={!tieneCantidad}
-                    onClick={() => limpiarFila(item.id)}
-                  >
-                    <Trash2
-                      className={TABLE_ROW_ACTION_ICON_CLASS}
-                      aria-hidden
-                    />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                  </div>
+                </TableCell>
+                <TableCell className="celda-datos text-center tabular-nums">
+                  {!destinoSeleccionado || !tieneCantidad ? "—" : cantidad}
+                </TableCell>
+                <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                  <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                      aria-label="Limpiar cantidad"
+                      title="Limpiar cantidad"
+                      disabled={!tieneCantidad}
+                      onClick={() => limpiarFila(item.id)}
+                    >
+                      <Trash2
+                        className={TABLE_ROW_ACTION_ICON_CLASS}
+                        aria-hidden
+                      />
+                    </Button>
+                  </div>
+                </TableCell>
+                <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                  <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                    {dup ? (
+                      <span
+                        className={ICON_WARNING_INTERACTIVE_CLASS}
+                        title={`Transferencia igual en los últimos ${TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS} días (${formatDdMmHhMmArgentina(new Date(dup.createdAtIso))})`}
+                      >
+                        <AlertTriangle
+                          className={TABLE_ROW_ACTION_ICON_CLASS}
+                          aria-hidden
+                        />
+                        <span className="sr-only">Duplicado reciente</span>
+                      </span>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                      aria-label="Ver historial de transferencias"
+                      title="Ver historial"
+                      onClick={() =>
+                        setHistorial({
+                          codTienda: item.id,
+                          descripcion: item.descripcion,
+                        })
+                      }
+                    >
+                      <Check
+                        className={TABLE_ROW_ACTION_ICON_CLASS}
+                        aria-hidden
+                      />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+
+      {historial ? (
+        <HistorialTransfDepositosModal
+          open={historial !== null}
+          onOpenChange={(open) => {
+            if (!open) setHistorial(null);
+          }}
+          codTienda={historial.codTienda}
+          descripcion={historial.descripcion}
+        />
+      ) : null}
+    </>
   );
 }

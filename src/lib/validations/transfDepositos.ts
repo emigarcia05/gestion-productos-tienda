@@ -20,3 +20,7 @@ export const registrarControlTransfDepositosSchema = z
 export type RegistrarControlTransfDepositosInput = z.infer<
   typeof registrarControlTransfDepositosSchema
 >;
+
+export const listarHistorialTransfDepositosProductoSchema = z.object({
+  codTienda: listaPreciosCodTiendaSchema,
+});

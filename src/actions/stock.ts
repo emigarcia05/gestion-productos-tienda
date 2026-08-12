@@ -11,7 +11,10 @@ import { z } from "zod";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { getControlStockParamsSchema } from "@/lib/validations/stock";
 import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
-import { registrarControlTransfDepositosSchema } from "@/lib/validations/transfDepositos";
+import {
+  listarHistorialTransfDepositosProductoSchema,
+  registrarControlTransfDepositosSchema,
+} from "@/lib/validations/transfDepositos";
 import { GP_INTERNAL, GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import {
   getIdDepositoPorSucursalCodigo,
@@ -203,6 +206,18 @@ export type ControlTransfDepositosRecienteDto = {
   createdAtIso: string;
 };
 
+export type HistorialTransfDepositosItemDto = {
+  createdAtIso: string;
+  cantidad: number;
+};
+
+export type HistorialTransfDepositosSeccionDto = {
+  origenCodigo: Sucursal;
+  destinoCodigo: Sucursal;
+  titulo: string;
+  items: HistorialTransfDepositosItemDto[];
+};
+
 export interface TransfDepositosData {
   items: ItemTransfDepositos[];
   total: number;
@@ -388,6 +403,35 @@ export async function registrarControlTransfDepositosAction(
   revalidatePath(GP_ROUTES.ayudaVendedor.transfDepositos);
   revalidatePath(GP_INTERNAL.ayudaVendedor.transfDepositos);
   return { ok: true, data: result.data };
+}
+
+/**
+ * Historial de transferencias de un producto (últimos 14 días),
+ * agrupado por par origen → destino.
+ */
+export async function listarHistorialTransfDepositosProductoAction(
+  raw: unknown
+): Promise<ActionResult<HistorialTransfDepositosSeccionDto[]>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.stock.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  const parsed = listarHistorialTransfDepositosProductoSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  try {
+    const { listarHistorialTransfDepositosPorProducto } = await import(
+      "@/services/transfDepositos.service"
+    );
+    const secciones = await listarHistorialTransfDepositosPorProducto(
+      parsed.data.codTienda
+    );
+    return { ok: true, data: secciones };
+  } catch (e) {
+    console.error("[listarHistorialTransfDepositosProductoAction]", e);
+    return { ok: false, error: "Error al cargar historial." };
+  }
 }
 
 const codTiendasExcelSchema = z.array(listaPreciosCodTiendaSchema).optional().default([]);
