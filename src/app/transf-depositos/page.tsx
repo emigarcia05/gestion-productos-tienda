@@ -38,11 +38,16 @@ export default async function TransfDepositosPage({ searchParams }: Props) {
   } = await searchParams;
 
   const origenValido = parseSucursal(origen);
-  const destinoValido = parseSucursal(destino);
+  const destinoParseado = parseSucursal(destino);
+  /** Origen y destino no pueden coincidir. */
+  const destinoValido =
+    destinoParseado !== null && destinoParseado !== origenValido
+      ? destinoParseado
+      : null;
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
   const data = origenValido
-    ? await getTransfDepositos(origenValido, destinoValido, {
+    ? await getTransfDepositos(origenValido, {
         q,
         marca,
         rubro,

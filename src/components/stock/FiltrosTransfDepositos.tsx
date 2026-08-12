@@ -121,15 +121,24 @@ export default function FiltrosTransfDepositos({
       setQ("");
       return;
     }
+    const nuevoOrigen = value as Sucursal;
     navigate({
-      origen: value as Sucursal,
+      origen: nuevoOrigen,
+      /** Origen y destino siempre distintos. */
+      destino: destinoActual === nuevoOrigen ? null : destinoActual,
       marca: "",
       rubro: "",
     });
   }
 
   function handleDestino(value: string) {
-    navigate({ destino: value ? (value as Sucursal) : null });
+    if (!value) {
+      navigate({ destino: null });
+      return;
+    }
+    const nuevoDestino = value as Sucursal;
+    if (nuevoDestino === origenActual) return;
+    navigate({ destino: nuevoDestino });
   }
 
   function handleMarca(value: string) {
@@ -176,11 +185,13 @@ export default function FiltrosTransfDepositos({
                   align="start"
                   className="select-content-filtro"
                 >
-                  {SUCURSALES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
+                  {SUCURSALES.filter((s) => s.value !== destinoActual).map(
+                    (s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    )
+                  )}
                 </SelectContent>
               </Select>
             </FiltroIndividualContainer>
@@ -205,11 +216,13 @@ export default function FiltrosTransfDepositos({
                   align="start"
                   className="select-content-filtro"
                 >
-                  {SUCURSALES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
+                  {SUCURSALES.filter((s) => s.value !== origenActual).map(
+                    (s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    )
+                  )}
                 </SelectContent>
               </Select>
             </FiltroIndividualContainer>

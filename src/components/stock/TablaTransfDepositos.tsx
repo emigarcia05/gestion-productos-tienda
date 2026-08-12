@@ -86,7 +86,7 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
         placement="blockedPanel"
         textSize="sm"
         maxWidth="full"
-        message="Seleccioná sucursal origen (y destino) para ver el stock."
+        message="Seleccioná sucursal origen y destino (distintas) para transferir."
       />
     );
   }

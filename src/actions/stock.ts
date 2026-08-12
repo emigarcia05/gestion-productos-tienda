@@ -192,9 +192,6 @@ export interface ItemTransfDepositos {
   descripcion: string;
   marca: string | null;
   rubro: string | null;
-  stockOrigen: number;
-  /** `null` si aún no hay sucursal destino seleccionada. */
-  stockDestino: number | null;
 }
 
 export interface TransfDepositosData {
@@ -221,13 +218,12 @@ const emptyTransfDepositos: TransfDepositosData = {
 };
 
 /**
- * Listado para **Trans. Depósitos**: catálogo stockeable con
- * `stock_real` del depósito **origen** y, si hay, del **destino**.
+ * Listado para **Trans. Depósitos**: catálogo stockeable (descripción / filtros).
+ * **No** expone `stock_real`: la UI solo captura cantidades a transferir.
  * Requiere permiso `PERMISOS.stock.acceso` y sucursal origen.
  */
 export async function getTransfDepositos(
   origen: Sucursal | null,
-  destino: Sucursal | null,
   params: GetTransfDepositosParams = {}
 ): Promise<TransfDepositosData> {
   const rol = await getRol();
@@ -235,12 +231,6 @@ export async function getTransfDepositos(
     return emptyTransfDepositos;
   }
   if (!origen || !z.enum(["guaymallen", "maipu"]).safeParse(origen).success) {
-    return emptyTransfDepositos;
-  }
-  if (
-    destino !== null &&
-    !z.enum(["guaymallen", "maipu"]).safeParse(destino).success
-  ) {
     return emptyTransfDepositos;
   }
 
@@ -257,12 +247,6 @@ export async function getTransfDepositos(
   const skip = (paginaNum - 1) * PAGE_SIZE;
 
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
-  const idDepositoOrigen = getIdDepositoPorSucursalCodigo(origen);
-  const idDepositoDestino =
-    destino !== null ? getIdDepositoPorSucursalCodigo(destino) : null;
-  const depositosIds = idDepositoDestino
-    ? [idDepositoOrigen, idDepositoDestino]
-    : [idDepositoOrigen];
 
   function baseWhere(exclude?: "marca" | "rubro"): Prisma.ProdTiendaWhereInput[] {
     const parts: Prisma.ProdTiendaWhereInput[] = [whereProdTiendaStockeable()];
@@ -293,11 +277,11 @@ export async function getTransfDepositos(
         orderBy: { descripcionTienda: "asc" },
         skip,
         take: PAGE_SIZE,
-        include: {
-          stocks: {
-            where: { idDeposito: { in: depositosIds } },
-            select: { idDeposito: true, stockReal: true },
-          },
+        select: {
+          codTienda: true,
+          descripcionTienda: true,
+          marca: true,
+          rubro: true,
         },
       }),
       prisma.prodTienda.count({ where: whereItems }),
@@ -315,24 +299,13 @@ export async function getTransfDepositos(
       }),
     ]);
 
-    const items: ItemTransfDepositos[] = rows.map((r) => {
-      const stockOrigen =
-        r.stocks.find((s) => s.idDeposito === idDepositoOrigen)?.stockReal ?? 0;
-      const stockDestino =
-        idDepositoDestino == null
-          ? null
-          : (r.stocks.find((s) => s.idDeposito === idDepositoDestino)
-              ?.stockReal ?? 0);
-      return {
-        id: r.codTienda,
-        codItem: r.codTienda,
-        descripcion: r.descripcionTienda ?? "",
-        marca: r.marca,
-        rubro: r.rubro,
-        stockOrigen,
-        stockDestino,
-      };
-    });
+    const items: ItemTransfDepositos[] = rows.map((r) => ({
+      id: r.codTienda,
+      codItem: r.codTienda,
+      descripcion: r.descripcionTienda ?? "",
+      marca: r.marca,
+      rubro: r.rubro,
+    }));
 
     const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
 
