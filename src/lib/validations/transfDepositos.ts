@@ -44,6 +44,13 @@ export const encolarTransferenciasPendientesSchema = z
     path: ["destino"],
   });
 
-export const exportarPendientesTransfDepositosSchema = z.object({
-  sucursal: sucursalCodigoSchema,
-});
+export const exportarPendientesTransfDepositosSchema = z
+  .object({
+    tipo: z.enum(["transferir", "recibir"]),
+    origen: sucursalCodigoSchema,
+    destino: sucursalCodigoSchema,
+  })
+  .refine((v) => v.origen !== v.destino, {
+    message: "Origen y destino deben ser distintos.",
+    path: ["destino"],
+  });

@@ -43,10 +43,10 @@ interface Props {
 }
 
 /**
- * Modal **Importar Transferencias**: encola cantidades de la grilla (si hay),
- * lista pendientes por sucursal y descarga Excel (EGRESO/INGRESO).
+ * Modal **Transf. Pendiente Registro**: encola la grilla (si hay), lista
+ * pendientes Transferir/Recibir por par origen→destino y descarga Excel.
  */
-export default function ImportarTransferenciasModal({
+export default function TransfPendienteRegistroModal({
   open,
   onOpenChange,
   origen,
@@ -114,14 +114,21 @@ export default function ImportarTransferenciasModal({
   function handleDescargar(p: PendienteExportTransfDepositosDto) {
     startTransition(async () => {
       const res = await exportarPendientesTransfDepositosAction({
-        sucursal: p.sucursal,
+        tipo: p.tipo,
+        origen: p.origenCodigo,
+        destino: p.destinoCodigo,
       });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      descargarExcelTransfDepositos(res.data.filas, p.label);
-      toast.success(`Excel de ${p.label} descargado.`);
+      descargarExcelTransfDepositos(
+        res.data.filas,
+        `${p.tipoLabel} ${res.data.sucursalExcelLabel}`
+      );
+      toast.success(
+        `Excel ${p.tipoLabel.toLowerCase()} · ${res.data.sucursalExcelLabel} descargado.`
+      );
       await cargarPendientes();
     });
   }
@@ -130,7 +137,7 @@ export default function ImportarTransferenciasModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
         size="lg"
-        title="Importar Transferencias"
+        title="Transf. Pendiente Registro"
         bodyClassName="space-y-4"
         actions={
           <Button
@@ -153,7 +160,7 @@ export default function ImportarTransferenciasModal({
 
         {!loading && !error && pendientes.length === 0 ? (
           <p className="text-sm text-foreground py-6 text-center">
-            No hay registros pendientes de importar.
+            No hay transferencias pendientes de registro.
           </p>
         ) : null}
 
@@ -161,22 +168,24 @@ export default function ImportarTransferenciasModal({
           <Table variant="compact">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[35%]">SUCURSAL</TableHead>
-                <TableHead className="w-[25%] text-center">
-                  REGISTRO PENDIENTE
-                </TableHead>
-                <TableHead className="w-[25%] text-center">FECHA</TableHead>
-                <TableHead className="w-[15%] text-center">ACCIONES</TableHead>
+                <TableHead className="w-[18%] text-center">TIPO</TableHead>
+                <TableHead className="w-[24%] text-center">SUC. ORIGEN</TableHead>
+                <TableHead className="w-[24%] text-center">SUC. DESTINO</TableHead>
+                <TableHead className="w-[20%] text-center">FECHA</TableHead>
+                <TableHead className="w-[14%] text-center">ACCIONES</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pendientes.map((p) => (
-                <TableRow key={p.sucursal}>
-                  <TableCell className="celda-datos font-medium">
-                    {p.label}
+                <TableRow key={p.id}>
+                  <TableCell className="celda-datos text-center font-medium">
+                    {p.tipoLabel}
                   </TableCell>
-                  <TableCell className="celda-datos text-center tabular-nums">
-                    {p.cantidadRegistros.toLocaleString("es-AR")}
+                  <TableCell className="celda-datos text-center">
+                    {p.origenLabel}
+                  </TableCell>
+                  <TableCell className="celda-datos text-center">
+                    {p.destinoLabel}
                   </TableCell>
                   <TableCell className="celda-datos text-center">
                     {formatDdMmHhMmArgentina(new Date(p.fechaIso))}
@@ -188,7 +197,7 @@ export default function ImportarTransferenciasModal({
                         variant="ghost"
                         size="icon"
                         className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                        aria-label={`Descargar Excel ${p.label}`}
+                        aria-label={`Descargar Excel ${p.tipoLabel} ${p.origenLabel} → ${p.destinoLabel}`}
                         title="Descargar Excel"
                         disabled={isPending}
                         onClick={() => handleDescargar(p)}

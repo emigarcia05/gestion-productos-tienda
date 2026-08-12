@@ -221,8 +221,15 @@ export type HistorialTransfDepositosSeccionDto = {
 };
 
 export type PendienteExportTransfDepositosDto = {
-  sucursal: Sucursal;
-  label: string;
+  id: string;
+  tipo: "transferir" | "recibir";
+  tipoLabel: "TRANSFERIR" | "RECIBIR";
+  origenCodigo: Sucursal;
+  destinoCodigo: Sucursal;
+  origenLabel: string;
+  destinoLabel: string;
+  sucursalExcel: Sucursal;
+  sucursalExcelLabel: string;
   cantidadRegistros: number;
   fechaIso: string;
 };
@@ -476,7 +483,7 @@ export async function encolarTransferenciasPendientesAction(
   return { ok: true, data: result.data };
 }
 
-/** Listado de sucursales con registros pendientes de exportar a Excel. */
+/** Listado de pendientes Excel: Transferir/Recibir por par origen→destino. */
 export async function listarPendientesExportTransfDepositosAction(): Promise<
   ActionResult<PendienteExportTransfDepositosDto[]>
 > {
@@ -497,13 +504,17 @@ export async function listarPendientesExportTransfDepositosAction(): Promise<
 }
 
 /**
- * Obtiene filas Excel de una sucursal y marca esos movimientos como exportados
- * (desaparecen de pendientes).
+ * Excel de un pendiente (Transferir/Recibir + par) y marca ese lado exportado
+ * (desaparece de pendientes).
  */
 export async function exportarPendientesTransfDepositosAction(
   raw: unknown
 ): Promise<
-  ActionResult<{ filas: FilaExcelTransfDepositosDto[]; marcados: number }>
+  ActionResult<{
+    filas: FilaExcelTransfDepositosDto[];
+    marcados: number;
+    sucursalExcelLabel: string;
+  }>
 > {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.stock.acceso)) {
@@ -513,12 +524,10 @@ export async function exportarPendientesTransfDepositosAction(
   if (!parsed.success) {
     return { ok: false, error: "Datos inválidos." };
   }
-  const { exportarPendientesTransfDepositosPorSucursal } = await import(
+  const { exportarPendientesTransfDepositos } = await import(
     "@/services/transfDepositos.service"
   );
-  const result = await exportarPendientesTransfDepositosPorSucursal(
-    parsed.data.sucursal
-  );
+  const result = await exportarPendientesTransfDepositos(parsed.data);
   if (!result.success) {
     return { ok: false, error: result.error };
   }

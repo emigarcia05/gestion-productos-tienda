@@ -7,9 +7,9 @@ import FiltrosTransfDepositos from "@/components/stock/FiltrosTransfDepositos";
 import TablaTransfDepositos, {
   type TablaTransfDepositosHandle,
 } from "@/components/stock/TablaTransfDepositos";
-import ImportarTransferenciasModal, {
+import TransfPendienteRegistroModal, {
   type ItemCantidadTransf,
-} from "@/components/stock/ImportarTransferenciasModal";
+} from "@/components/stock/TransfPendienteRegistroModal";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { Button } from "@/components/ui/button";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
@@ -30,7 +30,7 @@ interface Props {
 /**
  * Pantalla **Stock · Trans. Depósitos**: origen/destino → marca/rubro/búsqueda;
  * grilla DESCRIPCIÓN / {origen} / → / {destino} / ACCIONES;
- * header **Importar Transferencias** → Excel EGRESO/INGRESO por sucursal.
+ * header **Generar Transf.** → modal **Transf. Pendiente Registro**.
  */
 export default function TransfDepositosPageClient({
   data,
@@ -44,7 +44,7 @@ export default function TransfDepositosPageClient({
 }: Props) {
   const tieneOrigen = origen !== null;
   const tablaRef = useRef<TablaTransfDepositosHandle>(null);
-  const [importOpen, setImportOpen] = useState(false);
+  const [pendienteOpen, setPendienteOpen] = useState(false);
   const [itemsGrilla, setItemsGrilla] = useState<ItemCantidadTransf[]>([]);
 
   const filters = (
@@ -59,9 +59,9 @@ export default function TransfDepositosPageClient({
     />
   );
 
-  function abrirImportar() {
+  function abrirGenerarTransf() {
     setItemsGrilla(tablaRef.current?.getItemsConCantidad() ?? []);
-    setImportOpen(true);
+    setPendienteOpen(true);
   }
 
   return (
@@ -70,9 +70,9 @@ export default function TransfDepositosPageClient({
       subtitle="Trans. Depósitos"
       filters={filters}
       actions={
-        <Button type="button" className="h-10 px-4" onClick={abrirImportar}>
+        <Button type="button" className="h-10 px-4" onClick={abrirGenerarTransf}>
           <FileDown className="h-4 w-4 shrink-0" aria-hidden />
-          Importar Transferencias
+          Generar Transf.
         </Button>
       }
     >
@@ -99,9 +99,9 @@ export default function TransfDepositosPageClient({
         )}
       </div>
 
-      <ImportarTransferenciasModal
-        open={importOpen}
-        onOpenChange={setImportOpen}
+      <TransfPendienteRegistroModal
+        open={pendienteOpen}
+        onOpenChange={setPendienteOpen}
         origen={origen}
         destino={destino}
         itemsGrilla={itemsGrilla}

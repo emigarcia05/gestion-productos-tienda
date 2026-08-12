@@ -221,11 +221,23 @@ export async function registrarControlTransfDepositos(
   }
 }
 
+/** Transferir = Excel EGRESO (origen); Recibir = Excel INGRESO (destino). */
+export type TipoPendienteTransfDepositos = "transferir" | "recibir";
+
 export type PendienteExportTransfDepositos = {
-  sucursal: SucursalCodigoTransf;
-  label: string;
+  /** Clave estable `tipo|origen|destino`. */
+  id: string;
+  tipo: TipoPendienteTransfDepositos;
+  tipoLabel: "TRANSFERIR" | "RECIBIR";
+  origenCodigo: SucursalCodigoTransf;
+  destinoCodigo: SucursalCodigoTransf;
+  origenLabel: string;
+  destinoLabel: string;
+  /** Sucursal del Excel (origen si transferir, destino si recibir). */
+  sucursalExcel: SucursalCodigoTransf;
+  sucursalExcelLabel: string;
   cantidadRegistros: number;
-  /** ISO de la transferencia pendiente más reciente. */
+  /** ISO de la transferencia pendiente más reciente del grupo. */
   fechaIso: string;
 };
 
@@ -273,107 +285,202 @@ export async function encolarTransferenciasPendientes(input: {
 }
 
 /**
- * Resumen de pendientes de Excel por sucursal (EGRESO u INGRESO sin exportar).
+ * Pendientes de Excel por par origen→destino y lado:
+ * Transferir (EGRESO origen) / Recibir (INGRESO destino).
  */
 export async function listarPendientesExportTransfDepositos(): Promise<
   PendienteExportTransfDepositos[]
 > {
-  const sucursales: SucursalCodigoTransf[] = ["guaymallen", "maipu"];
+  const [pendientesOrigen, pendientesDestino] = await Promise.all([
+    prisma.prodStockTransfDep.findMany({
+      where: { exportadoOrigenAt: null },
+      select: {
+        origenCodigo: true,
+        destinoCodigo: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.prodStockTransfDep.findMany({
+      where: { exportadoDestinoAt: null },
+      select: {
+        origenCodigo: true,
+        destinoCodigo: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  type Agg = { count: number; maxTs: number };
+  const transferir = new Map<string, Agg>();
+  const recibir = new Map<string, Agg>();
+
+  for (const r of pendientesOrigen) {
+    if (r.origenCodigo === r.destinoCodigo) continue;
+    if (r.origenCodigo !== "guaymallen" && r.origenCodigo !== "maipu") continue;
+    if (r.destinoCodigo !== "guaymallen" && r.destinoCodigo !== "maipu") continue;
+    const key = `${r.origenCodigo}|${r.destinoCodigo}`;
+    const prev = transferir.get(key);
+    const ts = r.createdAt.getTime();
+    if (!prev) transferir.set(key, { count: 1, maxTs: ts });
+    else {
+      prev.count += 1;
+      if (ts > prev.maxTs) prev.maxTs = ts;
+    }
+  }
+
+  for (const r of pendientesDestino) {
+    if (r.origenCodigo === r.destinoCodigo) continue;
+    if (r.origenCodigo !== "guaymallen" && r.origenCodigo !== "maipu") continue;
+    if (r.destinoCodigo !== "guaymallen" && r.destinoCodigo !== "maipu") continue;
+    const key = `${r.origenCodigo}|${r.destinoCodigo}`;
+    const prev = recibir.get(key);
+    const ts = r.createdAt.getTime();
+    if (!prev) recibir.set(key, { count: 1, maxTs: ts });
+    else {
+      prev.count += 1;
+      if (ts > prev.maxTs) prev.maxTs = ts;
+    }
+  }
+
   const out: PendienteExportTransfDepositos[] = [];
 
-  for (const suc of sucursales) {
-    const [comoOrigen, comoDestino] = await Promise.all([
-      prisma.prodStockTransfDep.findMany({
-        where: { origenCodigo: suc, exportadoOrigenAt: null },
-        select: { createdAt: true },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.prodStockTransfDep.findMany({
-        where: { destinoCodigo: suc, exportadoDestinoAt: null },
-        select: { createdAt: true },
-        orderBy: { createdAt: "desc" },
-      }),
-    ]);
-    const cantidadRegistros = comoOrigen.length + comoDestino.length;
-    if (cantidadRegistros === 0) continue;
-    const fechas = [...comoOrigen, ...comoDestino].map((r) =>
-      r.createdAt.getTime()
-    );
-    const maxTs = Math.max(...fechas);
+  for (const [key, agg] of transferir) {
+    const [origenCodigo, destinoCodigo] = key.split("|") as [
+      SucursalCodigoTransf,
+      SucursalCodigoTransf,
+    ];
     out.push({
-      sucursal: suc,
-      label: labelSucursal(suc),
-      cantidadRegistros,
-      fechaIso: new Date(maxTs).toISOString(),
+      id: `transferir|${key}`,
+      tipo: "transferir",
+      tipoLabel: "TRANSFERIR",
+      origenCodigo,
+      destinoCodigo,
+      origenLabel: labelSucursal(origenCodigo),
+      destinoLabel: labelSucursal(destinoCodigo),
+      sucursalExcel: origenCodigo,
+      sucursalExcelLabel: labelSucursal(origenCodigo),
+      cantidadRegistros: agg.count,
+      fechaIso: new Date(agg.maxTs).toISOString(),
     });
   }
 
-  return out.sort((a, b) => a.label.localeCompare(b.label, "es"));
+  for (const [key, agg] of recibir) {
+    const [origenCodigo, destinoCodigo] = key.split("|") as [
+      SucursalCodigoTransf,
+      SucursalCodigoTransf,
+    ];
+    out.push({
+      id: `recibir|${key}`,
+      tipo: "recibir",
+      tipoLabel: "RECIBIR",
+      origenCodigo,
+      destinoCodigo,
+      origenLabel: labelSucursal(origenCodigo),
+      destinoLabel: labelSucursal(destinoCodigo),
+      sucursalExcel: destinoCodigo,
+      sucursalExcelLabel: labelSucursal(destinoCodigo),
+      cantidadRegistros: agg.count,
+      fechaIso: new Date(agg.maxTs).toISOString(),
+    });
+  }
+
+  return out.sort((a, b) => {
+    const byFecha = b.fechaIso.localeCompare(a.fechaIso);
+    if (byFecha !== 0) return byFecha;
+    const byTipo = a.tipoLabel.localeCompare(b.tipoLabel, "es");
+    if (byTipo !== 0) return byTipo;
+    return a.origenLabel.localeCompare(b.origenLabel, "es");
+  });
 }
 
 /**
- * Arma filas Excel para una sucursal y marca esos movimientos como exportados.
+ * Excel de un pendiente (par + Transferir/Recibir) y marca ese lado como exportado.
  */
-export async function exportarPendientesTransfDepositosPorSucursal(
-  sucursal: SucursalCodigoTransf
+export async function exportarPendientesTransfDepositos(
+  input: {
+    tipo: TipoPendienteTransfDepositos;
+    origen: SucursalCodigoTransf;
+    destino: SucursalCodigoTransf;
+  }
 ): Promise<
   ServiceResult<{
     filas: FilaExcelTransfDepositos[];
     marcados: number;
+    sucursalExcelLabel: string;
   }>
 > {
   try {
-    const ahora = new Date();
-    const [egresos, ingresos] = await Promise.all([
-      prisma.prodStockTransfDep.findMany({
-        where: { origenCodigo: sucursal, exportadoOrigenAt: null },
-        select: { id: true, codTienda: true, cantidad: true },
-        orderBy: { createdAt: "asc" },
-      }),
-      prisma.prodStockTransfDep.findMany({
-        where: { destinoCodigo: sucursal, exportadoDestinoAt: null },
-        select: { id: true, codTienda: true, cantidad: true },
-        orderBy: { createdAt: "asc" },
-      }),
-    ]);
-
-    if (egresos.length === 0 && ingresos.length === 0) {
-      return { success: false, error: "No hay registros pendientes." };
+    if (input.origen === input.destino) {
+      return { success: false, error: "Origen y destino deben ser distintos." };
     }
 
-    const filas: FilaExcelTransfDepositos[] = [
-      ...egresos.map((r) => ({
+    const ahora = new Date();
+
+    if (input.tipo === "transferir") {
+      const egresos = await prisma.prodStockTransfDep.findMany({
+        where: {
+          origenCodigo: input.origen,
+          destinoCodigo: input.destino,
+          exportadoOrigenAt: null,
+        },
+        select: { id: true, codTienda: true, cantidad: true },
+        orderBy: { createdAt: "asc" },
+      });
+      if (egresos.length === 0) {
+        return { success: false, error: "No hay registros pendientes." };
+      }
+      const filas: FilaExcelTransfDepositos[] = egresos.map((r) => ({
         cod: r.codTienda,
         tipoMovimiento: "EGRESO" as const,
         cantidad: r.cantidad,
-      })),
-      ...ingresos.map((r) => ({
-        cod: r.codTienda,
-        tipoMovimiento: "INGRESO" as const,
-        cantidad: r.cantidad,
-      })),
-    ];
-
-    await prisma.$transaction([
-      prisma.prodStockTransfDep.updateMany({
+      }));
+      await prisma.prodStockTransfDep.updateMany({
         where: { id: { in: egresos.map((r) => r.id) } },
         data: { exportadoOrigenAt: ahora },
-      }),
-      prisma.prodStockTransfDep.updateMany({
-        where: { id: { in: ingresos.map((r) => r.id) } },
-        data: { exportadoDestinoAt: ahora },
-      }),
-    ]);
+      });
+      return {
+        success: true,
+        data: {
+          filas,
+          marcados: egresos.length,
+          sucursalExcelLabel: labelSucursal(input.origen),
+        },
+      };
+    }
 
+    const ingresos = await prisma.prodStockTransfDep.findMany({
+      where: {
+        origenCodigo: input.origen,
+        destinoCodigo: input.destino,
+        exportadoDestinoAt: null,
+      },
+      select: { id: true, codTienda: true, cantidad: true },
+      orderBy: { createdAt: "asc" },
+    });
+    if (ingresos.length === 0) {
+      return { success: false, error: "No hay registros pendientes." };
+    }
+    const filas: FilaExcelTransfDepositos[] = ingresos.map((r) => ({
+      cod: r.codTienda,
+      tipoMovimiento: "INGRESO" as const,
+      cantidad: r.cantidad,
+    }));
+    await prisma.prodStockTransfDep.updateMany({
+      where: { id: { in: ingresos.map((r) => r.id) } },
+      data: { exportadoDestinoAt: ahora },
+    });
     return {
       success: true,
       data: {
         filas,
-        marcados: egresos.length + ingresos.length,
+        marcados: ingresos.length,
+        sucursalExcelLabel: labelSucursal(input.destino),
       },
     };
   } catch (e) {
-    console.error("[exportarPendientesTransfDepositosPorSucursal]", e);
+    console.error("[exportarPendientesTransfDepositos]", e);
     const message =
       e instanceof Error ? e.message : "Error al exportar pendientes.";
     return { success: false, error: message };
