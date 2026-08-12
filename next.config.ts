@@ -63,6 +63,7 @@ function canonicalGestionProductosRewrites(): { source: string; destination: str
     { source: R.ayudaVendedor.calcLitros, destination: I.ayudaVendedor.calcLitros },
     { source: R.ayudaVendedor.cargarGasto, destination: I.ayudaVendedor.cargarGasto },
     { source: R.ayudaVendedor.controlStock, destination: I.ayudaVendedor.controlStock },
+    { source: R.ayudaVendedor.transfDepositos, destination: I.ayudaVendedor.transfDepositos },
     {
       source: R.analisisPrecios.listaProveedores.listaPrecios,
       destination: I.analisisPrecios.listaProveedores.listaPrecios,

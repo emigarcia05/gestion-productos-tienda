@@ -27,8 +27,10 @@ export const GP_ROUTES = {
     },
     calcLitros: `${GP}/ayuda-vendedor/calc-litros`,
     cargarGasto: `${GP}/ayuda-vendedor/cargar-gasto`,
-    /** Enlace directo en sidebar Vendedor (`CONTROL STOCK`). */
+    /** Submódulo **Control Stock** bajo el módulo sidebar **STOCK**. */
     controlStock: `${GP}/ayuda-vendedor/control-stock`,
+    /** Submódulo **Trans. Depósitos** bajo el módulo sidebar **STOCK**. */
+    transfDepositos: `${GP}/ayuda-vendedor/transf-depositos`,
   },
   analisisPrecios: {
     listaProveedores: {
@@ -71,6 +73,7 @@ export const GP_INTERNAL = {
     calcLitros: "/tienda/litros",
     cargarGasto: "/cargar-gasto",
     controlStock: "/stock",
+    transfDepositos: "/transf-depositos",
   },
   analisisPrecios: {
     listaProveedores: {
@@ -133,6 +136,9 @@ const GP_ROUTE_ALIASES: Record<string, readonly string[]> = {
   [GP_ROUTES.ayudaVendedor.controlStock]: [
     "/gestion-productos/tienda/control-stock",
     "/stock",
+  ],
+  [GP_ROUTES.ayudaVendedor.transfDepositos]: [
+    "/transf-depositos",
   ],
   [GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios]: [
     "/gestion-productos/proveedores/lista-precios",
@@ -213,8 +219,10 @@ const CARGAR_GASTOS_PREFIXES = [
 
 const CONTROL_STOCK_PREFIXES = [
   GP_ROUTES.ayudaVendedor.controlStock,
+  GP_ROUTES.ayudaVendedor.transfDepositos,
   "/gestion-productos/tienda/control-stock",
   "/stock",
+  "/transf-depositos",
 ] as const;
 
 const ANALISIS_PRECIOS_PREFIXES = [
@@ -252,6 +260,19 @@ function pathnameMatchesPrefix(pathname: string, prefix: string): boolean {
 
 export function isGpRouteActive(pathname: string, canonicalHref: string): boolean {
   if (pathname === canonicalHref) return true;
+
+  /** `/stock` no debe activar Control Stock cuando la ruta es `/stock/...` (no aplica) ni confundirse con Transf. */
+  if (canonicalHref === GP_ROUTES.ayudaVendedor.controlStock) {
+    const aliases = GP_ROUTE_ALIASES[canonicalHref] ?? [];
+    return aliases.some((alias) => pathname === alias);
+  }
+
+  if (canonicalHref === GP_ROUTES.ayudaVendedor.transfDepositos) {
+    const aliases = GP_ROUTE_ALIASES[canonicalHref] ?? [];
+    return aliases.some(
+      (alias) => pathname === alias || pathname.startsWith(`${alias}/`)
+    );
+  }
 
   if (canonicalHref === GP_ROUTES.analisisPrecios.listaProveedores.listaPrecios) {
     const aliases = GP_ROUTE_ALIASES[canonicalHref] ?? [];
@@ -357,4 +378,5 @@ export const REVALIDATE_AYUDA_VENDEDOR_CALC = gpRevalidatePaths([
   GP_ROUTES.ayudaVendedor.calcLitros,
   GP_ROUTES.ayudaVendedor.pxVenta.pxTintometrico,
   GP_ROUTES.ayudaVendedor.controlStock,
+  GP_ROUTES.ayudaVendedor.transfDepositos,
 ]);

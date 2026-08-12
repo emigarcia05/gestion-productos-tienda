@@ -2110,6 +2110,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — sucursales de métricas/modal = `genera_est = true` (`listarSucursalesParaPedidoAFabrica`).
 
+*Última actualización (2026-08-12): **Stock · Trans. Depósitos** — ruta `GP_ROUTES.ayudaVendedor.transfDepositos`; reusa `getControlStock` para marcas/rubros/listado; params `origen`/`destino` (sin persistencia DUX aún).
+
 *Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
 
 *Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — Top 10: `promedioMensual` = total / (`cantidadPeriodosFiltro` = años × meses).
