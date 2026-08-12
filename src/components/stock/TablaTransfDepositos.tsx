@@ -33,11 +33,13 @@ const SUCURSAL_LABEL: Record<Sucursal, string> = {
   maipu: "MAIPÚ",
 };
 
-const PCT_DESC = 46;
-const PCT_ORIGEN = 18;
-const PCT_DESTINO = 14;
-const PCT_CONTROL = 12;
-const PCT_ACCIONES = 10;
+/** Bloque transferencia centrado: origen | flecha | destino. */
+const PCT_DESC = 44;
+const PCT_ORIGEN = 16;
+const PCT_FLECHA = 6;
+const PCT_DESTINO = 16;
+const PCT_CONTROL = 10;
+const PCT_ACCIONES = 8;
 
 interface Props {
   data: TransfDepositosData;
@@ -47,8 +49,8 @@ interface Props {
 
 /**
  * Grilla **Trans. Depósitos**:
- * DESCRIPCIÓN · {origen} (input+flecha) · {destino} · CONTROL (solo lectura) · ACCIONES.
- * La persistencia del control se hará al exportar Excel (pendiente).
+ * DESCRIPCIÓN · {origen} · → · {destino} · CONTROL · ACCIONES.
+ * Input / flecha / valor centrados bajo sus columnas.
  */
 export default function TablaTransfDepositos({ data, origen, destino }: Props) {
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
@@ -111,6 +113,7 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
       <colgroup>
         <col style={{ width: `${PCT_DESC}%` }} />
         <col style={{ width: `${PCT_ORIGEN}%` }} />
+        <col style={{ width: `${PCT_FLECHA}%` }} />
         <col style={{ width: `${PCT_DESTINO}%` }} />
         <col style={{ width: `${PCT_CONTROL}%` }} />
         <col style={{ width: `${PCT_ACCIONES}%` }} />
@@ -121,6 +124,10 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
           <TableHead className="text-center align-middle">
             {origenLabel}
           </TableHead>
+          <TableHead
+            className="text-center align-middle"
+            aria-label="Transferir hacia"
+          />
           <TableHead className="text-center align-middle">
             {destinoLabel}
           </TableHead>
@@ -139,7 +146,7 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
         {data.items.length === 0 && (
           <TableRow>
             <TableCell
-              colSpan={5}
+              colSpan={6}
               className={cn(
                 tableEmptyStateContainerVariants({
                   placement: "tableCellTall",
@@ -171,8 +178,8 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
               <TableCell className="celda-datos min-w-0 overflow-hidden">
                 {item.descripcion}
               </TableCell>
-              <TableCell className="celda-datos celda-datos--flush-right">
-                <div className="flex w-full items-center justify-end gap-1 pr-1">
+              <TableCell className="celda-datos text-center">
+                <div className="flex w-full items-center justify-center">
                   <Input
                     type="text"
                     inputMode="numeric"
@@ -182,9 +189,13 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
                     aria-label={`Cantidad a transferir desde ${origenLabel}`}
                     disabled={!destinoSeleccionado}
                   />
+                </div>
+              </TableCell>
+              <TableCell className="celda-datos text-center">
+                <div className="flex w-full items-center justify-center text-muted-foreground">
                   <span
                     className={cn(
-                      "inline-flex size-4 shrink-0 items-center justify-center text-muted-foreground",
+                      "inline-flex size-4 shrink-0 items-center justify-center",
                       !tieneCantidad && "invisible"
                     )}
                     aria-hidden={!tieneCantidad}
@@ -196,10 +207,8 @@ export default function TablaTransfDepositos({ data, origen, destino }: Props) {
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="celda-datos celda-datos--flush-left text-left tabular-nums">
-                <span className="pl-1">
-                  {!destinoSeleccionado || !tieneCantidad ? "—" : cantidad}
-                </span>
+              <TableCell className="celda-datos text-center tabular-nums">
+                {!destinoSeleccionado || !tieneCantidad ? "—" : cantidad}
               </TableCell>
               <TableCell className="celda-datos celda-datos--accion-relleno-fila">
                 <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
