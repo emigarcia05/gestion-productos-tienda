@@ -2,7 +2,15 @@
 
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
+import { cn } from "@/lib/utils";
 
 interface Proveedor {
   id: string;
@@ -17,6 +25,8 @@ interface Props {
   paramsActuales: { q?: string; sucursal?: string; pagina?: string };
   basePath?: string;
 }
+
+const SELECT_TODOS = "todos";
 
 function buildHref(proveedorId: string, params: Props["paramsActuales"], basePath: string) {
   const p = new URLSearchParams();
@@ -36,25 +46,34 @@ export default function SelectorProveedor({
   const router = useRouter();
 
   function handleChange(value: string) {
-    const url = buildHref(value, paramsActuales, basePath);
+    const proveedorId = value === SELECT_TODOS ? "" : value;
+    const url = buildHref(proveedorId, paramsActuales, basePath);
     router.push(url);
   }
 
   return (
-    <div className="relative w-64 shrink-0">
-      <select
-        value={proveedorActual}
-        onChange={(e) => handleChange(e.target.value)}
-        className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+    <div className="w-64 shrink-0">
+      <Select
+        value={proveedorActual || SELECT_TODOS}
+        onValueChange={handleChange}
       >
-        <option value="">Todos los proveedores</option>
-        {proveedores.map((p) => (
-          <option key={p.id} value={p.id}>
-            [{p.prefijo}] {p.nombre}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+          <SelectValue placeholder="Todos los proveedores" />
+        </SelectTrigger>
+        <SelectContent
+          position="popper"
+          side="bottom"
+          align="start"
+          className="select-content-filtro"
+        >
+          <SelectItem value={SELECT_TODOS}>Todos los proveedores</SelectItem>
+          {proveedores.map((p) => (
+            <SelectItem key={p.id} value={p.id}>
+              [{p.prefijo}] {p.nombre}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
