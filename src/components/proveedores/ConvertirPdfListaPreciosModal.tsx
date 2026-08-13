@@ -2,10 +2,17 @@
 
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
-import { FileText, Upload, Download, Loader2, ChevronDown, ArrowRight, Save } from "lucide-react";
+import { FileText, Upload, Download, Loader2, ArrowRight, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -15,10 +22,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import { descargarExcelListaPreciosPdfMatriz } from "@/lib/exportListaPreciosPdfMatrizExcelClient";
 import type { FilaPdfMatrizNormalizadaDto } from "@/lib/validations/parseListaPreciosPdfMatriz";
 import { PAGINA_INICIO_PDF_MATRIZ_DEFAULT } from "@/lib/validations/parseListaPreciosPdfMatriz";
 import { guardarPreciosRexDesdePdfAction } from "@/actions/prodPreciosRex";
+
+const SELECT_NONE = "none";
 
 interface Proveedor {
   id: string;
@@ -293,22 +303,28 @@ export default function ConvertirPdfListaPreciosModal({ proveedores }: Props) {
         <div className="space-y-3 pt-2 min-w-0 overflow-hidden" aria-busy={ocupado}>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">PROVEEDOR</label>
-            <div className="relative">
-              <select
-                value={proveedorId}
-                onChange={(e) => setProveedorId(e.target.value)}
-                disabled={ocupado}
-                className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring border-primary disabled:opacity-50"
+            <Select
+              value={proveedorId || SELECT_NONE}
+              onValueChange={(v) => setProveedorId(v === SELECT_NONE ? "" : v)}
+              disabled={ocupado}
+            >
+              <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                <SelectValue placeholder="SELECCIONAR PROVEEDOR…" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
               >
-                <option value="">SELECCIONAR PROVEEDOR…</option>
+                <SelectItem value={SELECT_NONE}>SELECCIONAR PROVEEDOR…</SelectItem>
                 {proveedores.map((p) => (
-                  <option key={p.id} value={p.id}>
+                  <SelectItem key={p.id} value={p.id}>
                     [{p.prefijo}] {p.nombre}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            </div>
+              </SelectContent>
+            </Select>
             <p className="text-xs text-muted-foreground">
               Obligatorio para guardar en REX. También define el nombre del archivo Excel.
             </p>

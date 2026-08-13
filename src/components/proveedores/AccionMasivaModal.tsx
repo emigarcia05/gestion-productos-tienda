@@ -2,11 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Settings2, ChevronDown, Loader2, CheckCircle2, Filter } from "lucide-react";
+import { Settings2, Loader2, CheckCircle2, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { aplicarCampoMasivo, type CampoMasivo } from "@/actions/productos";
@@ -31,6 +38,8 @@ interface Props {
 const CAMPOS_OPCIONES: { value: CampoMasivo; label: string; tipo: "porcentaje" | "boolean" }[] = [
   { value: "disponible", label: "DISPONIBLE", tipo: "boolean" },
 ];
+
+const SELECT_NONE = "none";
 
 export default function AccionMasivaModal({
   proveedores,
@@ -130,19 +139,22 @@ export default function AccionMasivaModal({
 
               <div className="space-y-1.5">
                 <Label className="text-xs">PROVEEDOR</Label>
-                <div className="relative">
-                  <select
-                    value={proveedorId}
-                    onChange={(e) => setProveedorId(e.target.value)}
-                    className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="">SELECCIONAR PROVEEDOR...</option>
+                <Select
+                  value={proveedorId || SELECT_NONE}
+                  onValueChange={(v) => setProveedorId(v === SELECT_NONE ? "" : v)}
+                >
+                  <SelectTrigger className={cn("w-full")}>
+                    <SelectValue placeholder="SELECCIONAR PROVEEDOR..." />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="bottom" align="start">
+                    <SelectItem value={SELECT_NONE}>SELECCIONAR PROVEEDOR...</SelectItem>
                     {proveedores.map((p) => (
-                      <option key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</option>
+                      <SelectItem key={p.id} value={p.id}>
+                        [{p.prefijo}] {p.nombre}
+                      </SelectItem>
                     ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                </div>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Opción de aplicar solo a los productos del filtro de búsqueda activo */}
@@ -180,33 +192,42 @@ export default function AccionMasivaModal({
             {/* Campo y valor */}
             <div className="space-y-1.5">
               <Label>CAMPO</Label>
-              <div className="relative">
-                <select
-                  value={campo}
-                  onChange={(e) => { setCampo(e.target.value as CampoMasivo); setValor(""); }}
-                  className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  {CAMPOS_OPCIONES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              </div>
+              <Select
+                value={campo}
+                onValueChange={(v) => {
+                  setCampo(v as CampoMasivo);
+                  setValor("");
+                }}
+              >
+                <SelectTrigger className={cn("w-full")}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper" side="bottom" align="start">
+                  {CAMPOS_OPCIONES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">
               <Label>VALOR</Label>
               {campoActual.tipo === "boolean" ? (
-                <div className="relative">
-                  <select
-                    value={valor}
-                    onChange={(e) => setValor(e.target.value)}
-                    className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="">SELECCIONAR...</option>
-                    <option value="true">DISPONIBLE</option>
-                    <option value="false">NO DISPONIBLE</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                </div>
+                <Select
+                  value={valor || SELECT_NONE}
+                  onValueChange={(v) => setValor(v === SELECT_NONE ? "" : v)}
+                >
+                  <SelectTrigger className={cn("w-full")}>
+                    <SelectValue placeholder="SELECCIONAR..." />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="bottom" align="start">
+                    <SelectItem value={SELECT_NONE}>SELECCIONAR...</SelectItem>
+                    <SelectItem value="true">DISPONIBLE</SelectItem>
+                    <SelectItem value="false">NO DISPONIBLE</SelectItem>
+                  </SelectContent>
+                </Select>
               ) : (
                 <div className="flex items-center gap-2">
                   <Input

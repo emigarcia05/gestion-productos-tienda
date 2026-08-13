@@ -44,7 +44,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
    - Estructura: `SectionHeader` o `ClassicPageHeader` → `FilterBar` (con `filtros-contenedor-tienda bg-card`) → contenido (tabla con `<Table variant="compact">`).  
    - **Fila 1 de desplegables:** `FilaFiltrosDesplegables` con **5 columnas por defecto** (tamaño fijo estándar). Si la fila tiene **exactamente 6** listas desplegables juntas, usar **`columnas={6}`** (`.fila-filtros-6`). Con 5 o menos: no cambiar (default o `columnas={2|4}` según layout).  
    - Si la página tiene **input de búsqueda con debounce**: usa el hook `useFiltrosConBusqueda` y el componente `FiltroBusquedaInput` (ver sección 1, punto 3). No reimplementes debounce ni restauración de foco.  
-   - Selects de filtros: `FILTER_SELECT_WRAPPER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `SelectContent` con `position="popper" side="bottom" align="start" className="select-content-filtro"`.  
+   - Selects de filtros: `FILTER_SELECT_WRAPPER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `SelectContent` con `position="popper" side="bottom" align="start" className="select-content-filtro"`. El buscador **BUSCAR...** viene **incluido** en `SelectContent` (no agregarlo a mano en cada call site). 
    - Contador de resultados: `cn(FILTER_COUNT_CLASS, "ml-auto")` si va alineado a la derecha; texto del contador en MAYÚSCULAS (PRODUCTO(S), ÍTEM(S), etc.).
 
 7. **Nuevo modal con tabla**  
@@ -161,6 +161,12 @@ Registro de simplificaciones y reglas para que no reaparezcan patrones inútiles
    - `LimpiarFiltrosButton` (ícono cesto): **siempre visible** por regla global de UX, incluso sin filtros activos. Su acción sigue limpiando el estado de filtros actual.
    - **Sin búsqueda por descripción**: cuando una pantalla no tiene input de búsqueda y los filtros entran en una sola línea, ubicar las acciones en la **misma fila** usando un slot inline dentro de `FilaFiltrosDesplegables` (`FILTER_INLINE_ACTION_SLOT_CLASS`, por ejemplo con `col-span-2`) para compactar altura. Si no entra en una sola línea, usar `FilterRowNoSearchActions` como segunda fila.
    - SelectContent: `position="popper" side="bottom" align="start" className="select-content-filtro"`.
+   - **Select shadcn con buscador (obligatorio, transversal):**
+     - **Prohibido** `<select>` nativo. Usar `Select` / `SelectContent` / `SelectItem` / `SelectTrigger` / `SelectValue` de `@/components/ui/select`.
+     - **`SelectContent`** incluye por defecto (`searchable={true}`) un input **`BUSCAR...`** como **primer** elemento (`SelectSearchInput` + clase `.select-search-input`). Filtra `SelectItem` por texto visible / `textValue` (sin acentos, locale `es`). Sin coincidencias → **SIN RESULTADOS**.
+     - Helpers: `@/lib/selectSearch` (`normalizeSelectSearchText`, `selectOptionMatchesQuery`, `filterItemsBySelectSearch`, `getReactNodeText`).
+     - Paneles custom (`role="listbox"`, multi-checkbox, `DropdownMenu` de opciones): reutilizar **`SelectSearchInput`** + `filterItemsBySelectSearch` (ej. tipo de pedido, meses/años multi, `MktMultiSelectCatalogo`).
+     - Triggers tipo filtro: `SELECT_TRIGGER_FILTER_CLASS` / `input-filtro-unificado`. **Valor vacío:** Radix no admite `SelectItem value=""` — sentinel `"none"` / `"todos"` y mapear en `onValueChange`. Opt-out excepcional: `searchable={false}` (documentar el call site).
    - **Select con ítem numérico 0:** si el valor elegido es `0` y el trigger parece vacío o el texto no contrasta, el `Select` controlado debe armar `value` con `typeof estado === "number" ? String(estado) : undefined` (evita ambigüedades con Radix/shadcn), sumar al trigger `text-foreground` y `[&_[data-slot=select-value]]:text-foreground` junto a `SELECT_TRIGGER_FILTER_CLASS`, y opcionalmente mostrar el número como hijo de `SelectValue` (`String(estado)`). Referencia: **PLAZO DE PAGO** en `CrearEditarFinBalGastoFinalModal`.
    - **Finanzas — barra de filtros en página:** en **Balance · Gastos**, **Ventas Mensuales**, **Balance mensual**, **Tesorería**, **Flujo de fondo** y **Control Comprobantes**, cada `Select` (y en Control Comprobantes el trigger de **rango de fechas** cuando hay fechas aplicadas) va envuelto en `FiltroIndividualContainer` además de `LimpiarFiltrosButton`. Para **AÑO** / **MES** en Balance · Gastos y Balance mensual, la referencia de “filtro activo” es el calendario actual en Argentina (`dateToIsoYmdArgentina`): limpiar **año** navega al año de hoy manteniendo el mes elegido; limpiar **mes** navega al mes de hoy manteniendo el año. **Balance mensual** añade cesto global que navega al periodo completo actual AR.
 
@@ -322,6 +328,10 @@ import SectionHeader from "@/components/SectionHeader";
 | `--modal-field-label-color` | **`:root`**: color de etiquetas de campo en modales (`var(--foreground)`). Aplicado con `!important` en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]` a `label`, `[data-slot="label"]`, `.modal-field-label`, `.modal-micro-label`, `dt`. |
 | `MODAL_FIELD_LABEL_CLASS`, `MODAL_MICRO_LABEL_CLASS` (`@/lib/ui-classes`) | Clases Tailwind para etiquetas en modales (foreground). **`ModalMicroLabel`** usa la micro constante vía CVA. |
 | `.input-filtro-unificado` | Input y SelectTrigger de filtros (borde primary, altura 2.5rem). |
+| `.select-content-filtro` | Ancho del menú = trigger (`--radix-select-trigger-width`); usar con `position="popper" side="bottom"`. |
+| `.select-search-input` | Input **BUSCAR...** del primer renglón de desplegables (`SelectSearchInput` / `SelectContent`). |
+| `SelectSearchInput` (`@/components/shared/SelectSearchInput.tsx`) | Buscador reutilizable para `SelectContent` y paneles `listbox` custom. |
+| `@/lib/selectSearch` | Normalización y filtro de opciones de desplegable (sin acentos). |
 | `.fila-filtros-4`, `.fila-filtros-5`, `.fila-filtros-6`, `.fila-filtros-desplegables` | Grid uniforme para Selects de filtros (`FilaFiltrosDesplegables` prop `columnas`). **Default 5**. Usar **`columnas={6}`** solo cuando hay **6** desplegables en la misma fila; con ≤5 no cambiar el default. |
 | `.tabla-gestion-compacta.tabla-vinculos-modal` | Variante de ancho para **modal Vínculos** (Tienda): `width: 100%`, `table-layout: fixed`; los encabezados usan la misma regla global de `tabla-gestion-compacta`. |
 | `.tabla-gestion-compacta.tabla-est-carga-datos` | **Estadísticas · Carga de Datos**: cebra estándar en **toda** la fila (incl. **PERIODO** sticky vía `.celda-est-carga-periodo` + `--tabla-row-bg`). Celdas sin datos: `.celda-est-carga-pendiente` (tinte `accent2` ~22 % sobre la cebra; hover ~30 %) para marcar acción pendiente de carga. |
@@ -916,6 +926,7 @@ Antes de dar por terminada una tarea de frontend:
 - [ ] Las clases condicionales o combinadas usan `cn(...)`.
 - [ ] Tablas usan `Table` de `@/components/ui/table` con `variant="compact"` cuando aplique; encabezado fijo (al hacer scroll los encabezados no desaparecen).
 - [ ] Filtros usan `FilterBar`, `FilaFiltrosDesplegables`, `INPUT_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. Input de búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`. Fila de desplegables: default **5** columnas; **`columnas={6}`** solo si hay **6** Selects en esa fila.
+- [ ] **Desplegables:** no hay `<select>` nativo; usan `@/components/ui/select` (buscador **BUSCAR...** en `SelectContent`) o paneles custom con `SelectSearchInput` + `filterItemsBySelectSearch`. Sentinels `"none"`/`"todos"` si hace falta valor vacío.
 - [ ] Encabezados de página usan `SectionHeader` o `ClassicPageHeader` (implementación única vía `PageSectionHeader`; no duplicar markup de `.section-header`).
 - [ ] Mensajes de tabla/lista vacía reutilizan `TableEmptyRow` o `TableEmptyState` (variantes CVA), sin copiar `py-* text-muted-foreground text-center` sueltos.
 - [ ] Botones de toolbar con **ícono + label** (y/o estado async): usan `ToolbarActionButton` (`src/components/shared/ToolbarActionButton.tsx`) o `Button` de shadcn **sin** repetir `gap-2 shrink-0` (el `Button` base ya los aporta) ni dimensionar el `<svg>` con `h-4 w-4 shrink-0` (el `Button` lo hace vía `[&_svg:not([class*='size-'])]:size-4`).
@@ -1901,6 +1912,10 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-11): **Pedido A Fáb.** — se elimina la columna **PROM. VTA. P/ DÍA** (grilla + modal sucursales); DESCRIPCIÓN **59%**.
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — modal sucursales: fila **TOTAL** (`TableFooter`) sumando/agregando sucursales.
+
+*Última actualización (2026-08-13): **Select searchable (transversal)** — `SelectContent` con **BUSCAR...**; helpers `selectSearch` + `SelectSearchInput`; sin `<select>` nativos; paneles multi/listbox alineados.*
+
+*Última actualización (2026-08-13): **Select shadcn** — migrados los `<select>` nativos restantes en proveedores (acción masiva, importar, lista precios, PDF), precios-competencia (reglas extracción, asociar URLs) y `ImportarEstPorProdModal` (mapeo columnas). Patrón sentinel `none` + `SelectContent` `position="popper"` documentado en §1 filtros.
 
 ---
 

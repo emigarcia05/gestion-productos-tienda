@@ -5,6 +5,14 @@ import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
+import {
   reglaExtraccionVacia,
   type CompetenciaConfigExtraccion,
   type ReglaExtraccionPagina,
@@ -53,6 +61,8 @@ export default function CompetenciaExtraccionReglasEditor({ value, onChange, cla
     onChange({ reglaDefaultId: reglaDefaultId || "", reglas: next });
   };
 
+  const reglaDefaultValue = value.reglaDefaultId ?? reglas[0]?.id ?? "";
+
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       {reglas.length === 0 ? (
@@ -65,17 +75,28 @@ export default function CompetenciaExtraccionReglasEditor({ value, onChange, cla
           {reglas.length > 1 ? (
             <div>
               <ModalMicroLabel>Plantilla por defecto</ModalMicroLabel>
-              <select
-                className="mt-1 input-filtro-unificado w-full max-w-md"
-                value={value.reglaDefaultId ?? reglas[0]?.id ?? ""}
-                onChange={(e) => onChange({ ...value, reglaDefaultId: e.target.value })}
+              <Select
+                value={reglaDefaultValue || undefined}
+                onValueChange={(v) => onChange({ ...value, reglaDefaultId: v })}
               >
-                {reglas.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.nombre}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  className={cn(SELECT_TRIGGER_FILTER_CLASS, "mt-1 w-full max-w-md")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {reglas.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           ) : null}
 

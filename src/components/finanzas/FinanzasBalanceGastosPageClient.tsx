@@ -36,6 +36,8 @@ import {
 } from "@/actions/finBalGastoMensualBalance";
 import type { PendienteDiscriminaIvaCargaMesItem } from "@/services/finBalGastoMensualBalance.service";
 import { cn } from "@/lib/utils";
+import { filterItemsBySelectSearch } from "@/lib/selectSearch";
+import SelectSearchInput from "@/components/shared/SelectSearchInput";
 
 type DimensionOpcionesFiltro = "sucursal" | "proveedor" | "rubro" | "gasto";
 
@@ -175,6 +177,11 @@ export default function FinanzasBalanceGastosPageClient({
   const [loading, setLoading] = useState(false);
   const mesesMultiRef = useRef<HTMLDivElement>(null);
   const [mesesOpen, setMesesOpen] = useState(false);
+  const [mesesQuery, setMesesQuery] = useState("");
+  const mesesFiltrados = useMemo(
+    () => filterItemsBySelectSearch(MESES_CALENDARIO, mesesQuery, (m) => m.etiqueta),
+    [mesesQuery]
+  );
 
   const [filtRubro, setFiltRubro] = useState("");
   const [filtGasto, setFiltGasto] = useState("");
@@ -296,6 +303,7 @@ export default function FinanzasBalanceGastosPageClient({
     function handleClickOutside(e: MouseEvent) {
       if (mesesMultiRef.current && !mesesMultiRef.current.contains(e.target as Node)) {
         setMesesOpen(false);
+        setMesesQuery("");
       }
     }
     if (mesesOpen) {
@@ -590,7 +598,13 @@ export default function FinanzasBalanceGastosPageClient({
                   <div className="relative" ref={mesesMultiRef}>
                     <button
                       type="button"
-                      onClick={() => setMesesOpen((o) => !o)}
+                      onClick={() =>
+                        setMesesOpen((o) => {
+                          const next = !o;
+                          if (!next) setMesesQuery("");
+                          return next;
+                        })
+                      }
                       className={cn(
                         SELECT_TRIGGER_FILTER_CLASS,
                         "flex w-full items-center justify-between gap-2 text-left font-semibold"
@@ -604,33 +618,48 @@ export default function FinanzasBalanceGastosPageClient({
                     </button>
                     {mesesOpen ? (
                       <div
-                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                        className="absolute top-full left-0 z-50 mt-1 flex max-h-72 min-w-full flex-col overflow-hidden rounded-md border border-border bg-popover shadow-md"
                         role="listbox"
                         aria-multiselectable="true"
                       >
-                        {MESES_CALENDARIO.map((m) => {
-                          const selected = meses.includes(m.valor);
-                          return (
-                            <label
-                              key={m.valor}
-                              role="option"
-                              aria-selected={selected}
-                              className={cn(
-                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
-                                selected && "bg-muted"
-                              )}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={() => toggleMes(m.valor)}
-                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                                aria-label={m.etiqueta}
-                              />
-                              <span>{m.etiqueta}</span>
-                            </label>
-                          );
-                        })}
+                        <div className="shrink-0 border-b border-border p-1">
+                          <SelectSearchInput
+                            value={mesesQuery}
+                            onValueChange={setMesesQuery}
+                            autoFocus
+                          />
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto p-1">
+                          {mesesFiltrados.length === 0 ? (
+                            <p className="px-2 py-1.5 text-sm text-muted-foreground" role="status">
+                              SIN RESULTADOS
+                            </p>
+                          ) : (
+                            mesesFiltrados.map((m) => {
+                              const selected = meses.includes(m.valor);
+                              return (
+                                <label
+                                  key={m.valor}
+                                  role="option"
+                                  aria-selected={selected}
+                                  className={cn(
+                                    "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                                    selected && "bg-muted"
+                                  )}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selected}
+                                    onChange={() => toggleMes(m.valor)}
+                                    className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                    aria-label={m.etiqueta}
+                                  />
+                                  <span>{m.etiqueta}</span>
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
                       </div>
                     ) : null}
                   </div>

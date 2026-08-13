@@ -8,7 +8,14 @@ import AgregarProveedorUrlCompetenciaModal from "@/components/precios-competenci
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
-import { INPUT_FILTER_CLASS } from "@/components/FilterBar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { INPUT_FILTER_CLASS, SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import { toast } from "sonner";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -436,27 +443,36 @@ export default function AsociarUrlsCompetenciaModal({
                           ) : (
                             <>
                               {f.reglas.length > 0 ? (
-                                <select
-                                  className="input-filtro-unificado w-full min-w-0"
-                                  value={f.tipoPagina}
+                                <Select
+                                  value={f.tipoPagina || undefined}
                                   disabled={!puedeEditar || accionesDeshabilitadas}
-                                  aria-label={`Ficha de producto — ${f.nombre}`}
-                                  onChange={(e) =>
+                                  onValueChange={(v) =>
                                     setFilas((prev) =>
                                       prev.map((row, i) =>
-                                        i === index
-                                          ? { ...row, tipoPagina: e.target.value }
-                                          : row
+                                        i === index ? { ...row, tipoPagina: v } : row
                                       )
                                     )
                                   }
                                 >
-                                  {f.reglas.map((r) => (
-                                    <option key={r.id} value={r.id}>
-                                      {r.nombre}
-                                    </option>
-                                  ))}
-                                </select>
+                                  <SelectTrigger
+                                    className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full min-w-0")}
+                                    aria-label={`Ficha de producto — ${f.nombre}`}
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent
+                                    position="popper"
+                                    side="bottom"
+                                    align="start"
+                                    className="select-content-filtro"
+                                  >
+                                    {f.reglas.map((r) => (
+                                      <SelectItem key={r.id} value={r.id}>
+                                        {r.nombre}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               ) : (
                                 <span className="text-xs text-muted-foreground">
                                   Sin reglas configuradas

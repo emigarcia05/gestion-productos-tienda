@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   CheckCircle2,
-  ChevronDown,
   FileText,
   Loader2,
   Upload,
@@ -616,26 +615,32 @@ export default function ImportarEstPorProdModal({
                           )}
                         </TableCell>
                         <TableCell className="celda-datos">
-                          <div className="relative">
-                            <select
-                              value={mapeo[i] ?? "ignorar"}
-                              onChange={(e) =>
-                                setMapeo((prev) => ({
-                                  ...prev,
-                                  [i]: e.target.value as CampoDestinoEstPorProd,
-                                }))
-                              }
-                              disabled={busy}
-                              className="w-full appearance-none rounded border border-input bg-background px-2 py-1.5 pr-6 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                          <Select
+                            value={mapeo[i] ?? "ignorar"}
+                            onValueChange={(v) =>
+                              setMapeo((prev) => ({
+                                ...prev,
+                                [i]: v as CampoDestinoEstPorProd,
+                              }))
+                            }
+                            disabled={busy}
+                          >
+                            <SelectTrigger className={cn("h-8 w-full text-xs")}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent
+                              position="popper"
+                              side="bottom"
+                              align="start"
+                              className="select-content-filtro"
                             >
                               {CAMPOS_MAPEO.map((c) => (
-                                <option key={c.value} value={c.value}>
+                                <SelectItem key={c.value} value={c.value}>
                                   {c.required ? `${c.label} *` : c.label}
-                                </option>
+                                </SelectItem>
                               ))}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-1.5 top-1.5 h-3 w-3 text-muted-foreground" />
-                          </div>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                       </TableRow>
                     ))}

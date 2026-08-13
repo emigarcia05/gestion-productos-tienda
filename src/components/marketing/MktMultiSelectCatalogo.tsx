@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { MktCatalogoNombreItem } from "@/lib/mktPublicacionesCatalogo";
+import { filterItemsBySelectSearch } from "@/lib/selectSearch";
+import SelectSearchInput from "@/components/shared/SelectSearchInput";
 import { cn } from "@/lib/utils";
 
 /** Multi-select de catálogo Marketing (redes, etc.). */
@@ -25,10 +27,15 @@ export default function MktMultiSelectCatalogo({
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedItems = useMemo(
     () => opciones.filter((o) => selectedSet.has(o.id)),
     [opciones, selectedSet]
+  );
+  const opcionesFiltradas = useMemo(
+    () => filterItemsBySelectSearch(opciones, query, (o) => o.nombre),
+    [opciones, query]
   );
 
   useEffect(() => {
@@ -36,6 +43,7 @@ export default function MktMultiSelectCatalogo({
     function onPointerDown(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
+        setQuery("");
       }
     }
     document.addEventListener("mousedown", onPointerDown);
@@ -74,7 +82,11 @@ export default function MktMultiSelectCatalogo({
           "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
           selectedItems.length === 0 && "text-muted-foreground"
         )}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen((o) => {
+          const next = !o;
+          if (!next) setQuery("");
+          return next;
+        })}
       >
         <span className="min-w-0 flex-1 truncate">{label}</span>
         <ChevronDown
@@ -84,32 +96,47 @@ export default function MktMultiSelectCatalogo({
       </button>
       {open && opciones.length > 0 ? (
         <div
-          className="absolute top-full left-0 z-50 mt-1 max-h-48 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+          className="absolute top-full left-0 z-50 mt-1 flex max-h-56 min-w-full flex-col overflow-hidden rounded-md border border-border bg-popover shadow-md"
           role="listbox"
           aria-multiselectable="true"
         >
-          {opciones.map((item) => {
-            const checked = selectedSet.has(item.id);
-            return (
-              <label
-                key={item.id}
-                role="option"
-                aria-selected={checked}
-                className={cn(
-                  "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
-                  checked && "bg-muted"
-                )}
-              >
-                <input
-                  type="checkbox"
-                  className="size-4 accent-primary"
-                  checked={checked}
-                  onChange={() => toggle(item.id)}
-                />
-                <span className="min-w-0 flex-1 truncate">{item.nombre}</span>
-              </label>
-            );
-          })}
+          <div className="shrink-0 border-b border-border p-1">
+            <SelectSearchInput
+              value={query}
+              onValueChange={setQuery}
+              autoFocus
+            />
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-1">
+            {opcionesFiltradas.length === 0 ? (
+              <p className="px-2 py-1.5 text-sm text-muted-foreground" role="status">
+                SIN RESULTADOS
+              </p>
+            ) : (
+              opcionesFiltradas.map((item) => {
+                const checked = selectedSet.has(item.id);
+                return (
+                  <label
+                    key={item.id}
+                    role="option"
+                    aria-selected={checked}
+                    className={cn(
+                      "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                      checked && "bg-muted"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-primary"
+                      checked={checked}
+                      onChange={() => toggle(item.id)}
+                    />
+                    <span className="min-w-0 flex-1 truncate">{item.nombre}</span>
+                  </label>
+                );
+              })
+            )}
+          </div>
         </div>
       ) : null}
     </div>
