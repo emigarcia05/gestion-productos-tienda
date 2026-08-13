@@ -26,12 +26,6 @@ export interface ReglaDescEspecialDetalle extends ReglaDescEspecialListaPrecio {
   codigosExt: string[];
 }
 
-export interface ReglaDescEspecialResumenProducto {
-  id: string;
-  nombre: string;
-  valor: number;
-}
-
 const CHUNK_MATERIALIZACION = 500;
 
 const includeFiltrosRegla = {
@@ -236,21 +230,6 @@ export async function obtenerReglaDescEspecialDetalle(
   return {
     ...mapReglaLista(row),
     codigosExt: row.productos.map((p) => p.listaPrecioProveedorCodExt),
-  };
-}
-
-export async function obtenerReglaDescEspecialPorCodExt(
-  codExt: string
-): Promise<ReglaDescEspecialResumenProducto | null> {
-  const link = await prisma.prodPrecioDescEspecialReglaProducto.findUnique({
-    where: { listaPrecioProveedorCodExt: codExt },
-    include: { regla: { select: { id: true, nombre: true, valor: true } } },
-  });
-  if (!link) return null;
-  return {
-    id: link.regla.id,
-    nombre: link.regla.nombre,
-    valor: Number(link.regla.valor),
   };
 }
 

@@ -91,12 +91,10 @@ export const esFabricaFormSchema = z
  * `crearProveedor`, `editarProveedor`, etc.).
  */
 import {
-  IVA_VALUES as IVA_VALUES_SHARED,
   ivaPoliticaFormSchema,
   type IvaValue as IvaValueShared,
 } from "@/lib/validations/iva";
 
-export const IVA_PROVEEDOR_VALUES = IVA_VALUES_SHARED;
 export type IvaProveedorValue = IvaValueShared;
 export const ivaProveedorFormSchema = ivaPoliticaFormSchema;
 

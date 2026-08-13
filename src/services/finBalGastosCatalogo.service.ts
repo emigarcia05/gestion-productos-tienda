@@ -138,61 +138,6 @@ function mapDbError(
 // ─── Lecturas ─────────────────────────────────────────────────────────────
 
 /**
- * Devuelve los Tipos sin jerarquía (para selects). Orden alfabético.
- */
-export async function listarFinBalGastoTipos(): Promise<FinBalGastoTipoItem[]> {
-  const rows = await prisma.finBalGastoTipo.findMany({
-    select: { id: true, nombre: true, createdAt: true, updatedAt: true },
-    orderBy: [{ nombre: "asc" }],
-  });
-  return rows.map((r) => ({
-    id: r.id,
-    nombre: r.nombre.toUpperCase(),
-    createdAt: r.createdAt,
-    updatedAt: r.updatedAt,
-  }));
-}
-
-/**
- * Devuelve los Rubros de un Tipo (para selects dependientes).
- */
-export async function listarFinBalGastoRubrosPorTipo(
-  tipoId: string
-): Promise<FinBalGastoRubroItem[]> {
-  const rows = await prisma.finBalGastoRubro.findMany({
-    where: { tipoId },
-    select: { id: true, nombre: true, tipoId: true, createdAt: true, updatedAt: true },
-    orderBy: [{ nombre: "asc" }],
-  });
-  return rows.map((r) => ({
-    id: r.id,
-    nombre: r.nombre.toUpperCase(),
-    tipoId: r.tipoId,
-    createdAt: r.createdAt,
-    updatedAt: r.updatedAt,
-  }));
-}
-
-/**
- * Devuelve los Gastos de un Rubro (para selects dependientes).
- */
-export async function listarFinBalGastosPorRubro(
-  rubroId: string
-): Promise<FinBalGastoItem[]> {
-  const rows = await prisma.finBalGasto.findMany({
-    where: { rubroId },
-    orderBy: [{ nombre: "asc" }],
-  });
-  return rows.map((r) => ({
-    id: r.id,
-    nombre: r.nombre.toUpperCase(),
-    rubroId: r.rubroId,
-    createdAt: r.createdAt,
-    updatedAt: r.updatedAt,
-  }));
-}
-
-/**
  * Devuelve la jerarquía completa Tipo → Rubros → Gastos para UI de árbol.
  * Un único roundtrip vía `include` anidado. Orden alfabético en cada nivel.
  */

@@ -290,28 +290,6 @@ export async function getProductosPorPresentacion(
   return { productos, costoCompraObjetivo: objetivo, labelCompleto, referenciasCompetencia };
 }
 
-/** Marcas distintas de lista_tienda (prod_precios_tienda.marca) para filtros. */
-export async function getMarcasFromListaTienda(): Promise<string[]> {
-  const rows = await prisma.prodTienda.findMany({
-    where: { marca: { not: null } },
-    select: { marca: true },
-    distinct: ["marca"],
-    orderBy: { marca: "asc" },
-  });
-  return rows.map((r) => r.marca as string).filter(Boolean);
-}
-
-/** Proveedores distintos de lista_tienda (prod_precios_tienda.proveedor) para filtros. */
-export async function getProveedoresFromListaTienda(): Promise<string[]> {
-  const rows = await prisma.prodTienda.findMany({
-    where: { proveedor: { not: null } },
-    select: { proveedor: true },
-    distinct: ["proveedor"],
-    orderBy: { proveedor: "asc" },
-  });
-  return rows.map((r) => r.proveedor as string).filter(Boolean);
-}
-
 function claveOpcionReferenciaCompetencia(codTienda: string, competenciaId: string): string {
   return `${codTienda}:${competenciaId}`;
 }

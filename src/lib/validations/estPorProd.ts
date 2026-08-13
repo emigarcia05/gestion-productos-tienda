@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
+import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import { EST_POR_PROD_CARGA_DESDE } from "@/lib/estPorProdPeriodo";
 
 const VTAS_EN_UN_MAX = 999_999_999.9999;
@@ -57,11 +57,6 @@ export const verificarEstPorProdPeriodoSchema = estPorProdMesAnioSchema.extend({
   sucursalId: estPorProdSucursalIdSchema,
 });
 export type VerificarEstPorProdPeriodoInput = z.infer<typeof verificarEstPorProdPeriodoSchema>;
-
-export const eliminarEstPorProdSchema = z.object({
-  id: prismaCuidSchema,
-});
-export type EliminarEstPorProdInput = z.infer<typeof eliminarEstPorProdSchema>;
 
 export const eliminarEstPorProdPorPeriodoSchema = estPorProdMesAnioSchema.extend({
   sucursalId: estPorProdSucursalIdSchema,

@@ -27,14 +27,6 @@ function toNum(n: unknown): number {
   return Number.isFinite(v) ? v : 0;
 }
 
-export type CostoCxPxResuelto = {
-  costoCompra: number;
-  proveedorLabel: string | null;
-  costoCompraCodExt: string | null;
-  /** true si el valor viene de FK persistida (no de fallback en lectura). */
-  desdeFkPersistida: boolean;
-};
-
 /** Valida que `codExt` sea candidato de costo para el ítem tienda. */
 export async function validarCodExtCostoLista(
   codTienda: string,
@@ -129,84 +121,6 @@ export async function autoAsignarCodExtCostoListaTrasVincular(
       data: { costoCompraCodExt: matchDux.codExt },
     });
   }
-}
-
-type FilaTiendaCostoInput = {
-  codTienda: string;
-  proveedor: string | null;
-  costoCompra: unknown;
-  costoCompraCodExt: string | null;
-  costoListaProveedor: {
-    pxCompraFinalSinIva: unknown;
-    proveedor: { nombre: string; prefijo: string | null };
-  } | null;
-};
-
-/**
- * Resuelve CX. COMPRA y proveedor para la grilla Cx/Px.
- * Prioridad: FK persistida → único candidato habilitado (solo lectura) → match DUX entre vínculos → espejo DUX.
- */
-export async function resolverCostoCxPxParaFila(
-  row: FilaTiendaCostoInput,
-  candidatosCache?: Awaited<ReturnType<typeof listarCandidatosCostoPorCodTienda>>
-): Promise<CostoCxPxResuelto> {
-  const costoDux = toNum(row.costoCompra);
-  const proveedorDux = row.proveedor?.trim() || null;
-
-  if (row.costoListaProveedor && row.costoCompraCodExt) {
-    const lp = row.costoListaProveedor;
-    const px = toNum(lp.pxCompraFinalSinIva);
-    const label =
-      (lp.proveedor.prefijo ?? "").trim() ||
-      lp.proveedor.nombre.trim() ||
-      null;
-    return {
-      costoCompra: px > 0 ? px : costoDux,
-      proveedorLabel: label ?? proveedorDux,
-      costoCompraCodExt: row.costoCompraCodExt,
-      desdeFkPersistida: true,
-    };
-  }
-
-  const candidatos =
-    candidatosCache ?? (await listarCandidatosCostoPorCodTienda(row.codTienda));
-
-  if (candidatos.length === 1) {
-    const c = candidatos[0];
-    const px = toNum(c.pxCompraFinalSinIva);
-    const label =
-      (c.proveedor.prefijo ?? "").trim() || c.proveedor.nombre.trim() || null;
-    return {
-      costoCompra: px > 0 ? px : costoDux,
-      proveedorLabel: label ?? proveedorDux,
-      costoCompraCodExt: c.codExt,
-      desdeFkPersistida: false,
-    };
-  }
-
-  const matchDux = candidatos.find((c) =>
-    proveedorTextoCoincideConDux(row.proveedor, c.proveedor.nombre, c.proveedor.prefijo)
-  );
-  if (matchDux) {
-    const px = toNum(matchDux.pxCompraFinalSinIva);
-    const label =
-      (matchDux.proveedor.prefijo ?? "").trim() ||
-      matchDux.proveedor.nombre.trim() ||
-      null;
-    return {
-      costoCompra: px > 0 ? px : costoDux,
-      proveedorLabel: label ?? proveedorDux,
-      costoCompraCodExt: matchDux.codExt,
-      desdeFkPersistida: false,
-    };
-  }
-
-  return {
-    costoCompra: costoDux,
-    proveedorLabel: proveedorDux,
-    costoCompraCodExt: null,
-    desdeFkPersistida: false,
-  };
 }
 
 export async function listarCandidatosCostoPorCodTienda(codTienda: string) {

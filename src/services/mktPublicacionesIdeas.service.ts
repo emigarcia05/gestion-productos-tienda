@@ -94,21 +94,6 @@ export async function listarMktIdeasJerarquia(): Promise<MktIdeaSeccionItem[]> {
   }));
 }
 
-export async function listarMktIdeaSecciones(): Promise<
-  Omit<MktIdeaSeccionItem, "detalles">[]
-> {
-  const jerarquia = await listarMktIdeasJerarquia();
-  return jerarquia.map(({ id, nombre, resumen }) => ({ id, nombre, resumen }));
-}
-
-export async function listarMktIdeaDetalles(): Promise<MktIdeaDetalleItem[]> {
-  const rows = await prisma.mktPublicacionIdeaDetalle.findMany({
-    orderBy: { tituloIdea: "asc" },
-    select: detalleSelect,
-  });
-  return ordenarDetallesIdeas(rows.map(mapDetalle));
-}
-
 export async function crearMktIdeaSeccion(
   input: CrearMktIdeaSeccionInput
 ): Promise<ServiceResult<MktIdeaSeccionItem>> {

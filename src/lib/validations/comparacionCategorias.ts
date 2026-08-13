@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { listaPreciosCodExtSchema } from "@/lib/validations/common";
 
-export const uuidSchema = z.string().uuid("ID inválido.");
 export const comparacionIdSchema = z.string().cuid("ID inválido.");
 
 export const nombreCategoriaSchema = z

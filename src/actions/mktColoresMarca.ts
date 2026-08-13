@@ -15,7 +15,6 @@ import {
   crearMktColorMarca,
   editarMktColorMarca,
   eliminarMktColorMarca,
-  listarMktColoresMarca,
 } from "@/services/mktColoresMarca.service";
 
 function firstZodErrorMessage(error: {
@@ -47,21 +46,6 @@ async function requireEditorMarketing(): Promise<{ ok: false; error: string } | 
     return { ok: false, error: "Sin permisos de editor." };
   }
   return null;
-}
-
-export async function listarMktColoresMarcaAction(): Promise<
-  ActionResult<MktColorMarcaItem[]>
-> {
-  const gate = await requireMarketingLectura();
-  if (gate) return gate;
-  try {
-    return { ok: true, data: await listarMktColoresMarca() };
-  } catch (e) {
-    return {
-      ok: false,
-      error: e instanceof Error ? e.message : "No se pudieron listar los registros.",
-    };
-  }
 }
 
 export async function crearMktColorMarcaAction(

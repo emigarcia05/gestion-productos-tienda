@@ -15,7 +15,6 @@ import {
   crearMktContenidoUrlDrive,
   editarMktContenidoUrlDrive,
   eliminarMktContenidoUrlDrive,
-  listarMktContenidoUrlDrive,
 } from "@/services/mktContenidoUrlDrive.service";
 
 function firstZodErrorMessage(error: {
@@ -47,21 +46,6 @@ async function requireEditorMarketing(): Promise<{ ok: false; error: string } | 
     return { ok: false, error: "Sin permisos de editor." };
   }
   return null;
-}
-
-export async function listarMktContenidoUrlDriveAction(): Promise<
-  ActionResult<MktContenidoUrlDriveItem[]>
-> {
-  const gate = await requireMarketingLectura();
-  if (gate) return gate;
-  try {
-    return { ok: true, data: await listarMktContenidoUrlDrive() };
-  } catch (e) {
-    return {
-      ok: false,
-      error: e instanceof Error ? e.message : "No se pudieron listar los registros.",
-    };
-  }
 }
 
 export async function crearMktContenidoUrlDriveAction(

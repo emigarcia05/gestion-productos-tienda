@@ -63,24 +63,3 @@ export function resolverParametrosFormulaMargenContribucion(
     ivaFactor: ivaFactor > 1 ? ivaFactor : 1 + FIN_ANA_MC_FORMULA_DEFAULTS.IVA_ALICUOTA.valor,
   };
 }
-
-/** Límites de persistencia por código. */
-export function clampValorFormulaMargenContribucion(
-  codigo: FinAnaMcFormulaCodigo,
-  valor: number
-): number | null {
-  if (!Number.isFinite(valor)) return null;
-  switch (codigo) {
-    case "PX_LISTA_C_IVA":
-      if (!(valor > 0) || valor > 1_000_000) return null;
-      return Math.round(valor * 100) / 100;
-    case "IVA_ALICUOTA":
-      if (!(valor > 0) || valor > 1) return null;
-      return Math.round(valor * 1_000_000) / 1_000_000;
-    case "IIBB_ALICUOTA":
-      if (valor < 0 || valor > 1) return null;
-      return Math.round(valor * 1_000_000) / 1_000_000;
-    default:
-      return null;
-  }
-}

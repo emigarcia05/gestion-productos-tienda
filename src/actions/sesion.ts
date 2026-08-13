@@ -31,9 +31,3 @@ export async function activarModoEditor(clave: string): Promise<{ ok: boolean; e
   revalidatePath("/", "layout");
   return { ok: true };
 }
-
-export async function volverModoSimple(): Promise<void> {
-  const sesion = await getSesion();
-  sesion.destroy();
-  revalidatePath("/", "layout");
-}

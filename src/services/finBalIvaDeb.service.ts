@@ -118,9 +118,6 @@ export async function listarIvaDebitoFinBalPorAnio(anio: number): Promise<number
   }
 }
 
-/** @deprecated Usar `listarIvaDebitoFinBalPorAnio`. */
-export const listarMontosBrutosFinBalIvaDebPorAnio = listarIvaDebitoFinBalPorAnio;
-
 async function upsertLinea(
   tx: Prisma.TransactionClient,
   f: FilaCsvIvaDebParseada,
@@ -201,7 +198,3 @@ export async function importarTxtIvaDebitoMes(params: {
   };
 }
 
-/** @deprecated Usar `importarTxtIvaDebitoMes`. */
-export const importarCsvIvaDebitoMes = importarTxtIvaDebitoMes;
-
-export type ImportarIvaDebCsvResultado = ImportarIvaDebTxtResultado;

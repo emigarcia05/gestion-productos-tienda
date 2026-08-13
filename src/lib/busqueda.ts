@@ -4,7 +4,7 @@
  */
 
 /** Normaliza texto para búsqueda: minúsculas y sin acentos. */
-export function normalizeForSearch(s: string): string {
+function normalizeForSearch(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")
