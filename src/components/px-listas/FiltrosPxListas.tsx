@@ -66,8 +66,6 @@ export default function FiltrosPxListas({
     },
   });
 
-  const hayFiltros = !!(q || marcaActual || rubroActual || filtroPxPromedioActual);
-
   function navigate(updates: {
     q?: string;
     marca?: string;
@@ -201,7 +199,7 @@ export default function FiltrosPxListas({
             inputRef={inputRef}
           />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+        <LimpiarFiltrosButton onClick={limpiarFiltros} />
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {totalItems.toLocaleString("es-AR")} ÍTEM{totalItems !== 1 ? "S" : ""}
         </span>

@@ -117,5 +117,3 @@ export default function ToolbarActionButton({
     </Button>
   );
 }
-
-export { toolbarActionButtonVariants };

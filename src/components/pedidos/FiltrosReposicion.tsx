@@ -64,14 +64,6 @@ export default function FiltrosReposicion({
     onDebouncedSearch: (value) => navigate({ q: value }),
   });
 
-  const hayFiltros = !!(
-    q ||
-    proveedorActual ||
-    marcaActual ||
-    rubroActual ||
-    configuradoActual
-  );
-
   function buildParams(updates: {
     sucursal?: SucursalReposicion | null;
     q?: string;
@@ -337,7 +329,7 @@ export default function FiltrosReposicion({
               disabled={!sucursalSeleccionada}
             />
           </FilterRowSearch>
-          <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+          <LimpiarFiltrosButton onClick={limpiarFiltros} />
         </div>
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {totalItems.toLocaleString("es-AR")} ÍTEM

@@ -133,9 +133,6 @@ export function FilterRowDateRange({
   return <div className={cn("w-full", className)}>{children}</div>;
 }
 
-/** Color de fuente de todos los filtros (heredable). Usa variable de tema. */
-export const FILTER_TEXT_COLOR_CLASS = "text-foreground";
-
 /**
  * Clase global única para input y SelectTrigger de filtros (SSOT en globals.css).
  * Un cambio en .input-filtro-unificado se propaga a todos los filtros.
@@ -169,14 +166,7 @@ export const FILTER_DATE_RANGE_TRIGGER_CLASS =
  * Botón cuadrado con icono de tacho de basura, al lado del filtro de descripción.
  * Al apretarlo borra todos los filtros. Heredable: usar en todos los módulos con filtros.
  */
-export function LimpiarFiltrosButton(
-  props: {
-    onClick: () => void;
-    /** DEPRECADO: el botón ahora se muestra siempre por regla global de UX. */
-    visible?: boolean;
-  }
-) {
-  const { onClick } = props;
+export function LimpiarFiltrosButton({ onClick }: { onClick: () => void }) {
   return (
     <Button
       type="button"

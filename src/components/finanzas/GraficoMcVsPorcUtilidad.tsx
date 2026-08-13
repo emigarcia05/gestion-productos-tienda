@@ -238,7 +238,11 @@ export default function GraficoMcVsPorcUtilidad({
   );
 
   useEffect(() => {
-    if (!categoriasDisponibles) setMostrarCategoriasMc(false);
+    if (!categoriasDisponibles) {
+      queueMicrotask(() => {
+        setMostrarCategoriasMc(false);
+      });
+    }
   }, [categoriasDisponibles]);
 
   const tituloGrafico = `RELACIÓN "PORC. UTILIDAD / ${etiquetaEjeY}"`;
