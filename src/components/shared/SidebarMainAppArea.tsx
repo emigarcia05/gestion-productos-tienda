@@ -28,7 +28,7 @@ import { CALLOUT_WARNING_CLASS } from "@/lib/ui-classes";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 
 export interface SidebarMainAppAreaProps {
-  /** Clases en el contenedor del indicador. */
+  /** Clases en el botón compacto. */
   className?: string;
 }
 
@@ -56,9 +56,8 @@ function FilaDetalle({
 }
 
 /**
- * Indicador compacto de slidenav: botón **Pendientes**.
- * El detalle se abre al costado con hover. Tras elegir usuario, si hay
- * transferencias pendientes se muestra un modal de advertencia.
+ * Fila **Pendientes** del dock de sesión (slidenav).
+ * Hover: detalle Pedido / Transferencia. Click con transf. pendientes → aviso.
  */
 export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProps) {
   const pathname = usePathname();
@@ -124,6 +123,12 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
   }, [pathname]);
 
   const hayTransfPendiente = conteos.emision > 0 || conteos.recepcion > 0;
+  const totalPendientes =
+    conteos.urgente +
+    conteos.tintometrico +
+    conteos.reposicion +
+    conteos.emision +
+    conteos.recepcion;
 
   function handleClickPendientes() {
     if (hayTransfPendiente) setAdvertenciaOpen(true);
@@ -136,15 +141,29 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
           <button
             type="button"
             onClick={handleClickPendientes}
-            aria-label="Pendientes"
+            aria-label={`Pendientes, ${totalPendientes}`}
             className={cn(
-              "flex w-full min-w-0 items-center justify-between gap-1 rounded-lg px-2 py-1.5",
+              "flex h-9 w-full min-w-0 items-center gap-1.5 rounded-md px-2",
               "text-sidebar-foreground",
-              "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+              "outline-none hover:bg-sidebar-accent/80",
+              "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
               className
             )}
           >
-            <span className="text-xs font-semibold tracking-wide">Pendientes</span>
+            <span className="min-w-0 flex-1 truncate text-left text-xs font-semibold tracking-wide">
+              Pendientes
+            </span>
+            <span
+              className={cn(
+                "inline-flex min-w-5 shrink-0 items-center justify-center rounded px-1",
+                "text-[10px] font-bold tabular-nums leading-none",
+                hayTransfPendiente
+                  ? "bg-accent2 text-foreground"
+                  : "bg-sidebar-accent text-sidebar-foreground"
+              )}
+            >
+              {totalPendientes}
+            </span>
             <ChevronRight className="size-3.5 shrink-0" aria-hidden />
           </button>
         </TooltipTrigger>

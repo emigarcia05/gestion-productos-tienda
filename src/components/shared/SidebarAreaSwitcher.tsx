@@ -65,7 +65,8 @@ function nombreUsuarioLabel(nombre: string): string {
 }
 
 /**
- * Pie de slidenav: ícono de módulo (si puede cambiar) + nombre de usuario.
+ * Pie de slidenav: fila de usuario (ícono módulo si puede cambiar + nombre).
+ * Vive dentro del dock de sesión (`sidebar-user-switcher-surface` en `Sidebar`).
  * Primera visita: modal **Elegir Usuario**; si el usuario tiene Administración, pide clave.
  */
 export default function SidebarAreaSwitcher({ rolActual }: Props) {
@@ -259,39 +260,39 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
 
   return (
     <>
-      <div
-        className={cn(
-          "w-full rounded-lg px-2 py-2",
-          "sidebar-user-switcher-surface"
-        )}
-      >
-        {puedeCambiar ? (
-          <button
-            type="button"
-            onClick={abrirCambiarModulo}
-            disabled={pending || forceChoose}
-            aria-label="Cambiar Módulo"
-            title="Cambiar Módulo"
-            className={cn(
-              "grid w-full grid-cols-[15%_85%] items-center gap-0",
-              "rounded-md text-left",
-              "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-              pending && "cursor-not-allowed opacity-90"
-            )}
-          >
-            <span className="flex items-center justify-center">
-              <IconoModulo className="size-4 shrink-0" aria-hidden />
-            </span>
-            <span className="min-w-0 truncate text-sm font-semibold tracking-wide">
-              {labelUsuario}
-            </span>
-          </button>
-        ) : (
-          <p className="w-full truncate text-center text-sm font-semibold tracking-wide">
+      {puedeCambiar ? (
+        <button
+          type="button"
+          onClick={abrirCambiarModulo}
+          disabled={pending || forceChoose}
+          aria-label="Cambiar Módulo"
+          title="Cambiar Módulo"
+          className={cn(
+            "grid h-9 w-full grid-cols-[15%_85%] items-center gap-0 rounded-md px-2",
+            "text-left text-sidebar-foreground",
+            "outline-none hover:bg-sidebar-accent/80",
+            "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+            pending && "cursor-not-allowed opacity-90"
+          )}
+        >
+          <span className="flex items-center justify-center">
+            <IconoModulo className="size-4 shrink-0" aria-hidden />
+          </span>
+          <span className="min-w-0 truncate text-xs font-semibold tracking-wide">
             {labelUsuario}
-          </p>
-        )}
-      </div>
+          </span>
+        </button>
+      ) : (
+        <p
+          className={cn(
+            "flex h-9 w-full items-center justify-center rounded-md px-2",
+            "truncate text-center text-xs font-semibold tracking-wide",
+            "text-sidebar-foreground"
+          )}
+        >
+          {labelUsuario}
+        </p>
+      )}
 
       <Dialog open={usuarioOpen} onOpenChange={handleUsuarioOpenChange}>
         <AppModal
