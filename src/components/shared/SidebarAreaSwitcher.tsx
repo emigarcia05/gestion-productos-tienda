@@ -26,6 +26,13 @@ import {
   getMainAppAreaIdFromPathname,
   type MainAppAreaId,
 } from "@/lib/main-app-areas";
+import {
+  SUCURSALES_PREFERIDAS,
+  guardarSucursalPreferida,
+  leerSucursalPreferida,
+  sucursalPreferidaAbrev,
+  type SucursalPreferida,
+} from "@/lib/sucursalPreferida";
 import type { Rol } from "@/lib/permisos";
 import { cn } from "@/lib/utils";
 
@@ -34,11 +41,26 @@ interface Props {
   rolActual: Rol;
 }
 
-/** Sesión de navegador: el usuario ya eligió un módulo de la app al menos una vez. */
+/** Sesión de navegador: el usuario ya eligió sucursal y módulo al menos una vez. */
 const STORAGE_AREA_ELEGIDA = "main-app-area-elegida";
 
 const areaOptionVariants = cva(
   "w-full rounded-lg border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+  {
+    variants: {
+      current: {
+        true: "border-sidebar-indicator bg-sidebar-accent/40 text-sidebar-foreground",
+        false: "border-border bg-card text-foreground hover:bg-muted/80",
+      },
+    },
+    defaultVariants: {
+      current: false,
+    },
+  }
+);
+
+const sucursalOptionVariants = cva(
+  "flex-1 rounded-lg border px-3 py-2.5 text-center text-sm font-semibold tracking-wide transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
   {
     variants: {
       current: {
@@ -74,16 +96,24 @@ function yaEligioArea(): boolean {
   }
 }
 
+function yaCompletoOnboarding(): boolean {
+  return yaEligioArea() && leerSucursalPreferida() !== null;
+}
+
 /**
- * Botón inferior de la slidenav: navega entre módulos/áreas (Vendedor, Administración, Marketing).
- * Administración pide clave (`EDITOR_PASSWORD`) si la sesión aún es `simple`.
- * En la primera apertura de la app fuerza elegir un módulo (modal no descartable).
+ * Botón inferior de la slidenav: sucursal preferida + módulo/área.
+ * Primera apertura: obliga a elegir **Sucursal** y **Módulo**.
  */
 export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [areasOpen, setAreasOpen] = useState(false);
-  const [forceChooseArea, setForceChooseArea] = useState(false);
+  const [forceChoose, setForceChoose] = useState(false);
+  const [sucursalDraft, setSucursalDraft] = useState<SucursalPreferida | null>(
+    null
+  );
+  const [sucursalGuardada, setSucursalGuardada] =
+    useState<SucursalPreferida | null>(null);
   const [claveOpen, setClaveOpen] = useState(false);
   const [clave, setClave] = useState("");
   const [mostrarClave, setMostrarClave] = useState(false);
@@ -93,20 +123,35 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
 
   const currentId = getMainAppAreaIdFromPathname(pathname);
   const current = getMainAppAreaById(currentId);
-  const labelActual = areaLabelMayusculas(current.label);
+  const labelModulo = areaLabelMayusculas(current.label);
+  const sucursalMostrada = sucursalGuardada ?? sucursalDraft;
+  const labelSucursalAbrev = sucursalMostrada
+    ? sucursalPreferidaAbrev(sucursalMostrada)
+    : "SUC";
+  const labelBoton = `${labelSucursalAbrev} / ${forceChoose ? "MÓDULO" : labelModulo}`;
 
   useEffect(() => {
-    if (yaEligioArea()) return;
+    const sucursal = leerSucursalPreferida();
     queueMicrotask(() => {
-      setForceChooseArea(true);
-      setAreasOpen(true);
+      setSucursalGuardada(sucursal);
+      setSucursalDraft(sucursal);
+      if (!yaCompletoOnboarding()) {
+        setForceChoose(true);
+        setAreasOpen(true);
+      }
     });
   }, []);
 
-  function goToArea(id: MainAppAreaId) {
-    const area = getMainAppAreaById(id);
+  function persistirOnboarding(sucursal: SucursalPreferida) {
+    guardarSucursalPreferida(sucursal);
     marcarAreaElegida();
-    setForceChooseArea(false);
+    setSucursalGuardada(sucursal);
+    setForceChoose(false);
+  }
+
+  function goToArea(id: MainAppAreaId, sucursal: SucursalPreferida) {
+    const area = getMainAppAreaById(id);
+    persistirOnboarding(sucursal);
     router.push(area.href);
     setAreasOpen(false);
     setClaveOpen(false);
@@ -114,13 +159,14 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   }
 
   function handleSelectArea(id: MainAppAreaId) {
-    if (id === currentId && !forceChooseArea) {
+    if (!sucursalDraft) return;
+    if (id === currentId && !forceChoose) {
+      persistirOnboarding(sucursalDraft);
       setAreasOpen(false);
       return;
     }
-    if (id === currentId && forceChooseArea) {
-      marcarAreaElegida();
-      setForceChooseArea(false);
+    if (id === currentId && forceChoose) {
+      persistirOnboarding(sucursalDraft);
       setAreasOpen(false);
       return;
     }
@@ -135,12 +181,12 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
       return;
     }
     startTransition(() => {
-      goToArea(id);
+      goToArea(id, sucursalDraft);
     });
   }
 
   function handleActivarYNavegar() {
-    if (!pendingAreaId) return;
+    if (!pendingAreaId || !sucursalDraft) return;
     setError("");
     startTransition(async () => {
       const res = await activarModoEditor(clave);
@@ -148,18 +194,23 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
         setError(res.error ?? "Error desconocido.");
         return;
       }
-      goToArea(pendingAreaId);
+      goToArea(pendingAreaId, sucursalDraft);
       router.refresh();
     });
   }
 
   function handleAreasOpenChange(open: boolean) {
-    if (!open && forceChooseArea) {
+    if (!open && forceChoose) {
       setAreasOpen(true);
       return;
     }
+    if (open) {
+      setSucursalDraft(leerSucursalPreferida() ?? sucursalGuardada);
+    }
     setAreasOpen(open);
   }
+
+  const puedeConfirmarModulo = sucursalDraft !== null;
 
   return (
     <>
@@ -175,18 +226,18 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
           "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
           pending && "cursor-not-allowed opacity-90"
         )}
-        aria-label="Cambiar Módulo De La Aplicación"
+        aria-label="Cambiar Sucursal Y Módulo De La Aplicación"
       >
         <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden />
-        <span className="relative flex items-center justify-center">
+        <span className="relative flex min-w-0 items-center justify-center">
           <span className="invisible whitespace-nowrap text-sm font-semibold tracking-wide">
-            CAMBIAR MÓDULO
+            CAMBIAR SUC / MÓDULO
           </span>
           <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-100 group-hover:opacity-0">
-            {forceChooseArea ? "ELEGIR MÓDULO" : labelActual}
+            {forceChoose ? "SUC / MÓDULO" : labelBoton}
           </span>
           <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-0 group-hover:opacity-100">
-            CAMBIAR MÓDULO
+            CAMBIAR SUC / MÓDULO
           </span>
         </span>
       </button>
@@ -194,13 +245,13 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
       <Dialog open={areasOpen} onOpenChange={handleAreasOpenChange}>
         <AppModal
           size="sm"
-          title="Módulos De La Aplicación"
+          title="Sucursal Y Módulo"
           padding="sm"
-          showCloseButton={!forceChooseArea}
+          showCloseButton={!forceChoose}
           actions={
-            forceChooseArea ? (
+            forceChoose ? (
               <p className="w-full text-center text-xs text-muted-foreground">
-                Elegí un módulo para empezar a navegar.
+                Elegí sucursal y módulo para empezar a navegar.
               </p>
             ) : (
               <Button type="button" variant="ghost" onClick={() => setAreasOpen(false)}>
@@ -209,43 +260,66 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
             )
           }
         >
-          <div className="flex w-full min-w-0 flex-col gap-2">
-            {forceChooseArea ? (
-              <p className="mb-1 text-sm text-foreground">
-                Seleccioná un módulo para comenzar.
-              </p>
-            ) : null}
-            {MAIN_APP_AREAS.map((area) => {
-              const Icon = areaIcons[area.id];
-              const esActual = area.id === currentId && !forceChooseArea;
-              return (
-                <button
-                  key={area.id}
-                  type="button"
-                  onClick={() => handleSelectArea(area.id)}
-                  disabled={pending}
-                  className={cn(areaOptionVariants({ current: esActual }))}
-                >
-                  <span className="flex items-center gap-2">
-                    <Icon
-                      className={cn(
-                        "h-4 w-4 shrink-0",
-                        esActual ? "text-foreground" : "text-muted-foreground"
-                      )}
-                      aria-hidden
-                    />
-                    <span className="block text-sm font-semibold leading-tight text-foreground">
-                      {areaLabelMayusculas(area.label)}
-                    </span>
-                    {area.requierePassword ? (
-                      <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                        Con clave
+          <div className="flex w-full min-w-0 flex-col gap-3">
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-semibold text-foreground">Sucursal</p>
+              <div className="flex gap-2">
+                {SUCURSALES_PREFERIDAS.map((s) => {
+                  const esActual = sucursalDraft === s.value;
+                  return (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setSucursalDraft(s.value)}
+                      disabled={pending}
+                      className={cn(sucursalOptionVariants({ current: esActual }))}
+                    >
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-semibold text-foreground">Módulo</p>
+              {!puedeConfirmarModulo ? (
+                <p className="text-xs text-muted-foreground">
+                  Primero seleccioná una sucursal.
+                </p>
+              ) : null}
+              {MAIN_APP_AREAS.map((area) => {
+                const Icon = areaIcons[area.id];
+                const esActual = area.id === currentId && !forceChoose;
+                return (
+                  <button
+                    key={area.id}
+                    type="button"
+                    onClick={() => handleSelectArea(area.id)}
+                    disabled={pending || !puedeConfirmarModulo}
+                    className={cn(areaOptionVariants({ current: esActual }))}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Icon
+                        className={cn(
+                          "h-4 w-4 shrink-0",
+                          esActual ? "text-foreground" : "text-muted-foreground"
+                        )}
+                        aria-hidden
+                      />
+                      <span className="block text-sm font-semibold leading-tight text-foreground">
+                        {areaLabelMayusculas(area.label)}
                       </span>
-                    ) : null}
-                  </span>
-                </button>
-              );
-            })}
+                      {area.requierePassword ? (
+                        <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                          Con clave
+                        </span>
+                      ) : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </AppModal>
       </Dialog>
@@ -256,7 +330,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
           setClaveOpen(open);
           if (!open) {
             setPendingAreaId(null);
-            if (forceChooseArea || !yaEligioArea()) {
+            if (forceChoose || !yaCompletoOnboarding()) {
               setAreasOpen(true);
             }
           }
@@ -277,7 +351,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
                 onClick={() => {
                   setClaveOpen(false);
                   setPendingAreaId(null);
-                  if (forceChooseArea || !yaEligioArea()) {
+                  if (forceChoose || !yaCompletoOnboarding()) {
                     setAreasOpen(true);
                   }
                 }}
@@ -287,7 +361,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
               </Button>
               <Button
                 onClick={handleActivarYNavegar}
-                disabled={pending || !clave || !pendingAreaId}
+                disabled={pending || !clave || !pendingAreaId || !sucursalDraft}
               >
                 {pending ? "Verificando..." : "Ingresar"}
               </Button>

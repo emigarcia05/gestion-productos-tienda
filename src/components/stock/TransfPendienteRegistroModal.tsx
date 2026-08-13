@@ -32,6 +32,7 @@ import {
 import { descargarExcelTransfDepositos } from "@/lib/exportTransfDepositosExcelClient";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 import { SUCURSAL_LABEL_TRANSF } from "@/lib/transfDepositosControl";
+import { leerSucursalPreferida } from "@/lib/sucursalPreferida";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -94,7 +95,9 @@ export default function TransfPendienteRegistroModal({
     queueMicrotask(() => {
       setLoading(true);
       setError(null);
-      setSucursalFiltro(origen ?? "");
+      setSucursalFiltro(
+        origen ?? leerSucursalPreferida() ?? ""
+      );
     });
 
     (async () => {

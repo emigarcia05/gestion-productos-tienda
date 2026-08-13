@@ -1,0 +1,53 @@
+/**
+ * Sucursal preferida de la sesión de navegador (slidenav).
+ * Default de filtros / Excel (p. ej. Trans. Depósitos); el usuario puede cambiarla después.
+ */
+
+export type SucursalPreferida = "guaymallen" | "maipu";
+
+export const SUCURSALES_PREFERIDAS: {
+  value: SucursalPreferida;
+  label: string;
+  /** Abreviatura en el botón slidenav (`SUC / MÓDULO`). */
+  abrev: string;
+}[] = [
+  { value: "guaymallen", label: "GUAYMALLÉN", abrev: "GUAY" },
+  { value: "maipu", label: "MAIPÚ", abrev: "MAIPÚ" },
+];
+
+/** Sesión de navegador: sucursal elegida junto al módulo. */
+export const STORAGE_SUCURSAL_PREFERIDA = "main-app-sucursal-preferida";
+
+export function parseSucursalPreferida(
+  raw: string | null | undefined
+): SucursalPreferida | null {
+  return raw === "guaymallen" || raw === "maipu" ? raw : null;
+}
+
+export function leerSucursalPreferida(): SucursalPreferida | null {
+  try {
+    return parseSucursalPreferida(
+      sessionStorage.getItem(STORAGE_SUCURSAL_PREFERIDA)
+    );
+  } catch {
+    return null;
+  }
+}
+
+export function guardarSucursalPreferida(codigo: SucursalPreferida): void {
+  try {
+    sessionStorage.setItem(STORAGE_SUCURSAL_PREFERIDA, codigo);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function sucursalPreferidaAbrev(codigo: SucursalPreferida): string {
+  const found = SUCURSALES_PREFERIDAS.find((s) => s.value === codigo);
+  return found?.abrev ?? codigo.toLocaleUpperCase("es");
+}
+
+export function sucursalPreferidaLabel(codigo: SucursalPreferida): string {
+  const found = SUCURSALES_PREFERIDAS.find((s) => s.value === codigo);
+  return found?.label ?? codigo.toLocaleUpperCase("es");
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Select,
@@ -21,6 +22,7 @@ import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
 import type { Sucursal, TransfDepositosData } from "@/actions/stock";
+import { leerSucursalPreferida } from "@/lib/sucursalPreferida";
 
 const SUCURSALES: { value: Sucursal; label: string }[] = [
   { value: "guaymallen", label: "GUAYMALLÉN" },
@@ -158,6 +160,29 @@ export default function FiltrosTransfDepositos({
   }
 
   const origenSeleccionado = origenActual !== null;
+
+  useEffect(() => {
+    if (origenActual) return;
+    const preferida = leerSucursalPreferida();
+    if (!preferida) return;
+    const p = new URLSearchParams();
+    p.set("origen", preferida);
+    if (destinoActual && destinoActual !== preferida) {
+      p.set("destino", destinoActual);
+    }
+    if (q) p.set("q", q);
+    if (marcaActual) p.set("marca", marcaActual);
+    if (rubroActual) p.set("rubro", rubroActual);
+    router.replace(`${pathname}?${p.toString()}`);
+  }, [
+    origenActual,
+    destinoActual,
+    q,
+    marcaActual,
+    rubroActual,
+    pathname,
+    router,
+  ]);
 
   return (
     <div className="flex flex-col gap-2">
