@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Eye,
@@ -42,6 +42,7 @@ import {
 import {
   puedeCambiarModulo,
   primerModuloPermitido,
+  etiquetaSucursalPorDefecto,
   usuarioTieneAdministracion,
 } from "@/lib/usuarios";
 import { avisarAdvertirTransfPendientes } from "@/lib/indicadorSlidenav";
@@ -77,7 +78,6 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const [usuarios, setUsuarios] = useState<GlobalPersonalItem[]>([]);
   const [usuariosError, setUsuariosError] = useState("");
   const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
-  const [usuarioDraftId, setUsuarioDraftId] = useState<string>("");
   const [usuarioSesion, setUsuarioSesion] = useState<UsuarioSesion | null>(null);
   const [moduloDraft, setModuloDraft] = useState<MainAppAreaId | "">("");
   const [clave, setClave] = useState("");
@@ -92,11 +92,6 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const puedeCambiar = usuarioSesion
     ? puedeCambiarModulo(usuarioSesion.modulosPermitidos)
     : false;
-
-  const usuarioSeleccionado = useMemo(
-    () => usuarios.find((u) => String(u.idPersonal) === usuarioDraftId) ?? null,
-    [usuarios, usuarioDraftId]
-  );
 
   useEffect(() => {
     const guardado = leerUsuarioSesion();
@@ -197,11 +192,6 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     startTransition(() => {
       persistirYNavegar(usuario, areaId, false);
     });
-  }
-
-  function handleAplicarUsuario() {
-    if (!usuarioSeleccionado) return;
-    aplicarUsuario(usuarioSeleccionado);
   }
 
   function handleAplicarModulo() {
@@ -309,17 +299,25 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
           title="Elegir Usuario"
           padding="sm"
           showCloseButton={!forceChoose}
+          footerClassName={forceChoose ? "justify-center" : undefined}
           actions={
-            <Button
-              type="button"
-              onClick={handleAplicarUsuario}
-              disabled={pending || !usuarioSeleccionado || cargandoUsuarios}
-            >
-              {pending ? "Aplicando..." : "Aplicar"}
-            </Button>
+            forceChoose ? (
+              <p className="w-full text-center text-sm text-muted-foreground">
+                Tocá un usuario para continuar
+              </p>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setUsuarioOpen(false)}
+                disabled={pending}
+              >
+                Cerrar
+              </Button>
+            )
           }
         >
-          <div className="flex w-full min-w-0 flex-col gap-3">
+          <div className="flex w-full min-w-0 flex-col gap-2">
             {cargandoUsuarios ? (
               <p className="text-sm text-foreground">Cargando…</p>
             ) : null}
@@ -332,36 +330,40 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
               </p>
             ) : null}
             {!cargandoUsuarios && usuarios.length > 0 ? (
-              <FiltroIndividualContainer
-                className="w-full"
-                activo={usuarioDraftId !== ""}
-                onLimpiar={() => setUsuarioDraftId("")}
+              <div
+                className="flex max-h-[min(24rem,50vh)] w-full min-w-0 flex-col gap-2 overflow-y-auto"
+                role="list"
+                aria-label="Usuarios disponibles"
               >
-                <Select
-                  value={usuarioDraftId || undefined}
-                  onValueChange={setUsuarioDraftId}
-                >
-                  <SelectTrigger
-                    id="switcher-usuario"
-                    className="input-filtro-unificado w-full"
-                    aria-label="Usuario"
-                  >
-                    <SelectValue placeholder="USUARIO" />
-                  </SelectTrigger>
-                  <SelectContent
-                    position="popper"
-                    side="bottom"
-                    align="start"
-                    className="select-content-filtro"
-                  >
-                    {usuarios.map((u) => (
-                      <SelectItem key={u.idPersonal} value={String(u.idPersonal)}>
-                        {nombreUsuarioLabel(u.nombrePersonal)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FiltroIndividualContainer>
+                {usuarios.map((u) => {
+                  const sucursal = etiquetaSucursalPorDefecto(u.sucursalPorDefecto);
+                  return (
+                    <Button
+                      key={u.idPersonal}
+                      type="button"
+                      variant="outline"
+                      role="listitem"
+                      disabled={pending}
+                      onClick={() => aplicarUsuario(u)}
+                      className={cn(
+                        "h-auto w-full justify-start px-3 py-2.5 text-left",
+                        "whitespace-normal"
+                      )}
+                    >
+                      <span className="flex min-w-0 flex-col items-start gap-0.5">
+                        <span className="w-full truncate text-sm font-semibold tracking-wide">
+                          {nombreUsuarioLabel(u.nombrePersonal)}
+                        </span>
+                        {sucursal ? (
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {sucursal}
+                          </span>
+                        ) : null}
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
             ) : null}
           </div>
         </AppModal>
