@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { fmtPorcentajeTabla } from "@/lib/format";
-import { labelCampoReglaDescuento } from "@/lib/descuentosListaPrecioReglasUi";
+import {
+  labelCampoReglaDescuento,
+  lineasCondicionReglaDescuento,
+} from "@/lib/descuentosListaPrecioReglasUi";
 import { CAMPO_DESC_ESPECIAL } from "@/lib/descuentosListaPrecioReglasConstants";
 import type { DescuentoActivoListaPrecio } from "@/services/listaPrecios.service";
 
@@ -74,25 +77,7 @@ function CondicionesReglaDetalle({
 }: {
   regla: NonNullable<DescuentoActivoListaPrecio["regla"]>;
 }) {
-  const lineas: { dimension: string; valor: string }[] = [];
-  if (regla.idProveedor) {
-    lineas.push({
-      dimension: "Proveedor",
-      valor: regla.proveedorNombre?.trim() || "—",
-    });
-  }
-  if (regla.idMarca) {
-    lineas.push({
-      dimension: "Marca",
-      valor: regla.marcaNombre?.trim() || "—",
-    });
-  }
-  if (regla.idRubro) {
-    lineas.push({
-      dimension: "Rubro",
-      valor: regla.rubroNombre?.trim() || "—",
-    });
-  }
+  const lineas = lineasCondicionReglaDescuento(regla);
 
   if (lineas.length === 0) {
     return <span className="text-muted-foreground">TODOS</span>;

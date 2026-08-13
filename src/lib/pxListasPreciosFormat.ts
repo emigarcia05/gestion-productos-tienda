@@ -20,33 +20,18 @@ export function roundMargenPxListaPct(value: number): number {
 /** Tope máscara **PORC. UTILIDAD** Px Listas: 9.999,99 % (2 decimales; sin tope inferior 0). */
 export const MARGEN_PX_LISTA_MAX_CENTS = 999_999;
 
-/** Valor para `<input>` de margen (2 decimales, sin `%`). */
-export function formatMargenPxListaInput(n: number): string {
-  return roundMargenPxListaPct(n).toFixed(2);
-}
-
-/** Parsea margen editado en Px Listas (≥ 0, máx. 2 decimales). */
-export function parseMargenPxListaInput(raw: string): number | undefined {
-  const trimmed = raw.trim().replace(",", ".");
-  if (trimmed === "") return undefined;
-  if (!/^\d+(\.\d{0,2})?$/.test(trimmed)) return undefined;
-  const n = Number(trimmed);
-  if (!Number.isFinite(n) || n < 0) return undefined;
-  return roundMargenPxListaPct(n);
+/** Margen para visualización es-AR (texto con coma, p. ej. `106,00`). */
+function formatMargenPxListaExportExcel(n: number): string {
+  return roundMargenPxListaPct(n).toLocaleString("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 /** Margen en modo lectura (2 decimales + `%`, es-AR). */
 export function fmtMargenPxListaTabla(n: number | null | undefined): string {
   if (n == null || Number.isNaN(n)) return "";
   return `${formatMargenPxListaExportExcel(n)}%`;
-}
-
-/** Margen para visualización es-AR (texto con coma, p. ej. `106,00`). */
-export function formatMargenPxListaExportExcel(n: number): string {
-  return roundMargenPxListaPct(n).toLocaleString("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 /** Formato de celda Excel es-AR: número con 4 decimales y coma (`106,0000`). */
@@ -82,12 +67,3 @@ export function preciosPxListaEnterosIguales(
   return roundPxListaEntero(pxA) === roundPxListaEntero(pxB);
 }
 
-/** Mismo PX de lista tienda a entero (DUX devuelve precio, no margen). */
-export function preciosPxListaSincronizados(
-  pxA: number | null | undefined,
-  pxB: number | null | undefined
-): boolean {
-  if (pxA == null || pxB == null) return false;
-  if (!(pxA > 0) || !(pxB > 0)) return false;
-  return roundPxListaEntero(pxA) === roundPxListaEntero(pxB);
-}

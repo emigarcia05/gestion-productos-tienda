@@ -87,7 +87,7 @@ export const CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS =
  * Usar con {@link BALANCE_MODAL_TH_HISTORIAL_CLASS}, {@link BALANCE_MODAL_TD_HISTORIAL_CLASS} y
  * {@link BALANCE_MODAL_BOTON_HISTORIAL_CLASS}.
  */
-export const BALANCE_MODAL_COL_HISTORIAL_CLASS =
+const BALANCE_MODAL_COL_HISTORIAL_CLASS =
   "border-l-2 border-[#0072BB] bg-muted/35";
 
 export const BALANCE_MODAL_TH_HISTORIAL_CLASS =
@@ -103,12 +103,6 @@ export const BALANCE_MODAL_BOTON_HISTORIAL_CLASS =
 /** Tooltip estándar: historial por rubro usa el gasto final de mayor monto en ese rubro. */
 export const BALANCE_MODAL_HISTORIAL_RUBRO_TITLE =
   "Evolución mensual del gasto con mayor impacto en este rubro";
-
-/**
- * Etiqueta de campo en modales (label nativo o `<Label>`).
- * Color `foreground` (negro de UI); `globals.css` refuerza en `.app-modal__body` / `.modal-app__body`.
- */
-export const MODAL_FIELD_LABEL_CLASS = "modal-field-label text-foreground";
 
 /**
  * Micro-etiqueta MAYÚSCULAS en modales (misma tipografía que `ModalMicroLabel`).
