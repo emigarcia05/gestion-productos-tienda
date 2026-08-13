@@ -44,7 +44,7 @@ Documento vivo: se actualiza con cada corrección o patrón detectado en auditor
    - Estructura: `SectionHeader` o `ClassicPageHeader` → `FilterBar` (con `filtros-contenedor-tienda bg-card`) → contenido (tabla con `<Table variant="compact">`).  
    - **Fila 1 de desplegables:** `FilaFiltrosDesplegables` con **5 columnas por defecto** (tamaño fijo estándar). Si la fila tiene **exactamente 6** listas desplegables juntas, usar **`columnas={6}`** (`.fila-filtros-6`). Con 5 o menos: no cambiar (default o `columnas={2|4}` según layout).  
    - Si la página tiene **input de búsqueda con debounce**: usa el hook `useFiltrosConBusqueda` y el componente `FiltroBusquedaInput` (ver sección 1, punto 3). No reimplementes debounce ni restauración de foco.  
-   - Selects de filtros: `FILTER_SELECT_WRAPPER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `SelectContent` con `position="popper" side="bottom" align="start" className="select-content-filtro"`.  
+   - Selects de filtros: `FILTER_SELECT_WRAPPER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `SelectContent` con `position="popper" side="bottom" align="start" className="select-content-filtro"`. **No** `<select>` nativo — usar shadcn `@/components/ui/select` (búsqueda BUSCAR… incluida). Valor vacío → sentinel `"none"`/`"todos"` + map en change.  
    - Contador de resultados: `cn(FILTER_COUNT_CLASS, "ml-auto")` si va alineado a la derecha; texto del contador en MAYÚSCULAS (PRODUCTO(S), ÍTEM(S), etc.).
 
 7. **Nuevo modal con tabla**  
