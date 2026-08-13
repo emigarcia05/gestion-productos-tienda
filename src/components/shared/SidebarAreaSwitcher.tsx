@@ -2,21 +2,19 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Boxes,
-  Eye,
-  EyeOff,
-  Landmark,
-  LayoutGrid,
-  Megaphone,
-  ShieldCheck,
-  type LucideIcon,
-} from "lucide-react";
-import { cva } from "class-variance-authority";
+import { Eye, EyeOff, LayoutGrid, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FiltroIndividualContainer } from "@/components/FilterBar";
 import AppModal from "@/components/shared/AppModal";
 import { activarModoEditor } from "@/actions/sesion";
 import {
@@ -44,41 +42,7 @@ interface Props {
 /** Sesión de navegador: el usuario ya eligió sucursal y módulo al menos una vez. */
 const STORAGE_AREA_ELEGIDA = "main-app-area-elegida";
 
-const areaOptionVariants = cva(
-  "w-full rounded-lg border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-  {
-    variants: {
-      current: {
-        true: "border-sidebar-indicator bg-sidebar-accent/40 text-sidebar-foreground",
-        false: "border-border bg-card text-foreground hover:bg-muted/80",
-      },
-    },
-    defaultVariants: {
-      current: false,
-    },
-  }
-);
-
-const sucursalOptionVariants = cva(
-  "flex-1 rounded-lg border px-3 py-2.5 text-center text-sm font-semibold tracking-wide transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-  {
-    variants: {
-      current: {
-        true: "border-sidebar-indicator bg-sidebar-accent/40 text-sidebar-foreground",
-        false: "border-border bg-card text-foreground hover:bg-muted/80",
-      },
-    },
-    defaultVariants: {
-      current: false,
-    },
-  }
-);
-
-const areaIcons: Record<MainAppAreaId, LucideIcon> = {
-  "gestion-productos": Boxes,
-  finanzas: Landmark,
-  marketing: Megaphone,
-};
+const MODULO_DEFAULT: MainAppAreaId = "gestion-productos";
 
 function marcarAreaElegida(): void {
   try {
@@ -102,16 +66,18 @@ function yaCompletoOnboarding(): boolean {
 
 /**
  * Botón inferior de la slidenav: sucursal preferida + módulo/área.
- * Primera apertura: obliga a elegir **Sucursal** y **Módulo**.
+ * Modal con dos desplegables: **SUCURSAL** (sin default) y **MÓDULO** (VENDEDOR).
  */
 export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [areasOpen, setAreasOpen] = useState(false);
   const [forceChoose, setForceChoose] = useState(false);
-  const [sucursalDraft, setSucursalDraft] = useState<SucursalPreferida | null>(
-    null
+  const [sucursalDraft, setSucursalDraft] = useState<SucursalPreferida | "">(
+    ""
   );
+  const [moduloDraft, setModuloDraft] =
+    useState<MainAppAreaId>(MODULO_DEFAULT);
   const [sucursalGuardada, setSucursalGuardada] =
     useState<SucursalPreferida | null>(null);
   const [claveOpen, setClaveOpen] = useState(false);
@@ -124,9 +90,8 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const currentId = getMainAppAreaIdFromPathname(pathname);
   const current = getMainAppAreaById(currentId);
   const labelModulo = areaLabelMayusculas(current.label);
-  const sucursalMostrada = sucursalGuardada ?? sucursalDraft;
-  const labelSucursalAbrev = sucursalMostrada
-    ? sucursalPreferidaAbrev(sucursalMostrada)
+  const labelSucursalAbrev = sucursalGuardada
+    ? sucursalPreferidaAbrev(sucursalGuardada)
     : "SUC";
   const labelBoton = `${labelSucursalAbrev} / ${forceChoose ? "MÓDULO" : labelModulo}`;
 
@@ -134,9 +99,10 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     const sucursal = leerSucursalPreferida();
     queueMicrotask(() => {
       setSucursalGuardada(sucursal);
-      setSucursalDraft(sucursal);
       if (!yaCompletoOnboarding()) {
         setForceChoose(true);
+        setSucursalDraft("");
+        setModuloDraft(MODULO_DEFAULT);
         setAreasOpen(true);
       }
     });
@@ -158,15 +124,14 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     setPendingAreaId(null);
   }
 
-  function handleSelectArea(id: MainAppAreaId) {
-    if (!sucursalDraft) return;
+  function aplicarSeleccion(id: MainAppAreaId, sucursal: SucursalPreferida) {
     if (id === currentId && !forceChoose) {
-      persistirOnboarding(sucursalDraft);
+      persistirOnboarding(sucursal);
       setAreasOpen(false);
       return;
     }
     if (id === currentId && forceChoose) {
-      persistirOnboarding(sucursalDraft);
+      persistirOnboarding(sucursal);
       setAreasOpen(false);
       return;
     }
@@ -181,8 +146,13 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
       return;
     }
     startTransition(() => {
-      goToArea(id, sucursalDraft);
+      goToArea(id, sucursal);
     });
+  }
+
+  function handleAplicar() {
+    if (!sucursalDraft) return;
+    aplicarSeleccion(moduloDraft, sucursalDraft);
   }
 
   function handleActivarYNavegar() {
@@ -205,12 +175,14 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
       return;
     }
     if (open) {
-      setSucursalDraft(leerSucursalPreferida() ?? sucursalGuardada);
+      const sucursal = leerSucursalPreferida() ?? sucursalGuardada;
+      setSucursalDraft(sucursal ?? "");
+      setModuloDraft(forceChoose ? MODULO_DEFAULT : currentId);
     }
     setAreasOpen(open);
   }
 
-  const puedeConfirmarModulo = sucursalDraft !== null;
+  const puedeAplicar = sucursalDraft !== "";
 
   return (
     <>
@@ -249,77 +221,107 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
           padding="sm"
           showCloseButton={!forceChoose}
           actions={
-            forceChoose ? (
-              <p className="w-full text-center text-xs text-muted-foreground">
-                Elegí sucursal y módulo para empezar a navegar.
-              </p>
-            ) : (
-              <Button type="button" variant="ghost" onClick={() => setAreasOpen(false)}>
-                Cerrar
+            <>
+              {forceChoose ? null : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setAreasOpen(false)}
+                  disabled={pending}
+                >
+                  Cerrar
+                </Button>
+              )}
+              <Button
+                type="button"
+                onClick={handleAplicar}
+                disabled={pending || !puedeAplicar}
+              >
+                {pending ? "Aplicando..." : "Aplicar"}
               </Button>
-            )
+            </>
           }
         >
           <div className="flex w-full min-w-0 flex-col gap-3">
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-semibold text-foreground">Sucursal</p>
-              <div className="flex gap-2">
-                {SUCURSALES_PREFERIDAS.map((s) => {
-                  const esActual = sucursalDraft === s.value;
-                  return (
-                    <button
-                      key={s.value}
-                      type="button"
-                      onClick={() => setSucursalDraft(s.value)}
-                      disabled={pending}
-                      className={cn(sucursalOptionVariants({ current: esActual }))}
-                    >
+            <FiltroIndividualContainer
+              className="w-full"
+              activo={sucursalDraft !== ""}
+              onLimpiar={() => setSucursalDraft("")}
+            >
+              <Select
+                value={sucursalDraft || undefined}
+                onValueChange={(v) => setSucursalDraft(v as SucursalPreferida)}
+              >
+                <SelectTrigger
+                  id="switcher-sucursal"
+                  className="input-filtro-unificado w-full"
+                  aria-label="Sucursal"
+                >
+                  <SelectValue placeholder="SUCURSAL" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {SUCURSALES_PREFERIDAS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
                       {s.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FiltroIndividualContainer>
 
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-semibold text-foreground">Módulo</p>
-              {!puedeConfirmarModulo ? (
-                <p className="text-xs text-muted-foreground">
-                  Primero seleccioná una sucursal.
-                </p>
-              ) : null}
-              {MAIN_APP_AREAS.map((area) => {
-                const Icon = areaIcons[area.id];
-                const esActual = area.id === currentId && !forceChoose;
-                return (
-                  <button
-                    key={area.id}
-                    type="button"
-                    onClick={() => handleSelectArea(area.id)}
-                    disabled={pending || !puedeConfirmarModulo}
-                    className={cn(areaOptionVariants({ current: esActual }))}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Icon
-                        className={cn(
-                          "h-4 w-4 shrink-0",
-                          esActual ? "text-foreground" : "text-muted-foreground"
-                        )}
-                        aria-hidden
-                      />
-                      <span className="block text-sm font-semibold leading-tight text-foreground">
-                        {areaLabelMayusculas(area.label)}
-                      </span>
-                      {area.requierePassword ? (
-                        <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                          Con clave
-                        </span>
-                      ) : null}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <FiltroIndividualContainer
+              className="w-full"
+              activo={moduloDraft !== MODULO_DEFAULT}
+              onLimpiar={() => setModuloDraft(MODULO_DEFAULT)}
+            >
+              <Select
+                value={moduloDraft}
+                onValueChange={(v) => {
+                  const id = v as MainAppAreaId;
+                  const area = getMainAppAreaById(id);
+                  if (area.requierePassword && rolActual !== "editor") {
+                    if (!sucursalDraft) {
+                      setModuloDraft(MODULO_DEFAULT);
+                      return;
+                    }
+                    setModuloDraft(id);
+                    setPendingAreaId(id);
+                    setAreasOpen(false);
+                    setClave("");
+                    setError("");
+                    setMostrarClave(false);
+                    setClaveOpen(true);
+                    return;
+                  }
+                  setModuloDraft(id);
+                }}
+              >
+                <SelectTrigger
+                  id="switcher-modulo"
+                  className="input-filtro-unificado w-full"
+                  aria-label="Módulo"
+                >
+                  <SelectValue placeholder="MÓDULO" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  {MAIN_APP_AREAS.map((area) => (
+                    <SelectItem key={area.id} value={area.id}>
+                      {areaLabelMayusculas(area.label)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FiltroIndividualContainer>
           </div>
         </AppModal>
       </Dialog>
@@ -330,6 +332,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
           setClaveOpen(open);
           if (!open) {
             setPendingAreaId(null);
+            setModuloDraft(MODULO_DEFAULT);
             if (forceChoose || !yaCompletoOnboarding()) {
               setAreasOpen(true);
             }
@@ -351,6 +354,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
                 onClick={() => {
                   setClaveOpen(false);
                   setPendingAreaId(null);
+                  setModuloDraft(MODULO_DEFAULT);
                   if (forceChoose || !yaCompletoOnboarding()) {
                     setAreasOpen(true);
                   }
