@@ -15,14 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { FiltroIndividualContainer } from "@/components/FilterBar";
 import AppModal from "@/components/shared/AppModal";
 import { activarModoEditor } from "@/actions/sesion";
 import { listUsuariosParaInicioSesionAction } from "@/actions/globalPersonal";
@@ -80,7 +72,6 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const [usuariosError, setUsuariosError] = useState("");
   const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
   const [usuarioSesion, setUsuarioSesion] = useState<UsuarioSesion | null>(null);
-  const [moduloDraft, setModuloDraft] = useState<MainAppAreaId | "">("");
   const [clave, setClave] = useState("");
   const [mostrarClave, setMostrarClave] = useState(false);
   const [error, setError] = useState("");
@@ -195,11 +186,6 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     });
   }
 
-  function handleAplicarModulo() {
-    if (!usuarioSesion || moduloDraft === "") return;
-    aplicarModulo(usuarioSesion, moduloDraft);
-  }
-
   function handleActivarYNavegar() {
     if (!pendingUsuario || !pendingAreaId) return;
     setError("");
@@ -251,10 +237,6 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const IconoModulo = ICONO_MODULO[currentId];
 
   function abrirCambiarModulo() {
-    const actualPermitido = usuarioSesion?.modulosPermitidos.includes(currentId)
-      ? currentId
-      : primerModuloPermitido(usuarioSesion?.modulosPermitidos ?? []);
-    setModuloDraft(actualPermitido ?? "");
     setModuloOpen(true);
   }
 
@@ -376,58 +358,49 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
           title="Cambiar Módulo"
           padding="sm"
           actions={
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setModuloOpen(false)}
-                disabled={pending}
-              >
-                Cerrar
-              </Button>
-              <Button
-                type="button"
-                onClick={handleAplicarModulo}
-                disabled={pending || moduloDraft === ""}
-              >
-                {pending ? "Aplicando..." : "Aplicar"}
-              </Button>
-            </>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setModuloOpen(false)}
+              disabled={pending}
+            >
+              Cerrar
+            </Button>
           }
         >
-          <FiltroIndividualContainer
-            className="w-full"
-            activo={moduloDraft !== ""}
-            onLimpiar={() => setModuloDraft("")}
+          <div
+            className="flex w-full min-w-0 flex-col gap-2"
+            role="list"
+            aria-label="Módulos disponibles"
           >
-            <Select
-              value={moduloDraft || undefined}
-              onValueChange={(v) => setModuloDraft(v as MainAppAreaId)}
-            >
-              <SelectTrigger
-                id="switcher-modulo"
-                className="input-filtro-unificado w-full"
-                aria-label="Módulo"
-              >
-                <SelectValue placeholder="MÓDULO" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                {(usuarioSesion?.modulosPermitidos ?? []).map((id) => {
-                  const area = getMainAppAreaById(id);
-                  return (
-                    <SelectItem key={id} value={id}>
-                      {areaLabelMayusculas(area.label)}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </FiltroIndividualContainer>
+            {(usuarioSesion?.modulosPermitidos ?? []).map((id) => {
+              const area = getMainAppAreaById(id);
+              const Icono = ICONO_MODULO[id];
+              const activo = id === currentId;
+              return (
+                <Button
+                  key={id}
+                  type="button"
+                  role="listitem"
+                  variant={activo ? "default" : "outline"}
+                  disabled={pending || !usuarioSesion}
+                  onClick={() => {
+                    if (!usuarioSesion) return;
+                    aplicarModulo(usuarioSesion, id);
+                  }}
+                  className={cn(
+                    "h-auto w-full justify-start gap-3 px-3 py-2.5 text-left",
+                    "whitespace-normal"
+                  )}
+                >
+                  <Icono className="size-4 shrink-0" aria-hidden />
+                  <span className="min-w-0 truncate text-sm font-semibold tracking-wide">
+                    {areaLabelMayusculas(area.label)}
+                  </span>
+                </Button>
+              );
+            })}
+          </div>
         </AppModal>
       </Dialog>
 
