@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Eye, EyeOff, LayoutGrid, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ import {
   SUCURSALES_PREFERIDAS,
   guardarSucursalPreferida,
   leerSucursalPreferida,
-  sucursalPreferidaAbrev,
+  sucursalPreferidaLabel,
   type SucursalPreferida,
 } from "@/lib/sucursalPreferida";
 import type { Rol } from "@/lib/permisos";
@@ -89,11 +89,12 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
 
   const currentId = getMainAppAreaIdFromPathname(pathname);
   const current = getMainAppAreaById(currentId);
-  const labelModulo = areaLabelMayusculas(current.label);
-  const labelSucursalAbrev = sucursalGuardada
-    ? sucursalPreferidaAbrev(sucursalGuardada)
-    : "SUC";
-  const labelBoton = `${labelSucursalAbrev} / ${forceChoose ? "MÓDULO" : labelModulo}`;
+  const labelModulo = forceChoose
+    ? "MÓDULO"
+    : areaLabelMayusculas(current.label);
+  const labelSucursal = sucursalGuardada
+    ? sucursalPreferidaLabel(sucursalGuardada)
+    : "SUCURSAL";
 
   useEffect(() => {
     const sucursal = leerSucursalPreferida();
@@ -192,25 +193,22 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
         disabled={pending}
         className={cn(
           "w-full rounded-lg px-3 py-2",
-          "flex items-center justify-center gap-2",
-          "group",
+          "flex flex-col items-center justify-center gap-1.5",
           "sidebar-user-switcher-surface",
           "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
           pending && "cursor-not-allowed opacity-90"
         )}
         aria-label="Cambiar Sucursal Y Módulo De La Aplicación"
       >
-        <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden />
-        <span className="relative flex min-w-0 items-center justify-center">
-          <span className="invisible whitespace-nowrap text-sm font-semibold tracking-wide">
-            CAMBIAR SUC / MÓDULO
-          </span>
-          <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-100 group-hover:opacity-0">
-            {forceChoose ? "SUC / MÓDULO" : labelBoton}
-          </span>
-          <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-0 group-hover:opacity-100">
-            CAMBIAR SUC / MÓDULO
-          </span>
+        <span className="w-full text-center text-sm font-semibold tracking-wide">
+          {labelSucursal}
+        </span>
+        <span
+          className="h-px w-[80%] shrink-0 bg-sidebar-foreground/85"
+          aria-hidden
+        />
+        <span className="w-full text-center text-sm font-semibold tracking-wide">
+          {labelModulo}
         </span>
       </button>
 

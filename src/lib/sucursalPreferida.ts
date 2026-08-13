@@ -8,11 +8,9 @@ export type SucursalPreferida = "guaymallen" | "maipu";
 export const SUCURSALES_PREFERIDAS: {
   value: SucursalPreferida;
   label: string;
-  /** Abreviatura en el botón slidenav (`SUC / MÓDULO`). */
-  abrev: string;
 }[] = [
-  { value: "guaymallen", label: "GUAYMALLÉN", abrev: "GUAY" },
-  { value: "maipu", label: "MAIPÚ", abrev: "MAIPÚ" },
+  { value: "guaymallen", label: "GUAYMALLÉN" },
+  { value: "maipu", label: "MAIPÚ" },
 ];
 
 /** Sesión de navegador: sucursal elegida junto al módulo. */
@@ -40,11 +38,6 @@ export function guardarSucursalPreferida(codigo: SucursalPreferida): void {
   } catch {
     /* ignore */
   }
-}
-
-export function sucursalPreferidaAbrev(codigo: SucursalPreferida): string {
-  const found = SUCURSALES_PREFERIDAS.find((s) => s.value === codigo);
-  return found?.abrev ?? codigo.toLocaleUpperCase("es");
 }
 
 export function sucursalPreferidaLabel(codigo: SucursalPreferida): string {
