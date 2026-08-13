@@ -12,6 +12,7 @@ import { PAGE_SIZE } from "@/lib/pagination";
 import { getControlStockParamsSchema } from "@/lib/validations/stock";
 import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import {
+  conteosIndicadorSlidenavSchema,
   encolarTransferenciasPendientesSchema,
   exportarPendientesTransfDepositosSchema,
   listarHistorialTransfDepositosProductoSchema,
@@ -534,6 +535,55 @@ export async function exportarPendientesTransfDepositosAction(
   revalidatePath(GP_ROUTES.ayudaVendedor.transfDepositos);
   revalidatePath(GP_INTERNAL.ayudaVendedor.transfDepositos);
   return { ok: true, data: result.data };
+}
+
+export type IndicadorSlidenavDto = {
+  urgente: number;
+  tintometrico: number;
+  reposicion: number;
+  emision: number;
+  recepcion: number;
+};
+
+/**
+ * Conteos del indicador de slidenav: pedidos (Generar Pedido) + transferencias pendientes.
+ */
+export async function getIndicadorSlidenavAction(
+  raw: unknown
+): Promise<ActionResult<IndicadorSlidenavDto>> {
+  const rol = await getRol();
+  const parsed = conteosIndicadorSlidenavSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  const sucursal = parsed.data.sucursal;
+  try {
+    const [pedidos, transf] = await Promise.all([
+      puede(rol, PERMISOS.pedidos.acceso)
+        ? import("@/services/pedidosEnvio.service").then((m) =>
+            m.contarItemsPedidoPorTipoParaSlidenav(sucursal)
+          )
+        : Promise.resolve({ urgente: 0, tintometrico: 0, reposicion: 0 }),
+      puede(rol, PERMISOS.stock.acceso)
+        ? import("@/services/transfDepositos.service").then((m) =>
+            m.contarPendientesTransfPorSucursal(sucursal)
+          )
+        : Promise.resolve({ emision: 0, recepcion: 0 }),
+    ]);
+    return {
+      ok: true,
+      data: {
+        urgente: pedidos.urgente,
+        tintometrico: pedidos.tintometrico,
+        reposicion: pedidos.reposicion,
+        emision: transf.emision,
+        recepcion: transf.recepcion,
+      },
+    };
+  } catch (e) {
+    console.error("[getIndicadorSlidenavAction]", e);
+    return { ok: false, error: "Error al cargar indicador." };
+  }
 }
 
 const codTiendasExcelSchema = z.array(listaPreciosCodTiendaSchema).optional().default([]);

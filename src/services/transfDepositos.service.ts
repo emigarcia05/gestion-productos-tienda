@@ -395,6 +395,29 @@ export async function listarPendientesExportTransfDepositos(): Promise<
   });
 }
 
+export type ConteosTransfSlidenav = {
+  emision: number;
+  recepcion: number;
+};
+
+/**
+ * Pendientes Excel de una sucursal (filas del modal Transf. Pendiente Registro):
+ * Emisión = TRANSFERIR, Recepción = RECIBIR.
+ */
+export async function contarPendientesTransfPorSucursal(
+  sucursal: SucursalCodigoTransf
+): Promise<ConteosTransfSlidenav> {
+  const pendientes = await listarPendientesExportTransfDepositos();
+  let emision = 0;
+  let recepcion = 0;
+  for (const p of pendientes) {
+    if (p.sucursalExcel !== sucursal) continue;
+    if (p.tipo === "transferir") emision += 1;
+    else recepcion += 1;
+  }
+  return { emision, recepcion };
+}
+
 /**
  * Excel de un pendiente (par + Transferir/Recibir) y marca ese lado como exportado.
  */

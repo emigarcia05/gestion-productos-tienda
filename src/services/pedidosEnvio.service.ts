@@ -815,6 +815,36 @@ export async function getItemsTablaEnviarPedido(params: {
   return { items: out };
 }
 
+export type ConteosPedidoSlidenav = {
+  urgente: number;
+  tintometrico: number;
+  reposicion: number;
+};
+
+/**
+ * Conteos de ítems con cant. pedir > 0 (misma resolución que Generar Pedido)
+ * para el indicador de slidenav, filtrados por sucursal.
+ */
+export async function contarItemsPedidoPorTipoParaSlidenav(
+  sucursalCodigo: string
+): Promise<ConteosPedidoSlidenav> {
+  const { items } = await getItemsTablaEnviarPedido({
+    sucursalCodigo,
+    tipos: [TIPO_URGENTE, TIPO_TINTOMETRICO, TIPO_REPOSICION],
+  });
+  const out: ConteosPedidoSlidenav = {
+    urgente: 0,
+    tintometrico: 0,
+    reposicion: 0,
+  };
+  for (const it of items) {
+    if (it.tipoPedido === TIPO_URGENTE) out.urgente += 1;
+    else if (it.tipoPedido === TIPO_TINTOMETRICO) out.tintometrico += 1;
+    else if (it.tipoPedido === TIPO_REPOSICION) out.reposicion += 1;
+  }
+  return out;
+}
+
 /**
  * Fila desde `prod_ped_merc` para PDF y sobrestock (`id` = PK de la fila).
  */

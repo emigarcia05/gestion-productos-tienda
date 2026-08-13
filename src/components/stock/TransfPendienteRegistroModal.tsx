@@ -32,6 +32,7 @@ import {
 import { descargarExcelTransfDepositos } from "@/lib/exportTransfDepositosExcelClient";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 import { SUCURSAL_LABEL_TRANSF } from "@/lib/transfDepositosControl";
+import { avisarIndicadorSlidenav } from "@/lib/indicadorSlidenav";
 import { leerSucursalPreferida } from "@/lib/sucursalPreferida";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -116,6 +117,7 @@ export default function TransfPendienteRegistroModal({
         toast.success(
           `${encolado.data.creados} transferencia${encolado.data.creados !== 1 ? "s" : ""} en cola.`
         );
+        avisarIndicadorSlidenav();
         onEncolado?.();
       }
       if (cancelled) return;
@@ -148,6 +150,7 @@ export default function TransfPendienteRegistroModal({
       toast.success(
         `Excel ${p.tipoLabel.toLowerCase()} · ${res.data.sucursalExcelLabel} descargado.`
       );
+      avisarIndicadorSlidenav();
       await cargarPendientes();
     });
   }

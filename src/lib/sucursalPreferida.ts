@@ -16,6 +16,9 @@ export const SUCURSALES_PREFERIDAS: {
 /** Sesión de navegador: sucursal elegida junto al módulo. */
 export const STORAGE_SUCURSAL_PREFERIDA = "main-app-sucursal-preferida";
 
+/** Evento de ventana: la sucursal preferida cambió en esta pestaña. */
+export const EVENTO_SUCURSAL_PREFERIDA = "main-app-sucursal-preferida-changed";
+
 export function parseSucursalPreferida(
   raw: string | null | undefined
 ): SucursalPreferida | null {
@@ -35,6 +38,7 @@ export function leerSucursalPreferida(): SucursalPreferida | null {
 export function guardarSucursalPreferida(codigo: SucursalPreferida): void {
   try {
     sessionStorage.setItem(STORAGE_SUCURSAL_PREFERIDA, codigo);
+    window.dispatchEvent(new Event(EVENTO_SUCURSAL_PREFERIDA));
   } catch {
     /* ignore */
   }

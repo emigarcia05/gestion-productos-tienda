@@ -54,3 +54,7 @@ export const exportarPendientesTransfDepositosSchema = z
     message: "Origen y destino deben ser distintos.",
     path: ["destino"],
   });
+
+export const conteosIndicadorSlidenavSchema = z.object({
+  sucursal: sucursalCodigoSchema,
+});
