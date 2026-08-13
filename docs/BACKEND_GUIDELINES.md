@@ -2105,7 +2105,7 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 *Última actualización (2026-08-13): **Slidenav** — sin modal de transf. pendientes; indicador solo panel lateral.*
 
-*Última actualización (2026-08-13): **Slidenav** — sin `EVENTO_ADVERTIR_TRANSF_PENDIENTES`; aviso modal solo desde indicador Pendientes.*
+*Última actualización (2026-08-13): **Slidenav** — eliminado `EVENTO_ADVERTIR_TRANSF_PENDIENTES` (ya no se avisaba al elegir usuario).*
 
 *Última actualización (2026-08-13): **Slidenav** — `getIndicadorSlidenavAction` (conteos Generar Pedido + pendientes transf. por sucursal).*
 
