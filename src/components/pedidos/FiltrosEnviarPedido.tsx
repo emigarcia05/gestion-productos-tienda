@@ -25,6 +25,7 @@ import SelectSearchInput from "@/components/shared/SelectSearchInput";
 import { TIPOS_PEDIDO, type SucursalPedido, type TipoPedido } from "@/lib/pedidos";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import { useAplicarSucursalPreferidaSiVacia } from "@/lib/hooks/useAplicarSucursalPreferidaSiVacia";
 
 type SucursalFiltroOption = { value: SucursalPedido; label: string };
 
@@ -114,11 +115,25 @@ export default function FiltrosEnviarPedido({
     }
   }, [multiOpen]);
 
-  const hayFiltros = !!(sucursal || proveedor || tipos.length > 0);
+  useAplicarSucursalPreferidaSiVacia(sucursal || null, (codigo) => {
+    if (!sucursales.some((s) => s.value === codigo)) return;
+    const search = new URLSearchParams();
+    search.set("sucursal", codigo);
+    if (proveedor) search.set("proveedor", proveedor);
+    if (tipos.length > 0) search.set("tipo", tipos.join(","));
+    if (qActual.trim()) search.set("q", qActual.trim());
+    router.replace(`${pathname}?${search.toString()}`);
+  });
+
+  const hayFiltros = !!(proveedor || tipos.length > 0);
   const hayFiltrosOBusqueda = hayFiltros || !!qActual.trim();
 
   function limpiarFiltros() {
     setQ("");
+    if (sucursal) {
+      updateUrl({ proveedor: "", tipos: [], q: "" });
+      return;
+    }
     updateUrl({ sucursal: "", proveedor: "", tipos: [], q: "" });
   }
 

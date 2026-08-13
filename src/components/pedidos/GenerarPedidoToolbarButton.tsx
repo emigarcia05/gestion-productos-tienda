@@ -47,6 +47,7 @@ import {
 } from "@/actions/pedidos";
 import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
 import { avisarIndicadorSlidenav } from "@/lib/indicadorSlidenav";
+import { leerSucursalPreferida } from "@/lib/sucursalPreferida";
 import SobreStockReposicionAdvertenciaModal from "@/components/shared/SobreStockReposicionAdvertenciaModal";
 import ReposicionProveedorPrioritarioModal, {
   type ReposicionProveedorPrioritarioSeleccion,
@@ -146,7 +147,7 @@ export default function GenerarPedidoToolbarButton({
   const proveedoresSeqRef = useRef(0);
 
   const aplicarDefaults = useCallback(() => {
-    setSucursal(defaultSucursal);
+    setSucursal(defaultSucursal || leerSucursalPreferida() || "");
     setProveedor(defaultProveedor.trim());
     setTipos(tiposInicialesParaModulo(modulo, defaultTipos));
   }, [defaultSucursal, defaultProveedor, defaultTipos, modulo]);

@@ -21,6 +21,7 @@ import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
 import type { ReposicionData, SucursalReposicion } from "@/actions/reposicion";
+import { useAplicarSucursalPreferidaSiVacia } from "@/lib/hooks/useAplicarSucursalPreferidaSiVacia";
 
 type SucursalFiltroOption = { value: SucursalReposicion; label: string };
 
@@ -71,6 +72,18 @@ export default function FiltrosReposicion({
     rubroActual ||
     configuradoActual
   );
+
+  useAplicarSucursalPreferidaSiVacia(sucursalActual, (codigo) => {
+    if (!sucursales.some((s) => s.value === codigo)) return;
+    const p = new URLSearchParams();
+    p.set("sucursal", codigo);
+    if (q) p.set("q", q);
+    if (marcaActual) p.set("marca", marcaActual);
+    if (rubroActual) p.set("rubro", rubroActual);
+    if (configuradoActual) p.set("configurado", configuradoActual);
+    if (proveedorActual) p.set("proveedor", proveedorActual);
+    router.replace(`${pathname}?${p.toString()}`);
+  });
 
   function buildParams(updates: {
     sucursal?: SucursalReposicion | null;

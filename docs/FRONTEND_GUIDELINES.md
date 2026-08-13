@@ -826,7 +826,7 @@ Bloque en el pie de la slidenav (**debajo** de Sync), superficie única **`sideb
 - **Usuario**: bloque **ícono + nombre** (o solo nombre) **centrado** en la fila del dock. Si puede cambiar de módulo: ícono del módulo actual + nombre MAYÚSCULAS (`truncate`); click → modal **Cambiar Módulo** con **lista clickeable** de módulos permitidos (ícono + label MAYÚSCULAS; activo `variant="default"`; **un click** aplica, sin Select ni Aplicar). Con un solo módulo: solo el nombre centrado.
 - **Onboarding (primera visita de la pestaña)**: modal **Elegir Usuario** (`listUsuariosParaInicioSesionAction`). Lista completa de usuarios en pantalla (botones `outline`: nombre MAYÚSCULAS + sucursal); **un click** aplica. Sin Select ni botón **Aplicar**. En primera visita no se cierra con X (pie: “Tocá un usuario para continuar”). Persiste `sessionStorage` `main-app-usuario-sesion` y copia `sucursal_por_defecto` a `main-app-sucursal-preferida`. El onboarding **no** abre modal de transferencias; el indicador **Pendientes** solo muestra el panel lateral (hover/click).
 - **Administración**: si el usuario elegido tiene módulo **Administración** y `rol !== "editor"`, modal **Acceso A Administración** (`activarModoEditor`) **antes** de entrar. Tras la clave, puede navegar entre sus módulos sin volver a pedirla en esa sesión.
-- **Default de filtros**: STOCK / Trans. Depósitos siguen precargando la sucursal preferida (ahora viene del usuario).
+- **Default de filtros**: en **Vendedor**, **Pedido** (Urgente / Tintométrico / Reposición / Generar Pedido) y **Control Stock** / Trans. Depósitos precargan la **sucursal del usuario** (`leerSucursalPreferida` / `sucursal_por_defecto`); el usuario puede cambiarla manualmente. Hook: `useAplicarSucursalPreferidaSiVacia`.
 - **Logo**: retirado del pie de slidenav.
 
 #### Modal “Acceso A Administración”
@@ -1822,6 +1822,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-11): **Sidebar · Vendedor** — orden: **MERCADERÍA** → **PRECIOS** → **CALCULAR LTS** → **CONTROL STOCK** → **CARGAR GASTOS** → **ASISTENTE IA**.
 
 *Última actualización (2026-08-11): **Entrada app** — `/`, `/finanzas` y `/marketing` son hubs vacíos; datos solo al elegir ruta hoja (sin redirect a Px Sugeridos/Tesorería/Calendario).
+
+*Última actualización (2026-08-13): **Vendedor** — Pedido + Control Stock: sucursal default = usuario (`useAplicarSucursalPreferidaSiVacia`); editable manualmente.*
 
 *Última actualización (2026-08-13): **Slidenav** — sin modal de transf. pendientes en onboarding/Elegir Usuario; solo desde el indicador **Pendientes**.
 
