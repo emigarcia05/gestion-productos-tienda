@@ -15,7 +15,3 @@ export const MARKETING_ROUTES = {
     coloresMarca: "/marketing/base-multimedia/colores-marca",
   },
 } as const;
-
-/** @deprecated Usar `MARKETING_ROUTES.baseMultimedia.contenido`. */
-export const MARKETING_ROUTE_BASE_MULTIMEDIA_LEGACY =
-  MARKETING_ROUTES.baseMultimedia.contenido;

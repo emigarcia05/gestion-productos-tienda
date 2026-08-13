@@ -1,7 +1,7 @@
 /**
  * Servicio prod_precios_provee – Capa de datos (Neon / Prisma).
  * Upsert por código externo (cod_ext = [SUFIJO]-[codProdProv]).
- * getListaPreciosConTienda: una sola entrada para la página lista-precios (DRY).
+ * Lectura de grilla: `getListaPreciosConTiendaFiltrada`.
  */
 
 import type { FilaListaPrecio } from "@/lib/parsearImport";
@@ -129,19 +129,6 @@ function mapListaPrecioProveedorParaCliente(f: ListaPrecioProveedorParaCliente):
 export interface ListaPreciosFiltradoOpciones {
   /** Si true, solo devuelve ítems con px_vta_sugerido no nulo (p. ej. página Px Vta. Sugeridos). */
   soloPxSugerido?: boolean;
-}
-
-/**
- * Obtiene lista de precios proveedor unida con descripciones de prod_precios_tienda.
- * Una sola función para la página lista-precios: evita repetir la lógica de join.
- */
-export async function getListaPreciosConTienda(): Promise<FilaListaPrecioParaCliente[]> {
-  const filas = await prisma.listaPrecioProveedor.findMany({
-    include: listaPrecioParaClienteInclude,
-    orderBy: { codExt: "asc" },
-  });
-
-  return filas.map(mapListaPrecioProveedorParaCliente);
 }
 
 /**

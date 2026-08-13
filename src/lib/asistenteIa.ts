@@ -21,10 +21,6 @@ export const ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN =
 export const ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN_LEGACY =
   "Buscar Color Desde Imagen" as const;
 
-/** @deprecated Preferir ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN. */
-export const ASISTENTE_IA_SUBMODULO_BUSCAR_COLOR_IMAGEN =
-  ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN;
-
 /** Submódulo de recomendaciones guiadas por formulario. */
 export const ASISTENTE_IA_SUBMODULO_DISENAR_COLORES =
   "Diseñar Colores" as const;

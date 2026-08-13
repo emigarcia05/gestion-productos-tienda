@@ -462,85 +462,6 @@ export async function listarPedidosHistoria(params: {
   }
 }
 
-export async function agregarPedidoHistoriaItem(params: {
-  pedidoHistoriaId: string;
-  codTienda: string;
-  cantRecibida: number;
-}): Promise<ServiceResult<{ idItem: string }>> {
-  const { pedidoHistoriaId, codTienda, cantRecibida } = params;
-  const cod = normalizeCodTienda(codTienda);
-  const cant = Math.max(0, Math.floor(Number(cantRecibida) || 0));
-
-  if (!pedidoHistoriaId.trim()) return { success: false, error: "ID inválido." };
-
-  try {
-    await purgarPedidosHistoriaExpirados(prisma);
-
-    const header = await prisma.pedidoHistoria.findUnique({
-      where: { id: pedidoHistoriaId.trim() },
-      select: { id: true, estado: true },
-    });
-    if (!header) return { success: false, error: "Pedido no encontrado." };
-
-    const existing = await prisma.pedidoHistoriaItem.findUnique({
-      where: { pedidoHistoriaId_codTienda: { pedidoHistoriaId: header.id, codTienda: cod } },
-      select: { id: true },
-    });
-    if (existing) return { success: false, error: "El producto ya existe en el pedido." };
-
-    const idItem = await prisma.pedidoHistoriaItem.create({
-      data: {
-        pedidoHistoriaId: header.id,
-        codTienda: cod,
-        cantPedida: cant,
-        cantRecibida: cant,
-      },
-      select: { id: true },
-    });
-
-    return { success: true, data: { idItem: idItem.id } };
-  } catch (e) {
-    logServiceError("agregarPedidoHistoriaItem", e);
-    const msg = e instanceof Error ? e.message : "Error al agregar el producto al pedido.";
-    return { success: false, error: msg };
-  }
-}
-
-export async function actualizarPedidoHistoriaItemCantRecibida(params: {
-  pedidoHistoriaItemId: string;
-  cantRecibida: number;
-}): Promise<ServiceResult<void>> {
-  const { pedidoHistoriaItemId, cantRecibida } = params;
-  const id = pedidoHistoriaItemId.trim();
-  const cant = Math.max(0, Math.floor(Number(cantRecibida) || 0));
-
-  if (!id) return { success: false, error: "ID inválido." };
-
-  try {
-    await purgarPedidosHistoriaExpirados(prisma);
-
-    const item = await prisma.pedidoHistoriaItem.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        pedidoHistoria: { select: { estado: true } },
-      },
-    });
-    if (!item) return { success: false, error: "Ítem no encontrado." };
-
-    await prisma.pedidoHistoriaItem.update({
-      where: { id },
-      data: { cantRecibida: cant },
-    });
-
-    return { success: true, data: undefined };
-  } catch (e) {
-    logServiceError("actualizarPedidoHistoriaItemCantRecibida", e);
-    const msg = e instanceof Error ? e.message : "Error al actualizar la cantidad recibida.";
-    return { success: false, error: msg };
-  }
-}
-
 export async function guardarRecepcionPedidoHistoria(params: {
   pedidoHistoriaId: string;
   items: Array<{
@@ -659,39 +580,6 @@ export async function marcarPedidoHistoriaRegistrado(params: {
   } catch (e) {
     logServiceError("marcarPedidoHistoriaRegistrado", e);
     const msg = e instanceof Error ? e.message : "Error al marcar el pedido como registrado.";
-    return { success: false, error: msg };
-  }
-}
-
-export async function reabrirPedidoHistoriaRecepcion(params: {
-  pedidoHistoriaId: string;
-}): Promise<ServiceResult<void>> {
-  const { pedidoHistoriaId } = params;
-  const id = pedidoHistoriaId.trim();
-  if (!id) return { success: false, error: "ID inválido." };
-
-  try {
-    await purgarPedidosHistoriaExpirados(prisma);
-
-    const actual = await prisma.pedidoHistoria.findUnique({
-      where: { id },
-      select: { estado: true },
-    });
-    if (!actual) return { success: false, error: "Pedido no encontrado." };
-
-    if (actual.estado === "PENDIENTE" || actual.estado === "SIN RECEPCION") {
-      // Idempotente: ya está abierto para edición.
-      return { success: true, data: undefined };
-    }
-
-    await prisma.pedidoHistoria.update({
-      where: { id },
-      data: { estado: "PENDIENTE", registradoAt: null },
-    });
-    return { success: true, data: undefined };
-  } catch (e) {
-    logServiceError("reabrirPedidoHistoriaRecepcion", e);
-    const msg = e instanceof Error ? e.message : "Error al reabrir la recepción del pedido.";
     return { success: false, error: msg };
   }
 }

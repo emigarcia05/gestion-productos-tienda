@@ -21,19 +21,6 @@ function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-/** Hoy calendario en Argentina → DD/MM/YYYY para query DUX compras. */
-export function fechaHastaArgentinaComoDux(now = new Date()): string {
-  const iso = dateToIsoYmdArgentina(now);
-  const [ys, ms, ds] = iso.split("-");
-  const y = Number(ys);
-  const m = Number(ms);
-  const d = Number(ds);
-  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
-    return "01/01/1970";
-  }
-  return `${pad2(d)}/${pad2(m)}/${y}`;
-}
-
 /**
  * Resta `dias` al calendario de **hoy en Argentina** (`dateToIsoYmdArgentina`),
  * sin depender del huso del servidor para el día de negocio.

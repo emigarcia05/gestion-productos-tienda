@@ -5,9 +5,6 @@ import {
   type FinAnaMcCategoriaItem,
 } from "@/lib/finAnaMcCategorias";
 import type {
-  CrearFinAnaMcCategoriaInput,
-  EditarFinAnaMcCategoriaInput,
-  EliminarFinAnaMcCategoriaInput,
   ReemplazarFinAnaMcCategoriasInput,
 } from "@/lib/validations/finAnaMcCategorias";
 import type { ServiceResult } from "@/types";
@@ -57,7 +54,7 @@ function mapDbError(error: unknown, fallback: string): string {
 }
 
 /** Semilla idempotente de categorías M.C. (cobertura continua 0…100). */
-export async function ensureFinAnaMcCategoriasSeed(): Promise<void> {
+async function ensureFinAnaMcCategoriasSeed(): Promise<void> {
   const count = await prisma.finAnaMcCategoria.count();
   if (count > 0) return;
 
@@ -80,139 +77,6 @@ export async function listarFinAnaMcCategorias(): Promise<FinAnaMcCategoriaItem[
     },
   });
   return rows.map(mapCategoria);
-}
-
-export async function crearFinAnaMcCategoria(
-  input: CrearFinAnaMcCategoriaInput
-): Promise<ServiceResult<FinAnaMcCategoriaItem[]>> {
-  const categoria = normalizarNombreCategoriaMc(input.categoria);
-  if (!categoria) {
-    return { success: false, error: "El nombre no puede quedar vacío." };
-  }
-
-  try {
-    const existentes = await listarFinAnaMcCategorias();
-    const propuesta = [
-      ...existentes.map((row) => ({
-        id: row.id,
-        categoria: row.categoria,
-        desdePct: row.desdePct,
-        hastaPct: row.hastaPct,
-      })),
-      {
-        desdePct: input.desdePct,
-        hastaPct: input.hastaPct,
-        categoria,
-      },
-    ];
-    const errorContinuidad = validarContinuidadRangosMcCategorias(propuesta);
-    if (errorContinuidad) {
-      return { success: false, error: errorContinuidad };
-    }
-
-    const maxOrden = await prisma.finAnaMcCategoria.aggregate({
-      _max: { orden: true },
-    });
-    const orden = (maxOrden._max.orden ?? 0) + 10;
-
-    await prisma.finAnaMcCategoria.create({
-      data: {
-        categoria,
-        desdePct: input.desdePct,
-        hastaPct: input.hastaPct,
-        orden,
-      },
-    });
-
-    return { success: true, data: await listarFinAnaMcCategorias() };
-  } catch (e) {
-    return { success: false, error: mapDbError(e, "Error al crear categoría.") };
-  }
-}
-
-export async function editarFinAnaMcCategoria(
-  input: EditarFinAnaMcCategoriaInput
-): Promise<ServiceResult<FinAnaMcCategoriaItem[]>> {
-  const categoria = normalizarNombreCategoriaMc(input.categoria);
-  if (!categoria) {
-    return { success: false, error: "El nombre no puede quedar vacío." };
-  }
-
-  try {
-    const existentes = await listarFinAnaMcCategorias();
-    const actual = existentes.find((row) => row.id === input.id);
-    if (!actual) {
-      return { success: false, error: "Categoría no encontrada." };
-    }
-
-    const propuesta = existentes.map((row) =>
-      row.id === input.id
-        ? {
-            id: row.id,
-            categoria,
-            desdePct: input.desdePct,
-            hastaPct: input.hastaPct,
-          }
-        : {
-            id: row.id,
-            categoria: row.categoria,
-            desdePct: row.desdePct,
-            hastaPct: row.hastaPct,
-          }
-    );
-    const errorContinuidad = validarContinuidadRangosMcCategorias(propuesta);
-    if (errorContinuidad) {
-      return { success: false, error: errorContinuidad };
-    }
-
-    await prisma.finAnaMcCategoria.update({
-      where: { id: input.id },
-      data: {
-        categoria,
-        desdePct: input.desdePct,
-        hastaPct: input.hastaPct,
-      },
-    });
-
-    return { success: true, data: await listarFinAnaMcCategorias() };
-  } catch (e) {
-    return { success: false, error: mapDbError(e, "Error al editar categoría.") };
-  }
-}
-
-export async function eliminarFinAnaMcCategoria(
-  input: EliminarFinAnaMcCategoriaInput
-): Promise<ServiceResult<FinAnaMcCategoriaItem[]>> {
-  try {
-    const existentes = await listarFinAnaMcCategorias();
-    if (!existentes.some((row) => row.id === input.id)) {
-      return { success: false, error: "Categoría no encontrada." };
-    }
-
-    const propuesta = existentes
-      .filter((row) => row.id !== input.id)
-      .map((row) => ({
-        id: row.id,
-        categoria: row.categoria,
-        desdePct: row.desdePct,
-        hastaPct: row.hastaPct,
-      }));
-    const errorContinuidad = validarContinuidadRangosMcCategorias(propuesta);
-    if (errorContinuidad) {
-      return {
-        success: false,
-        error: `${errorContinuidad} Ajustá los rangos vecinos antes de eliminar.`,
-      };
-    }
-
-    await prisma.finAnaMcCategoria.delete({ where: { id: input.id } });
-    return { success: true, data: await listarFinAnaMcCategorias() };
-  } catch (e) {
-    return {
-      success: false,
-      error: mapDbError(e, "Error al eliminar categoría."),
-    };
-  }
 }
 
 /** Reemplaza el catálogo completo (transacción) con rangos continuos 0…100. */

@@ -6,27 +6,14 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
   actualizarDescuentoFpMargenContribucion,
-  listarDescuentosFpMargenContribucion,
 } from "@/services/finAnaMcDescuentoFp.service";
 import { actualizarDescuentoFpMargenContribucionSchema } from "@/lib/validations/finAnaMcDescuentoFp";
 import type { DescuentoFpMargenContribucionMap } from "@/services/finAnaMcDescuentoFp.service";
 import {
-  actualizarFormulaMargenContribucion,
-  listarFormulasMargenContribucion,
-} from "@/services/finAnaMcFormulas.service";
-import { actualizarFormulaMargenContribucionSchema } from "@/lib/validations/finAnaMcFormulas";
-import type { FinAnaMcFormulaItem } from "@/lib/finAnaMcFormulas";
-import {
-  crearFinAnaMcCategoria,
-  editarFinAnaMcCategoria,
-  eliminarFinAnaMcCategoria,
   listarFinAnaMcCategorias,
   reemplazarFinAnaMcCategorias,
 } from "@/services/finAnaMcCategorias.service";
 import {
-  crearFinAnaMcCategoriaSchema,
-  editarFinAnaMcCategoriaSchema,
-  eliminarFinAnaMcCategoriaSchema,
   reemplazarFinAnaMcCategoriasSchema,
 } from "@/lib/validations/finAnaMcCategorias";
 import type { FinAnaMcCategoriaItem } from "@/lib/finAnaMcCategorias";
@@ -56,16 +43,6 @@ async function requireEditorFinanzas(): Promise<{ ok: false; error: string } | n
   return null;
 }
 
-export async function listarDescuentosFpMargenContribucionAction(): Promise<
-  ActionResult<DescuentoFpMargenContribucionMap>
-> {
-  const gate = await requireFinanzasLectura();
-  if (gate) return gate;
-
-  const map = await listarDescuentosFpMargenContribucion();
-  return { ok: true, data: map };
-}
-
 export async function actualizarDescuentoFpMargenContribucionAction(
   params: unknown
 ): Promise<ActionResult<DescuentoFpMargenContribucionMap>> {
@@ -82,32 +59,6 @@ export async function actualizarDescuentoFpMargenContribucionAction(
   return { ok: true, data: res.data };
 }
 
-export async function listarFormulasMargenContribucionAction(): Promise<
-  ActionResult<FinAnaMcFormulaItem[]>
-> {
-  const gate = await requireFinanzasLectura();
-  if (gate) return gate;
-
-  const items = await listarFormulasMargenContribucion();
-  return { ok: true, data: items };
-}
-
-export async function actualizarFormulaMargenContribucionAction(
-  params: unknown
-): Promise<ActionResult<FinAnaMcFormulaItem[]>> {
-  const gate = await requireEditorFinanzas();
-  if (gate) return gate;
-
-  const parsed = actualizarFormulaMargenContribucionSchema.safeParse(params);
-  if (!parsed.success) return { ok: false, error: "Datos inválidos." };
-
-  const res = await actualizarFormulaMargenContribucion(parsed.data);
-  if (!res.success) return { ok: false, error: res.error };
-
-  revalidatePath(RUTA_MARGEN_CONTRIBUCION);
-  return { ok: true, data: res.data };
-}
-
 export async function listarFinAnaMcCategoriasAction(): Promise<
   ActionResult<FinAnaMcCategoriaItem[]>
 > {
@@ -116,54 +67,6 @@ export async function listarFinAnaMcCategoriasAction(): Promise<
 
   const items = await listarFinAnaMcCategorias();
   return { ok: true, data: items };
-}
-
-export async function crearFinAnaMcCategoriaAction(
-  params: unknown
-): Promise<ActionResult<FinAnaMcCategoriaItem[]>> {
-  const gate = await requireEditorFinanzas();
-  if (gate) return gate;
-
-  const parsed = crearFinAnaMcCategoriaSchema.safeParse(params);
-  if (!parsed.success) return { ok: false, error: "Datos inválidos." };
-
-  const res = await crearFinAnaMcCategoria(parsed.data);
-  if (!res.success) return { ok: false, error: res.error };
-
-  revalidatePath(RUTA_MARGEN_CONTRIBUCION);
-  return { ok: true, data: res.data };
-}
-
-export async function editarFinAnaMcCategoriaAction(
-  params: unknown
-): Promise<ActionResult<FinAnaMcCategoriaItem[]>> {
-  const gate = await requireEditorFinanzas();
-  if (gate) return gate;
-
-  const parsed = editarFinAnaMcCategoriaSchema.safeParse(params);
-  if (!parsed.success) return { ok: false, error: "Datos inválidos." };
-
-  const res = await editarFinAnaMcCategoria(parsed.data);
-  if (!res.success) return { ok: false, error: res.error };
-
-  revalidatePath(RUTA_MARGEN_CONTRIBUCION);
-  return { ok: true, data: res.data };
-}
-
-export async function eliminarFinAnaMcCategoriaAction(
-  params: unknown
-): Promise<ActionResult<FinAnaMcCategoriaItem[]>> {
-  const gate = await requireEditorFinanzas();
-  if (gate) return gate;
-
-  const parsed = eliminarFinAnaMcCategoriaSchema.safeParse(params);
-  if (!parsed.success) return { ok: false, error: "Datos inválidos." };
-
-  const res = await eliminarFinAnaMcCategoria(parsed.data);
-  if (!res.success) return { ok: false, error: res.error };
-
-  revalidatePath(RUTA_MARGEN_CONTRIBUCION);
-  return { ok: true, data: res.data };
 }
 
 export async function reemplazarFinAnaMcCategoriasAction(

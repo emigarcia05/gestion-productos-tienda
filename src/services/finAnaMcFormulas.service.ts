@@ -34,7 +34,7 @@ function toItem(row: {
 }
 
 /** Semilla idempotente de parámetros de fórmula MC. */
-export async function ensureFinAnaMcFormulasSeed(): Promise<void> {
+async function ensureFinAnaMcFormulasSeed(): Promise<void> {
   const existentes = await prisma.finAnaMcFormula.findMany({
     select: { codigo: true },
   });

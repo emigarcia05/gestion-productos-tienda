@@ -27,7 +27,7 @@ function clampDescuentoPct(n: number): number {
 }
 
 /** Semilla idempotente: una fila por forma de pago del simulador. */
-export async function ensureFinAnaMcDescuentoFpSeed(): Promise<void> {
+async function ensureFinAnaMcDescuentoFpSeed(): Promise<void> {
   await ensureFinAnaCosFinaPagosSeed();
   const pagosMargen = filtrarPagosMargenContribucion(await listarFinAnaCosFinaPagos());
 

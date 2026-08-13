@@ -223,16 +223,6 @@ export async function listarCompetenciasConPxSugeridoPorCodTiendas(
   return result;
 }
 
-/** @deprecated Usar `buildMapPxSugeridoCompetenciaPorCodTienda`. */
-export async function buildMapPxVtaSugeridoPorCodTienda(
-  codTiendas: string[]
-): Promise<Map<string, number>> {
-  const detalle = await buildMapPxSugeridoCompetenciaPorCodTienda(codTiendas);
-  const map = new Map<string, number>();
-  for (const [cod, d] of detalle) map.set(cod, d.px);
-  return map;
-}
-
 /** Clave `codTienda:idProveedor` → precio entero en pesos. */
 export async function buildMapPxVtaSugerido(
   codTiendas: string[],

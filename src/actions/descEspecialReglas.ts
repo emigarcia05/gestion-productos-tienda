@@ -9,7 +9,6 @@ import {
   crearReglaDescEspecialSchema,
   eliminarReglaDescEspecialSchema,
   obtenerReglaDescEspecialDetalleSchema,
-  reglaDescEspecialPorCodExtSchema,
 } from "@/lib/validations/descEspecialReglas";
 import {
   actualizarReglaDescEspecial,
@@ -17,17 +16,14 @@ import {
   eliminarReglaDescEspecial,
   listarReglasDescEspecial,
   obtenerReglaDescEspecialDetalle,
-  obtenerReglaDescEspecialPorCodExt,
   type ReglaDescEspecialDetalle,
   type ReglaDescEspecialListaPrecio,
-  type ReglaDescEspecialResumenProducto,
 } from "@/services/descEspecialReglas.service";
 import { REVALIDATE_LISTA_PRECIOS } from "@/lib/gestionProductosRoutes";
 
 export type {
   ReglaDescEspecialListaPrecio,
   ReglaDescEspecialDetalle,
-  ReglaDescEspecialResumenProducto,
 } from "@/services/descEspecialReglas.service";
 
 function revalidarListaPrecios(): void {
@@ -162,29 +158,6 @@ export async function eliminarReglaDescEspecialAction(
     return { ok: true, data: result.data };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Error al eliminar la regla.";
-    return { ok: false, error: message };
-  }
-}
-
-/** Lectura de regla aplicada a un ítem (Descuentos Aplicados / permiso lista precios). */
-export async function obtenerReglaDescEspecialPorCodExtAction(
-  raw: unknown
-): Promise<ActionResult<ReglaDescEspecialResumenProducto | null>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.proveedores.listaPrecios)) {
-    return { ok: false, error: "Sin permisos." };
-  }
-
-  const parsed = reglaDescEspecialPorCodExtSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, error: "Código de producto inválido." };
-  }
-
-  try {
-    const regla = await obtenerReglaDescEspecialPorCodExt(parsed.data.codExt);
-    return { ok: true, data: regla };
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Error al consultar la regla.";
     return { ok: false, error: message };
   }
 }

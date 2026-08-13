@@ -83,14 +83,6 @@ export async function getStockReal(
   return row != null ? row.stockReal : null;
 }
 
-export async function getStockMaipu(codTienda: string): Promise<number> {
-  return (await getStockReal(codTienda, getIdDepositoMaipu())) ?? 0;
-}
-
-export async function getStockGuaymallen(codTienda: string): Promise<number> {
-  return (await getStockReal(codTienda, getIdDepositoGuaymallen())) ?? 0;
-}
-
 /** Mapa cod_tienda → stock_real para un depósito (0 si no hay fila). */
 export async function buildMapStockPorDeposito(
   codTiendas: string[],

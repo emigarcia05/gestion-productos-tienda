@@ -36,7 +36,7 @@ function mapRow(row: {
   };
 }
 
-export async function ensureFinAnaMcConfig(): Promise<FinAnaMcConfigItem> {
+async function ensureFinAnaMcConfig(): Promise<FinAnaMcConfigItem> {
   const existing = await prisma.finAnaMcConfig.findUnique({
     where: { id: FIN_ANA_MC_CONFIG_ID },
   });

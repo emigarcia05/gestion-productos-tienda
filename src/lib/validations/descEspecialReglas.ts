@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import {
   listaPreciosCodExtListSchema,
-  listaPreciosCodExtSchema,
   prismaIdOptionalNullableSchema,
   prismaIdSchema,
 } from "@/lib/validations/common";
@@ -80,8 +79,4 @@ export type EliminarReglaDescEspecialInput = z.infer<typeof eliminarReglaDescEsp
 
 export const obtenerReglaDescEspecialDetalleSchema = z.object({
   id: prismaIdSchema,
-});
-
-export const reglaDescEspecialPorCodExtSchema = z.object({
-  codExt: listaPreciosCodExtSchema,
 });
