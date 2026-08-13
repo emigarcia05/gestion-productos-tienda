@@ -1,11 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -14,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FiltroIndividualContainer } from "@/components/FilterBar";
 import {
   encolarTransferenciasPendientesAction,
   exportarPendientesTransfDepositosAction,
@@ -23,11 +31,17 @@ import {
 } from "@/actions/stock";
 import { descargarExcelTransfDepositos } from "@/lib/exportTransfDepositosExcelClient";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
+import { SUCURSAL_LABEL_TRANSF } from "@/lib/transfDepositosControl";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
+
+const SUCURSALES_MODAL: { value: Sucursal; label: string }[] = [
+  { value: "guaymallen", label: SUCURSAL_LABEL_TRANSF.guaymallen },
+  { value: "maipu", label: SUCURSAL_LABEL_TRANSF.maipu },
+];
 
 export type ItemCantidadTransf = { codTienda: string; cantidad: number };
 
@@ -43,8 +57,8 @@ interface Props {
 }
 
 /**
- * Modal **Transf. Pendiente Registro**: encola la grilla (si hay), lista
- * pendientes Transferir/Recibir por par origen→destino y descarga Excel.
+ * Modal **Transf. Pendiente Registro**: desplegable **SUCURSAL** primero;
+ * encola la grilla (si hay) y lista Transferir/Recibir de esa sucursal.
  */
 export default function TransfPendienteRegistroModal({
   open,
@@ -57,6 +71,7 @@ export default function TransfPendienteRegistroModal({
   const [pendientes, setPendientes] = useState<
     PendienteExportTransfDepositosDto[]
   >([]);
+  const [sucursalFiltro, setSucursalFiltro] = useState<Sucursal | "">("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -79,6 +94,7 @@ export default function TransfPendienteRegistroModal({
     queueMicrotask(() => {
       setLoading(true);
       setError(null);
+      setSucursalFiltro(origen ?? "");
     });
 
     (async () => {
@@ -133,6 +149,14 @@ export default function TransfPendienteRegistroModal({
     });
   }
 
+  const pendientesFiltrados = useMemo(
+    () =>
+      sucursalFiltro
+        ? pendientes.filter((p) => p.sucursalExcel === sucursalFiltro)
+        : [],
+    [pendientes, sucursalFiltro]
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
@@ -150,6 +174,37 @@ export default function TransfPendienteRegistroModal({
           </Button>
         }
       >
+        <FiltroIndividualContainer
+          className="w-full"
+          activo={sucursalFiltro !== ""}
+          onLimpiar={() => setSucursalFiltro("")}
+        >
+          <Select
+            value={sucursalFiltro || undefined}
+            onValueChange={(v) => setSucursalFiltro(v as Sucursal)}
+          >
+            <SelectTrigger
+              id="filtro-transf-pendiente-sucursal"
+              className="input-filtro-unificado w-full"
+              aria-label="Sucursal"
+            >
+              <SelectValue placeholder="SUCURSAL" />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              side="bottom"
+              align="start"
+              className="select-content-filtro"
+            >
+              {SUCURSALES_MODAL.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FiltroIndividualContainer>
+
         {loading ? (
           <p className="text-sm text-foreground py-6 text-center">Cargando…</p>
         ) : null}
@@ -158,13 +213,22 @@ export default function TransfPendienteRegistroModal({
           <p className="text-sm text-destructive py-6 text-center">{error}</p>
         ) : null}
 
-        {!loading && !error && pendientes.length === 0 ? (
+        {!loading && !error && sucursalFiltro === "" ? (
           <p className="text-sm text-foreground py-6 text-center">
-            No hay transferencias pendientes de registro.
+            Seleccioná una sucursal para ver las transferencias pendientes.
           </p>
         ) : null}
 
-        {!loading && !error && pendientes.length > 0 ? (
+        {!loading &&
+        !error &&
+        sucursalFiltro !== "" &&
+        pendientesFiltrados.length === 0 ? (
+          <p className="text-sm text-foreground py-6 text-center">
+            No hay transferencias pendientes de registro para esta sucursal.
+          </p>
+        ) : null}
+
+        {!loading && !error && pendientesFiltrados.length > 0 ? (
           <Table variant="compact">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -176,7 +240,7 @@ export default function TransfPendienteRegistroModal({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pendientes.map((p) => (
+              {pendientesFiltrados.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="celda-datos text-center font-medium">
                     {p.tipoLabel}

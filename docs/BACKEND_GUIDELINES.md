@@ -283,7 +283,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **Historial (modal)**: `listarHistorialTransfDepositosPorProducto(codTienda)` agrupa por par origen→destino (FECHA / CANTIDAD). Action: `listarHistorialTransfDepositosProductoAction`.
 - **Excel DUX (Generar Transf. / Transf. Pendiente Registro)**:
   - `encolarTransferenciasPendientes` — persiste ítems de la grilla con ambos flags `NULL`.
-  - `listarPendientesExportTransfDepositos` — filas por par origen→destino: **TRANSFERIR** (`exportado_origen_at` null → Excel EGRESO) y **RECIBIR** (`exportado_destino_at` null → Excel INGRESO).
+  - `listarPendientesExportTransfDepositos` — filas por par origen→destino: **TRANSFERIR** (`exportado_origen_at` null → Excel EGRESO, `sucursalExcel` = origen) y **RECIBIR** (`exportado_destino_at` null → Excel INGRESO, `sucursalExcel` = destino). La UI filtra por sucursal seleccionada.
   - `exportarPendientesTransfDepositos({ tipo, origen, destino })` — filas `COD.` / `TIPO MOVIMIENTO` / `CANTIDAD DISPONIBLE`; marca solo el lado del tipo y deja de listarse.
   - Actions: `encolarTransferenciasPendientesAction`, `listarPendientesExportTransfDepositosAction`, `exportarPendientesTransfDepositosAction`.
   - Backfill de la migración de flags: filas históricas se marcan exportadas para no aparecer como pendientes.
@@ -2125,6 +2125,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-11): **Pedido A Fáb.** — UI sin columna **PROM. VTA. P/ DÍA** (el cálculo sigue alimentando stock/días/sugerida).
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — sucursales de métricas/modal = `genera_est = true` (`listarSucursalesParaPedidoAFabrica`).
+
+*Última actualización (2026-08-13): **Stock · Trans. Depósitos** — pendientes filtrados en UI por sucursal (`sucursalExcel`).*
 
 *Última actualización (2026-08-12): **Stock · Trans. Depósitos** — pendientes Transferir/Recibir por par; botón **Generar Transf.** / modal **Transf. Pendiente Registro**.*
 
