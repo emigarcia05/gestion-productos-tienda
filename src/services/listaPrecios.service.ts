@@ -997,10 +997,11 @@ async function mercaderiaMapsDesdeMerc2(
 
   for (const p of pairs) {
     const ce = (p.codExt ?? "").trim();
+    if (!ce) continue;
     const u = cantUrgentePorCodExt.get(ce);
-    if (u != null) {
-      mercaderiaMapUrgente.set(`${p.idProveedor}:${p.codExt}`, u);
-    }
+    if (u == null || u <= 0) continue;
+    mercaderiaMapUrgente.set(`${p.idProveedor}:${ce}`, u);
+    mercaderiaMapUrgente.set(ce, u);
   }
 
   return { mercaderiaMapUrgente, mercaderiaRepoSet, mercaderiaMapRepo };
@@ -1168,6 +1169,51 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
   }
 
   const listaWhereBaseParts: Prisma.ListaPrecioProveedorWhereInput[] = [{ habilitado: true }];
+
+  /**
+   * Con filtro PEDIDO: no cargar el catálogo completo. Semillas = filas con cant. &gt; 0;
+   * se expanden a todo el grupo `codTiendaVinculo` para el modal Elegir Proveedor.
+   */
+  if (pedidoTipo && urgenteCodExtsFiltro && repoCodTiendasFiltro) {
+    const orSeed: Prisma.ListaPrecioProveedorWhereInput[] = [];
+
+    if (
+      (pedidoTipo === "urgente" || pedidoTipo === "cualquier") &&
+      urgenteCodExtsFiltro.size > 0
+    ) {
+      const codExtsUrg = [...urgenteCodExtsFiltro];
+      const seedsUrg = await prisma.listaPrecioProveedor.findMany({
+        where: { habilitado: true, codExt: { in: codExtsUrg } },
+        select: { codExt: true, codTiendaVinculo: true },
+      });
+      const vinculosUrg = [
+        ...new Set(
+          seedsUrg
+            .map((s) => s.codTiendaVinculo?.trim() ?? "")
+            .filter((v) => v.length > 0)
+        ),
+      ];
+      if (vinculosUrg.length > 0) {
+        orSeed.push({ codTiendaVinculo: { in: vinculosUrg } });
+      }
+      orSeed.push({ codExt: { in: codExtsUrg } });
+    }
+
+    if (
+      (pedidoTipo === "reposicion" || pedidoTipo === "cualquier") &&
+      repoCodTiendasFiltro.size > 0
+    ) {
+      const tiendas = [...repoCodTiendasFiltro];
+      orSeed.push({ codTiendaVinculo: { in: tiendas } });
+      orSeed.push({ prodTienda: { codTienda: { in: tiendas } } });
+    }
+
+    if (orSeed.length === 0) {
+      return { items: [], total: 0, totalPaginas: 1 };
+    }
+    listaWhereBaseParts.push({ OR: orSeed });
+  }
+
   if (busqueda.length >= 3) {
     const tokens = busqueda.trim().split(/\s+/).filter(Boolean);
     if (tokens.length > 0) {
@@ -1194,7 +1240,7 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
     prodTienda: { select: { codTienda: true, descripcionTienda: true } },
   } as const;
 
-  /** Meta sin filtro de proveedor: conserva todos los miembros del grupo por `codTiendaVinculo`. */
+  /** Meta: conserva todos los miembros del grupo por `codTiendaVinculo`. */
   const meta = await prisma.listaPrecioProveedor.findMany({
     where: listaWhereBase,
     select: { codExt: true, codTiendaVinculo: true, idProveedor: true },
@@ -1221,12 +1267,14 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
     return a0.localeCompare(b0);
   });
 
+  /** Seguridad: el grupo debe tener al menos una semilla con cant. &gt; 0 del tipo filtrado. */
   if (pedidoTipo && urgenteCodExtsFiltro && repoCodTiendasFiltro) {
     sortedKeys = sortedKeys.filter((k) => {
       const cods = groupKeyToCodExts.get(k)!;
       const tieneUrgente = cods.some((ce) => urgenteCodExtsFiltro!.has(ce));
-      const codTienda = k.startsWith("T:") ? k.slice(2) : "";
-      const tieneRepo = Boolean(codTienda) && repoCodTiendasFiltro!.has(codTienda);
+      const codTiendaVinculo = k.startsWith("T:") ? k.slice(2) : "";
+      const tieneRepo =
+        Boolean(codTiendaVinculo) && repoCodTiendasFiltro!.has(codTiendaVinculo);
       if (pedidoTipo === "urgente") return tieneUrgente;
       if (pedidoTipo === "reposicion") return tieneRepo;
       return tieneUrgente || tieneRepo;
@@ -1283,9 +1331,11 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
   type FilaU = (typeof filas)[number];
 
   function itemDesdeFila(f: FilaU): PedidoUrgenteItem {
-    const key = `${f.idProveedor}:${f.codExt}`;
+    const ce = (f.codExt ?? "").trim();
+    const keyProv = `${f.idProveedor}:${ce}`;
     const descTienda = f.prodTienda?.descripcionTienda?.trim() || null;
-    const cantUrgenteUi = mercaderiaMapUrgente.get(key) ?? 0;
+    const cantUrgenteUi =
+      mercaderiaMapUrgente.get(keyProv) ?? mercaderiaMapUrgente.get(ce) ?? 0;
     const tiendaListaId = f.codTiendaVinculo ?? null;
 
     return {
@@ -1310,17 +1360,44 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       .filter((x): x is FilaU => x != null);
     if (memberFilas.length === 0) continue;
     if (memberFilas.length === 1) {
-      items.push(itemDesdeFila(memberFilas[0]!));
+      const unico = itemDesdeFila(memberFilas[0]!);
+      if (pedidoTipo === "urgente" && unico.cantPedidaUrgente <= 0) continue;
+      if (pedidoTipo === "reposicion" && unico.cantReposicion <= 0) continue;
+      if (
+        pedidoTipo === "cualquier" &&
+        unico.cantPedidaUrgente <= 0 &&
+        unico.cantReposicion <= 0
+      ) {
+        continue;
+      }
+      items.push(unico);
       continue;
     }
     const codTienda = memberFilas[0]!.codTiendaVinculo?.trim();
     if (!codTienda) {
       for (const mf of memberFilas) {
-        items.push(itemDesdeFila(mf));
+        const it = itemDesdeFila(mf);
+        if (pedidoTipo === "urgente" && it.cantPedidaUrgente <= 0) continue;
+        if (pedidoTipo === "reposicion" && it.cantReposicion <= 0) continue;
+        if (
+          pedidoTipo === "cualquier" &&
+          it.cantPedidaUrgente <= 0 &&
+          it.cantReposicion <= 0
+        ) {
+          continue;
+        }
+        items.push(it);
       }
       continue;
     }
     const memberItems = memberFilas.map(itemDesdeFila);
+    const cantUrgenteGrupo = memberItems.reduce((s, x) => s + x.cantPedidaUrgente, 0);
+    const cantRepoGrupo = memberItems[0]!.cantReposicion;
+    if (pedidoTipo === "urgente" && cantUrgenteGrupo <= 0) continue;
+    if (pedidoTipo === "reposicion" && cantRepoGrupo <= 0) continue;
+    if (pedidoTipo === "cualquier" && cantUrgenteGrupo <= 0 && cantRepoGrupo <= 0) {
+      continue;
+    }
     const descripcionGrupo = descripcionTiendaUnificadaParaGrupoPedidoUrgente(memberFilas);
     items.push({
       id: `agrup-tienda:${codTienda}`,
@@ -1328,15 +1405,15 @@ async function getListaPedidoUrgenteDesdeListaPrecios(
       prefijo: "",
       descripcion: descripcionGrupo,
       pxCompraFinalSinIva: null,
-      cantPedidaUrgente: memberItems.reduce((s, x) => s + x.cantPedidaUrgente, 0),
+      cantPedidaUrgente: cantUrgenteGrupo,
       confReposicion: memberItems[0]!.confReposicion,
-      cantReposicion: memberItems[0]!.cantReposicion,
+      cantReposicion: cantRepoGrupo,
       estaVinculadoTienda: true,
       miembrosAgrupacion: memberItems.map((i) => ({
         codExt: i.codExt,
         prefijo: i.prefijo,
         pxCompraFinalSinIva: i.pxCompraFinalSinIva,
-      ivaProveedor: i.ivaProveedor ?? IvaProveedor.PREGUNTA,
+        ivaProveedor: i.ivaProveedor ?? IvaProveedor.PREGUNTA,
         cantPedidaUrgente: i.cantPedidaUrgente,
         estaVinculadoTienda: i.estaVinculadoTienda,
       })),
