@@ -76,17 +76,6 @@ export function FilterRowSearch({ children, className }: { children: React.React
   );
 }
 
-/** Fila 2 (sin búsqueda): acciones alineadas a la derecha (ej. limpiar filtros). */
-export function FilterRowNoSearchActions({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return <div className={cn("flex items-center justify-end w-full", className)}>{children}</div>;
-}
-
 /**
  * Wrapper de filtro individual con botón tacho contextual.
  * El botón aparece solo cuando el filtro está activo.

@@ -105,14 +105,8 @@ export const BALANCE_MODAL_HISTORIAL_RUBRO_TITLE =
   "Evolución mensual del gasto con mayor impacto en este rubro";
 
 /**
- * Etiqueta de campo en modales (label nativo o `<Label>`).
- * Color `foreground` (negro de UI); `globals.css` refuerza en `.app-modal__body` / `.modal-app__body`.
- */
-export const MODAL_FIELD_LABEL_CLASS = "modal-field-label text-foreground";
-
-/**
  * Micro-etiqueta MAYÚSCULAS en modales (misma tipografía que `ModalMicroLabel`).
- * Preferir el componente `ModalMicroLabel`; usar esta constante solo en `<label>` compuestos.
+ * Preferir el componente `ModalMicroLabel`.
  */
 export const MODAL_MICRO_LABEL_CLASS =
   "modal-micro-label modal-field-label text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-foreground";
