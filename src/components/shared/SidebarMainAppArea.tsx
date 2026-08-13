@@ -9,7 +9,6 @@ import {
   type IndicadorSlidenavDto,
 } from "@/actions/stock";
 import {
-  EVENTO_ADVERTIR_TRANSF_PENDIENTES,
   EVENTO_INDICADOR_SLIDENAV,
 } from "@/lib/indicadorSlidenav";
 import {
@@ -106,17 +105,15 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
   useEffect(() => {
     let cancelled = false;
 
-    async function cargar(): Promise<IndicadorSlidenavDto> {
+    async function cargar() {
       const sucursal = leerSucursalPreferida();
       if (!sucursal) {
         if (!cancelled) setConteos(VACIO);
-        return VACIO;
+        return;
       }
       const res = await getIndicadorSlidenavAction({ sucursal });
-      if (cancelled) return VACIO;
-      const data = res.ok ? res.data : VACIO;
-      setConteos(data);
-      return data;
+      if (cancelled) return;
+      setConteos(res.ok ? res.data : VACIO);
     }
 
     function onRefresh() {
@@ -127,20 +124,10 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
       if (document.visibilityState === "visible") void cargar();
     }
 
-    function onAdvertirTransf() {
-      void cargar().then((data) => {
-        if (cancelled) return;
-        if (data.emision > 0 || data.recepcion > 0) {
-          setAdvertenciaOpen(true);
-        }
-      });
-    }
-
     void cargar();
     window.addEventListener("focus", onRefresh);
     window.addEventListener(EVENTO_SUCURSAL_PREFERIDA, onRefresh);
     window.addEventListener(EVENTO_INDICADOR_SLIDENAV, onRefresh);
-    window.addEventListener(EVENTO_ADVERTIR_TRANSF_PENDIENTES, onAdvertirTransf);
     document.addEventListener("visibilitychange", onVisible);
     const id = window.setInterval(() => {
       void cargar();
@@ -151,10 +138,6 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
       window.removeEventListener("focus", onRefresh);
       window.removeEventListener(EVENTO_SUCURSAL_PREFERIDA, onRefresh);
       window.removeEventListener(EVENTO_INDICADOR_SLIDENAV, onRefresh);
-      window.removeEventListener(
-        EVENTO_ADVERTIR_TRANSF_PENDIENTES,
-        onAdvertirTransf
-      );
       document.removeEventListener("visibilitychange", onVisible);
       window.clearInterval(id);
     };

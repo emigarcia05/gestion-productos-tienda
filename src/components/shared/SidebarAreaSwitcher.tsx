@@ -37,7 +37,6 @@ import {
   etiquetaSucursalPorDefecto,
   usuarioTieneAdministracion,
 } from "@/lib/usuarios";
-import { avisarAdvertirTransfPendientes } from "@/lib/indicadorSlidenav";
 import type { Rol } from "@/lib/permisos";
 import { cn } from "@/lib/utils";
 
@@ -77,7 +76,6 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const [error, setError] = useState("");
   const [pendingUsuario, setPendingUsuario] = useState<UsuarioSesion | null>(null);
   const [pendingAreaId, setPendingAreaId] = useState<MainAppAreaId | null>(null);
-  const [advertirTrasClave, setAdvertirTrasClave] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const currentId = getMainAppAreaIdFromPathname(pathname);
@@ -118,11 +116,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     };
   }, [usuarioOpen]);
 
-  function persistirYNavegar(
-    usuario: UsuarioSesion,
-    areaId: MainAppAreaId,
-    advertirTransf: boolean
-  ) {
+  function persistirYNavegar(usuario: UsuarioSesion, areaId: MainAppAreaId) {
     guardarUsuarioSesion(usuario);
     setUsuarioSesion(usuario);
     setForceChoose(false);
@@ -133,22 +127,11 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     setClaveOpen(false);
     setPendingUsuario(null);
     setPendingAreaId(null);
-    setAdvertirTrasClave(false);
-    if (advertirTransf) {
-      window.setTimeout(() => {
-        avisarAdvertirTransfPendientes();
-      }, 300);
-    }
   }
 
-  function pedirClave(
-    usuario: UsuarioSesion,
-    areaId: MainAppAreaId,
-    advertirTransf: boolean
-  ) {
+  function pedirClave(usuario: UsuarioSesion, areaId: MainAppAreaId) {
     setPendingUsuario(usuario);
     setPendingAreaId(areaId);
-    setAdvertirTrasClave(advertirTransf);
     setUsuarioOpen(false);
     setModuloOpen(false);
     setClave("");
@@ -163,11 +146,11 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     const destino = primerModuloPermitido(usuario.modulosPermitidos);
     if (!destino) return;
     if (usuarioTieneAdministracion(usuario.modulosPermitidos) && rolActual !== "editor") {
-      pedirClave(usuario, destino, true);
+      pedirClave(usuario, destino);
       return;
     }
     startTransition(() => {
-      persistirYNavegar(usuario, destino, true);
+      persistirYNavegar(usuario, destino);
     });
   }
 
@@ -178,11 +161,11 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     }
     const area = getMainAppAreaById(areaId);
     if (area.requierePassword && rolActual !== "editor") {
-      pedirClave(usuario, areaId, false);
+      pedirClave(usuario, areaId);
       return;
     }
     startTransition(() => {
-      persistirYNavegar(usuario, areaId, false);
+      persistirYNavegar(usuario, areaId);
     });
   }
 
@@ -195,7 +178,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
         setError(res.error ?? "Error desconocido.");
         return;
       }
-      persistirYNavegar(pendingUsuario, pendingAreaId, advertirTrasClave);
+      persistirYNavegar(pendingUsuario, pendingAreaId);
       router.refresh();
     });
   }
@@ -213,7 +196,6 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     if (!open) {
       setPendingUsuario(null);
       setPendingAreaId(null);
-      setAdvertirTrasClave(false);
       if (forceChoose) {
         setUsuarioOpen(true);
       }
@@ -224,7 +206,6 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     setClaveOpen(false);
     setPendingUsuario(null);
     setPendingAreaId(null);
-    setAdvertirTrasClave(false);
     if (forceChoose) {
       setUsuarioOpen(true);
     }
