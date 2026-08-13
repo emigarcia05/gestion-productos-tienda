@@ -73,7 +73,7 @@ function BotonCategoriaPendiente({
       }}
       className={cn(
         rowSpanClass,
-        "self-center justify-self-start text-left text-xs font-semibold tracking-wide",
+        "w-full self-center text-center text-xs font-semibold uppercase tracking-wide",
         "rounded-sm text-foreground underline-offset-2",
         "hover:text-primary hover:underline",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -87,8 +87,8 @@ function BotonCategoriaPendiente({
 /**
  * Fila **Pendientes** del dock de sesión (slidenav).
  * Label **PENDIENTES** centrado; badge = categorías con pendientes (Pedido y/o
- * Transferencia; máx. 2). Hover o click: detalle lateral con botones Pedido /
- * Transferencia.
+ * Transferencia; máx. 2). Hover o click: detalle lateral con botones **PEDIDO** /
+ * **TRANSFERENCIA** (MAYÚSCULAS, centrados y alineados entre sí).
  */
 export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProps) {
   const pathname = usePathname();
