@@ -132,6 +132,8 @@ export const PERMISOS = {
   usuarios: {
     /** Catálogo `global_personal`: sucursal por defecto y módulos permitidos. Solo editor. */
     acceso: { simple: false, editor: true },
+    /** Listado para el modal de inicio (nombre + sucursal + módulos). */
+    inicioSesion: { simple: true, editor: true },
   },
 
   // ─── Módulo Asistente IA (Vendedor) ────────────────────────────────────────

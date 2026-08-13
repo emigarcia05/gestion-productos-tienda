@@ -40,3 +40,19 @@ export function etiquetaSucursalPorDefecto(
     codigo.toLocaleUpperCase("es")
   );
 }
+
+export function usuarioTieneAdministracion(
+  modulos: readonly MainAppAreaId[]
+): boolean {
+  return modulos.includes("finanzas");
+}
+
+export function primerModuloPermitido(
+  modulos: readonly MainAppAreaId[]
+): MainAppAreaId | null {
+  return modulos[0] ?? null;
+}
+
+export function puedeCambiarModulo(modulos: readonly MainAppAreaId[]): boolean {
+  return modulos.length > 1;
+}

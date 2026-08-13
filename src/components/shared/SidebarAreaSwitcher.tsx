@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,20 +17,25 @@ import {
 import { FiltroIndividualContainer } from "@/components/FilterBar";
 import AppModal from "@/components/shared/AppModal";
 import { activarModoEditor } from "@/actions/sesion";
+import { listUsuariosParaInicioSesionAction } from "@/actions/globalPersonal";
 import {
-  MAIN_APP_AREAS,
   areaLabelMayusculas,
   getMainAppAreaById,
   getMainAppAreaIdFromPathname,
   type MainAppAreaId,
 } from "@/lib/main-app-areas";
+import type { GlobalPersonalItem } from "@/services/globalPersonal.service";
 import {
-  SUCURSALES_PREFERIDAS,
-  guardarSucursalPreferida,
-  leerSucursalPreferida,
-  sucursalPreferidaLabel,
-  type SucursalPreferida,
-} from "@/lib/sucursalPreferida";
+  guardarUsuarioSesion,
+  leerUsuarioSesion,
+  usuarioSesionDesdeItem,
+  type UsuarioSesion,
+} from "@/lib/usuarioSesion";
+import {
+  puedeCambiarModulo,
+  primerModuloPermitido,
+  usuarioTieneAdministracion,
+} from "@/lib/usuarios";
 import type { Rol } from "@/lib/permisos";
 import { cn } from "@/lib/utils";
 
@@ -39,125 +44,142 @@ interface Props {
   rolActual: Rol;
 }
 
-/** Sesión de navegador: el usuario ya eligió sucursal y módulo al menos una vez. */
-const STORAGE_AREA_ELEGIDA = "main-app-area-elegida";
-
-const MODULO_DEFAULT: MainAppAreaId = "gestion-productos";
-
-function marcarAreaElegida(): void {
-  try {
-    sessionStorage.setItem(STORAGE_AREA_ELEGIDA, "1");
-  } catch {
-    /* ignore */
-  }
-}
-
-function yaEligioArea(): boolean {
-  try {
-    return sessionStorage.getItem(STORAGE_AREA_ELEGIDA) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function yaCompletoOnboarding(): boolean {
-  return yaEligioArea() && leerSucursalPreferida() !== null;
+function nombreUsuarioLabel(nombre: string): string {
+  return nombre.toLocaleUpperCase("es-AR");
 }
 
 /**
- * Botón inferior de la slidenav: sucursal preferida + módulo/área.
- * Modal con dos desplegables: **SUCURSAL** (sin default) y **MÓDULO** (VENDEDOR).
+ * Pie de slidenav: nombre de usuario + cambio de módulo si hay más de uno.
+ * Primera visita: modal **Elegir Usuario**; si el usuario tiene Administración, pide clave.
  */
 export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const [areasOpen, setAreasOpen] = useState(false);
   const [forceChoose, setForceChoose] = useState(false);
-  const [sucursalDraft, setSucursalDraft] = useState<SucursalPreferida | "">(
-    ""
-  );
-  const [moduloDraft, setModuloDraft] =
-    useState<MainAppAreaId>(MODULO_DEFAULT);
-  const [sucursalGuardada, setSucursalGuardada] =
-    useState<SucursalPreferida | null>(null);
+  const [usuarioOpen, setUsuarioOpen] = useState(false);
+  const [moduloOpen, setModuloOpen] = useState(false);
   const [claveOpen, setClaveOpen] = useState(false);
+  const [usuarios, setUsuarios] = useState<GlobalPersonalItem[]>([]);
+  const [usuariosError, setUsuariosError] = useState("");
+  const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
+  const [usuarioDraftId, setUsuarioDraftId] = useState<string>("");
+  const [usuarioSesion, setUsuarioSesion] = useState<UsuarioSesion | null>(null);
+  const [moduloDraft, setModuloDraft] = useState<MainAppAreaId | "">("");
   const [clave, setClave] = useState("");
   const [mostrarClave, setMostrarClave] = useState(false);
   const [error, setError] = useState("");
+  const [pendingUsuario, setPendingUsuario] = useState<UsuarioSesion | null>(null);
   const [pendingAreaId, setPendingAreaId] = useState<MainAppAreaId | null>(null);
   const [pending, startTransition] = useTransition();
 
   const currentId = getMainAppAreaIdFromPathname(pathname);
-  const current = getMainAppAreaById(currentId);
-  const labelModulo = forceChoose
-    ? "MÓDULO"
-    : areaLabelMayusculas(current.label);
-  const labelSucursal = sucursalGuardada
-    ? sucursalPreferidaLabel(sucursalGuardada)
-    : "SUCURSAL";
+  const puedeCambiar = usuarioSesion
+    ? puedeCambiarModulo(usuarioSesion.modulosPermitidos)
+    : false;
+
+  const usuarioSeleccionado = useMemo(
+    () => usuarios.find((u) => String(u.idPersonal) === usuarioDraftId) ?? null,
+    [usuarios, usuarioDraftId]
+  );
 
   useEffect(() => {
-    const sucursal = leerSucursalPreferida();
+    const guardado = leerUsuarioSesion();
     queueMicrotask(() => {
-      setSucursalGuardada(sucursal);
-      if (!yaCompletoOnboarding()) {
+      setUsuarioSesion(guardado);
+      if (!guardado) {
         setForceChoose(true);
-        setSucursalDraft("");
-        setModuloDraft(MODULO_DEFAULT);
-        setAreasOpen(true);
+        setUsuarioOpen(true);
       }
     });
   }, []);
 
-  function persistirOnboarding(sucursal: SucursalPreferida) {
-    guardarSucursalPreferida(sucursal);
-    marcarAreaElegida();
-    setSucursalGuardada(sucursal);
-    setForceChoose(false);
-  }
+  useEffect(() => {
+    if (!usuarioOpen) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      setCargandoUsuarios(true);
+      setUsuariosError("");
+    });
+    void listUsuariosParaInicioSesionAction().then((res) => {
+      if (cancelled) return;
+      setCargandoUsuarios(false);
+      if (!res.ok) {
+        setUsuarios([]);
+        setUsuariosError(res.error);
+        return;
+      }
+      setUsuarios(res.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [usuarioOpen]);
 
-  function goToArea(id: MainAppAreaId, sucursal: SucursalPreferida) {
-    const area = getMainAppAreaById(id);
-    persistirOnboarding(sucursal);
+  function persistirYNavegar(usuario: UsuarioSesion, areaId: MainAppAreaId) {
+    guardarUsuarioSesion(usuario);
+    setUsuarioSesion(usuario);
+    setForceChoose(false);
+    const area = getMainAppAreaById(areaId);
     router.push(area.href);
-    setAreasOpen(false);
+    setUsuarioOpen(false);
+    setModuloOpen(false);
     setClaveOpen(false);
+    setPendingUsuario(null);
     setPendingAreaId(null);
   }
 
-  function aplicarSeleccion(id: MainAppAreaId, sucursal: SucursalPreferida) {
-    if (id === currentId && !forceChoose) {
-      persistirOnboarding(sucursal);
-      setAreasOpen(false);
-      return;
-    }
-    if (id === currentId && forceChoose) {
-      persistirOnboarding(sucursal);
-      setAreasOpen(false);
-      return;
-    }
-    const area = getMainAppAreaById(id);
-    if (area.requierePassword && rolActual !== "editor") {
-      setPendingAreaId(id);
-      setAreasOpen(false);
-      setClave("");
-      setError("");
-      setMostrarClave(false);
-      setClaveOpen(true);
+  function pedirClave(usuario: UsuarioSesion, areaId: MainAppAreaId) {
+    setPendingUsuario(usuario);
+    setPendingAreaId(areaId);
+    setUsuarioOpen(false);
+    setModuloOpen(false);
+    setClave("");
+    setError("");
+    setMostrarClave(false);
+    setClaveOpen(true);
+  }
+
+  function aplicarUsuario(item: GlobalPersonalItem) {
+    const usuario = usuarioSesionDesdeItem(item);
+    if (!usuario) return;
+    const destino = primerModuloPermitido(usuario.modulosPermitidos);
+    if (!destino) return;
+    if (usuarioTieneAdministracion(usuario.modulosPermitidos) && rolActual !== "editor") {
+      pedirClave(usuario, destino);
       return;
     }
     startTransition(() => {
-      goToArea(id, sucursal);
+      persistirYNavegar(usuario, destino);
     });
   }
 
-  function handleAplicar() {
-    if (!sucursalDraft) return;
-    aplicarSeleccion(moduloDraft, sucursalDraft);
+  function aplicarModulo(usuario: UsuarioSesion, areaId: MainAppAreaId) {
+    if (areaId === currentId && !forceChoose) {
+      setModuloOpen(false);
+      return;
+    }
+    const area = getMainAppAreaById(areaId);
+    if (area.requierePassword && rolActual !== "editor") {
+      pedirClave(usuario, areaId);
+      return;
+    }
+    startTransition(() => {
+      persistirYNavegar(usuario, areaId);
+    });
+  }
+
+  function handleAplicarUsuario() {
+    if (!usuarioSeleccionado) return;
+    aplicarUsuario(usuarioSeleccionado);
+  }
+
+  function handleAplicarModulo() {
+    if (!usuarioSesion || moduloDraft === "") return;
+    aplicarModulo(usuarioSesion, moduloDraft);
   }
 
   function handleActivarYNavegar() {
-    if (!pendingAreaId || !sucursalDraft) return;
+    if (!pendingUsuario || !pendingAreaId) return;
     setError("");
     startTransition(async () => {
       const res = await activarModoEditor(clave);
@@ -165,178 +187,211 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
         setError(res.error ?? "Error desconocido.");
         return;
       }
-      goToArea(pendingAreaId, sucursalDraft);
+      persistirYNavegar(pendingUsuario, pendingAreaId);
       router.refresh();
     });
   }
 
-  function handleAreasOpenChange(open: boolean) {
+  function handleUsuarioOpenChange(open: boolean) {
     if (!open && forceChoose) {
-      setAreasOpen(true);
+      setUsuarioOpen(true);
       return;
     }
-    if (open) {
-      const sucursal = leerSucursalPreferida() ?? sucursalGuardada;
-      setSucursalDraft(sucursal ?? "");
-      setModuloDraft(forceChoose ? MODULO_DEFAULT : currentId);
-    }
-    setAreasOpen(open);
+    setUsuarioOpen(open);
   }
 
-  const puedeAplicar = sucursalDraft !== "";
+  function handleClaveOpenChange(open: boolean) {
+    setClaveOpen(open);
+    if (!open) {
+      setPendingUsuario(null);
+      setPendingAreaId(null);
+      if (forceChoose) {
+        setUsuarioOpen(true);
+      }
+    }
+  }
+
+  function handleCancelarClave() {
+    setClaveOpen(false);
+    setPendingUsuario(null);
+    setPendingAreaId(null);
+    if (forceChoose) {
+      setUsuarioOpen(true);
+    }
+  }
+
+  const labelUsuario = usuarioSesion
+    ? nombreUsuarioLabel(usuarioSesion.nombrePersonal)
+    : "USUARIO";
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setAreasOpen(true)}
-        disabled={pending}
+      <div
         className={cn(
           "w-full rounded-lg px-3 py-2",
           "flex flex-col items-center justify-center gap-1.5",
-          "sidebar-user-switcher-surface",
-          "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-          pending && "cursor-not-allowed opacity-90"
+          "sidebar-user-switcher-surface"
         )}
-        aria-label="Cambiar Sucursal Y Módulo De La Aplicación"
       >
-        <span className="w-full text-center text-sm font-semibold tracking-wide">
-          {labelSucursal}
-        </span>
-        <span
-          className="h-px w-[80%] shrink-0 bg-sidebar-foreground/85"
-          aria-hidden
-        />
-        <span className="w-full text-center text-sm font-semibold tracking-wide">
-          {labelModulo}
-        </span>
-      </button>
+        <p className="w-full text-center text-sm font-semibold tracking-wide">
+          {labelUsuario}
+        </p>
+        {puedeCambiar ? (
+          <>
+            <span
+              className="h-px w-[80%] shrink-0 bg-sidebar-foreground/85"
+              aria-hidden
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const actualPermitido = usuarioSesion?.modulosPermitidos.includes(
+                  currentId
+                )
+                  ? currentId
+                  : primerModuloPermitido(usuarioSesion?.modulosPermitidos ?? []);
+                setModuloDraft(actualPermitido ?? "");
+                setModuloOpen(true);
+              }}
+              disabled={pending || forceChoose}
+              className={cn(
+                "w-full text-center text-sm font-semibold tracking-wide",
+                "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                pending && "cursor-not-allowed opacity-90"
+              )}
+            >
+              Cambiar Módulo
+            </button>
+          </>
+        ) : null}
+      </div>
 
-      <Dialog open={areasOpen} onOpenChange={handleAreasOpenChange}>
+      <Dialog open={usuarioOpen} onOpenChange={handleUsuarioOpenChange}>
         <AppModal
           size="sm"
-          title="Sucursal Y Módulo"
+          title="Elegir Usuario"
           padding="sm"
           showCloseButton={!forceChoose}
           actions={
-            <>
-              {forceChoose ? null : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setAreasOpen(false)}
-                  disabled={pending}
+            <Button
+              type="button"
+              onClick={handleAplicarUsuario}
+              disabled={pending || !usuarioSeleccionado || cargandoUsuarios}
+            >
+              {pending ? "Aplicando..." : "Aplicar"}
+            </Button>
+          }
+        >
+          <div className="flex w-full min-w-0 flex-col gap-3">
+            {cargandoUsuarios ? (
+              <p className="text-sm text-foreground">Cargando…</p>
+            ) : null}
+            {usuariosError ? (
+              <p className="text-sm text-destructive">{usuariosError}</p>
+            ) : null}
+            {!cargandoUsuarios && !usuariosError && usuarios.length === 0 ? (
+              <p className="text-sm text-foreground">
+                No hay usuarios configurados. Cargá sucursal y módulos en Usuarios.
+              </p>
+            ) : null}
+            {!cargandoUsuarios && usuarios.length > 0 ? (
+              <FiltroIndividualContainer
+                className="w-full"
+                activo={usuarioDraftId !== ""}
+                onLimpiar={() => setUsuarioDraftId("")}
+              >
+                <Select
+                  value={usuarioDraftId || undefined}
+                  onValueChange={setUsuarioDraftId}
                 >
-                  Cerrar
-                </Button>
-              )}
+                  <SelectTrigger
+                    id="switcher-usuario"
+                    className="input-filtro-unificado w-full"
+                    aria-label="Usuario"
+                  >
+                    <SelectValue placeholder="USUARIO" />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    align="start"
+                    className="select-content-filtro"
+                  >
+                    {usuarios.map((u) => (
+                      <SelectItem key={u.idPersonal} value={String(u.idPersonal)}>
+                        {nombreUsuarioLabel(u.nombrePersonal)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FiltroIndividualContainer>
+            ) : null}
+          </div>
+        </AppModal>
+      </Dialog>
+
+      <Dialog open={moduloOpen} onOpenChange={setModuloOpen}>
+        <AppModal
+          size="sm"
+          title="Cambiar Módulo"
+          padding="sm"
+          actions={
+            <>
               <Button
                 type="button"
-                onClick={handleAplicar}
-                disabled={pending || !puedeAplicar}
+                variant="ghost"
+                onClick={() => setModuloOpen(false)}
+                disabled={pending}
+              >
+                Cerrar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleAplicarModulo}
+                disabled={pending || moduloDraft === ""}
               >
                 {pending ? "Aplicando..." : "Aplicar"}
               </Button>
             </>
           }
         >
-          <div className="flex w-full min-w-0 flex-col gap-3">
-            <FiltroIndividualContainer
-              className="w-full"
-              activo={sucursalDraft !== ""}
-              onLimpiar={() => setSucursalDraft("")}
+          <FiltroIndividualContainer
+            className="w-full"
+            activo={moduloDraft !== ""}
+            onLimpiar={() => setModuloDraft("")}
+          >
+            <Select
+              value={moduloDraft || undefined}
+              onValueChange={(v) => setModuloDraft(v as MainAppAreaId)}
             >
-              <Select
-                value={sucursalDraft || undefined}
-                onValueChange={(v) => setSucursalDraft(v as SucursalPreferida)}
+              <SelectTrigger
+                id="switcher-modulo"
+                className="input-filtro-unificado w-full"
+                aria-label="Módulo"
               >
-                <SelectTrigger
-                  id="switcher-sucursal"
-                  className="input-filtro-unificado w-full"
-                  aria-label="Sucursal"
-                >
-                  <SelectValue placeholder="SUCURSAL" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  {SUCURSALES_PREFERIDAS.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FiltroIndividualContainer>
-
-            <FiltroIndividualContainer
-              className="w-full"
-              activo={moduloDraft !== MODULO_DEFAULT}
-              onLimpiar={() => setModuloDraft(MODULO_DEFAULT)}
-            >
-              <Select
-                value={moduloDraft}
-                onValueChange={(v) => {
-                  const id = v as MainAppAreaId;
+                <SelectValue placeholder="MÓDULO" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                {(usuarioSesion?.modulosPermitidos ?? []).map((id) => {
                   const area = getMainAppAreaById(id);
-                  if (area.requierePassword && rolActual !== "editor") {
-                    if (!sucursalDraft) {
-                      setModuloDraft(MODULO_DEFAULT);
-                      return;
-                    }
-                    setModuloDraft(id);
-                    setPendingAreaId(id);
-                    setAreasOpen(false);
-                    setClave("");
-                    setError("");
-                    setMostrarClave(false);
-                    setClaveOpen(true);
-                    return;
-                  }
-                  setModuloDraft(id);
-                }}
-              >
-                <SelectTrigger
-                  id="switcher-modulo"
-                  className="input-filtro-unificado w-full"
-                  aria-label="Módulo"
-                >
-                  <SelectValue placeholder="MÓDULO" />
-                </SelectTrigger>
-                <SelectContent
-                  position="popper"
-                  side="bottom"
-                  align="start"
-                  className="select-content-filtro"
-                >
-                  {MAIN_APP_AREAS.map((area) => (
-                    <SelectItem key={area.id} value={area.id}>
+                  return (
+                    <SelectItem key={id} value={id}>
                       {areaLabelMayusculas(area.label)}
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FiltroIndividualContainer>
-          </div>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
         </AppModal>
       </Dialog>
 
-      <Dialog
-        open={claveOpen}
-        onOpenChange={(open) => {
-          setClaveOpen(open);
-          if (!open) {
-            setPendingAreaId(null);
-            setModuloDraft(MODULO_DEFAULT);
-            if (forceChoose || !yaCompletoOnboarding()) {
-              setAreasOpen(true);
-            }
-          }
-        }}
-      >
+      <Dialog open={claveOpen} onOpenChange={handleClaveOpenChange}>
         <AppModal
           size="sm"
           title={
@@ -349,21 +404,14 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
             <>
               <Button
                 variant="ghost"
-                onClick={() => {
-                  setClaveOpen(false);
-                  setPendingAreaId(null);
-                  setModuloDraft(MODULO_DEFAULT);
-                  if (forceChoose || !yaCompletoOnboarding()) {
-                    setAreasOpen(true);
-                  }
-                }}
+                onClick={handleCancelarClave}
                 disabled={pending}
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleActivarYNavegar}
-                disabled={pending || !clave || !pendingAreaId || !sucursalDraft}
+                disabled={pending || !clave || !pendingUsuario || !pendingAreaId}
               >
                 {pending ? "Verificando..." : "Ingresar"}
               </Button>

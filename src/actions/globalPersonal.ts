@@ -9,6 +9,7 @@ import { actualizarUsuarioPersonalSchema } from "@/lib/validations/globalPersona
 import {
   actualizarUsuarioPersonal,
   listGlobalPersonal,
+  listUsuariosParaInicioSesion,
   type GlobalPersonalItem,
 } from "@/services/globalPersonal.service";
 
@@ -40,6 +41,23 @@ export async function listGlobalPersonalAction(): Promise<
     const message = e instanceof Error ? e.message : String(e);
     console.error("[globalPersonal][action][listGlobalPersonal]", message);
     return { ok: false, error: "Error al listar el personal." };
+  }
+}
+
+export async function listUsuariosParaInicioSesionAction(): Promise<
+  ActionResult<GlobalPersonalItem[]>
+> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.usuarios.inicioSesion)) {
+    return { ok: false, error: "Sin permisos." };
+  }
+  try {
+    const items = await listUsuariosParaInicioSesion();
+    return { ok: true, data: items };
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    console.error("[globalPersonal][action][listUsuariosParaInicioSesion]", message);
+    return { ok: false, error: "Error al listar usuarios." };
   }
 }
 

@@ -236,7 +236,7 @@
     @apply flex flex-col gap-y-2 py-2;
   }
 
-  /* Superficie del botón de cambio de módulo/área en la slidenav. */
+  /* Superficie del bloque de usuario / cambio de módulo en la slidenav. */
   .sidebar-user-switcher-surface {
     background-color: var(--sidebar-user-switcher-bg);
     color: var(--sidebar-foreground);

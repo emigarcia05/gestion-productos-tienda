@@ -37,7 +37,7 @@ Sigue estas reglas para mantener seguridad, integridad de datos y arquitectura l
 ### 1.2.1 Activación de modo editor (`sesion.ts`)
 
 - Entrada **`clave`**: validar con Zod (`z.string().min(1).max(500)`) antes de comparar con `EDITOR_PASSWORD`. Evita payloads anómalos y documenta el contrato.
-- **UI de activación**: `SidebarAreaSwitcher` al elegir el módulo **Administración** (`MAIN_APP_AREAS.requierePassword`) si la sesión es `simple`. Ya no existe el switcher de “nivel de usuario” (`SelectorRol`). La sucursal preferida de la sesión de navegador (`sessionStorage` `main-app-sucursal-preferida`, `@/lib/sucursalPreferida.ts`) **no** se persiste en iron-session ni en BD.
+- **UI de activación**: `SidebarAreaSwitcher` en el **onboarding** si el usuario elegido tiene módulo **Administración** (`modulos_permitidos` incluye `finanzas`) y la sesión es `simple`. Tras `activarModoEditor`, puede cambiar de módulo sin volver a pedir clave. Ya no existe el switcher de “nivel de usuario” (`SelectorRol`). El usuario de la pestaña (`sessionStorage` `main-app-usuario-sesion`, `@/lib/usuarioSesion.ts`) **no** se persiste en iron-session ni en BD; la sucursal preferida se copia de `global_personal.sucursal_por_defecto`.
 - **`volverModoSimple()`**: no exige rol previo; destruye la cookie de sesión (equivale a salir del modo editor). No hay payload que validar con Zod.
 
 - **Arranque por sesión de navegador** (`src/middleware.ts` + `src/lib/sesion-arranque.ts`): la cookie **`tienda-app-arranque`** es de **sesión de navegador** (sin `maxAge`). En la **primera** petición de documento de esa sesión, si existía la cookie iron-session del rol (`gestion-rol`), el middleware la **elimina** y añade la cabecera interna **`x-tienda-forzar-rol-simple`** al request para ese ciclo; **`getRol()`** devuelve **`"simple"`** al detectarla (el `Set-Cookie` de borrado no aplica aún a `cookies()` en el mismo render). Así, al abrir la app tras cerrar el navegador, el arranque no conserva modo editor de la cookie anterior. Las rutas **`/api/*`** quedan fuera del `matcher` del middleware para no alterar el orden de llamadas API en herramientas externas.
@@ -735,6 +735,7 @@ interface ReglaDescuentoListaPrecio {
 - **Migraciones:** `20260605100000_add_global_personal`; seed `20260605110000_seed_global_personal` (`14242873` FERNANDO PANAIA, `14045740` WALTER GARCIA, `1930206` EMILIANO GARCIA, `1930207` JUAN PABLOCHANTA); columnas de usuario `20260813140000_global_personal_sucursal_modulos`.
 - **Carga de datos:** alta de filas DUX manual o sync futuro; **sucursal / módulos** se editan en **Administración · USUARIOS** (`/finanzas/usuarios`).
 - **Lectura:** `listGlobalPersonal()` en `src/services/globalPersonal.service.ts`; Action `listGlobalPersonalAction` (`src/actions/globalPersonal.ts`) con gate `PERMISOS.pedidos.acceso` (selector recepción).
+- **Inicio de sesión (slidenav):** `listUsuariosParaInicioSesion` / `listUsuariosParaInicioSesionAction` (`PERMISOS.usuarios.inicioSesion`) — solo filas con `sucursal_por_defecto` y al menos un módulo. El cliente persiste `main-app-usuario-sesion`.
 - **Mutación usuarios:** `actualizarUsuarioPersonal` + `actualizarUsuarioPersonalAction` (`raw: unknown` + `actualizarUsuarioPersonalSchema`); gate `PERMISOS.usuarios.acceso` + `esEditor()`. Zod: `@/lib/validations/globalPersonal.ts`.
 - **Uso en recepción:** antes de `registrarRecepcionCompraDuxAction`, la UI debe pedir al operador qué personal registra la compra; el `idPersonal` elegido se envía en el payload y se mapea a `id_personal` del POST. Validación Zod: `z.coerce.number().int().positive()` (campo `idPersonal` en la Action). Selector: `ElegirPersonalRecepcionModal` enlazado a **Registrar En Dux**.
 
@@ -1780,7 +1781,7 @@ Auditoría integral de los **26** Server Actions vigentes en `src/actions/*.ts` 
 | `comparacionCategorias.ts` | comparacionCategorias.{acceso,editar} | ✓ | ✓ | ✓ | ✅ |
 | `comprobantesProveedor.ts` | finanzas + editor | n/a (sin payload) | ✓ | ✓ | ✅ |
 | `controlComprobantes.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
-| `globalPersonal.ts` | pedidos (list) / usuarios + editor (update) | ✓ | ✓ | ✓ | ✅ |
+| `globalPersonal.ts` | pedidos (list recepción) / usuarios.inicioSesion (login) / usuarios + editor (update) | ✓ | ✓ | ✓ | ✅ |
 | `registrarRecepcionCompraDux.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastoMensualBalance.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastosCatalogo.ts` | finanzas + editor (todas) | ✓ | ✓ | ✓ | ✅ |
@@ -2095,6 +2096,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-04): **Est. · terminacion** — tabla `est_por_prod_terminacion`; match regex; modal **Gestion Terminacion**; columna TERMINACION en Categorizacion.*
 
 *Última actualización (2026-08-06): **Áreas** — Estadísticas Productos bajo sidebar **Administración** (id `finanzas`); sin macro-área propia. Ver §2.5g.
+
+*Última actualización (2026-08-13): **Sesión slidenav** — onboarding por usuario (`listUsuariosParaInicioSesionAction`); clave Administración si el usuario tiene ese módulo.*
 
 *Última actualización (2026-08-13): **Usuarios** — `global_personal.sucursal_por_defecto` + `modulos_permitidos`; Action `actualizarUsuarioPersonalAction`.*
 

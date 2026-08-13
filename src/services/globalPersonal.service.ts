@@ -39,6 +39,14 @@ export async function listGlobalPersonal(): Promise<GlobalPersonalItem[]> {
   return rows.map(mapRow);
 }
 
+/** Usuarios con sucursal por defecto y al menos un módulo (modal de inicio). */
+export async function listUsuariosParaInicioSesion(): Promise<GlobalPersonalItem[]> {
+  const items = await listGlobalPersonal();
+  return items.filter(
+    (item) => item.sucursalPorDefecto != null && item.modulosPermitidos.length > 0
+  );
+}
+
 export async function actualizarUsuarioPersonal(input: {
   idPersonal: number;
   sucursalPorDefecto: SucursalPreferida;
