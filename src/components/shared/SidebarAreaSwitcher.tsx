@@ -250,17 +250,17 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
           aria-label="Cambiar Módulo"
           title="Cambiar Módulo"
           className={cn(
-            "grid h-9 w-full grid-cols-[15%_85%] items-center gap-0 rounded-md px-2",
-            "text-left text-sidebar-foreground",
+            "flex h-9 w-full items-center justify-center gap-1.5 rounded-md px-2",
+            "text-sidebar-foreground",
             "outline-none hover:bg-sidebar-accent/80",
             "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
             pending && "cursor-not-allowed opacity-90"
           )}
         >
-          <span className="flex items-center justify-center">
+          <span className="flex w-[15%] max-w-6 shrink-0 items-center justify-center">
             <IconoModulo className="size-4 shrink-0" aria-hidden />
           </span>
-          <span className="min-w-0 truncate text-xs font-semibold tracking-wide">
+          <span className="min-w-0 max-w-[85%] truncate text-center text-xs font-semibold tracking-wide">
             {labelUsuario}
           </span>
         </button>

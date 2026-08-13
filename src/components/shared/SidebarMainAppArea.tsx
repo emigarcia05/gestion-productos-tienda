@@ -57,7 +57,8 @@ function FilaDetalle({
 
 /**
  * Fila **Pendientes** del dock de sesión (slidenav).
- * Hover: detalle Pedido / Transferencia. Click con transf. pendientes → aviso.
+ * Label **PENDIENTES** centrado; badge = categorías con pendientes (Pedido y/o
+ * Transferencia; máx. 2). Hover: detalle. Click con transf. pendientes → aviso.
  */
 export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProps) {
   const pathname = usePathname();
@@ -122,13 +123,12 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
     };
   }, [pathname]);
 
+  const hayPedidoPendiente =
+    conteos.urgente + conteos.tintometrico + conteos.reposicion > 0;
   const hayTransfPendiente = conteos.emision > 0 || conteos.recepcion > 0;
-  const totalPendientes =
-    conteos.urgente +
-    conteos.tintometrico +
-    conteos.reposicion +
-    conteos.emision +
-    conteos.recepcion;
+  /** Categorías con pendientes (Pedido y/o Transferencia); máximo 2. */
+  const categoriasPendientes =
+    (hayPedidoPendiente ? 1 : 0) + (hayTransfPendiente ? 1 : 0);
 
   function handleClickPendientes() {
     if (hayTransfPendiente) setAdvertenciaOpen(true);
@@ -141,7 +141,7 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
           <button
             type="button"
             onClick={handleClickPendientes}
-            aria-label={`Pendientes, ${totalPendientes}`}
+            aria-label={`Pendientes, ${categoriasPendientes}`}
             className={cn(
               "flex h-9 w-full min-w-0 items-center gap-1.5 rounded-md px-2",
               "text-sidebar-foreground",
@@ -150,7 +150,7 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
               className
             )}
           >
-            <span className="min-w-0 flex-1 truncate text-left text-xs font-semibold tracking-wide">
+            <span className="min-w-0 flex-1 truncate text-center text-xs font-semibold uppercase tracking-wide">
               Pendientes
             </span>
             <span
@@ -162,7 +162,7 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
                   : "bg-sidebar-accent text-sidebar-foreground"
               )}
             >
-              {totalPendientes}
+              {categoriasPendientes}
             </span>
             <ChevronRight className="size-3.5 shrink-0" aria-hidden />
           </button>
