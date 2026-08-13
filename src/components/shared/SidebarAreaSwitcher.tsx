@@ -2,7 +2,15 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Landmark,
+  Megaphone,
+  ShieldCheck,
+  Store,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -45,12 +53,18 @@ interface Props {
   rolActual: Rol;
 }
 
+const ICONO_MODULO: Record<MainAppAreaId, LucideIcon> = {
+  "gestion-productos": Store,
+  finanzas: Landmark,
+  marketing: Megaphone,
+};
+
 function nombreUsuarioLabel(nombre: string): string {
   return nombre.toLocaleUpperCase("es-AR");
 }
 
 /**
- * Pie de slidenav: nombre de usuario + cambio de módulo si hay más de uno.
+ * Pie de slidenav: ícono de módulo (si puede cambiar) + nombre de usuario.
  * Primera visita: modal **Elegir Usuario**; si el usuario tiene Administración, pide clave.
  */
 export default function SidebarAreaSwitcher({ rolActual }: Props) {
@@ -243,46 +257,50 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     ? nombreUsuarioLabel(usuarioSesion.nombrePersonal)
     : "USUARIO";
 
+  const IconoModulo = ICONO_MODULO[currentId];
+
+  function abrirCambiarModulo() {
+    const actualPermitido = usuarioSesion?.modulosPermitidos.includes(currentId)
+      ? currentId
+      : primerModuloPermitido(usuarioSesion?.modulosPermitidos ?? []);
+    setModuloDraft(actualPermitido ?? "");
+    setModuloOpen(true);
+  }
+
   return (
     <>
       <div
         className={cn(
-          "w-full rounded-lg px-3 py-2",
-          "flex flex-col items-center justify-center gap-1.5",
+          "w-full rounded-lg px-2 py-2",
           "sidebar-user-switcher-surface"
         )}
       >
-        <p className="w-full text-center text-sm font-semibold tracking-wide">
-          {labelUsuario}
-        </p>
         {puedeCambiar ? (
-          <>
-            <span
-              className="h-px w-[80%] shrink-0 bg-sidebar-foreground/85"
-              aria-hidden
-            />
-            <button
-              type="button"
-              onClick={() => {
-                const actualPermitido = usuarioSesion?.modulosPermitidos.includes(
-                  currentId
-                )
-                  ? currentId
-                  : primerModuloPermitido(usuarioSesion?.modulosPermitidos ?? []);
-                setModuloDraft(actualPermitido ?? "");
-                setModuloOpen(true);
-              }}
-              disabled={pending || forceChoose}
-              className={cn(
-                "w-full text-center text-sm font-semibold tracking-wide",
-                "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                pending && "cursor-not-allowed opacity-90"
-              )}
-            >
-              Cambiar Módulo
-            </button>
-          </>
-        ) : null}
+          <button
+            type="button"
+            onClick={abrirCambiarModulo}
+            disabled={pending || forceChoose}
+            aria-label="Cambiar Módulo"
+            title="Cambiar Módulo"
+            className={cn(
+              "grid w-full grid-cols-[15%_85%] items-center gap-0",
+              "rounded-md text-left",
+              "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+              pending && "cursor-not-allowed opacity-90"
+            )}
+          >
+            <span className="flex items-center justify-center">
+              <IconoModulo className="size-4 shrink-0" aria-hidden />
+            </span>
+            <span className="min-w-0 truncate text-sm font-semibold tracking-wide">
+              {labelUsuario}
+            </span>
+          </button>
+        ) : (
+          <p className="w-full truncate text-center text-sm font-semibold tracking-wide">
+            {labelUsuario}
+          </p>
+        )}
       </div>
 
       <Dialog open={usuarioOpen} onOpenChange={handleUsuarioOpenChange}>
