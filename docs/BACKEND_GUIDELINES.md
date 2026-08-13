@@ -57,6 +57,7 @@ Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
 - **Historial de pedidos — mutaciones** (`pedidosHistoria.ts`): con `puede(rol, PERMISOS.pedidos.acceso)` se habilitan para `simple` y `editor`: **guardar recepción** (`guardarRecepcionPedidoHistoriaAction`), **marcar registrado**, **eliminar cabecera** y **descargar PDF**. Lecturas (listado RSC, detalle modal) usan servicio directo o **`GET /api/pedidos-historia/[id]/detalle`** — no Server Actions de lectura.
 - **Integraciones DUX / compras** (`comprobantesProveedor.ts`; sync masivo vía `comprobantesProveedorDuxSync.service.ts` + `duxComprasApi.ts`): `puede(rol, PERMISOS.finanzas.acceso)` **y** `esEditor()` antes de llamar APIs externas o sync masivo desde **Server Actions** (misma sensibilidad que otras escrituras financieras).
 - **Catálogos finanzas balance** (`finBalGastosCatalogo.ts`, etc.): ya documentado — `finanzas.acceso` + `esEditor()` en mutaciones de catálogo maestro.
+- **Usuarios** (`globalPersonal.ts` `actualizarUsuarioPersonalAction`): `puede(rol, PERMISOS.usuarios.acceso)` **y** `esEditor()`.
 
 ### 1.2.4 Edición inline en `/proveedores` (`productos.ts`)
 
@@ -729,9 +730,12 @@ interface ReglaDescuentoListaPrecio {
 - **Tabla:** `global_personal` — Prisma `GlobalPersonal`.
   - `id_personal` (`INTEGER`, PK): ID numérico del personal en DUX (mismo valor que `id_personal` en POST v2/compras).
   - `nombre_personal` (`TEXT`, NOT NULL): nombre para mostrar en selector UI.
-- **Migración:** `20260605100000_add_global_personal`.
-- **Carga de datos:** manual (`INSERT`) o sync futuro desde API DUX *Consultar Personales*; no hay UI de alta en v1. Seed inicial (migración `20260605110000_seed_global_personal`): `14242873` FERNANDO PANAIA, `14045740` WALTER GARCIA, `1930206` EMILIANO GARCIA, `1930207` JUAN PABLOCHANTA.
-- **Lectura:** `listGlobalPersonal()` en `src/services/globalPersonal.service.ts`; Action `listGlobalPersonalAction` (`src/actions/globalPersonal.ts`) con gate `PERMISOS.pedidos.acceso`.
+  - `sucursal_por_defecto` (`TEXT`, NULL): código `global_sucursales.codigo` (`guaymallen` \| `maipu`); FK `ON DELETE SET NULL`. CHECK restringe a esas dos sucursales.
+  - `modulos_permitidos` (`TEXT[]`, NOT NULL, default `{}`): ids de `MAIN_APP_AREAS` (`gestion-productos` \| `finanzas` \| `marketing`); CHECK `modulos_permitidos <@ ARRAY[…]`. Puede ser más de uno; la UI de Administración exige al menos uno al guardar.
+- **Migraciones:** `20260605100000_add_global_personal`; seed `20260605110000_seed_global_personal` (`14242873` FERNANDO PANAIA, `14045740` WALTER GARCIA, `1930206` EMILIANO GARCIA, `1930207` JUAN PABLOCHANTA); columnas de usuario `20260813140000_global_personal_sucursal_modulos`.
+- **Carga de datos:** alta de filas DUX manual o sync futuro; **sucursal / módulos** se editan en **Administración · USUARIOS** (`/finanzas/usuarios`).
+- **Lectura:** `listGlobalPersonal()` en `src/services/globalPersonal.service.ts`; Action `listGlobalPersonalAction` (`src/actions/globalPersonal.ts`) con gate `PERMISOS.pedidos.acceso` (selector recepción).
+- **Mutación usuarios:** `actualizarUsuarioPersonal` + `actualizarUsuarioPersonalAction` (`raw: unknown` + `actualizarUsuarioPersonalSchema`); gate `PERMISOS.usuarios.acceso` + `esEditor()`. Zod: `@/lib/validations/globalPersonal.ts`.
 - **Uso en recepción:** antes de `registrarRecepcionCompraDuxAction`, la UI debe pedir al operador qué personal registra la compra; el `idPersonal` elegido se envía en el payload y se mapea a `id_personal` del POST. Validación Zod: `z.coerce.number().int().positive()` (campo `idPersonal` en la Action). Selector: `ElegirPersonalRecepcionModal` enlazado a **Registrar En Dux**.
 
 ### 1.12 Tipos de pintura y rendimientos (`/tienda/litros`)
@@ -1507,6 +1511,7 @@ Objetivo: preparar `RecepcionCompraDatosPreparados` para el POST DUX v2/compras 
 | `@/lib/validations/reposicion.ts` | `sucursalReposicionSchema`, `reposicionFormaPedidoSchema` (`CANT_FIJA` \| `CANT_MAXIMA`), `getReposicionParamsSchema`, `productosReposicionSelectorSchema`. |
 | `@/lib/validations/stock.ts` | `getControlStockParamsSchema`. |
 | `@/lib/validations/transfDepositos.ts` | `registrarControlTransfDepositosSchema`; `listarHistorialTransfDepositosProductoSchema`; `encolarTransferenciasPendientesSchema`; `exportarPendientesTransfDepositosSchema`; `conteosIndicadorSlidenavSchema` (`sucursal`: `guaymallen` \| `maipu`). |
+| `@/lib/validations/globalPersonal.ts` | `sucursalPorDefectoSchema`, `moduloPermitidoUsuarioSchema`, `actualizarUsuarioPersonalSchema`. |
 | `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `@/lib/validations/cajasTesoreria.ts` | `crearCajaTesoreriaSchema`, `editarCajaTesoreriaSchema` (`entidadId` `prismaCuidOrUuidSchema`, `tipoValor`, `disponibilidad`), `eliminarCajaTesoreriaSchema`; catálogo entidades: `crearFinTesoreriaEntidadSchema`, `editarFinTesoreriaEntidadSchema`, `eliminarFinTesoreriaEntidadSchema`; `tipoCajaTesoreriaSchema`, `tipoValorTesoreriaSchema`, `disponibilidadCajaTesoreriaSchema`. |
 | `@/lib/validations/finBalGastosCatalogo.ts` | CRUD de la jerarquía `fin_bal_gasto_tipo / rubro / gasto` + `fin_bal_gasto_final`: `crear*Schema`, `editar*Schema`, `eliminar*Schema` (incluye `*FinBalGastoFinal*`). `nombre` con `trim + toUpperCase`; jerarquía con `prismaCuidSchema`; gasto final: `gastoId`/`proveedorId` con `prismaCuidOrUuidSchema`; **`sucursalId`** con `globalSucursalIdSchema` solo si `gastoMensual === true`, si no se normaliza a `null`; `gastoMensual` boolean; `diaDevengado` / `vencimiento` condicionales al tipo; `iva` (`ivaPoliticaFormSchema`). |
@@ -1775,7 +1780,7 @@ Auditoría integral de los **26** Server Actions vigentes en `src/actions/*.ts` 
 | `comparacionCategorias.ts` | comparacionCategorias.{acceso,editar} | ✓ | ✓ | ✓ | ✅ |
 | `comprobantesProveedor.ts` | finanzas + editor | n/a (sin payload) | ✓ | ✓ | ✅ |
 | `controlComprobantes.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
-| `globalPersonal.ts` | pedidos | n/a | ✓ | ✓ | ✅ |
+| `globalPersonal.ts` | pedidos (list) / usuarios + editor (update) | ✓ | ✓ | ✓ | ✅ |
 | `registrarRecepcionCompraDux.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastoMensualBalance.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
 | `finBalGastosCatalogo.ts` | finanzas + editor (todas) | ✓ | ✓ | ✓ | ✅ |
@@ -2090,6 +2095,8 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 *Última actualización (2026-08-04): **Est. · terminacion** — tabla `est_por_prod_terminacion`; match regex; modal **Gestion Terminacion**; columna TERMINACION en Categorizacion.*
 
 *Última actualización (2026-08-06): **Áreas** — Estadísticas Productos bajo sidebar **Administración** (id `finanzas`); sin macro-área propia. Ver §2.5g.
+
+*Última actualización (2026-08-13): **Usuarios** — `global_personal.sucursal_por_defecto` + `modulos_permitidos`; Action `actualizarUsuarioPersonalAction`.*
 
 *Última actualización (2026-08-13): **Slidenav** — sucursal preferida en `sessionStorage` (`main-app-sucursal-preferida`); default de filtros STOCK / Trans. Depósitos.*
 

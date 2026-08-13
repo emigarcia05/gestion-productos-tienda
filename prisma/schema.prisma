@@ -253,18 +253,27 @@ model Sucursal {
   finBalGastoMensualImputaciones FinBalGastoMensual[] @relation("FinBalGastoMensualImputacionSucursal")
   finBalVtas          FinBalVtas[]
   estPorProd          EstPorProd[]
+  personalSucursalPorDefecto GlobalPersonal[] @relation("PersonalSucursalPorDefecto")
 
   @@map("global_sucursales")
 }
 
 /**
- * Catálogo de personal DUX para recepción de compras (`id_personal` en POST v2/compras).
+ * Catálogo de personal DUX para recepción de compras (`id_personal` en POST v2/compras)
+ * y administración de usuarios (sucursal por defecto + módulos permitidos).
  * Filas cargadas manualmente o por sync futuro; PK = ID numérico DUX.
  */
 model GlobalPersonal {
-  idPersonal     Int    @id @map("id_personal")
-  nombrePersonal String @map("nombre_personal")
+  idPersonal         Int      @id @map("id_personal")
+  nombrePersonal     String   @map("nombre_personal")
+  /** Código de `global_sucursales` (guaymallen | maipu). */
+  sucursalPorDefecto String?  @map("sucursal_por_defecto")
+  /** Áreas MAIN_APP_AREAS: gestion-productos | finanzas | marketing (0..n). */
+  modulosPermitidos  String[] @default([]) @map("modulos_permitidos")
 
+  sucursalDefault Sucursal? @relation("PersonalSucursalPorDefecto", fields: [sucursalPorDefecto], references: [codigo], onDelete: SetNull)
+
+  @@index([sucursalPorDefecto], map: "global_personal_sucursal_por_defecto_idx")
   @@map("global_personal")
 }
 

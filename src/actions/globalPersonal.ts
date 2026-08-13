@@ -1,12 +1,29 @@
 "use server";
 
-import { getRol } from "@/lib/sesion";
+import { revalidatePath } from "next/cache";
+import { getRol, esEditor } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
+import { USUARIOS_PATH } from "@/lib/usuarios";
+import { actualizarUsuarioPersonalSchema } from "@/lib/validations/globalPersonal";
 import {
+  actualizarUsuarioPersonal,
   listGlobalPersonal,
   type GlobalPersonalItem,
 } from "@/services/globalPersonal.service";
+
+function firstZodErrorMessage(error: {
+  flatten: () => {
+    fieldErrors: Record<string, string[] | undefined>;
+    formErrors: string[];
+  };
+}): string {
+  const flattened = error.flatten();
+  return (
+    [...Object.values(flattened.fieldErrors).flat(), ...flattened.formErrors][0] ??
+    "Datos inválidos."
+  );
+}
 
 export async function listGlobalPersonalAction(): Promise<
   ActionResult<GlobalPersonalItem[]>
@@ -24,4 +41,28 @@ export async function listGlobalPersonalAction(): Promise<
     console.error("[globalPersonal][action][listGlobalPersonal]", message);
     return { ok: false, error: "Error al listar el personal." };
   }
+}
+
+export async function actualizarUsuarioPersonalAction(
+  raw: unknown
+): Promise<ActionResult<GlobalPersonalItem>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.usuarios.acceso)) {
+    return { ok: false, error: "Sin permisos para usuarios." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const parsed = actualizarUsuarioPersonalSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+
+  const result = await actualizarUsuarioPersonal(parsed.data);
+  if (!result.success) {
+    return { ok: false, error: result.error };
+  }
+  revalidatePath(USUARIOS_PATH);
+  return { ok: true, data: result.data };
 }

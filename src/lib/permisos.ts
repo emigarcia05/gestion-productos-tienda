@@ -128,6 +128,12 @@ export const PERMISOS = {
     acceso: { simple: true, editor: true },
   },
 
+  // ─── Administración · USUARIOS (`/finanzas/usuarios`) ─────────────────────
+  usuarios: {
+    /** Catálogo `global_personal`: sucursal por defecto y módulos permitidos. Solo editor. */
+    acceso: { simple: false, editor: true },
+  },
+
   // ─── Módulo Asistente IA (Vendedor) ────────────────────────────────────────
   asistenteIa: {
     /** Acceso al módulo (vendedor/`simple` + editor). CRUD de prompts: solo editor (`esEditor`). */
