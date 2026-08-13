@@ -719,12 +719,14 @@
 
   /* ─── Menú desplegable de filtros: mismo ancho que el trigger, solo hacia abajo ───
    * Usar clase .select-content-filtro en SelectContent.
-   * Para que se abra solo hacia abajo: usar position="popper" side="bottom" align="start" en el componente.
+   * Defaults del componente: position="popper" side="bottom" align="start".
+   * max-height = espacio disponible bajo el trigger (muestra la mayor cantidad de opciones).
    */
   .select-content-filtro {
     width: var(--radix-select-trigger-width) !important;
     min-width: var(--radix-select-trigger-width) !important;
     max-width: var(--radix-select-trigger-width) !important;
+    max-height: var(--radix-select-content-available-height);
     border-radius: var(--radius);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     border: 1px solid var(--border);

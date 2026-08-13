@@ -152,8 +152,9 @@ type SelectContentProps = React.ComponentProps<typeof SelectPrimitive.Content> &
 function SelectContent({
   className,
   children,
-  position = "item-aligned",
-  align = "center",
+  position = "popper",
+  side = "bottom",
+  align = "start",
   searchable = true,
   searchPlaceholder = "BUSCAR...",
   onCloseAutoFocus,
@@ -174,13 +175,16 @@ function SelectContent({
         data-slot="select-content"
         data-searchable={searchable ? "true" : "false"}
         className={cn(
-          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden rounded-md border shadow-md",
+          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden rounded-md border shadow-md",
+          // Usa todo el alto disponible bajo el trigger (no limitar a la altura del trigger).
+          "max-h-[var(--radix-select-content-available-height)]",
           searchable ? "flex flex-col overflow-hidden" : "overflow-y-auto",
           position === "popper" &&
             "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
           className
         )}
         position={position}
+        side={side}
         align={align}
         onCloseAutoFocus={(event) => {
           setQuery("");
@@ -200,15 +204,18 @@ function SelectContent({
         ) : null}
         <div
           className={cn(
-            searchable && "min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+            searchable
+              ? "min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+              : undefined
           )}
         >
           <SelectScrollUpButton />
           <SelectPrimitive.Viewport
             className={cn(
               "p-1",
+              // Ancho = trigger; sin altura fija para mostrar la mayor cantidad de opciones posible.
               position === "popper" &&
-                "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
+                "w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
             )}
           >
             {nodes}

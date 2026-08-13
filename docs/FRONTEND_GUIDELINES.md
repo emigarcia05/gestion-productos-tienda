@@ -163,7 +163,7 @@ Registro de simplificaciones y reglas para que no reaparezcan patrones inútiles
    - SelectContent: `position="popper" side="bottom" align="start" className="select-content-filtro"`.
    - **Select shadcn con buscador (obligatorio, transversal):**
      - **Prohibido** `<select>` nativo. Usar `Select` / `SelectContent` / `SelectItem` / `SelectTrigger` / `SelectValue` de `@/components/ui/select`.
-     - **`SelectContent`** incluye por defecto (`searchable={true}`) un input **`BUSCAR...`** como **primer** elemento (`SelectSearchInput` + clase `.select-search-input`). Filtra `SelectItem` por texto visible / `textValue` (sin acentos, locale `es`). Sin coincidencias → **SIN RESULTADOS**.
+     - **`SelectContent`** incluye por defecto (`searchable={true}`) un input **`BUSCAR...`** como **primer** elemento (`SelectSearchInput` + clase `.select-search-input`). Filtra `SelectItem` por texto visible / `textValue` (sin acentos, locale `es`). Sin coincidencias → **SIN RESULTADOS**. Defaults: `position="popper"` `side="bottom"` `align="start"` (abre **hacia abajo**). Alto máximo = `--radix-select-content-available-height` (muestra la mayor cantidad de opciones que permita la pantalla; el listado scrollea debajo del buscador). **No** fijar la altura del viewport a la del trigger.
      - Helpers: `@/lib/selectSearch` (`normalizeSelectSearchText`, `selectOptionMatchesQuery`, `filterItemsBySelectSearch`, `getReactNodeText`).
      - Paneles custom (`role="listbox"`, multi-checkbox, `DropdownMenu` de opciones): reutilizar **`SelectSearchInput`** + `filterItemsBySelectSearch` (ej. tipo de pedido, meses/años multi, `MktMultiSelectCatalogo`).
      - Triggers tipo filtro: `SELECT_TRIGGER_FILTER_CLASS` / `input-filtro-unificado`. **Valor vacío:** Radix no admite `SelectItem value=""` — sentinel `"none"` / `"todos"` y mapear en `onValueChange`. Opt-out excepcional: `searchable={false}` (documentar el call site).
@@ -1912,6 +1912,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-11): **Pedido A Fáb.** — se elimina la columna **PROM. VTA. P/ DÍA** (grilla + modal sucursales); DESCRIPCIÓN **59%**.
 
 *Última actualización (2026-08-11): **Pedido A Fáb.** — modal sucursales: fila **TOTAL** (`TableFooter`) sumando/agregando sucursales.
+
+*Última actualización (2026-08-13): **Select** — abre hacia abajo; alto = espacio disponible; buscador fijo arriba y lista scrolleable.*
 
 *Última actualización (2026-08-13): **Select searchable (transversal)** — `SelectContent` con **BUSCAR...**; helpers `selectSearch` + `SelectSearchInput`; sin `<select>` nativos; paneles multi/listbox alineados.*
 
