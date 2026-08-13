@@ -55,10 +55,47 @@ function FilaDetalle({
   );
 }
 
+function hrefTransfDepositosConOrigen(): string {
+  const sucursal = leerSucursalPreferida();
+  if (!sucursal) return GP_ROUTES.ayudaVendedor.transfDepositos;
+  return `${GP_ROUTES.ayudaVendedor.transfDepositos}?origen=${encodeURIComponent(sucursal)}`;
+}
+
+function BotonCategoriaPendiente({
+  label,
+  rowSpanClass,
+  onNavigate,
+}: {
+  label: string;
+  rowSpanClass: string;
+  onNavigate: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onNavigate();
+      }}
+      className={cn(
+        rowSpanClass,
+        "self-center justify-self-start text-left text-xs font-semibold tracking-wide",
+        "rounded-sm text-foreground underline-offset-2",
+        "hover:text-primary hover:underline",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 /**
  * Fila **Pendientes** del dock de sesión (slidenav).
  * Label **PENDIENTES** centrado; badge = categorías con pendientes (Pedido y/o
- * Transferencia; máx. 2). Hover: detalle. Click con transf. pendientes → aviso.
+ * Transferencia; máx. 2). Hover: detalle con botones Pedido / Transferencia.
+ * Click con transf. pendientes → aviso.
  */
 export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProps) {
   const pathname = usePathname();
@@ -134,9 +171,17 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
     if (hayTransfPendiente) setAdvertenciaOpen(true);
   }
 
+  function irAGenerarPedido() {
+    router.push(GP_ROUTES.pedidoMercaderia.generarPedido);
+  }
+
+  function irATransfDepositos() {
+    router.push(hrefTransfDepositosConOrigen());
+  }
+
   return (
     <>
-      <Tooltip delayDuration={150}>
+      <Tooltip delayDuration={150} disableHoverableContent={false}>
         <TooltipTrigger asChild>
           <button
             type="button"
@@ -171,24 +216,28 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
           side="right"
           align="center"
           sideOffset={10}
-          className="border-border bg-card p-2.5 text-card-foreground"
+          className="pointer-events-auto border-border bg-card p-2.5 text-card-foreground"
         >
           <div
             className="grid min-w-[13.5rem] grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1"
             aria-label="Detalle de pendientes"
           >
-            <p className="row-span-3 self-center text-xs font-semibold tracking-wide">
-              Pedido
-            </p>
+            <BotonCategoriaPendiente
+              label="Pedido"
+              rowSpanClass="row-span-3"
+              onNavigate={irAGenerarPedido}
+            />
             <FilaDetalle label="Urgente" valor={conteos.urgente} />
             <FilaDetalle label="Tintométrico" valor={conteos.tintometrico} />
             <FilaDetalle label="Reposición" valor={conteos.reposicion} />
 
             <span className="col-span-3 my-1 h-px bg-primary" aria-hidden />
 
-            <p className="row-span-2 self-center text-xs font-semibold tracking-wide">
-              Transferencia
-            </p>
+            <BotonCategoriaPendiente
+              label="Transferencia"
+              rowSpanClass="row-span-2"
+              onNavigate={irATransfDepositos}
+            />
             <FilaDetalle label="Emisión" valor={conteos.emision} />
             <FilaDetalle label="Recepción" valor={conteos.recepcion} />
           </div>
@@ -217,7 +266,7 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
                 type="button"
                 onClick={() => {
                   setAdvertenciaOpen(false);
-                  router.push(GP_ROUTES.ayudaVendedor.transfDepositos);
+                  irATransfDepositos();
                 }}
               >
                 Ir A Trans. Depósitos
