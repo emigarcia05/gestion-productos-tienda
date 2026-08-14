@@ -12,12 +12,14 @@ import FilterBar, {
   FiltroIndividualContainer,
   FilterRowSelection,
   FilterRowSearch,
+  FilaFiltrosDesplegables,
   SELECT_TRIGGER_FILTER_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import { cn } from "@/lib/utils";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 
 const FOCUS_KEY = "filtros-proveedores-focus";
@@ -83,31 +85,34 @@ export default function FiltrosProductos({
   return (
     <FilterBar>
       <FilterRowSelection>
-        <FiltroIndividualContainer
-          className={FILTER_SELECT_WRAPPER_CLASS}
-          activo={Boolean(proveedorActual)}
-          onLimpiar={() => handleProveedor("")}
-        >
-          <Select
-            value={proveedorActual || undefined}
-            onValueChange={(v) => handleProveedor(v)}
+        <FilaFiltrosDesplegables>
+          <FiltroIndividualContainer
+            className={FILTER_SELECT_WRAPPER_CLASS}
+            activo={Boolean(proveedorActual)}
+            onLimpiar={() => handleProveedor("")}
           >
-            <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-              <SelectValue placeholder="PROVEEDOR" />
-            </SelectTrigger>
-            <SelectContent>
-              {proveedores.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  [{p.prefijo}] {p.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FiltroIndividualContainer>
-        <span className={FILTER_COUNT_CLASS}>
-          {totalProductos.toLocaleString()} PRODUCTO
-          {totalProductos !== 1 ? "S" : ""}
-        </span>
+            <Select
+              value={proveedorActual || undefined}
+              onValueChange={(v) => handleProveedor(v)}
+            >
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="PROVEEDOR" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                {proveedores.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    [{p.prefijo}] {p.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FiltroIndividualContainer>
+        </FilaFiltrosDesplegables>
       </FilterRowSelection>
       <div className="flex items-center gap-2">
         <FilterRowSearch>
@@ -121,6 +126,10 @@ export default function FiltrosProductos({
           />
         </FilterRowSearch>
         <LimpiarFiltrosButton onClick={limpiarFiltros} />
+        <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
+          {totalProductos.toLocaleString()} PRODUCTO
+          {totalProductos !== 1 ? "S" : ""}
+        </span>
       </div>
     </FilterBar>
   );

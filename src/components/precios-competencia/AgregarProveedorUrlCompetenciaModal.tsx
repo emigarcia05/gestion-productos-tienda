@@ -75,7 +75,7 @@ export default function AgregarProveedorUrlCompetenciaModal({
             <Input
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar proveedor..."
+              placeholder="BUSCAR PROVEEDOR..."
               className={cn("w-full pl-9", INPUT_FILTER_CLASS)}
               aria-label="Buscar proveedor sin URL"
             />

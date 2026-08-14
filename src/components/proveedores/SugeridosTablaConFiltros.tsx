@@ -8,8 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import FilterBar, {
+  FiltroIndividualContainer,
   FilterRowSelection,
   FilterRowSearch,
   FilaFiltrosDesplegables,
@@ -17,6 +17,8 @@ import FilterBar, {
   FILTER_COUNT_CLASS,
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
+import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import {
   Table,
   TableBody,
@@ -68,6 +70,19 @@ export default function SugeridosTablaConFiltros({
   const [proveedorId, setProveedorId] = useState<string>("");
   const [marcaNombre, setMarcaNombre] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
+  const {
+    q,
+    setQ,
+    ref: inputRef,
+    handleQChange,
+    isDebouncing,
+  } = useFiltrosConBusqueda({
+    qActual: busqueda,
+    debounceMs: 700,
+    onDebouncedSearch: (value) => {
+      setBusqueda(value);
+    },
+  });
   const [filasData, setFilasData] = useState<FilaListaPrecioParaCliente[]>([]);
   const [proveedoresOptions, setProveedoresOptions] = useState<ProveedorOption[]>(proveedores);
   const [marcasOptions, setMarcasOptions] = useState<MarcaOption[]>(marcas);
@@ -147,6 +162,7 @@ export default function SugeridosTablaConFiltros({
   function limpiarFiltros() {
     setProveedorId("");
     setMarcaNombre("");
+    setQ("");
     setBusqueda("");
   }
 
@@ -155,7 +171,11 @@ export default function SugeridosTablaConFiltros({
       <FilterBar className="filtros-contenedor-tienda bg-card">
         <FilterRowSelection>
           <FilaFiltrosDesplegables>
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(proveedorId)}
+              onLimpiar={() => setProveedorId("")}
+            >
               <Select
                 value={proveedorId || undefined}
                 onValueChange={(v) => setProveedorId(v)}
@@ -176,8 +196,12 @@ export default function SugeridosTablaConFiltros({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className={FILTER_SELECT_WRAPPER_CLASS}>
+            </FiltroIndividualContainer>
+            <FiltroIndividualContainer
+              className={FILTER_SELECT_WRAPPER_CLASS}
+              activo={Boolean(marcaNombre)}
+              onLimpiar={() => setMarcaNombre("")}
+            >
               <Select
                 value={marcaNombre || undefined}
                 onValueChange={(v) => setMarcaNombre(v)}
@@ -198,17 +222,18 @@ export default function SugeridosTablaConFiltros({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FiltroIndividualContainer>
           </FilaFiltrosDesplegables>
         </FilterRowSelection>
         <div className="flex items-center gap-3">
           <FilterRowSearch className="flex-1">
-            <Input
+            <FiltroBusquedaInput
               id="filtro-sugeridos-busqueda"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por descripción (mín. 3 caracteres)"
-              className="input-filtro-unificado"
+              value={q}
+              onChange={handleQChange}
+              isDebouncing={isDebouncing}
+              inputRef={inputRef}
+              placeholder="BUSCAR POR DESCRIPCIÓN (MÍN. 3 CARACTERES)"
             />
           </FilterRowSearch>
           <LimpiarFiltrosButton onClick={limpiarFiltros} />

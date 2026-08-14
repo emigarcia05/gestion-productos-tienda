@@ -6,7 +6,8 @@ import { Settings2, Loader2, CheckCircle2, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
 import {
   Select,
   SelectContent,
@@ -114,24 +115,37 @@ export default function AccionMasivaModal({
         </TooltipTrigger>
         <TooltipContent>Aplicar cambios a varios productos</TooltipContent>
       </Tooltip>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Acción Masiva</DialogTitle>
-        </DialogHeader>
-
-        {afectados !== null ? (
-          <div className="space-y-4 pt-2">
-            <div className={cn("flex items-center gap-2 text-sm", TEXT_SUCCESS_CLASS)}>
-              <CheckCircle2 className="h-4 w-4" />
-              Se actualizaron {afectados} productos correctamente.
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => { setAfectados(null); setValor(""); }}>Nueva Acción</Button>
+      <AppModal
+        size="sm"
+        title="Acción Masiva"
+        actions={
+          afectados !== null ? (
+            <>
+              <Button variant="outline" onClick={() => { setAfectados(null); setValor(""); }}>
+                Nueva Acción
+              </Button>
               <Button onClick={() => handleOpen(false)}>Cerrar</Button>
-            </div>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => handleOpen(false)} disabled={pending}>
+                Cancelar
+              </Button>
+              <Button onClick={handleAplicar} disabled={pending || !proveedorId || !valor} className="gap-2">
+                {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Aplicar
+              </Button>
+            </>
+          )
+        }
+      >
+        {afectados !== null ? (
+          <div className={cn("flex items-center gap-2 text-sm", TEXT_SUCCESS_CLASS)}>
+            <CheckCircle2 className="h-4 w-4" />
+            Se actualizaron {afectados} productos correctamente.
           </div>
         ) : (
-          <div className="space-y-4 pt-2">
+          <div className="space-y-4">
 
             {/* Alcance de la acción */}
             <div className="rounded-md border border-border/50 bg-muted/30 px-3 py-2.5 space-y-2">
@@ -238,17 +252,9 @@ export default function AccionMasivaModal({
                 </div>
               )}
             </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => handleOpen(false)} disabled={pending}>Cancelar</Button>
-              <Button onClick={handleAplicar} disabled={pending || !proveedorId || !valor} className="gap-2">
-                {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-                Aplicar
-              </Button>
-            </div>
           </div>
         )}
-      </DialogContent>
+      </AppModal>
     </Dialog>
   );
 }

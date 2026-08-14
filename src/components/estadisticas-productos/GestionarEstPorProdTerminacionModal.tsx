@@ -185,7 +185,7 @@ export default function GestionarEstPorProdTerminacionModal({
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar terminación por nombre..."
+                  placeholder="BUSCAR TERMINACIÓN POR NOMBRE..."
                   className="h-10 pl-9"
                   aria-label="Buscar terminación por nombre"
                 />

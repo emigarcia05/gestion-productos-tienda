@@ -217,7 +217,7 @@ export default function GestionarEstPorProdUnPresentacionModal({
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar unidad..."
+                  placeholder="BUSCAR UNIDAD..."
                   className="h-10 pl-9"
                   aria-label="Buscar unidad"
                 />

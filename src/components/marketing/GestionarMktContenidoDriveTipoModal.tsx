@@ -169,7 +169,7 @@ export default function GestionarMktContenidoDriveTipoModal({
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar tipo..."
+                  placeholder="BUSCAR TIPO..."
                   className="h-10 pl-9"
                   aria-label="Buscar tipo de contenido"
                 />

@@ -714,7 +714,7 @@ export default function PedidoAFabricaPageClient({
                 <FilterRowSearch className="flex-1">
                   <FiltroBusquedaInput
                     id="filtro-pedido-a-fabrica-descripcion"
-                    placeholder="Buscar por descripción..."
+                    placeholder="BUSCAR POR DESCRIPCIÓN..."
                     value={q}
                     onChange={handleQChange}
                     isDebouncing={isDebouncing}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -63,13 +64,14 @@ export default function TablaProveedoresGestion({ proveedores }: Props) {
               {proveedores.map((prov) => (
                 <TableRow key={prov.id}>
                   <TableCell className="celda-datos min-w-0">
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
                       onClick={() => openEdit(prov)}
-                      className="text-primary hover:underline truncate block text-left w-full"
+                      className="h-auto p-0 text-primary truncate block text-left w-full justify-start"
                     >
                       {prov.nombre}
-                    </button>
+                    </Button>
                   </TableCell>
                   <TableCell className="celda-datos celda-mono whitespace-nowrap">{prov.prefijo}</TableCell>
                   <TableCell className="celda-datos celda-mono whitespace-nowrap">{prov.codigoUnico}</TableCell>

@@ -616,7 +616,7 @@ export default function AsistenteIaDisenarColoresVista({
                         className="h-9 w-[7.5rem]"
                         aria-label={`Color para ${item.nombre}`}
                       >
-                        <SelectValue placeholder="Color" />
+                        <SelectValue placeholder="COLOR" />
                       </SelectTrigger>
                       <SelectContent>
                         {ASISTENTE_IA_INDICES_COLOR.map((n) => (

@@ -331,7 +331,7 @@ export default function AsociarUrlsCompetenciaModal({
                   <Input
                     value={busquedaFiltro}
                     onChange={(e) => setBusquedaFiltro(e.target.value)}
-                    placeholder="Buscar proveedor..."
+                    placeholder="BUSCAR PROVEEDOR..."
                     disabled={saving || filas.length === 0}
                     className={cn("w-full pl-9", INPUT_FILTER_CLASS)}
                     aria-label="Filtrar proveedores con URL cargada"

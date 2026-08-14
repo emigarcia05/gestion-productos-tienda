@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  * Contenedor del mensaje de estado bajo filtros en modales (éxito, error, carga).
  * Tokens de tema únicamente; sin paletas genéricas.
  */
-export const modalFeedbackRegionVariants = cva(
+const modalFeedbackRegionVariants = cva(
   "flex flex-col items-center justify-center gap-2 rounded-md border px-4 py-3 text-center",
   {
     variants: {
