@@ -143,7 +143,6 @@ export default function SugeridosTablaConFiltros({
 
   const filteredFilas = filasData;
 
-  const hayFiltros = !!proveedorId || !!marcaNombre || !!busqueda.trim();
 
   function limpiarFiltros() {
     setProveedorId("");
@@ -212,7 +211,7 @@ export default function SugeridosTablaConFiltros({
               className="input-filtro-unificado"
             />
           </FilterRowSearch>
-          <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+          <LimpiarFiltrosButton onClick={limpiarFiltros} />
           <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
             {filteredFilas.length.toLocaleString()} PRODUCTO
             {filteredFilas.length !== 1 ? "S" : ""}

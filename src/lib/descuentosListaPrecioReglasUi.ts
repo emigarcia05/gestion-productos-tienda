@@ -145,7 +145,7 @@ export function celdaCondicionReglaDescuento(
   }
 }
 
-export type LineaCondicionReglaDescuento = {
+type LineaCondicionReglaDescuento = {
   dimension: "Proveedor" | "Marca" | "Rubro";
   valor: string;
 };
@@ -182,7 +182,7 @@ export function lineasCondicionReglaDescuento(regla: {
 }
 
 /** Ancho % columna ACCIONES compartida entre pestañas GENERAL y POR PRODUCTO (modal Reglas Descuentos). */
-export const REGLAS_DESCUENTOS_ACCIONES_COL_PCT = 18;
+const REGLAS_DESCUENTOS_ACCIONES_COL_PCT = 18;
 
 export const REGLAS_DESCUENTOS_ACCIONES_HEAD_DIVIDER_CLASS =
   "tabla-bloque-secundario-head-divider";

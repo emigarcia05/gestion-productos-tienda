@@ -40,7 +40,7 @@ export function etiquetaPresentacionConversion(item: EstPorProdPresentacionItem)
  * Catálogo suele usar `''`; DUX/listas suelen traer `"` (o ″ / “ ”).
  * Ejemplo: `3''` y `3"` pasan a la misma forma canónica.
  */
-export function normalizarMarcasPulgadaParaMatch(valor: string): string {
+function normalizarMarcasPulgadaParaMatch(valor: string): string {
   return valor
     .replace(/\u2033/g, '"') // ″ double prime
     .replace(/\u2036/g, '"') // ‶

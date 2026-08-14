@@ -154,14 +154,7 @@ export const FILTER_DATE_RANGE_TRIGGER_CLASS =
  * Botón cuadrado con icono de tacho de basura, al lado del filtro de descripción.
  * Al apretarlo borra todos los filtros. Heredable: usar en todos los módulos con filtros.
  */
-export function LimpiarFiltrosButton(
-  props: {
-    onClick: () => void;
-    /** DEPRECADO: el botón ahora se muestra siempre por regla global de UX. */
-    visible?: boolean;
-  }
-) {
-  const { onClick } = props;
+export function LimpiarFiltrosButton({ onClick }: { onClick: () => void }) {
   return (
     <Button
       type="button"

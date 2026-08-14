@@ -102,13 +102,6 @@ export default function FiltrosHistorialPedidos({
     qLocalRef.current = qLocal;
   }, [qLocal]);
 
-  const hayFiltros =
-    !!proveedorId.trim() ||
-    !!sucursalCodigo ||
-    estado === "RECEPCIONADO" ||
-    estado === "ALL" ||
-    !!qLocal.trim();
-
   function limpiarFiltros() {
     setQLocal("");
     applyNavigate({
@@ -218,7 +211,7 @@ export default function FiltrosHistorialPedidos({
             inputRef={inputRef}
           />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+        <LimpiarFiltrosButton onClick={limpiarFiltros} />
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {total.toLocaleString("es-AR")} PEDIDO{total === 1 ? "" : "S"}
         </span>

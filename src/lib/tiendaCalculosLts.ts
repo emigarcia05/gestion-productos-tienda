@@ -27,21 +27,6 @@ export function sanitizeDecimalUnDigito(value: string): string {
   return frac === "" ? intPart : `${intPart}.${frac}`;
 }
 
-export function parseMonto(value: string): number {
-  const normalized = value.replace(/\./g, "").replace(",", ".").trim();
-  const n = Number(normalized);
-  return Number.isFinite(n) && n >= 0 ? n : 0;
-}
-
-export function formatMonto(value: number): string {
-  if (!Number.isFinite(value)) return "";
-  const body = value.toLocaleString("es-AR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-  return `$${body}`;
-}
-
 export function roundToNearestHundred(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.round(value / 100) * 100;

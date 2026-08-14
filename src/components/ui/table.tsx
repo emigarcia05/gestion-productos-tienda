@@ -8,7 +8,7 @@ import {
 } from "@/components/shared/TableEmptyState"
 import { cn } from "@/lib/utils"
 
-export type TableVariant = "default" | "compact"
+type TableVariant = "default" | "compact"
 
 interface TableProps extends React.ComponentProps<"table"> {
   variant?: TableVariant
@@ -121,19 +121,6 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   )
 }
 
-function TableCaption({
-  className,
-  ...props
-}: React.ComponentProps<"caption">) {
-  return (
-    <caption
-      data-slot="table-caption"
-      className={cn("text-muted-foreground mt-4 text-sm", className)}
-      {...props}
-    />
-  )
-}
-
 /** Fila vacía reutilizable: tabla visible sin datos (ej. sin filtros o sin resultados). */
 function EmptyTableRow({
   colSpan,
@@ -172,6 +159,5 @@ export {
   TableHead,
   TableRow,
   TableCell,
-  TableCaption,
   EmptyTableRow,
 }

@@ -639,7 +639,7 @@ export default function AsistenteIaDisenarColoresVista({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-2 lg:gap-6">
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-6 overflow-hidden">
         <nav
           aria-label="Preguntas del cuestionario"
           className="flex min-h-0 flex-col gap-1.5 overflow-y-auto"

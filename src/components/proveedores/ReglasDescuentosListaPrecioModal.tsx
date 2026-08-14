@@ -71,7 +71,7 @@ const TH_DIVIDER_CLASS = "tabla-bloque-secundario-head-divider";
 const TD_DIVIDER_CLASS = "tabla-bloque-secundario-cell-divider";
 
 /** Alto fijo del área de tabla: mismo tamaño en GENERAL y POR PRODUCTO (vacía o con datos). */
-export const REGLAS_DESCUENTOS_TABLA_AREA_CLASS =
+const REGLAS_DESCUENTOS_TABLA_AREA_CLASS =
   "contenedor-tabla-gestion h-[min(46.4vh,25.6rem)] min-h-[min(46.4vh,25.6rem)] shrink-0";
 
 interface Props {
@@ -202,9 +202,9 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
         <AppModal
           title="Reglas Descuentos"
           size="xl"
-          className="sm:max-w-[57.6rem] min-h-[min(62vh,34.5rem)]"
+          className="max-w-[57.6rem] min-h-[min(62vh,34.5rem)]"
           padding="sm"
-          bodyShellClassName="p-2 sm:p-3"
+          bodyShellClassName="p-3"
           bodyClassName="flex flex-col"
           scrollBody={false}
           hideBodyScrollbars

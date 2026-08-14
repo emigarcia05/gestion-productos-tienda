@@ -97,8 +97,6 @@ export default function FiltrosPedidoUrgente({
     },
   });
 
-  const hayFiltros = !!(qLocal || sucursal || proveedor || pedido);
-
   function limpiarFiltros() {
     setQLocal("");
     updateUrl({ q: "", sucursal: "", proveedor: "", pedido: "" });
@@ -197,7 +195,7 @@ export default function FiltrosPedidoUrgente({
             inputRef={inputRef}
           />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+        <LimpiarFiltrosButton onClick={limpiarFiltros} />
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {totalProductos.toLocaleString()} PRODUCTO
           {totalProductos !== 1 ? "S" : ""}

@@ -211,7 +211,7 @@ const MS_CALENDARIO_DIA = 86_400_000;
  * Días calendario entre `desdeIso` y `hastaIso` (solo `YYYY-MM-DD`), ambas en zona de negocio Argentina.
  * Si `hastaIso` es anterior a `desdeIso`, devuelve `null`. Si coinciden, `0`.
  */
-export function diasCalendarioDesdeHastaIsoYmdArgentina(
+function diasCalendarioDesdeHastaIsoYmdArgentina(
   desdeIso: string,
   hastaIso: string
 ): number | null {

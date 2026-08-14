@@ -104,8 +104,6 @@ export default function FiltrosEnviarPedido({
     }
   }, [multiOpen]);
 
-  const hayFiltros = !!(sucursal || proveedor || tipos.length > 0);
-  const hayFiltrosOBusqueda = hayFiltros || !!qActual.trim();
 
   function limpiarFiltros() {
     setQ("");
@@ -275,7 +273,7 @@ export default function FiltrosEnviarPedido({
             inputRef={inputRef}
           />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltrosOBusqueda} onClick={limpiarFiltros} />
+        <LimpiarFiltrosButton onClick={limpiarFiltros} />
       </div>
     </FilterBar>
   );
