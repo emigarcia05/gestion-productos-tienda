@@ -6,7 +6,7 @@ Stack: **Next.js 16** + **React 19** + **Tailwind 4** + **shadcn/ui** + **Zod** 
 
 | Documento | Cuándo |
 |-----------|--------|
-| [`docs/FRONTEND_GUIDELINES.md`](../docs/FRONTEND_GUIDELINES.md) | UI, componentes, estilos — **solo la sección del módulo tocado** |
+| [`docs/FRONTEND_GUIDELINES.md`](../docs/FRONTEND_GUIDELINES.md) | UI — tabla “Qué estás haciendo” al inicio + sección del patrón/módulo |
 | [`docs/BACKEND_GUIDELINES.md`](../docs/BACKEND_GUIDELINES.md) | Actions, servicios, Prisma — **buscar el § del dominio** |
 | [`docs/AGENTEIA_GUIDELINES.md`](../docs/AGENTEIA_GUIDELINES.md) | IA Diseño, CSV, scraper, Asistente IA |
 | [`docs/IA_DISEÑO/`](../docs/IA_DISEÑO/) | Reglas de negocio, ADRs, CHANGELOG, prompt GPT |
@@ -35,7 +35,7 @@ Implementar features de punta a punta (UI → Server Actions → servicios → P
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
 1. docs/README.md — mapa de guías.
-2. docs/FRONTEND_GUIDELINES.md — solo la sección del módulo/UI tocado + "Guía para IA" + Checklist de PR (§4).
+2. docs/FRONTEND_GUIDELINES.md — tabla “Qué estás haciendo” + Guía para IA + sección del patrón/módulo + Checklist de PR (§4).
 3. docs/BACKEND_GUIDELINES.md — solo el § del dominio (auth, ActionResult, modelo, reglas de negocio).
 4. Si toca IA Diseño / colores / scraper / Asistente IA: docs/AGENTEIA_GUIDELINES.md; si cambia el asesor: docs/IA_DISEÑO/REGLAS_NEGOCIO.md.
 
@@ -77,7 +77,7 @@ Crear y modificar UI (páginas, componentes, estilos) con máxima consistencia v
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
 1. docs/README.md
-2. docs/FRONTEND_GUIDELINES.md — sección del módulo tocado + "Guía para IA" + Checklist de PR (§4) + catálogo de clases globales y componentes shared si aplica.
+2. docs/FRONTEND_GUIDELINES.md — tabla “Qué estás haciendo” + Guía para IA + sección del patrón/módulo + Checklist de PR (§4).
 3. Si la UI depende de un contrato de datos o regla de dominio ya documentada, consultar solo el § necesario en docs/BACKEND_GUIDELINES.md (no reimplementar lógica de negocio en el cliente).
 4. Módulo IA Diseño / Asistente IA: docs/AGENTEIA_GUIDELINES.md.
 
@@ -100,8 +100,7 @@ PROHIBIDO
 
 CIERRE DOCUMENTAL (obligatorio)
 Si creas o ajustas un patrón, clase global, componente shared o comportamiento de UI de un módulo:
-→ actualizar docs/FRONTEND_GUIDELINES.md en la sección correspondiente.
-Si el módulo tiene hallazgos/auditoría, reflejarlo en §5 cuando corresponda.
+→ actualizar docs/FRONTEND_GUIDELINES.md (§1–2 patrones/catálogo, §3 módulo).
 La UI no se considera terminada sin la guía al día.
 
 CRITERIO DE HECHO
@@ -143,7 +142,7 @@ INTEGRIDAD
 CIERRE DOCUMENTAL (obligatorio)
 Tras cada cambio de esquema, servicio nuevo, regla de negocio o patrón de action:
 → actualizar docs/BACKEND_GUIDELINES.md (modelo, relaciones, funciones del servicio, ejemplos si aplica).
-Balance mensual / fin_bal_vtas: fuente de verdad en BACKEND_GUIDELINES §2.5f (UI en FRONTEND_GUIDELINES, subsección Balance mensual).
+Balance mensual / fin_bal_vtas: fuente de verdad en BACKEND_GUIDELINES §2.5f (UI en FRONTEND_GUIDELINES §3 Finanzas).
 Sin guía actualizada, el backend no está “completado”.
 
 CRITERIO DE HECHO
@@ -162,7 +161,7 @@ Revisar código existente (o un diff/PR) contra las guías oficiales, detectar i
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
 1. docs/README.md — mapa de fuentes de verdad.
-2. docs/FRONTEND_GUIDELINES.md — Guía para IA, patrones, catálogo de clases, shared, Checklist PR (§4), hallazgos (§5).
+2. docs/FRONTEND_GUIDELINES.md — Guía para IA, patrones (§1), catálogo (§2), módulo (§3), Checklist PR (§4).
 3. docs/BACKEND_GUIDELINES.md — seguridad (§1.2.x), arquitectura limpia, ActionResult, dominios tocados.
 4. .cursorrules y reglas en .cursor/rules/ (manuales-obligatorios, flujo-fullstack-end-to-end).
 5. Si auditas IA Diseño: docs/AGENTEIA_GUIDELINES.md + ADRs / CHANGELOG en docs/IA_DISEÑO/.

@@ -6,11 +6,18 @@ import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { prismaCuidSchema } from "@/lib/validations/common";
 import { createProveedorSchema, updateProveedorSchema } from "@/lib/validations/proveedor";
-import { proveedoresPageParamsSchema } from "@/lib/validations/proveedores";
+import {
+  REVALIDATE_AYUDA_VENDEDOR_CALC,
+  REVALIDATE_LISTA_PROVEEDORES_TABLERO,
+} from "@/lib/gestionProductosRoutes";
 import * as proveedorService from "@/services/proveedor.service";
-import { getProductosProveedoresPageFiltrados } from "@/services/listaPrecios.service";
-import type { ProductoProveedoresPage } from "@/lib/productoProveedoresPage";
 import { z } from "zod";
+
+function revalidateCatalogoProveedores() {
+  for (const path of REVALIDATE_LISTA_PROVEEDORES_TABLERO) {
+    revalidatePath(path);
+  }
+}
 
 function puedeConsultarCatalogoProveedores(rol: Rol): boolean {
   return (
@@ -44,41 +51,6 @@ export async function getProveedoresFabrica() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) return [];
   return proveedorService.getProveedoresFabrica();
-}
-
-/**
- * Datos para `/proveedores`: proveedores + productos filtrados desde `prod_precios_provee`.
- * Sin filtros activos no se cargan productos (misma regla que lista-precios).
- */
-export async function getProveedoresPageData(raw: unknown): Promise<{
-  proveedores: Awaited<ReturnType<typeof proveedorService.getProveedoresMercaderia>>;
-  productos: ProductoProveedoresPage[];
-  total: number;
-  totalPaginas: number;
-}> {
-  const vacio = { proveedores: [] as Awaited<ReturnType<typeof proveedorService.getProveedoresMercaderia>>, productos: [], total: 0, totalPaginas: 0 };
-  const rol = await getRol();
-  if (!puedeConsultarCatalogoProveedores(rol)) return vacio;
-
-  const parsed = proveedoresPageParamsSchema.safeParse(raw);
-  const params = parsed.success ? parsed.data : {};
-  const proveedores = await proveedorService.getProveedoresMercaderia();
-
-  const sinFiltros = !params.q?.trim() && !params.proveedor;
-  if (sinFiltros) {
-    return { proveedores, productos: [], total: 0, totalPaginas: 0 };
-  }
-
-  try {
-    const { productos, total, totalPaginas } = await getProductosProveedoresPageFiltrados({
-      proveedorId: params.proveedor,
-      busqueda: params.q?.trim() || undefined,
-      pagina: params.pagina,
-    });
-    return { proveedores, productos, total, totalPaginas };
-  } catch {
-    return { proveedores, productos: [], total: 0, totalPaginas: 0 };
-  }
 }
 
 export async function crearProveedor(formData: FormData): Promise<ActionResult<{ id: string }>> {
@@ -124,9 +96,7 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
       ...parsed.data,
       idProveedorDux: idProveedorDuxRaw.trim() || null,
     });
-    revalidatePath("/proveedores");
-    revalidatePath("/proveedores/lista");
-    revalidatePath("/proveedores/gestion");
+    revalidateCatalogoProveedores();
     return { ok: true, data: { id } };
   } catch (e: unknown) {
     const isPrisma = e && typeof e === "object" && "code" in e;
@@ -192,9 +162,7 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
       ...parsed.data,
       idProveedorDux,
     });
-    revalidatePath("/proveedores");
-    revalidatePath("/proveedores/lista");
-    revalidatePath("/proveedores/gestion");
+    revalidateCatalogoProveedores();
     return { ok: true, data: undefined };
   } catch (e: unknown) {
     const isPrisma = e && typeof e === "object" && "code" in e;
@@ -221,9 +189,7 @@ export async function eliminarProveedor(id: string): Promise<ActionResult> {
   if (!idParsed.success) return { ok: false, error: "ID de proveedor inválido." };
   const del = await proveedorService.deleteProveedor(idParsed.data);
   if (!del.success) return { ok: false, error: del.error };
-  revalidatePath("/proveedores");
-  revalidatePath("/proveedores/lista");
-  revalidatePath("/proveedores/gestion");
+  revalidateCatalogoProveedores();
   return { ok: true, data: undefined };
 }
 
@@ -259,16 +225,14 @@ export async function actualizarCoeficientesTintometricosAction(
 
   try {
     await proveedorService.updateCoeficientesTintometricos(parsed.data);
-    revalidatePath("/stock");
-    revalidatePath("/proveedores");
-    revalidatePath("/proveedores/lista");
-    revalidatePath("/proveedores/gestion");
-    revalidatePath("/tienda/tintometrico");
-    revalidatePath("/tienda/litros");
+    revalidateCatalogoProveedores();
+    for (const path of REVALIDATE_AYUDA_VENDEDOR_CALC) {
+      revalidatePath(path);
+    }
     return { ok: true, data: { actualizados: parsed.data.length } };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error al actualizar coeficientes.";
     return { ok: false, error: message };
   }
 }
-
+

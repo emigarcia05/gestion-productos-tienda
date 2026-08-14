@@ -31,10 +31,6 @@ import {
   getStockeableFromMap,
   getStockSucursalPrincipal,
 } from "@/services/prodTiendaStock.service";
-import {
-  mapFilaListaPrecioToProductoProveedoresPage,
-  type ProductoProveedoresPage,
-} from "@/lib/productoProveedoresPage";
 
 const TIPO_URGENTE_MERC2 = "URGENTE";
 
@@ -747,77 +743,6 @@ export async function actualizarListaPreciosMasivo(
     const msg = e instanceof Error ? e.message : String(e);
     return { actualizados: 0, error: msg };
   }
-}
-
-const MAX_COD_EXT_ACCION_MASIVA = 10_000;
-
-/** `cod_ext` de ítems de un proveedor (opcional búsqueda ≥3 caracteres), para acción masiva en `/proveedores`. */
-export async function listarCodExtListaPreciosPorProveedor(
-  proveedorId: string,
-  busqueda?: string
-): Promise<string[]> {
-  const { filas } = await getListaPreciosConTiendaFiltrada(
-    proveedorId,
-    undefined,
-    undefined,
-    busqueda?.trim() || undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    MAX_COD_EXT_ACCION_MASIVA
-  );
-  return filas.map((f) => f.codExt);
-}
-
-/** Campos editables desde `/proveedores` (tabla legacy) → columnas `prod_precios_provee`. */
-export type CampoEditableProductoProveedoresPage = "disponible";
-
-export function camposEditableProductoProveedoresToActualizacion(
-  campo: CampoEditableProductoProveedoresPage,
-  valor: number | boolean
-): ActualizacionMasivaListaPrecios {
-  switch (campo) {
-    case "disponible":
-      return { habilitado: valor as boolean };
-    default:
-      return {};
-  }
-}
-
-export async function aplicarCampoMasivoListaPrecios(
-  proveedorId: string,
-  campo: CampoEditableProductoProveedoresPage,
-  valor: number | boolean,
-  busqueda?: string
-): Promise<{ afectados: number; error?: string }> {
-  const ids = await listarCodExtListaPreciosPorProveedor(proveedorId, busqueda);
-  if (ids.length === 0) return { afectados: 0 };
-  const data = camposEditableProductoProveedoresToActualizacion(campo, valor);
-  const result = await actualizarListaPreciosMasivo(ids, data);
-  return { afectados: result.actualizados, error: result.error };
-}
-
-/** Listado paginado para `/proveedores` (misma fuente que lista-precios). */
-export async function getProductosProveedoresPageFiltrados(params: {
-  proveedorId?: string;
-  busqueda?: string;
-  pagina?: number;
-}): Promise<{ productos: ProductoProveedoresPage[]; total: number; totalPaginas: number }> {
-  const { filas, total, totalPaginas } = await getListaPreciosConTiendaFiltrada(
-    params.proveedorId,
-    undefined,
-    undefined,
-    params.busqueda,
-    undefined,
-    undefined,
-    undefined,
-    params.pagina
-  );
-  const productos = filas
-    .map(mapFilaListaPrecioToProductoProveedoresPage)
-    .filter((p): p is ProductoProveedoresPage => p != null);
-  return { productos, total, totalPaginas };
 }
 
 // ─── Pedido Urgente: ítems con descripción unificada ─────────────────

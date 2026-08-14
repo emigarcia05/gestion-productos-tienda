@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import {
+  REVALIDATE_LISTA_PRECIOS,
+  REVALIDATE_LISTA_PROVEEDORES_TABLERO,
+} from "@/lib/gestionProductosRoutes";
 import { guardListaPreciosImportarEsEditor } from "@/lib/apiRouteAuth";
 import { aplicarMapeoListaPrecios } from "@/lib/parsearImport";
 import { importarListaPreciosProveedorSchema } from "@/lib/validations/importar";
@@ -69,10 +73,12 @@ export async function POST(request: Request) {
 
     await setImportResultInDb({ creados, actualizados, eliminados: 0, errores });
 
-    revalidatePath("/proveedores");
-    revalidatePath("/proveedores/lista-precios");
-    revalidatePath("/proveedores/lista");
-    revalidatePath("/proveedores/gestion");
+    for (const path of REVALIDATE_LISTA_PRECIOS) {
+      revalidatePath(path);
+    }
+    for (const path of REVALIDATE_LISTA_PROVEEDORES_TABLERO) {
+      revalidatePath(path);
+    }
 
     return NextResponse.json({ ok: true, creados, actualizados, errores });
   } catch (e) {

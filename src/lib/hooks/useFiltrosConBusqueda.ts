@@ -39,7 +39,7 @@ export interface UseFiltrosConBusquedaResult {
 /**
  * Hook reutilizable para filtros con input de búsqueda: estado local, debounce,
  * restauración de foco tras recarga y señal de carga.
- * Usado por FiltrosProductos, FiltrosTienda, FiltrosPedidoUrgente, etc.
+ * Usado por FiltrosTienda, FiltrosPedidoUrgente, FiltrosEnviarPedido, etc.
  */
 export function useFiltrosConBusqueda({
   qActual,

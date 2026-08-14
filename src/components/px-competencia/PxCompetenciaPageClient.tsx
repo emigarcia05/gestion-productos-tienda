@@ -7,22 +7,22 @@ import { Plus, RefreshCw, Users } from "lucide-react";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { Button } from "@/components/ui/button";
-import FiltrosPxListas from "@/components/px-listas/FiltrosPxListas";
-import TablaPxListas from "@/components/px-listas/TablaPxListas";
-import AgregarProductoComparacionModal from "@/components/px-listas/AgregarProductoComparacionModal";
+import FiltrosPxCompetencia from "@/components/px-competencia/FiltrosPxCompetencia";
+import TablaPxCompetencia from "@/components/px-competencia/TablaPxCompetencia";
+import AgregarProductoComparacionModal from "@/components/px-competencia/AgregarProductoComparacionModal";
 import GestionCompetidoresModal from "@/components/precios-competencia/GestionCompetidoresModal";
 import SincronizarCompetenciaModal from "@/components/precios-competencia/SincronizarCompetenciaModal";
 import CompetenciaSyncProgresoBanner from "@/components/precios-competencia/CompetenciaSyncProgresoBanner";
 import { PAGE_SIZE } from "@/lib/pagination";
-import type { FiltroPxPromedioPxListas } from "@/lib/pxListasFiltros";
-import type { ItemPxListasParaTabla } from "@/lib/pxListas";
+import type { FiltroPxPromedioCompetencia } from "@/lib/pxCompetenciaFiltros";
+import type { ItemPxCompetenciaTabla } from "@/lib/pxCompetencia";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import { PERMISOS, puede, type Rol } from "@/lib/permisos";
 
 const BASE_PATH = GP_ROUTES.analisisPrecios.pxCompetencia;
 
 interface Props {
-  items: ItemPxListasParaTabla[];
+  items: ItemPxCompetenciaTabla[];
   total: number;
   totalPaginas: number;
   marcas: Array<{ marca: string }>;
@@ -32,11 +32,11 @@ interface Props {
   q: string;
   rubro: string;
   marca: string;
-  filtroPxPromedio: FiltroPxPromedioPxListas;
+  filtroPxPromedio: FiltroPxPromedioCompetencia;
   paginaNum: number;
 }
 
-export default function PxListasPageClient({
+export default function PxCompetenciaPageClient({
   items,
   total,
   totalPaginas,
@@ -93,7 +93,7 @@ export default function PxListasPageClient({
   const filters = (
     <div className="flex w-full min-w-0 flex-col gap-0.5">
       {puedeGestionarCompetidores ? <CompetenciaSyncProgresoBanner /> : null}
-      <FiltrosPxListas
+      <FiltrosPxCompetencia
         marcas={marcas.map((m) => m.marca)}
         rubros={rubros.map((r) => r.rubro)}
         totalItems={total}
@@ -114,7 +114,7 @@ export default function PxListasPageClient({
       >
         <div className="flex flex-col h-full min-h-0 gap-0.5">
           <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
-            <TablaPxListas
+            <TablaPxCompetencia
               items={items}
               competencias={competencias}
               puedeEditar={puedeEditar}

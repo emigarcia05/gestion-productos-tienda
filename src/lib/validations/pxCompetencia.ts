@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-/** Parámetros de URL del listado Px Listas (`/gestion-productos/tienda/cx-px-tienda`). */
-export const getPxListasPageParamsSchema = z.object({
+/** Parámetros de URL del listado Px Competencia (`/gestion-productos/tienda/cx-px-tienda`). */
+export const getPxCompetenciaPageParamsSchema = z.object({
   q: z.string().max(500).optional(),
   rubro: z.string().max(200).optional(),
   marca: z.string().max(200).optional(),

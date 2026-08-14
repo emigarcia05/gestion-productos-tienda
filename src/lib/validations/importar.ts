@@ -3,22 +3,6 @@ import { prismaCuidSchema } from "@/lib/validations/common";
 
 const indiceColumnaSchema = z.string().regex(/^\d+$/, "Índice de columna inválido.");
 
-export const campoDestinoProductoSchema = z.enum([
-  "codProdProv",
-  "descripcion",
-  "precioLista",
-  "precioVentaSugerido",
-  "ignorar",
-]);
-
-export const mapeoColumnasProductoSchema = z.record(indiceColumnaSchema, campoDestinoProductoSchema);
-
-export const importarProductosSchema = z.object({
-  proveedorId: prismaCuidSchema,
-  filasCrudas: z.array(z.array(z.string().max(8000))).min(1).max(100_000),
-  mapeo: mapeoColumnasProductoSchema,
-});
-
 export const campoDestinoListaPreciosSchema = z.enum([
   "codigoExterno",
   "codProdProv",

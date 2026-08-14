@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
-import { getPxListasPageData } from "@/actions/pxListas";
-import { esFiltroPxPromedioPxListas } from "@/lib/pxListasFiltros";
-import type { FiltroPxPromedioPxListas } from "@/lib/pxListasFiltros";
-import PxListasPageClient from "@/components/px-listas/PxListasPageClient";
+import { getPxCompetenciaPageData } from "@/actions/pxCompetencia";
+import { esFiltroPxPromedioCompetencia } from "@/lib/pxCompetenciaFiltros";
+import type { FiltroPxPromedioCompetencia } from "@/lib/pxCompetenciaFiltros";
+import PxCompetenciaPageClient from "@/components/px-competencia/PxCompetenciaPageClient";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
@@ -19,7 +19,7 @@ interface Props {
   }>;
 }
 
-export default async function PxListasPage({ searchParams }: Props) {
+export default async function PxCompetenciaPage({ searchParams }: Props) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
     redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
@@ -34,14 +34,14 @@ export default async function PxListasPage({ searchParams }: Props) {
     pagina = "1",
   } = sp;
 
-  const filtroPxPromedio: FiltroPxPromedioPxListas = esFiltroPxPromedioPxListas(
+  const filtroPxPromedio: FiltroPxPromedioCompetencia = esFiltroPxPromedioCompetencia(
     filtroPxPromedioRaw
   )
     ? filtroPxPromedioRaw
     : "";
 
   const { items, total, totalPaginas, marcas, rubros, competencias } =
-    await getPxListasPageData({
+    await getPxCompetenciaPageData({
       q,
       rubro,
       marca,
@@ -51,7 +51,7 @@ export default async function PxListasPage({ searchParams }: Props) {
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
 
   return (
-    <PxListasPageClient
+    <PxCompetenciaPageClient
       items={items}
       total={total}
       totalPaginas={totalPaginas}

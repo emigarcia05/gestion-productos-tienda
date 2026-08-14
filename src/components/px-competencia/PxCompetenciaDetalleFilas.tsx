@@ -93,7 +93,7 @@ function DetalleCompetidorFallo({
   );
 }
 
-export function PxListasDetalleVacio({ codTienda }: { codTienda: string }) {
+export function PxCompetenciaDetalleVacio({ codTienda }: { codTienda: string }) {
   return (
     <TableRow
       key={`${codTienda}-detalle-vacio`}
@@ -112,7 +112,7 @@ export function PxListasDetalleVacio({ codTienda }: { codTienda: string }) {
   );
 }
 
-export function PxListasDetalleCompetenciaFilas({
+export function PxCompetenciaDetalleFilas({
   codTienda,
   detalle,
   fallos,

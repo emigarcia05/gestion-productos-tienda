@@ -22,14 +22,14 @@ Sigue estas reglas para mantener seguridad, integridad de datos y arquitectura l
 - **Regla de oro**: Toda Action que **modifique datos** (crear, actualizar, eliminar) o exponga datos sensibles **debe** comprobar sesión/rol **al inicio**, antes de cualquier lógica.
 - **Lecturas (Server Actions)**: Aunque la ruta esté protegida en layout, **toda** Action invocable desde el cliente debe validar acceso con `getRol()` + `puede(rol, PERMISOS.*)` cuando exista permiso en `@/lib/permisos`, para evitar invocación directa sin pasar por la UI.
 - **Escrituras con dos niveles**: Si el módulo da **acceso de lectura** a `simple` y `editor` (`PERMISOS.*.acceso` con ambos `true`) pero la operación es **crítica** (p. ej. borrado o registro en sistemas externos), exigir además **`esEditor()`** tras el chequeo de `puede(rol, PERMISOS.*)`. Excepción documentada: en **historial de pedidos**, tanto **recepción** (guardar/corregir/marcar/reabrir/agregar ítems) como **eliminación de pedidos** están habilitadas para `simple` y `editor`.
-- **Importar** (`PERMISOS.importar.acceso`, solo editor en la matriz actual): comprobar **`puede(rol, PERMISOS.importar.acceso)`** y **`esEditor()`**, más validación Zod del payload (`@/lib/validations/importar.ts`).
+- **Importar lista de precios** (`POST /api/import-lista-precios`): `guardListaPreciosImportarEsEditor` + `PERMISOS.listaPrecios.acciones.importarLista`; payload Zod `importarListaPreciosProveedorSchema` (`@/lib/validations/importar.ts`).
 - **Helpers**: `esEditor()` para “solo editor”; para permisos granulares usar `getRol()` y `puede(rol, PERMISOS.modulo.accion)` desde `@/lib/permisos`.
 - **IDs de Prisma**: Los modelos usan **`cuid`** (no UUID) salvo tablas explícitas con `@default(uuid())` (p. ej. `ProdPedMerc2`, `prod_rendimientos`). Validar con `prismaCuidSchema`, `uuidSchema` o `listaPreciosCodExtSchema` / `listaPreciosCodTiendaSchema` según el modelo; **no** mezclar `.uuid()` donde el identificador ya no sea UUID. Claves naturales: **`prod_precios_provee.cod_ext`**, **`prod_tienda.cod_tienda`** (PK).
 - **Lecturas con datos sensibles** (precios, vínculos, catálogos):
   - **Lista de precios** (`getListaPreciosConOpcionesAction`, `actualizarListaPreciosMasivoAction`): `getRol()` + lectura según módulo — `PERMISOS.proveedores.listaPrecios` (grilla lista precios) o `PERMISOS.proveedores.sugeridos` si `opciones.soloPxSugerido`; mutaciones con `PERMISOS.listaPrecios.acciones.edicionMasiva`; payload **`unknown`** → `listaPreciosFiltrosLecturaSchema` o `{ ids, data }` / `{ filtros, data }` con Zod (edición masiva por filtro = todos los ítems, sin paginación). **`proveedorId`** en filtros: `prismaCuidSchema.optional()` (no `z.string().max(128)`). En `getListaPreciosConTiendaFiltrada`, mapear siempre `px_vta_sugerido` a `pxVtaSugerido`; `opciones.soloPxSugerido` solo filtra filas.
-  - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`, `getProveedoresMercaderia`, `getProveedoresNoMercaderia`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`. `getProveedoresMercaderia` devuelve solo filas con `proveedor_mercaderia = true` y `getProveedoresNoMercaderia` su complemento (`= false`). Ambos reutilizan el índice `global_proveedores_proveedor_mercaderia_idx` (ver §1.11c).
+  - **Catálogo de proveedores** (`getProveedores`, `getProveedoresMercaderia`, `getProveedoresNoMercaderia`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`. `getProveedoresMercaderia` devuelve solo filas con `proveedor_mercaderia = true` y `getProveedoresNoMercaderia` su complemento (`= false`). Ambos reutilizan el índice `global_proveedores_proveedor_mercaderia_idx` (ver §1.11c).
   - **Vínculos tienda** (`getVinculos`, `listarProductosParaVincular` en `vinculos.ts`): `getRol()` + `puede(rol, PERMISOS.tienda.acceso)` (**solo editor**); ítem tienda por `cod_tienda` (`listaPreciosCodTiendaSchema`); línea lista proveedor por `cod_ext` (`listaPreciosCodExtSchema`). Filtros de búsqueda acotados con Zod en la Action cuando aplique.
-  - **Sincronización DUX lista tienda** (`GET`/`POST` `/api/sync-lista-precios-tienda`, más `syncDuxStatusDb` / jobs internos que llaman `syncListaPrecioTiendaFromDux`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)` en **POST**, **GET** bloqueante, **cancel**, **`GET …/status`** (helpers en `@/lib/apiRouteAuth`). En la matriz actual **`simple` y `editor`** tienen `sincronizar: true`. Sin sesión válida o sin permiso → `403` en todas esas rutas (no hay “progreso global” público por URL). **Cancelación cooperativa:** `POST /api/sync-lista-precios-tienda/cancel` (mismo permiso) pone `running = false` en `sync_dux_status`; el servicio `syncListaPrecioTiendaFromDux` comprueba el flag entre lotes y aborta con `SyncListaPrecioTiendaCancelledError`. **No** se llama `setSyncDuxSuccessInDb`, por lo tanto **`last_completed_at` no cambia** (la cancelación no cuenta como “Últ. Act.”). **No** existe Server Action paralela para el mismo trabajo (evitar superficie invocable desde el cliente sin uso en UI). **Eliminado** el mock **`/api/sync-tienda`**. Progreso UI en **`SyncStatusIndicator`** + **`DuxSyncStyleButton`** (ver `FRONTEND_GUIDELINES` § SSOT progreso API DUX).
+  - **Sincronización DUX lista tienda** (`GET`/`POST` `/api/sync-lista-precios-tienda`, más `syncDuxStatusDb` / jobs internos que llaman `syncListaPrecioTiendaFromDux`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)` en **POST**, **GET** bloqueante, **cancel**, **`GET …/status`** (helpers en `@/lib/apiRouteAuth`). En la matriz actual **`simple` y `editor`** tienen `sincronizar: true`. Sin sesión válida o sin permiso → `403` en todas esas rutas (no hay “progreso global” público por URL). **Cancelación cooperativa:** `POST /api/sync-lista-precios-tienda/cancel` (mismo permiso) pone `running = false` en `sync_dux_status`; el servicio `syncListaPrecioTiendaFromDux` comprueba el flag entre lotes y aborta con `SyncListaPrecioTiendaCancelledError`. **No** se llama `setSyncDuxSuccessInDb`, por lo tanto **`last_completed_at` no cambia** (la cancelación no cuenta como “Últ. Act.”). **No** existe Server Action paralela para el mismo trabajo (evitar superficie invocable desde el cliente sin uso en UI). **Eliminado** el mock **`/api/sync-tienda`**. Progreso UI en **`SyncStatusIndicator`** + **`DuxSyncStyleButton`** (ver `FRONTEND_GUIDELINES` §1.6).
 - **Mutaciones sobre `Proveedor`**: validar `id` con `prismaCuidSchema` en editar/eliminar; `eliminarProveedor` delega en `deleteProveedor` del servicio (`ServiceResult`) y maneja restricciones FK (p. ej. historial de pedidos, comprobantes proveedor).
 - **`global_proveedores.id_proveedor_dux`**: índice **único** (`global_proveedores_id_proveedor_dux_key`). PostgreSQL permite varios `NULL`; cada valor no nulo debe ser único. Sirve como **FK referenciada** por `fin_compras_comprobante.id_proveedor` (mismo valor DUX; `onDelete: Restrict`): no se puede borrar un proveedor si tiene comprobantes vinculados.
 - **Lecturas de listados con filtros** (pedidos urgente/enviar, reposición, stock, tienda): además del permiso de módulo, validar el objeto de parámetros con esquemas dedicados (`@/lib/validations/pedidosLectura`, `pedidosMutaciones`, `reposicion`, `stock`, `tienda`) para acotar `q`, `pagina`, sucursales, `proveedorId` (CUID) y arrays (`tipos`).
@@ -59,9 +59,10 @@ Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
 - **Catálogos finanzas balance** (`finBalGastosCatalogo.ts`, etc.): ya documentado — `finanzas.acceso` + `esEditor()` en mutaciones de catálogo maestro.
 - **Usuarios** (`globalPersonal.ts` `actualizarUsuarioPersonalAction`): `puede(rol, PERMISOS.usuarios.acceso)` **y** `esEditor()`.
 
-### 1.2.4 Edición inline en `/proveedores` (`productos.ts`)
+### 1.2.4 Edición masiva lista de precios
 
-- `editarProducto` / `aplicarCampoMasivo`: permiso `puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)`; payload `unknown` + Zod; solo `habilitado` (descuentos vía motor §1.8d). Revalida `/proveedores` y `/proveedores/lista-precios`.
+- Grilla canónica: **Listas Px Prov.** (`actualizarListaPreciosMasivoAction` + `actualizacionMasivaListaPreciosSchema`).
+- **Eliminado (no reintroducir):** `src/actions/productos.ts` (`editarProducto` / `aplicarCampoMasivo`), `src/lib/validations/productos.ts`, `src/lib/productoProveedoresPage.ts`, helpers `aplicarCampoMasivoListaPrecios` / `getProductosProveedoresPageFiltrados` en `listaPrecios.service.ts`. `/proveedores` redirige a la lista de precios.
 
 ### 1.2.5 Auditoría de seguridad — patrones obligatorios (cierre 2026-05)
 
@@ -117,7 +118,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 **Contrato de payloads (refuerzo 2026-06):**
 
-- Lecturas/mutaciones desde cliente: parámetro **`raw: unknown`** + `.safeParse()` con esquema en `@/lib/validations/*` (ej. `getListaPreciosConOpcionesAction`, `actualizarListaPreciosMasivoAction`, `editarProducto`, `aplicarCampoMasivo`, `buscarProductosParaAsignarAction`).
+- Lecturas/mutaciones desde cliente: parámetro **`raw: unknown`** + `.safeParse()` con esquema en `@/lib/validations/*` (ej. `getListaPreciosConOpcionesAction`, `actualizarListaPreciosMasivoAction`, `buscarProductosParaAsignarAction`).
 - El cliente pasa **un objeto** acorde al esquema (no argumentos posicionales sueltos en Actions nuevas).
 - **`listaPreciosFiltrosLecturaSchema.proveedorId`**: `prismaCuidSchema.optional()`.
 - **`buscarProductosAsignarSchema.proveedorId`**: `prismaCuidSchema.optional()`.
@@ -131,13 +132,10 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 **Tipado:** sin `any` en `src/` (TS 5.9).
 
-**Integración real `/proveedores` (2026-06-04, eficiencia/DRY):**
+**Lista de precios (lectura compartida):**
 
-- **`getProveedoresPageData`**: delega en `getProductosProveedoresPageFiltrados` (`listaPrecios.service.ts`) — misma query que lista-precios (`getListaPreciosConTiendaFiltrada`), sin `MOCK_PRODUCTOS`.
-- **`productos.ts`**: `editarProducto` / `aplicarCampoMasivo` solo permiten **`disponible`→`habilitado`**; descuentos gobernados por motor §1.8d.
-- **Tipo compartido:** `ProductoProveedoresPage` en `src/lib/productoProveedoresPage.ts` (mapper desde `FilaListaPrecioParaCliente`).
+- Edición masiva vigente: `actualizarListaPreciosMasivoAction`. No reintroducir `productos.ts` / `productoProveedoresPage.ts` (§1.2.4).
 - **`FilaListaPrecioParaCliente`**: incluye `codProdProveedor`, `habilitado` y `proveedor.codigoUnico` para todas las lecturas de lista.
-- **`proveedoresPageParamsSchema`**: `proveedor` = `prismaCuidSchema.optional()`; `pagina` numérica acotada.
 
 **Herramientas de auditoría:**
 
@@ -163,7 +161,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 | `pedidos.ts` | `syncPedidoUrgenteEnvioAction` | `upsertPedidoUrgenteMercaderiaItemAction`. |
 | `finBalVtas.ts` | `listarFinBalVtasAction`, `listarSucursalesGeneraBalanceParaVtasAction`, `crearFinBalVtasAction` | Lecturas RSC + `listarFinBalVtasPorMesAnioAction` / `guardarFinBalVtasCargaPeriodoAction`. |
 | `cajasTesoreria.ts` | `listarCajasTesoreriaAction`, `listarFinTesoreriaTipoCajaAction`, `listarCajasTesoreriaTipoDigitalAction` | RSC/servicios; conservar `listarCajasTesoreriaTipoBancoAction` (modal acreditar cheque). |
-| `competenciaPrecios.ts` | `getCompetenciaPreciosListAction` | `getPxListasPageData` (`pxListas.ts` + `pxListasPage.service.ts`). |
+| `competenciaPrecios.ts` | `getCompetenciaPreciosListAction` | `getPxCompetenciaPageData` (`pxCompetencia.ts` + `pxCompetenciaPage.service.ts`). |
 | `comparacionCategorias.ts` | `getArbolCategoriasAction`, `getPresentacionesConLabelAction`, `getPresentacionesParaGestionAction` | RSC importa servicios (`categoriasComparacion.service.ts`). |
 | `finBalPosicionIvaComparacionPedido.ts` | `getEstadoIvaComparacionPedidoAction` | Lectura en página RSC / servicio. |
 
@@ -171,11 +169,11 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 | Eliminado | Motivo |
 |-----------|--------|
-| `competenciaPreciosList.service.ts` | Reemplazado por `pxListasPage.service.ts` + `pxListasRows.service.ts`. |
+| `competenciaPreciosList.service.ts` | Reemplazado por `pxCompetenciaPage.service.ts` + `pxCompetenciaRows.service.ts`. |
 | `syncPedidoUrgenteEnvio` + `syncPedidoUrgenteEnvioSchema` | Sin call sites tras unificación envío urgente. |
 | `crearFinBalVtas` + `crearFinBalVtasSchema` | Alta de ventas vía `guardarFinBalVtasCargaPeriodo`. |
 | `getPresentacionesConLabel`, `getPresentacionesParaGestion` (`categoriasComparacion.service.ts`) | Solo las Actions huérfanas las invocaban. |
-| `competenciaPreciosFiltros.ts`, `competenciaPreciosFiltrosQuery.ts`, `competenciaPreciosFiltrosSchema` | Filtros legacy Px Competencia; Px Listas usa `@/lib/pxListasFiltros` + `getPxListasPageParamsSchema`. |
+| `competenciaPreciosFiltros.ts`, `competenciaPreciosFiltrosQuery.ts`, `competenciaPreciosFiltrosSchema` | Filtros legacy; vigentes: Px Competencia `@/lib/pxCompetenciaFiltros` + `getPxCompetenciaPageParamsSchema`; Px Listas (DUX) `@/lib/pxListasPreciosFiltros`. |
 
 **Correcciones de seguridad:**
 
@@ -264,7 +262,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 - **API / parseo** (`duxApi.ts`): `mapItem` arma `ItemDux.precios[]`. Lista principal UI: `getIdPrecioListaPrincipal()` (default **56994**). Por ítem: upsert catálogo + precio; `deleteMany` precios del ítem cuyo `id_lista` ya no vino.
 - **Sync** (`syncListaPrecioTienda.service.ts`): Fase 2 — `prod_tienda` + `prod_tienda_listas_precios` + `prod_tienda_precios` por chunk. Fase 3 — `cod_tienda` ausentes (`last_sync` &lt; inicio corrida). Fase 4 — borrar precios y filas de catálogo con `id_lista` fuera del set visto en la corrida. **Post-fase 3:** `limpiarHuerfanosProdTienda` (`limpiarHuerfanosProdTienda.service.ts`) — borra/anula referencias `cod_tienda` sin fila padre en `prod_tienda` (ediciones Px Listas, stock, competencia, vínculos proveedor, reglas reposición; opcional historial pedidos). Script manual: `npm run db:purge-huerfanos-prod-tienda` (`--execute`, `--incluir-historial`).
 - **Lecturas precio tienda en UI**: **`prodTiendaPrecios.service.ts`** — `buildMapPrecioListaPrincipal` (mapa `cod_tienda` → precio de lista principal; 0 si no hay fila).
-- **Filtros Px Listas (post-unificación)**: `@/lib/pxListasFiltros` + `getPxListasPageParamsSchema` / `getPxListasPreciosPageParamsSchema`; agregados en memoria vía `competenciaPreciosFilaResumen.ts`.
+- **Filtros Px Competencia**: `@/lib/pxCompetenciaFiltros` + `getPxCompetenciaPageParamsSchema`; agregados en memoria vía `competenciaPreciosFilaResumen.ts`. **Filtros Px Listas (DUX)**: `@/lib/pxListasPreciosFiltros` + `getPxListasPreciosPageParamsSchema`.
 - **Migraciones clave**: `20260604180000_prod_tienda_precios_y_listas_catalog` (rename hechos → `prod_tienda_precios`; catálogo nuevo `prod_tienda_listas_precios`; DROP `prod_listas_dux`).
 
 ### 1.4.3a Catálogo precios REX (`prod_precios_rex`)
@@ -450,7 +448,7 @@ Por cada ítem (`id_proveedor`, `marca` texto, `rubro` texto) y cada `campo`:
   - `upsertListaPrecios` / `crearProductoListaPrecio` → materializar filas afectadas tras alta/import.
   - `actualizarListaPreciosMasivo` → si cambia `marca` o `rubro`, re-materializar esas filas.
   - CRUD regla → `recalcularFilasAfectadasPorRegla`.
-- **Bloqueo escritura manual:** `actualizacionMasivaListaPreciosSchema` y `editarProducto` / `aplicarCampoMasivo` **no** aceptan `dto_*` ni `cx_transporte`.
+- **Bloqueo escritura manual:** `actualizacionMasivaListaPreciosSchema` **no** acepta `dto_*` ni `cx_transporte`.
 
 #### Server Actions (`src/actions/descuentosListaPrecioReglas.ts`)
 
@@ -598,12 +596,12 @@ interface ReglaDescuentoListaPrecio {
 - Alta/edición de proveedor: validar entrada con Zod (`coeficienteTintometrico > 0`, hasta 6 decimales) y persistir en `createProveedor` / `updateProveedor`.
 - Lecturas de proveedores que alimentan cálculos (ej. `/tienda/tintometrico`) deben incluir el coeficiente en el payload.
 - Tipos de pintura para rendimientos (`prod_rendimientos.tipo_pintura`, antes `tipos_pintura_rendimientos`): normalizar y persistir en MAYÚSCULAS desde la Action de alta/edición para mantener consistencia de filtros y catálogos.
-- Edición masiva (modal en `Control Stock`):
+- Edición masiva (modal **Editar Coeficientes** en **Px Tintométrico**):
   - Action `actualizarCoeficientesTintometricosAction(raw)` en `src/actions/proveedores.ts`.
   - Permisos: solo rol `editor`.
   - Validación: arreglo de `{ id, coeficienteTintometrico }` (`id` CUID válido + `coeficienteTintometrico` numérico finito `> 0`).
   - Servicio `updateCoeficientesTintometricos(items)` en `src/services/proveedor.service.ts` con `prisma.$transaction` para actualizar múltiple `proveedor`.
-  - Revalidación de rutas dependientes de coeficiente: `/stock`, `/proveedores`, `/proveedores/lista`, `/proveedores/gestion`, `/tienda/tintometrico`, `/tienda/litros`.
+  - Revalidación: `REVALIDATE_LISTA_PROVEEDORES_TABLERO` + `REVALIDATE_AYUDA_VENDEDOR_CALC` (Stock, Lista Prov., Px Tintométrico, Calc. Litros).
 
 ### 1.11b Plazos de pago por proveedor (`plazos_pagos`)
 
@@ -632,7 +630,7 @@ interface ReglaDescuentoListaPrecio {
   - `getProveedoresNoMercaderia()`: `src/app/finanzas/balance/gastos/catalogo/page.tsx` (popula la 3ª columna "PROVEEDORES" del catálogo).
   - `getProveedores()`: call sites transversales que requieren el padrón completo sin filtrar (Px. Vta. Sugeridos, Lista Px Proveedores, Comp. por Cat., sincronizaciones DUX, pedidos, etc.).
 - **Regla**: si se agrega una vista exclusiva de "mercadería" o de "no mercadería", consumir el helper correspondiente (`getProveedoresMercaderia` / `getProveedoresNoMercaderia`); no replicar el filtro en call sites. Usar `getProveedores()` solo cuando la vista realmente necesite **ambos** conjuntos.
-- **Regla transversal Gestión Productos (2026-04-27):** todo backend que alimente filtros **PROVEEDOR** en rutas `/gestion-productos/*` debe restringir a `proveedor_mercaderia = true`. Aplicado en: `actions/proveedores.getProveedoresPageData` (filtro de `/proveedores`), `actions/vinculos.getProveedores` (modales de vínculos/comparación), `actions/tienda.getTiendaPageData` y `getProveedoresTintoLts`, `services/listaPrecios.getListaPreciosConTiendaFiltrada` / `getProveedoresParaPedidoUrgente`, `services/tintometrico.getProveedoresTintometricos`, y `app/pedidos/historial/page.tsx` (lista de proveedores del filtro).
+- **Regla transversal Gestión Productos:** todo backend que alimente filtros **PROVEEDOR** en rutas `/gestion-productos/*` debe restringir a `proveedor_mercaderia = true`. Aplicado en: `actions/vinculos.getProveedores` (modales de vínculos/comparación), `actions/tienda.getTiendaPageData` y `getProveedoresTintoLts`, `services/listaPrecios.getListaPreciosConTiendaFiltrada` / `getProveedoresParaPedidoUrgente`, `services/tintometrico.getProveedoresTintometricos`, y `app/pedidos/historial/page.tsx`.
 - **Edición desde el modal "Nuevo/Editar Proveedor"** (`ProveedorForm.tsx` + `ProveedorModal.tsx`):
   - Campo **PROVEEDOR MERCADERÍA** (Select SI/NO) en el form, con hidden `<input name="proveedorMercaderia">` (`si` / `no`) para que viaje por `FormData`.
   - Default UX en alta: **SI** (el modal se abre desde la pantalla de mercadería, lo esperado es opt-in explícito). En edición precarga el valor persistido.
@@ -703,7 +701,7 @@ interface ReglaDescuentoListaPrecio {
 - Actions `src/actions/proveedores.ts`:
   - `crearProveedor` y `editarProveedor` agregan `iva: (formData.get("iva") as string | null) ?? ""` al payload bruto antes de `safeParse`.
   - El orden de mensajes de error agrega `iva` al final (después de `plazosPagos`); en la práctica `ivaProveedorFormSchema` no falla nunca (cae a `PREGUNTA`), pero se mantiene el campo en el flatten por consistencia con el patrón de auditoría.
-- UI (`ProveedorForm.tsx` + `ProveedorModal.tsx` + `TablaProveedoresGestion.tsx` + `TablaProveedoresLista.tsx` + `FinBalGastosCatalogoPageClient.tsx`):
+- UI (`ProveedorForm.tsx` + `ProveedorModal.tsx` + `TablaProveedoresLista.tsx` + `FinBalGastosCatalogoPageClient.tsx`):
   - Select `IVA` con opciones SIEMPRE / NUNCA / PREGUNTA, controlled + hidden `<input name="iva">` para que viaje por `FormData`.
   - **Default UX en alta**: `PREGUNTA` (mismo default de la columna). En edición se precarga `proveedor.iva` persistido. Sin asterisco "obligatorio" (siempre hay un valor válido por defecto).
   - `ProveedorParaModal` incluye `iva?: 'SIEMPRE' | 'NUNCA' | 'PREGUNTA'`. Las tablas que abren el modal mapean `prov.iva` desde `ProveedorListItem` al armar el `ProveedorParaModal`.
@@ -1500,9 +1498,8 @@ Objetivo: preparar `RecepcionCompraDatosPreparados` para el POST DUX v2/compras 
 | `@/types/components.types` | Props de modales, drawers, confirmaciones |
 | `@/lib/permisos` | `Rol`, `PERMISOS`, función `puede(rol, permiso)` |
 | `@/lib/sesion` | `SesionData`, `getSesion()`, `getRol()`, `esEditor()` |
-| `@/lib/validations/importar.ts` | `importarProductosSchema`, `importarListaPreciosProveedorSchema`, mapeos de columnas CSV (índices numéricos como string, límites de filas/celdas). |
+| `@/lib/validations/importar.ts` | `importarListaPreciosProveedorSchema` y mapeos de columnas CSV (índices numéricos como string, límites de filas/celdas). |
 | `@/lib/validations/common.ts` | `uuidSchema`, `prismaCuidSchema`, `prismaCuidOrUuidSchema` (UUID o CUID para FKs legacy), `globalSucursalIdSchema` (UUID, CUID o literal `suc_corporativo` para `global_sucursales.id`). |
-| `@/lib/validations/proveedores.ts` | `proveedoresPageParamsSchema` (query de página proveedores). |
 | `@/lib/validations/pedidosLectura.ts` | `sucursalPedidoCodigoSchema`, `tipoPedidoMercaderiaSchema`, `tiposPedidoMercaderiaSchema`, `proveedorFiltroPedidoSchema` (`""` \| CUID), `getPedidoUrgenteDataParamsSchema`, `getEnviarPedidoDataParamsSchema`, `getEnviarPedidoTablaParamsSchema`. |
 | `@/lib/validations/pedidosMutaciones.ts` | Mutaciones/envío: `proveedorIdPedidoSchema` (`prismaCuidSchema`), `listarProveedoresConPedidoActivoSchema`, `comprobarItemsParaGenerarPedidoSchema`, `generarPdfEnviarPedidoSchema` (`idItemPedidoEnvio` → `uuidSchema` / `prod_ped_merc`), `getSobreStockReposicionParaModalSchema`, `upsertPedidoUrgenteItemSchema`, `upsertPedidoTintometricoItemsSchema`, `deleteTintometricoItemSchema`. |
 | `@/lib/validations/reposicion.ts` | `sucursalReposicionSchema`, `reposicionFormaPedidoSchema` (`CANT_FIJA` \| `CANT_MAXIMA`), `getReposicionParamsSchema`, `productosReposicionSelectorSchema`. |
@@ -1549,11 +1546,11 @@ Antes de entregar código nuevo o modificado, verificar:
 
 - **`tienda.ts`**: `getTiendaPageData` y `getProveedoresTintoLts` comprueban `getRol()` + `puede()`. **Cx Compra** (`PERMISOS.tienda.acceso`) solo **editor**. Módulo **Control de Aumentos** eliminado por completo (2026-05-28; será reimplementado más adelante). `getUltimoSync` y `convertirEnProveedor` eliminadas (sin uso).
 - **`cxPxTienda.ts` (actions)**: `guardarCostoCxProdTiendaAction`, **`exportarCostoCxDiffAction`**. Permiso `PERMISOS.cxPxTienda.acceso` (solo **editor**). FK `costo_compra_cod_ext` (ver §1.10b). **`costoListaTienda.service.ts`**, **`cxPxTiendaRows.service.ts`**, **`exportCostoCxDiff.service.ts`**, **`exportCostoCxExcelClient.ts`**.
-- **`comparacionCompetencia.ts` (actions)**: `buscarProductosParaComparacionAction`, `agregarProductoComparacionAction`, `quitarProductoComparacionAction` — gate `PERMISOS.competenciaPrecios.editar` + `esEditor()`. Servicio **`comparacionCompetencia.service.ts`**. Flag **`prod_tienda.comparar_competencia`**: la grilla **Px Competencia** lista solo filas con `comparar_competencia = true` (`pxListasPage.service.ts`); el sync DUX **no** modifica el flag. Al quitar de comparación se pone `false`; las filas en **`prod_precios_competencia`** se conservan. Migración **`20260610120000`**: backfill `true` donde ya existía fila en `prod_precios_competencia`.
-- **`pxListas.ts` (actions)**: `getPxListasPageData` — módulo **Px Competencia** (`/gestion-productos/tienda/cx-px-tienda`; componentes `px-listas/*`). **`exportarResumenAumentosPxAction`** (PDF aumentos; usado desde **Cx Compra**).
+- **`comparacionCompetencia.ts` (actions)**: `buscarProductosParaComparacionAction`, `agregarProductoComparacionAction`, `quitarProductoComparacionAction` — gate `PERMISOS.competenciaPrecios.editar` + `esEditor()`. Servicio **`comparacionCompetencia.service.ts`**. Flag **`prod_tienda.comparar_competencia`**: la grilla **Px Competencia** lista solo filas con `comparar_competencia = true` (`pxCompetenciaPage.service.ts`); el sync DUX **no** modifica el flag. Al quitar de comparación se pone `false`; las filas en **`prod_precios_competencia`** se conservan. Migración **`20260610120000`**: backfill `true` donde ya existía fila en `prod_precios_competencia`.
+- **`pxCompetencia.ts` (actions)**: `getPxCompetenciaPageData` — módulo **Px Competencia** (`/gestion-productos/tienda/cx-px-tienda`; componentes `px-competencia/*`). **`exportarResumenAumentosPxAction`** (PDF aumentos; usado desde **Cx Compra**).
 - **`pxListasPrecios.ts` (actions)**: `getPxListasPreciosPageData`, `guardarPxListaMargenEdicionAction`, **`guardarPxListaPrecioEdicionAction`**, **`guardarPxListaCompetenciaRefAction`**, **`exportarPxListasMargenAction`** — módulo **Px Listas**. Staging en **`prod_tienda_precios_edicion`** (`pxListasPrecioEdicion.service.ts`); REF. competidor GENERAL en **`pxListasCompetenciaRef.service.ts`** (`prod_tienda.competencia_id_px_lista_general`); **Act. Px** re-sincroniza PX de ref. y limpia filas exportadas. Filtro **`actualizar`**: ítems con `pxEdicion` en staging. Export: **`exportPxListasMargen.service.ts`** — `.xls` por `nombre_lista` (**CODIGO**, **PORC UTILIDAD** numérico 4 dec. + formato `#.##0,0000`). Helpers: **`pxListasPreciosCelda.ts`**, **`pxListasPreciosFiltros.ts`**, **`pxListasCompetenciaRef.ts`**.
 - **`syncListaPrecioTienda.service.ts`**: deduplica por `cod_tienda` dentro de cada chunk y hace `upsert` con `where: { codTienda }`. En **`create`** y **`update`** se persisten las columnas sincronizadas desde DUX **excepto `proveedor`** (congelado — ver §1.4.2). Al finalizar la sync elimina de `prod_tienda` los `cod_tienda` que ya no llegaron en la corrida actual desde DUX.
-- **`importar.ts`**: `puede(rol, PERMISOS.importar.acceso)` + `esEditor()`; payloads validados con `@/lib/validations/importar.ts` (`safeParse`).
+- **Import lista precios:** `POST /api/import-lista-precios` + `importarListaPreciosProveedorSchema` + `guardListaPreciosImportarEsEditor`. No hay Server Action mock de import.
 - **`pedidosHistoria.ts`**: Lecturas y mutaciones (cantidades, agregar ítem, registrar en DUX, borrar) habilitadas para cualquier rol con `puede(rol, PERMISOS.pedidos.acceso)`.
 - **`pedidos.ts`**: mutaciones/envío validadas con `@/lib/validations/pedidosMutaciones` (`proveedorId` CUID, IDs `prod_ped_merc` UUID); permisos `pedidos.acceso` al inicio; lógica en `pedidosEnvio.service.ts`.
 - **`sesion.ts`**: `activarModoEditor` valida la clave con Zod.
@@ -1578,20 +1575,20 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/services/pedidosEnvio.service.ts` | `upsertPedidoMercaderiaReposicionConfig`: validación de `reposicion_punto_pedido` admite `0` (solo rechaza `< 0`). Persistencia REPOSICIÓN por `cod_tienda`: `prod_precios_tienda.cod_tienda` → `cod_ext` + proveedor vigentes; al guardar se eliminan otras filas **`prod_ped_merc`** `REPOSICION` para la misma `sucursal + cod_tienda` con proveedor/cod_ext obsoletos. |
 | `src/actions/syncListaPrecioTienda.ts` | **Eliminado (2026-05-10):** redundante con `/api/sync-lista-precios-tienda` + `syncListaPrecioTiendaFromDux` (superficie invocable desde cliente sin uso). Histórico: comprobación `PERMISOS.tienda.acciones.sincronizar`; no llegó a usar `esEditor()` en código final. |
 | `src/actions/duxCompras.ts` | **Eliminado (2026-05-10):** sin call sites; histórico: correlativo DUX para recepción. **2026-05-08:** removidos también `src/services/duxCompras.service.ts` y `src/lib/duxComprobanteCorrelativo.ts`; ver §2.8 y §2.9. |
-| `src/actions/importar.ts` | Solo `importarProductos` (mock). Import lista: `POST /api/import-lista-precios` + `importarListaPreciosProveedorSchema`. |
+| `src/actions/importar.ts` | **Eliminado:** mock `importarProductos`. Import vigente: `POST /api/import-lista-precios` + `importarListaPreciosProveedorSchema`. |
 | `prisma/migrations/20260508140000_precios_natural_pk_cod_tienda_cod_ext/migration.sql` | **`prod_precios_tienda`** PK = **`cod_tienda`**; **`prod_precios_provee`** PK = **`cod_ext`**; vínculo **`prod_precios_provee.cod_tienda`**; satélites comparación (`prod_comp_*`) referencian `cod_ext`. |
 | `src/actions/listaPrecios.ts` | `actualizarListaPreciosMasivoAction`: `{ ids, data }` (fila) o `{ filtros, data }` (todos los coincidentes vía `listarListaPreciosFiltradaParaExport`) + `actualizacionMasivaListaPreciosSchema`. **`exportarListaPreciosAction`**: exportación filtrada sin paginación. **`eliminarListaPrecioAction`**: borrado por `cod_ext`. |
 | `src/lib/validations/listaPrecios.ts` | Reexport `listaPreciosCodExtListSchema`; `actualizacionMasivaListaPreciosSchema` con `porcentajeListaPreciosSchema` (0–100, máx. 2 decimales) en `dto_*` y `cxTransporte`; `cotizacionDolar` y `pxListaProveedor` con **`.min(0)`** (0 permitido). **`listaPreciosFiltrosExportSchema`** (lectura/export sin `pagina`). **`vinculado`** opcional en filtros de lectura (vínculo REX). **`eliminarListaPrecioSchema`** (`codExt`). **`crearProductoListaPrecioSchema`** (alta manual: proveedor CUID, código, descripción, px lista, marca opcional). |
 | `prisma/migrations/20260527150000_prod_precios_provee_porcentajes_decimal/migration.sql` | Columnas `dto_*` y `cx_transporte`: **INTEGER → NUMERIC(5,2)**. Antes hay que **`DROP`** la columna generada `px_compra_final_sin_iva` y recrearla con la misma expresión (PostgreSQL no permite `ALTER TYPE` en columnas dependientes). Lecturas en servicios: `Number(prisma.Decimal)`. Si falló el primer intento: `npx prisma migrate resolve --rolled-back 20260527150000_prod_precios_provee_porcentajes_decimal` y luego `migrate deploy`. |
-| `src/components/proveedores/ImportarModal.tsx` | Manejo de respuesta: comprueba `res.ok` y usa `res.data` o `res.error` según corresponda. |
+| `src/components/proveedores/ImportarListaPreciosModal.tsx` | Import vigente de lista; comprueba `res.ok` y usa `res.data` o `res.error`. |
 | **Fase 2 (cierre de auditoría)** | |
 | `src/actions/pedidos.ts` | `getPedidoUrgenteData`: comprobación `getRol()` + `puede(rol, PERMISOS.pedidos.acceso)`; si no hay acceso se devuelve estructura vacía (proveedores mock, productos [], total 0). |
 | `src/actions/stock.ts` | `getControlStock`: … **`getTransfDepositos(origen, destino, params)`**: catálogo + `controlesRecientes` (14 días, par actual). **`listarHistorialTransfDepositosProductoAction`**: historial 14 días por producto (secciones origen→destino). **`registrarControlTransfDepositosAction`**: reservado para export Excel. **`getIndicadorSlidenavAction`**: conteos slidenav (Generar Pedido + filas pendientes TRANSFERIR/RECIBIR). |
 | `src/actions/vinculos.ts` | `vincularProducto` / `desvincularProducto`: `listaPreciosCodTiendaSchema` + `listaPreciosCodExtSchema` (`@/lib/validations/common`). `desvincularProducto` limpia `costo_compra_cod_ext` si apuntaba al `cod_ext` desvinculado; no bloquea por proveedor oficial DUX. |
-| `src/actions/productos.ts` | `editarProducto`: validación con `editarProductoSchema` (id + campos). `aplicarCampoMasivo`: validación con `aplicarCampoMasivoSchema` (proveedorId, campo, valor, q). |
+| `src/actions/productos.ts` | **Eliminado (2026-08):** `editarProducto` / `aplicarCampoMasivo`. Edición masiva vigente: `actualizarListaPreciosMasivoAction`. |
 | `src/actions/comparacionCategorias.ts` | Acciones `ActionResult<T>`; Zod (`comparacionCategorias.ts` + `listaPreciosCodExtSchema`); presentaciones: **`ref_cod_tienda` + `ref_competencia_id`** → `prod_precios_competencia`; costo objetivo solo **`costo_compra_objetivo`** (sin FK legacy `prod_ref_cod_ext`); DTO extra: `listaPrecioProveedorId` validado como `cod_ext`. |
 | `src/lib/validations/common.ts` | Esquemas base: `uuidSchema`, `prismaCuidSchema`, `prismaCuidOrUuidSchema`, `globalSucursalIdSchema`; claves naturales **`listaPreciosCodExtSchema`**, **`listaPreciosCodTiendaSchema`**, **`listaPreciosCodExtListSchema`**. |
-| `src/lib/validations/productos.ts` | Nuevo: `camposEditablesProductoSchema`, `editarProductoSchema`, `campoMasivoSchema`, `aplicarCampoMasivoSchema`. |
+| `src/lib/validations/productos.ts` | **Eliminado (2026-08)** junto con `productos.ts`. |
 | `src/lib/validations/comparacionCategorias.ts` | CRUD + asignación por `listaPreciosCodExtSchema`; presentación → referencia competencia (`asignarReferenciaCompetenciaSchema`); costo objetivo numérico en `updatePresentacionSchema`. |
 | Componentes comparación/stock | `ComparacionCategoriasClient`: uso de `res.data` en `getProductosPorPresentacionAction`. `AsignarProductosModal`: uso de `res.data?.count`. `TablaStock`: manejo de `registrarExportacionExcelStock` con toast en error. |
 | Comp. Por Cat. | Nueva persistencia de `DTO. EXTRA` (0-99 o null) por ítem aislada en tabla `prod_comp_dto_extra` (antes `comparacion_dto_extra_items`), con Action `actualizarDtoExtraComparacionAction` y servicio `getProductosPorPresentacion` que devuelve `dtoExtraComparacion`. |
@@ -1707,7 +1704,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | Área | Cambio |
 |------|--------|
 | `src/actions/tienda.ts` | `getTiendaPageData`, `getProveedoresTintoLts`: `getRol` + `puede`. |
-| `src/actions/importar.ts` | `puede(importar)` + `esEditor` + `importarProductosSchema`. Lista precios: API route (§1.2.8). |
+| `src/actions/importar.ts` | **Eliminado** (mock). Lista precios: API route (§1.2.8). |
 | `src/lib/validations/importar.ts` | Esquemas de mapeo y límites de filas/celdas. |
 | `src/actions/pedidosHistoria.ts` | Mutaciones con `esEditor()`; listado: `proveedorId` normalizado con Zod. |
 | `src/actions/pedidos.ts` | `generarPdfEnviarPedidoSchema`, `upsertPedidoUrgenteItemSchema`. |
@@ -1721,8 +1718,8 @@ Antes de entregar código nuevo o modificado, verificar:
 |------|--------|
 | `src/actions/listaPrecios.ts` | Lecturas: `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)` + `listaPreciosFiltrosLecturaSchema` / opciones estrictas. |
 | `src/lib/validations/listaPrecios.ts` | `listaPreciosOpcionesFiltroSchema`, `listaPreciosFiltrosLecturaSchema`. |
-| `src/actions/proveedores.ts` | `getProveedores` / `getProveedoresPageData`: permiso compuesto (sugeridos \| lista \| importar lista); `editarProveedor` / `eliminarProveedor`: `prismaCuidSchema`; eliminación vía servicio. |
-| `src/lib/validations/proveedores.ts` | `proveedoresPageParamsSchema`. |
+| `src/actions/proveedores.ts` | `getProveedores` / `getProveedoresMercaderia`: permiso compuesto (sugeridos \| lista \| importar lista); `editarProveedor` / `eliminarProveedor`: `prismaCuidSchema`; eliminación vía servicio. |
+| `src/lib/validations/proveedor.ts` | `createProveedorSchema` / `updateProveedorSchema`. |
 | `src/services/proveedor.service.ts` | `deleteProveedor` con `ServiceResult` y errores FK. |
 | `src/lib/validations/common.ts` | `prismaCuidSchema`. |
 | `src/actions/vinculos.ts` | `getVinculos` / `listarProductosParaVincular`: `PERMISOS.tienda.acceso` + Zod. |
@@ -1737,7 +1734,7 @@ Antes de entregar código nuevo o modificado, verificar:
 | `src/actions/stock.ts` | `getControlStock`: Zod params + validación sucursal. |
 | `src/lib/validations/stock.ts` | Nuevo. |
 | `src/actions/comparacionCategorias.ts` | `buscarProductosParaAsignarAction`: Zod en `proveedorId` / `q`. |
-| `src/lib/validations/productos.ts` | `aplicarCampoMasivoSchema.proveedorId` → `cuid`; `editarProductoSchema.id` → string acotado (mock). |
+| `src/lib/validations/productos.ts` | **Eliminado (2026-08)** junto con `productos.ts`. |
 
 ### 5.9 Sucursales habilitadas para Pedido De Mercadería (2026-04-15)
 
@@ -1793,7 +1790,7 @@ Auditoría integral de los **26** Server Actions vigentes en `src/actions/*.ts` 
 | `listaPrecios.ts` | listaPrecios.* | ✓ | ✓ | ✓ | ✅ |
 | `pedidos.ts` | pedidos.acceso | ✓ | ✓ | ✓ | ✅ |
 | `pedidosHistoria.ts` | pedidos.acceso | ✓ (CUIDs) | ✓ | ✓ | ✅ |
-| `productos.ts` (mock) | listaPrecios.acciones.edicionMasiva | ✓ | ✓ | n/a | ✅ |
+| `productos.ts` | **Eliminado (2026-08)** — no reintroducir. Edición masiva: `listaPrecios.ts`. |
 | `productosTienda.ts` | pedidos.acceso | ✓ | ✓ | ✓ | ✅ |
 | `proveedores.ts` | proveedores.* / editor (mutaciones) | ✓ | ✓ | ✓ | ✅ |
 | `reposicion.ts` | pedidos.acceso | ✓ | ✓ | ✓ (parcial) | ✅ |
@@ -1874,7 +1871,7 @@ Sin contenido y sin trazabilidad útil del lado del usuario.
 
 - **`prod_competencia`:** catálogo de competidores — `id`, `nombre`, `web` (referencia, **opcional** / `NULL`), `id_proveedor` (FK opcional → `global_proveedores.id`; si está definido, el sync puede tomar `px_vta_sugerido` de `prod_precios_provee` sin HTTP), `ultima_comparacion_at`, `config_extraccion` (JSON: reglas por tipo de página — selectores CSS, JSON-LD, regex; esquema Zod en `@/lib/competenciaConfigExtraccion.ts`). **Sin** `url_busqueda` (eliminada).
 - **`prod_precios_competencia`:** vínculo **producto tienda × competidor** — PK `(cod_tienda, competencia_id)`; `url_producto` (manual); `tipo_pagina` (slug de regla en `config_extraccion.reglas`); `px_competencia` (último precio); `estado` (`SIN_URL` | `PENDIENTE` | `OK` | `SIN_PRECIO` | `ERROR`); `error_mensaje`; `relevado_at` (último intento de relevamiento). Constantes en `@/lib/competenciaRelevamiento.ts`.
-- **Precio mostrado (lectura / grilla):** misma presentación que el precio por URL. Prioridad en `aplicarPrioridadPrecioMostrar` (`competenciaPxSugerido.service.ts`), aplicada en **`pxListasRows.service.ts`** / **`pxListasPage.service.ts`**: (1) si hay `px_vta_sugerido` del proveedor asociado al competidor para ese `cod_tienda` → se expone como `pxCompetencia` con `estado = OK`; (2) si no → `px_competencia` y `estado` del relevamiento por URL en BD. `prod_precios_competencia.px_competencia` sigue siendo solo el resultado del scraping. **`pxListasRows.service.ts`** resuelve sugeridos con **`listarCompetenciasConPxSugeridoPorCodTiendas`** (todos los proveedores con sugerido por ítem, sin exigir fila previa en `prod_precios_competencia`) y arma `buildMapPxVtaSugerido` con proveedores de **todas** las competencias configuradas, no solo los que ya tienen vínculo URL. **`resolverPreciosCompetenciaMostrar` / `resolverPrecioCompetenciaMostrar`** (mismo SSOT) usan en **Comp. Categorias — Comparacion** para el referente de presentación (`prod_comp_presentaciones.ref_cod_tienda` + `ref_competencia_id`).
+- **Precio mostrado (lectura / grilla):** misma presentación que el precio por URL. Prioridad en `aplicarPrioridadPrecioMostrar` (`competenciaPxSugerido.service.ts`), aplicada en **`pxCompetenciaRows.service.ts`** / **`pxCompetenciaPage.service.ts`**: (1) si hay `px_vta_sugerido` del proveedor asociado al competidor para ese `cod_tienda` → se expone como `pxCompetencia` con `estado = OK`; (2) si no → `px_competencia` y `estado` del relevamiento por URL en BD. `prod_precios_competencia.px_competencia` sigue siendo solo el resultado del scraping. **`pxCompetenciaRows.service.ts`** resuelve sugeridos con **`listarCompetenciasConPxSugeridoPorCodTiendas`** (todos los proveedores con sugerido por ítem, sin exigir fila previa en `prod_precios_competencia`) y arma `buildMapPxVtaSugerido` con proveedores de **todas** las competencias configuradas, no solo los que ya tienen vínculo URL. **`resolverPreciosCompetenciaMostrar` / `resolverPrecioCompetenciaMostrar`** (mismo SSOT) usan en **Comp. Categorias — Comparacion** para el referente de presentación (`prod_comp_presentaciones.ref_cod_tienda` + `ref_competencia_id`).
 - **Sync:** si hay sugerido, no hace HTTP ni pisa `px_competencia` en BD; si no hay sugerido, scraping de `url_producto`. Filas relevables: `url_producto` no nulo **o** sugerido disponible (`whereVinculosRelevablesCompetencia`). `POST` body `{ competenciaId, limiteProductos?, codTienda? }` o `{ todos: true, … }`; cancelación `POST /api/sync-competencia-precios/cancel`.
 - **Guardar URL:** `guardarUrlVinculoCompetenciaAction` → `competenciaVinculo.service.ts` (upsert por `cod_tienda` + `competencia_id`; solo el competidor tocado: si la URL no cambió no se pisa `estado`/`px_competencia`; si cambia la URL → `PENDIENTE` y se limpia precio de ese vínculo; al borrar URL solo ese competidor pasa a `SIN_URL` sin tocar filas de otros).
 
@@ -1888,16 +1885,16 @@ Migraciones: `20260520190000_add_prod_competencia_tables`; `20260523120000_prod_
 ### Server Actions (`src/actions/competenciaPrecios.ts`)
 
 - `listCompetenciasAction`, `createCompetenciaAction`, `updateCompetenciaAction`, `deleteCompetenciaAction`, `guardarUrlVinculoCompetenciaAction`, **`relevarUrlVinculoCompetenciaAction`** (`relevarUrlVinculoSchema`: `{ codTienda, competenciaId }` — un solo vínculo, sin lock de sync masivo), **`relevarUrlsProductoCompetenciaAction`** (`relevarUrlsProductoSchema`: `{ codTienda }` — todos los vínculos relevables del ítem tienda).
-- **Listado grilla competencia:** `getPxListasPageData` en `src/actions/pxListas.ts` (no Action en `competenciaPrecios.ts`).
+- **Listado grilla competencia:** `getPxCompetenciaPageData` en `src/actions/pxCompetencia.ts` (no Action en `competenciaPrecios.ts`).
 - Payloads `unknown` + Zod (`@/lib/validations/competenciaPrecios.ts`). Tras mutaciones, `revalidateCompetenciaPreciosPaths()` (Px Listas).
 
 ### Servicios
 
 - `competencia.service.ts` — CRUD + `normalizeWebUrl` (incluye `idProveedor` opcional).
 - `competenciaPxSugerido.service.ts` — `obtenerPxVtaSugeridoParaCompetencia`, **`obtenerPxVtaSugeridoPorCompetenciaId`** (resuelve `id_proveedor` del competidor y delega), `whereVinculosRelevablesCompetencia`, `countVinculosRelevablesCompetencia`, `resolverPreciosCompetenciaMostrar`.
-- **`pxListasPage.service.ts`** + **`pxListasRows.service.ts`** — listado paginado Px Listas (`PAGE_SIZE`) con vínculos por competidor por fila. Filtros: `getPxListasPageParamsSchema` + `@/lib/pxListasFiltros` (`filtroPxPromedio` en memoria). Agregados promedio/mín/máx vía `competenciaPreciosFilaResumen.ts`.
+- **`pxCompetenciaPage.service.ts`** + **`pxCompetenciaRows.service.ts`** — listado paginado **Px Competencia** (`PAGE_SIZE`) con vínculos por competidor por fila. Filtros: `getPxCompetenciaPageParamsSchema` + `@/lib/pxCompetenciaFiltros` (`filtroPxPromedio` en memoria). Agregados promedio/mín/máx vía `competenciaPreciosFilaResumen.ts`.
 - `competenciaPrecioScraping.service.ts` — `fetch` HTML; extracción por regla del competidor (`config_extraccion` + `tipo_pagina` del vínculo): JSON-LD, selectores CSS (`.clase`, `#id`, `[id^="prefijo-"]`, `[itemprop="price"]`), regex custom; `expandirSelectoresPrecio` en `@/lib/competenciaConfigExtraccion.ts` duplica `#id-1234` → también `[id^="id-"]` para IDs distintos por producto; heurística genérica solo si no hay regla o como último método. Tras capturar texto, **`parsePrecioArgentino`** (`@/lib/parsePrecioArgentino.ts`) normaliza a **entero en pesos** (sin centavos): punto como **miles** (`179.129` → `179129`), coma como decimales opcionales (`1.234.567,89` → `1234567`). Aplica a regex, CSS y JSON-LD por igual.
-- `syncCompetenciaPrecios.service.ts` — relevamiento por par producto×competidor (sugerido proveedor o scraping); devuelve también `desdeSugerido`; progreso vía callback. **`relevarVinculoCompetenciaUnico`** — mismo criterio para un solo `{ codTienda, competenciaId }` (usado desde **Asociar URLs**). **`relevarVinculosPorCodTienda`** — itera competidores con vínculo relevable para ese `codTienda` (usado desde columna ACCIONES en **Px Listas**).
+- `syncCompetenciaPrecios.service.ts` — relevamiento por par producto×competidor (sugerido proveedor o scraping); devuelve también `desdeSugerido`; progreso vía callback. **`relevarVinculoCompetenciaUnico`** — mismo criterio para un solo `{ codTienda, competenciaId }` (usado desde **Asociar URLs**). **`relevarVinculosPorCodTienda`** — itera competidores con vínculo relevable para ese `codTienda` (usado desde columna ACCIONES en **Px Competencia**).
 
 ### API Routes
 
@@ -1917,8 +1914,8 @@ La UI de configuración de competidores **debe** permitir asignar `idProveedor` 
 | `listCompetenciasAction` | `idProveedor` | `string \| null` | En cada ítem de `CompetenciaParaCliente` |
 | `createCompetenciaAction` | `idProveedor` | `string \| null` opcional | Zod: `prismaCuidSchema`, `""` o `null` → `null` |
 | `updateCompetenciaAction` | `idProveedor` | idem | Mismo esquema que create + `id` competidor |
-| `getPxListasPageData` / ítems grilla | `vinculosPorCompetencia[*].pxCompetencia` | `number \| null` | **Ya resuelto en servidor:** si el competidor tiene `idProveedor` y existe `prod_precios_provee.px_vta_sugerido` para ese `cod_tienda`, el listado devuelve ese precio con `estado = OK`; si no, precio/estado del scraping (`px_competencia` en BD) |
-| `getPxListasPageData` / ítems grilla | `vinculosPorCompetencia[*].urlBloqueadaPorPxSugerido` | `boolean` | `true` cuando aplica el sugerido anterior; la UI bloquea URL en **Asociar URLs**; `guardarUrlVinculoCompetencia` rechaza alta/edición de URL en ese caso |
+| `getPxCompetenciaPageData` / ítems grilla | `vinculosPorCompetencia[*].pxCompetencia` | `number \| null` | **Ya resuelto en servidor:** si el competidor tiene `idProveedor` y existe `prod_precios_provee.px_vta_sugerido` para ese `cod_tienda`, el listado devuelve ese precio con `estado = OK`; si no, precio/estado del scraping (`px_competencia` en BD) |
+| `getPxCompetenciaPageData` / ítems grilla | `vinculosPorCompetencia[*].urlBloqueadaPorPxSugerido` | `boolean` | `true` cuando aplica el sugerido anterior; la UI bloquea URL en **Asociar URLs**; `guardarUrlVinculoCompetencia` rechaza alta/edición de URL en ese caso |
 
 **Catálogo de proveedores para el selector:** reutilizar `getProveedoresMercaderia` (`src/actions/proveedores.ts`; solo `proveedor_mercaderia = true`) con el gate de permisos existente; el valor guardado es `Proveedor.id` (CUID), no `id_proveedor_dux`.
 
@@ -1928,9 +1925,11 @@ La UI de configuración de competidores **debe** permitir asignar `idProveedor` 
 
 *Última actualización (2026-05-28): **Retiro comparación tienda↔competencia** — migración **`20260528210000`**: DROP `px_lista_cx_px`, `cx_px_px_comp_ref` (y temporalmente `es_producto_propio`, reintroducida en Cx Compra). **`costo_compra_cod_ext`** y **CX PROD.** en **Cx Compra**.*
 
-*Última actualización (2026-05-28): **Px Listas** — `getPxListasPageData` en `src/actions/pxListas.ts`; URL canónica `/gestion-productos/tienda/cx-px-tienda`; permiso `PERMISOS.cxPxTienda.acceso`.*
+*Última actualización (2026-05-28): **Px Listas** — `getPxCompetenciaPageData` en `src/actions/pxCompetencia.ts`; URL canónica `/gestion-productos/tienda/cx-px-tienda`; permiso `PERMISOS.cxPxTienda.acceso`.*
 
-*Última actualización (2026-05-30): **Unificación Px Competencia → Px Listas** — grilla con PX PROMEDIO, DIF TIENDA, detalle y URLs; `getPxListasPageData` incluye `competencias`; `/gestion-productos/precios-competencia` redirige a Px Listas. Scraping desde **`PxListasPageClient`** (`SincronizarCompetenciaModal` → `POST /api/sync-competencia-precios`; permiso `competenciaPrecios.editar`).*
+*Última actualización (2026-05-30): **Unificación Px Competencia → Px Listas** — grilla con PX PROMEDIO, DIF TIENDA, detalle y URLs; `getPxCompetenciaPageData` incluye `competencias`; `/gestion-productos/precios-competencia` redirige a Px Competencia. Scraping desde **`PxCompetenciaPageClient`** (`SincronizarCompetenciaModal` → `POST /api/sync-competencia-precios`; permiso `competenciaPrecios.editar`).*
+
+*Última actualización (2026-08-14): **Naming Px Competencia vs Px Listas** — competencia: `src/actions/pxCompetencia.ts`, `pxCompetenciaPage.service.ts` / `pxCompetenciaRows.service.ts`, UI `src/components/px-competencia/`. **Px Listas** (DUX) permanece en `pxListasPrecios*` / `px-listas-precios/`. URL `/tienda/cx-px` sin cambios. Eliminados `productos.ts` / `productoProveedoresPage.ts` (§1.2.4).*
 
 ### PDF matriz → Excel y REX (`prod_precios_rex`)
 

@@ -3,7 +3,7 @@
 ## Uso obligatorio para IA
 
 Al **crear o modificar código frontend** (componentes, páginas, estilos):
-1. **Lee y aplica** las **secciones relevantes** de **`docs/FRONTEND_GUIDELINES.md`** (no el archivo completo).
+1. **Lee y aplica** las **secciones relevantes** de **`docs/FRONTEND_GUIDELINES.md`** (tabla “Qué estás haciendo” al inicio; no el archivo completo).
 2. Usa la sección "Guía para IA" como checklist: estilos con tokens y `cn()`, filtros con `useFiltrosConBusqueda` + `FiltroBusquedaInput`, tablas con `Table` de `@/components/ui/table`, etc.
 3. Antes de dar por terminada una tarea, verifica el **Checklist de PR** en `docs/FRONTEND_GUIDELINES.md` (sección 4) y actualiza la guía si introduces nuevas clases globales o patrones.
 
@@ -86,4 +86,4 @@ No inventes convenciones de estilos ni estructuras que no estén documentadas en
 
 - Es obligatorio actualizar `docs/BACKEND_GUIDELINES.md` tras cada cambio en el esquema o creacion de un nuevo servicio.
 - Debes documentar los modelos de datos, las relaciones y las funciones del servicio para que cualquier IA pueda realizar consultas o modificaciones sin romper la integridad referencial.
-- **Balance mensual** (`/finanzas/balance/mensual`) y **`fin_bal_vtas`**: fuente de verdad en **`docs/BACKEND_GUIDELINES.md` §2.5f**; UI, colores de informe y grid en **`docs/FRONTEND_GUIDELINES.md`** (subsección **Balance mensual** bajo `ClassicFilteredTableLayout`).
+- **Balance mensual** (`/finanzas/balance/mensual`) y **`fin_bal_vtas`**: fuente de verdad en **`docs/BACKEND_GUIDELINES.md` §2.5f**; UI, colores de informe y grid en **`docs/FRONTEND_GUIDELINES.md` §3 Finanzas**.

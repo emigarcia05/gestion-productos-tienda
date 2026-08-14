@@ -1,5 +1,5 @@
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
-import type { OpcionCompetenciaPxLista } from "@/lib/pxListas";
+import type { OpcionPxCompetencia } from "@/lib/pxCompetencia";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
 
@@ -42,9 +42,9 @@ const VINCULO_VACIO: DatoVinculoCompetenciaCliente = {
 };
 
 /** Alinea vínculos con `opcionesCompetencia` (DET PRECIO) para promedio y detalle. */
-export function fusionarVinculosConOpcionesPxListas(
+export function fusionarVinculosConOpcionesPxCompetencia(
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
-  opciones: OpcionCompetenciaPxLista[]
+  opciones: OpcionPxCompetencia[]
 ): Record<string, DatoVinculoCompetenciaCliente> {
   const out = { ...vinculosPorCompetencia };
   for (const op of opciones) {
@@ -87,12 +87,12 @@ function listarCompetidoresConPrecioOk(
  * Px Listas: incluye precios de vínculos y de `opcionesCompetencia` (p. ej. sugerido sin fila PPC).
  */
 function listarCompetidoresConPrecioPxListas(
-  opciones: OpcionCompetenciaPxLista[],
+  opciones: OpcionPxCompetencia[],
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
   competencias: CompetenciaParaCliente[],
   pxListaTienda: number
 ): CompetidorPrecioFila[] {
-  const vinculos = fusionarVinculosConOpcionesPxListas(vinculosPorCompetencia, opciones);
+  const vinculos = fusionarVinculosConOpcionesPxCompetencia(vinculosPorCompetencia, opciones);
   const desdeVinculos = listarCompetidoresConPrecioOk(
     vinculos,
     competencias,
@@ -158,13 +158,13 @@ export type ResumenPreciosPxListas = ResumenPreciosCompetenciaFila & {
 };
 
 /** Promedio / DIF TIENDA / detalle expandido para Px Listas (incluye precios sugeridos). */
-export function calcularResumenPreciosPxListas(
-  opciones: OpcionCompetenciaPxLista[],
+export function calcularResumenPreciosPxCompetencia(
+  opciones: OpcionPxCompetencia[],
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
   competencias: CompetenciaParaCliente[],
   pxListaTienda: number
 ): ResumenPreciosPxListas {
-  const vinculos = fusionarVinculosConOpcionesPxListas(vinculosPorCompetencia, opciones);
+  const vinculos = fusionarVinculosConOpcionesPxCompetencia(vinculosPorCompetencia, opciones);
   const competidoresOrdenados = listarCompetidoresConPrecioPxListas(
     opciones,
     vinculos,

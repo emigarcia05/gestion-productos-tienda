@@ -5,7 +5,7 @@ Crear y modificar UI (páginas, componentes, estilos) con máxima consistencia v
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
 1. docs/README.md
-2. docs/FRONTEND_GUIDELINES.md — sección del módulo tocado + "Guía para IA" + Checklist de PR (§4) + catálogo de clases globales y componentes shared si aplica.
+2. docs/FRONTEND_GUIDELINES.md — **tabla “Qué estás haciendo”** + Guía para IA + sección del patrón/módulo + Checklist PR (§4).
 3. Si la UI depende de un contrato de datos o regla de dominio ya documentada, consultar solo el § necesario en docs/BACKEND_GUIDELINES.md (no reimplementar lógica de negocio en el cliente).
 4. Módulo IA Diseño / Asistente IA: docs/AGENTEIA_GUIDELINES.md.
 
@@ -28,8 +28,7 @@ PROHIBIDO
 
 CIERRE DOCUMENTAL (obligatorio)
 Si creas o ajustas un patrón, clase global, componente shared o comportamiento de UI de un módulo:
-→ actualizar docs/FRONTEND_GUIDELINES.md en la sección correspondiente.
-Si el módulo tiene hallazgos/auditoría, reflejarlo en §5 cuando corresponda.
+→ actualizar docs/FRONTEND_GUIDELINES.md (§1–2 patrones/catálogo, §3 módulo).
 La UI no se considera terminada sin la guía al día.
 
 REGLA TRANSVERSAL

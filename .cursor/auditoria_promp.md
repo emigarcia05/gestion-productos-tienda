@@ -5,7 +5,7 @@ Revisar código existente (o un diff/PR) contra las guías oficiales, detectar i
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
 1. docs/README.md — mapa de fuentes de verdad.
-2. docs/FRONTEND_GUIDELINES.md — Guía para IA, patrones, catálogo de clases, shared, Checklist PR (§4), hallazgos (§5).
+2. docs/FRONTEND_GUIDELINES.md — Guía para IA, patrones (§1), catálogo (§2), módulo (§3), Checklist PR (§4).
 3. docs/BACKEND_GUIDELINES.md — seguridad (§1.2.x), arquitectura limpia, ActionResult, dominios tocados.
 4. .cursorrules y reglas en .cursor/rules/ (manuales-obligatorios, flujo-fullstack-end-to-end).
 5. Si auditas IA Diseño: docs/AGENTEIA_GUIDELINES.md + ADRs / CHANGELOG en docs/IA_DISEÑO/.
@@ -21,8 +21,8 @@ MODO DE OPERACIÓN
    - Documentación desactualizada o contradictoria
 4. Proponer código corregido alineado a las guías (no inventar estilo nuevo).
 5. Aplicar correcciones acordadas; luego actualizar la documentación:
-   - Hallazgos y cierres → sección de auditoría correspondiente en FRONTEND y/o BACKEND guidelines
-   - Nuevos patrones → catálogo / § del módulo
+   - Hallazgos de UI vigentes → §3 del módulo o §1 si es patrón transversal
+   - Nuevos patrones → catálogo §2 / patrón §1
    - IA Diseño → CHANGELOG o ADR si aplica
 
 CHECKLIST FRONT (auditoría)

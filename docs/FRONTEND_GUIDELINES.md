@@ -1,954 +1,279 @@
-# Guía de Frontend — Convenciones vigentes
+# Guía de Frontend — vigente
 
-Fuente de verdad de la UI. Actualizar este documento cuando cambie un patrón, clase global o comportamiento de módulo — no como changelog histórico. Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/ui**, **Geist**, **lucide-react**, **sonner**.
+Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/ui**, **Geist**, **lucide-react**, **sonner**. Desktop-only. Tokens del tema + `cn()` de `@/lib/utils`.
 
-**Entrada por defecto (`/`):** hub vacío (sin datos en el panel central). El contenido aparece solo al elegir una **ruta hoja** en el sidenav. Al cambiar de macro-área (`MAIN_APP_AREAS`): **Vendedor** → `/`, **Administración** → `/finanzas`, **Marketing** → `/marketing` (también hubs vacíos; sin redirect automático a Tesorería/Calendario/Px Sugeridos).
+**No leas este archivo entero.** Usá la tabla de abajo y saltá a la sección del patrón o módulo que estás tocando.
 
----
+| Qué estás haciendo | Leer |
+|--------------------|------|
+| Cualquier UI nueva o cambio visual | **Guía para IA** + **§4 Checklist** |
+| Página con tabla/filtros | **§1.1–1.3** |
+| Modal | **§1.4** + `AppModal` / `ModalTablaConFiltros` en **§2.3** |
+| Finder (columnas de catálogo) | **§1.5** |
+| Sidebar / áreas / URLs | **§1.6–1.7** |
+| Clase CSS o constante de estilo | **§2** |
+| Comportamiento de una pantalla concreta | **§3** (solo esa subsección) |
+| IA Diseño / Asistente IA | `docs/AGENTEIA_GUIDELINES.md` |
 
-## Guía para IA (crear o modificar código frontend)
-
-**Cuando crees o modifiques cualquier código frontend en este proyecto, usa este documento como referencia.** No lo leas entero: localizá la sección del patrón o módulo que estás tocando (Guía para IA §1–4, catálogo de clases, o la subsección del área en § layouts/páginas). Antes de proponer o escribir código:
-
-1. **Consultar esta guía (sección relevante)**  
-   Aplica los patrones existentes; no inventes estilos ni estructuras nuevas que rompan la convención.
-
-2. **Estilos**  
-   - **Nunca** uses `bg-white`, `text-slate-*`, `bg-slate-*`, `border-slate-*`. Usa **siempre** tokens: `bg-card`, `text-foreground`, `text-muted-foreground`, `bg-muted`, `border-border`, `bg-primary`, etc.  
-   - **No** uses utilidades de paleta genérica (`emerald-*`, `amber-*`, `blue-*`, etc.) para éxito, advertencia o resaltados: usá **`@/lib/ui-classes`** (`BADGE_SUCCESS_TINT_CLASS`, `TEXT_SUCCESS_CLASS`, `TEXT_WARNING_CLASS`, `ICON_WARNING_INTERACTIVE_CLASS`, **`CALLOUT_WARNING_CLASS`**, `IMPORT_STAT_BADGE_CLASSES`) o tokens **`primary`**, **`accent`**, **`accent2`** (amarillo de marca) en combinación con `cn()`.  
-   - **Banners y avisos no destructivos:** usar **`CALLOUT_WARNING_CLASS`** en `<p>` / `<div>` de aviso (Balance mensual, configuraciones faltantes, etc.). Está prohibido el patrón `border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100` o cualquier combinación de `*-amber-*` (incluido `dark:`).  
-   - **Nunca duplicar utilidades por eje** dentro de la misma `className` (`px-2 px-3`, `min-w-[40rem] min-w-[44rem]`, `text-sm text-base`, `gap-2 gap-4`, `flex-col` + `flex-row`, `grid-cols-1` + `grid-cols-2`, `text-center` + `text-left`, `w-full` + `w-auto` en el mismo nodo salvo override intencional vía `cn()`). Mantener **una sola** utilidad por eje. Padding de página: **`ClassicFilteredTableLayout`** `density` `default` → `px-8`, `compact` → `px-6`. No encadenar `px-4 px-6 px-8`.  
-   - **Cascarón de página de área:** páginas y `*PageClient` que ocupan toda la pantalla deben usar la clase global **`.area-page-shell`** (opcional **`bg-gris`** si el módulo lo requiere) en lugar de duplicar `flex h-screen … flex-col overflow-hidden` o `flex h-screen min-h-0 flex-col overflow-hidden`. **No** combinar `.area-page-shell` con esas utilidades: la clase global ya las incluye en `globals.css`.  
-   - **Política desktop-only (obligatoria):** no usar variantes responsive/mobile en clases Tailwind (`sm:`, `md:`, `lg:`, `xl:`, `2xl:`, `max-*`, etc.). Definir solo clases base (desktop) y mantener una única versión visual.
-   - **Excepción acordada**: la pantalla **Balance mensual** (`FinanzasBalanceMensualPageClient`) usa **hex fijos de informe** en el encabezado de la grilla (`#0072BB` + texto blanco) y en las filas de **resultado operativo / resultado ejercicio** (fondo `#a9d6f1`, texto `#063652`). No extrapolar este patrón a otras pantallas sin actualizar esta guía. Detalle en la subsección **Balance mensual** bajo `ClassicFilteredTableLayout`. **Ventas Mensuales** (`FinBalVtasPageClient`, `/finanzas/balance/vtas`): barra **`FilterBar`** + **`FilaFiltrosDesplegables`** (5 columnas: **MES**, **AÑO**, **SUCURSAL**, slot **`col-span-2`** con contador **REGISTRO(S)** + **`LimpiarFiltrosButton`**); cada desplegable en **`FiltroIndividualContainer`** (`input-filtro-unificado`, `select-content-filtro`, máscara **MAYÚSCULAS** en opción “todos” y meses); sin etiquetas fuera del trigger; la **carga** de datos va en **`CrearFinBalVtasModal`** (botón **Nueva Carga** en `actions`), no en la barra de filtros. En modo editor, **Eliminar** por fila: botón ícono **`Trash2`** con **`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`**, `aria-label` descriptivo.  
-   - **Siempre** combina clases con `cn()` de `@/lib/utils.ts`. **No** uses template literals en `className` (ej. `` className={`${x} ...`} ``), incluyendo el `body` de `layout.tsx`.  
-   - **`AppModal`** (`size`): el CVA ya aplica `max-w-md` … `max-w-3xl`. **No** repetir el mismo `max-w-*` en `className` salvo un ancho distinto al del `size` (ej. `max-w-[66rem]` en recepción).
-   - **Etiquetas de campo en modales (global):** todo **label** de input, **Select**, fecha, etc. dentro de **`AppModal`**, **`.modal-app`** o **`[data-slot="dialog-content"]`** debe verse en **negro** (`var(--foreground)` / `text-foreground`), **no** `text-muted-foreground`. **`globals.css`** fuerza `color: var(--modal-field-label-color)` en `label`, `[data-slot="label"]`, **`.modal-field-label`**, **`.modal-micro-label`** y **`dt`** de formularios en el cuerpo del modal. Constante: **`MODAL_MICRO_LABEL_CLASS`** (`@/lib/ui-classes`); preferir **`ModalMicroLabel`**. Texto auxiliar (ayudas, vacíos, contadores) puede seguir **`text-muted-foreground`**.
-   - **Micro-etiquetas en modales densos:** usar **`ModalMicroLabel`** (ya incluye color foreground), no repetir la cadena legacy en `<span>` sueltos.
-   - **`DialogHeader` / `DialogFooter`** (`components/ui/dialog.tsx`): una sola alineación y una sola dirección de flex por eje (sin `text-center` + `text-left` ni `flex-col-reverse` + `flex-row` duplicados).
-   - Ejemplo correcto: `className={cn("flex gap-2", isActive && "bg-primary/10")}`.
-  - **Tarjeta envoltorio de tabla**: cuando la grilla principal vaya dentro de un `Card` (ej. Comp. Proveedores, `/pedidos/enviar`), usar clase global **`card-tabla-envoltorio`** en el **`Card`** de shadcn; la sombra sale de **`--card-tabla-envoltorio-shadow`** en **`globals.css`**. Si la card debe crecer en un flex column (p. ej. proveedores), usar **`className={cn("card-tabla-envoltorio", "flex-1")}`**. En páginas que no usan `Card` (ej. Pedido Urgente / Tintométrico), aplicar directamente `.contenedor-tabla-gestion` como en Comp. Proveedores. **No** repetir utilidades largas ni **`shadow-[0_4px_12px_rgba(0,0,0,0.05)]`** (valor mágico duplicado).
-
-3. **Texto en mayúscula inicial (title case)**  
-   - **Títulos de modales** y **textos de botones**: cada palabra con primera letra en mayúscula. Ejemplos: "Importar Lista De Precios", "Nueva Importación".  
-   - **Sidebar**: nombre del **módulo** en MAYÚSCULAS (ej. "MERCADERÍA", "PRECIOS"). Nombre del **submódulo** o **agrupador desplegable** dentro de un módulo: title case (ej. "Lista Precios", "Lista Proveedores", "Cx Compra", "Pedido Urgente", "Px. Vta. Sugerido").  
-   - Encabezados de página (`SectionHeader` / `ClassicPageHeader`): **módulo** MAYÚSCULAS; **submódulo 1** MAYÚSCULAS + negrita; **submódulo 2** Title Case + negrita (vía CSS `.section-header__*`). Los props pueden seguir en Title Case; el CSS aplica el transform. Aplicar Title Case también a `title`/`aria-label` de botones y modales.
-4. **Abreviaciones con punto**  
-   - Toda abreviatura en la UI (encabezados, labels, placeholders, tooltips, nombres de archivo generados) debe terminar en punto. Ejemplos: Px., Cx., Dto., Desc., Cant., Prov., Cod., Cód., Sug., Disp., Ext., Transp., Finan., Vta., Comp., Cat., Últ., Mín., Act.
-5. **Mayúsculas en filtros y tablas**  
-   - **Filtros**: contador de resultados (ej. "X PRODUCTO(S)", "X ÍTEM(S)"), `aria-label` del FilterBar ("FILTROS DE BÚSQUEDA") y placeholders de búsqueda en mayúsculas (ej. "BUSCAR POR DESCRIPCIÓN O CÓDIGO...").  
-   - **Opciones de filtros desplegables**: placeholders de Select (PROVEEDOR, MARCA, RUBRO, etc.) y opciones por defecto (PROVEEDORES, TODAS, SELECCIONAR, etc.) en MAYÚSCULAS.  
-  - **Encabezados de tablas**: todo el texto de `<TableHead>` en **MAYÚSCULAS y negrita** (`font-bold` en el componente; refuerzo en `globals.css` en `.tabla-gestion-compacta thead th` con `font-weight: var(--font-weight-bold)`). Ej.: PROVEEDOR, DESCRIPCIÓN, CANT. PRODUCTOS. Las abreviaciones en mayúsculas también llevan punto (PX., CX., DTO., etc.). **No** añadir `font-normal` ni `font-medium` en `className` de `TableHead` salvo excepción documentada (anularía la regla).
-  - **Columnas de selección** (checkbox/tilde): el encabezado debe ser una **tilde** (ícono `Check`), no texto alternativo como “SELECCIÓN”.
-6. **Nueva página con filtros y tabla**  
-   - Estructura: `SectionHeader` o `ClassicPageHeader` → `FilterBar` (con `filtros-contenedor-tienda bg-card`) → contenido (tabla con `<Table variant="compact">`).  
-   - **Fila 1 de desplegables:** `FilaFiltrosDesplegables` con **5 columnas por defecto** (tamaño fijo estándar). Si la fila tiene **exactamente 6** listas desplegables juntas, usar **`columnas={6}`** (`.fila-filtros-6`). Con 5 o menos: no cambiar (default o `columnas={4}` según layout).  
-   - Si la página tiene **input de búsqueda con debounce**: usa el hook `useFiltrosConBusqueda` y el componente `FiltroBusquedaInput` (ver sección 1, punto 3). No reimplementes debounce ni restauración de foco.  
-   - Selects de filtros: `FILTER_SELECT_WRAPPER_CLASS`, `SELECT_TRIGGER_FILTER_CLASS`, `SelectContent` con `position="popper" side="bottom" align="start" className="select-content-filtro"`. El buscador **BUSCAR...** viene **incluido** en `SelectContent` (no agregarlo a mano en cada call site). 
-   - Contador de resultados: `cn(FILTER_COUNT_CLASS, "ml-auto")` si va alineado a la derecha; texto del contador en MAYÚSCULAS (PRODUCTO(S), ÍTEM(S), etc.).
-
-7. **Nuevo modal con tabla**  
-   - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección). Para modales genéricos: `AppModal` de `@/components/shared/AppModal.tsx` con cuerpo `bg-card`.
-   - **Botones en modales (obligatorio):** siempre `Button` de `@/components/ui/button`. **Prohibido** `<button>` con utilidades sueltas (`bg-muted/60`, `px-3 py-1.5 rounded-lg`, etc.). CTA principal (adjuntar archivo, confirmar, ítem de lista accionable): `variant="default"` (primary azul, texto blanco). Cancelar / secundario: `variant="outline"`. Pares **SÍ / NO**: **`ModalSiNoChoice`** (`@/components/shared/ModalSiNoChoice.tsx`) — opción activa `default`, inactiva `outline`. Modos o pestañas en el cuerpo: fila de `Button` `size="sm"` con la misma regla activo/inactivo. Excepciones documentadas: celdas de calendario, checkboxes de tabla, disparadores de tooltip, barras de gráfico interactivas.
-   - **Etiquetas de campo:** `<label>`, `<Label>` (`data-slot="label"`), **`ModalMicroLabel`** o **`MODAL_MICRO_LABEL_CLASS`** — color **`text-foreground`** (regla global en **`globals.css`**; ver punto 2 de la Guía para IA).
-   - Micro-etiquetas de campo en modales densos: **`ModalMicroLabel`** (`@/components/shared/ModalMicroLabel.tsx`, CVA `align`).
-   - `AppModal` (wrapper estándar) expone variantes con **CVA** para evitar duplicación de clases:
-    - `size`: `"sm" | "md" | "lg" | "xl"` (default `"md"` = `max-w-lg`).
-     - `padding`: `"sm" | "default" | "lg"` (default `"default"`).
-     - `scrollBody`: `boolean` (default `true`) controla el overflow del cuerpo sin reescribir clases.
-     - `hideBodyScrollbars`: `boolean` (default `false`) — con `scrollBody`, oculta barras del área gris (`.app-modal__scroll-area`) y de la card (`.app-modal__body`); ver `globals.css`.
-    - `bodyShellClassName`: `string?` — se combina con el `div` gris que envuelve la card (`p-4` por defecto). Ej. `p-2` en modales compactos.
-   - Cuando el modal tiene una **tabla + bloque inferior fijo** (ej. resúmenes como `TOTAL PEDIDO`), el contenedor de tabla debe consumir el espacio con `flex-1 min-h-0` y **no** debe forzarse con `h-0` u otros height absolutos. Además, como `.contenedor-tabla-gestion` tiene `height: 100%` en `globals.css`, si la cascada lo impide, sobrescribir de forma garantizada con `style={{ height: "auto" }}` (y aplicar `min-h-0 overflow-hidden` en el wrapper inmediato) evita solapes/recortes y deja el scroll exclusivamente en la tabla.
-   - Si necesitás alinear un bloque inferior con las mismas columnas de la tabla, **no** usar `grid-cols` con porcentajes que superen 100%. Usar `fr` proporcionales que sumen el mismo total que la tabla, o preferir **`TableFooter` (`<tfoot>`) dentro del mismo `<Table>`** con `colSpan` en las columnas previas.
-   - **`PedidoHistoriaDetalleModal` (Recepcion Pedido):** no duplicar el spec en esta checklist. Usa **`AppModal`** `size="xl"` + `className="max-w-[66rem] h-[95vh] max-h-[95vh]"` (desktop-only). Scroll vertical solo en la tabla; pie **TOTAL PEDIDO** fuera del scroll (`<section aria-label="Totales del pedido">` + grid `5fr_55fr_10fr_15fr_15fr`). Comportamiento vigente: subsección **`PedidoHistoriaDetalleModal`**.
-
-8. **Tablas (encabezado fijo + paginación)**  
-   - **Un solo diseño** para toda la app (referencia: **Lista Px Proveedores** / `ListaPreciosTablaConFiltros`). Siempre usar `Table` de `@/components/ui/table`; aplica la clase `.tabla-gestion-compacta`. La prop `variant="compact"` se acepta por compatibilidad pero **no cambia el look**: no introducir una segunda variante visual. No usar `<table>` en crudo ni otras clases de tabla, salvo excepciones documentadas: **`TablaGastos`** (totales en tarjetas), **`PrintStock`** (HTML de impresión) y el panel de series de **`GraficoMcVsPorcUtilidad`** (checklist del gráfico, no grilla de módulo). Encabezados (`TableHead`) en **MAYÚSCULAS y negrita**. Celdas de datos con **`.celda-datos`**; **no** sobrescribir `py-*` / `px-*` ni altura en filas de datos (el diseño global manda: **`--tabla-body-row-min-height: 2rem`** en todas las tablas).
-  - **Altura de encabezado (obligatorio y global):** todos los `th` de tablas con `.tabla-gestion-compacta` deben usar **siempre** la misma altura fija definida en `globals.css` (`--tabla-thead-height = 2.125rem`), valor tomado de la tabla de **Comp. Proveedores**. Este alto corresponde a **2 líneas** de texto y se aplica aunque una tabla tenga títulos de una sola línea; no se permite altura dinámica por tabla.
-   - **Pie de totales fijo** (patrón `contenedor-tabla-gestion--pie-fijo`): en scroll, `scrollbar-gutter: stable` (`globals.css`). **Tesorería** y **Balance · Gastos** bajan los totales con **`.finanzas-resumen-tarjeta`** (borde #0072bb, contenido centrado) bajo el área con scroll, **sin** segunda `<table>` de pie. **`TablaGastos`:** `<table>` en crudo, totales en tarjetas **MONTO** / **PAGADO** / **PENDIENTE**; **`TablaTesoreriaCajas`:** `Table` de shadcn, pie en **`.finanzas-resumen-tarjeta`**: fila **tipo de valor** (**EFECTIVO**, **DIGITAL**, **CHEQUE**) y fila **disponibilidad** (**INMEDIATO**, **DIFERIDO**; cheques repartidos como `montoDisponible` / `montoChequesDiferidos`).
-   - **Encabezado fijo (obligatorio)**: el encabezado de la tabla debe estar fijo y **no moverse con el scroll**. `TableHeader` (`<thead>`) usa **`sticky top-0 z-20`** y **`bg-primary`** (fondo opaco); `TableHead` (`<th>`) añade **`sticky top-0 z-20`**. **`globals.css`** (`.tabla-gestion-compacta thead th`) refuerza **`position: sticky`**, **`top: 0`** y **`z-index: 20`**. **Crítico:** el wrapper **`data-slot="table-container"`** del componente **`Table` no debe llevar **`overflow-y-auto`** ni **`overflow-x-hidden`/`auto`**: en CSS, si un eje de overflow no es `visible`, el otro pasa a comportarse como `auto` y ese nodo se convierte en scrollport intermedio; al crecer con la tabla, el sticky del `<thead>` deja de anclarse al contenedor que el usuario desplaza. El scroll vertical (y el horizontal, si aplica) debe estar **solo** en un ancestro (p. ej. **`.contenedor-tabla-gestion`** o un **`div`** con **`overflow-y-auto`** en modales). Iconos en cabecera sobre **`bg-primary`**: **`text-primary-foreground`** (no **`text-foreground`**).  
-  - **Botón en `TableHead` (tilde/selección total):** si un encabezado incluye un `button`, ese botón debe adaptarse al alto fijo del `th` y **no** heredar dimensiones globales de `main button` (`h-10`, `py`, etc.). La normalización vive en `globals.css` (`.tabla-gestion-compacta thead th button`) para mantener una altura uniforme del encabezado entre módulos.
-  - **Botones de solo ícono en celdas de tabla (`tbody`) — prohibición y formato obligatorio:** está **prohibido** usar `<Button variant="outline" size="icon-xs">` (o `icon-sm` / `icon` con `outline`) para acciones por fila que generen apariencia **neutra tipo documento** (`border`, `bg-background`, `shadow-xs`, hover `accent`). **Obligatorio:** fondo **`#0072BB`**, **ícono** (o texto mínimo **+** / **−**) en **blanco** (`text-white`), hover **`bg-[#0072BB]/90`**. Patrón: `variant="ghost"` + `size="icon"` + **`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`** + contenedor **`TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS`** (**`p-1.5`**). **`globals.css`** fuerza el cuadrado a **`calc(var(--tabla-body-row-min-height) - 0.75rem)`** con **`padding: 0.125rem`** para que **`size-9`** del `Button` **no** estire la fila por encima de **2rem**. Ícono: **`TABLE_ROW_ACTION_ICON_CLASS`**. Celda: **`.celda-datos--accion-relleno-fila`**. Si en la misma fila hay un **`Input`** entre **+**/**−**, dar al input **`self-center`**. **No** extrapolar a botones con **texto visible** de CTA en cabeceras, pies de modal o barras de herramientas: esos siguen `default` / `outline` / `secondary` del tema cuando corresponda.
-   - **Paginación estándar**: todas las tablas de la app muestran **100 ítems por página** (`PAGE_SIZE` en `@/lib/pagination`). Cuando el total de filas supera 100, se muestran controles de paginación debajo de la tabla.  
-   - **Pedido Urgente** (`TablaPedidoUrgente`): **sin** columna **VINC.** (el vínculo a tienda/Dux se refleja solo en los **subencabezados** del `tbody` y en **`estaVinculadoTienda`** en datos). **Subencabezados en el `tbody`** (no un segundo `<thead>`): si el bloque tiene al menos una fila, **`TablaSubencabezadoSeccionRow`** (`colSpan={7}`) con el texto fijo **Productos Registrados en Dux** / **Productos Sin Registrar en Dux** (MAYÚSCULAS vía el componente) antes de las filas con **`estaVinculadoTienda === true`** / **`false`**; orden siempre registrados primero. **Modales Balance** (detalle por tipo y rubro): misma fila de sección con **`totalBloque`** opcional (suma de rubros del tipo). **Columna PROVEEDOR** en **registrados Dux**: un solo proveedor vinculado → **`prefijo`**; varios (`miembrosAgrupacion` con más de un miembro) → solo el dígito **`n`** (ej. **`2`**, **`3`**); en **sin registrar** sigue **`prefijo`** salvo agrupación anómala (misma regla legacy: varios miembros sin Dux → celda vacía). **Bloques secundarios en cabecera y cuerpo** (`tabla-bloque-secundario-*`): primero **CANT. PED.** + **PROV. PED.** (prefijos con cantidad > 0; celdas **PROV. PED.** y cesto **sin** `tabla-bloque-secundario-cell-divider` para no enmarcar la columna) + cesto; luego **CONF. REPO.** + **CANT. REPO.**; cada sub-bloque arranca con **`*-divider`** en la primera columna del bloque (línea blanca en `thead`, **#0072bb** inset en `tbody` donde aplique **`*-cell-divider`**). **DESCRIPCIÓN** en agrupados = **`descripcion_tienda`** unificada en servidor. **CANT. PED.** = suma por `cod_ext`; doble clic abre modal **Elegir Proveedor** con **Proveedor 1**, **Proveedor 2**, … y botón **Pedir A Este Proveedor** por fila; borrar cantidad limpia todos los miembros con cantidad > 0.
-   - **Páginas con URL** (Pedido Urgente, Tienda, Stock): usar `PaginacionTabla` de `@/components/shared/PaginacionTabla.tsx` con `basePath` y `params` (query actual sin `pagina`).  
-   - **Páginas con datos en cliente** (Lista precios, Sugeridos): usar `PaginacionClient` de `@/components/shared/PaginacionClient.tsx` con `paginaActual`, `totalPaginas` y `onPaginaChange`.  
-   - En el backend, las consultas que alimentan tablas deben usar `skip` y `take` (p. ej. `take: PAGE_SIZE`, `skip: (pagina - 1) * PAGE_SIZE`) y devolver `total` y `totalPaginas` para que la UI muestre la paginación correctamente.
-
-9. **Zona horaria (Argentina)**  
-   - Para mostrar **fecha/hora de negocio** (pedidos, historial, impresión stock, nombres de export) usar `@/lib/fechaArgentina` (misma regla que backend: `America/Argentina/Buenos_Aires`). No depender de la zona del navegador si el dato es un instante UTC (p. ej. `generadoAt` serializado como ISO).
-   - Valores **solo día** persistidos como `@db.Date` (Prisma `Date` en medianoche UTC del calendario guardado): exponer `YYYY-MM-DD` con **`isoYmdFromPrismaDateOnly`**, no con **`dateToIsoYmdArgentina`** sobre ese `Date` (en Argentina quedaría el día anterior; afecta inputs `type="date"`, p. ej. **Editar Cheque**).
-
-10. **Al terminar un cambio**  
-   - Recorre el checklist de la sección 4. Si añades una clase global nueva en `globals.css`, regístrala en la sección 2 de este documento.
-   - Si ajustas elementos de **slidenav/sidebar**, mantener componentes compactos y consistentes:
-    - **Ritmo vertical** (`Sidebar.tsx`): **navegación** arriba (`sidebar-nav-scroll`, `pt-3 px-4 pb-2`). Abajo (`mt-auto`, `px-4 pb-3`, **`gap-2`**): **regla horizontal** → **sync/import** (CTA) → **dock de sesión** (`sidebar-user-switcher-surface`: **Pendientes** + divisor + **usuario**). Sin `my-*` sueltos entre bloques.
-    - **Progreso import / sync** (`ImportStatusIndicator`, `SyncStatusIndicator`): `ImportStatusIndicator` solo visible con import activa; polling solo si **`pollEnabled`** (`rol === "editor"`). **`SyncStatusIndicator`**: botón fijo **`SINCRONIZAR`** + línea **`Últ. Act.: Hace …`** (más reciente entre productos y compras). **Simple**: click → sync **productos**. **Editor**: click → modal **`SincronizarDuxOpcionesModal`** (**Productos** / **Compras**). Con sync en curso el slot muestra **`SINCRONIZANDO…`** + progreso y ETA en minutos (`formatSyncEta.ts`). Toasts al finalizar productos/compras.
-     - Resto de botones de sidebar (navegación, etc.): tokens (`bg-sidebar-accent`, `text-sidebar-foreground`) y hover suave (`bg-sidebar-accent/80`).
-
-**Referencia rápida de tokens (usar en lugar de valores fijos):**
-
-| Evitar | Usar |
-|--------|------|
-| `bg-white` | `bg-card` o `bg-background` |
-| `text-slate-400`, `text-slate-500`, `text-slate-600` | `text-muted-foreground` |
-| `bg-slate-100`, fondos grises | `bg-muted` |
-| `border-slate-200` | `border-border` |
-| `emerald-*`, `amber-*`, `blue-*` (éxito / aviso / “info”) | `@/lib/ui-classes` o `text-primary`, `bg-accent`, `text-accent2`, etc. |
-| Banner/aviso `border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100` | **`CALLOUT_WARNING_CLASS`** (`@/lib/ui-classes`) — token `accent2` |
-| Ícono `TriangleAlert` con `text-amber-600 dark:text-amber-500` | **`TEXT_WARNING_CLASS`** (`@/lib/ui-classes`) |
-| `` className={`${a} ${b}`} `` | `className={cn(a, b)}` |
-| `shadow-[0_4px_12px_rgba(0,0,0,0.05)]` en `Card` de tabla | `className={cn("card-tabla-envoltorio", …)}` + variable **`--card-tabla-envoltorio-shadow`** |
-| `<div className="flex h-screen min-h-0 flex-col overflow-hidden">` o `h-screen flex flex-col overflow-hidden` (cascarón de página) | `<div className="area-page-shell">` o `area-page-shell bg-gris` |
-| `<col style={{ width: "20%" }}>` con valor estático | `<col className="w-[20%]">` (solo usar `style` para anchos **dinámicos**) |
-| `window.location.href = …` (navegación interna App Router) | `useRouter().push(url)` desde `next/navigation` |
-| Utilidades duplicadas en una misma `className` (`px-2 px-3`, `min-w-[a] min-w-[b]`) | Mantener **una sola** utilidad por eje; el último valor gana en CSS y la duplicación oculta intención |
+`/` , `/finanzas` y `/marketing` son **hubs vacíos** (panel central sin datos). El contenido aparece al elegir una **ruta hoja** en el sidenav. Al cambiar de área: **Vendedor** → `/`, **Administración** → `/finanzas`, **Marketing** → `/marketing`.
 
 ---
 
-## 1. Patrones de diseño
+## Guía para IA
 
-### Página con filtros y tabla unificada
+1. **Tokens.** Nunca `bg-white`, `text-slate-*`, `bg-slate-*`, `border-slate-*`, ni paletas genéricas (`emerald-*`, `amber-*`, `blue-*`) para estados. Usar `bg-card`, `text-foreground`, `text-muted-foreground`, `bg-muted`, `border-border`, `primary` / `accent` / `accent2`, o constantes de `@/lib/ui-classes` (`CALLOUT_WARNING_CLASS`, `TEXT_SUCCESS_CLASS`, `TEXT_WARNING_CLASS`, `IMPORT_STAT_BADGE_CLASSES`, `TABLE_ROW_*`).
+2. **`cn()`.** Siempre. Prohibido `` className={`${a} ${b}`} ``. Una sola utilidad por eje (`px-8`, no `px-4 px-6 px-8`).
+3. **Desktop-only.** Sin breakpoints Tailwind (`sm:`, `md:`, `lg:`, `xl:`, `2xl:`, `max-*:`). Las keys CVA `sm`/`md`/`lg` de `Button`/`AppModal` no son breakpoints.
+4. **Cascarón.** Páginas a pantalla completa: `.area-page-shell` (opcional `bg-gris`). No duplicar `flex h-screen min-h-0 flex-col overflow-hidden`.
+5. **Página con tabla.** `ClassicFilteredTableLayout` → `filters` = `FilterBar` `filtros-contenedor-tienda bg-card` → `children` = `.contenedor-tabla-gestion` + `Table` de `@/components/ui/table`. Padding horizontal lo pone el layout (`density` default `px-8`, `compact` `px-6`); no repetir `px-*` en filtros/tabla.
+6. **Búsqueda.** `useFiltrosConBusqueda` + `FiltroBusquedaInput`. No reimplementar debounce ni foco.
+7. **Selects.** Prohibido `<select>` nativo. `Select` shadcn; `SelectContent` incluye buscador **BUSCAR...**. Valor vacío: sentinel `"none"` / `"todos"` (Radix no admite `""`). Triggers de filtro: `SELECT_TRIGGER_FILTER_CLASS` + `className="select-content-filtro"` `position="popper" side="bottom" align="start"`.
+8. **Tablas.** Un solo look: `.tabla-gestion-compacta`. Encabezados **MAYÚSCULAS + negrita**. Celdas `.celda-datos`. Vacío = `""` (no `"-"`/`"—"`; `fmtCelda` / `fmtNumero` de `@/lib/format`). Scroll **solo** en `.contenedor-tabla-gestion` (el wrapper `data-slot="table-container"` **no** lleva `overflow-y-auto`). Sticky: `thead th`. 100 ítems/página (`PAGE_SIZE`). Botón solo ícono en fila: `variant="ghost"` `size="icon"` + `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS` (no `outline` + `icon-xs`). Columna tilde: encabezado = ícono `Check`.
+9. **Modales.** `AppModal` (o `ModalTablaConFiltros` si hay tabla seleccionable). Botones: `Button` shadcn (`default` / `outline`). Pares SÍ/NO: `ModalSiNoChoice`. Labels de campo: `text-foreground` (`ModalMicroLabel`). No `max-w-*` extra si coincide con `size`.
+10. **Texto.** Títulos de modal y botones: Title Case. Sidebar: módulo MAYÚSCULAS, submódulo Title Case. Filtros, placeholders y `TableHead`: MAYÚSCULAS. Abreviaturas con punto (Px., Cx., Dto., Cant., Cod.).
+11. **Fechas de negocio.** `@/lib/fechaArgentina`. `@db.Date` → `isoYmdFromPrismaDateOnly` (no `dateToIsoYmdArgentina` sobre ese `Date`).
+12. **Navegación interna.** `useRouter().push`, no `window.location.href`.
+13. **Excepción hex (no copiar).** Solo **Balance mensual**: cabecera `#0072BB` + texto blanco; filas resultado `#a9d6f1` / `#063652`.
+14. **Al cerrar.** Checklist **§4**. Clase global nueva → registrarla en **§2**.
 
-1. **Estructura de página**
-   - `SectionHeader` o `ClassicPageHeader`: título + subtítulo + acciones (botones a la derecha, `h-10 px-4`).
-   - `FilterBar` con `filtros-contenedor-tienda bg-card`: `FilterRowSelection` > `FilaFiltrosDesplegables` (**default 5 columnas**; **`columnas={6}`** solo si la fila tiene **exactamente 6** Selects juntos) + `FilterRowSearch` (input ~75%) + `LimpiarFiltrosButton`.
-   - Contenido: tabla con `<Table>` de `@/components/ui/table` (diseño único `.tabla-gestion-compacta` en `globals.css`).
-  - **Scroll vertical (obligatorio en tablas)**: el scroll debe estar **dentro del contenedor de tabla** (`.contenedor-tabla-gestion`), para que solo se deslicen las filas y el encabezado quede fijo. Evitar `overflow-auto` en wrappers internos (cards/divs) y evitar scroll en el `main` de la app para no crear scrolls anidados.
-  - **Scrollbar visible (recomendado)**: en páginas, **no** usar `no-scrollbar` en `.contenedor-tabla-gestion` para que el usuario vea el scroll dentro de la tabla (como en “Px. Vta. Sugeridos”). Reservar `no-scrollbar` solo para casos muy puntuales.
-  - **Encabezado fijo (detalle crítico)**: el sticky se implementa **por celda** (`.tabla-gestion-compacta thead th { position: sticky; top: 0; }`). **No** usar `position: sticky` en `<thead>` porque es menos confiable entre navegadores y puede fallar cuando hay contenedores con scroll.
+---
 
-2. **Clases de filtros (SSOT en FilterBar / globals.css)**
-   - Input y SelectTrigger: `INPUT_FILTER_CLASS` / `SELECT_TRIGGER_FILTER_CLASS` = `"input-filtro-unificado"`.
-   - Wrapper de cada Select: `FILTER_SELECT_WRAPPER_CLASS` = `"min-w-0 flex-1"`.
-   - Contador: `FILTER_COUNT_CLASS` (incluye `filtro-count-label`). Cuando convive con `LimpiarFiltrosButton` global, reserva margen derecho para evitar superposición y mantiene truncado en una línea (sin reglas responsive).
-   - `LimpiarFiltrosButton` (ícono cesto): **siempre visible** por regla global de UX, incluso sin filtros activos. Su acción sigue limpiando el estado de filtros actual.
-   - **Sin búsqueda por descripción**: cuando una pantalla no tiene input de búsqueda y los filtros entran en una sola línea, ubicar las acciones en la **misma fila** usando un slot inline dentro de `FilaFiltrosDesplegables` (`FILTER_INLINE_ACTION_SLOT_CLASS`, por ejemplo con `col-span-2`) para compactar altura.
-   - SelectContent: `position="popper" side="bottom" align="start" className="select-content-filtro"`.
-   - **Select shadcn con buscador (obligatorio, transversal):**
-     - **Prohibido** `<select>` nativo. Usar `Select` / `SelectContent` / `SelectItem` / `SelectTrigger` / `SelectValue` de `@/components/ui/select`.
-     - **`SelectContent`** incluye por defecto (`searchable={true}`) un input **`BUSCAR...`** como **primer** elemento (`SelectSearchInput` + clase `.select-search-input`). Filtra `SelectItem` por texto visible / `textValue` (sin acentos, locale `es`). Sin coincidencias → **SIN RESULTADOS**. Defaults: `position="popper"` `side="bottom"` `align="start"` (abre **hacia abajo**). Alto máximo = `--radix-select-content-available-height` (muestra la mayor cantidad de opciones que permita la pantalla; el listado scrollea debajo del buscador). **No** fijar la altura del viewport a la del trigger.
-     - Helpers: `@/lib/selectSearch` (`normalizeSelectSearchText`, `selectOptionMatchesQuery`, `filterItemsBySelectSearch`, `getReactNodeText`).
-     - Paneles custom (`role="listbox"`, multi-checkbox, `DropdownMenu` de opciones): reutilizar **`SelectSearchInput`** + `filterItemsBySelectSearch` (ej. tipo de pedido, meses/años multi, `MktMultiSelectCatalogo`).
-     - Triggers tipo filtro: `SELECT_TRIGGER_FILTER_CLASS` / `input-filtro-unificado`. **Valor vacío:** Radix no admite `SelectItem value=""` — sentinel `"none"` / `"todos"` y mapear en `onValueChange`. Opt-out excepcional: `searchable={false}` (documentar el call site).
-   - **Select con ítem numérico 0:** si el valor elegido es `0` y el trigger parece vacío o el texto no contrasta, el `Select` controlado debe armar `value` con `typeof estado === "number" ? String(estado) : undefined` (evita ambigüedades con Radix/shadcn), sumar al trigger `text-foreground` y `[&_[data-slot=select-value]]:text-foreground` junto a `SELECT_TRIGGER_FILTER_CLASS`, y opcionalmente mostrar el número como hijo de `SelectValue` (`String(estado)`). Referencia: **PLAZO DE PAGO** en `CrearEditarFinBalGastoFinalModal`.
-   - **Finanzas — barra de filtros en página:** en **Balance · Gastos**, **Ventas Mensuales**, **Balance mensual**, **Tesorería**, **Flujo de fondo** y **Control Comprobantes**, cada `Select` (y en Control Comprobantes el trigger de **rango de fechas** cuando hay fechas aplicadas) va envuelto en `FiltroIndividualContainer` además de `LimpiarFiltrosButton`. Para **AÑO** / **MES** en Balance · Gastos y Balance mensual, la referencia de “filtro activo” es el calendario actual en Argentina (`dateToIsoYmdArgentina`): limpiar **año** navega al año de hoy manteniendo el mes elegido; limpiar **mes** navega al mes de hoy manteniendo el año. **Balance mensual** añade cesto global que navega al periodo completo actual AR.
+## 1. Patrones
 
-3. **Input de búsqueda en filtros (reutilización)**
-  - **Hook:** `useFiltrosConBusqueda` en `@/lib/hooks/useFiltrosConBusqueda.ts`: estado `q`, debounce, restauración de foco (opcional con `focusStorageKey`) y `isDebouncing`. Llamar `prepareNavigate()` antes de `router.push` / navegación que recargue la vista cuando se use `focusStorageKey`. El hook agrega un **commit diferido cancelable** (`commitDelayMs`) para evitar carreras: si el usuario vuelve a escribir mientras hay navegación pendiente, se cancela la búsqueda anterior.
-  - **Regla UX anti-race (typing + recarga):** al sincronizar `qActual` desde URL, si el input de búsqueda sigue enfocado y el usuario ya escribió un valor más nuevo localmente, **no** sobrescribir ese texto con el valor de una navegación previa. Esto evita que se borre lo tipeado cuando el usuario hace una pausa corta y vuelve a escribir.
-   - **Componente:** `FiltroBusquedaInput` en `@/components/shared/FiltroBusquedaInput.tsx`: icono Search, input con estilo unificado, tacho **`Trash2`** (`variant="primaryIcon"` + `filtro-individual-clear-btn`, mismo look que `LimpiarFiltrosButton`) y Loader. Usar junto al hook para nueva pantallas con filtro de búsqueda (ej. FiltrosProductos, FiltrosTienda, FiltrosStock).
-   - **Nota**: Si la página ya usa filtros por URL (Server Component) y necesitás una segunda fila con búsqueda (ej. “Generar Pedido”), agregá `q` en `searchParams`, pasalo al componente de filtros, y debounceá la navegación con `useFiltrosConBusqueda` (placeholder en MAYÚSCULAS).
-   - **Pedido Urgente** (`PedidoUrgentePageClient`): **solo SUCURSAL** es obligatoria para listar productos; las cantidades en **CANT. PED.** se sincronizan desde el servidor en cada `productos` (p. ej. tras `router.refresh()` al generar pedido) y se limpian al instante con `onGeneradoExito` en `GenerarPedidoToolbarButton`; **PROVEEDOR**, filtro **PEDIDO** y búsqueda acotan. Filtro **PEDIDO**: **`PEDIDO URGENTE`** = productos con **CANT. PED.** (urgente) &gt; 0; **`PEDIDO REPOSICION`** = productos con **CANT. REPO.** &gt; 0 (regla `cantPedirReposicionMerc2`); **`CUALQUIER TIPO PEDIDO`** = urgente &gt; 0 **o** reposición &gt; 0. Sin filtro PEDIDO (placeholder): catálogo completo habilitado para cargar cantidades. Backend: `getListaPreciosParaPedidoUrgente`. Mensaje sin sucursal: *«Seleccioná una sucursal para ver los productos.»* En cabecera solo el botón **Generar Pedido** (`GenerarPedidoToolbarButton`); **no** hay **Guardar Cambios**. Cantidades: modal de cantidad o cesto (`upsertPedidoUrgenteMercaderiaItemAction`). Debajo de la tabla **no** mostrar texto resumen tipo **“Mostrando X de Y”**; si hay más de una página, renderizar solo `PaginacionTabla` alineada a la derecha. **Doble clic en fila:** si hay **varios proveedores** para el mismo vínculo tienda (`miembrosAgrupacion.length > 1`), abrir modal **Elegir Proveedor** — **también con filtro PROVEEDOR activo** (el backend sigue enviando todos los miembros del grupo); si no, abrir directamente **`CantidadPedidoUrgenteModal`**.
-  - **Tabla Pedido Urgente (columnas y anchos)** (`TablaPedidoUrgente`): siete columnas vía `<colgroup>` (suma **100%**): **PROVEEDOR** **10%**, **DESCRIPCIÓN** **60%**, **CANT. PED.** **6%**, **PROV. PED.** **6%**, cesto **6%**, **CONF. REPO.** **6%**, **CANT. REPO.** **6%**. **Cesto** (eliminar cantidad pedida): el `Button` con **`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`** debe ir en contenedor **`flex … p-0`** (sin **`TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS`**/`p-1.5`) y overrides **`!size-7 max-h-7`** para no superar el alto fijo de fila **`2rem`** de `.tabla-gestion-compacta` (el `size="icon"` base es **`size-9`** y estiraba la fila). **PROV. PED.**: prefijo(es) del o de los proveedores con cantidad pedida > 0 (según **`cantPorId`** por `cod_ext`); en grupo, varios miembros con cantidad → prefijos unidos con **` · `**. **Sin** columna **VINC.** (registro Dux/tienda por subencabezados y **`estaVinculadoTienda`**). Bloques **`tabla-bloque-secundario-*`**: pedido (**CANT. PED.** con divisor de bloque, **PROV. PED.** y cesto sin divisor vertical en esas celdas, **CONF. REPO.** inicia bloque reposición) y reposición. Definir anchos con `<colgroup>` + `Table` `table-fixed` y un único contenedor `.contenedor-tabla-gestion`.
-   - **Auto-refresh por Posición IVA (pedidos):** en **Generar Pedido**, **Pedido Urgente** y **Pedido Reposición**, montar **`PosicionIvaComparacionAutoRefresh`** con el token inicial del servidor (`getPosicionIvaComparacionRevisionToken`). El hook **`usePosicionIvaComparacionAutoRefresh`** consulta cada ~30 s (y al recuperar foco) si cambió el saldo efectivo de comparación (acumulado automático, saldo manual/débito/crédito **o** valor configurado en Posición IVA); si cambia, **`router.refresh()`** para actualizar proveedores resueltos sin recargar manualmente (útil si otra PC modificó Posición IVA).
-   - **Generar pedido (PDF / WhatsApp)**: usar `GenerarPedidoToolbarButton`. Texto del botón de cabecera por defecto: **Generar Pedido** (también en **Urgente** y **Tintométrico**). Abre un **`AppModal`** con orden **`SUCURSAL` → `TIPO DE PEDIDO` (multi) → `PROVEEDOR`**. **TIPO** deshabilitado hasta elegir sucursal; **PROVEEDOR** deshabilitado hasta sucursal **y** al menos un tipo. **PROVEEDOR** solo lista proveedores con ítems y **cantidad a pedir > 0** para esa sucursal y esos tipos (`listarProveedoresConPedidoActivoAction`); en **`/pedidos/enviar`** el filtro URL usa el mismo criterio vía **`getEnviarPedidoData`**. Al cambiar sucursal se resetean tipo y proveedor. El botón del footer del modal solo se habilita con los **tres** completos y **`hayItems === true`**. Tras éxito (descarga PDF o envío WhatsApp) ejecutar `router.refresh()` para que se limpien las grillas afectadas (Urgente/Tintométrico). Rutas: `/pedidos/enviar`, **Pedido Urgente**, **Pedido Tintométrico**, **Pedido Reposición**.
-   - **Pedido Tintométrico** (`/pedidos/tintometrico`): al guardar ítems, el backend arma `cod_ext` con **`buildCodExtTintometrico(codTienda, codTintometrico)`** para que no se pisen filas con la misma base y distinto COD.; al borrar, enviar el **`codExt`** de la fila (no solo `cod_tienda`). **`NuevoItemTintometricoModal`**: una columna **SUCURSAL** → **PROVEEDOR** → **COD. TINTOMÉTRICO** (máscaras en `placeholder`/`SelectValue`; sin `<span>` de etiqueta encima).
-  - **Px. Vta. Sugerido** (`/gestion-productos/proveedores/sugeridos`): la grilla lista ítems que coinciden con filtros y con **`habilitado = true`** (no exige `px_vta_sugerido` no nulo). La columna de encabezado es **`DESCRIPCIÓN`** y muestra descripción efectiva por `cod_ext`: primero **`descripcion_tienda`** (si existe en `prod_precios_tienda`), y como fallback **`descripcion_proveedor`** (`prod_precios_provee`). Si **`px_vta_sugerido`** viene nulo, la celda se muestra vacía (sin `$0`). En el payload de lectura (`getListaPreciosConOpcionesAction`), el campo **`pxVtaSugerido`** debe enviarse siempre para evitar celdas vacías por ausencia de mapeo.
-   - **Página `/pedidos/enviar` (tabla previa)**: sin filtros en URL muestra **todos** los ítems con cantidad a pedir **> 0** según datos resueltos desde **`prod_ped_merc`** (`getItemsTablaEnviarPedido`); cada filtro activo (**SUCURSAL**, **PROVEEDOR**, **TIPO**, `q`) **reduce** la grilla. Vacío sin filtros: *«No hay ítems con cantidad a pedir.»*; vacío con algún filtro: *«No hay ítems para generar el pedido con los filtros seleccionados.»*
-- **Tabla `/pedidos/enviar` (columnas, orden):** **TIPO PEDIDO** (**12%**, `prod_ped_merc.tipo_de_pedido`), **SUCURSAL** (**12%**, texto en MAYÚSCULAS), **PROVEEDOR** (**18%**), **DESCRIPCIÓN** (**48%**), **CANT. PEDIR** (**10%**). Envoltorio: **`Card`** con **`className="card-tabla-envoltorio"`** (o **`cn(..., "flex-1")`** si aplica).
-- En la barra de filtros de **Generar Pedido** (`FiltrosEnviarPedido` y modal `GenerarPedidoToolbarButton`), el orden es `SUCURSAL` → `TIPO DE PEDIDO` → `PROVEEDOR`, con habilitación en cascada (ver ítem anterior). El desplegable **TIPO DE PEDIDO** (multi) muestra cada opción como **casilla** (`input type="checkbox"`) + etiqueta (URGENTE / TINTOMÉTRICO / REPOSICIÓN), no ícono ✓ a la derecha.
-- En `Pedido Reposición`, el orden de desplegables es `SUCURSAL` → `PROVEEDOR` → `MARCA` → `RUBRO` → `CONFIGURADO` (sin `SUB-RUBRO`).
-  - **Modal `ConfigurarReposicionModal`** (`src/components/pedidos/ConfigurarReposicionModal.tsx`): al abrir un ítem **sin** regla guardada (`idReposicion` y `formaPedir` vacíos), **PUNTO REPOSIC.** y la columna de cantidad (CANT. MAX. / CANT. FIJA) usan estado **string** (`puntoInput`, `cantInput`) para mostrar **vacío** en lugar de `0`. Tras elegir **FORMA PEDIR**, el tercer campo solo aparece cuando **PUNTO REPOSIC.** tiene un entero válido **≥ 0** (el **0** habilita la columna de cantidad). **Cantidad reposición** sigue exigiendo entero **≥ 1** al guardar; vacío o **0** no son válidos. Al editar una regla existente, se precargan los valores del servidor como texto. Helpers locales: `parsePuntoReposicionInput`, `parseCantReposicionInput`. La tabla bajo **Agregar esta configuración a estos productos** está **siempre** visible: primera fila = producto con el que se abrió el modal (`item.descripcionTienda`), sin botón quitar (celda **—**); filas siguientes = `productosAdicionales` con acción quitar.
+### 1.1 Página
 
-4. **Modal con tabla y filtros**
-   - Usar `ModalTablaConFiltros` de `@/components/shared/ModalTablaConFiltros.tsx` (single o multi selección).
-   - **Limpieza en modales:** no usar `LimpiarFiltrosButton` (posición global del recuadro de filtros de página); ahorra espacio. Cada `Select` u otro control sin limpiar integrado va envuelto en `FiltroIndividualContainer` (`activo` / `onLimpiar`). Para búsqueda, preferir `FiltroBusquedaInput` (incluye X propia) en lugar de duplicar tachos.
-   - **Estilo y tamaño del tacho individual (`filtro-individual-clear-btn`):** debe usar el mismo look del botón global `LimpiarFiltrosButton` (`variant="primaryIcon"` / `size="icon-lg"`) y, al mismo tiempo, ajustarse al control contenedor sin superarlo (regla CSS global en `globals.css` con `inline-size/block-size` limitados por `%` del wrapper). Debe conservar “aire” visual interno (inset) para que el botón no toque los contornos del filtro. Esta regla aplica en **Gestión de Productos**, **Finanzas** y debe reutilizarse igual en **Estadísticas**.
-
-5. **Variantes: contador debajo**
-   - **Contador debajo a la derecha**: cuando el diseño requiera el número de ítems en una fila inferior alineada a la derecha, usar una tercera fila dentro del `FilterBar`: `<div className="flex justify-end w-full"><span className={FILTER_COUNT_CLASS}>…</span></div>`. No incluir el contador dentro de `FilterRowSelection`.
-   - **Tablas con paginación (estándar de la app)**: todas las tablas de páginas muestran **100 ítems por página**. No se cargan todos los registros; el backend aplica `skip`/`take` y devuelve `total` y `totalPaginas`. Debajo de la tabla se muestra la barra de paginación (`PaginacionTabla` o `PaginacionClient`) cuando `totalPaginas > 1`. El contenedor de tabla **sí** hace scroll vertical interno para navegar filas sin perder el encabezado; el usuario cambia de página con los controles. Ver sección "Guía para IA" punto 8.
-
-6. **Variantes: filtros sin filtros (solo acción “+”)**
-  - Cuando el módulo no requiere filtros pero debe conservar el **mismo bloque de filtros** (tamaño/ubicación), usar `FilterBar` igualmente y renderizar una única acción alineada a la derecha (ej. botón `+`).
-  - Patrón aplicado: `src/components/pedidos/PedidoTintometricoPageClient.tsx`.
-
-### Tabla con bloque de información secundaria
-
-- Patrón pensado para tablas donde hay **datos principales** (configuración, acciones) y un **bloque de resumen secundario** (stock, métricas) en la misma fila.
-- Referencia: módulo **Pedido Reposición** (`TablaReposicion`).
-- Estructura:
-  - Columnas principales a la izquierda: DESCRIPCIÓN, FORMA PEDIR, PUNTO REPOSIC., **CANT. REPOSIC.** (valor persistido `prod_ped_merc.reposicion_cant_conf`, campo **`ItemReposicion.cant`** en `getReposicionData`), acciones (botón de basura).
-  - Bloque secundario a la derecha: STOCK, CANT. A PEDIR.
-- Clases globales:
-  - Encabezados secundarios: `tabla-bloque-secundario-head` / `tabla-bloque-secundario-head-divider` (misma tipografía que el resto del encabezado; `*-divider` añade **solo** borde izquierdo entre sub-grupos).
-  - Celdas secundarias: `tabla-bloque-secundario-cell` / `tabla-bloque-secundario-cell-divider` (sin fondo distinto; heredan cebra de fila; `*-divider` = línea vertical **#0072bb** vía `box-shadow` inset, no `border-left`, para que con encabezado sticky no se “cuele” el gris en la franja azul).
-- Uso recomendado:
-  - Aplicar estas clases solo a columnas de **información secundaria** (no editable o de resumen).
-  - Mantener siempre el orden lógico: primero las columnas principales, luego el bloque secundario.
-  - **No** añadir `px-3 py-2 text-xs` extra en cabeceras/celdas secundarias: el tamaño lo define `.tabla-gestion-compacta` / `.celda-datos`.
-- **Varios sub-bloques:** en tablas con bloques secundarios (p. ej. **Pedido Reposición**), las columnas principales van sin `tabla-bloque-*`; cada grupo siguiente empieza con `*-divider` (línea vertical). La última columna del bloque derecho usa `*-head` / `*-cell` sin divider.
-
-### Modales con tabla de selección (patrón `modal-app`)
-
-- Para modales que muestran una tabla de selección (ej. **Seleccionar Producto** en Tienda y **Seleccionar Productos** en Pedido Reposición) usar siempre el patrón `modal-app`:
-  - `DialogContent` con clase `modal-app` y límites de ancho/alto.
-  - `DialogHeader` con clase `modal-app__header` y `DialogTitle` con `modal-app__title` (color de fondo y botón de cierre `X` unificados).
-  - `modal-app__body`:
-    - Filtros fijos arriba.
-    - Encabezado de tabla fijo (Table con solo `<TableHeader>`) fuera del contenedor con scroll.
-    - Cuerpo con scroll: `<TableBody>` dentro de un `div` con `overflow-y: auto`.
-  - `modal-app__footer` con botones alineados (`Cancelar`, `Agregar`, etc.).
-- Ejemplos: `SeleccionarProductoModal` (Tienda) y `SelectorProductosReposicionModal` (Pedido Reposición).
-
-### Tienda — Vínculos con proveedores (Cx Compra)
-
-- **Alta de vínculo:** el ícono **Link2** en **ACCIONES** de `TablaTienda` abre **`SeleccionarProductoModal`** (“Vincular Nuevo Producto”, patrón `modal-app`). Encabezado del producto: dos líneas — (1) descripción `text-sm font-semibold text-foreground` con `break-words`; (2) si hay datos, **Marca - Rubro - SubRubro** en `text-xs text-muted-foreground`. Recibe `itemDescripcion`, `marca`, `rubro`, `subRubro`, `idsProveedoresYaVinculados` y toggle **Producto TiendaColor**.
-- **Gestión de vínculos existentes:** subfilas **`CxCompraVinculosDetalle`** (chevron expandir en la grilla; **no** hay modal `VincularModal.tsx`). Orden: proveedor oficial (prefijo) primero, resto por px. final de compra ascendente (`ordenarFilasVinculosTienda` en `@/lib/vinculosTiendaUi`).
-- **Subfila:** descripción + prefijo; columna **CX PROD.** = grilla **`.cx-compra-subfila-cx-prod`** (checkbox **BASE** + variación | precio). **BASE** persiste `establecerCostoListaTiendaAction(codTienda, codExt | null)`. Variación: `labelVariacionVsBase` + tokens `variacion-costo--*` / `variacion-costo-icon--positiva|negativa`. **DESVINC.**: `Trash2` + `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS` → `desvincularProducto`.
-- **No** reintroducir el listado legacy `.modal-vinculos-*`. La clase **`tabla-vinculos-modal`** se reutiliza en modales de **Reglas Descuentos** (tabla compacta a ancho 100 %), no en Cx Compra.
-
-### Ejemplos de código (referencia para IA)
-
-**Combinar clases con `cn()`:**
 ```tsx
-import { cn } from "@/lib/utils";
-
-// Condicional
-<div className={cn("rounded-lg border", isActive && "bg-primary/10 text-primary")} />
-
-// Varias clases + variable
-<span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>{count}</span>
+<div className="area-page-shell">
+  <ClassicFilteredTableLayout
+    title="Módulo"
+    subtitle="Submódulo"
+    actions={<>…</>}
+    filters={<FilterBar className="filtros-contenedor-tienda bg-card">…</FilterBar>}
+  >
+    <div className="contenedor-tabla-gestion">
+      <Table variant="compact">{/* … */}</Table>
+    </div>
+  </ClassicFilteredTableLayout>
+</div>
 ```
 
-**Nueva pantalla con filtro de búsqueda (esqueleto):**
-```tsx
-"use client";
-import { usePathname } from "next/navigation";
-import FilterBar, { FilterRowSelection, FilterRowSearch, FILTER_COUNT_CLASS, LimpiarFiltrosButton } from "@/components/FilterBar";
-import { usePathname, useRouter } from "next/navigation";
-import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
-import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
-import { cn } from "@/lib/utils";
+- Header: `ClassicFilteredTableLayout` usa `ClassicPageHeader` (`tone="card"`). API ES: `SectionHeader`. Núcleo: `PageSectionHeader`. Visual: **MÓDULO** → **SUBMÓDULO 1** → **Submódulo 2**.
+- `contentWidth`: `default` (`max-w-7xl`) | `wide150` (Comp. Categorías) | `full` (Balance, Gastos, Flujo, Calcular Lts, Px Tintométricos).
+- Card envolviendo tabla: `className={cn("card-tabla-envoltorio", "flex-1")}`.
+- CFTL **sin** `filters`: Calcular Lts, Px Tintométricos, Cargar Gasto (card de cálculo / modal; acciones de editor en `actions`). Hubs vacíos: `return null`. Finder sin `FilterBar`: Catálogo Gastos, Comp. Categorías, Ideas Marketing.
 
-export default function MiFiltros({ qActual, totalItems }: { qActual: string; totalItems: number }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { q, setQ, ref: inputRef, handleQChange, isDebouncing, prepareNavigate } = useFiltrosConBusqueda({
-    qActual,
-    debounceMs: 400,
-    focusStorageKey: "mi-modulo-focus",
-    onDebouncedSearch: (value) => {
-      prepareNavigate();
-      const params = new URLSearchParams();
-      if (value) params.set("q", value);
-      const query = params.toString();
-      router.push(query ? `${pathname}?${query}` : pathname);
-    },
-  });
-  return (
-    <FilterBar className="filtros-contenedor-tienda bg-card">
-      <FilterRowSelection>
-        <span className={FILTER_COUNT_CLASS}>{totalItems.toLocaleString()} ítems</span>
-      </FilterRowSelection>
-      <div className="flex items-center gap-2">
-        <FilterRowSearch>
-          <FiltroBusquedaInput id="mi-busqueda" placeholder="Buscar..." value={q} onChange={handleQChange} isDebouncing={isDebouncing} inputRef={inputRef} />
-        </FilterRowSearch>
-        <LimpiarFiltrosButton onClick={() => { setQ(""); router.push(pathname); }} />
-      </div>
-    </FilterBar>
-  );
-}
-```
+### 1.2 Filtros
 
-**Encabezado de página:**
-```tsx
-import SectionHeader from "@/components/SectionHeader";
+- `FilterBar` > `FilaFiltrosDesplegables` (default **5** columnas; `columnas={6}` solo con 6 Selects) + `FilterRowSearch` + `LimpiarFiltrosButton` (siempre visible).
+- Cada Select de página en `FiltroIndividualContainer`. En modal: `FiltroIndividualContainer` o `FiltroBusquedaInput` (X propia); no `LimpiarFiltrosButton`.
+- Sin búsqueda: acciones en la misma fila (`FILTER_INLINE_ACTION_SLOT_CLASS`, a menudo `col-span-2`).
+- Contador: `FILTER_COUNT_CLASS`, texto MAYÚSCULAS (`X PRODUCTO(S)`).
+- Rango de fechas: `FilterRowDateRange` + `FiltroRangoFechasCalendarioModal`.
+- Multi-select: trigger `<button>` + panel `role="listbox"` + `SelectSearchInput` (tipo de pedido, meses/años, `MktMultiSelectCatalogo`). No `<select multiple>`.
+- Sucursal vacía en Vendedor (pedidos / stock): `useAplicarSucursalPreferidaSiVacia`. Opciones de sucursal de pedido: `global_sucursales` con `pedido = true`.
 
-<SectionHeader titulo="Mercadería" subtitulo="Cant. Pedida" subtituloSecundario="Urgente" actions={<Button>Acción</Button>} />
-{/* Visual: MERCADERÍA / CANT. PEDIDA - Urgente */}
-```
+### 1.3 Tablas
 
----
+- Altura fila datos: `--tabla-body-row-min-height` (**2rem**). Encabezado: `--tabla-thead-height` (mín. 2 líneas).
+- Bloque secundario: `tabla-bloque-secundario-head*` / `*-cell*` (`*-divider` = inicio de sub-bloque).
+- Subencabezado en `tbody`: `TablaSubencabezadoSeccionRow`.
+- Pie de totales: o `TableFooter` en la misma tabla, o `.finanzas-resumen-tarjeta` bajo scroll (`contenedor-tabla-gestion--pie-fijo`). No segunda `<table>` de pie.
+- Paginación URL: `PaginacionTabla`. Cliente: `PaginacionClient`. Backend: `skip`/`take` + `total` / `totalPaginas`.
+- `<table>` nativo: solo `TablaGastos`, `PrintStock` (impresión) y leyenda de `GraficoMcVsPorcUtilidad`.
+- Anchos estáticos: `<col className="w-[20%]" />`. `style` solo si el ancho es dinámico.
 
-## 2. Catálogo de clases globales (Tailwind 4 / globals.css)
+### 1.4 Modales
 
-| Clase / variable | Uso |
-|------------------|-----|
-| `.section-header` | Encabezado de sección (título, barra primaria, acciones). Fondo: `var(--card)`. **Módulo** (`.section-header__titulo`): MAYÚSCULAS. **Submódulo 1** (`.section-header__subtitulo-primario`): MAYÚSCULAS + negrita. **Submódulo 2** (`.section-header__subtitulo-secundario`): Title Case + negrita. |
-| `.card-tabla-envoltorio` | **`Card`** que envuelve la tabla principal en páginas con layout estándar cuando se use `Card` (ej. Comp. Proveedores, Generar Pedido): `min-h-0` flex column, `rounded-xl`, `border-border`, `bg-card`, `gap-0`, `py-0`, sombra vía **`--card-tabla-envoltorio-shadow`**. Incluye override específico sobre `Card` base (`[data-slot="card"].card-tabla-envoltorio`) para anular `gap-6 py-6 border-card-border` heredados y evitar espacio extra entre borde, encabezado y cuerpo de tabla. No duplicar la misma cadena de utilidades Tailwind en cada página. |
-| `.est-vtas-barra-btn` | **Est. Vtas**: `<button>` de barra del gráfico. Anula `main button` / `:not([data-variant])` (altura 2.5rem, padding, fondo primary, sombra) para priorizar la estética del gráfico (pista + fill proporcional). |
-| `.est-vtas-titulo-pildora` | **Est. Vtas**: píldora de título compartida (Dimensión / Top 10 / Mes). Ancho fijo **11.75rem** (referencia “Un. Vendidas Por Mes”). |
-| `.est-vtas-select-titulo` | **Est. Vtas**: `SelectTrigger` píldora primary del eje Y. Misma altura/ancho que `.est-vtas-titulo-pildora` (anula `main button`). |
-| `.est-vtas-select-desglose` | **Est. Vtas**: `SelectTrigger` de Desglose. Altura **1.25rem**, fondo transparente + **borde suave `primary`**. |
-| `.est-vtas-desglose-clear-btn` | **Est. Vtas**: basura compacta junto al Desglose activo (vuelve a SIN DESGLOSE). |
-| `.est-vtas-desc-btn` | **Est. Vtas · Top 10**: `<button>` de la celda DESCRIPCION; anula `main button` (se ve como texto de tabla, no CTA). |
-| `.sidebar-nav-scroll` | Scroll del `<nav>` del sidebar: barra **fina** (6px / `scrollbar-width: thin`), thumb redondeado con `sidebar-foreground` semitransparente sobre track transparente; hover del thumb un poco más opaco. |
-| `.sidebar-nav-divider` / `SidebarNavDivider` | Separador **solo entre módulos de primera jerarquía** (`1px`, ~32 % `sidebar-foreground`, márgenes al ícono). No usar dentro de paneles anidados. |
-| `.sidebar-nav-tree` / `--nested` | Panel de hijos del acordeón: **solo indentación** (`padding-left`), **sin** guía vertical ni divisores horizontales. `--nested` = segundo nivel de indent. |
-| `.sidebar-nav-item`, `.sidebar-nav-module` | **Hover**: `bg-sidebar-accent`. **`data-active`**: página actual — accent + barra amarilla (única señal vertical de estado). **`data-ancestor`**: padre con hijo activo — semibold, sin accent. Chevron `.sidebar-nav-chevron` más opaco al expandir. Íconos siempre blancos. |
-| `--card-tabla-envoltorio-shadow` | **`:root`**: sombra suave de la tarjeta-tabla. No repetir `shadow-[0_4px_12px_rgba(0,0,0,0.05)]`. |
-| `.modal-app`, `.modal-app__header`, `.modal-app__body`, `.modal-app__footer` | Modales con tabla y filtros. |
-| `--modal-field-label-color` | **`:root`**: color de etiquetas de campo en modales (`var(--foreground)`). Aplicado con `!important` en `.app-modal__body`, `.modal-app__body` y `[data-slot="dialog-content"]` a `label`, `[data-slot="label"]`, `.modal-field-label`, `.modal-micro-label`, `dt`. |
-| `MODAL_MICRO_LABEL_CLASS` (`@/lib/ui-classes`) | Clase Tailwind para micro-etiquetas en modales (foreground). **`ModalMicroLabel`** la usa vía CVA. |
-| `.input-filtro-unificado` | Input y SelectTrigger de filtros (borde primary, altura 2.5rem). |
-| `.select-content-filtro` | Ancho del menú = trigger (`--radix-select-trigger-width`); usar con `position="popper" side="bottom"`. |
-| `.select-search-input` | Input **BUSCAR...** del primer renglón de desplegables (`SelectSearchInput` / `SelectContent`). |
-| `SelectSearchInput` (`@/components/shared/SelectSearchInput.tsx`) | Buscador reutilizable para `SelectContent` y paneles `listbox` custom. |
-| `@/lib/selectSearch` | Normalización y filtro de opciones de desplegable (sin acentos). |
-| `.fila-filtros-4`, `.fila-filtros-5`, `.fila-filtros-6`, `.fila-filtros-desplegables` | Grid uniforme para Selects de filtros (`FilaFiltrosDesplegables` prop `columnas`). **Default 5**. Usar **`columnas={6}`** solo cuando hay **6** desplegables en la misma fila; con ≤5 no cambiar el default. |
-| `.tabla-gestion-compacta.tabla-vinculos-modal` | Variante de ancho para tablas densas en modales (p. ej. **Reglas Descuentos**): `width: 100%`, `table-layout: fixed`; los encabezados usan la misma regla global de `tabla-gestion-compacta`. |
-| `.tabla-gestion-compacta.tabla-est-carga-datos` | **Estadísticas · Carga de Datos**: cebra estándar en **toda** la fila (incl. **PERIODO** sticky vía `.celda-est-carga-periodo` + `--tabla-row-bg`). Celdas sin datos: `.celda-est-carga-pendiente` (tinte `accent2` ~22 % sobre la cebra; hover ~30 %) para marcar acción pendiente de carga. |
-| `.tabla-gestion-compacta.tabla-recepcion-pedido` | **Recepcion Pedido** (`PedidoHistoriaDetalleModal`): **`recepcion-fila-pendiente`** cebra estándar; **`recepcion-fila-verificada`** fondo **gris intermedio** neutro (`color-mix(in oklab, var(--muted) 72%, var(--card) 28%)`, hover **84%/16%**), entre blanco/card y cebra celeste; misma altura de fila que el resto de tablas. |
-| `.tabla-gestion-compacta.tabla-deuda-proveedores` | Solo **Finanzas / Venc. Provee. Merc.** (`/finanzas/deuda-proveedores`): misma altura de fila global (**2rem**); `.celda-proveedor-deuda` con **ellipsis** (`nowrap`, `overflow: hidden`); primera columna **PROVEEDOR** (tbody y tfoot) **centrada** en horizontal y vertical. |
-| `.tabla-fila-altura-auto` | Excepción en **`tbody`**: filas auxiliares (subencabezado **Pedido Urgente**, detalle expandido **Precios Competencia**, etc.) con **`height: auto`**; el resto de filas de datos usan **`--tabla-body-row-min-height`** (**2rem**, referencia **Lista Px Proveedores**). |
-| `.tabla-fila-seccion-subencabezado`, `.tabla-fila-seccion-subencabezado-celda` | Subencabezado de bloque en **`tbody`**: fondo **`var(--gris-inset)`** (`#e2e8f0`), **sin** bordes ni franja lateral; **alto fijo** = **`--tabla-thead-height`**. Componente **`TablaSubencabezadoSeccionRow`**: **`titulo`**, **`colSpan`**, **`totalBloque?`**. |
-| `.tabla-gestion-compacta.tabla-flujo-de-fondo` | **Finanzas / Flujo De Fondo** (`/finanzas/venc-por-fecha`, `TablaFlujoDeFondo` / `TablaFlujoDeFondoDetalleDia`) y **reutilización** de **`TablaFlujoDeFondoDetalleDia`** en **Venc. Provee. Gastos** (`/finanzas/vencimientos-gastos`) y **Venc. Provee. Merc.** (`/finanzas/deuda-proveedores`, detalle por proveedor): **thead** sin sobrescrituras (mismo centrado global). **FECHA** (grilla principal) **centrada**; en el **modal** columnas **FECHA DEVENGADA**, **FECHA VENCIMIENTO**, **PROVEEDOR**, **DETALLE**, **MONTO** (fechas centradas, texto a la izquierda, importes con **`TD_NUM`**). **SALDO** negativo: `text-destructive` en la celda, **no** fila con tinte (cebra = card + primary 8 % impar/par). |
-| `.tabla-gestion-compacta` | **Diseño único** de tablas (referencia: Comp. Proveedores). Usar siempre `<Table>` de `@/components/ui/table`; no usar otra clase. **Encabezado fijo obligatorio**: al hacer scroll los encabezados no desaparecen (`position: sticky` en `globals.css`). **`thead th`**: **`--tabla-thead-height`** es la **altura mínima** (referencia ≈ 2 líneas + padding); si el título lo requiere, el **`th` crece en altura** (texto con `word-break`, sin `line-clamp` ni `max-height` fijos); centrado horizontal y vertical del bloque de título; sin `nowrap` en encabezados. Tipografía de encabezado: **`text-xs`**, **`text-transform: uppercase`**, **`font-weight: var(--font-weight-bold)`** (alineado con `TableHead` → `font-bold`). **Inputs y Select** en celdas: fondo transparente, recuadro #0072bb. **Select en tablas**: texto en negro, sin bold (`globals.css`). **Hover global de filas (páginas y modales):** el resaltado es uniforme para toda la fila, sin distinción por columnas ni overlays por celda (`td:hover::before` desactivado). Los colores se definen por estado de fila (cebra `odd`/`even`, `hover`, `data-state="selected"`) y, en `hover`, el color de fuente de todas las celdas se fuerza a **`foreground`** para mantener contraste homogéneo. |
-| `.tabla-bloque-secundario-head`, `.tabla-bloque-secundario-head-divider` | Columnas de **información secundaria** en `<thead>`: fondo `var(--primary)` explícito (opaco bajo sticky). `*-divider`: primera columna de cada sub-bloque; el divisor blanco se dibuja con `::before` absoluto (`2px`, `primary-foreground`) sobre el `th` sticky para evitar artefactos al hacer scroll (ej. `TablaTienda`: MARGEN vs MEJOR PROV.). |
-| `.tabla-bloque-secundario-cell`, `.tabla-bloque-secundario-cell-divider` | Celdas de **tbody** secundarias; fondo transparente (cebra). `*-divider`: línea vertical **#0072bb** con `box-shadow: inset 1px 0 0 #0072bb` (evita artefactos con `border-collapse: collapse` y scroll). |
-| `--tabla-thead-height`, `--tabla-thead-lines`, `--tabla-thead-line-height`, `--tabla-thead-padding-y`, `--tabla-body-row-min-height`, `--tabla-body-cell-padding-y`, `--tabla-body-cell-padding-x` | **`--tabla-thead-height`** = `calc((0.75rem * --tabla-thead-line-height * --tabla-thead-lines) + (--tabla-thead-padding-y * 2))` usada como **`min-height`** del **`thead th`**; defaults `--tabla-thead-lines: 2`, `--tabla-thead-line-height: 1.15`, `--tabla-thead-padding-y: 0.2rem`; **`--tabla-body-row-min-height`** = **2rem**; padding vertical celdas ~**`py-0.5`** (**0.125rem**); inputs/botones en celdas ~**1.75rem**. Sin cambio de **`font-size`** en **`tbody tr:hover td`** (evita saltos). |
-| `.celda-datos` | Celdas de datos; usa las mismas variables de padding y min-height que la tabla oficial. |
-| `.celda-datos.celda-datos--flush-left` | Anula **`padding-left`** con **`!important`** (especificidad doble clase) cuando **`!pl-0`** de Tailwind no gana al atajo **`padding`** de **`.celda-datos`**; usar con **`Input`** **`pl-0` `pr-3`** (base **`Input`**: **`pl-3 pr-3`**, no **`px-3`**, para que **`tailwind-merge`** anule bien el lado izquierdo). |
-| `.celda-datos.celda-datos--flush-right` | Anula **`padding-right`** con **`!important`** para campos al ras del borde derecho dentro de celdas `celda-datos` (ej. input de **TOTAL PEDIDO**). |
-| `.celda-datos.celda-datos--accion-relleno-fila` | Anula **`padding`** de **`.celda-datos`** en columnas solo de acción; el aire al borde de fila lo aporta **`TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS`** (**`p-1.5`**). |
-| `.tabla-fin-ana-margen-contribucion`, `.tabla-mc-col-forma`, `.tabla-mc-celda-descuento` | **Margen Contribución**: tabla **`w-max` / `max-content`**. Columna forma fija **`--tabla-mc-forma-width`** (**7,5 rem**). Celdas en **%** (base PX LISTA = 100). **DESCUENTO**: `.tabla-mc-celda-descuento` sin padding vertical; máscara al alto de fila (igual que IVA). |
-| `.tabla-mc-col-expandir` | **Margen Contribución**: última columna (~**5 %**, `min-width` 2,25 rem); fondo unificado `var(--background)` **sin cebra ni hover** (parece fuera de la tabla); botón expandir COSTOS en la **última fila**. |
-| `.contenedor-tabla-gestion--mc-overlay` | **Margen Contribución**: alto al contenido; **solo** `overflow-x: auto` (sin scroll vertical). Contorno de tarjeta (`rounded-md border p-0 shadow-md`) **siempre** (colapsada o expandida); al expandir COSTOS además overlay (`absolute` + `z-30`) sobre el gráfico; spacer con altura colapsada. |
-| `.tabla-check-toggle` | Checkbox/toggle compacto para columnas de **tilde** en tablas (`.tabla-gestion-compacta`): cuadrado (mismo alto/ancho) con tamaño derivado de `--tabla-body-row-min-height`, sin superar el alto de fila; borde **`#0072BB`**, fondo transparente y solo ícono **Check** en **`#0072BB`** al seleccionar. **Regla global:** toda columna de selección usa encabezado con tilde (`Check`). Reutilizar en tablas actuales y futuras para mantener consistencia visual. |
-| `.celda-destacado` | Celdas “destacadas” sin negrita (font-weight normal) para cumplir el estilo de tablas. |
-| `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS` (`@/lib/ui-classes`) | Botones **solo ícono** relleno **`#0072BB`**: **`tabla-row-btn-filled-brand`**, **`aspect-square`**, **`!h-full`**, **`max-h-full`**, **`!w-auto`**, **`max-w-full`**, **`self-center`**, `size="icon"` + `variant="ghost"`. **Padding interno** **`0.5rem`** en **`globals.css`**. No usar **`!w-full`** (rompe el cuadrado). |
-| `tabla-row-btn-filled-brand` | Marca botones excluidos de **`tbody td button`** fijo **1.75rem** en **`globals.css`**; **`padding: 0.5rem !important`**, **`max-height: 100%`**. |
-| `TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS` (`@/lib/ui-classes`) | `flex` con **`h-full`**, **`min-h-0`**, **`p-1.5`**, **`items-center`**, **`justify-center`**, **`gap-1.5`**, **`box-border`** para agrupar botones **`TABLE_ROW_*`**. |
-| `.contenedor-pagina-con-filtros` | Espaciado vertical entre header, filtros y tabla. |
-| `.finanzas-resumen-tarjeta` | Totales bajo tablas de **Finanzas** (p. ej. **Balance · Gastos** / **`TablaGastos`** — **MONTO**, **PAGADO**, **PENDIENTE**; **Tesorería** / **`TablaTesoreriaCajas`**): borde **2px** **#0072bb**, `border-radius` suave, fondo **`var(--card)`**, `flex` columna, texto centrado. |
-| `.no-scrollbar` | En **`globals.css`**: oculta barras del scrollport del mismo nodo (`scrollbar-width: none` / webkit); mantiene **`overflow-y-auto`** / **`overflow-x-auto`** (rueda/táctil). Usar en el **div** que hace scroll (p. ej. hijo interno de **`contenedor-tabla-gestion`**, **`AppModal`** con **`hideBodyScrollbars`**, tabla dentro de modal en **Flujo De Fondos**). |
-| `@/lib/ui-classes` | Constantes reutilizables: `BADGE_SUCCESS_TINT_CLASS`, `TEXT_SUCCESS_CLASS`, `TEXT_WARNING_CLASS`, `ICON_WARNING_INTERACTIVE_CLASS`, `IMPORT_STAT_BADGE_CLASSES` (badges de importación / estados positivos y avisos con tokens `primary`, `accent`, `accent2`). |
-| `PAGE_SIZE` (`@/lib/pagination`) | Tamaño de página estándar para tablas: 100 ítems. |
-| `PaginacionTabla` (`@/components/shared/PaginacionTabla.tsx`) | Paginación por URL: `basePath`, `params`, `paginaActual`, `totalPaginas`, `total`, `pageSize`. |
-| `PaginacionClient` (`@/components/shared/PaginacionClient.tsx`) | Paginación por estado: `paginaActual`, `totalPaginas`, `onPaginaChange`. |
-| `TableEmptyState` + CVA (`@/components/shared/TableEmptyState.tsx`) | Mensajes de lista/tabla vacía; `EmptyTableRow` en `ui/table` reutiliza las mismas variantes. |
-| `ModalMicroLabel` + CVA (`@/components/shared/ModalMicroLabel.tsx`) | Micro-etiquetas MAYÚSCULAS en modales (campos/secciones densas); variantes `align`: `left` \| `center`. |
-| `--gris-canvas`, `--gris` (`bg-gris`) | Lienzo de app: páginas (`ClassicFilteredTableLayout` tone gray), shell, marco de **`AppModal`** (`#cbd5e1`). |
-| `--gris-inset` (`bg-gris-inset`) | Inset dentro de card blanca: subfilas de tabla (`.tabla-fila-seccion-subencabezado`, `.tabla-fila-detalle-competencia`); valor `#e2e8f0`. |
-| `--border`, `--input` | Alias de **`--gris-inset`** (visibles sobre **`--gris-canvas`**). |
-| `--primary`, `--card`, `--muted-foreground`, `--border` | Tokens de tema; **no** usar `bg-white`, `text-slate-*`, `border-slate-*` en componentes. |
-| `.area-page-shell` | Cascarón de página de área (Finanzas, Estadísticas, Proveedores, Tienda, etc.) — `flex` columna, `height: 100vh`, `min-height: 0`, `overflow: hidden`. Combinar con **`bg-gris`** solo cuando el módulo lo requiera (Cx Compra, Px Competencia, calc. vendedor). **SSOT**: reemplaza `flex h-screen min-h-0 flex-col overflow-hidden` y la variante corta `h-screen flex flex-col overflow-hidden`. **No** duplicar esas utilidades encima de la clase global. |
-| `CALLOUT_WARNING_CLASS` (`@/lib/ui-classes`) | Banner/aviso no destructivo (token `accent2`): `rounded-md border border-accent2/40 bg-accent2/10 px-3 py-2 text-xs text-foreground`. **Prohibido** crear avisos con `border-amber-*`, `bg-amber-*`, `text-amber-*` (paleta genérica). |
+| Caso | Componente |
+|------|------------|
+| Formulario / confirmación | `AppModal` dentro de `Dialog` |
+| Tabla + filtros + selección | `ModalTablaConFiltros` (`single` / `singleConfirm` / `multi` / `multiQuantity`) |
+| Tabla de selección “vieja” ya migrada | Preferir `ModalTablaConFiltros` o `AppModal`; `modal-app` BEM sigue en call sites existentes (`SeleccionarProductoModal`) |
+
+`AppModal`: `size` `sm|md|lg|xl` (md = `max-w-lg`), `padding`, `scrollBody` (default true), `hideBodyScrollbars`, `bodyShellClassName`. Tabla + pie fijo: tabla `flex-1 min-h-0`; no `h-0`.
+
+### 1.5 Finder
+
+`@/components/shared/catalogo-finder/` + `CATALOGO_FINDER_*` en `ui-classes`. Columnas con header `bg-primary`, `+` (`nuevoLado`: `end` default, `start` en Ideas). Filas: hover editar/eliminar; selección `CATALOGO_FINDER_ROW_SELECTED_CLASS`. Usos: Catálogo Gastos (5 cols), Comp. Categorías (4), Ideas (2).
+
+### 1.6 Sidebar y áreas
+
+SSOT: `src/lib/main-app-areas.ts`, `administracionNav.ts`, `marketingRoutes.ts`, `Sidebar.tsx`.
+
+| Área (UI) | id | Entrada |
+|-----------|-----|---------|
+| Vendedor | `gestion-productos` | `/` |
+| Administración | `finanzas` (pide clave) | `/finanzas` |
+| Marketing | `marketing` | `/marketing` |
+
+**Vendedor** (acordeón, módulos cerrados al inicio): **MERCADERÍA** (Cant. Pedida → Urgente / Tintométrico / Reposición → Generar Pedido → Recepción) → **PRECIOS** (Px Sugeridos, Px Tintométricos) → **CALCULAR LTS** → **STOCK** (Control Stock, Trans. Depósitos) → **CARGAR GASTOS** → **ASISTENTE IA**. Rol `simple` ve estos módulos; CRUD de prompts IA solo `editor`.
+
+**Administración** (`AdministracionAccordionNav`): **FINANZAS** (BALANCE / OPERACIONES) → **LISTA PRECIOS** (PX TIENDA / PROVEEDORES / ANÁLISIS M.C.) → **PEDIDO A FÁB.** → **ESTADÍSTICAS** → **USUARIOS**. Un solo destino → click navega (sin chevron).
+
+**Marketing:** **PUBLICACIONES** (Calendario, Ideas Contenido, Objetivos) → **BASE MULTIMEDIA** (Base Multimedia, Colores Marca). Lectura libre; mutaciones `editor`.
+
+**Dock** (abajo, `mt-auto`): Sync DUX (`SyncStatusIndicator` / `DuxSyncStyleButton`) → superficie sesión (`Pendientes` + usuario). Sync **no** se duplica en headers de página. Editor: modal Productos / Compras. Simple: sync productos. Import Excel: `ImportStatusIndicator` (independiente).
+
+**Pendientes:** badge 0–2 (pedido / transferencia); hover o click abre detalle; no modal al entrar a Stock.
+
+### 1.7 URLs
+
+Canónicas Vendedor / Análisis: `GP_ROUTES` (`src/lib/gestionProductosRoutes.ts`). Rewrites en `next.config.ts` sirven `src/app/pedidos`, `proveedores`, `tienda`, etc. Finanzas y Marketing usan la URL de `src/app/` tal cual.
+
+| Pantalla | URL canónica / app |
+|----------|-------------------|
+| Generar Pedido | `/gestion-productos/pedido-mercaderia/generar-pedido` → `/pedidos/enviar` |
+| Urgente / Tintométrico / Reposición | `…/conf-pedido/{…}` → `/pedidos/{urgente\|tintometrico\|reposicion}` |
+| Recepción Pedido | `…/recepcion-pedido` → `/pedidos/historial` |
+| Px Sugeridos | `…/px-vta-sugerido` → `/proveedores/sugeridos` |
+| Cx Compra | `…/cx-compra` → `/tienda` |
+| Px Listas | `…/px-listas` → `/tienda/px-listas` |
+| Px Competencia | `…/px-competencia` → `/tienda/cx-px` |
+| Listas Px Prov. | `…/lista-precios` → `/proveedores/lista-precios` |
+| Lista Prov. | `…/lista` → `/proveedores/lista` |
+| Flujo De Fondo | `/finanzas/venc-por-fecha` |
+| Pedido A Fáb. | `/pedido-a-fabrica` |
+
+Aliases viejos (`/pedidos/*`, `/proveedores`, `/proveedores/gestion`, `/finanzas/flujo-de-fondo`, …) **redirigen**; no crear páginas ahí.
 
 ---
 
-## 3. Reglas técnicas estrictas
+## 2. Catálogo
 
-| Área | Regla |
-|------|--------|
-| **Tipado** | TypeScript 5.9+. No `any`. Esquemas Zod para validación. |
-| **Estilos** | Siempre `cn()` de `@/lib/utils.ts` para combinar clases. No concatenar con `` `...${VAR}` ``. |
-| **Tokens** | Solo variables del tema: `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`. Evitar `bg-white`, `text-slate-*`, `bg-slate-*`. |
-| **Estructura** | Rutas en `src/app/`; componentes base shadcn en `src/components/ui/`; compartidos en `src/components/shared/`. |
-| **Texto UI** | Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo con primera letra de cada palabra en mayúscula (title case). Filtros y desplegables: MAYÚSCULAS. **Encabezados de tablas de datos**: MAYÚSCULAS y **negrita**. Toda abreviatura termina con punto (Px., Cx., Dto., Cod., etc.). |
-| **Tablas** | Todas las tablas con encabezado fijo: al hacer scroll los encabezados no desaparecen. Usar `<Table>` de `@/components/ui/table` (aplica `.tabla-gestion-compacta` en `globals.css`). |
-| **Celdas vacías (tablas)** | En tablas, los valores vacíos/null **se renderizan en blanco** (string vacío). **No** usar `"-"` ni `"—"` como placeholder. Para valores opcionales, usar `fmtCelda()` / `fmtNumero()` de `@/lib/format` (devuelven `""` para vacío). |
-| **Acciones en tablas (basura)** | Los botones de eliminar (ícono cesto) dentro de tablas deben verse **en negro** (`text-foreground`) para que se perciban como acción. En hover pueden pasar a `text-destructive`. |
-| **Sesiones** | Acceso a datos vía iron-session y helpers del proyecto. |
+### 2.1 Clases globales (`globals.css`)
+
+| Clase | Uso |
+|-------|-----|
+| `.area-page-shell` | Cascarón de página |
+| `.contenedor-pagina-con-filtros` | Gap header / filtros / tabla |
+| `.section-header` + `__titulo` `__subtitulo-*` | Encabezado |
+| `.filtros-contenedor-tienda` `.input-filtro-unificado` `.select-content-filtro` `.fila-filtros-4\|5\|6` `.filtro-individual-*` `.filtro-count-label` | Filtros |
+| `.contenedor-tabla-gestion` (+ `--pie-fijo`, `--mc-overlay`, `no-scroll-x`) | Scrollport de tabla |
+| `.card-tabla-envoltorio` | Card alrededor de tabla |
+| `.tabla-gestion-compacta` `.celda-datos` `.tabla-check-toggle` `.tabla-row-btn-filled-brand` `.tabla-bloque-secundario-*` `.tabla-fila-seccion-subencabezado*` | Tablas |
+| `.modal-app` / `.app-modal` `.modal-micro-label` `.modal-field-label` | Modales |
+| `.sidebar-nav-*` `.sidebar-user-switcher-surface` | Sidebar |
+| `.finanzas-resumen-tarjeta` | Totales Finanzas |
+| `.no-scrollbar` | Oculta barra; mantiene scroll |
+| `.btn-primario-gestion` | CTA toolbar legacy; nuevas toolbars → `ToolbarActionButton` |
+| `--gris` `--gris-inset` `--primary` | Lienzo / inset / marca |
+
+Variantes de tabla (misma familia compacta): `tabla-flujo-de-fondo`, `tabla-deuda-proveedores`, `tabla-recepcion-pedido`, `tabla-est-carga-datos`, `tabla-px-competencia-listado`, `tabla-px-listas-*`, `tabla-fin-ana-margen-contribucion`, `tabla-vinculos-modal`.
+
+### 2.2 `@/lib/ui-classes`
+
+Éxito/aviso: `BADGE_SUCCESS_TINT_CLASS`, `TEXT_SUCCESS_CLASS`, `TEXT_WARNING_CLASS`, `ICON_WARNING_INTERACTIVE_CLASS`, `CALLOUT_WARNING_CLASS`, `IMPORT_STAT_BADGE_CLASSES`. Finder: `CATALOGO_FINDER_*`. Tabla: `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`, `TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS`, `TABLE_ROW_ACTION_ICON_CLASS`. Balance modales: `BALANCE_MODAL_*`. Labels: `MODAL_MICRO_LABEL_CLASS`.
+
+### 2.3 Shared (`src/components/shared/`)
+
+Nuevo shared: CVA + tokens + `"use client"` solo si hay estado/hooks. Documentar aquí.
+
+| Componente | Rol |
+|------------|-----|
+| `ClassicFilteredTableLayout` | Template página. Props: `title`, `subtitle?`, `subtitleSecondary?`, `actions?`, `filters?`, `children`, `tone` gray\|card, `contentWidth`, `density` |
+| `ClassicPageHeader` / `SectionHeader` | Header. Núcleo `PageSectionHeader` |
+| `AppModal` | Modal estándar. `title`, `children`, `actions`, `size`, `padding`, `scrollBody`, `hideBodyScrollbars` |
+| `ModalTablaConFiltros` | Modal tabla + filtros. `selectionMode`, `columns`, `rows`, `getRowId` |
+| `FiltroBusquedaInput` | Búsqueda con debounce (junto al hook) |
+| `TableEmptyState` | Vacío (`tableCell` \| `panel` \| `compact`) |
+| `PaginacionTabla` / `PaginacionClient` | Paginación URL vs callback |
+| `ToolbarActionButton` | Toolbar ícono + label + `loading`. No en botones solo ícono |
+| `DuxSyncStyleButton` | Dos líneas + swap hover (Sync slidenav) |
+| `MensajeProceso` | “X de Y” / sidebar |
+| `ModalMicroLabel` / `ModalSiNoChoice` / `ModalFeedbackRegion` | Labels, SÍ/NO, feedback |
+| `MontoArInput` / `MontoArSaldoEnteroInput` / `PorcentajeCentInput` / `PorcentajeEnteroMaskInput` / `PxListaEnteroInput` | Máscaras AR |
+| `SelectSearchInput` | Buscador de desplegables |
+| `FiltroRangoFechasCalendarioModal` | Rango de fechas |
+| `TablaSubencabezadoSeccionRow` | Subencabezado en tbody |
+| `CeldaDifPct` / `CeldaCxProdTienda` | Celdas de variación / Cx |
+| `catalogo-finder/*` | Finder |
+| `SidebarAreaSwitcher` / `SidebarMainAppArea` | Dock sesión / Pendientes |
+| `ReposicionProveedorPrioritarioModal` / `SobreStockReposicionAdvertenciaModal` | Confirmaciones al generar pedido |
+| `ExportarMktSeccionesGoogleSheetsButton` | Export Marketing |
+
+Filtros: `@/components/FilterBar` (`FilaFiltrosDesplegables`, `LimpiarFiltrosButton`, `FILTER_*`).
 
 ---
 
-## 3.1 Catálogo de componentes compartidos (`src/components/shared/`)
+## 3. Módulos (solo reglas únicas)
 
-Estos componentes son **SSOT** para patrones repetidos. Reglas:
+Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el patrón ciego. Lógica de negocio → `docs/BACKEND_GUIDELINES.md`.
 
-- **Siempre** combinar clases con `cn()` (`@/lib/utils.ts`).
-- **Variantes**: cuando haya duplicación de clases o combinaciones, usar **CVA** (`class-variance-authority`) dentro del componente.
-- **Accesibilidad**: inputs de selección deben tener `aria-label` si no hay texto visible.
+### Pedidos
 
-**Patrón Design System (nuevos componentes en `shared/`):**
+- **Urgente** (`PedidoUrgentePageClient`): sucursal obligatoria para listar. 7 columnas (PROVEEDOR 10%, DESCRIPCIÓN 60%, CANT. PED. / PROV. PED. / cesto / CONF. REPO. / CANT. REPO. 6% c/u). Sin columna VINC.; registro Dux vía `TablaSubencabezadoSeccionRow`. Filtro PEDIDO: urgente / reposición / cualquiera. Doble clic: varios proveedores → Elegir Proveedor (también con filtro PROVEEDOR). Header: solo `GenerarPedidoToolbarButton`. Auto-refresh IVA: `PosicionIvaComparacionAutoRefresh`.
+- **Tintométrico:** `cod_ext` = `buildCodExtTintometrico`. Alta: sucursal → proveedor → COD. TINTOMÉTRICO.
+- **Reposición:** desplegables SUCURSAL → PROVEEDOR → MARCA → RUBRO → CONFIGURADO. Bloque secundario STOCK / CANT. A PEDIR. `ConfigurarReposicionModal`: punto/cant vacíos (no `0`) si no hay regla.
+- **Generar Pedido** (`/pedidos/enviar` + botón en urgentes): modal SUCURSAL → TIPO (multi checkbox) → PROVEEDOR. Footer solo con tres filtros y `hayItems`. Tras PDF/WhatsApp: `router.refresh()`. Confirmaciones: `ReposicionProveedorPrioritarioModal` luego `SobreStockReposicionAdvertenciaModal`.
+- **Recepción** (`PedidoHistoriaDetalleModal`): `AppModal` `size="xl"` + `max-w-[66rem] h-[95vh]`. Scroll solo en tabla; pie TOTAL PEDIDO fuera. Checklist local hasta **Registrar En Dux** (fiscal → personal → POST). Corrección: **Corregir Recepcion** / **Guardar Corrección**. Tabla `tabla-recepcion-pedido`. Listado: `FiltrosHistorialPedidos` default PENDIENTE; acciones Recepción / Ver (`PedidoHistoriaLecturaModal`) / Borrar.
 
-- **CVA**: definir `*Variants = cva(base, { variants, defaultVariants })`; tipar props con `VariantProps<typeof *Variants>` y extender `ComponentPropsWithoutRef<"elemento">` (u otra raíz semántica).
-- **Export**: si otras piezas reutilizan las mismas clases (ej. `EmptyTableRow`), exportar el objeto `*Variants` además del componente.
-- **Tokens**: solo tema (`bg-card`, `text-muted-foreground`, `border-border`, etc.); nunca `bg-white` / `text-slate-*` / paletas genéricas para estados — ver `@/lib/ui-classes`.
-- **Capa cliente**: añadir `"use client"` solo si el componente usa hooks, eventos del navegador o estado; los presentacionales pueden quedarse como Server Components.
-- **Retroalimentación**: al dar de alta un componente compartido, añadir entrada en esta sección **3.1** (props, variantes CVA, accesibilidad, ejemplos breves).
+### Tienda / precios
 
-### `AppModal` (`src/components/shared/AppModal.tsx`)
+- **Cx Compra:** Link2 → `SeleccionarProductoModal`. Vínculos en subfilas `CxCompraVinculosDetalle` (no modal de lista). CX PROD. = BASE + variación. Header **Act. Cx.** (`ActCxButton`).
+- **Px Listas** (`px-listas-precios/`): columnas fijas sticky 50% (DESCRIPCIÓN + CATEGORÍA M.C.) + listas DUX (PX / PORC. UTILIDAD; GENERAL + REF.). Staging `prod_tienda_precios_edicion`. Header **Act. Px.** → Excel por lista.
+- **Px Competencia** (`PxCompetenciaPageClient` en `/tienda/cx-px`; **no** confundir con Px Listas): solo `comparar_competencia = true`. Filtros MARCA / RUBRO / PX PROMEDIO + búsqueda. Grilla DESCRIPCIÓN / PX PROMEDIO / DIF TIENDA / ACCIONES. Banner `CompetenciaSyncProgresoBanner`. UI en `px-competencia/` (`FiltrosPxCompetencia`, `TablaPxCompetencia`) + modales en `precios-competencia/`. Actions/servicios: `pxCompetencia.ts`, `pxCompetenciaPage.service.ts`. URL interna `/tienda/cx-px` (no renombrar).
+- **Px Sugeridos:** `habilitado = true`; DESCRIPCIÓN = `descripcion_tienda` fallback proveedor; `px_vta_sugerido` nulo → celda vacía.
+- **Comp. Categorías:** CFTL `wide150`, sin FilterBar. Finder 4 columnas + tabla. DTO. EXTRA y DIF % en cliente al blur. Layout: `@/lib/comparacionCategoriasLayout.ts`.
 
-Modal estándar (header corporativo + cuerpo en capas `bg-gris → bg-card` + footer con acciones).
+### Stock / ayuda vendedor
 
-- **Props**
-  - **`title`**: `ReactNode` (título del modal, en title case).
-  - **`children`**: `ReactNode` (contenido del cuerpo).
-  - **`actions`**: `ReactNode` (botonera del footer).
-  - **`size`**: `"sm" | "md" | "lg" | "xl"` (default `"md"`).
-  - **`padding`**: `"sm" | "default" | "lg"` (default `"default"`).
-  - **`scrollBody`**: `boolean` (default `true`).
-  - **`hideBodyScrollbars`**: `boolean` (default `false`). Si `true` y `scrollBody`, oculta la barra de scroll del **área gris** (`.app-modal__scroll-area`) y de la **card** (`.app-modal__body`); el scroll con rueda/táctil se mantiene. Estilos en `globals.css` (combinación con `.no-scrollbar`).
-  - **`showCloseButton`**: `boolean` (default `true`).
-  - **`className`** / **`bodyClassName`**: overrides puntuales (evitar duplicar estilos base).
-  - **`bodyShellClassName`**: opcional; se aplica al `div` gris que rodea la card del cuerpo (junto con `p-4` por defecto). Útil para reducir padding en modales densos.
-  - **`headerClassName`** / **`footerClassName`**: opcional; se combinan con el header primary (`pt-5 pb-4` por defecto) y el footer (`py-4`). Ej. `PedidoHistoriaDetalleModal`: `headerClassName="pt-3 pb-3"`, `footerClassName="py-3"`, `padding="sm"` y `bodyClassName` con `py-2` para ganar altura útil en la tabla.
+- **Control Stock:** header Exportar / Imprimir. Sin modal de sync al entrar. Excel: ítems con variación; Check confirma sin variación.
+- **Trans. Depósitos:** origen ≠ destino; origen default = sucursal preferida. **Generar Transf.** → `TransfPendienteRegistroModal`.
+- **Px Tintométrico / Calc. Litros:** CFTL `contentWidth="full"` sin FilterBar; card de cálculo. Coeficientes / rendimientos solo `editor`, en `actions` del header (**Editar Coeficientes** / **Editar Rendimientos**).
+- **Cargar Gasto:** CFTL; al entrar abre `GastoUnicoBalanceModal` (gasto eventual, mes/año AR). Header **Nuevo Gasto Eventual**.
 
-### `ToolbarActionButton` (`src/components/shared/ToolbarActionButton.tsx`)
+### Finanzas
 
-Botón estándar para **barras de acciones y encabezados de página** (toolbar de `SectionHeader` / `ClassicPageHeader`, modales, cards). Centraliza el patrón `icon + label + estado async` accesible, delegando tipografía, altura y tokens al **`Button`** de `@/components/ui/button`.
+- **Balance mensual:** CSS Grid (concepto + Global + sucursales `genera_balance`). Filas `h-10`. Hex de informe (**Guía para IA** punto 13). Ventas solo lectura desde `fin_bal_vtas` (carga en Ventas Mensuales). Drill-down: historial → clic barra (CV/CF) → rubros; footer **Volver**. Filtros mes/año + cesto → periodo AR actual. `contentWidth="full"`.
+- **Gastos:** filtros sucursal/proveedor/rubro/gasto/estado + año/mes (mes multi). Totales en `.finanzas-resumen-tarjeta`. `TablaGastos` usa `<table>` nativo (excepción).
+- **Ventas Mensuales:** MES / AÑO / SUCURSAL + contador. Carga: **Nueva Carga** → `CrearFinBalVtasModal` (no en la barra de filtros). Eliminar fila: `Trash2` brand.
+- **Tesorería:** 4 filtros en una fila. Pie dos filas de tarjetas (tipo de valor / disponibilidad). Cheques: tenencia ACTUALES / TRANSFERIDOS.
+- **Flujo De Fondo:** `/finanzas/venc-por-fecha` (`TablaFlujoDeFondo`). SALDO negativo: `text-destructive` en la celda. Doble clic → detalle día. **No** usar `/finanzas/flujo-de-fondo` (redirect).
+- **Venc. Provee. Merc. / Gastos:** doble clic → mismo detalle de flujo filtrado por proveedor.
+- **Control Comprobantes:** fila filtros + rango fechas. CONTROLADO solo lectura; doble clic (editor) confirma marca.
+- **Catálogo Gastos:** Finder 5 columnas. Proveedores no-mercadería desde header.
+- **Margen Contribución / Cx. Financieros:** ver PageClients; overlay COSTOS en MC (`.contenedor-tabla-gestion--mc-overlay`).
+- **Usuarios:** búsqueda + tabla; modal sucursal y módulos (mín. 1).
 
-- **Por qué existe**
-  - Evita repetir `gap-2 shrink-0` en cada call site: el `Button` base ya los incluye en su clase (y tamaña los SVGs a `size-4` vía selector `[&_svg:not([class*='size-'])]:size-4`).
-  - Encapsula el estado **`loading`** (spinner + `disabled` + `aria-busy`). No repetir ese patrón ad hoc en cada toolbar.
-  - Fuerza `type="button"` (previene submit accidental dentro de `<form>`).
+### Estadísticas / Pedido A Fáb.
 
-- **Props**
-  - **`label`**: `ReactNode?` — texto del botón (title case). Si no hay texto visible, pasar `aria-label`.
-  - **`icon`**: `ReactNode?` — ícono de `lucide-react` (ej. `<RefreshCw />`). No hace falta dimensionarlo: el `Button` base aplica `size-4 shrink-0` a los `<svg>`.
-  - **`loading`**: `boolean` (default `false`) — al activarse deshabilita, reemplaza el ícono por **`Loader2`** con `animate-spin` y setea `aria-busy`.
-  - **`loadingLabel`**: `ReactNode?` — texto alterno mientras `loading` (ej. `"Importando…"`). Si se omite, se mantiene `label`.
-  - **`variant`** / **`size`**: pass-through del `Button` de shadcn (`default` | `outline` | `secondary` | `destructive` | `ghost` | `primaryIcon` | `link`; tamaños `default` | `xs` | `sm` | `lg` | `icon*`).
-  - **`density`** (CVA): `"default"` | `"tight"` — única variante propia, sólo ajusta el gap cuando una toolbar densa lo requiera.
-  - Resto: hereda `ComponentProps<typeof Button>` (incluye `onClick`, `disabled`, `className`, etc.).
+- **Carga De Datos:** grilla periodo × sucursal (`tabla-est-carga-datos`); celda pendiente `.celda-est-carga-pendiente`.
+- **Configuracion:** `FilaFiltrosDesplegables` `columnas={6}` + búsqueda.
+- **Ventas:** dos FilterBar + tres gráficos (clases `.est-vtas-*`).
+- **Pedido A Fáb.:** dos FilterBar; CANT. PEDIR debounce a `prod_ped_merc` tipo A FÁBRICA; header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
 
-- **Ejemplos**
+### Marketing
 
-  ```tsx
-  import { RefreshCw, Download } from "lucide-react";
-  import ToolbarActionButton from "@/components/shared/ToolbarActionButton";
+SSOT `MARKETING_ROUTES`. Calendario: grilla mes + Cuadro De Mando; ícono red `MktRedSocialIcon`. Ideas: Finder 2 columnas. Objetivos: 3 ejes × semanal/mensual. Base Multimedia / Colores Marca: tablas CFTL. Export: `ExportarMktSeccionesGoogleSheetsButton`.
 
-  // Acción primaria con ícono
-  <ToolbarActionButton
-    label="Importar Datos Dux"
-    icon={<RefreshCw />}
-    onClick={handleImport}
-  />
+### Asistente IA
 
-  // Acción con estado async y texto alterno
-  <ToolbarActionButton
-    label="Importar Datos Dux"
-    loadingLabel="Importando…"
-    loading={syncing}
-    icon={<RefreshCw />}
-    onClick={handleImport}
-  />
-
-  // Variante secundaria (exportar)
-  <ToolbarActionButton
-    variant="outline"
-    label="Exportar Stock"
-    icon={<Download />}
-  />
-  ```
-
-- **Cuándo usarlo**
-  - **Nuevas** toolbars con íconos y/o estados async (importar, exportar, sincronizar, generar PDF, imprimir, etc.).
-  - Cualquier acción donde actualmente se repetía `className="btn-primario-gestion gap-2 shrink-0"` junto con `<Icon className="h-4 w-4 shrink-0" />`.
-
-- **Cuándo NO usarlo**
-  - Botones puramente ícono (ej. `LimpiarFiltrosButton`): usar `<Button variant="primaryIcon" size="icon-lg" aria-label="…">` directo.
-  - Botones sin ícono ni estado async: `<Button>` de shadcn sigue siendo la API mínima.
-  - Botones con doble línea (texto principal + detalle de última actualización): usar **`DuxSyncStyleButton`** (CVA `surface`).
-
-- **Clase `.btn-primario-gestion`:** vigente en CTAs de toolbar/modales que aún no usan `ToolbarActionButton`. **Nuevas** toolbars con ícono + label → `ToolbarActionButton`. No reintroducir helpers de className (`actionButtons.ts`) ni `SyncDuxHeaderButton` / `SyncButton` (sync = **`SyncStatusIndicator`**).
-
-### `ModalTablaConFiltros` (`src/components/shared/ModalTablaConFiltros.tsx`)
-
-Modal reutilizable de **título + filtros + tabla** con modos:
-
-- **Single** (default): selección por **doble clic** en fila (definido por el padre con `onRowDoubleClick`).
-- **SingleConfirm**: selección por **click** en fila + confirmación con botón (default: `confirmSingleLabel="AGREGAR"`).
-- **Multi**: selección por checkbox + confirmación con botón.
-- **MultiQuantity**: columna **CANT** con input entero positivo por fila + confirmación con botón (ej. **Seleccione Una Base** en pedido tintométrico).
-
-- **Props base**
-  - **`open`**, **`onClose`**.
-  - **`title`**: `string` (title case).
-  - **`subtitle`**: `string?`.
-  - **`filterContent`**: `ReactNode` (filtros del modal).
-  - **`columns`**: `{ key, label, className?, render(row) }[]`.
-  - **`rows`**, **`getRowId(row)`**.
-  - **`loading`**: `boolean?`.
-  - **`emptyMessage`**: `string?` (default `"Sin resultados"`).
-  - **`count`**: `number?` (si se pasa, muestra “X resultado(s)” en el footer).
-  - **`contentClassName`**: `string?` (solo para ajustes puntuales del contenedor).
-
-- **Props single**
-  - **`selectionMode`**: `"single"` (default).
-  - **`onRowDoubleClick(row)`**: handler de selección.
-  - **`footerRight`**: `ReactNode?` (por defecto renderiza “Cancelar”).
-
-- **Props multi**
-  - **`selectionMode`**: `"multi"` (obligatorio).
-  - **`onConfirm(ids)`**: callback async/sync (si resuelve OK, el modal se cierra).
-  - **`confirmLabel(count)`**: texto del botón (default: `Asignar N producto(s)`).
-  - **`confirmPending`**: `boolean?` (deshabilita acciones y muestra loader).
-
-- **Props multiQuantity**
-  - **`selectionMode`**: `"multiQuantity"` (obligatorio).
-  - **`onConfirmQuantity(items)`**: `{ id, cantidad }[]` solo con filas con cantidad &gt; 0; si resuelve OK, el modal se cierra.
-  - **`confirmQuantityLabel(count)`**: texto del botón (default: `AGREGAR N BASE(S)`).
-  - **`confirmPending`**: `boolean?` (deshabilita acciones y muestra loader).
-  - Input **CANT**: enteros positivos; clase global **`tabla-celda-cant`** en la celda para que el input ocupe todo el alto/ancho de la fila (2rem) con borde visible en los cuatro lados; fila resaltada cuando tiene cantidad válida; doble clic en fila lo delega al padre (ej. agregar con cantidad 1).
-
-- **Props singleConfirm**
-  - **`selectionMode`**: `"singleConfirm"` (obligatorio).
-  - **`onConfirmSingle(row)`**: callback async/sync. Si resuelve OK, el modal se cierra.
-  - **`confirmSingleLabel`**: texto del botón de confirmación (default: `AGREGAR`).
-  - **`confirmPending`**: `boolean?` (deshabilita acciones y muestra loader).
-
-- **Notas de implementación**
-  - **Estilos de tabla**: las celdas repetidas (header/body) y estilos de fila usan **CVA** para evitar duplicación.
-  - **Accesibilidad**: los checkboxes incluyen `aria-label` (no hay texto visible).
-
-### `GenerarPedidoToolbarButton` (`src/components/pedidos/GenerarPedidoToolbarButton.tsx`)
-
-Botón de cabecera que abre el modal **Generar Pedido** (`AppModal` + `Dialog`). Lista de proveedores: misma forma que **`FiltrosEnviarPedido`** (`id`, `nombre`, `prefijo`); en **Tintométrico** se mapea desde los proveedores tintométricos; en **Reposición** se usa **`getEnviarPedidoData().proveedores`** (catálogo completo con lista de precios habilitada).
-
-- **Props**: `proveedores`, `defaultSucursal`, `defaultProveedor`, `defaultTipos`, `modulo` (`"enviar" | "urgente" | "tintometrico" | "reposicion"`), `triggerLabel?`, `triggerClassName?`, `triggerSize?`.
-- **Título del modal**: **Generar Pedido** (title case). Footer: **Cancelar** (outline) + **Generar Pedido** (primary).
-- **Tipo de pedido**: `DropdownMenu` de **`radix-ui`** (`modal={false}` dentro del `Dialog`) con **`Portal`** + **`CheckboxItem`** (tres opciones: URGENTE, TINTOMÉTRICO, REPOSICIÓN); no usar panel `absolute` bajo el trigger — el **`AppModal`**/`DialogContent` llevan `overflow-hidden` y recortaban el menú.
-- **Bajo los tres desplegables**: recuadro reservado (`min-h`, borde `border-border`, `bg-muted/40`), contenido **centrado** (`items-center`, `text-center`). Estados: aviso/error → ícono **`AlertCircle`** `text-destructive`; comprobación → **`Loader2`** `text-muted-foreground`; sin ítems → **`AlertCircle`** rojo + texto muted; listo → **`CheckCircle2`** `text-primary` (#0072BB vía token) + **«Listo para generar el pedido.»**. El footer **Generar Pedido** solo con los tres filtros y **`hayItems === true`**.
-- **Validación de sobrestock (otra sucursal):** al confirmar **Generar Pedido**, la primera llamada es `generarPdfEnviarPedidoAction` **sin** `confirmarSobreStock`. El servidor valida antes del snapshot: para cada línea del pedido con **`cod_tienda`**, si en la **otra** sucursal hay sobrestock (stock en `prod_precios_tienda` vs tope resuelto con filas REPOSICIÓN en **`prod_ped_merc`**), responde `SOBRESTOCK_REQUIERE_CONFIRMACION:…` **sin persistir** (aplica con cualquier combinación de tipos URGENTE / TINTOMÉTRICO / REPOSICIÓN). El cliente llama `getSobreStockReposicionParaModalAction` y abre **`SobreStockReposicionAdvertenciaModal`**. **Confirmar Cant. Pedida** reintenta con `confirmarSobreStock: true`.
-- **Reposición — proveedor prioritario distinto:** si **`tipos`** incluye **REPOSICIÓN** y hay ítems con cantidad a pedir &gt; 0 cuyo proveedor ganador (`elegirListaPrecioProveedorReposicion`) **no** es el proveedor elegido en el modal **pero el producto está vinculado a ese proveedor** (`prod_precios_provee.cod_tienda`), la primera llamada responde `REPOSICION_PROVEEDOR_PRIORITARIO_REQUIERE_CONFIRMACION:…` **sin persistir**. El cliente abre **`ReposicionProveedorPrioritarioModal`** (tilde por ítem). **Generar Pedido** en ese modal reintenta con `confirmarReposicionProveedorPrioritario: true` y `itemsReposicionProveedorPrioritario` (puede ser vacío). Los ítems marcados se **agregan al mismo PDF** del proveedor elegido (un solo pedido). El modal de sobrestock, si aplica, se muestra **después** de confirmar este paso.
-
-### `ReposicionProveedorPrioritarioModal` (`src/components/shared/ReposicionProveedorPrioritarioModal.tsx`)
-
-- **Rol:** opt-in antes de generar pedido de **REPOSICIÓN** cuando hay productos asignados a otro proveedor por menor costo comparable (orquestado por `GenerarPedidoToolbarButton`).
-- **Props:** `open`, `onOpenChange`, `items` (`ReposicionProveedorPrioritarioItem[]`), `proveedorPedidoEtiqueta` (proveedor elegido en Generar Pedido), `pending?`, `onConfirmar(seleccionados)`.
-- **Copy:** *«Estos productos están asignados a [proveedor prioritario], pero por temas de stock y logística podés incluirlos en el pedido de [proveedor del pedido].»*
-- **Tabla:** columna **tilde** (`tabla-check-toggle` cuadrado, alto acorde a fila 2rem), **DESCRIPCIÓN**, **CANT.** Fila seleccionada: `bg-primary/15`. Botón activo: relleno `primary` + ícono `Check`. Copy por grupo de proveedor en el párrafo superior (proveedor asignado ya no va en columna).
-- **Ancho:** `AppModal` `size="lg"` + `className="max-w-[50.4rem]"` (−30 % sobre `72rem` base).
-- **Datos:** `getReposicionProveedorPrioritarioParaModalAction` → `getReposicionItemsProveedorPrioritarioAlternativo`.
-
-### `SobreStockReposicionAdvertenciaModal` (`src/components/shared/SobreStockReposicionAdvertenciaModal.tsx`)
-
-- **Rol:** advertencia accesible antes de generar el pedido cuando hay sobrestock en la **otra** sucursal (orquestado por `GenerarPedidoToolbarButton`).
-- **Props:** `open`, `onOpenChange`, `items` (`SobreStockReposicionItem[]`), `pending?`, `onPedirAlProveedorIgual`, `layoutGap?` (`"default"` \| `"tight"` — CVA `sobreStockAdvertenciaLayoutVariants`).
-- **CVA:** `sobreStockAdvertenciaLayoutVariants`, `sobreStockAdvertenciaTableShellVariants`.
-- **Copy vigente:** título del modal **Advertencia SobreStock**; texto principal **Confirmar Cantidad Pedida al Proveedor** (sin párrafo descriptivo secundario).
-- **Tabla (patrón visual `Recepcion Pedido`):** columnas **CHECKLIST**, **SUCURSAL**, **DESCRIPCIÓN**, **SOBRESTOCK**, **CANT. PEDIR**, **ACCIONES**. Clave de fila: `` `${idItemPedidoEnvio}-${origenDeteccion}-${sucursalCodigoSobrestock}` ``.
-- **Anchos actuales (proporción final normalizada):** `CHECKLIST 6%`, `SUCURSAL 9%`, `DESCRIPCIÓN 50%`, `SOBRESTOCK 8%`, `CANT. PEDIR 20%`, `ACCIONES 9%`. El modal usa `AppModal` `size="lg"` + `className="max-w-[72rem]"` para acompañar el crecimiento de columnas.
-- **Edición de cantidad:** `CANT. PEDIR` usa el mismo patrón de `PedidoHistoriaDetalleModal` (botón `-`, `Input` numérico centrado, botón `+`; controles `size="icon-xs"`). Cualquier cambio en cantidad limpia la confirmación de esa fila.
-- **Acciones por fila:** **Check** confirma la fila con la cantidad actual del input. **Cesto** pone la cantidad en `0` y confirma en el mismo click.
-- **Confirmación global:** el botón **Confirmar Cant. Pedida** permanece deshabilitado hasta que todas las filas estén confirmadas.
-- **Tipo `SobreStockReposicionItem`:** incluye `sucursalCodigoSobrestock`, `origenDeteccion` (en este flujo **`OTRA_SUCURSAL`**; el tipo conserva `LOCAL` por compatibilidad de contrato).
-- **Tokens:** `TEXT_WARNING_CLASS` para el ícono de aviso; `AppModal` + `Dialog` como en el resto de modales compuestos.
-
-### `PedidoHistoriaDetalleModal` (`src/components/pedidos/PedidoHistoriaDetalleModal.tsx`)
-
-Modal del submódulo **Recepcion Pedido** (ruta `/pedidos/historial`) para operar la recepción de ítems del pedido (tabla, cantidades recibidas, alta de productos, etc.). Usa **`AppModal`**.
-
-- **Título (`AppModal`, prop `title`):** **Recepcion Pedido** (title case).
-- **Ancho / alto:** `size="xl"` + `className="max-w-[66rem] h-[95vh] max-h-[95vh]"` (desktop único, sin `sm:`/`lg:`).
-- **Resumen superior (columna proveedor):** sin micro-etiqueta “Nombre proveedor”; el nombre del proveedor es el primer nodo visible (`<p>` `text-sm font-semibold`). Contenedor **`flex-col justify-center gap-0.5 py-0 text-left`**; padding horizontal **`CELDA_RESUMEN_PROVEEDOR_PADDING_X`**. Línea secundaria (**sucursal - dd/mm hh:mm**) sin **`mt-*`** (separación vía **`gap-0.5`**). Grid resumen: **`items-center`**. Sin estado PEDIDO/RECIBIDO en esa línea.
-- **Resumen superior (borde a borde):** el panel de resumen se renderiza sin padding lateral ni márgenes negativos (`py-0`), con grid `w-full` para ocupar todo el ancho disponible del cuerpo.
-- **Tabla ítems + totales:** pie **TOTAL PEDIDO** fuera del `<table>` y **fuera** del **`div`** con **`overflow-y-auto`** que envuelve solo la **`<Table>`** (**`<section aria-label="Totales del pedido">`** hermana bajo **`.contenedor-tabla-gestion`** **`flex flex-col`**: scroll **`flex-1 min-h-0 overflow-y-auto`**, totales **`shrink-0`** **`border-t`** **`bg-background`** **`py-2`**). Desktop-only; no `overflow-y-auto` en el `DialogContent`.
-- **Scroll en Recepción:** cuando la grilla de ítems supera el alto visible, el desplazamiento vertical debe ocurrir solo en el contenedor de filas (tbody) del bloque de tabla; header y totales permanecen fijos. En este modal, el contenedor de filas usa `no-scrollbar` para ocultar la barra visual sin perder scroll con rueda/trackpad y **no** debe tener `max-h` fijo, para que aproveche todo el alto disponible del cuerpo.
-- **Alta de nuevos ítems:** se realiza con botón primario **`(+ ) Agregar Producto`** dentro del modal de recepción. Al hacer click, abre `AgregarProductosModal`, donde se selecciona el producto en tabla, se carga **CANT.** y se confirma con **Agregar Producto**.
-- **Alta de nuevos ítems (borde a borde):** la sección de alta no usa márgenes negativos ni padding lateral manual; el bloque de filtro + botón toma el ancho completo disponible.
-- **Altura fila alta (Recepción):** en la fila **filtro + Agregar Producto**, el **`FiltroBusquedaInput`** lleva `className="h-10 min-h-10"` y el botón **Agregar Producto** **`h-10 min-h-10`** (la X del input sustituye al cesto global del modal). Bordes/ring `#0072bb`, `rounded-md`, `text-sm`, `px-3 py-1`; ancho desktop según contenido.
-- **Filtro previo de alta:** arriba del botón `(+ ) Agregar Producto` se muestra `FiltroBusquedaInput` con placeholder **BUSCAR POR DESCRIPCIÓN...** (limpieza con la X del componente). Ese valor se usa como búsqueda inicial al abrir `AgregarProductosModal`.
-- **Filtro por descripción (tabla de recepción):** el input de la fila de alta también filtra en vivo los ítems visibles de la tabla por `DESCRIPCIÓN` (case-insensitive). Si no hay coincidencias, mostrar estado vacío específico de búsqueda.
-- **Limpieza automática del filtro:** cada vez que una fila pasa a checklist **TRUE** (OK, cesto o check de edición), el filtro por descripción de la tabla de recepción se limpia automáticamente.
-- **Alta de producto y checklist:** al agregar una nueva fila en recepción, el ítem nuevo se marca confirmado y las confirmaciones previas de ítems existentes deben preservarse (no resetear checklist al recargar detalle).
-- **Fila de acciones de alta (Recepción):** en `PedidoHistoriaDetalleModal`, **filtro** + **Agregar Producto** en `flex` con separación horizontal fija (`justify-between items-center gap-x-10`): bloque izquierdo acotado (`max-w-[36rem]`) para que el input de búsqueda no estire todo el ancho; bloque derecho **Agregar Producto** con ancho por contenido.
-- **Separación funcional en fila de alta:** mantener dos bloques en la misma fila (filtro a la izquierda y acción a la derecha).
-- **Espaciado vertical fila alta:** la fila `filtro + agregar` lleva padding superior leve (`pt-1`) para separarla visualmente del bloque resumen.
-- **Ancho/alto del botón Agregar (fila recepción):** altura **`h-10 min-h-10`** (misma que cesto e input de esa fila); ancho según contenido en layout desktop.
-- **Orden en filtros de `AgregarProductosModal`:** **DESCRIPCIÓN** (`FiltroBusquedaInput`, X integrada) → **CANT.** (`Input` dentro de `FiltroIndividualContainer` para tacho solo si hay valor). La tabla muestra primera columna de checkbox de selección; en modo `singleConfirm` solo puede quedar 1 fila marcada a la vez. El botón **Agregar Producto** del footer se habilita solo cuando hay una fila seleccionada y **CANT.** > 0.
-- **Nota:** el texto `AGREGAR PRODUCTO A LA RECEPCIÓN` se mantiene solo como label de accesibilidad (sr-only) y no se muestra visualmente; la acción visible es el botón `(+ ) Agregar Producto`.
-- **Lista de verificación / acciones:** el campo de la primera columna no admite tipeo; al abrir en estado **SIN RECEPCION**, la columna **CANT. RECIBIDA** inicia vacía para todas las filas y se completa de forma secuencial por acción del usuario. **OK** copia **cant. pedida** en **cant. recibida** y confirma checklist; **Editar** copia **cant. pedida** en **cant. recibida**, limpia confirmación y abre controles de edición (`-`, input, `+`); **cesto** coloca **0** y confirma checklist en UI. **Registrar En Dux** (único disparador de registro en DUX): gate `puedeRegistrarEnDux`. Secuencia: fiscal (`PREGUNTA` si aplica) → abre **`ElegirPersonalRecepcionModal`**; al pulsar **Seleccionar** en una fila, la app queda en espera (`pending={guardando === "post"}`) hasta completar guardar recepción local → `registrarRecepcionCompraDuxAction` → `marcarPedidoHistoriaRegistradoAction` (estado **RECEPCIONADO**). Tras éxito, modal **Pedido Recepcionado** (`AppModal` `size="sm"`) con comprobante/`id_compra`; **Aceptar** cierra ese modal, **Elegir Personal** y **Recepcion Pedido**. Cancelar en fiscal o personal aborta sin guardar ni POST.
-- **Persistencia diferida (Recepción):** agregar producto, editar cantidades y confirmar checklist son cambios locales del modal; no deben persistirse en BD hasta ejecutar **Registrar En Dux** (al confirmar personal) o **Guardar Corrección** en pedidos recepcionados.
-- **Persistencia de TOTAL PEDIDO:** al registrar en DUX vía POST, el modal envía `totalPedido` a backend para persistirlo en `prod_ped_historial.total`. Si el pedido ya está **RECEPCIONADO**, al reabrir el modal el input **TOTAL PEDIDO** se precarga con ese valor guardado.
-- **Input TOTAL PEDIDO (tipeo):** visual **AR** (`$` + miles `.` + decimales `,`, máx. **2** cifras decimales). El usuario puede tipear **`,` o `.`** como separador decimal: si aparecen ambos, el **separador decimal** es el que queda **más a la derecha**; el otro solo agrupa. Repeticiones seguidas del **mismo** separador (`,,` / `..`) se colapsan a **uno** (el resto se ignora).
-- **Pedido ya recepcionado (corrección):** cuando el pedido está en estado **RECEPCIONADO**, el footer muestra **Corregir Recepcion**. Al activarlo, el modal habilita los mismos campos cargados para permitir edición y cambia la acción a **Guardar Corrección**; al guardar persiste los cambios y vuelve al modo bloqueado (sin exportación Excel).
-- **Checklist inicial en corrección:** al cargar un pedido en estado **RECEPCIONADO**, la lista de verificación inicia con todos los ítems marcados como revisados (según la última recepción persistida), para que en **Corregir Recepcion** el usuario solo ajuste diferencias puntuales y no tenga que rehacer toda la confirmación.
-- **Corrección en recepcionado (persistencia):** durante **Guardar Corrección**, las ediciones de **CANT. RECIBIDA** y el alta por **Agregar Producto** se persisten sobre `prod_ped_historial_merc` aun cuando la cabecera esté en estado **RECEPCIONADO**; la corrección no debe mostrar bloqueo por “Pedido ya recepcionado” en ese flujo.
-- **Confirmación de comprobante fiscal previo al POST DUX:** antes de invocar `registrarRecepcionCompraDuxAction` en **Registrar En Dux**, `PedidoHistoriaDetalleModal` consulta `detalle.proveedorIva` (campo expuesto por `getPedidoHistoriaDetalle`):
-  - Si `proveedorIva ∈ {SIEMPRE, NUNCA}` → la regla del enum prevalece y el POST se invoca **sin abrir modal** (`SIEMPRE → FACTURA`, `NUNCA → Comprobante_Compra`).
-  - Si `proveedorIva === PREGUNTA` → se abre `ConfirmarComprobanteFiscalModal` (`src/components/pedidos/ConfirmarComprobanteFiscalModal.tsx`, **AppModal**, `size="sm"`, `max-w-md`, título **Confirmar Comprobante Fiscal**) con la pregunta **¿La compra genera comprobante fiscal?** y dos botones: **Si** (decisión `true` → **FACTURA**) y **No** (decisión `false` → Comprobante_Compra). El padre orquesta la promesa con un `useRef<((value: boolean | "cancelado") => void) | null>` (`decisionFiscalResolverRef`) y un `useState<boolean>` (`confirmarFiscalOpen`).
-  - **Cancelar** (cierre por overlay/ESC) resuelve la promesa como `"cancelado"` y aborta el flujo entero: no se abre el selector de personal ni se ejecuta POST. El padre se asegura de que cualquier promesa pendiente quede limpia al reabrir el modal de detalle (`useEffect` que resuelve el resolver con `"cancelado"` y resetea `confirmarFiscalOpen = false`).
-  - El componente `ConfirmarComprobanteFiscalModal` **no** cierra el modal por sí mismo al elegir Si/No: deja que el padre decida cuándo cerrarlo (típicamente apenas resuelva la promesa). El prop `pending` se enlaza al estado de `guardando != null` para deshabilitar los botones mientras la Action está en curso. Diseño minimalista: pregunta principal en `text-sm text-foreground` + microayuda en `text-xs text-muted-foreground` indicando el mapeo (`SI → FACTURA`, `NO → Comprobante_Compra`).
-- **Selector de personal DUX (`ElegirPersonalRecepcionModal`):** el POST v2/compras exige `id_personal`. Catálogo en `global_personal` vía `listGlobalPersonalAction`. Componente: `src/components/pedidos/ElegirPersonalRecepcionModal.tsx` — **AppModal** `size="md"` + `className="max-w-[35.2rem]"` (~+10% sobre `max-w-lg`); título **Elegir Personal**; al abrir carga la lista; tabla compacta **NOMBRE** + **SELECCIONAR** (columna `w-[6.5rem]`, botón **Check** por fila; spinner solo en la fila elegida); búsqueda por nombre (`Input` MAYÚSCULAS, sin etiqueta visible); **Cancelar** / overlay / ESC cierran sin POST (bloqueados mientras `pending`). El POST y el marcado **RECEPCIONADO** se disparan en `onSeleccionar` del padre (`PedidoHistoriaDetalleModal`); el modal **no** se cierra al elegir fila hasta que el usuario confirme **Aceptar** en el modal de éxito. Hoy solo enlazado a **Registrar En Dux**.
-- **COMPROBANTE en recepción DUX:** correlativo en `prod_ped_ult_comp` **por tipo** (FACTURA vs Comprobante_Compra; ver `BACKEND_GUIDELINES` §2.8), reservado en `prepararRecepcionCompraDatos` al ejecutar POST.
-- **Manejo defensivo de Server Actions en recepción:** en `PedidoHistoriaDetalleModal`, cualquier llamada async crítica (`guardarRecepcionPedidoHistoriaAction`, `registrarRecepcionCompraDuxAction`, `marcarPedidoHistoriaRegistradoAction`) debe ir envuelta en `try/catch` además del chequeo `res.ok`, para evitar que excepciones transport/runtime muestren el error genérico de Server Components en producción.
-- **Cartel de diagnóstico copiable:** si ocurre error en cargar detalle, guardar recepción o flujo **Registrar En Dux**, además del `toast` y del mensaje en la tabla vacía cuando aplica, se muestra debajo del resumen (**FECHA FACTURA**) un **`role="alert"`** con título **Error técnico (copiar y enviar a soporte)**, texto en `<pre>` monoespaciado (`select-all`, scroll vertical acotado), botones **Ocultar cartel** y **Copiar detalle** (`navigator.clipboard` + toast). El contenido incluye prefijo `[Recepcion Pedido · <contexto> · ISO-8601]` y el mensaje bruto para que el usuario lo pegue a soporte/desarrollo. Si el mensaje sugiere *action not found* o *digest* de Server Components, se muestra una **pista operativa** en `text-muted-foreground`.
-- **Carga del detalle (Transport):** **`PedidoHistoriaDetalleModal`** y **`PedidoHistoriaLecturaModal`** llaman **`fetchPedidoHistoriaDetalle`** contra **`GET /api/pedidos-historia/[id]/detalle`** (cookies `same-origin`). Así la respuesta es JSON HTTP y no depende del pipeline Flight/RSC que en producción a veces reduce el fallo a un digest sin mensaje útil.
-- **Checklist visual (columna 1):** en filas no verificadas no mostrar recuadro/input placeholder en la columna de checklist; dejar celda limpia para evitar confusión. El check visible aparece solo cuando el ítem está confirmado (`TRUE`).
-- **Visualización de `CANT. RECIBIDA`:** con pedido **SIN RECEPCION**, la celda queda **vacía** hasta que el ítem tenga checklist confirmada (**OK**, cesto o check de edición); recién entonces se muestra el número (incluido **`0`** tras cesto). Con pedido **RECEPCIONADO** (lectura o **Corregir Recepcion**), mostrar siempre el valor persistido; vacío solo cuando en datos es `null`.
-- **Edición en CANT. RECIBIDA:** la columna se ensancha para soportar controles inline en edición (`-`, input, `+`, `check`). El botón `check` dentro de la celda confirma checklist con el número editado. Al ampliar esa columna, se incrementa también el ancho del `AppModal` para conservar legibilidad.
-- **Orden de ítems en tabla de recepción:** mantener el orden original de carga (`detalle.items`) y **no** mover la fila cuando cambia checklist.
-- **Contraste de estados (Recepción):** tabla con clase **`tabla-recepcion-pedido`**; pendiente **`recepcion-fila-pendiente`** (cebra global **odd/even**); verificado **`recepcion-fila-verificada`** (fondo gris intermedio **`muted`/`card` ~**72/28** en `oklab`) + círculo **`bg-primary/20`** en checklist; hover más oscuro (**~84/16**) en `globals.css`; altura de fila igual al estándar de tabla.
-- **Confirmación optimista (Recepción):** en acciones **OK**, **cesto** y **check de edición**, el estado visual de checklist se marca en frontend antes de la respuesta del backend para acelerar percepción de respuesta; si la persistencia falla, se revierte al estado previo.
-
-Layout, grillas y reglas de tabla: esta subsección (desktop-only; `AppModal`; scroll en la tabla).
-
-### `PedidoHistoriaLecturaModal` — **Ver Pedido** (`src/components/pedidos/PedidoHistoriaLecturaModal.tsx`)
-
-- Solo lectura. Con pedido **Recepcionado**: tabla **DESCRIPCIÓN** (`w-[52%]`) | columna estrecha (`w-[10%]`, cabecera con **`sr-only`** "Diferencia cantidades") con **`AlertTriangle`** + **`Tooltip`** solo si cant. recibida ≠ cant. pedida — color vía token de marca **`accent2`** (`ICON_WARNING_INTERACTIVE_CLASS` en `@/lib/ui-classes`), no clases `amber-*` sueltas. Sin texto de resumen bajo la subcabecera sobre cantidad de ítems con diferencia; **CANT. RECIBIDA** sin **negrita** ni color condicional por diferencia (el detalle va en tooltip del ícono). Celdas vacías: string vacío (sin `—`). Con estado **Sin Recepción**: **DESCRIPCIÓN** + **CANT. PEDIDA** únicamente; footer **`AppModal`**: botón primario **Recepcion Pedido** (si existe **`onIrARecepcion`**) a la izquierda de **Cerrar** — cierra **Ver Pedido** y el padre abre **`PedidoHistoriaDetalleModal`** (mismo `pedidoHistoriaId`).
-
-### `HistorialPedidosPageClient` (`src/components/pedidos/HistorialPedidosPageClient.tsx`)
-
-Listado **Recepcion Pedido** (`/pedidos/historial`; sidebar y subtítulo de página). Todas las acciones están habilitadas para cualquier usuario con acceso a `pedidos`: **Recepción**, **Ver Detalles** y **Borrar**. **`FiltrosHistorialPedidos`**: **`estado`** en URL — sin `estado` o vacío, la página lista solo **`PENDIENTE`**; opciones visibles: **PENDIENTE**, **RECEPCIONADO**, **TODOS** (`estado=ALL`); **Limpiar filtros** restablece **`PENDIENTE`**. Compatibilidad legacy: el backend acepta `SIN RECEPCION` y lo normaliza a `PENDIENTE`. Parámetro URL **`q`** con **`useFiltrosConBusqueda`** (**700 ms**) + **`FiltroBusquedaInput`** en **`FilterRowSearch`**, **`focusStorageKey`** **`filtros-historial-pedidos-focus`**; al buscar se listan solo pedidos con algún ítem cuya descripción en catálogo coincida (backend: **`listarPedidosHistoria`**). **`PaginacionTabla`** incluye **`q`** en **`params`**. Última columna **ACCIONES** (`tabla-bloque-secundario-*` alineado al patrón de tabla gestión), celdas con **`flex items-center justify-center gap-2`**. Botones **`size="icon-xs"`** con **`Tooltip`**: **Recepción De Mercadería** (`PackageCheck`) → **`PedidoHistoriaDetalleModal`**; **Ver Detalles** (`Eye`) → **`PedidoHistoriaLecturaModal`** (solo lectura, título **Ver Pedido**; **`AppModal`** **`size="xl"`** (`max-w-3xl`), **`scrollBody={false}`** para que la card sea **`flex flex-col` `overflow-hidden`** y el **único scroll vertical** sea **`.contenedor-tabla-gestion`** bajo la cabecera fija — patrón equivalente a *header / `flex-1 overflow-y-auto` con tabla + `thead` sticky / footer*; cabecera del cuerpo: **badge** **Pendiente** / **Recepcionado** y nombre proveedor en **una fila** (`flex items-center gap-2`), sucursal + fecha debajo; **`.contenedor-tabla-gestion`** **`no-scrollbar`** **`no-scroll-x`**; en **Ver Pedido** ver **`PedidoHistoriaLecturaModal`**; sin inputs); dentro de **Ver Pedido** la botonera incluye **Descargar PDF** (`Download`, **`descargarPdfPedidoHistoriaAction`** + **`descargarPdfBase64`** desde `@/lib/descargarPdfBase64`, loader **`Loader2`** mientras corre); **Borrar** (`Trash2`, hover **destructive**) → **`PedidoHistoriaBorrarConfirmModal`** (texto de confirmación, **Cancelar** outline / **Sí, Borrar** destructive). Tras cerrar recepción o borrar, **`router.refresh()`** mantiene el listado al día.
-- **Descripción en Historial (fuente correcta):** cuando un ítem proviene de un producto vinculado, la columna **DESCRIPCIÓN** debe reflejar el producto de `prod_precios_tienda` resuelto por la vinculación (**`cod_tienda`** / `codTiendaVinculo`) y no depender solo de coincidencia por `cod_ext` del proveedor activo; así se evita mostrar genéricos como *PRODUCTO VARIOS* en productos vinculados.
-
-### `FiltroBusquedaInput` (`src/components/shared/FiltroBusquedaInput.tsx`)
-
-Input unificado para búsqueda en filtros (ícono Search + tacho `primaryIcon` / `filtro-individual-clear-btn` + loader). Wrapper **`filtro-individual-container`**. Usar junto a `useFiltrosConBusqueda`.
-
-- **Props**
-  - **`id`**: `string`.
-  - **`placeholder`**: `string` (en MAYÚSCULAS cuando sea placeholder de filtro).
-  - **`value`** / **`onChange(value)`**.
-  - **`isDebouncing`**: `boolean`.
-  - **`inputRef`**: `RefObject<HTMLInputElement | null>`.
-  - **`disabled`**: `boolean?`.
-  - **`className`**: `string?`.
-
-### `MontoArInput` (`src/components/shared/MontoArInput.tsx`)
-
-Input monetario reutilizable (formato **AR**): muestra **`$`**, miles con `.` y decimales con `,` (máx. **2**).
-
-- **Props**
-  - **`valueNormalized`**: `string` — `"" | "123" | "123.45"` (siempre `.` como separador decimal interno).
-  - **`onValueNormalizedChange(next)`**: callback al confirmar (onBlur) con el valor normalizado.
-  - **`variant`**: `"totalPedido"` (default) — variantes definidas con **CVA**.
-  - **`className`**: `string?` — para borde/ring (ej. `inputBorderClassName`) u overrides puntuales.
-  - **`treatEmptyNormalizedAsBlank`**: `boolean?` — si `true`, `valueNormalized === ""` muestra el campo vacío (no `$0,00`) y al borrar hasta cero centavos se emite `""` (p. ej. **`ActualizarMontoCajaTesoreriaModal`** en tesorería).
-- **Reglas de tipeo**
-  - Máscara **POS**: al **enfocar**, el primer dígito **reemplaza** el valor mostrado; los siguientes desplazan hacia la izquierda (centavos). Mismo comportamiento en **`PorcentajeCentInput`**. Por defecto el **`%`** va en **`.input-mascara-sufijo__pct`** (sufijo fijo a la derecha, `user-select: none`; el valor editable no incluye el símbolo).
-  - Acepta **`,` o `.`** como separador decimal (si aparecen ambos, se toma el más a la derecha).
-  - Repeticiones `,,` / `..` se colapsan a una sola.
-
-### `PageSectionHeader` (`src/components/shared/PageSectionHeader.tsx`)
-
-Núcleo **único** del encabezado de página (barra primaria, `h1`, `h3`, acciones, `Separator`). Variantes con **CVA** (`pageSectionHeaderRootVariants`) para evitar duplicar clases entre rutas.
-
-- **Props**
-  - **`title`**: `string` (módulo; visual MAYÚSCULAS vía CSS).
-  - **`subtitle`**: `string?` — **submódulo 1** MAYÚSCULAS + negrita (`.section-header__subtitulo-primario`). Vacío/`undefined` no renderiza el `h3`.
-  - **`subtitleSecondary`**: `string?` — **submódulo 2** Title Case + negrita (`.section-header__subtitulo-secundario`), separado por ` - `.
-  - **`actions`**: `ReactNode?` (botones a la derecha, tamaño uniforme `h-10 px-4` vía CSS global).
-  - **`tone`**: `"default" | "card"` (default `"default"`). `"card"` añade `bg-card` como refuerzo del token; el layout global `.section-header` ya usa `var(--card)`.
-  - **`className`**: `string?`.
-- **Jerarquía tipográfica:** **`MÓDULO`** (h1 MAYÚSCULAS) → **`SUBMÓDULO 1`** (MAYÚSCULAS negrita) - **`Submódulo 2`** (Title Case negrita).
-- **Accesibilidad**: `role="banner"` en el `<header>`; barra decorativa con `aria-hidden`.
-
-**Consumo recomendado:** no importar este componente directamente salvo nuevos layouts; usar `SectionHeader` (API en español) o `ClassicPageHeader` (inglés + `tone="card"`).
-
-### `ClassicPageHeader` (`src/components/shared/ClassicPageHeader.tsx`)
-
-Wrapper sobre `PageSectionHeader` con **`tone="card"`** (misma API que antes: `title`, `subtitle`, `actions`, `className`).
-
-### `ClassicFilteredTableLayout` (`src/components/shared/ClassicFilteredTableLayout.tsx`)
-
-Layout reutilizable para páginas con **header + filtros + tabla**. Centraliza espaciados y contenedores con variantes **CVA** para evitar clases duplicadas en rutas.
-
-- **Props**
-  - **`title`**: `string` (módulo; visual MAYÚSCULAS vía `ClassicPageHeader` / CSS).
-  - **`subtitle`**: `string?` (submódulo 1, MAYÚSCULAS + negrita).
-  - **`subtitleSecondary`**: `string?` (submódulo 2, Title Case + negrita).
-  - **`actions`**: `ReactNode?` (acciones del header).
-  - **`filters`**: `ReactNode?` (bloque de filtros).
-  - **`children`**: `ReactNode` (contenido principal; normalmente tabla).
-  - **`tone`**: `"gray" | "card"` (default `"gray"`).
-  - **`contentWidth`**: `"default" | "wide150" | "full"` (default `"default"`). **`wide150`**: ancho completo (`max-w-none`) + padding horizontal reducido en el módulo (Comp. Categorias).
-  - **`density`**: `"default" | "compact"` (default `"default"`).
-  - **`filtersAriaLabel`**: `string` (default `"Filtros"`), para accesibilidad del bloque `role="search"`.
-  - **`className`** / **`contentClassName`**: overrides puntuales.
-  - **Ancho filtros ↔ tabla (obligatorio):** el padding horizontal lo define **solo** el contenedor CVA (`density` default → **`px-8`**, `compact` → **`px-6`**) sobre `contenedor-pagina-con-filtros`. **`filters` y `children` comparten ese ancho.** No volver a aplicar `px-*` (ni `sm:`/`lg:`) en el envoltorio de la tabla; patrón correcto: `children` = `.contenedor-tabla-gestion` directo (ej. `PedidoTintometricoPageClient`, `MarketingBaseMultimediaPageClient`).
-
-### Balance mensual (`src/components/finanzas/FinanzasBalanceMensualPageClient.tsx`)
-
-Página **Finanzas → Balance → Balance mensual** (`/finanzas/balance/mensual`). Objetivo: **una sola tabla en CSS Grid** con columna **Concepto** + una columna por **Global** y cada sucursal con `genera_balance`, para alinear importes en la misma línea visual.
-
-- **Layout**: `grid-template-columns: minmax(10.5rem, 1.05fr) repeat(N, minmax(6.75rem, 1fr))`; contenedor con `overflow-x-auto` y ancho mínimo para scroll en pantallas chicas.
-- **Altura de fila (obligatoria en este grid)**: **todas** las filas (incluida la cabecera de columnas) usan la misma altura fija **`h-10` (2,5 rem)**, tomada como referencia de la fila **Resultado operativo** (una línea `text-sm` sin botones). Celdas: `flex items-center`, `py-0`, `px-3`. En columnas de **Global y sucursal**, el sublayout interno es **`25%` + `75%`** (`grid-cols-[25%_75%]`): el **25%** izquierdo muestra el botón **histórico** (ícono **BarChart2**, “Ver Evolución Mensual De La Fila”) en **Ventas**, **Costos Variables**, **Resultado operativo**, **Costos Fijos**, **Resultado del ejercicio**, **Margen contribución** y **Punto de equilibrio** (total de la fila en esa columna, no un gasto individual); el **75%** derecho muestra el importe alineado a la derecha. El modal **`BalanceMensualGastoHistoricoModal`** arma la serie con **`listarSerieHistorialFilaBalanceMensualAction`** (misma regla que **`resumenBalanceMensualDesdeFilas`**, ventana de meses hacia atrás; **Margen contribución** en % en el gráfico). **No** hay botón directo al desglose por rubro en la grilla: el modal **BalanceMensualDetallePorRubroModal** se abre **solo** si el historial se abrió desde **Costo variable** o **Costo fijo** y el usuario **hace clic en la barra** del mes deseado; los datos de ese periodo se cargan con **`cargarFilasBalanceMensualPeriodoAction`**. Si el historial se abre desde una fila de detalle (**`BalanceMensualDetalleGastosRubroModal`**) sigue el modo **gasto individual** (`listarHistoricoMontosGastoFinalBalanceAction`): las barras **no** abren el detalle por rubro. Botones: `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS` + `TABLE_ROW_ACTION_ICON_CLASS` (`@/lib/ui-classes`) con override compacto **`!h-7 !w-7 !p-1`**. Constantes `CLASE_FILA_BALANCE_MENSUAL_GRID` / `CLASE_CELDA_BALANCE_MENSUAL` / `CLASE_BOTON_ACCION_BALANCE_MENSUAL` en el componente.
-- **Cabecera de columnas** (Concepto / Global / sucursales): fondo **`#0072BB`**, texto **blanco**, **negrita** (`font-bold`), **mayúsculas** vía estilos del texto (títulos de columna y celda «Concepto»), divisores `border-white/20`. *Es la excepción documentada en la guía para IA (punto 2 de estilos).*
-- **Filas de datos**: orden lógico — **Ventas**, **Costos Variables**, **Resultado operativo**, **Costos Fijos**, **Resultado ejercicio**, **Margen Contribución** (%), **Punto de Equilibrio** ($ o `—`), **Margen Contribución Histórico**, **Punto de Equilibrio Histórico** (últimos dos con `—` hasta backend). Etiquetas de costos en el mismo color que Ventas (`text-foreground`).
-- **Filas resultado** (operativo y ejercicio): fondo **`#a9d6f1`**, texto **`#063652`**, **negrita** en concepto e importes; en la columna Concepto **`pl-10`** para indentar. Constantes `BG_FILA_RESULTADO` / `FG_FILA_RESULTADO` en el componente.
-- **Ventas en Balance mensual**: la fila **Ventas** es **solo lectura**: los montos salen de **`fin_bal_vtas`** según mes/año. Cargar o ajustar ventas solo en **Finanzas → Ventas Mensuales** (`/finanzas/balance/vtas`): **`CrearFinBalVtasModal`**, **`crearFinBalVtasAction`** y grilla de registros (`FinBalVtasPageClient`); no hay lápiz ni modal de edición en Balance mensual.
-- **Modales de drill-down** (detalle por rubro → gastos por rubro → líneas de gasto → historial por gasto): cadena orquestada en **`FinanzasBalanceMensualPageClient`**. **Footer:** solo botón **Volver** (sin **Cerrar**); si no hay `onVolver`, el modal cierra con `onOpenChange(false)`. **Títulos** (mayúsculas en subtítulo `SUCURSAL — AÑO — MES` centrado, negro): *Historial gasto por mes* (grilla), *Detalle costos variables/fijos por rubro*, *Detalle de gasto en …*, *Detalle de gasto* (líneas). **Columna Hist.** (última, fija): clases compartidas **`BALANCE_MODAL_TH_HISTORIAL_CLASS`**, **`BALANCE_MODAL_TD_HISTORIAL_CLASS`**, **`BALANCE_MODAL_BOTON_HISTORIAL_CLASS`** y tooltip **`BALANCE_MODAL_HISTORIAL_RUBRO_TITLE`** en `@/lib/ui-classes` (divisor **`border-l-2 border-[#0072BB]`**, fondo **`bg-muted/35`**). Botón **`ChartNoAxesColumn`** solo si hay **`gastoFinalId`** válido (líneas y gastos agregados) o si **`historialRubroDisponible`** resuelve id vía **`resolverGastoFinalIdHistorialRubro`** (gasto de mayor monto del rubro; tooltip aclara que no es el total del rubro). **Stack de modales:** al abrir detalle por rubro desde barra del historial CV/CF en grilla, se oculta el historial (`historicoOpen=false`) conservando su estado; **Volver** o **X** en detalle por rubro reabre el historial; cerrar el historial con **X** cierra en cascada el detalle por rubro si estaba abierto desde esa barra (`detalleRubrosDesdeHistoricoGrilla`). **`BalanceMensualGastoHistoricoModal`**: reset de serie vacía con **`queueMicrotask`** (ESLint `react-hooks/set-state-in-effect`).
-- **Filtros**: mes y año en `FilterBar` + `ClassicFilteredTableLayout` (`contentWidth="full"`): cada Select en `FiltroIndividualContainer` (referencia hoy AR) y `LimpiarFiltrosButton` en `col-span-3` que navega al periodo actual AR. Aviso ámbar si no hay sucursales con `genera_balance`.
-
-### `SectionHeader` (`src/components/SectionHeader.tsx`)
-
-API histórica (`titulo`, `subtitulo`, `subtituloSecundario`, `actions`). Delega en `PageSectionHeader` con `tone` default. Misma jerarquía: **MÓDULO** (MAYÚSCULAS) → **SUBMÓDULO 1** (MAYÚSCULAS negrita) → **Submódulo 2** (Title Case negrita).
-
-### `TableEmptyState` (`src/components/shared/TableEmptyState.tsx`)
-
-Mensaje de **lista/tabla vacía** con tokens (`text-muted-foreground`) y densidades unificadas. Exporta **CVA**: `tableEmptyStateContainerVariants`, `tableEmptyStateMessageVariants`.
-
-- **Props (`TableEmptyState`)**
-  - **`message`**: `string`.
-  - **`placement`**: `"tableCell" | "panel" | "compact"` — `tableCell` ≈ fila vacía estándar (`py-8`); `panel` para modales (`py-12`); `compact` para paneles secundarios (`py-6`).
-  - **`textSize`**: `"sm" | "xs"`.
-  - **`maxWidth`**: `"readable" | "full"` — `readable` aplica `max-w-md` al texto (comportamiento de `EmptyTableRow` en `ui/table`).
-  - **`as`**: `"div" | "p"` (default `"div"`). Usar `"p"` cuando el padre requiera un párrafo semántico.
-  - **`className`** / **`messageClassName`**: overrides puntuales.
-
-**Integración:** `EmptyTableRow` (`@/components/ui/table`) y `ModalTablaConFiltros` usan estas variantes para no duplicar utilidades. Paneles secundarios pueden usar `<TableEmptyState as="p" … />` para mantener densidad y tokens.
-
-### `MensajeProceso` (`src/components/shared/MensajeProceso.tsx`)
-
-Indicador de **proceso en curso** (modal, importación, barra lateral). Clases globales `.mensaje-proceso` / `.mensaje-proceso--sidebar`; contenedor variantado con **CVA** (`mensajeProcesoVariants`).
-
-- **Props**
-  - **`mensaje`**: `string`.
-  - **`detalle`**: `{ procesados: number; total: number } | string | null | undefined` — objeto muestra “X de Y” con locale `es-AR`.
-  - **`variant`**: `"default" | "sidebar"`.
-  - **`className`**: `string?`.
-  - **`onDoubleClick`**: `() => void?` — si está definido, el contenedor usa **`cursor-pointer`** y **`title`** *«Doble Clic Para Cancelar Sincronización»* (p. ej. sync lista precios en slidenav).
-- **Accesibilidad**: `role="status"`, `aria-live="polite"`.
-
-### Etiquetas de campo en modales (regla global)
-
-- **Alcance:** todos los modales (`AppModal`, `.modal-app`, `Dialog` con `[data-slot="dialog-content"]`).
-- **Color obligatorio:** **`var(--foreground)`** (negro de la UI). **Prohibido** `text-muted-foreground` en etiquetas de inputs, desplegables, fechas y micro-etiquetas de campo.
-- **Implementación:** `globals.css` (`--modal-field-label-color` + selectores en `.app-modal__body`, `.modal-app__body`, `[data-slot="dialog-content"]`). Constante **`MODAL_MICRO_LABEL_CLASS`** en `@/lib/ui-classes`; preferir **`ModalMicroLabel`**.
-- **Excepciones:** textos de ayuda, estados vacíos, metadatos secundarios y contadores (ej. `12 / 10000`) siguen **`text-muted-foreground`**.
-
-### `ModalMicroLabel` (`src/components/shared/ModalMicroLabel.tsx`)
-
-Etiqueta visual **compacta** para títulos de campo o bloques dentro de modales (tipografía en MAYÚSCULAS alineada a filtros/tablas). Implementación con **CVA** (`modalMicroLabelVariants`, base **`MODAL_MICRO_LABEL_CLASS`** → **`text-foreground`**).
-
-- **Props**
-  - **`children`**: `ReactNode` — texto en MAYÚSCULAS (según guía de mayúsculas en filtros cuando aplique).
-  - **`align`** (CVA): `"left"` (default) \| `"center"` — controla `text-left` / `text-center` y `w-full leading-tight`.
-  - **`className`**: `string?` — combina con `cn()` para overrides puntuales (ej. `mb-1 block`).
-  - Resto: atributos nativos de `<span>` (`id`, `ref`, etc.).
-- **Accesibilidad**: es un `<span>` con clases **`modal-micro-label`** y **`modal-field-label`**; si precede a un control, envolver en `<label>` (como en **FECHA FACTURA** de `PedidoHistoriaDetalleModal`) o asociar el control con `aria-labelledby` / `aria-label` explícito en el input.
-- **Cuándo usarlo**: micro-etiquetas sobre inputs o separación de secciones en modales densos; no duplicar la cadena legacy con `text-muted-foreground`.
-
-### `DuxSyncStyleButton` (`src/components/shared/DuxSyncStyleButton.tsx`)
-
-Botón de **dos líneas** con **swap al hover** en la primera (misma interacción que el sync de lista precios en slidenav). Implementado con **CVA** (`duxSyncStyleButtonVariants`, `duxSyncStyleSecondaryVariants`).
-
-- **Props**
-  - **`lineIdle`** / **`lineHover`**: `string` — texto línea 1 en reposo vs hover (ambos visibles con cross-fade; si `busy` o `disabled`, no se aplica hover).
-  - **`secondary`**: `ReactNode` — segunda línea (ej. `Últ. Act.: …`); en hover se colapsa (`max-h-0` + opacidad), igual que en slidenav.
-  - **`surface`**: `"sidebar"` (default, `bg-sidebar-accent` + `text-sidebar-foreground`) | `"card"` (`border` + `bg-card` + `text-foreground`, hover `bg-muted/60`) para uso fuera de la slidenav si hiciera falta.
-  - **`busy`**: `boolean` — cursor espera y opacidad atenuada; alinea línea 1 sin efecto hover.
-  - **`progreso`**: `{ mensaje, detalle? }` — reemplaza el botón por **`MensajeProceso`** `variant="sidebar"` (clases `.mensaje-proceso--sidebar`: fondo azul claro + texto `foreground`; detalle en `#0072BB`). Línea 2 = **X de Y · ~N min restantes** (string o `{ procesados, total }`). Usado en **`SyncStatusIndicator`** durante sync productos/compras. **`onProgresoDoubleClick`** para cancelar.
-  - Resto: atributos estándar de `<button>` (`onClick`, `disabled`, `aria-label`, `className`, etc.).
-- **Uso**: `SyncStatusIndicator` (lista precios, compras).
-
-### `formatLastCompletedAtElapsed` (`src/lib/formatElapsedSince.ts`)
-
-Helper compartido para textos **Últ. Act.: Hace …** (bloques de 15 min. bajo 1 h; luego horas/días). Usado por `SyncStatusIndicator` (lista precios y compras según área).
-
-### Slidenav — Áreas principales (`src/lib/main-app-areas.ts`, `SidebarAreaSwitcher`, `SidebarMainAppArea`)
-
-La app se divide en **tres áreas** de alto nivel. El id interno `gestion-productos` se muestra como **Vendedor** (pedidos, ayuda vendedor, asistente IA). El id `finanzas` se muestra como **Administración** (**Análisis de Precios** y **Estadísticas Productos** viven en ese sidebar; URLs de análisis siguen bajo `/gestion-productos/analisis-precios/...`; URLs de estadísticas bajo `/estadisticas-productos/...`).
-
-- **`MAIN_APP_AREAS`**: cada ítem tiene `id`, `label` (title case en datos), `statusLabel`, `href`, **`requierePassword`** (`true` solo en **Administración** / `finanzas`). En modal, el nombre visible usa **`areaLabelMayusculas(label)`** → **MAYÚSCULAS** (ej. **VENDEDOR**, **ADMINISTRACIÓN**, **MARKETING**).
-- **`getMainAppAreaIdFromPathname(pathname)`**: rutas de Análisis de Precios (`isAnalisisPreciosPathname` / `getGpSidebarModule === "analisis-precios"`) → área **Administración** (`finanzas`); `/finanzas` y `/finanzas/*` → **Administración**; `/estadisticas-productos` y subrutas → **Administración**; `/marketing` y `/marketing/*` → **Marketing**; cualquier otra ruta → **Vendedor** (incluye `/gestion-productos/*` no-análisis, `/`, `/stock`, `/pedidos`, ayuda vendedor, etc.).
-- **Navegación lateral por área activa** (`Sidebar.tsx`): acordeón vertical en **Vendedor**, **Administración** y **Marketing**. Jerarquía por **indent + tipografía + chevron**; **sin** guías verticales de árbol. Separadores **`.sidebar-nav-divider`** **solo entre módulos de primer nivel**. **`data-active`** solo en la página actual; padres con **`data-ancestor`**. En **Vendedor** el orden de módulos es **MERCADERÍA** → **PRECIOS** → **CALCULAR LTS** → **STOCK** → **CARGAR GASTOS** → **ASISTENTE IA** (accesibles al rol vendedor/`simple`; CRUD de prompts del Asistente IA solo `editor`). Dentro de **MERCADERÍA**: agrupador **Cant. Pedida** (Urgente / Tintométrico / Reposición) → **Generar Pedido** → **Recepción Pedido**. **PRECIOS**: **Px Sugeridos** + **Px Tintométricos**. **STOCK**: **Control Stock** + **Trans. Depósitos**. **CALCULAR LTS** y **CARGAR GASTOS** son enlaces directos (sin hijos). **ASISTENTE IA**: **Buscar Cód. Imagen** + **Diseñar** (rutas `GP_ROUTES.asistenteIa.*`). Módulo **Procesos** eliminado. **Control Stock** (`GP_ROUTES.ayudaVendedor.controlStock`, `PERMISOS.stock.acceso`) es enlace directo en sidebar Vendedor (ruta canónica conservada). Con área **Administración** el sidebar muestra **5 pilares** (`AdministracionAccordionNav`, SSOT `administracionNav.ts`): **FINANZAS**, **LISTA PRECIOS**, **PEDIDO A FÁB.**, **ESTADÍSTICAS**, **USUARIOS**. Desglose: **FINANZAS** → **BALANCE** | **OPERACIONES** → pantallas; **LISTA PRECIOS** → **PX TIENDA** | **PROVEEDORES** | **ANÁLISIS M.C.** → pantallas; **PEDIDO A FÁB.** → **Pedido A Fáb.** (`/pedido-a-fabrica`); **ESTADÍSTICAS** → **VENTAS** | grupo **CONFIGURACION** (**Carga De Datos** | **Configuracion**). **ANÁLISIS M.C.** vive bajo **LISTA PRECIOS** (no bajo FINANZAS). En **Marketing** (`MARKETING_MODULES`, SSOT rutas `src/lib/marketingRoutes.ts`): módulo **`PUBLICACIONES`** (`Megaphone`) con **Calendario** → `/marketing/publicaciones/calendario` (`CalendarRange`), **Ideas Contenido** → `/marketing/publicaciones/ideas` (`Lightbulb`) y **Objetivos**; módulo **`BASE MULTIMEDIA`**; permiso **`PERMISOS.marketing.acceso`** (**libre** para `simple` y `editor`; mutaciones CRUD solo `editor`).
-- **`SidebarMainAppArea`**: fila **Pendientes** del dock de sesión. Vista fija: label **PENDIENTES** (`uppercase`, `text-center`) + badge de **categorías** (Pedido si Urgente+Tintométrico+Reposición &gt; 0 → 1; Transferencia si Emisión+Recepción &gt; 0 → 1; **máx. 2**, `tabular-nums`) + chevron. Badge con `bg-accent2` si Emisión o Recepción &gt; 0; si no, `bg-sidebar-accent`. Hover (`Tooltip` `side="right"`, `disableHoverableContent={false}`): grilla 3 columnas (**sección** | **tipo** | **cantidad**): botón **PEDIDO** (MAYÚSCULAS, centrado en columna) → `GP_ROUTES.pedidoMercaderia.generarPedido` / divisor `h-px bg-primary` / botón **TRANSFERENCIA** (MAYÚSCULAS, centrado, alineado con PEDIDO) → `GP_ROUTES.ayudaVendedor.transfDepositos?origen=` + sucursal preferida (`leerSucursalPreferida`). Hover o **click** abren el mismo panel lateral (sin modal). Action `getIndicadorSlidenavAction`. Refresh al cambiar sucursal, navegar, enfocar, cada 30 s y `EVENTO_INDICADOR_SLIDENAV`. Sin modal de aviso al onboarding ni al click en **Pendientes**.
-- **`SidebarAreaSwitcher`**: fila de usuario dentro del mismo dock (sin superficie propia). **Ícono módulo + nombre** centrados en la fila (`justify-center`; ícono ~15 % / nombre ~85 % del bloque) si `modulos_permitidos.length > 1` (`Store` / `Landmark` / `Megaphone`); click → **Cambiar Módulo** (lista visible, un click aplica). Con un solo módulo: solo el nombre, también centrado. Ambas filas del dock usan **`h-9`** + hover `sidebar-accent/80`. **Primera visita**: modal **Elegir Usuario** con lista clickeable. Si tiene **Administración**, pide clave. Sucursal = `sucursal_por_defecto`. Al aplicar usuario **no** se abre el aviso de transferencias (solo el indicador **Pendientes**).
-- **Dock de sesión** (`Sidebar.tsx`): un contenedor `sidebar-user-switcher-surface rounded-lg p-1` agrupa Pendientes + línea `bg-sidebar-foreground/40` + usuario. **Sincronizar** queda arriba como único CTA (`DuxSyncStyleButton`).
-- **Acordeón sidebar (cerrado al inicio)**: en **Vendedor**, **Marketing** (`Sidebar.tsx`) y **Administración** (`AdministracionAccordionNav`) los módulos/pilares arrancan **cerrados** (no se auto-abren por la ruta). Al cambiar de área se cierran todos. **Módulo/pilar/grupo con un solo destino navegable visible**: el click **navega directo** (sin chevron/acordeón); ej. **PEDIDO A FÁB.** → `/pedido-a-fabrica`; **USUARIOS** → `/finanzas/usuarios`.
-- **`/finanzas`**: hub vacío del área **Administración** (`src/app/finanzas/page.tsx`); sin redirect a Tesorería. Entrada del modal de módulos → **`MAIN_APP_AREAS`** → `/finanzas`.
-- **`/finanzas/tesoreria`**: **`ClassicFilteredTableLayout`** título **Finanzas**, subtítulo **Tesorería**. Incluye bloque de filtros con cuatro desplegables (**ENTIDAD**, **TITULAR**, **TIPO CAJA**, **TIPO DE VALOR**), cada uno en `FiltroIndividualContainer`, y `LimpiarFiltrosButton` inline en la misma fila (`FilterBar` + `FilaFiltrosDesplegables` + `FILTER_INLINE_ACTION_SLOT_CLASS`) cuando el contenido entra en una línea. **`actions`** (solo `editor`): botón **Nueva Caja** (`h-10 px-4`, `Plus`) que abre **`NuevaCajaTesoreriaModal`** (título visible: **Crear Caja**). Modal (`AppModal`) con alta en orden: **TIPO CAJA**, **ENTIDAD** (`Select` + botón **`+`** → **`CrearEntidadTesoreriaModal`**, título **Crear Entidad**: CRUD sobre `fin_tesoreria_entidades`), **TITULAR**, **TIPO VALOR**, **DISPONIBILIDAD** (al cambiar **TIPO CAJA** se actualizan **TIPO VALOR** y **DISPONIBILIDAD** según `cajasTesoreriaTipos`); guarda con `crearCajaTesoreriaAction` y `router.refresh()`. **ENTIDAD** se muestra en MAYÚSCULAS (nombre del catálogo); **TITULAR** en MAYÚSCULAS y se persiste en MAYÚSCULAS. **TITULAR** se elige por desplegable fijo (sin texto libre) con estos valores: `SUC. GUAYMALLEN`, `SUC. MAIPU`, `WALTER GARCIA`, `FERNANDO PANAIA`, `EMILIANO GARCIA`, `VANESA GARCIA`, `COORPORATIVO`. Tabla **`TablaTesoreriaCajas`**: **`contenedor-tabla-gestion--pie-fijo`** (scroll solo el cuerpo; bajo el scroll, **dos filas** de tarjetas **`.finanzas-resumen-tarjeta`**, alineado a **Balance · Gastos**; `scrollbar-gutter: stable` en **`contenedor-tabla-gestion--pie-fijo-scroll`** vía `globals.css`). Columnas en orden: **ÚLT. ACTUALIZACIÓN** (primera; celda con **flex**: franja fija `size-9` alineada para ícono o hueco, fecha `flex-1 text-right tabular-nums`; sin divisor visible entre ambas; si &gt; **5 días** sin actualizar monto: **`TriangleAlert`** en caja **`border-2`/`bg-accent2`** con trazo blanco reforzado y `text-white`), **TIPO CAJA** (etiqueta con `etiquetaTipoCajaEnPantalla`), **ENTIDAD**, **TITULAR**, **MONTO** (`$` + `fmtPrecio`, entero) y **ACCIONES** (10 %, solo `editor`, bloque `tabla-bloque-secundario-*`): **Editar monto** (filas no **CHEQUE** → **`ActualizarMontoCajaTesoreriaModal`**), **Ver cheques** (**CHEQUE** → **`ChequesCajaTesoreriaModal`**), **Editar caja**. `<colgroup>`: 15 % **ÚLT. ACT.**, 15 % **TIPO CAJA**, 20 % **ENTIDAD**, 20 % **TITULAR**, 20 % **MONTO**, 10 % **ACCIONES** (sin **ACCIONES**, **MONTO** 30 %). Pie de resumen: **fila 1** subtotales por **tipo de valor** (**EFECTIVO**, **DIGITAL**, **CHEQUE** total por caja); **fila 2** **INMEDIATO** / **DIFERIDO** (cajas no cheque por `disponibilidad`; cajas **CHEQUE** con cheques no transferidos: acreditación ≤ hoy AR → **INMEDIATO**, &gt; hoy → **DIFERIDO**, mismos importes que **MONTO** por fila); la tabla no muestra **TIPO VALOR** ni **DISPONIBILIDAD** (siguen en **`EditarCajaTesoreriaModal`**). Rol **`simple`**: doble clic en fila **CHEQUE** abre **`ChequesCajaTesoreriaModal`** (título visible: **Detalles De Cheques**): encima de la tabla, **`ModalMicroLabel` “Tenencia”** + **`Select`** (`input-filtro-unificado`, `select-content-filtro`) **ACTUALES** (`tenencia = TIENDA` y `fecha_transferencia` nula) / **TRANSFERIDOS** (`tenencia` **DEPOSITADO** o **PROVEEDOR**; valor API `transferidos`). Filtro **ACTUALES**: columnas **RECIBIDO** (`fecha_recibido`), **TIPO**, **TENEDOR**, **EMISOR**, **MONTO**, **ACREDITACION** (`fecha_acreditacion`), **DÍAS** (acreditación − hoy AR; `diasTextoAcreditacionMenosHoyArgentina`) y **ACCIONES** (editor: **Transferir** si `tenencia === TIENDA` y no transferido / **Editar** / **Borrar**); orden filas por **DÍAS** ascendente. Filtro **TRANSFERIDOS** (`transferidos` en API): **RECIBIDO**, **EMISOR**, **TRANSFERENCIA** (`fecha_transferencia`, día calendario AR), **TENEDOR** (celda con custodia `tenencia`), **MONTO**, **ACCIONES** (**Editar** / **Borrar**); orden por **TRANSFERENCIA** descendente. Listado vía `listarChequesPorCajaAction` con `cajaId` y `tenenciaFiltro` (sin parámetro **vista**). **`AltaChequeTesoreriaModal`** (**Registrar Cheque**): **FECHA RECIBIDO** (default día Argentina) inmediatamente antes de **FECHA ACREDITACIÓN**; doble clic en cualquiera de esos campos abre el **calendario nativo** del navegador (`type="date"` oculto + `showPicker()`). **Pago Proveedor** desde **Destino Cheque** llama directo `marcarEntregaProveedorFinTesoreriaChequeAction` (custodia **PROVEEDOR**, sin modal intermedio). Los cheques transferidos se conservan en BD **500 días** y luego se purgan al listar o al transferir (ver `BACKEND_GUIDELINES` §2.5c, cheques). Filas con altura fija y botones ajustados al alto de fila mediante `TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS` donde aplique. El ícono lápiz abre **`EditarCajaTesoreriaModal`** (campos en orden: **TITULAR**, **ENTIDAD** (`Select` + **`+`** → **`CrearEntidadTesoreriaModal`**), **TIPO DE CAJA**, **TIPO DE VALOR**, **DISPONIBILIDAD**; **Eliminar caja** (solo desde este modal) abre **`EliminarCajaTesoreriaModal`** embebido con confirmación; **Guardar** con `entidadId`, `tipoValor`/`disponibilidad` explícitos vía `editarCajaTesoreriaAction`; conserva monto). Sin paginación. Datos desde `listarCajasTesoreria` (servidor). `PERMISOS.finanzas.acceso`. La consulta de compras DUX queda solo en **`SyncStatusIndicator`** (slidenav, área Finanzas).
-- **`/finanzas/analisis-mc/margen-contribucion`**: **`ClassicFilteredTableLayout`** título **Finanzas**, subtítulo **Margen Contribución**. **`actions`**: **Gestionar Cat. M.C.** (`Tags`) → **`GestionarCategoriasMargenContribucionModal`** (rangos continuos 0…100; mín. = máx. anterior; **+** bloqueado si máx. = 100); **Gestion Cx. Y Formulas** (`Calculator`) → **`GestionCxYFormulasMargenContribucionModal`** (VARIABLES + VARIABLES CALCULADAS; valores PX LISTA / IVA / IIBB desde `fin_ana_mc_formulas`); **Gestionar Pagos** (`Settings2`) → **`GestionarPagosFinAnaCosFinaModal`**. **Configuración** (`FilterBar`, una fila): **TERMINAL**, **TIPO DE COMPROBANTE** (`FACTURA A` | `FACTURA C`; **C** no calcula IVA ni IIBB), **PORC. UTILIDAD** (`PorcentajeCentInput` placeholder **PORC. UTILIDAD** si vacío/`0`; → CX MERCADERÍA), **`LimpiarFiltrosButton`**. Tabla **`TablaFinAnaMargenContribucion`**: columnas = formas de pago con `en_margen_contribucion`; por defecto compacta (**INGRESO** · DESCUENTO + **MARGEN** · M.C · M.C PONDERADO); flecha inferior derecha expande **COSTOS** (IVA · IIBB · CX MERCADERÍA · CX FINANCIERO) en **overlay** sobre el gráfico (`.contenedor-tabla-gestion--mc-overlay`, sin scroll vertical de la tabla); celda `.tabla-mc-celda-descuento` al mismo alto que IVA. Montos en **`N%`**. Debajo: **`GraficoMcVsPorcUtilidad`** — panel izquierdo con select métrica (**CX MERCADERÍA** · **CX FINANCIERO** · **M.C** · **M.C PONDERADO**) y tabla checklist (checkbox · forma · valor %; default **3 CUOTAS** marcado; encabezado **GRAFICAR** con **`tabla-check-toggle`** todas/ninguna; filas siguen permitiendo selección individual); eje X 20–200 %; responde a filtros de página. Ver BACKEND §2.5i.
-- **`/finanzas/analisis-mc/costos-financieros`**: **`ClassicFilteredTableLayout`** título **Finanzas**, subtítulo **Costos Financieros** (módulo sidebar **ANALISIS M.C.**). **`actions`**: **Cálculo Cx. Total** (`Calculator`, botón primario `h-10 px-4`) → **`CalculoCxTotalFinAnaCosFinaModal`** (fórmulas **CX TOTAL S/ IVA** y **CX TOTAL C/ IVA** + componentes); **Gestionar Pagos** (`Settings2`, botón primario `h-10 px-4`) → **`GestionarPagosFinAnaCosFinaModal`**; **Gestionar Terminales** (`Settings2`, botón primario `h-10 px-4`) → **`GestionarTerminalesFinAnaCosFinaModal`** (listado, **Crear**, editar y eliminar con íconos **Pencil** / **Trash2** en **`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`**; mutaciones solo `editor`). **Filtros**: **TERMINAL** (catálogo dinámico `fin_ana_cos_fina_terminales`), **PAGO** (catálogo `fin_ana_cos_fina_pagos` con `en_costos_financieros`), **HABILITADO** + contador **X COMBINACIÓN(ES)** + **`LimpiarFiltrosButton`**. Tabla **`TablaFinAnaCosFina`** (orden de columnas): **HABILITADO** → **TERMINAL** → **PAGO** → **DÍAS ACREDITACIÓN** → **ARANCEL** → **CX FINANCIERO** → **IMP. CHEQUE** (`tabla-check-toggle`, editable solo `editor`) → **CX TOTAL S/ IVA** → **CX TOTAL C/ IVA** (calculadas, solo lectura: texto centrado `text-xs tabular-nums` + `%`, sin `Input`; encabezados en **dos líneas** `CX TOTAL` / `S|C IVA`). Encabezados con **`leading-tight`** y **`text-center`** alineados a columnas centradas. Inputs % editables: **`.input-mascara-sufijo`**. Fórmulas: ver `BACKEND_GUIDELINES` §2.5h (`cxTotalSinIvaFinAnaCosFina`, `cxTotalConIvaFinAnaCosFina`). Mutación grilla: **`actualizarFinAnaCosFinaAction`**.
-- **`PedidoHistoriaDetalleModal` — `TOTAL PEDIDO` (`MontoArInput`)**: input con patrón **POS** (desplazamiento de centavos). Reglas: solo admite dígitos (`0-9`) y borrado (`Backspace`/`Delete`); **no** admite `.` ni `,`; el display inicia siempre en **`0,00`** y cada dígito nuevo desplaza el valor (ej. `1 -> 0,01`, `12 -> 0,12`, `123 -> 1,23`). Límite máximo: **`99.999.999,99`**.
-- **`/finanzas/deuda-proveedores`**: **`ClassicFilteredTableLayout`** título **Finanzas**, subtítulo **Venc. Provee. Merc.** (nombre visible; la URL se mantiene por compatibilidad). Tabla **`TablaDeudaProveedores`**: columnas **PROVEEDOR** (encabezado y celdas centrados en vertical y horizontal; nombres largos con salto de línea), **DEUDA TOTAL**, **VENCIDA**, **5 DÍAS**, **30 DÍAS**, **45 DÍAS**, **60 DÍAS** (importes `$` + `es-AR` 2 dec., alineados a la derecha). Reparto del saldo por vencimiento según servicio (ver `BACKEND_GUIDELINES` §2.5a). Contador **X PROVEEDOR(ES) CON DEUDA**. Doble clic sobre proveedor abre modal **Detalle De Vencimientos** (`Dialog` + `AppModal` + `TablaFlujoDeFondoDetalleDia`) con título simple (sin subtítulo de proveedor/corte) y grilla de 5 columnas: **FECHA DEVENGADA**, **FECHA VENCIMIENTO**, **PROVEEDOR**, **DETALLE**, **MONTO**. Sin paginación. `PERMISOS.finanzas.acceso`. Ruta legacy **`/finanzas/venc-proveedores-mercaderia`** redirige permanentemente a esta URL.
-- **`/finanzas/vencimientos-gastos`**: **`FinanzasVencimientosGastosPageClient`**: mismo ancho de contenido que **`/finanzas/deuda-proveedores`** (`ClassicFilteredTableLayout` con `contentWidth` por defecto = `max-w-7xl mx-auto` + padding de `contenedor-pagina-con-filtros`). Proveedores con `proveedorMercaderia === false` y obligación de gasto de balance vencida (`fecha_venc` &lt; hoy AR, pendiente a hoy &gt; 0). **`TablaVencimientosGastosNoMercaderia`**: envoltorio `flex flex-1 min-h-0 flex-col gap-2 px-8 pb-4` alineado con **`TablaDeudaProveedores`**; columnas **PROVEEDOR**, **TOTAL VENCIDO**; doble clic abre **`Dialog`** + **`AppModal`** (título **Detalle De Vencimientos**, sin subtítulo adicional) + **`TablaFlujoDeFondoDetalleDia`** filtrada en cliente por proveedor con 5 columnas: **FECHA DEVENGADA**, **FECHA VENCIMIENTO**, **PROVEEDOR**, **DETALLE**, **MONTO**; **`emptyMessage`** en mayúsculas acorde a este contexto (la grilla compartida con Flujo de Fondo usa el mensaje por defecto orientado al día). Datos: `listarObligacionesGastoVencidasNoMercaderia` en `finBalGastoMensualBalance.service.ts`. `PERMISOS.finanzas.acceso`.
-- **`/finanzas/venc-por-fecha`**: **`src/app/finanzas/venc-por-fecha/page.tsx`** (servidor) + **`FinanzasVencPorFechaPageClient`**. **`ClassicFilteredTableLayout`** `contentWidth="full"`, título **Finanzas**, subtítulo **Flujo De Fondo**; **`filters`**: **FilterBar** con Select **PROVEEDOR** en `FiltroIndividualContainer` + **`LimpiarFiltrosButton`**. Rango: **hoy** (AR) a **hoy+150** — venc. de comprobantes **y** imputaciones de balance (ver `BACKEND_GUIDELINES` §2.5a). **Vista:** **`TablaFlujoDeFondo`**: cuatro columnas (**FECHA**, **VENCIMIENTO DEL DÍA**, **CAJA DISPONIBLE**, **SALDO**); cálculo en servidor con **`calcularFilasFlujoDeFondo`** (`@/lib/flujoDeFondoFilas.ts`). **SALDO** negativo: `text-destructive font-semibold` en la celda. Con filtro **PROVEEDOR**, la columna **VENCIMIENTO DEL DÍA** y el modal restringen a ese proveedor (CAJA/SALDO siguen con totales globales). **Paginación** 100, `pagina`. **Doble clic** → modal **`TablaFlujoDeFondoDetalleDia`**. `PERMISOS.finanzas.acceso`.
-- **`/finanzas/control-comprobantes`**: **`ClassicFilteredTableLayout`** título **Finanzas**, subtítulo **Control Comprobantes**. Tabla **`TablaControlComprobantes`** con columnas: **CONTROLADO** (primera), **FECHA COMP.** (segunda), **PROVEEDOR**, **SUCURSAL**, **COMPROBANTE**, **TOTAL**, **MONTO APLICADO** y **VENCIMIENTO**. La vista usa **filtros de una sola línea** (sin búsqueda por descripción): **PROVEEDOR**, **SUCURSAL**, **PAGADO** (solo opción `PENDIENTE`), **VENCIDO** (solo opción `VENCIDO`) y **CONTROLADO** (solo opción `NO`). En **VENCIMIENTO** se muestra monto solo si existe saldo vencido según regla backend (`vencimientoSaldo > 0`); caso contrario la celda queda vacía. **CONTROLADO** es de solo lectura: renderiza `tabla-check-toggle` (alto autoajustado) sin interacción directa en celda; si está en `true` se pinta con **fondo azul (`primary`) + tilde blanca** para contraste. La marcación se realiza por **doble click en fila** (solo `editor`), que abre `AppModal` dinámico de confirmación: si está en `false` pregunta por marcar como **"Controlado"**; si está en `true` pregunta por marcar como **"No Controlado"**. Al confirmar llama a `actualizarControladoComprobanteAction` + `router.refresh()`.
-- **Nuevo patrón global de filtros por fecha (fila 2 con flecha):** usar `FilterRowDateRange` + `FILTER_DATE_RANGE_TRIGGER_CLASS` (`@/components/FilterBar`). La segunda fila no contiene búsqueda de descripción: muestra un trigger con ícono/flecha que abre **`FiltroRangoFechasCalendarioModal`** (`@/components/shared/FiltroRangoFechasCalendarioModal.tsx`): calendario mensual (semana inicia lunes), navegación mes anterior/siguiente, **primer click** en un día = fecha desde, **segundo click** = fecha hasta (si el segundo es anterior al primero se intercambian); al completar el segundo click se aplica el rango y se cierra el modal. Botones **Limpiar** (borra rango y cierra) y **Cerrar** (cierra sin aplicar cambio si no se completó el segundo click).
-- **`/finanzas/control-comprobantes`**: **`ClassicFilteredTableLayout`** título **Finanzas**, subtítulo **Control Comprobantes**. Tabla **`TablaControlComprobantes`** con columnas: **CONTROLADO** (primera), **FECHA COMP.** (segunda), **PROVEEDOR**, **SUCURSAL**, **COMPROBANTE**, **TOTAL**, **MONTO APLICADO** y **VENCIMIENTO**. La vista usa **filtro doble fila**: primera fila con **PROVEEDOR**, **SUCURSAL**, **PAGADO** (solo `PENDIENTE`), **VENCIDO** (solo `VENCIDO`) y **CONTROLADO** (solo `NO`); segunda fila con filtro de rango de fechas por flecha. En **VENCIMIENTO** se muestra monto solo si existe saldo vencido según regla backend (`vencimientoSaldo > 0`); caso contrario la celda queda vacía. **CONTROLADO** es de solo lectura: renderiza `tabla-check-toggle` (alto autoajustado) sin interacción directa en celda; si está en `true` se pinta con **fondo azul (`primary`) + tilde blanca** para contraste. La marcación se realiza por **doble click en fila** (solo `editor`), que abre `AppModal` dinámico de confirmación: si está en `false` pregunta por marcar como **"Controlado"**; si está en `true` pregunta por marcar como **"No Controlado"**. Al confirmar llama a `actualizarControladoComprobanteAction` + `router.refresh()`.
-- **Layout Finder (catálogos jerárquicos):** componentes compartidos en `@/components/shared/catalogo-finder/` — **`CatalogoFinderColumn`** (header **`bg-primary`**, título centrado; botón **`+`** con **`nuevoLado`**: default **`end`** (derecha) o **`start`** (izquierda, p. ej. Marketing · Ideas); clases **`CATALOGO_FINDER_COLUMN_NOVO_BUTTON_*`**), **`CatalogoFinderRow`** (acciones hover: **`onVer`** opcional → ícono **`Eye`**, **`onEditar`** **`Pencil`**, **`onEliminar`** **`Trash2`**), **`CatalogoFinderEmpty`**. Usado en **Balance · Catálogo Gastos** (5 columnas), **Comp. Categorias** y **Marketing · Ideas** (2 columnas **SECCIONES** → **DETALLE**).
-- **`/finanzas/balance/gastos/catalogo`**: **`ClassicFilteredTableLayout`** título **FINANZAS**, subtítulo **Balance · Catálogo Gastos** (submódulo **Catálogo Gastos** dentro del módulo **BALANCE**, ícono `FolderTree`). Página dedicada al mantenimiento del catálogo jerárquico `fin_bal_gasto_tipo → fin_bal_gasto_rubro → fin_bal_cat_gasto` (ver `BACKEND_GUIDELINES` §2.5e) **+ catálogo maestro de proveedores "no-mercadería"** (modal desde el header). **Layout tipo Finder** con **`grid grid-cols-5 gap-3`** (desktop único): **TIPOS** · **RUBROS** · **GASTOS** · **GASTO FINAL** · **INDICADOR**. Las cuatro primeras columnas en cascada; **INDICADOR** resume **SUCURSALES** y **PROVEEDORES** con actividad para el gasto seleccionado. El catálogo maestro de proveedores no-mercadería se abre con el botón **PROVEEDORES** del header (modal lista + **`ProveedorModal`**). Cada columna es una `<section>` con borde y `rounded-lg`, header en `bg-muted/60` que muestra el **título** (uppercase tracking), un **subtítulo contextual** (contador de hijos o prompt `Seleccioná un tipo/rubro`) y un botón **`+ Nuevo`** (solo `editor`, `size="sm"`, `h-8`, ícono `Plus`). El body de la columna es `flex-1 overflow-y-auto` y renderiza filas `FilaCatalogo`. **Selección en cascada:** click en un tipo selecciona y puebla la columna de rubros (reset del rubro y del gasto); click en un rubro selecciona y puebla la columna de gastos (reset del gasto); click en un gasto selecciona y puebla **GASTO FINAL**. Estado seleccionado: `bg-primary/10` + `ChevronRight` en color `primary`. Filas: `truncate` para el nombre + meta auxiliar (`N rubros` / `N gastos`) en `text-[11px]`, con acciones **editar** (ícono `Pencil`) y **eliminar** (ícono `Trash2`, color destructive) ocultas por defecto y visibles en `group-hover`/`group-focus-within` (solo `editor`). Click/Enter/Space en la fila dispara la selección; los `<Button>` de acción usan `e.stopPropagation()` para no activarla. Estados vacíos con **`TableEmptyState`** (wrapper local **`EmptyState`** en `FinBalGastosCatalogoPageClient`). Las mutaciones de tipo/rubro/gasto usan **`CrearEditarFinBalCatalogoItemModal`** y **`EliminarFinBalCatalogoItemModal`** (`nivel: "tipo" | "rubro" | "gasto"`). El modal de catálogo solo persiste **NOMBRE**; en **alta de gasto** (`esAltaGastoSoloNombre`) solo se muestra NOMBRE (sin contexto rubro). La tabla hoja `fin_bal_cat_gasto` no tiene proveedor. **Columna GASTOS:** filas con `meta` = conteo de asignaciones finales (`fin_bal_gasto_final`). **Columna GASTO FINAL:** `CrearEditarFinBalGastoFinalModal` + `EliminarFinBalGastoFinalModal` — **TIPO DE GASTO** MENSUAL / EVENTUAL; **mensual** → sucursal obligatoria (`Select` desde `listarSucursalesParaGastos`, `centro_costo = true`); **eventual** → sucursal bloqueada (**NO APLICA**) y persistencia `sucursal_id` **NULL**; **DÍA DEVENGADO**, **PLAZO DE PAGO** e **IVA** según `BACKEND_GUIDELINES` §2.5e. El modal de eliminación de tipo/rubro/gasto es `AppModal size="sm"` con **Sí, Eliminar**; `onDelete: Restrict` en jerarquía. **Importante**: si en alta/edición el usuario marca `PROVEEDOR MERCADERÍA = SI`, ese proveedor saldrá del listado (quedará visible en `/gestion-productos/proveedores/lista`). **Permiso:** `PERMISOS.finanzas.acceso` (rol `simple` ve la jerarquía + lista de proveedores en modo lectura, sin botones de mutación).
-- **`/finanzas/balance/gastos`**: **`ClassicFilteredTableLayout`** `contentWidth="full"`, título **Balance**, subtítulo **Gastos**. **Filtros** (`FilterBar` `filtros-contenedor-tienda bg-card`): **fila 1** `FilterRowSelection` + `FilaFiltrosDesplegables` — **SUCURSAL**, **PROVEEDOR**, **RUBRO**, **GASTO** (opciones acotadas según otras dimensiones), **ESTADO** (**CON MONTO Y PENDIENTE** = `monto > 0` y `pagado < monto`, saldo `monto − pagado` > 0: sin pagar o pago parcial; **CON MONTO Y PAGADO** = `monto > 0` y `pagado > 0`; **SIN MONTO** = `monto === 0`; **SIN MONTO O PENDIENTE** = `monto === 0` o (`monto > 0` y `pagado < monto`)); cada dimensión en `FiltroIndividualContainer`; patrón global de Select (`input-filtro-unificado`, `SelectContent` `position="popper"` `side="bottom"` `align="start"` `select-content-filtro`, primera opción con valor `none` muestra el **nombre de la dimensión** en el trigger, no la palabra «TODOS»). **Fila 2** — misma retícula: **Año**, **Mes** (también con `FiltroIndividualContainer` respecto a hoy AR) y, en `col-span-3` (`FILTER_INLINE_ACTION_SLOT_CLASS`), contador **`FILTER_COUNT_CLASS`** (**X GASTO(S)**) + **`LimpiarFiltrosButton`** (dimensiones de grilla; no cambia el periodo de la URL). Select **Mes**: selección **múltiple** con checkboxes (patrón como tipo de pedido en Enviar Pedido); URL `mes=6` o `mes=6,7,8` (sin opción **TODOS**; legacy `mes=todos` redirige al mes actual AR). **GASTO FIJO** requiere exactamente un mes. **GASTO EVENTUAL** usa el mes único o, si hay varios, el mes calendario AR. Select **Año**: **2026–2046** (`ANIOS_FILTRO_BALANCE_GASTOS` en `FinanzasBalanceGastosPageClient`). Sin `mes`/`anio` en la URL, el servidor **`redirect`** a **`?mes=&anio=`** del **mes y año actuales en Argentina**. Solo `editor`: **GASTO FIJO** llama `cargarFinBalGastoMensualMesAction({ mes, anio })`. Tabla **`TablaGastos`**: **FECHA**, **SUCURSAL**, **TIPO GASTO**, **RUBRO** (8% c/u), **GASTO** y **PROVEEDOR** (15% c/u), **MONTO**, **PAGADO**, **DEVENGADO** (8% c/u; muestra **pendiente de pago sobre el devengado**: acumulado proporcional hasta hoy − **PAGADO**, mínimo 0); con `editor`, **ACCIONES** (14%, `tabla-bloque-secundario-*`, `bg-muted/25`): **Registrar pago** (`Banknote`) → **Editar** (`Pencil`) → **Eliminar** (`Trash2`), luego **separador vertical** `#0072BB` y **evolución mensual** (`BarChart2`). Sin **ACCIONES** (rol `simple`), el ícono de evolución mensual sigue en la celda **MONTO** (junto al importe). **Scroll** único a la derecha de toda la tabla (incluye **ACCIONES**). Sin columna **MONTO VENCIDO**. Sin **ACCIONES** (rol `simple`), el `colgroup` aplica la misma proporción de las 9 columnas de datos escalada a 100%. **Editar monto** → `EditarMontoFinBalGastoMensualModal`: fila **Ult. Monto $… — Repetir Monto** (aplica el monto del mes anterior y cierra); **Eliminar** → `EliminarFinBalGastoMensualModal`. Banda bajo el scroll (`w-full` como la tabla, `border-t`), **tarjetas** compactas **centradas** con totales **MONTO** / **PAGADO** / **PENDIENTE** (suma por fila de `max(0, monto − pagado)` sobre el listado visible; `—` si el total es 0) (`aria-live="polite"`); sin fila de pie en la tabla. `PERMISOS.finanzas.acceso`.
-- **`/finanzas/balance/vtas`**: **`ClassicFilteredTableLayout`** `contentWidth="full"`, título **FINANZAS**, subtítulo **Ventas Mensuales**. **Filtros** en una sola **`FilaFiltrosDesplegables`**: **MES** / **AÑO** / **SUCURSAL** (valor `none` = sin filtrar por esa dimensión; etiquetas **MAYÚSCULAS**) + **`col-span-2`**: **`FILTER_COUNT_CLASS`** (**X REGISTRO(S)**) + **`LimpiarFiltrosButton`**. Listado completo desde servidor (`listarFinBalVtas`); el filtrado es en cliente. Solo `editor`: **`actions`** — botón **Nueva Carga** abre **`CrearFinBalVtasModal`**: fila **MES/AÑO** y una fila por sucursal (`genera_balance`) con **`MontoArInput`**; precarga del periodo y guardado masivo con **`guardarFinBalVtasCargaPeriodoAction`** (mínimo un monto; upsert si ya existía). Tabla **Registros**: **PERIODO**, **SUCURSAL**, **MONTO**, **ALTA**, **ACCIONES** (eliminar). `PERMISOS.finanzas.acceso`.
-- **`BalanceMensualGastoHistoricoModal`** (evolución mensual por `gastoFinalId`): debajo de cada barra, **mes y año** (`etiquetaMes`), **monto** y **variación % entera** vs. el mes anterior (`ArrowUp` / `ArrowDown`; **0%** sin flecha; **—** si no hay mes anterior o el anterior tenía monto 0 y el actual no). El **número del porcentaje** usa **`text-foreground`** y **`text-[11px]`** (`font-medium`); solo la **flecha** lleva color (sube **`text-destructive`**, baja **`TEXT_SUCCESS_CLASS`**).
-- **Administración · pilares** (SSOT `administracionNav.ts`): **FINANZAS** · **LISTA PRECIOS** · **PEDIDO A FÁB.** · **ESTADÍSTICAS** · **USUARIOS**. **Estadísticas** (URLs `/estadisticas-productos/*`, SSOT `ESTADISTICAS_PRODUCTOS_ROUTES`): pantalla **VENTAS** (`estadisticas-vtas`); grupo **CONFIGURACION** → **Carga De Datos** + **Configuracion** (ruta `categorizacion`). **Pedido A Fáb.** (SSOT `pedidoAFabricaRoutes.ts`, `/pedido-a-fabrica`; legacy `/estadisticas-productos/est-para-compra` → redirect). `/estadisticas-productos` → redirect a Carga De Datos. **Usuarios** (`/finanzas/usuarios`): catálogo `global_personal`.
-- **`/finanzas/usuarios`** (**Usuarios**): pilar sidebar **USUARIOS** (navegación directa). **`ClassicFilteredTableLayout`** título **Administración**, subtítulo **Usuarios**. **FilterBar** una fila: `FiltroBusquedaInput` (nombre / sucursal / módulo) + `LimpiarFiltrosButton` + contador **X USUARIO(S)**. Tabla: **NOMBRE** · **SUCURSAL POR DEFECTO** · **MÓDULOS PERMITIDOS** · **ACCIONES** (editor: **Pencil** → **`EditarUsuarioModal`**). Modal: nombre solo lectura; **SUCURSAL POR DEFECTO** (`Select` GUAYMALLÉN / MAIPÚ, obligatorio); **MÓDULOS PERMITIDOS** (botones multi: **VENDEDOR** / **ADMINISTRACIÓN** / **MARKETING**, mín. 1). Mutación `actualizarUsuarioPersonalAction`. `PERMISOS.usuarios.acceso` (solo `editor`).
-- **`/estadisticas-productos/ventas-por-producto`** (**Carga De Datos**): **`ClassicFilteredTableLayout`** `contentWidth="full"`, título **ESTADÍSTICAS PRODUCTOS**, subtítulo **Carga De Datos**. Cascarón **`area-page-shell`**. Grilla **periodo × sucursal** (`tabla-est-carga-datos`): filas = meses desde el **mes actual AR** hasta **Mayo 2026** (primera fila = más actual); columnas = sucursales con **`genera_est = true`**. Cebra **odd/even** en toda la fila (PERIODO sticky con `--tabla-row-bg`). Celdas **sin datos**: `.celda-est-carga-pendiente` (tinte `accent2`) + **Subir** (`FileUp`); celdas **con datos**: solo **Borrar** (`Trash2` → `POST /api/est-por-prod/eliminar-periodo`, UI optimista); para recargar hay que borrar primero. **Unidad de trabajo = celda (mes/año × sucursal)**. Modal **`ImportarEstPorProdModal`**: periodo/sucursal fijos; **siempre hay encabezados** — selector **FILA DE ENCABEZADOS** (default **FILA 3**); mapeo **ENCABEZADO / MAPEAR A**. Sidebar: **ESTADÍSTICAS** → **CONFIGURACION** → **Carga De Datos**. `PERMISOS.estadisticasProductos.acceso`.
-- **`/estadisticas-productos/categorizacion`** (**Configuracion**): **`ClassicFilteredTableLayout`** título **ESTADÍSTICAS PRODUCTOS**, subtítulo **Configuracion**. Listado `prod_tienda` (`listarProdTiendaCategorizacion`): **DESCRIPCIÓN**, **MARCA**, **RUBRO**, **SUB RUBRO**, **COLOR**, **TERMINACION**, **PRESENTACION** (match catálogo `est_por_prod_presentacion` + formato prefijo/sufijo/sufijo sin espacio). **Filtros** fila 1: `FilaFiltrosDesplegables` **`columnas={6}`** — Marca / Rubro / Sub Rubro / Color / Terminacion / Presentacion; fila 2: `flex items-center gap-3` con `FilterRowSearch` `flex-1` + `FiltroBusquedaInput` + `LimpiarFiltrosButton` + contador `FILTER_COUNT_CLASS` `ml-auto`. Paginación cliente. Solo `editor`: **`actions`** — **Gestion Colores** (`Palette`) · **Gestion Unidades** (`Ruler` → **`GestionarEstPorProdUnPresentacionModal`**) · **Gestion Presentacion** (`Beaker` → **`GestionarEstPorProdPresentacionModal`**; form Nueva/Editar en 2 secciones **Presentacion** / **Conversion** opcional; Convertir a un. solo unidades con **`suma`**, ≠ Unidad medida, opción **SIN CONVERSION**; **Unidad completa** / **Unidad convertida completa** solo lectura; `texto` lo deriva el servicio) · **Gestion Terminacion** (`Paintbrush` → **`GestionarEstPorProdTerminacionModal`**; `onCatalogoChanged` → `router.refresh()`). Sidebar: **ESTADÍSTICAS** → **CONFIGURACION** → **Configuracion**.
-- **`/pedido-a-fabrica`** (**Pedido A Fáb.**): pilar sidebar **PEDIDO A FÁB.**; `PedidoAFabricaPageClient`. **Dos** `FilterBar` (`filtros-contenedor-tienda bg-card`) en columna (`flex flex-col gap-2`): (1) **PROVEEDOR** (`FiltroIndividualContainer` + `input-filtro-unificado`; solo `es_fabrica = true` vía `getProveedoresFabrica`; opción incluye `tiempoEntregaEnDias`) + **FECHA DE PEDIDO** (texto `dd/mm/aaaa` + placeholder **FECHA DE PEDIDO**, sin default; máscara `maskDigitsToDdMmYyyyDisplay` + `CalendarDays`/`showPicker`; cesto limpia; vacío → hoy AR solo en fórmulas Info) + **TIEMPO STOCKEO** (`Input` numérico entero, solo dígitos, `INPUT_FILTER_CLASS`, cesto individual; alimenta el cálculo de **CANT. SUGERIDA**) + **PEDIDO SUGERIDO** (Select SI/NO; SI = cant. sugerida &gt; 0) + **STOCK QUEBRADO** (Select SI/NO; SI = stock hasta llegada ≤ 0); filtros derivados se aplican en cliente sobre la página cargada; (2) fila **MARCA** | **RUBRO** | **SUB-RUBRO** (`FilaFiltrosDesplegables` default 5; opciones dinámicas desde `prod_tienda` de ítems vinculados del proveedor; cascada marca→limpia rubro/sub; rubro→limpia sub) + fila **`FiltroBusquedaInput`** (`useFiltrosConBusqueda`, placeholder **BUSCAR POR DESCRIPCIÓN...**) + **`LimpiarFiltrosButton`** + contador **X PRODUCTO(S)**. Al elegir proveedor: **`TablaPedidoAFabrica`** — **DESCRIPCIÓN** (**59%**; `descripcion_tienda` vía vínculo, fallback `descripcion_proveedor`; margen izq. **`TriangleAlert`** + `TEXT_WARNING_CLASS` si **stock quebrado**) · **STOCK ACTUAL** (**14%** = **EN UNIDADES** **7%** | **EN DÍAS** **7%**; totales = suma sucursales `genera_est`; días = `calcularStockEnDiasPedidoAFabrica`) · **STOCK HASTA LLEGADA DE PEDIDO** (**7%**, `calcularStockAFechaLlegadaPedidoAFabrica` = stock − entrega×prom; no requiere TIEMPO STOCKEO) · **COMPRA** (**14%** = **CANT. SUGERIDA** **7%** | **CANT. PEDIR** **7%**; requiere **TIEMPO STOCKEO**) · tilde confirmar (**3%**) · **Info** (**3%**) abre **`DetalleSucursalesPedidoAFabricaModal`**: por sucursal **STOCK ACTUAL** (EN UNIDADES | EN DÍAS) + **STOCK HASTA LLEGADA DE PEDIDO** + **COMPRA · SUGERIDA**; fila final **`TableFooter` TOTAL** (misma lógica de agregación que la grilla). **PROM. VTA.** se calcula (2 meses / 48, techo) y alimenta stock en días / hasta llegada / cant. sugerida, pero **no** se muestra como columna. **CANT. SUGERIDA** (solo lectura): `calcularCantSugeridaPedidoAFabrica` con stock/prom totales + `tiempo_entrega_en_dias` + **TIEMPO STOCKEO** — ver `docs/BACKEND_GUIDELINES.md` §1.11f. Header **Generar Pedido** (`GenerarPedidoToolbarButton` `modulo="a-fabrica"`, tipo fijo **A FÁBRICA**) + **Info Formulas** → **`InfoPromedioPedidoAFabricaModal`**: secciones **PROM. VTA.** · **FECHAS** (**Fecha Pedido** = filtro **FECHA DE PEDIDO**, vacío → hoy AR; **Fecha Llegada** = Fecha Pedido + `tiempo_entrega_en_dias`; **Fecha Stockeo**) · **STOCK Y CANT. SUGERIDA** (izq. negrita; Cant. Sugerida en dos subfórmulas). **CANT. PEDIR** (input con padding de `.celda-datos`, sin flush/`p-0`, para aire vs. divisores de columna) se persiste al tipear (debounce) en `prod_ped_merc` (`tipo_de_pedido = A FÁBRICA`) y se hidrata al cargar el proveedor; tras generar PDF queda en historial (`prod_ped_historial` / `prod_ped_historial_merc`) accesible desde Recepción Pedido. Carga: `getProductosPedidoAFabricaAction` (filtros marca/rubro/subRubro/q + página + `cantAPedirByCodExt`) + `PaginacionClient` (100/página). Legacy **`/estadisticas-productos/est-para-compra`** → `permanentRedirect`.
-
-- **`/estadisticas-productos/estadisticas-vtas`** (**Ventas**): **`ClassicFilteredTableLayout`** título **ESTADÍSTICAS PRODUCTOS**, subtítulo **Ventas**. Sidebar: **ESTADÍSTICAS** → **VENTAS**. **Dos** `FilterBar` (`filtros-contenedor-tienda bg-card`): (1) **UNIDADES** (`UNIDAD` \| `SUMA DE UNIDADES`) · **SUCURSAL** (`genera_est`) · **AÑO** multi · **MES** multi (default = periodo más reciente con ventas; al menos uno de cada; patrón checkbox como Balance · Gastos) + contador; (2) misma fila de 6 desplegables + búsqueda que Configuracion/Categorizacion (Marca/Rubro/Sub Rubro/Color/Terminacion/Presentacion + `FiltroBusquedaInput` + `LimpiarFiltrosButton` + contador). **Tres gráficos** en fila: (1) `EstVtasGraficoVarianteBarras` — título Select **píldora `primary`** (**Dimensión**); eje Y `EST_VTAS_DIMENSION_OPTIONS` = MARCA · RUBRO · SUB RUBRO · COLOR · TERMINACION · **PRESENTACION** · SUCURSAL; Desglose `EST_VTAS_DESGLOSE_DIMENSION_OPTIONS` = **SUCURSAL** · MARCA · RUBRO · SUB RUBRO · COLOR · TERMINACION · PRESENTACION (default **MARCA**); **Desglose** = `SIN DESGLOSE` + las mismas dimensiones **excepto la ya elegida en Dimensión** (`opcionesDesgloseEstVtas` / `opcionesDimensionEstVtas`, sin repetir); SIN DESGLOSE = barras planas (`agregarUnidadesPorEjeY`); con desglose = grupos categoría → hijos (`agregarUnidadesPorDobleDimension`, azules estables + leyenda); clic filtra G2/G3 (producto y/o sucursal según cruce); (2) `EstVtasGraficoTopProductos` — **tabla Top 10** (`agregarTopProductos`): columnas **DESCRIPCION** 70 % (botón `.est-vtas-desc-btn`, sin formato CTA) · **TO.** 15 % (total periodo) · **PM.** 15 % (promedio mensual); TO. = suma con filtros activos; PM. = TO. / (años × meses seleccionados); clic en descripción filtra G3; (3) `EstVtasGraficoBarrasMensual` — barras **verticales** ENE–DIC; **respeta AÑO** multi (ENE…DIC; ignora filtro MES de página); aplica filtros de página no temporales + G1/G2 si hay selección (`codTienda` si hay producto del Top 10). El Top 10 se muestra siempre con los filtros de página; si hay selección en G1, también la aplica. Cliente **`EstVtasPageClient`**; ruta SSOT `ESTADISTICAS_PRODUCTOS_ROUTES.estadisticasVtas`.
-
-- **Área Marketing** (`/marketing/*`): SSOT rutas **`MARKETING_ROUTES`** (`src/lib/marketingRoutes.ts`). Entrada modal / `/marketing` → hub vacío (sin redirect a Calendario). **Base Multimedia** (`MARKETING_ROUTES.baseMultimedia.contenido` → `/marketing/base-multimedia`, `MarketingBaseMultimediaPageClient`): listado `mkt_contenido_drive_url` (NOMBRE 40% / TIPO 20% / DESCRIPCIÓN 30% / ACCIONES 10%; Eye Ver; header **Gestionar Tipos** + **Nuevo**). **FilterBar** clásico 2 filas: (1) `FilaFiltrosDesplegables` **TIPO** en `FiltroIndividualContainer`; (2) `FiltroBusquedaInput` por descripción (`useFiltrosConBusqueda` + `matchByMultiTerm`) + `LimpiarFiltrosButton` + contador. Header (solo `editor`): **Exportar a Sheets** (`ExportarMktSeccionesGoogleSheetsButton`, misma acción que Calendario) · **Gestionar Tipos** · **Nuevo** → `CrearEditarMktContenidoUrlDriveModal` (nombre, descripción, URL Drive); editar/eliminar en fila. Sidebar grupo **BASE MULTIMEDIA**: **Base Multimedia** + **Colores Marca** (`Palette`). **Colores Marca** (`/marketing/base-multimedia/colores-marca`, `MarketingColoresMarcaPageClient`): `mkt_colores_marca` (NOMBRE 40% / CÓD. HEX. 20% con muestra + código **centrados** bajo el encabezado / DESCRIPCIÓN 30% / ACCIONES 10%; **FilterBar** una fila: búsqueda por nombre, descripción o hex + contador; header (solo `editor`): **Exportar a Sheets** (`ExportarMktSeccionesGoogleSheetsButton`, misma acción que Calendario) · **Nuevo** → `CrearEditarMktColorMarcaModal` (nombre, descripción, códigos hex con **`#` fijo** no editable a la izquierda del input; sin placeholder de ejemplo; varios códigos separados por coma; el backend normaliza a `#RRGGBB`); editar/eliminar en fila. **Sidebar grupo PUBLICACIONES**: **Calendario** · **Ideas Contenido** · **Objetivos** (`Target`). **Objetivos** (`MARKETING_ROUTES.publicaciones.objetivos` → `/marketing/publicaciones/objetivos`, `MarketingObjetivosPageClient`): grilla **3 columnas** (**RED** · **CONTENIDO** · **SECCION**), estilo cuadro de mando; cada columna se subdivide verticalmente en dos bloques de igual altura, **SEMANALES** y **MENSUALES**, cada uno con listado, scroll y **`+`** propios (solo `editor`); el **`+`** abre **Nuevo Objetivo** con eje y periodo ya fijados (sin selects de dimensión ni periodo); modal: destino + control de cantidad **`−` / input centrado / `+`** (1–9999), con **Crear** en el footer; header **Exportar a Sheets**; editar solo cantidad y eliminar en lista; **un objetivo por destino**. **Calendario** (`MarketingCalendarioPageClient`; sidebar/subtítulo **Calendario**): header (solo `editor`) — **Exportar a Sheets** · **Gestionar Redes** · **Gestionar Tipo Contenido** (`Settings2`); avance de objetivos en **Cuadro De Mando** (columna Objetivos + modal de incumplidos). Redes/contenido: **`GestionarMktCatalogoNombreModal`** (`kind: "red" | "contenido"`): buscador + **`+`**, lista con **Pencil** / **Trash2**, alta/edición en submodal (solo nombre). Catálogos independientes. Cuerpo: **`MktCalendarioPublicacionesGrid`** — grilla **5 semanas × 7 días + columna OBJ.** del **mes elegido** (columnas **LUN.–DOM.** + **OBJ.** angosta); por fila, **OBJ.** = tilde azul (`Check`/`text-primary`) si todos los objetivos **SEMANALES** de esa semana están cumplidos, **X** roja (`text-destructive`) si no, **—** si no hay objetivos semanales; días del mes con tinte `bg-primary/8`; semana seleccionada (1–5) con tinte más fuerte `bg-primary/20`; **hoy** con anillo + badge primary. Calendario **compacto** (filas `min-h-[3.25rem]`). Arriba **Cuadro De Mando** (`MktPublicacionesCuadroMando`, sin título propio): mes (`Select` mes/año) + **Semana** (`Select`: **Todas** | **Semana 1**–**5**) + 3 columnas **Redes** · **Contenido** · **Objetivos**. Filtro de indicadores y objetivos = mes completo (**Todas** → metas **MENSUAL**) o lun–dom de la fila (**1–5** → metas **SEMANAL**); SSOT `filtrarPublicacionesPorVistaCalendario` + `evaluarMktPublicacionObjsCliente`. Ícono en celda: **Terminado** (`contenido_creado` SI) = relleno `bg-primary` + ícono blanco; **Planificado** (NO) = borde `primary` + fondo `card` + ícono primary. Click en un día: **sin** publicaciones → **`CrearEditarMktPublicacionModal`** (crear); **con** publicaciones → **`MktPublicacionesDiaModal`** (botón **Crear Nueva Publicación** + listado: ícono red · texto · tipo contenido · Pencil/Trash2; editar abre el mismo form en modo editar; eliminar confirma en **`EliminarMktPublicacionModal`**); form de alta/edición (`CrearEditarMktPublicacionModal`): 3 bloques con `divide-y divide-primary/25` — **Publicación** (fecha + **Redes** multi MktMultiSelectCatalogo mín. 1 / Tipo contenido) · **Idea** (**SECCION** + **IDEA** de `mkt_publi_ideas_detalle` con `usada = false` o la vinculada en edición + **Detalle** solo lectura) · **Contenido** (input **URL** Google Drive → `contenido_url`; vacío = planificado / con URL = creado y `contenido_creado` derivado); al guardar se lista en `mkt_publi` (FK `idea_detalle_id`) y la idea queda **USADA: SI**; en la celda aparecen **íconos de red** (`MktRedSocialIcon`: Instagram, Facebook, TikTok, YouTube, LinkedIn, X/Twitter, WhatsApp; fallback `Share2`). Helpers SSOT: `@/lib/mktCalendarioPublicaciones.ts`. **Ideas Contenido** (`MarketingIdeasPageClient`; sidebar/subtítulo **Ideas Contenido**): Finder **2 columnas** (**SECCIONES** | **DETALLE**; detalles ordenados: `usada = false` primero, luego `titulo_idea` A–Z), botón **`+`** a la **derecha** del encabezado; cascada sección → detalles; create/edit sección: **Nombre** + **Resumen** (`idea_resumen`); create/edit detalle: **Red** multi-select (checkboxes, mín. 1; N:M en backend); **Tipo de contenido** select simple; **Usada** solo en edición (alta siempre NO); meta del listado une redes + tipo contenido con ` · `; acciones fila (**Eye** → `VerMktIdeaSeccionModal` / `VerMktIdeaDetalleModal` solo lectura con `divide-y divide-primary/25` entre campos; editar/eliminar) con `CrearEditarMktIdeaSeccionModal` / `CrearEditarMktIdeaDetalleModal` / `EliminarMktIdeaModal` (solo `editor`). `PERMISOS.marketing.acceso` (**libre** para `simple` y `editor`; mutaciones CRUD solo `editor`).
-- **Jerarquía canónica de URLs:** SSOT en **`src/lib/gestionProductosRoutes.ts`** (`GP_ROUTES`). Prefijo **`/gestion-productos/{módulo}/{agrupador}/{submódulo}`** alineado al sidebar. Rewrites en `next.config.ts` sirven páginas internas (`src/app/pedidos`, `proveedores`, `tienda`, …); redirects permanentes desde URLs previas.
-  - **Pedido Mercaderia:** `/gestion-productos/pedido-mercaderia/generar-pedido`, `/gestion-productos/pedido-mercaderia/conf-pedido/{urgente|tintometrico|reposicion}`, `/gestion-productos/pedido-mercaderia/recepcion-pedido`.
-  - **Ayuda Vendedor:** `/gestion-productos/ayuda-vendedor/px-venta/{px-vta-sugerido|px-tintometrico}`, `/gestion-productos/ayuda-vendedor/{calc-litros|cargar-gasto|control-stock|transf-depositos}`.
-  - **Análisis de Precios:** `/gestion-productos/analisis-precios/lista-proveedores/{lista-precios|lista}` (reglas descuentos vía modal en Lista Precios, sin ítem sidebar), `/gestion-productos/analisis-precios/cx-y-px-tienda/{cx-compra|px-listas}`, `/gestion-productos/analisis-precios/px-competencia`, `/gestion-productos/analisis-precios/comp-categorias/{comparacion|categorias}`.
-  - Entrada por defecto (`/` y modal área Vendedor): **`GP_ROUTES.defaultEntry`** = `/` (hub vacío).
-  - Compatibilidad: redirects desde `/pedidos/*`, `/proveedores/*`, `/tienda/*`, `/stock`, `/cargar-gasto`, `/precios-competencia` y rutas canónicas **2026-03** (`/gestion-productos/pedidos/*`, `/gestion-productos/proveedores/*`, etc.).
-
-### Slidenav — Dock de sesión (`SidebarMainAppArea` + `SidebarAreaSwitcher`)
-
-Bloque en el pie de la slidenav (**debajo** de Sync), superficie única **`sidebar-user-switcher-surface`**.
-
-- **Estructura**: fila **Pendientes** (`h-9`, label centrado MAYÚSCULAS, badge 0–2 por categoría, chevron) → divisor `h-px bg-sidebar-foreground/40` → fila **usuario** (`h-9`).
-- **Pendientes**: hover o click abren el detalle lateral; **PEDIDO** y **TRANSFERENCIA** (MAYÚSCULAS, centrados y alineados) son botones (Generar Pedido / Trans. Depósitos con `origen` = sucursal preferida); badge = categorías con pendientes (máx. 2); `accent2` si hay Emisión o Recepción. Sin modal de aviso.
-- **Usuario**: bloque **ícono + nombre** (o solo nombre) **centrado** en la fila del dock. Si puede cambiar de módulo: ícono del módulo actual + nombre MAYÚSCULAS (`truncate`); click → modal **Cambiar Módulo** con **lista clickeable** de módulos permitidos (ícono + label MAYÚSCULAS; activo `variant="default"`; **un click** aplica, sin Select ni Aplicar). Con un solo módulo: solo el nombre centrado.
-- **Onboarding (primera visita de la pestaña)**: modal **Elegir Usuario** (`listUsuariosParaInicioSesionAction`). Lista completa de usuarios en pantalla (botones `outline`: nombre MAYÚSCULAS + sucursal); **un click** aplica. Sin Select ni botón **Aplicar**. En primera visita no se cierra con X (pie: “Tocá un usuario para continuar”). Persiste `sessionStorage` `main-app-usuario-sesion` y copia `sucursal_por_defecto` a `main-app-sucursal-preferida`. El onboarding **no** abre modal de transferencias; el indicador **Pendientes** solo muestra el panel lateral (hover/click).
-- **Administración**: si el usuario elegido tiene módulo **Administración** y `rol !== "editor"`, modal **Acceso A Administración** (`activarModoEditor`) **antes** de entrar. Tras la clave, puede navegar entre sus módulos sin volver a pedirla en esa sesión.
-- **Default de filtros**: en **Vendedor**, **Pedido** (Urgente / Tintométrico / Reposición / Generar Pedido) y **Control Stock** / Trans. Depósitos precargan la **sucursal del usuario** (`leerSucursalPreferida` / `sucursal_por_defecto`); el usuario puede cambiarla manualmente. Hook: `useAplicarSucursalPreferidaSiVacia`.
-- **Logo**: el pie de slidenav no incluye logo. No reintroducirlo ahí.
-
-#### Modal “Acceso A Administración”
-
-- Misma clave `EDITOR_PASSWORD` / action `activarModoEditor` (ver `BACKEND_GUIDELINES` §1.2.1).
-- Título **Acceso A Administración**; CTA **Ingresar**.
-
-### Slidenav — Sincronización DUX (`src/components/layout/SyncStatusIndicator.tsx`)
-
-Botón persistente en la parte inferior de la slidenav. Markup en **`DuxSyncStyleButton`** (`surface="sidebar"`).
-
-- **Etiqueta:** siempre **`SINCRONIZAR`** (sin variantes por área ni hover distinto).
-- **Simple:** un click inicia sync de **productos** (`POST /api/sync-lista-precios-tienda` encadenado).
-- **Editor:** click abre **`SincronizarDuxOpcionesModal`** con **Productos** y **Compras** (`sincronizarComprobantesProveedorDesdeDuxAction`).
-- **Mutex UI:** si corre sync de productos, compras o arranque pendiente → botón **disabled** + `busy` (no segundo click).
-- **Últ. Act.:** timestamp más reciente entre lista precios y compras (`formatLastCompletedAtElapsed`).
-- **Progreso en curso:** el mismo slot pasa a **`MensajeProceso`** `variant="sidebar"` vía prop **`progreso`** de **`DuxSyncStyleButton`** (mismas clases que importación: `.mensaje-proceso--sidebar`, fondo azul claro, texto oscuro). Línea 1 **`SINCRONIZANDO…`** + línea 2 con **X de Y · ~N min restantes**. ETA: productos (`remainingMinutes` del status lista) y compras (status compras). Helpers: `formatSyncEta.ts`.
-
-### Sincronización DUX — Slidenav
-
-Regla de UX: la sincronización DUX **no debe duplicarse** en encabezados de módulos; se inicia desde **`SyncStatusIndicator`** en la slidenav (modal de opciones para **editor**).
-
-### Comp. Categorias — Comparacion
-
-Layout compartido en `@/lib/comparacionCategoriasLayout.ts`: **`contentWidth="wide150"`** + **`COMP_CATEGORIAS_PAGE_CONTENT_CLASS`**. **Comparacion**: stack vertical **`COMP_CATEGORIAS_COMPARISON_STACK_CLASS`** (`gap-3`) — panel selector **`flex-[2]` (40 %)** + panel tabla **`flex-[3]` (60 %)**; grid Finder 4 columnas **`h-full`**. Modales **Asignar Productos** y **Agregar Referencia De Competencia**: ancho compartido **`MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS`** (`!max-w-[75.6rem]`). Referencia usa selección **`singleConfirm`** en `ModalTablaConFiltros` (clic en toda la fila + checkbox).
-
-Submódulo **Comparacion** (`ComparacionCategoriasClient.tsx`): sin `FilterBar`. Arriba, selector en cascada (`ComparacionCategoriaSelector`, **4 columnas** `grid-cols-[1fr_1fr_1fr_2fr]` → **20 % / 20 % / 20 % / 40 %**: CATEGORÍA · SUBCATEGORÍA · PRESENTACIÓN · REFERENCIA COMPETENCIA; filas del Finder **sin** línea `meta` de conteos). **CRUD de dimensiones** en la misma pantalla si `comparacionCategorias.editar`: **`+`** por columna y editar/eliminar al hover en cada fila → `CrearEditarComparacionCategoriaModal` / `EliminarComparacionCategoriaModal`. **Auto-selección en cascada** (`resolverSeleccionCascadaUnica`): si un nivel tiene **una sola** opción (p. ej. una subcategoría bajo la categoría elegida), se selecciona sola y continúa hasta presentación; al llegar a presentación única se cargan productos. La ruta **Categorias** quedó unificada (redirect a Comparacion). Al elegir una **presentación**, se cargan los productos asignados (`getProductosPorPresentacionAction` → filas de `prod_precios_provee` vía `id_presentacion`).
-
-**Columna Referencia competencia** (`ComparacionReferenciaCompetenciaColumn`): grilla sin fila de encabezados — **COMP. 12 %** · **PRODUCTO 70 %** (`line-clamp-2`) · **PX. 13 %** · **basura 5 %**; celdas **centradas**; botón basura por fila; selección única con **`CATALOGO_FINDER_ROW_SELECTED_CLASS`**; **+ Nuevo** agrega referencia.
-
-Columnas bloque principal: **TILDE 3 %** · **PROVEEDOR 7 %** · **DESCRIPCIÓN 40 %** (32 % si hay columna acciones) · **DTO. EXTRA 6 %** · **COSTO 8 %** · **VAR 7 %** (`scrollX` en tabla). **DTO. EXTRA** — input entero 0–99 con máscara `%` (`PorcentajeEnteroMaskInput`, `formatDtoExtraComparacionMask` / `parseDtoExtraComparacionMask` en `comparacionCategoriasFormat.ts`; default **0%**); componente **`CeldaDtoExtraComparacion`**; recálculo instantáneo de **COSTO**, **VAR** y márgenes vía `dtoExtraDraft`; persistencia al blur (`actualizarDtoExtraComparacionAction`, `prod_comp_item_comparados`). Bloque secundario (`tabla-bloque-secundario-*`): **MARG. SEG. REF. 7 %** — `calcMargenSegunPxReferencia` (2 dec. + `%`); **PX. CALC. 8 %** — calculado (`calcPxManualDesdeDifPctReferencia`, máscara **`formatPxManualEnteroMask`**); **DIF % REF. MAN. 7 %** — **input** (`CeldaDifPxRefManualComparacion`, `PorcentajeEnteroMaskInput` con `signed`; default **0%**); **MARG. CALC. 7 %** — calculado (`calcMargenManualDesdeDifPctReferencia`, `fmtMargenComparacionPct`, 2 dec.); recálculo en cliente vía `difPxRefManualDraft`; persistencia al blur del input → **`dif_px_ref_manual`** (`actualizarDifPxRefManualComparacionAction`, misma tabla **`prod_comp_item_comparados`**). Acciones **8 %**. Modales **Asignar productos** y **Elegir referencia**: **`MODAL_COMP_CATEGORIAS_BUSQUEDA_MAX_WIDTH_CLASS`** (`!max-w-[151.2rem]`); stack de filtros **`MODAL_COMP_CATEGORIAS_FILTROS_STACK_CLASS`** (select entidad + input búsqueda); tabla **`MODAL_COMP_CATEGORIAS_TABLA_COLUMN_WIDTHS_PCT`** `[5,15,65,15]`; búsqueda multi-término (AND).
-
-### Sincronización DUX — Slidenav (detalle técnico)
-
-Regla de UX: la sincronización de **lista de precios tienda** y **comprobantes de compra** no debe duplicarse en encabezados de módulos; ambas se disparan desde **`SyncStatusIndicator`** (modal **Productos** / **Compras** para **editor**). No hay botón duplicado en **`/finanzas/tesoreria`**.
-
-### SSOT — Progreso de consultas API DUX (GET/POST)
-
-**Regla canónica (obligatoria para nuevos flujos DUX ERP):** todo proceso largo que consulte la **API DUX ERP** (`erp.duxsoftware.com.ar`, ítems, compras, modificación de costos, etc.) — ya sea **GET** o **POST** — debe:
-
-1. **Mutex en UI:** mientras un flujo DUX está activo, **`SyncStatusIndicator`** queda **deshabilitado** (sin iniciar otro sync). Backend: mutex en `sync_dux_status` y/o **409** en rutas API cuando aplique.
-2. **No** duplicar banners de progreso en páginas/modales para esos flujos (el disparador es el botón **SINCRONIZAR** en sidebar).
-3. **Lotes y pausa** (backend, `BACKEND_GUIDELINES` §1.10c): **50 ítems por lote**; **≥ 5 s** entre lotes (`duxApiBatchPolicy.ts`).
-
-| Flujo | API | Disparo UI | Mutex |
-|-------|-----|------------|-------|
-| Sync lista precios tienda | `GET`/`POST` `/api/sync-lista-precios-tienda` | **SINCRONIZAR** (simple o modal **Productos**) | botón disabled |
-| Sync compras | DUX comprobantes | Modal **Compras** (solo **editor**) | botón disabled |
-| Import lista proveedor | Excel (no DUX ERP) | **`ImportStatusIndicator`** (segundo nodo sidebar) | independiente |
-| Sync competencia (scraping URLs) | HTTP externo, no DUX ERP | **`CompetenciaSyncProgresoBanner`** en página ⚠️ pendiente migrar | independiente |
-| Recepción pedido → DUX | POST `v2/compras` | Estado local en modal ⚠️ pendiente migrar | sin mutex global |
-
-**Excepciones documentadas (no extrapolar sin actualizar esta tabla):** import Excel y scraping competencia no usan la API DUX ERP; hoy tienen UI propia. **Act. Cx.** exporta Excel en la página (sin sidebar). **Recepción DUX** es POST puntual en modal — aún sin slot sidebar.
-
-**Checklist PR (flujos DUX nuevos):** ¿mutex en botón **SINCRONIZAR**? ¿sin banner duplicado en la página? ¿lotes de **50** y pausa **5 s** vía `duxApiBatchPolicy.ts`?
-
-### Orden y labels — Sidebar Vendedor / Administración · Análisis (`Sidebar.tsx`)
-
-**PRECIOS** (rol **vendedor**/`simple`): **Px Sugeridos** + **Px Tintométricos**. **STOCK** agrupa **Control Stock** (`GP_ROUTES.ayudaVendedor.controlStock`) y **Trans. Depósitos** (`GP_ROUTES.ayudaVendedor.transfDepositos`); permiso `PERMISOS.stock.acceso`. **CALCULAR LTS** y **CARGAR GASTOS** son módulos de enlace directo. **Cargar Gasto** (`/gestion-productos/cargar-gasto`, `PERMISOS.ayudaVendedor.cargarGasto` para `simple` y `editor`): abre al entrar el modal **`GastoUnicoBalanceModal`** (**Nuevo Gasto Eventual**, mismo flujo que **GASTO EVENTUAL** en `/finanzas/balance/gastos`); periodo = mes/año calendario Argentina. Actions: `listarFinBalGastosFinalesNoMensualesAction` / `crearFinBalImputacionGastoUnicoAction` con gate `requireCargarGastoEventual` (permiso `cargarGasto`).
-
-**LISTA PRECIOS** (área **Administración**, rol **editor**, SSOT `administracionNav.ts`): grupos **`PX TIENDA`** → **Cx. Compra**, **Px. Listas**, **Px. Competencia**, **Analisis Por Cat.**; **`PROVEEDORES`** → **Listas Px Prov.** (toolbar: **`CotizacionUsdListaPreciosControl`**, **`ReglasDescuentosListaPrecioModal`** — cotización USD y CRUD reglas descuentos; permisos `listaPrecios.acciones.gestionarCotizacionUsd` / `gestionarReglasDescuentos`), **Lista Prov.**; **`ANÁLISIS M.C.`** → **Margen Contribución**, **Cx. Financieros**. Rutas de análisis siguen bajo `/gestion-productos/analisis-precios/...`. **`Cx. Compra`**: grilla con **CX PROD.** + **`ActCxButton`** (Excel costos + modal opcional PDF informe aumentos). **`Px. Competencia`** (`/gestion-productos/tienda/cx-px-tienda`, rewrite → `/tienda/cx-px`): listado paginado **solo** de productos con **`comparar_competencia = true`**; header **`Prod. Comparar`** + **`Gestionar Competidores`** + **`Comparar Precios Competencia`** (`SincronizarCompetenciaModal`; permiso `competenciaPrecios.editar`). **`CompetenciaSyncProgresoBanner`** sobre filtros. Filtros **`FiltrosPxListas`**: **MARCA**, **RUBRO**, **PX PROMEDIO** (DIF TIENDA vs promedio; query `filtroPxPromedio`) + búsqueda. Grilla **`TablaPxListas`**: **DESCRIPCIÓN**, **PX PROMEDIO**, **DIF TIENDA**, **ACCIONES** (detalle expandido por competidor; asociar/relevar URLs; quitar de comparación). DIF TIENDA compara `px_lista_tienda` (DUX) vs promedio competidores. No reintroducir en esta grilla **DET PRECIO**, **PX LISTA**, **MARCACION**, filtros `detPrecio` / `ordenMarcacion`, **`ExportarPxButton`** ni `guardarPxListaTiendaAction`. Permiso `PERMISOS.cxPxTienda.acceso`. `@/components/px-listas/`. **Analisis Por Cat.**: `/gestion-productos/analisis-precios/comp-categorias/comparacion` (permiso `comparacionCategorias.acceso`; alta/edición/baja de categoría/subcategoría/presentación en selector si `comparacionCategorias.editar`; **Categorias** → redirect Comparacion).
-
-### Stock — No mostrar modal al entrar (`/stock`)
-
-Regla de UX: al abrir **Control Stock** no se debe interrumpir con un modal de “¿Desea sincronizar?”.  
-La sincronización se inicia solo desde **`SyncStatusIndicator`** en la slidenav.
-
-### Stock — Módulo sidebar **STOCK**
-
-- Sidebar Vendedor: módulo **STOCK** con dos hojas: **Control Stock** y **Trans. Depósitos**.
-- **Control Stock**: sin cambios de negocio; header `title="Stock"` / `subtitle="Control Stock"`; ruta canónica `GP_ROUTES.ayudaVendedor.controlStock`.
-- **Trans. Depósitos** (`GP_ROUTES.ayudaVendedor.transfDepositos` → rewrite `/transf-depositos`): **Fila 1** `FilterBar` con **SUCURSAL ORIGEN** / **SUCURSAL DESTINO** (query `origen` / `destino`; **siempre distintas**; origen default = sucursal preferida de slidenav). **Fila 2** **MARCA** / **RUBRO** + búsqueda. Header `Stock` / `Trans. Depósitos`. **`actions`**: **Generar Transf.** (`FileDown`, `h-10 px-4`) → **`TransfPendienteRegistroModal`** (título **Transf. Pendiente Registro**): primero **SUCURSAL** (`FiltroIndividualContainer` + `input-filtro-unificado`; precarga origen de la grilla o sucursal preferida; sin sucursal no hay tabla). Al abrir, si hay origen+destino y cantidades, encola con `encolarTransferenciasPendientesAction` y limpia inputs. Lista solo pendientes de esa sucursal (`sucursalExcel`: TRANSFERIR origen / RECIBIR destino): **TIPO** · **SUC. ORIGEN** · **SUC. DESTINO** · **FECHA** · **ACCIONES** (`Download`); Excel vía `exportarPendientesTransfDepositosAction` y la fila desaparece. Grilla (`TablaTransfDepositos` + `forwardRef` `getItemsConCantidad`/`clearCantidades`; cantidades se conservan al paginar, se limpian al cambiar origen/destino; `colgroup` 60/10/3/10/17): **DESCRIPCIÓN** · nombre origen (`Input` centrado) · flecha centrada (solo con cantidad) · nombre destino (lectura centrada) · **ACCIONES**: **Borrar** (`Trash2`) · **Historial** (`Check` → **`HistorialTransfDepositosModal`**, 14 días) · **Advertencia** (`AlertTriangle`, slot `invisible` si no hay match) si la cantidad coincide con un control del par actual en los **últimos 14 días**.
-
-### Stock — Acciones del encabezado (Control Stock)
-
-- En `Control Stock`, la zona de acciones del encabezado muestra solo acciones de salida (**Exportar** / **Imprimir**) alineadas a la derecha.
-- Control Stock no muestra **Editar Coeficientes** (vive en Px Tintométrico).
-- **Exportar Excel** (`TablaStock`): columna **STOCK** con **−** / input / **+** / botón **Check** (confirmar control sin variación: deja el stock igual al de BD). El **Check** queda **`disabled`** mientras haya **variación** (stock editado ≠ BD); al editar con variación se quita la confirmación previa. Columna **ÚLT. CONTROL**: muestra fecha persistida, o **Pendiente** + tilde si hay variación o confirmación en sesión. Al **Exportar Excel**: el `.xls` solo incluye ítems con **variación** (todas las páginas visitadas); la persistencia de **ÚLT. CONTROL** (`registrarExportacionExcelStock`) aplica a ítems con variación **o** confirmación. Si solo hay confirmaciones sin variación, se registra control sin descargar Excel.
-
-### Ayuda Vendedor — `Px Tintométrico` (`/tienda/tintometrico`) y `Calc. Litros` (`/tienda/litros`)
-
-- Rutas canónicas bajo **Ayuda Vendedor** (`/gestion-productos/tienda/calc-tintometrico`, `/gestion-productos/tienda/calc-litros`); la URL antigua `/tienda/tinto-lts` redirige (308) a tintométrico.
-- **Px Tintométricos** usa `SectionHeader` título **Precios** + subtítulo **Px Tintométricos**. **Calcular Lts** usa título **Calcular Lts** (módulo de enlace directo).
-- No renderizan bloque de filtros (`FilterBar`).
-- **Px Tintométrico**: cálculo local en cliente (sin persistencia de montos). Una card `bg-card` a ancho útil (`max-w-xl` centrada para el formulario) con título en mayúsculas **CÁLCULO DE PX TINTOMÉTRICO** + línea `bg-primary` al `70%`; grilla etiqueta/campo: `Proveedor` (`Select` con `SELECT_TRIGGER_FILTER_CLASS`), `Px. Compra` (`Input` entero), `Px Lista Tienda` (solo lectura, múltiplo de 100). Solo proveedores con `coeficienteTintometrico > 1` en el desplegable. **Editar Coeficientes** solo `editor`; modal `EditarCoeficientesModal` con tabla de dos columnas (**PROVEEDOR** y **COEFICIENTE** editable), persistencia en DB y botón **Guardar** deshabilitado cuando no hay cambios (o durante guardado).
-- **Calc. Litros**: cálculo local; card única a ancho completo del contenedor con título **CALCULO DE LTS** + línea `bg-primary` al `70%`; selectores **FORMA DE CÁLCULO** y **TIPO DE PINTURA**; tablas según forma (paredes, módulo, pileta). **EDITAR RENDIMIENTOS** solo `editor` (modal CRUD `prod_rendimientos`, antes `tipos_pintura_rendimientos`). Los campos **LARGO**, **ANCHO**, **ALTO** y **PROFUNDIDAD** (dimensiones en metros) usan `InputDimensionMts` en `TiendaCalcLitrosPageClient.tsx`: `Input` con `pr-10` + sufijo visual **Mts.** (`text-muted-foreground`, `pointer-events-none`, `aria-hidden`); el valor sigue siendo solo el número; `aria-label` incluye «en metros».
-- Sidebar por rol: **simple** → **MERCADERÍA** + **PRECIOS** + **CALCULAR LTS** + **STOCK** + **CARGAR GASTOS** + **ASISTENTE IA**; **editor** → mismos módulos Vendedor + área Administración/Marketing. **Cx Compra** solo **editor** (`PERMISOS.tienda.acceso`).
-
-## 4. Checklist de PR (Cursor / desarrollador)
-
-Antes de dar por terminada una tarea de frontend:
-
-- [ ] No hay estilos inline ni clases hardcodeadas (`bg-white`, `text-slate-400`, `emerald-*`, `amber-*`, etc.); se usan tokens (`bg-card`, `text-muted-foreground`, `primary`/`accent2`) o `@/lib/ui-classes` (incluido **`CALLOUT_WARNING_CLASS`** para banners y **`TEXT_WARNING_CLASS`** / **`ICON_WARNING_INTERACTIVE_CLASS`** para íconos de aviso). Excepción aceptable: anchos dinámicos (p. ej. barra de progreso `%`) o el patrón documentado `style={{ height: "auto" }}` en modales con tabla. **`Card`** que envuelve la tabla principal: **`card-tabla-envoltorio`**, no sombras arbitrarias **`shadow-[0_4px_12px_rgba(...)]`** ni la cadena larga de utilidades duplicada.
-- [ ] **Anchos de columna estáticos** en tablas con `<colgroup>`: usar `<col className="w-[x%]" />` (ver `ComparacionCategoriasClient`, `TablaFlujoDeFondo`). `style={{ width }}` queda solo para anchos verdaderamente dinámicos (p. ej. `esEditor ? "24%" : "36%"`).
-- [ ] **Cascarón de página de área**: páginas y `*PageClient` que ocupan toda la pantalla usan **`.area-page-shell`**, no la cadena `flex h-screen min-h-0 flex-col overflow-hidden`.
-- [ ] **Sin utilidades Tailwind duplicadas por eje** en una misma `className` (ej. `px-2 px-3`, `px-4 px-6 px-8`, `gap-2 gap-4`, `grid-cols-1` + `grid-cols-2`, `flex-col` + `flex-row`, `min-w-[a] min-w-[b]`, `text-sm text-base`): mantener una sola y usar `cn()` para overrides condicionales.
-- [ ] Las clases condicionales o combinadas usan `cn(...)`.
-- [ ] Tablas usan `Table` de `@/components/ui/table` con `variant="compact"` cuando aplique; encabezado fijo (al hacer scroll los encabezados no desaparecen).
-- [ ] Filtros usan `FilterBar`, `FilaFiltrosDesplegables`, `INPUT_FILTER_CLASS`, `FILTER_SELECT_WRAPPER_CLASS`. Input de búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`. Fila de desplegables: default **5** columnas; **`columnas={6}`** solo si hay **6** Selects en esa fila.
-- [ ] **Desplegables:** no hay `<select>` nativo; usan `@/components/ui/select` (buscador **BUSCAR...** en `SelectContent`) o paneles custom con `SelectSearchInput` + `filterItemsBySelectSearch`. Sentinels `"none"`/`"todos"` si hace falta valor vacío.
-- [ ] Encabezados de página usan `SectionHeader` o `ClassicPageHeader` (implementación única vía `PageSectionHeader`; no duplicar markup de `.section-header`).
-- [ ] Mensajes de tabla/lista vacía reutilizan `TableEmptyRow` o `TableEmptyState` (variantes CVA), sin copiar `py-* text-muted-foreground text-center` sueltos.
-- [ ] Botones de toolbar con **ícono + label** (y/o estado async): usan `ToolbarActionButton` (`src/components/shared/ToolbarActionButton.tsx`) o `Button` de shadcn **sin** repetir `gap-2 shrink-0` (el `Button` base ya los aporta) ni dimensionar el `<svg>` con `h-4 w-4 shrink-0` (el `Button` lo hace vía `[&_svg:not([class*='size-'])]:size-4`).
-- [ ] Títulos de modales y botones: title case. Sidebar: módulo en MAYÚSCULAS, submódulo con primera letra de cada palabra en mayúscula (title case). Filtros y desplegables: MAYÚSCULAS. Encabezados de tablas de datos: MAYÚSCULAS y negrita. Abreviaciones con punto final (Px., Cx., Dto., etc.).
-- [ ] **Modales:** etiquetas de campos (`label`, `Label`, `ModalMicroLabel`, `MODAL_MICRO_LABEL_CLASS`) en **`text-foreground`**; no `text-muted-foreground` en etiquetas de controles (ayudas y mensajes secundarios exceptuados).
-- [ ] Iconos: `lucide-react`. Toasts: `sonner`. Fuente: Geist (vía layout/tema).
-- [ ] No hay `any`; validación de datos con Zod donde aplique.
-- [ ] Si se añade una clase global nueva, se registra en este documento (sección 2).
+UI en `src/components/asistente-ia/`. Contratos, prompts y scraper: **`docs/AGENTEIA_GUIDELINES.md`**.
 
 ---
 
-## 5. Anti-patrones (no reintroducir)
+## 4. Checklist de PR
 
-- **Paletas genéricas** (`bg-white`, `text-slate-*`, `emerald-*`, `amber-*`, `blue-*` para estados): usar tokens shadcn o `@/lib/ui-classes`.
-- **Breakpoints Tailwind** (`sm:`, `md:`, `lg:`, `xl:`, `2xl:`, `max-*:`): la app es desktop-only. Las keys CVA `sm`/`md`/`lg`/`xl` de `Button`/`AppModal` no son breakpoints.
-- **`<select>` nativo**: siempre `Select` shadcn. Valor vacío → sentinel `"none"` / `"todos"`.
-- **`<button>` suelto en modales/páginas**: usar `Button` de `@/components/ui/button`. Excepciones: celdas de calendario, checkboxes de tabla, `TooltipTrigger`, barras de gráfico, dock/sidebar, triggers de multi-select de filtros.
-- **Multi-select de filtros**: Radix Select no cubre múltiple; el patrón vigente es trigger `<button>` + panel `role="listbox"` + `SelectSearchInput` (tipo de pedido, meses/años, `MktMultiSelectCatalogo`). No reintroducir `<select multiple>`.
-- **`LimpiarFiltrosButton` con prop `visible`**: el cesto global está siempre visible.
-- **`window.location.href`** para navegación interna: `useRouter().push`.
-- **Template literals en `className`**: siempre `cn()`.
-- **Cascarón `flex h-screen … overflow-hidden`**: usar `.area-page-shell`.
-- **Sombras mágicas** `shadow-[0_4px_12px_rgba(0,0,0,0.05)]` en Card de tabla: `card-tabla-envoltorio`.
-- **Hooks/componentes huérfanos**: no conservar `useListaPreciosTiendaModalSync`, `useSyncListaPreciosStatusPoll`, `useMirrorScrollTop`, `usePieFijoColumnWidthsSync`, `SyncDuxHeaderButton`, `StockCard`, `StockPageSyncGate`, `Navbar` (nav legacy), `UploadZone` (demo), `BuscadorSimple` (rama `simple` nunca llega a `/proveedores`).
-- **Reexports shadcn sin call sites**: no exportar `CardFooter`, `CardAction`, `TableCaption`, `DialogClose`, `DialogDescription`, `SelectGroup`, `SelectLabel`, `SelectSeparator`, ni `buttonVariants`/`badgeVariants`. Internos del kit (`DialogPortal`, scroll buttons de Select, `SelectGroup` para filtro searchable) se quedan en el archivo del kit.
-- **CVA exportado sin consumidores**: variantes CVA internas no se reexportan salvo que otro módulo las importe (p. ej. `tableEmptyState*Variants`).
-- **Clases CSS retiradas** (0 call sites): `.modal-vinculos-*`, `.btn-convertir-proveedor-principal*`, `.btn-desvincular-icono`, `.modal-vinculos-footer`, `.est-vtas-link-btn`, `.celda-sublinea-tabla*`, `.lista-precios-sublinea-*`, `.input-filtro-custom`, `.fila-filtros-2`, `.contenedor-tabla-gestion--pie-fijo-pie`, `.btn-main`.
-- **ESLint React Compiler**: `setState` en `useEffect` → `queueMicrotask`; no escribir `.current` en render; args/vars no usadas → prefijo `_`.
-- **Ruta demo `/importar`**: no recrear página/Navbar/UploadZone; el import real es `ImportarModal` en Lista Proveedores.
-- **`<table>` nativo en módulos de gestión**: usar `Table` shadcn. Excepciones vigentes: `TablaGastos`, `PrintStock` (impresión) y el panel de series de `GraficoMcVsPorcUtilidad`.
+- [ ] Tokens + `cn()`; sin paletas genéricas; banners con `CALLOUT_WARNING_CLASS`.
+- [ ] `.area-page-shell`; sin `px-*` duplicado; sin breakpoints `sm:`/`md:`/`lg:`.
+- [ ] Página con tabla: CFTL + `FilterBar` `filtros-contenedor-tienda bg-card` + `Table` compacta + sticky thead + vacío `TableEmptyState`.
+- [ ] Búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`. Selects shadcn con buscador. Fila desplegables: 5 cols (6 solo si hay 6).
+- [ ] Íconos de fila: `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`. Toolbar ícono+label: `ToolbarActionButton`.
+- [ ] Title Case / MAYÚSCULAS / abreviaturas con punto según **Guía para IA** punto 10.
+- [ ] Labels de modal en `text-foreground`.
+- [ ] lucide-react + sonner + Geist. Sin `any`. Zod en el borde si hay input.
+- [ ] Clase global o shared nuevo → **§2**. Comportamiento único de pantalla → **§3**.
 
 ---
 
-## Módulo Px Listas (precios multi-lista DUX)
+## 5. Anti-patrones
 
-- **Pantalla canónica:** `/gestion-productos/tienda/px-listas` (rewrite → `/tienda/px-listas`). Título y sidebar: **Px Listas**. Permiso: `PERMISOS.cxPxTienda.acceso` (solo editor).
-- **Layout:** `area-page-shell` + `ClassicFilteredTableLayout`. **FilterBar** `filtros-contenedor-tienda bg-card` (mismo patrón que **Px Competencia** / **Cx Compra**): fila 1 `FilaFiltrosDesplegables` — **MARCA**, **RUBRO**, **SUB-RUBRO**, **PX VINCULADO** (competidor de REF. en **1 - GENERAL**; query `pxVinculado` = `competencia_id_px_lista_general`; opciones con **etiqueta** = prefijo proveedor o abrev. 3 letras), **ACTUALIZAR** (SI/NO: ítems con PX en staging `prod_tienda_precios_edicion` pendiente de **Act. Px**) en `FiltroIndividualContainer` + `FILTER_SELECT_WRAPPER_CLASS`, `SelectTrigger` **`input-filtro-unificado`**, `SelectContent` `select-content-filtro`; sin ítems «TODAS/TODOS» (estado vacío = `value` `undefined` + placeholder en trigger); cascada marca → limpia rubro/sub-rubro, rubro → limpia sub-rubro. Fila 2: `FilterRowSearch` `flex-1` + `FiltroBusquedaInput` + `LimpiarFiltrosButton` + `FILTER_COUNT_CLASS` (`X PRODUCTO(S)`).
-- **Componentes:** `src/components/px-listas-precios/*` — `FiltrosPxListasPrecios`, `TablaPxListasPrecios`, `PxListasPreciosPageClient`, **`ActPxListasButton`** (header).
-- **Exportación DUX:** botón **Act. Px.** → un Excel **por** `nombre_lista`; columnas **CODIGO** + **PORC UTILIDAD** (margen % numérico, 4 decimales, formato celda es-AR `#.##0,0000` → `106,0000`; `ESNUMERO` = verdadero); al exportar se **eliminan** las filas exportadas (cierra la act. pendiente); si no hay filas → **`ModalSinProductosExportar`**; archivo **`Act. {nombre_lista} dd-mm hh-mm.xls`**; `exportarPxListasMargenAction` + `router.refresh()` en cliente.
-- **Tabla:** clase `tabla-px-listas-listado tabla-px-listas-precios` (scroll horizontal de listas en `.contenedor-tabla-gestion` con `container-type: inline-size`). **Columnas fijas** (`sticky`, **50 %** del viewport: **DESCRIPCIÓN 42 %** + **CATEGORÍA M.C 8 %** vía `42cqw` / `8cqw`): **CATEGORÍA M.C** solo lectura (`resolverCategoriaMargenPxListas` / `fin_ana_mc_cat` sobre **PORC. UTILIDAD** de **`1 - GENERAL`**). **Columnas desplazables (~40 %** mínimo visible, crece con más listas): por cada `prod_tienda_listas_precios`, subcabecera `nombre_lista` + subcolumnas **PX** y **PORC. UTILIDAD**; en **`1 - GENERAL`** además **REF.** (Select de competidor con precio de referencia: sugerido o scraping; opción **-** = sin referencia). Edición: **`PxListaEnteroInput`** / **`PorcentajeCentInput`**; staging **`prod_tienda_precios_edicion`**; resaltado **`.celda-px-listas-actualizar`**.
-- **REF. competidor (1 - GENERAL):** persiste `prod_tienda.competencia_id_px_lista_general`. Elegir competidor → copia PX de referencia a staging de GENERAL (PORC. UTILIDAD = f(PX, `costo_compra`)). **-** solo limpia la FK (no toca PX/PORC.). Edición manual de PX o PORC. en GENERAL → limpia FK (vuelve a **-**). Si cambia el precio de referencia y hay FK, se re-sincroniza el PX (listado y **Act. Px**) y se recalcula el %. En **REF.** y filtro **PX VINCULADO** la etiqueta visible es el **prefijo** del proveedor vinculado (≤3 letras) o abreviatura de 3 letras del nombre (`etiquetaAbrevCompetenciaPxListas`). Action: `guardarPxListaCompetenciaRefAction`.
-- **Clases globales:** `.tabla-px-listas-precios` — columnas fijas sticky; inputs PX/PORC. y select REF. en `globals.css` (`.celda-px-lista-col` / `.celda-marcacion-col` / `.celda-px-lista-ref-col`); `.celda-px-listas-actualizar` para pendientes de actualizar en DUX.
+- Paletas genéricas, breakpoints responsive, `<select>` nativo, `window.location.href`, template literals en `className`, cascarón `h-screen flex…`, sombra mágica en Card de tabla.
+- `<button>` suelto en páginas/modales (usar `Button`). Excepciones: celdas de calendario, checkbox de tabla, `TooltipTrigger`, barras de gráfico, dock/sidebar, trigger de multi-select.
+- Sync DUX en el header de un módulo (vive en slidenav).
+- Inventar layout “dashboard” o segunda variante de tabla.
+- Recrear páginas en URLs redirigidas (`/proveedores`, `/proveedores/gestion`, `/finanzas/flujo-de-fondo`, `/precios-competencia`, …).
+- Copiar el hex de Balance mensual a otras pantallas.
+- Lógica de negocio, auth o persistencia en el cliente.
 
-## Módulo Px Competencia
-
-- **Pantalla canónica:** **`TablaPxListas`** / **`PxListasPageClient`** en `/gestion-productos/tienda/cx-px-tienda` (título de página y sidebar: **Px Competencia**). **`/gestion-productos/precios-competencia`** (y legacy `/proveedores/competencia-precios`) **redirigen** aquí. **No** reintroducir grilla standalone (`CompetenciaPreciosTabla`, `FiltrosCompetenciaPrecios`, `CompetenciaPreciosPageClient`). Componentes activos en `src/components/precios-competencia/*`: `AsociarUrlsCompetenciaModal`, `RelevamientoUltimoMensaje`, `SincronizarCompetenciaModal`, etc.
-- **Permisos:** acceso/edición lista → `PERMISOS.cxPxTienda.acceso`; botones **Asociar URL** y **Relevar URLs** (columna ACCIONES, `RefreshCw`) → `PERMISOS.competenciaPrecios.editar`; relevar por ítem usa `relevarUrlsProductoCompetenciaAction` (todos los vínculos del producto, sin sync masivo).
-- **Ruta histórica** (solo redirect): `/precios-competencia`. **Permiso standalone** (gestión/sync si se reexpone): `PERMISOS.competenciaPrecios.acceso`.
-- **Layout:** `area-page-shell` + `ClassicFilteredTableLayout` (`title` **Px Competencia**; ancho de contenido **default** `max-w-7xl`, igual que **Px. Vta. Sugeridos** y **Lista Px Proveedores**). **FilterBar** `filtros-contenedor-tienda bg-card`: fila 1 `FilaFiltrosDesplegables` (5 selects); fila 2 `flex items-center gap-3` con búsqueda (`FilterRowSearch` `flex-1`), `LimpiarFiltrosButton` y contador `FILTER_COUNT_CLASS`. Banner de sync sin `mx-8` (ancho del bloque de filtros).
-- **Componentes:** `src/components/precios-competencia/*` (no bajo `proveedores/`).
-- **Tabla** (`TablaPxListas`): **DESCRIPCIÓN**, **PX PROMEDIO**, **DIF TIENDA**, **ACCIONES** (`<colgroup>` **46% + 18% + 18% + 18%**). Detalle expandido: **`PxListasDetalleCompetenciaFilas`** con estilos **`tabla-fila-detalle-competencia-*`** (fondo **`var(--gris-inset)`**, alto fijo **`--tabla-body-row-min-height`**).
-- **Filtros** (`FiltrosPxListas` en `px-listas/`): **MARCA**, **RUBRO**, **PX PROMEDIO** (DIF TIENDA vs promedio; query `filtroPxPromedio`) + **`FiltroBusquedaInput`** + contador. Búsqueda vía `filtroTexto` en servicios de listado (términos parciales, igual que lista precios). Constantes UI: `@/lib/pxListasFiltros` / `@/lib/competenciaPreciosFiltros` según pantalla.
-- **Vínculo manual:** botón **Asociar URLs** por fila → `AsociarUrlsCompetenciaModal` (`max-w-[54rem]`, ~50 % más ancho que `lg`): solo competidores con URL (o **Px Sugerido**); buscador + botón **+** siempre visibles cuando hay competidores registrados (buscador deshabilitado si la lista está vacía); botón **+** abre `AgregarProveedorUrlCompetenciaModal` (proveedores sin URL). Grilla: **Relevar** (`RefreshCw`, solo ese vínculo vía `relevarUrlVinculoCompetenciaAction`) + basura (quitar fila) | **Proveedor** | **Ficha de Producto** | **URL**; en la columna URL, tacho dentro del input solo vacía el campo (el competidor sigue en la lista hasta **Guardar**); al guardar sin URL se desvincula como con el tacho de fila. **Guardar** persiste cambios y bajas. `RelevamientoUltimoMensaje` bajo filas editables.
-- **Contrato Px. sugerido** (`BACKEND_GUIDELINES.md` § *Contrato backend → frontend*): **`idProveedor`** en **`AltaCompetidorModal`** y **`ConfiguracionCompetidorModal`** (selector `getProveedoresMercaderia` → solo `global_proveedores` con `proveedor_mercaderia = true`; valor `Proveedor.id`; `null` = SIN PROVEEDOR). **`vinculosPorCompetencia[*].pxCompetencia` / `estado`** vienen ya resueltos del servidor (sugerido proveedor → `OK`; si no, scraping); la grilla **no** debe reimplementar esa prioridad en cliente.
-- **Alta / edición competidor:** `CompetidorProveedorNombrePaginaFields` compartido por **`AltaCompetidorModal`** y **`ConfiguracionCompetidorModal`**. Orden: **PROVEEDOR** → **NOMBRE** → **PAGINA** (`web`). Con proveedor distinto de **SIN PROVEEDOR**, **NOMBRE** queda bloqueado y se rellena con `global_proveedores.nombre` (`getProveedores`). Editar además incluye `CompetenciaExtraccionReglasEditor`.
-- **Acciones (editor):** **Prod. Comparar** (`Plus` + **`AgregarProductoComparacionModal`**: catálogo `prod_tienda` con `comparar_competencia = false`; selección single → `agregarProductoComparacionAction`) + **Gestionar Competidores** + **Comparar Precios Competencia** (`SincronizarCompetenciaModal` …). Columna **ACCIONES**: **Quitar de comparación** (`Trash2`, `quitarProductoComparacionAction`; conserva URLs en BD). Grilla vacía: mensaje orientando a **Prod. Comparar**.
-- **Vínculo URL:** en **`AsociarUrlsCompetenciaModal`**, si el competidor tiene reglas de extracción, selector **Tipo de página** (`tipo_pagina` en vínculo) que elige qué regla aplica al relevar. Avisos de último relevamiento: **`RelevamientoUltimoMensaje`** con **`CALLOUT_WARNING_CLASS`** (no `amber-*`) para estados no destructivos.
-- **Sidebar:** pilar **LISTA PRECIOS** (`administracionNav.ts`): **PX TIENDA** (**Cx. Compra**, **Px. Listas**, **Px. Competencia**, **Analisis Por Cat.**), **PROVEEDORES** (**Listas Px Prov.**, **Lista Prov.**; reglas descuentos en modal desde toolbar Listas Px Prov.), **ANÁLISIS M.C.** (**Margen Contribución**, **Cx. Financieros**).
-
----
-
-## 6. Organización en Cursor (prompts y reglas persistentes)
-
-- Mapa de guías + **flujo de trabajo canónico** (contrato Zod/`ActionResult` → servicios → actions → UI → docs) y **criterio de hecho**: `docs/README.md`.
-- Archivo recomendado para acceso rápido a prompts operativos: `.cursor/prompts.md`.
-- `.cursor/prompts.md` incluye el bloque **Dream Team de agentes** (FullStack / Front / Back / Auditoría); para cambios de UI priorizar el perfil frontend o auditor frontend según el objetivo. Plantillas por agente: `.cursor/fullstack_promp.md`, `.cursor/front_promp.md`, `.cursor/back_promp.md`, `.cursor/auditoria_promp.md`.
-- Reglas persistentes activas en `.cursor/rules/`:
-  - `manuales-obligatorios.mdc`: obliga lectura de `docs/README.md` y la guía del área (solo secciones relevantes) antes de codificar; la tarea no está completa sin docs al día.
-  - `flujo-fullstack-end-to-end.mdc`: ciclo end-to-end con contrato de datos antes de la UI, orden servicios → actions → UI, reglas técnicas (TS estricto, `cn()`, filtros/tablas, auth) y criterio de hecho.
-- Módulo **Pedido De Mercadería** (`/pedidos/*`): las opciones de **SUCURSAL** deben venir de `global_sucursales` con `pedido = true` (no hardcodear listado fijo). Si una sucursal queda deshabilitada en DB, no debe aparecer en filtros/selectores ni operar por URL.
-- Si se agrega un nuevo patrón visual, clase global, componente compartido o convención de UI, debe actualizarse este documento y mantenerse alineado con las reglas de `.cursor/rules/` y `docs/README.md`.
-
----
-
-**Para IA:** El archivo `.cursorrules` en la raíz indica que este documento (`docs/FRONTEND_GUIDELINES.md`) es la **referencia obligatoria** al crear o modificar código frontend. Usar la sección "Guía para IA" y el checklist de la sección 4 en cada tarea.
+**Para IA:** `.cursorrules` obliga esta guía al tocar frontend. Leer solo la sección relevante + checklist **§4**.

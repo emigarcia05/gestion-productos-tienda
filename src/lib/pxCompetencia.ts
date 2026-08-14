@@ -2,16 +2,16 @@ import type {
   CompetidorFalloRelevamientoFila,
   CompetidorPrecioFila,
 } from "@/lib/competenciaPreciosFilaResumen";
-import type { VinculoCompetenciaPxListas } from "@/lib/pxListasVinculos";
+import type { VinculoPxCompetencia } from "@/lib/pxCompetenciaVinculos";
 
 /** Opción de competidor con precio (armado en servidor para resumen/detalle). */
-export type OpcionCompetenciaPxLista = {
+export type OpcionPxCompetencia = {
   competenciaId: string;
   nombre: string;
   px: number | null;
 };
 
-export type ItemPxListasParaTabla = {
+export type ItemPxCompetenciaTabla = {
   id: string;
   codItem: string;
   descripcion: string;
@@ -22,5 +22,5 @@ export type ItemPxListasParaTabla = {
   difPctTiendaVsPromedio: number | null;
   competidoresPrecioDetalle: CompetidorPrecioFila[];
   competidoresFalloDetalle: CompetidorFalloRelevamientoFila[];
-  vinculosCompetencia: VinculoCompetenciaPxListas[];
+  vinculosCompetencia: VinculoPxCompetencia[];
 };

@@ -2,7 +2,7 @@
 
 | Documento | Cuándo leerlo |
 |-----------|---------------|
-| [FRONTEND_GUIDELINES.md](./FRONTEND_GUIDELINES.md) | UI / componentes / estilos — **solo la sección del módulo tocado**, no el archivo entero |
+| [FRONTEND_GUIDELINES.md](./FRONTEND_GUIDELINES.md) | UI / componentes / estilos — **tabla “Qué estás haciendo” al inicio** + sección del patrón o módulo; no el archivo entero |
 | [BACKEND_GUIDELINES.md](./BACKEND_GUIDELINES.md) | Actions / servicios / Prisma — **buscar el § del dominio** |
 | [AGENTEIA_GUIDELINES.md](./AGENTEIA_GUIDELINES.md) | IA Diseño: capas, CSV, scraper, UI Asistente IA |
 | [IA_DISEÑO/](./IA_DISEÑO/) | Índice del módulo, reglas, prompt GPT, ADRs, CSVs |

@@ -95,8 +95,6 @@ export const GP_INTERNAL = {
     buscarColorImagen: "/asistente-ia/buscar-color-imagen",
     disenarColores: "/asistente-ia/disenar-colores",
   },
-  /** Legacy: grilla productos por proveedor (sin entrada en sidebar). */
-  proveedoresLegacy: "/proveedores",
 } as const;
 
 /** URLs canónicas anteriores y rutas cortas equivalentes por href canónico. */
@@ -371,7 +369,6 @@ export const REVALIDATE_PX_COMPETENCIA = gpRevalidatePaths([
 
 export const REVALIDATE_LISTA_PROVEEDORES_TABLERO = gpRevalidatePaths([
   GP_ROUTES.analisisPrecios.listaProveedores.lista,
-  GP_INTERNAL.proveedoresLegacy,
 ]);
 
 export const REVALIDATE_AYUDA_VENDEDOR_CALC = gpRevalidatePaths([

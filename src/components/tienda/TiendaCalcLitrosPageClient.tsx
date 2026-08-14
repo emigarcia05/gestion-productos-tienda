@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
-import SectionHeader from "@/components/SectionHeader";
+import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import {
   Select,
   SelectContent,
@@ -227,16 +227,24 @@ export default function TiendaCalcLitrosPageClient({
   }
 
   return (
-    <div className="area-page-shell bg-gris">
+    <div className="area-page-shell">
       <GestionTiposPinturaModal
         open={gestionarTiposOpen}
         onOpenChange={setGestionarTiposOpen}
         rows={tiposPintura}
         onSaved={() => router.refresh()}
       />
-      <SectionHeader titulo="Calcular Lts" />
-
-      <div className="flex-1 overflow-hidden w-full px-8 contenedor-pagina-con-filtros">
+      <ClassicFilteredTableLayout
+        title="Calcular Lts"
+        contentWidth="full"
+        actions={
+          esEditor ? (
+            <Button type="button" onClick={() => setGestionarTiposOpen(true)}>
+              Editar Rendimientos
+            </Button>
+          ) : undefined
+        }
+      >
         <section className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-card p-4">
           <div className="flex h-full min-h-0 flex-col gap-3">
             <div className="flex flex-col items-center gap-1">
@@ -639,16 +647,9 @@ export default function TiendaCalcLitrosPageClient({
                 ) : null}
               </div>
             </div>
-            {esEditor ? (
-              <div className="flex justify-center pt-1">
-                <Button type="button" onClick={() => setGestionarTiposOpen(true)}>
-                  EDITAR RENDIMIENTOS
-                </Button>
-              </div>
-            ) : null}
           </div>
         </section>
-      </div>
+      </ClassicFilteredTableLayout>
     </div>
   );
 }

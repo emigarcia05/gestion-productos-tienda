@@ -48,7 +48,7 @@ export const ICON_WARNING_INTERACTIVE_CLASS =
 export const CALLOUT_WARNING_CLASS =
   "rounded-md border border-accent2/40 bg-accent2/10 px-3 py-2 text-xs text-foreground";
 
-/** Badges del resumen numérico en ImportarModal (ResultStat). */
+/** Badges del resumen numérico en ImportarListaPreciosModal (ResultStat). */
 export const IMPORT_STAT_BADGE_CLASSES = {
   created: BADGE_SUCCESS_TINT_CLASS,
   updated: "bg-accent text-accent-foreground border-border",

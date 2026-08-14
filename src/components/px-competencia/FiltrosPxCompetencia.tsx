@@ -20,12 +20,12 @@ import FilterBar, {
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import {
-  OPCIONES_FILTRO_PX_PROMEDIO_PX_LISTAS,
-  type FiltroPxPromedioPxListas,
-} from "@/lib/pxListasFiltros";
+  OPCIONES_FILTRO_PX_PROMEDIO_COMPETENCIA,
+  type FiltroPxPromedioCompetencia,
+} from "@/lib/pxCompetenciaFiltros";
 import { cn } from "@/lib/utils";
 
-const FOCUS_KEY = "filtros-px-listas-focus";
+const FOCUS_KEY = "filtros-px-competencia-focus";
 
 interface Props {
   marcas: string[];
@@ -34,10 +34,10 @@ interface Props {
   qActual: string;
   marcaActual: string;
   rubroActual: string;
-  filtroPxPromedioActual: FiltroPxPromedioPxListas;
+  filtroPxPromedioActual: FiltroPxPromedioCompetencia;
 }
 
-export default function FiltrosPxListas({
+export default function FiltrosPxCompetencia({
   marcas,
   rubros,
   totalItems,
@@ -71,7 +71,7 @@ export default function FiltrosPxListas({
     q?: string;
     marca?: string;
     rubro?: string;
-    filtroPxPromedio?: FiltroPxPromedioPxListas;
+    filtroPxPromedio?: FiltroPxPromedioCompetencia;
   }) {
     const p = new URLSearchParams();
     const qVal = updates.q !== undefined ? updates.q : q;
@@ -164,7 +164,7 @@ export default function FiltrosPxListas({
             <Select
               value={filtroPxPromedioActual || undefined}
               onValueChange={(v) =>
-                navigate({ filtroPxPromedio: v as FiltroPxPromedioPxListas })
+                navigate({ filtroPxPromedio: v as FiltroPxPromedioCompetencia })
               }
             >
               <SelectTrigger
@@ -179,7 +179,7 @@ export default function FiltrosPxListas({
                 align="start"
                 className="select-content-filtro"
               >
-                {OPCIONES_FILTRO_PX_PROMEDIO_PX_LISTAS.map((op) => (
+                {OPCIONES_FILTRO_PX_PROMEDIO_COMPETENCIA.map((op) => (
                   <SelectItem key={op.value} value={op.value}>
                     {op.label}
                   </SelectItem>

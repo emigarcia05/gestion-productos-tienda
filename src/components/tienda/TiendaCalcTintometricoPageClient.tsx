@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import SectionHeader from "@/components/SectionHeader";
+import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import {
   Select,
   SelectContent,
@@ -67,19 +67,25 @@ export default function TiendaCalcTintometricoPageClient({
   }, [pxCompraNorm, proveedorId, proveedoresConCoefMayorAUno]);
 
   return (
-    <div className="area-page-shell bg-gris">
+    <div className="area-page-shell">
       <EditarCoeficientesModal
         open={editarCoefOpen}
         onOpenChange={setEditarCoefOpen}
         proveedores={proveedores}
         onSaved={() => router.refresh()}
       />
-      <SectionHeader
-        titulo="Precios"
-        subtitulo="Px Tintométricos"
-      />
-
-      <div className="flex-1 overflow-hidden w-full px-8 contenedor-pagina-con-filtros">
+      <ClassicFilteredTableLayout
+        title="Precios"
+        subtitle="Px Tintométricos"
+        contentWidth="full"
+        actions={
+          esEditor ? (
+            <Button type="button" onClick={() => setEditarCoefOpen(true)}>
+              Editar Coeficientes
+            </Button>
+          ) : undefined
+        }
+      >
         <section className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-card p-4">
           <div className="flex h-full min-h-0 flex-col gap-3">
             <div className="flex flex-col items-center gap-1">
@@ -141,17 +147,9 @@ export default function TiendaCalcTintometricoPageClient({
                 {pxListaMayorista}
               </div>
             </div>
-
-            {esEditor ? (
-              <div className="flex justify-center pt-1">
-                <Button type="button" onClick={() => setEditarCoefOpen(true)}>
-                  Editar Coeficientes
-                </Button>
-              </div>
-            ) : null}
           </div>
         </section>
-      </div>
+      </ClassicFilteredTableLayout>
     </div>
   );
 }

@@ -116,6 +116,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/proveedores/gestion",
+        destination: R.analisisPrecios.listaProveedores.lista,
+        permanent: true,
+      },
+      {
+        source: "/finanzas/flujo-de-fondo",
+        destination: "/finanzas/venc-por-fecha",
+        permanent: true,
+      },
+      {
         source: "/proveedores/lista-precios/reglas-descuentos",
         destination: R.analisisPrecios.listaProveedores.reglasDescuentos,
         permanent: true,

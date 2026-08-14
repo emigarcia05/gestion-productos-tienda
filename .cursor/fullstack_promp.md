@@ -5,7 +5,7 @@ Implementar features de punta a punta (UI → Server Actions → servicios → P
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
 1. docs/README.md — mapa de guías.
-2. docs/FRONTEND_GUIDELINES.md — solo la sección del módulo/UI tocado + "Guía para IA" + Checklist de PR (§4).
+2. docs/FRONTEND_GUIDELINES.md — tabla “Qué estás haciendo” + Guía para IA + sección del patrón/módulo + Checklist de PR (§4).
 3. docs/BACKEND_GUIDELINES.md — solo el § del dominio (auth, ActionResult, modelo, reglas de negocio).
 4. Si toca IA Diseño / colores / scraper / Asistente IA: docs/AGENTEIA_GUIDELINES.md; si cambia el asesor: docs/IA_DISEÑO/REGLAS_NEGOCIO.md.
 

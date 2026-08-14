@@ -1388,7 +1388,8 @@
   box-shadow: inset 1px 0 0 #0072bb;
 }
 
-/* Tabla Px Listas: 7 columnas 28/14/12/12/12/12/10 % (colgroup en TablaPxListas). */
+/* table-layout fijo: Px Competencia (`TablaPxCompetencia`) y Px Listas (junto a `.tabla-px-listas-precios`). */
+.tabla-px-competencia-listado,
 .tabla-px-listas-listado {
   table-layout: fixed;
   width: 100%;

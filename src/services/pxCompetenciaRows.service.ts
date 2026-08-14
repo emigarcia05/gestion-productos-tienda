@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ESTADO_RELEVAMIENTO_COMPETENCIA } from "@/lib/competenciaRelevamiento";
-import type { ItemPxListasParaTabla, OpcionCompetenciaPxLista } from "@/lib/pxListas";
+import type { ItemPxCompetenciaTabla, OpcionPxCompetencia } from "@/lib/pxCompetencia";
 import {
   aplicarPrioridadPrecioMostrar,
   buildMapPxVtaSugerido,
@@ -8,10 +8,10 @@ import {
   type CompetenciaPxSugeridoPorCodTienda,
 } from "@/services/competenciaPxSugerido.service";
 import {
-  calcularResumenPreciosPxListas,
-  fusionarVinculosConOpcionesPxListas,
+  calcularResumenPreciosPxCompetencia,
+  fusionarVinculosConOpcionesPxCompetencia,
 } from "@/lib/competenciaPreciosFilaResumen";
-import { vinculosRecordToArray } from "@/lib/pxListasVinculos";
+import { vinculosRecordToArray } from "@/lib/pxCompetenciaVinculos";
 import {
   competenciaSelect,
   mapCompetenciaRow,
@@ -19,8 +19,8 @@ import {
 } from "@/services/competencia.service";
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
 
-export type BuildPxListasItemsResult = {
-  items: ItemPxListasParaTabla[];
+export type BuildPxCompetenciaItemsResult = {
+  items: ItemPxCompetenciaTabla[];
   competencias: CompetenciaParaCliente[];
 };
 
@@ -56,19 +56,19 @@ function vinculoDesdeRow(row: {
 }
 
 function opcionesConPrecioRegistrado(
-  opciones: OpcionCompetenciaPxLista[]
-): OpcionCompetenciaPxLista[] {
+  opciones: OpcionPxCompetencia[]
+): OpcionPxCompetencia[] {
   return opciones.filter((o) => o.px != null && o.px > 0);
 }
 
 function enriquecerOpcionesConSugerido(
-  opciones: OpcionCompetenciaPxLista[],
+  opciones: OpcionPxCompetencia[],
   sugerido: {
     competenciaId: string;
     competenciaNombre: string;
     px: number;
   } | null
-): OpcionCompetenciaPxLista[] {
+): OpcionPxCompetencia[] {
   if (!sugerido || !(sugerido.px > 0)) return opciones;
   if (opciones.some((o) => o.competenciaId === sugerido.competenciaId)) {
     return opciones.map((o) =>
@@ -88,9 +88,9 @@ function enriquecerOpcionesConSugerido(
 }
 
 function enriquecerOpcionesConTodosSugeridos(
-  opciones: OpcionCompetenciaPxLista[],
+  opciones: OpcionPxCompetencia[],
   sugeridos: CompetenciaPxSugeridoPorCodTienda[]
-): OpcionCompetenciaPxLista[] {
+): OpcionPxCompetencia[] {
   return sugeridos.reduce(
     (acc, s) =>
       enriquecerOpcionesConSugerido(acc, {
@@ -114,14 +114,14 @@ function agruparSugeridosPorCodTienda(
   return map;
 }
 
-export async function buildPxListasItemsDesdeFilas(
+export async function buildPxCompetenciaItemsDesdeFilas(
   filas: Array<{
     codTienda: string;
     descripcion: string;
     costoCompra: number;
     pxListaTienda: number;
   }>
-): Promise<BuildPxListasItemsResult> {
+): Promise<BuildPxCompetenciaItemsResult> {
   if (filas.length === 0) {
     const competenciasRows = await prisma.prodCompetencia.findMany({
       orderBy: { nombre: "asc" },
@@ -187,7 +187,7 @@ export async function buildPxListasItemsDesdeFilas(
     vinculosMap.set(cod, entry);
   }
 
-  const opcionesPorCod = new Map<string, OpcionCompetenciaPxLista[]>();
+  const opcionesPorCod = new Map<string, OpcionPxCompetencia[]>();
   for (const row of preciosRows) {
     const pxSugeridoComp =
       row.competencia.idProveedor != null
@@ -229,13 +229,13 @@ export async function buildPxListasItemsDesdeFilas(
     ).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     const vinculos = vinculosMap.get(f.codTienda) ?? {};
     const pxListaParaResumen = f.pxListaTienda > 0 ? f.pxListaTienda : 0;
-    const resumen = calcularResumenPreciosPxListas(
+    const resumen = calcularResumenPreciosPxCompetencia(
       opciones,
       vinculos,
       competencias,
       pxListaParaResumen
     );
-    const vinculosFusionados = fusionarVinculosConOpcionesPxListas(vinculos, opciones);
+    const vinculosFusionados = fusionarVinculosConOpcionesPxCompetencia(vinculos, opciones);
     const competenciaIds = competencias.map((c) => c.id);
 
     return {

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { exportarCostoCxDiffAction } from "@/actions/cxPxTienda";
-import { exportarResumenAumentosPxAction } from "@/actions/pxListas";
+import { exportarResumenAumentosPxAction } from "@/actions/pxCompetencia";
 import { descargarExcelCostoCx } from "@/lib/exportCostoCxExcelClient";
 import { descargarPdfResumenAumentosPx } from "@/lib/exportPxPdfClient";
 import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";

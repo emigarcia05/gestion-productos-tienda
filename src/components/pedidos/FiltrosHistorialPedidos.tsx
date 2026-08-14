@@ -113,7 +113,7 @@ export default function FiltrosHistorialPedidos({
   }
 
   return (
-    <FilterBar className="px-4 filtros-contenedor-tienda bg-card">
+    <FilterBar className="filtros-contenedor-tienda bg-card">
       <FilterRowSelection>
         <FilaFiltrosDesplegables>
           <FiltroIndividualContainer

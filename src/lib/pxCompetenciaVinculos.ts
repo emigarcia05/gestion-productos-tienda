@@ -1,11 +1,11 @@
 import type { DatoVinculoCompetenciaCliente } from "@/services/competenciaVinculo.service";
 
-export type VinculoCompetenciaPxListas = {
+export type VinculoPxCompetencia = {
   competenciaId: string;
 } & DatoVinculoCompetenciaCliente;
 
 export function vinculosArrayToRecord(
-  list: VinculoCompetenciaPxListas[]
+  list: VinculoPxCompetencia[]
 ): Record<string, DatoVinculoCompetenciaCliente> {
   const out: Record<string, DatoVinculoCompetenciaCliente> = {};
   for (const { competenciaId, ...vinculo } of list) {
@@ -17,7 +17,7 @@ export function vinculosArrayToRecord(
 export function vinculosRecordToArray(
   record: Record<string, DatoVinculoCompetenciaCliente>,
   competenciaIds: string[]
-): VinculoCompetenciaPxListas[] {
+): VinculoPxCompetencia[] {
   return competenciaIds.map((competenciaId) => ({
     competenciaId,
     ...(record[competenciaId] ?? {
@@ -34,7 +34,7 @@ export function vinculosRecordToArray(
 
 /** true si el producto tiene al menos un vínculo con URL o Px. Vta. Sugerido. */
 export function productoTieneVinculosRelevables(
-  vinculos: VinculoCompetenciaPxListas[]
+  vinculos: VinculoPxCompetencia[]
 ): boolean {
   return vinculos.some(
     (v) => v.urlBloqueadaPorPxSugerido || !!v.urlProducto?.trim()

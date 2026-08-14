@@ -18,13 +18,13 @@ import {
 import CeldaDifPct from "@/components/shared/CeldaDifPct";
 import AsociarUrlsCompetenciaModal from "@/components/precios-competencia/AsociarUrlsCompetenciaModal";
 import {
-  PxListasDetalleCompetenciaFilas,
-  PxListasDetalleVacio,
-} from "@/components/px-listas/PxListasDetalleCompetenciaFilas";
+  PxCompetenciaDetalleFilas,
+  PxCompetenciaDetalleVacio,
+} from "@/components/px-competencia/PxCompetenciaDetalleFilas";
 import { relevarUrlsProductoCompetenciaAction } from "@/actions/competenciaPrecios";
 import { quitarProductoComparacionAction } from "@/actions/comparacionCompetencia";
-import type { ItemPxListasParaTabla } from "@/lib/pxListas";
-import { vinculosArrayToRecord, productoTieneVinculosRelevables } from "@/lib/pxListasVinculos";
+import type { ItemPxCompetenciaTabla } from "@/lib/pxCompetencia";
+import { vinculosArrayToRecord, productoTieneVinculosRelevables } from "@/lib/pxCompetenciaVinculos";
 import type { CompetenciaParaCliente } from "@/services/competencia.service";
 import { fmtPrecio } from "@/lib/format";
 import {
@@ -51,7 +51,7 @@ function FilaPxListas({
   relevandoCodTienda,
   quitandoCodTienda,
 }: {
-  item: ItemPxListasParaTabla;
+  item: ItemPxCompetenciaTabla;
   puedeEditarEnlaces: boolean;
   puedeQuitarComparacion: boolean;
   isPending: boolean;
@@ -155,10 +155,10 @@ function FilaPxListas({
         </TableCell>
       </TableRow>
       {expandido && filasDetalle === 0 ? (
-        <PxListasDetalleVacio codTienda={item.codItem} />
+        <PxCompetenciaDetalleVacio codTienda={item.codItem} />
       ) : null}
       {expandido ? (
-        <PxListasDetalleCompetenciaFilas
+        <PxCompetenciaDetalleFilas
           codTienda={item.codItem}
           detalle={detalle}
           fallos={fallos}
@@ -169,13 +169,13 @@ function FilaPxListas({
   );
 }
 
-export default function TablaPxListas({
+export default function TablaPxCompetencia({
   items,
   competencias,
   puedeEditarEnlaces,
   puedeQuitarComparacion,
 }: {
-  items: ItemPxListasParaTabla[];
+  items: ItemPxCompetenciaTabla[];
   competencias: CompetenciaParaCliente[];
   puedeEditar: boolean;
   puedeEditarEnlaces: boolean;
@@ -241,7 +241,7 @@ export default function TablaPxListas({
 
   return (
     <>
-      <Table variant="compact" scrollX={false} className="tabla-px-listas-listado">
+      <Table variant="compact" scrollX={false} className="tabla-px-competencia-listado">
         <colgroup>
           {COL_WIDTHS.map((pct, i) => (
             <col key={i} style={{ width: `${pct}%` }} />

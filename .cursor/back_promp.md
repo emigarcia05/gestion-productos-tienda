@@ -28,7 +28,7 @@ INTEGRIDAD
 CIERRE DOCUMENTAL (obligatorio)
 Tras cada cambio de esquema, servicio nuevo, regla de negocio o patrón de action:
 → actualizar docs/BACKEND_GUIDELINES.md (modelo, relaciones, funciones del servicio, ejemplos si aplica).
-Balance mensual / fin_bal_vtas: fuente de verdad en BACKEND_GUIDELINES §2.5f (UI en FRONTEND_GUIDELINES, subsección Balance mensual).
+Balance mensual / fin_bal_vtas: fuente de verdad en BACKEND_GUIDELINES §2.5f (UI en FRONTEND_GUIDELINES §3 Finanzas).
 Sin guía actualizada, el backend no está “completado”.
 
 REGLA TRANSVERSAL

@@ -23,7 +23,6 @@ export const PERMISOS = {
     acciones: {
       nuevoProveedor: { simple: false, editor: true },
       importarLista:  { simple: false, editor: true },
-      accionMasiva:   { simple: false, editor: true },
     },
     tabla: {
       codProdProv:         { simple: false, editor: true  },
@@ -107,12 +106,7 @@ export const PERMISOS = {
     cargarGasto: { simple: true, editor: true },
   },
 
-  // ─── Importar productos (`ImportarModal` / `importarProductos`) ───────────
-  importar: {
-    acceso: { simple: false, editor: true },
-  },
-
-  // ─── Área /finanzas (deuda proveedores, etc.) ─────────────────────────────
+  // ─── Área /finanzas (deuda proveedores, tesorería, balance, etc.) ────────
   finanzas: {
     acceso: { simple: true, editor: true },
   },

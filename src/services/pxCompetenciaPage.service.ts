@@ -1,23 +1,23 @@
 import type { Prisma } from "@prisma/client";
 import { filtroTexto } from "@/lib/busqueda";
 import {
-  esFiltroPxPromedioPxListas,
-  filtrarItemsPxListasEnMemoria,
-  requierePostProcesoPxListas,
-  type FiltroPxPromedioPxListas,
-} from "@/lib/pxListasFiltros";
+  esFiltroPxPromedioCompetencia,
+  filtrarItemsPxCompetenciaEnMemoria,
+  requierePostProcesoPxCompetencia,
+  type FiltroPxPromedioCompetencia,
+} from "@/lib/pxCompetenciaFiltros";
 import { PAGE_SIZE } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
-import { getPxListasPageParamsSchema } from "@/lib/validations/pxListas";
+import { getPxCompetenciaPageParamsSchema } from "@/lib/validations/pxCompetencia";
 import {
   listCompetencias,
   type CompetenciaParaCliente,
 } from "@/services/competencia.service";
-import { buildPxListasItemsDesdeFilas } from "@/services/pxListasRows.service";
-import type { ItemPxListasParaTabla } from "@/lib/pxListas";
+import { buildPxCompetenciaItemsDesdeFilas } from "@/services/pxCompetenciaRows.service";
+import type { ItemPxCompetenciaTabla } from "@/lib/pxCompetencia";
 import { buildMapPrecioListaPrincipal } from "@/services/prodTiendaPrecios.service";
 
-type FilaPxListasBase = {
+type FilaPxCompetenciaBase = {
   codTienda: string;
   descripcion: string;
   costoCompra: number;
@@ -30,7 +30,7 @@ async function filasConPrecioListaPrincipal(
     descripcionTienda: string | null;
     costoCompra: { toString(): string };
   }>
-): Promise<FilaPxListasBase[]> {
+): Promise<FilaPxCompetenciaBase[]> {
   const pxMap = await buildMapPrecioListaPrincipal(rows.map((r) => r.codTienda));
   return rows.map((r) => ({
     codTienda: r.codTienda,
@@ -60,7 +60,7 @@ const selectBase = {
 } as const;
 
 async function getPxListasPageEmpty(): Promise<{
-  items: ItemPxListasParaTabla[];
+  items: ItemPxCompetenciaTabla[];
   total: number;
   totalPaginas: number;
   marcas: Array<{ marca: string }>;
@@ -95,7 +95,7 @@ async function getPxListasPageEmpty(): Promise<{
 async function listarItemsPxListasPostProcesados(
   where: Prisma.ProdTiendaWhereInput,
   opts: {
-    filtroPxPromedio: FiltroPxPromedioPxListas;
+    filtroPxPromedio: FiltroPxPromedioCompetencia;
     paginaNum: number;
   }
 ) {
@@ -105,8 +105,8 @@ async function listarItemsPxListasPostProcesados(
     orderBy: [{ descripcionTienda: "asc" }],
   });
   const filas = await filasConPrecioListaPrincipal(rows);
-  const built = await buildPxListasItemsDesdeFilas(filas);
-  let items = filtrarItemsPxListasEnMemoria(built.items, {
+  const built = await buildPxCompetenciaItemsDesdeFilas(filas);
+  let items = filtrarItemsPxCompetenciaEnMemoria(built.items, {
     filtroPxPromedio: opts.filtroPxPromedio,
   });
   const total = items.length;
@@ -116,14 +116,14 @@ async function listarItemsPxListasPostProcesados(
   return { items, total, totalPaginas, competencias: built.competencias };
 }
 
-export async function getPxListasPageDataFromDb(params: {
+export async function getPxCompetenciaPageDataFromDb(params: {
   q?: string;
   rubro?: string;
   marca?: string;
   filtroPxPromedio?: string;
   pagina?: string;
 }) {
-  const parsed = getPxListasPageParamsSchema.safeParse(params);
+  const parsed = getPxCompetenciaPageParamsSchema.safeParse(params);
   if (!parsed.success) {
     return getPxListasPageEmpty();
   }
@@ -136,7 +136,7 @@ export async function getPxListasPageDataFromDb(params: {
     pagina = "1",
   } = parsed.data;
 
-  const filtroPxPromedio: FiltroPxPromedioPxListas = esFiltroPxPromedioPxListas(
+  const filtroPxPromedio: FiltroPxPromedioCompetencia = esFiltroPxPromedioCompetencia(
     filtroPxPromedioRaw
   )
     ? filtroPxPromedioRaw
@@ -144,7 +144,7 @@ export async function getPxListasPageDataFromDb(params: {
 
   const where = buildWherePxListas({ q, rubro, marca });
   const paginaNum = Math.max(1, parseInt(pagina, 10) || 1);
-  const postProceso = requierePostProcesoPxListas({ filtroPxPromedio });
+  const postProceso = requierePostProcesoPxCompetencia({ filtroPxPromedio });
 
   const andPartsOnlyQ: Prisma.ProdTiendaWhereInput[] = [];
   const textFilter = filtroTexto(q, ["descripcionTienda", "codTienda"]);
@@ -203,7 +203,7 @@ export async function getPxListasPageDataFromDb(params: {
   ]);
 
   const filas = await filasConPrecioListaPrincipal(rows);
-  const { items, competencias } = await buildPxListasItemsDesdeFilas(filas);
+  const { items, competencias } = await buildPxCompetenciaItemsDesdeFilas(filas);
   const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
 
   return { items, total, totalPaginas, marcas, rubros, competencias };
