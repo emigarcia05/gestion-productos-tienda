@@ -125,9 +125,6 @@ export default function FiltrosEnviarPedido({
     router.replace(`${pathname}?${search.toString()}`);
   });
 
-  const hayFiltros = !!(proveedor || tipos.length > 0);
-  const hayFiltrosOBusqueda = hayFiltros || !!qActual.trim();
-
   function limpiarFiltros() {
     setQ("");
     if (sucursal) {
@@ -319,7 +316,7 @@ export default function FiltrosEnviarPedido({
             inputRef={inputRef}
           />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltrosOBusqueda} onClick={limpiarFiltros} />
+        <LimpiarFiltrosButton onClick={limpiarFiltros} />
       </div>
     </FilterBar>
   );

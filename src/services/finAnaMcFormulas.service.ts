@@ -1,13 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import {
-  clampValorFormulaMargenContribucion,
   FIN_ANA_MC_FORMULA_CODIGOS,
   FIN_ANA_MC_FORMULA_DEFAULTS,
   type FinAnaMcFormulaCodigo,
   type FinAnaMcFormulaItem,
 } from "@/lib/finAnaMcFormulas";
-import type { ActualizarFormulaMargenContribucionInput } from "@/lib/validations/finAnaMcFormulas";
-import type { ServiceResult } from "@/types";
 
 function toItem(row: {
   codigo: string;
@@ -79,35 +76,4 @@ export async function listarFormulasMargenContribucion(): Promise<
   }
 
   return items.sort((a, b) => a.orden - b.orden || a.codigo.localeCompare(b.codigo));
-}
-
-export async function actualizarFormulaMargenContribucion(
-  input: ActualizarFormulaMargenContribucionInput
-): Promise<ServiceResult<FinAnaMcFormulaItem[]>> {
-  try {
-    await ensureFinAnaMcFormulasSeed();
-    const valor = clampValorFormulaMargenContribucion(input.codigo, input.valor);
-    if (valor == null) {
-      return { success: false, error: "Valor de fórmula fuera de rango." };
-    }
-
-    const def = FIN_ANA_MC_FORMULA_DEFAULTS[input.codigo];
-    await prisma.finAnaMcFormula.upsert({
-      where: { codigo: input.codigo },
-      create: {
-        codigo: input.codigo,
-        etiqueta: def.etiqueta,
-        valor,
-        orden: def.orden,
-      },
-      update: { valor },
-    });
-
-    const items = await listarFormulasMargenContribucion();
-    return { success: true, data: items };
-  } catch (e) {
-    const msg =
-      e instanceof Error ? e.message : "Error al guardar parámetro de fórmula.";
-    return { success: false, error: msg };
-  }
 }

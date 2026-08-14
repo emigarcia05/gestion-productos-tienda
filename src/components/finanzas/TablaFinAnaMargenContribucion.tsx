@@ -82,7 +82,7 @@ function CeldaConceptoMargenContribucion({
   );
 }
 
-export type InputsMargenContribucionState = {
+type InputsMargenContribucionState = {
   pxListaNorm: string;
   /** Entero −100…100 (%) por forma de pago. Negativo = descuento; positivo = recargo. */
   descuentoPctPorFormaPago: Record<FormaPagoMargenContribucion, number>;
@@ -457,12 +457,6 @@ export default function TablaFinAnaMargenContribucion({
     </>
   );
 }
-
-/** Valores por defecto vacíos para simulación. */
-export const INPUTS_MARGEN_CONTRIBUCION_VACIOS: InputsMargenContribucionState = {
-  pxListaNorm: "",
-  descuentoPctPorFormaPago: crearDescuentoPctPorFormaPagoVacios(),
-};
 
 /** Serializa inputs persistidos (opcional futuro). */
 export function inputsMargenContribucionDesdeNumeros(params: {

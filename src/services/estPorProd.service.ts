@@ -1,8 +1,6 @@
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type {
   EstPorProdCeldaCarga,
-  EstPorProdItem,
   ImportarEstPorProdResultado,
   SucursalEstOption,
 } from "@/lib/estPorProdTypes";
@@ -11,53 +9,11 @@ import type { ServiceResult } from "@/types";
 
 export type {
   EstPorProdCeldaCarga,
-  EstPorProdItem,
   ImportarEstPorProdResultado,
   SucursalEstOption,
 } from "@/lib/estPorProdTypes";
 
 const IMPORT_UPSERT_CHUNK = 100;
-
-function decimalToNumber(value: Prisma.Decimal): number {
-  return Number(value.toString());
-}
-
-function mapEstPorProdRow(row: {
-  id: string;
-  sucursalId: string;
-  mes: number;
-  anio: number;
-  codTienda: string;
-  vtasEnUn: Prisma.Decimal;
-  createdAt: Date;
-  updatedAt: Date;
-  sucursal: { id: string; nombre: string };
-  producto: { codTienda: string; descripcionTienda: string | null };
-}): EstPorProdItem {
-  return {
-    id: row.id,
-    sucursalId: row.sucursalId,
-    mes: row.mes,
-    anio: row.anio,
-    codTienda: row.codTienda,
-    vtasEnUn: decimalToNumber(row.vtasEnUn),
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-    sucursal: {
-      id: row.sucursal.id,
-      nombre: row.sucursal.nombre.toLocaleUpperCase("es"),
-    },
-    producto: {
-      codTienda: row.producto.codTienda,
-      descripcionTienda: row.producto.descripcionTienda,
-    },
-  };
-}
-
-const estPorProdInclude = {
-  sucursal: { select: { id: true, nombre: true } },
-  producto: { select: { codTienda: true, descripcionTienda: true } },
-} as const;
 
 /** Sucursales elegibles para Carga de Datos: `genera_est = true`. */
 export async function listarSucursalesParaEstPorProd(): Promise<SucursalEstOption[]> {
@@ -73,19 +29,6 @@ export async function listarSucursalesParaEstPorProd(): Promise<SucursalEstOptio
     }));
   } catch (e: unknown) {
     console.error("[estPorProd.service] listarSucursalesParaEstPorProd:", e);
-    return [];
-  }
-}
-
-export async function listarEstPorProd(): Promise<EstPorProdItem[]> {
-  try {
-    const rows = await prisma.estPorProd.findMany({
-      orderBy: [{ anio: "desc" }, { mes: "desc" }, { sucursal: { nombre: "asc" } }, { codTienda: "asc" }],
-      include: estPorProdInclude,
-    });
-    return rows.map(mapEstPorProdRow);
-  } catch (e: unknown) {
-    console.error("[estPorProd.service] listarEstPorProd:", e);
     return [];
   }
 }
@@ -278,20 +221,6 @@ export async function importarEstPorProd(
     };
   } catch (e: unknown) {
     const msg = mapEstPorProdDbError(e, "No se pudo importar la planilla.");
-    return { success: false, error: msg };
-  }
-}
-
-export async function eliminarEstPorProd(id: string): Promise<ServiceResult<{ id: string }>> {
-  try {
-    await prisma.estPorProd.delete({ where: { id } });
-    return { success: true, data: { id } };
-  } catch (e: unknown) {
-    const code = e && typeof e === "object" && "code" in e ? (e as { code: string }).code : "";
-    if (code === "P2025") {
-      return { success: false, error: "Registro no encontrado." };
-    }
-    const msg = e instanceof Error ? e.message : "No se pudo eliminar el registro.";
     return { success: false, error: msg };
   }
 }

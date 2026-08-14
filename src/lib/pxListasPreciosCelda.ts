@@ -62,12 +62,6 @@ export function armarCeldaPrecioPxListas(params: {
   };
 }
 
-export function itemRequiereActualizar(
-  preciosPorLista: PrecioListaPxListasCelda[]
-): boolean {
-  return preciosPorLista.some((c) => c.requiereActualizar);
-}
-
 export function filtrarItemPorActualizar(
   item: { preciosPorLista: PrecioListaPxListasCelda[] },
   filtro: "si" | "no"

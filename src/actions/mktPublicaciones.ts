@@ -15,7 +15,6 @@ import {
   crearMktPublicacion,
   editarMktPublicacion,
   eliminarMktPublicacion,
-  listarMktPublicacionesCalendario,
 } from "@/services/mktPublicaciones.service";
 
 function firstZodErrorMessage(error: {
@@ -49,21 +48,6 @@ async function requireEditorMarketing(): Promise<{ ok: false; error: string } | 
     return { ok: false, error: "Sin permisos de editor." };
   }
   return null;
-}
-
-export async function listarMktPublicacionesCalendarioAction(): Promise<
-  ActionResult<MktPublicacionCalendarioItem[]>
-> {
-  const gate = await requireMarketingLectura();
-  if (gate) return gate;
-  try {
-    return { ok: true, data: await listarMktPublicacionesCalendario() };
-  } catch (e) {
-    return {
-      ok: false,
-      error: e instanceof Error ? e.message : "No se pudieron listar las publicaciones.",
-    };
-  }
 }
 
 export async function crearMktPublicacionAction(

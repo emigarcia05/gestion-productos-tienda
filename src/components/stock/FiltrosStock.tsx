@@ -64,14 +64,6 @@ export default function FiltrosStock({
     onDebouncedSearch: (value) => navigate({ q: value }),
   });
 
-  const hayFiltros = !!(
-    q ||
-    marcaActual ||
-    rubroActual ||
-    soloNegativoActual ||
-    ordenActual === "segunTiempoControl"
-  );
-
   useAplicarSucursalPreferidaSiVacia(sucursalActual, (preferida) => {
     const p = new URLSearchParams();
     p.set("sucursal", preferida);
@@ -324,7 +316,7 @@ export default function FiltrosStock({
             disabled={!sucursalSeleccionada}
           />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+        <LimpiarFiltrosButton onClick={limpiarFiltros} />
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {totalItems.toLocaleString("es-AR")} ÍTEM
           {totalItems !== 1 ? "S" : ""}

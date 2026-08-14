@@ -67,9 +67,9 @@ const SELECT_CLASS = "input-filtro-unificado w-full min-w-0";
 const FORM_CONTROL_CLASS = "min-w-0";
 
 /** Modal alto: la sección productos reserva ≥50% del cuerpo útil. */
-const REGLA_DESC_ESPECIAL_MODAL_CLASS = "sm:max-w-[42rem] min-h-[min(85vh,38rem)]";
+const REGLA_DESC_ESPECIAL_MODAL_CLASS = "max-w-[42rem] min-h-[min(85vh,38rem)]";
 const REGLA_DESC_ESPECIAL_BODY_CLASS =
-  "flex min-h-0 flex-1 flex-col overflow-hidden p-4 sm:p-5";
+  "flex min-h-0 flex-1 flex-col overflow-hidden p-5";
 const REGLA_DESC_ESPECIAL_PRODUCTOS_CLASS =
   "flex min-h-[50%] flex-1 flex-col gap-2 overflow-hidden rounded-md border border-border bg-muted/30 px-3 py-2";
 
@@ -239,7 +239,7 @@ export default function CrearEditarReglaDescEspecialModal({
           className={REGLA_DESC_ESPECIAL_MODAL_CLASS}
           padding="sm"
           scrollBody={false}
-          bodyShellClassName="flex min-h-0 flex-1 items-stretch p-3 sm:p-4"
+          bodyShellClassName="flex min-h-0 flex-1 items-stretch p-4"
           bodyClassName={REGLA_DESC_ESPECIAL_BODY_CLASS}
           headerClassName="pt-4 pb-3"
           footerClassName="py-3"

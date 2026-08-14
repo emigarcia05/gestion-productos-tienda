@@ -1,3 +1,5 @@
+import { DUX_API_BATCH_SIZE } from "@/lib/duxApiBatchPolicy";
+
 export const DUX_BASE_URL = "https://erp.duxsoftware.com.ar/WSERP/rest/services/items";
 
 /** Rate limit DUX: 1 petición cada 5 segundos. Respetar en el cliente (ej. sync service) con delay >= 5s entre llamadas. */
@@ -181,10 +183,8 @@ export function mapItem(raw: unknown): ItemDux {
   };
 }
 
-const FETCH_LIMIT = 1000;
-
-/** Límite máximo por petición que permite la API DUX (50 ítems). Ver `DUX_API_BATCH_SIZE` en `duxApiBatchPolicy.ts`. */
-export const DUX_API_PAGE_LIMIT = 50;
+/** Límite máximo por petición que permite la API DUX. SSOT: `DUX_API_BATCH_SIZE`. */
+export const DUX_API_PAGE_LIMIT = DUX_API_BATCH_SIZE;
 
 export interface FetchItemsPageResult {
   results: ItemDux[];
@@ -315,39 +315,3 @@ export async function fetchItemsPage(offset: number, limit: number = DUX_API_PAG
   throw lastError ?? new Error("Error API Dux: desconocido");
 }
 
-export async function fetchTodosLosItems(): Promise<ItemDux[]> {
-  const token = process.env.DUX_API_TOKEN;
-  if (!token) throw new Error("DUX_API_TOKEN no configurado.");
-
-  const headers = {
-    accept: "application/json",
-    authorization: token,
-  };
-
-  const todos: ItemDux[] = [];
-  let offset = 0;
-  let total = Infinity;
-
-  while (offset < total) {
-    const url = `${DUX_BASE_URL}?limit=${FETCH_LIMIT}&offset=${offset}`;
-    const res = await fetch(url, { headers, cache: "no-store" });
-
-    if (!res.ok) {
-      throw new Error(`Error API Dux: ${res.status} ${res.statusText}`);
-    }
-
-    const json = await res.json();
-    const results: unknown[] = json.results ?? [];
-    total = Number(json.paging?.total ?? results.length);
-
-    if (results.length === 0) break;
-
-    todos.push(...results.map(mapItem));
-    offset += FETCH_LIMIT;
-
-    // Pequeña pausa entre requests para no saturar la API
-    if (offset < total) await new Promise((r) => setTimeout(r, 300));
-  }
-
-  return todos;
-}

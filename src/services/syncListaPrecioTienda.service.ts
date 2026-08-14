@@ -11,6 +11,7 @@ import {
   DUX_API_PAGE_LIMIT,
   type ItemDux,
 } from "@/lib/duxApi";
+import { DUX_API_BATCH_INTERVAL_MS } from "@/lib/duxApiBatchPolicy";
 import {
   getSyncDuxStatusFromDb,
   getSyncDuxWorkerStateFromDb,
@@ -36,8 +37,8 @@ async function assertListaPrecioTiendaSyncNotCancelled(): Promise<void> {
   }
 }
 
-/** Pausa entre peticiones (mínimo 5s según rate limit DUX: 1 petición cada 5 segundos). */
-const DELAY_MS = Math.max(5000, Number(process.env.DUX_SYNC_DELAY_MS) || 5000);
+/** Pausa entre peticiones (SSOT: `DUX_API_BATCH_INTERVAL_MS`, mínimo 5 s). */
+const DELAY_MS = DUX_API_BATCH_INTERVAL_MS;
 const COD_TIENDA = process.env.DUX_COD_TIENDA ?? "DUX";
 
 /** Tamaño de cada chunk al persistir en Neon (muchas upserts anidadas por ítem). */

@@ -74,7 +74,6 @@ export default function FiltrosProductos({
     navigate(q, value);
   }
 
-  const hayFiltros = !!(proveedorActual || q);
 
   function limpiarFiltros() {
     setQ("");
@@ -121,7 +120,7 @@ export default function FiltrosProductos({
             inputRef={inputRef}
           />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+        <LimpiarFiltrosButton onClick={limpiarFiltros} />
       </div>
     </FilterBar>
   );

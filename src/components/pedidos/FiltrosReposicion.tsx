@@ -65,14 +65,6 @@ export default function FiltrosReposicion({
     onDebouncedSearch: (value) => navigate({ q: value }),
   });
 
-  const hayFiltros = !!(
-    q ||
-    proveedorActual ||
-    marcaActual ||
-    rubroActual ||
-    configuradoActual
-  );
-
   useAplicarSucursalPreferidaSiVacia(sucursalActual, (codigo) => {
     if (!sucursales.some((s) => s.value === codigo)) return;
     const p = new URLSearchParams();
@@ -350,7 +342,7 @@ export default function FiltrosReposicion({
               disabled={!sucursalSeleccionada}
             />
           </FilterRowSearch>
-          <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+          <LimpiarFiltrosButton onClick={limpiarFiltros} />
         </div>
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {totalItems.toLocaleString("es-AR")} ÍTEM

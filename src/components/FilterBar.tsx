@@ -39,10 +39,10 @@ export function FilterRowSelection({ children, className }: { children: React.Re
 }
 
 /**
- * Fila de filtros desplegables en grid uniforme (2, 4, 5 o 6 columnas).
+ * Fila de filtros desplegables en grid uniforme (4, 5 o 6 columnas).
  * Default **5** (estándar de la app). Usar **`columnas={6}`** solo cuando la fila
  * tiene **exactamente 6** listas desplegables juntas (p. ej. Categorizacion).
- * Con 5 o menos: dejar el default o `columnas={2|4}` según el layout (sin cambios).
+ * Con 5 o menos: dejar el default o `columnas={4}` según el layout (sin cambios).
  */
 export function FilaFiltrosDesplegables({
   children,
@@ -50,13 +50,12 @@ export function FilaFiltrosDesplegables({
 }: {
   children: React.ReactNode;
   /** Cantidad de columnas del grid (por defecto 5). */
-  columnas?: 2 | 4 | 5 | 6;
+  columnas?: 4 | 5 | 6;
 }) {
   return (
     <div
       className={cn(
         "fila-filtros-desplegables grid w-full gap-3",
-        columnas === 2 && "fila-filtros-2 grid-cols-2",
         columnas === 4 && "fila-filtros-4 grid-cols-4",
         columnas === 5 && "fila-filtros-5 grid-cols-5",
         columnas === 6 && "fila-filtros-6 grid-cols-6"
@@ -74,17 +73,6 @@ export function FilterRowSearch({ children, className }: { children: React.React
       {children}
     </div>
   );
-}
-
-/** Fila 2 (sin búsqueda): acciones alineadas a la derecha (ej. limpiar filtros). */
-export function FilterRowNoSearchActions({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return <div className={cn("flex items-center justify-end w-full", className)}>{children}</div>;
 }
 
 /**
@@ -133,9 +121,6 @@ export function FilterRowDateRange({
   return <div className={cn("w-full", className)}>{children}</div>;
 }
 
-/** Color de fuente de todos los filtros (heredable). Usa variable de tema. */
-export const FILTER_TEXT_COLOR_CLASS = "text-foreground";
-
 /**
  * Clase global única para input y SelectTrigger de filtros (SSOT en globals.css).
  * Un cambio en .input-filtro-unificado se propaga a todos los filtros.
@@ -169,14 +154,7 @@ export const FILTER_DATE_RANGE_TRIGGER_CLASS =
  * Botón cuadrado con icono de tacho de basura, al lado del filtro de descripción.
  * Al apretarlo borra todos los filtros. Heredable: usar en todos los módulos con filtros.
  */
-export function LimpiarFiltrosButton(
-  props: {
-    onClick: () => void;
-    /** DEPRECADO: el botón ahora se muestra siempre por regla global de UX. */
-    visible?: boolean;
-  }
-) {
-  const { onClick } = props;
+export function LimpiarFiltrosButton({ onClick }: { onClick: () => void }) {
   return (
     <Button
       type="button"

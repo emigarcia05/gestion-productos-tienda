@@ -21,7 +21,6 @@ import {
   editarMktIdeaSeccion,
   eliminarMktIdeaDetalle,
   eliminarMktIdeaSeccion,
-  listarMktIdeasJerarquia,
 } from "@/services/mktPublicacionesIdeas.service";
 
 function firstZodErrorMessage(error: {
@@ -54,21 +53,6 @@ async function requireEditorMarketing(): Promise<{ ok: false; error: string } | 
     return { ok: false, error: "Sin permisos de editor." };
   }
   return null;
-}
-
-export async function listarMktIdeasJerarquiaAction(): Promise<
-  ActionResult<MktIdeaSeccionItem[]>
-> {
-  const gate = await requireMarketingLectura();
-  if (gate) return gate;
-  try {
-    return { ok: true, data: await listarMktIdeasJerarquia() };
-  } catch (e) {
-    return {
-      ok: false,
-      error: e instanceof Error ? e.message : "No se pudieron listar las ideas.",
-    };
-  }
 }
 
 export async function crearMktIdeaSeccionAction(

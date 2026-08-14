@@ -56,13 +56,3 @@ export const listaPreciosCodTiendaSchema = z
   .min(1, "Cód. tienda inválido.")
   .max(200, "Cód. tienda demasiado largo.");
 
-/** Lista de UUIDs (mínimo uno). */
-export const uuidsSchema = z.array(uuidSchema).min(1, "Al menos un ID es requerido.");
-
-/** Parámetros de paginación y filtros de texto (para acciones de listado). */
-export const paramsPaginaSchema = z.object({
-  q: z.string().optional().default(""),
-  pagina: z.string().optional().default("1"),
-});
-
-export type ParamsPagina = z.infer<typeof paramsPaginaSchema>;

@@ -11,7 +11,7 @@ export interface CompetidorPrecioFila {
   difPctVsTienda: number | null;
 }
 
-export interface ResumenPreciosCompetenciaFila {
+interface ResumenPreciosCompetenciaFila {
   pxPromedio: number | null;
   difPctTiendaVsPromedio: number | null;
   menor: CompetidorPrecioFila | null;
@@ -20,7 +20,7 @@ export interface ResumenPreciosCompetenciaFila {
 }
 
 /** Abreviatura en columnas MENOR/MAYOR PRECIO: `global_proveedores.prefijo` del proveedor del competidor. */
-export function abreviaturaCompetidorEnGrilla(c: CompetenciaParaCliente): string {
+function abreviaturaCompetidorEnGrilla(c: CompetenciaParaCliente): string {
   const p = c.prefijoProveedor?.trim();
   if (!p) return "—";
   return p.toUpperCase();
@@ -63,7 +63,7 @@ export function fusionarVinculosConOpcionesPxListas(
 }
 
 /** Competidores con precio a mostrar (scraping OK o Px. Vta. Sugerido vía `aplicarPrioridadPrecioMostrar`). */
-export function listarCompetidoresConPrecioOk(
+function listarCompetidoresConPrecioOk(
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
   competencias: CompetenciaParaCliente[],
   pxListaTienda: number
@@ -86,7 +86,7 @@ export function listarCompetidoresConPrecioOk(
 /**
  * Px Listas: incluye precios de vínculos y de `opcionesCompetencia` (p. ej. sugerido sin fila PPC).
  */
-export function listarCompetidoresConPrecioPxListas(
+function listarCompetidoresConPrecioPxListas(
   opciones: OpcionCompetenciaPxLista[],
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
   competencias: CompetenciaParaCliente[],
@@ -127,7 +127,7 @@ export interface CompetidorFalloRelevamientoFila {
 }
 
 /** Competidores con URL y último relevamiento en ERROR o SIN_PRECIO (para detalle expandido). */
-export function listarCompetidoresConFalloRelevamiento(
+function listarCompetidoresConFalloRelevamiento(
   vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
   competencias: CompetenciaParaCliente[]
 ): CompetidorFalloRelevamientoFila[] {
@@ -151,19 +151,6 @@ export function listarCompetidoresConFalloRelevamiento(
     });
   }
   return items.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-}
-
-export function calcularResumenPreciosCompetenciaFila(
-  vinculosPorCompetencia: Record<string, DatoVinculoCompetenciaCliente>,
-  competencias: CompetenciaParaCliente[],
-  pxListaTienda: number
-): ResumenPreciosCompetenciaFila {
-  const competidoresOrdenados = listarCompetidoresConPrecioOk(
-    vinculosPorCompetencia,
-    competencias,
-    pxListaTienda
-  );
-  return resumenDesdeCompetidoresOrdenados(competidoresOrdenados, pxListaTienda);
 }
 
 export type ResumenPreciosPxListas = ResumenPreciosCompetenciaFila & {

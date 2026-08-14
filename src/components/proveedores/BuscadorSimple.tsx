@@ -48,7 +48,6 @@ export default function BuscadorSimple({
     },
   });
 
-  const hayFiltros = !!q;
 
   function limpiarFiltros() {
     setQ("");
@@ -78,7 +77,7 @@ export default function BuscadorSimple({
             inputRef={inputRef}
           />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+        <LimpiarFiltrosButton onClick={limpiarFiltros} />
       </div>
     </FilterBar>
   );

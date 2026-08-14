@@ -154,9 +154,6 @@ export default function PedidoAFabricaPageClient({
   const marcaActiva = marca !== FILTRO_TODOS;
   const rubroActivo = rubro !== FILTRO_TODOS;
   const subRubroActivo = subRubro !== FILTRO_TODOS;
-  const busquedaActiva = qDebounced.trim() !== "";
-  const hayFiltrosCatalogo =
-    marcaActiva || rubroActivo || subRubroActivo || busquedaActiva || q !== "";
 
   const proveedorSeleccionado = proveedoresFabrica.find(
     (p) => p.id === proveedorId
@@ -725,10 +722,7 @@ export default function PedidoAFabricaPageClient({
                     disabled={!proveedorActivo}
                   />
                 </FilterRowSearch>
-                <LimpiarFiltrosButton
-                  visible={hayFiltrosCatalogo}
-                  onClick={limpiarFiltrosCatalogo}
-                />
+                <LimpiarFiltrosButton onClick={limpiarFiltrosCatalogo} />
                 <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
                   {contadorProductos.toLocaleString("es-AR")} PRODUCTO
                   {contadorProductos === 1 ? "" : "S"}

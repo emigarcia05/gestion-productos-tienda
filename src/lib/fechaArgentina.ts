@@ -130,33 +130,6 @@ export function isoYmdFromPrismaDateOnly(d: Date): string {
   return `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-/**
- * Día del mes en calendario Argentina (1–31), acotado a **28** para `fin_bal_gasto_final.dia_devengado` (CHECK 1–28 en BD).
- * Uso típico: alta de **gasto único** (`gasto_mensual = false`) con devengo el día de la carga.
- */
-export function diaDevengadoFinBalDesdeCalendarioArgentina(d: Date = new Date()): number {
-  const m = toPartMap(d, { day: "numeric" });
-  const day = Number.parseInt(m.day ?? "1", 10);
-  if (!Number.isFinite(day) || day < 1) return 1;
-  return Math.min(day, 28);
-}
-
-/** Primeros siete caracteres de {@link dateToIsoYmdArgentina} → `YYYY-MM` (mes calendario AR). */
-export function isoYearMonthArgentina(d = new Date()): string {
-  return dateToIsoYmdArgentina(d).slice(0, 7);
-}
-
-/** Título tipo **Marzo 2026** para encabezado de calendario. */
-export function formatMesAnioTituloArgentina(year: number, month1to12: number): string {
-  const d = new Date(Date.UTC(year, month1to12 - 1, 15, 3, 0, 0));
-  const mes = new Intl.DateTimeFormat("es-AR", {
-    timeZone: TIMEZONE_ARGENTINA,
-    month: "long",
-  }).format(d);
-  const capitalizado = mes.charAt(0).toLocaleUpperCase("es-AR") + mes.slice(1);
-  return `${capitalizado} ${year}`;
-}
-
 /** Suma días calendario a `YYYY-MM-DD` (negocio en `TIMEZONE_ARGENTINA`). */
 export function addDaysToIsoYmdArgentina(isoYmd: string, deltaDays: number): string {
   const [y, m, d] = isoYmd.split("-").map(Number);
@@ -238,7 +211,7 @@ const MS_CALENDARIO_DIA = 86_400_000;
  * Días calendario entre `desdeIso` y `hastaIso` (solo `YYYY-MM-DD`), ambas en zona de negocio Argentina.
  * Si `hastaIso` es anterior a `desdeIso`, devuelve `null`. Si coinciden, `0`.
  */
-export function diasCalendarioDesdeHastaIsoYmdArgentina(
+function diasCalendarioDesdeHastaIsoYmdArgentina(
   desdeIso: string,
   hastaIso: string
 ): number | null {

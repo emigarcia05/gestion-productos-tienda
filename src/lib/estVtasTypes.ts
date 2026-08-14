@@ -19,7 +19,7 @@ export type EstVtasDimensionGrafico = EstVtasEjeY | "sucursal";
  * Opciones del eje Y (Dimensión) — orden de producto + sucursal.
  * `variante` se muestra como PRESENTACION.
  */
-export const EST_VTAS_EJE_Y_OPTIONS: readonly {
+const EST_VTAS_EJE_Y_OPTIONS: readonly {
   value: EstVtasEjeY;
   label: string;
 }[] = [
@@ -32,7 +32,7 @@ export const EST_VTAS_EJE_Y_OPTIONS: readonly {
 ] as const;
 
 /** Opciones del select Dimensión (eje Y). */
-export const EST_VTAS_DIMENSION_OPTIONS: readonly {
+const EST_VTAS_DIMENSION_OPTIONS: readonly {
   value: EstVtasDimensionGrafico;
   label: string;
 }[] = [
@@ -44,7 +44,7 @@ export const EST_VTAS_DIMENSION_OPTIONS: readonly {
  * Opciones del Desglose (además de SIN DESGLOSE), en el orden de negocio.
  * Misma semántica que Dimensión; se excluye la ya elegida en eje Y.
  */
-export const EST_VTAS_DESGLOSE_DIMENSION_OPTIONS: readonly {
+const EST_VTAS_DESGLOSE_DIMENSION_OPTIONS: readonly {
   value: EstVtasDimensionGrafico;
   label: string;
 }[] = [
@@ -56,12 +56,6 @@ export const EST_VTAS_DESGLOSE_DIMENSION_OPTIONS: readonly {
   { value: "terminacion", label: "TERMINACION" },
   { value: "variante", label: "PRESENTACION" },
 ] as const;
-
-export function etiquetaEstVtasEjeY(eje: EstVtasEjeY): string {
-  return (
-    EST_VTAS_EJE_Y_OPTIONS.find((o) => o.value === eje)?.label ?? "PRESENTACION"
-  );
-}
 
 export function etiquetaEstVtasDimension(d: EstVtasDimensionGrafico): string {
   return (
@@ -81,15 +75,10 @@ export function esEstVtasEjeY(d: EstVtasDimensionGrafico): d is EstVtasEjeY {
  */
 export type EstVtasDesglose = "ninguno" | EstVtasDimensionGrafico;
 
-export const EST_VTAS_DESGLOSE_NINGUNO = {
+const EST_VTAS_DESGLOSE_NINGUNO = {
   value: "ninguno" as const,
   label: "SIN DESGLOSE",
 };
-
-export function etiquetaEstVtasDesglose(d: EstVtasDesglose): string {
-  if (d === "ninguno") return EST_VTAS_DESGLOSE_NINGUNO.label;
-  return etiquetaEstVtasDimension(d);
-}
 
 /** Opciones de desglose excluyendo la dimensión ya elegida (sin repetir). */
 export function opcionesDesgloseEstVtas(
@@ -136,7 +125,7 @@ export type EstVtasBarraDimension = {
 };
 
 /** Barra hija dentro de un grupo (desglose del gráfico 1). */
-export type EstVtasBarraHija = {
+type EstVtasBarraHija = {
   id: string;
   etiqueta: string;
   unidades: number;
@@ -152,9 +141,6 @@ export type EstVtasGrupoDimension = {
   unidades: number;
   hijos: EstVtasBarraHija[];
 };
-
-/** @deprecated Usar `EstVtasBarraHija`. */
-export type EstVtasBarraSucursal = EstVtasBarraHija;
 
 /** Selección en desglose jerárquico (dimensión + valor de desglose). */
 export type EstVtasSeleccionDesglose = {
@@ -193,6 +179,3 @@ export type EstVtasBarraProducto = {
    */
   promedioMensual: number;
 };
-
-/** @deprecated Usar `EstVtasBarraDimension`. */
-export type EstVtasBarraVariante = EstVtasBarraDimension;

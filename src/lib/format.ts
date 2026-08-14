@@ -19,33 +19,10 @@ export function fmtCelda<T>(val: T | null | undefined): string {
   return String(val);
 }
 
-/** Formatea una variación porcentual con signo y un decimal. */
-export function fmtPct(n: number): string {
-  const abs = Math.abs(n).toFixed(1);
-  if (n > 0.5)  return `+${abs}%`;
-  if (n < -0.5) return `-${abs}%`;
-  return "≈0%";
-}
-
 /** Redondea un porcentaje de negocio (0–100) a 2 decimales. */
 export function roundPorcentaje0a100(value: number): number {
   const capped = Math.max(0, Math.min(100, value));
   return Math.round(capped * 100) / 100;
-}
-
-/** Parsea texto de input de porcentaje (0–100, máx. 2 decimales). Vacío → `undefined`. */
-export function parsePorcentaje0a100Input(raw: string): number | undefined {
-  const trimmed = raw.trim().replace(",", ".");
-  if (trimmed === "") return undefined;
-  if (!/^\d{0,3}(\.\d{0,2})?$/.test(trimmed)) return undefined;
-  const n = Number(trimmed);
-  if (!Number.isFinite(n) || n < 0 || n > 100) return undefined;
-  return roundPorcentaje0a100(n);
-}
-
-/** Valor para `<input>` de porcentaje (siempre 2 decimales visibles). */
-export function formatPorcentaje0a100Input(n: number): string {
-  return roundPorcentaje0a100(n).toFixed(2);
 }
 
 /** Porcentaje en tabla (es-AR, 2 decimales + sufijo `%`). */

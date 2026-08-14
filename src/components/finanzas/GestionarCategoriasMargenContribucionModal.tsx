@@ -325,7 +325,7 @@ export default function GestionarCategoriasMargenContribucionModal({
         }
       >
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-2">
             <div className="flex min-w-0 flex-col gap-1">
               <ModalMicroLabel>TERMINAL</ModalMicroLabel>
               <Select

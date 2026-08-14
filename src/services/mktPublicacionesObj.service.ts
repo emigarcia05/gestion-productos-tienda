@@ -2,20 +2,12 @@ import type { MktPubliObjEje, MktPubliObjPeriodo, Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma";
 import {
   destinoClaveMktPubliObj,
-  type MktPublicacionObjEvaluacion,
   type MktPublicacionObjItem,
 } from "@/lib/mktPublicacionesObj";
 import type {
   CrearMktPublicacionObjInput,
   EditarMktPublicacionObjInput,
 } from "@/lib/validations/mktPublicacionesObj";
-import {
-  filtrarPublicacionesPorMesAnio,
-  filtrarPublicacionesPorRangoIsoYmd,
-} from "@/lib/mktPublicacionesEstadisticas";
-import { addDaysToIsoYmdArgentina } from "@/lib/fechaArgentina";
-import { contarPublicacionesConRed } from "@/lib/mktPublicaciones";
-import { listarMktPublicacionesCalendario } from "@/services/mktPublicaciones.service";
 import type { ServiceResult } from "@/types/service.types";
 
 function mapDbError(error: unknown, fallback: string): string {
@@ -210,52 +202,4 @@ export async function eliminarMktPublicacionObj(
       error: mapDbError(error, "No se pudo eliminar el objetivo."),
     };
   }
-}
-
-export type VentanaEvaluacionMktObj =
-  | { tipo: "semana"; lunesIso: string }
-  | { tipo: "mes"; mes: number; anio: number };
-
-/**
- * Evalúa objetivos contra una semana o mes de calendario AR.
- * Cuenta publicaciones **programadas** (cualquier fila `mkt_publi` en el rango).
- * Pensado para UI de avance (posterior al MVP de gestión).
- */
-export async function evaluarMktPublicacionObjs(
-  ventana: VentanaEvaluacionMktObj
-): Promise<MktPublicacionObjEvaluacion[]> {
-  const [objetivos, publicaciones] = await Promise.all([
-    listarMktPublicacionObjs(),
-    listarMktPublicacionesCalendario(),
-  ]);
-
-  const periodoFiltro: MktPubliObjPeriodo =
-    ventana.tipo === "semana" ? "SEMANAL" : "MENSUAL";
-
-  const enVentana =
-    ventana.tipo === "semana"
-      ? filtrarPublicacionesPorRangoIsoYmd(
-          publicaciones,
-          ventana.lunesIso,
-          addDaysToIsoYmdArgentina(ventana.lunesIso, 6)
-        )
-      : filtrarPublicacionesPorMesAnio(publicaciones, ventana.mes, ventana.anio);
-
-  return objetivos
-    .filter((o) => o.periodo === periodoFiltro)
-    .map((o) => {
-      let actual = 0;
-      if (o.eje === "RED") {
-        actual = contarPublicacionesConRed(enVentana, o.destinoId);
-      } else if (o.eje === "CONTENIDO") {
-        actual = enVentana.filter((p) => p.tipoContenidoId === o.destinoId).length;
-      } else {
-        actual = enVentana.filter((p) => p.ideaSeccionId === o.destinoId).length;
-      }
-      return {
-        ...o,
-        actual,
-        cumplido: actual >= o.cantidad,
-      };
-    });
 }

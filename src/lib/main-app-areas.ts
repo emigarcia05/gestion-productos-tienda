@@ -17,7 +17,7 @@ export type MainAppAreaId =
   | "finanzas"
   | "marketing";
 
-export interface MainAppAreaDefinition {
+interface MainAppAreaDefinition {
   id: MainAppAreaId;
   /** Título canónico en title case; en UI usar `areaLabelMayusculas(label)` en slidenav y modal de áreas. */
   label: string;

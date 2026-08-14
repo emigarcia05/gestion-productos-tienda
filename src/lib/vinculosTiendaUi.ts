@@ -17,7 +17,7 @@ export type ProductoVinculoTienda = {
 
 const UMBRAL_PCT = 1;
 
-export function pxCompraDeProductoVinculo(p: ProductoVinculoTienda): number {
+function pxCompraDeProductoVinculo(p: ProductoVinculoTienda): number {
   return p.pxCompraFinalSinIva != null
     ? p.pxCompraFinalSinIva
     : calcPxCompraFinal(

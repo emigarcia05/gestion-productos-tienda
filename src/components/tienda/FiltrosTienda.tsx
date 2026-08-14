@@ -82,15 +82,6 @@ export default function FiltrosTienda({
     },
   });
 
-  const hayFiltros = !!(
-    q ||
-    marcaActual ||
-    rubroActual ||
-    (usaCxCompra ? cxCompraActual : subRubroActual) ||
-    proveedorActual ||
-    vinculadoActual
-  );
-
   function navigate(updates: {
     q?: string;
     marca?: string;
@@ -347,7 +338,7 @@ export default function FiltrosTienda({
             inputRef={inputRef}
           />
         </FilterRowSearch>
-        <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+        <LimpiarFiltrosButton onClick={limpiarFiltros} />
         <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
           {totalItems.toLocaleString()} ITEM{totalItems !== 1 ? "S" : ""}
         </span>
