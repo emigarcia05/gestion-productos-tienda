@@ -236,7 +236,7 @@
     @apply flex flex-col gap-y-2 py-2;
   }
 
-  /* Superficie del botón de cambio de módulo/área en la slidenav. */
+  /* Superficie del bloque de usuario / cambio de módulo en la slidenav. */
   .sidebar-user-switcher-surface {
     background-color: var(--sidebar-user-switcher-bg);
     color: var(--sidebar-foreground);
@@ -552,16 +552,43 @@
 
   /* ─── Menú desplegable de filtros: mismo ancho que el trigger, solo hacia abajo ───
    * Usar clase .select-content-filtro en SelectContent.
-   * Para que se abra solo hacia abajo: usar position="popper" side="bottom" align="start" en el componente.
+   * Defaults del componente: position="popper" side="bottom" align="start".
+   * max-height = espacio disponible bajo el trigger (muestra la mayor cantidad de opciones).
    */
   .select-content-filtro {
     width: var(--radix-select-trigger-width) !important;
     min-width: var(--radix-select-trigger-width) !important;
     max-width: var(--radix-select-trigger-width) !important;
+    max-height: var(--radix-select-content-available-height);
     border-radius: var(--radius);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     border: 1px solid var(--border);
     background-color: var(--popover);
+  }
+
+  /* Buscador fijo en el primer renglón de listas desplegables (Select + paneles custom). */
+  .select-search-input {
+    width: 100%;
+    min-width: 0;
+    height: 2rem;
+    border-radius: calc(var(--radius) - 2px);
+    border: 1px solid var(--border);
+    background-color: var(--background);
+    color: var(--foreground);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-sans);
+    padding-left: 1.75rem;
+    padding-right: 0.5rem;
+    outline: none;
+  }
+  .select-search-input::placeholder {
+    color: var(--muted-foreground);
+    font-weight: var(--font-weight-semibold);
+  }
+  .select-search-input:focus-visible {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 20%, transparent);
   }
 
   /* ─── Sección de filtros (recuadro): diseño global; variables en :root ─── */

@@ -1,0 +1,115 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { FileDown } from "lucide-react";
+import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import FiltrosTransfDepositos from "@/components/stock/FiltrosTransfDepositos";
+import TablaTransfDepositos, {
+  type TablaTransfDepositosHandle,
+} from "@/components/stock/TablaTransfDepositos";
+import TransfPendienteRegistroModal, {
+  type ItemCantidadTransf,
+} from "@/components/stock/TransfPendienteRegistroModal";
+import PaginacionTabla from "@/components/shared/PaginacionTabla";
+import { Button } from "@/components/ui/button";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+import { PAGE_SIZE } from "@/lib/pagination";
+import type { Sucursal, TransfDepositosData } from "@/actions/stock";
+
+interface Props {
+  data: TransfDepositosData;
+  origen: Sucursal | null;
+  destino: Sucursal | null;
+  q: string;
+  marca: string;
+  rubro: string;
+  paginaNum: number;
+  paramsPagina: Record<string, string>;
+}
+
+/**
+ * Pantalla **Stock · Trans. Depósitos**: origen/destino → marca/rubro/búsqueda;
+ * grilla DESCRIPCIÓN / {origen} / → / {destino} / ACCIONES;
+ * header **Generar Transf.** → modal **Transf. Pendiente Registro**.
+ */
+export default function TransfDepositosPageClient({
+  data,
+  origen,
+  destino,
+  q,
+  marca,
+  rubro,
+  paginaNum,
+  paramsPagina,
+}: Props) {
+  const tieneOrigen = origen !== null;
+  const tablaRef = useRef<TablaTransfDepositosHandle>(null);
+  const [pendienteOpen, setPendienteOpen] = useState(false);
+  const [itemsGrilla, setItemsGrilla] = useState<ItemCantidadTransf[]>([]);
+
+  const filters = (
+    <FiltrosTransfDepositos
+      data={data}
+      origenActual={origen}
+      destinoActual={destino}
+      qActual={q}
+      marcaActual={marca}
+      rubroActual={rubro}
+      totalItems={data.total}
+    />
+  );
+
+  function abrirGenerarTransf() {
+    setItemsGrilla(tablaRef.current?.getItemsConCantidad() ?? []);
+    setPendienteOpen(true);
+  }
+
+  return (
+    <ClassicFilteredTableLayout
+      title="Stock"
+      subtitle="Trans. Depósitos"
+      filters={filters}
+      actions={
+        <Button type="button" className="h-10 px-4" onClick={abrirGenerarTransf}>
+          <FileDown className="h-4 w-4 shrink-0" aria-hidden />
+          Generar Transf.
+        </Button>
+      }
+    >
+      <div className="flex flex-col h-full min-h-0 gap-0.5">
+        <div className="contenedor-tabla-gestion no-scroll-x flex-1 min-h-0">
+          <TablaTransfDepositos
+            ref={tablaRef}
+            data={data}
+            origen={origen}
+            destino={destino}
+          />
+        </div>
+        {tieneOrigen && data.totalPaginas > 1 && (
+          <div className="flex justify-end pt-2 shrink-0">
+            <PaginacionTabla
+              basePath={GP_ROUTES.ayudaVendedor.transfDepositos}
+              params={paramsPagina}
+              paginaActual={paginaNum}
+              totalPaginas={data.totalPaginas}
+              total={data.total}
+              pageSize={PAGE_SIZE}
+            />
+          </div>
+        )}
+      </div>
+
+      <TransfPendienteRegistroModal
+        open={pendienteOpen}
+        onOpenChange={setPendienteOpen}
+        origen={origen}
+        destino={destino}
+        itemsGrilla={itemsGrilla}
+        onEncolado={() => {
+          tablaRef.current?.clearCantidades();
+          setItemsGrilla([]);
+        }}
+      />
+    </ClassicFilteredTableLayout>
+  );
+}

@@ -21,6 +21,7 @@ import FilterBar, {
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { cn } from "@/lib/utils";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
+import { useAplicarSucursalPreferidaSiVacia } from "@/lib/hooks/useAplicarSucursalPreferidaSiVacia";
 
 export type SucursalPedido = "guaymallen" | "maipu";
 type SucursalFiltroOption = { value: SucursalPedido; label: string };
@@ -80,6 +81,16 @@ export default function FiltrosPedidoUrgente({
     router.push(query ? `${pathname}?${query}` : pathname);
   }
 
+  useAplicarSucursalPreferidaSiVacia(sucursal || null, (codigo) => {
+    if (!sucursales.some((s) => s.value === codigo)) return;
+    const search = new URLSearchParams();
+    if (q) search.set("q", q);
+    search.set("sucursal", codigo);
+    if (proveedor) search.set("proveedor", proveedor);
+    if (pedido) search.set("pedido", pedido);
+    router.replace(`${pathname}?${search.toString()}`);
+  });
+
   const {
     q: qLocal,
     setQ: setQLocal,
@@ -99,6 +110,10 @@ export default function FiltrosPedidoUrgente({
 
   function limpiarFiltros() {
     setQLocal("");
+    if (sucursal) {
+      updateUrl({ q: "", proveedor: "", pedido: "" });
+      return;
+    }
     updateUrl({ q: "", sucursal: "", proveedor: "", pedido: "" });
   }
 

@@ -7,13 +7,19 @@ import {
   FileText,
   CheckCircle2,
   AlertCircle,
-  ChevronDown,
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -27,6 +33,9 @@ import { parsearCSVCrudo } from "@/lib/parsearImport";
 import { cn } from "@/lib/utils";
 import { BADGE_SUCCESS_TINT_CLASS } from "@/lib/ui-classes";
 import ModalSiNoChoice from "@/components/shared/ModalSiNoChoice";
+import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
+
+const SELECT_NONE = "none";
 
 interface Proveedor {
   id: string;
@@ -201,21 +210,27 @@ export default function ImportarListaPreciosModal({ proveedores, cotizacionUsd }
             {/* Fila 0: Proveedor */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">PROVEEDOR</label>
-              <div className="relative">
-                <select
-                  value={proveedorId}
-                  onChange={(e) => setProveedorId(e.target.value)}
-                  className="input-filtro-unificado w-full appearance-none pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 border-primary"
+              <Select
+                value={proveedorId || SELECT_NONE}
+                onValueChange={(v) => setProveedorId(v === SELECT_NONE ? "" : v)}
+              >
+                <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}>
+                  <SelectValue placeholder="SELECCIONAR PROVEEDOR..." />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
                 >
-                  <option value="">SELECCIONAR PROVEEDOR...</option>
+                  <SelectItem value={SELECT_NONE}>SELECCIONAR PROVEEDOR...</SelectItem>
                   {proveedores.map((p) => (
-                    <option key={p.id} value={p.id}>
+                    <SelectItem key={p.id} value={p.id}>
                       [{p.prefijo}] {p.nombre}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              </div>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Tres filas: mismo tipo/tamaño/color de texto; botones en la misma columna alineados */}
@@ -318,25 +333,31 @@ export default function ImportarListaPreciosModal({ proveedores, cotizacionUsd }
                             {(encabezados ?? filaEjemplo)?.[i] ?? <span className="text-muted-foreground italic">—</span>}
                           </TableCell>
                           <TableCell className="celda-datos">
-                            <div className="relative">
-                              <select
-                                value={mapeo[i] ?? "ignorar"}
-                                onChange={(e) =>
-                                  setMapeo((prev) => ({
-                                    ...prev,
-                                    [i]: e.target.value as CampoDestinoListaPrecios,
-                                  }))
-                                }
-                                className="w-full appearance-none rounded border border-input bg-background px-2 py-1.5 pr-6 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                            <Select
+                              value={mapeo[i] ?? "ignorar"}
+                              onValueChange={(v) =>
+                                setMapeo((prev) => ({
+                                  ...prev,
+                                  [i]: v as CampoDestinoListaPrecios,
+                                }))
+                              }
+                            >
+                              <SelectTrigger className={cn("h-8 w-full text-xs")}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent
+                                position="popper"
+                                side="bottom"
+                                align="start"
+                                className="select-content-filtro"
                               >
                                 {CAMPOS.map((c) => (
-                                  <option key={c.value} value={c.value}>
+                                  <SelectItem key={c.value} value={c.value}>
                                     {c.required ? `${c.label} *` : c.label}
-                                  </option>
+                                  </SelectItem>
                                 ))}
-                              </select>
-                              <ChevronDown className="pointer-events-none absolute right-1.5 top-1.5 h-3 w-3 text-muted-foreground" />
-                            </div>
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                         </TableRow>
                       ))}

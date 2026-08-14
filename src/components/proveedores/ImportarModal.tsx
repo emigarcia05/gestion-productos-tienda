@@ -4,12 +4,19 @@ import { useState, useTransition, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import {
   Upload, FileText, Loader2, CheckCircle2,
-  AlertCircle, X, ChevronDown, ArrowRight, ArrowLeft,
+  AlertCircle, X, ArrowRight, ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,6 +36,8 @@ import {
   TEXT_SUCCESS_CLASS,
 } from "@/lib/ui-classes";
 import ModalSiNoChoice from "@/components/shared/ModalSiNoChoice";
+
+const SELECT_NONE = "none";
 
 interface Proveedor {
   id: string;
@@ -182,20 +191,23 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
             {/* Selector de proveedor */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">PROVEEDOR</label>
-              <div className="relative">
-                <select
-                  value={proveedorId}
-                  onChange={(e) => setProveedorId(e.target.value)}
-                  disabled={!!proveedorPreseleccionado}
-                  className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                >
-                  <option value="">SELECCIONAR PROVEEDOR...</option>
+              <Select
+                value={proveedorId || SELECT_NONE}
+                onValueChange={(v) => setProveedorId(v === SELECT_NONE ? "" : v)}
+                disabled={!!proveedorPreseleccionado}
+              >
+                <SelectTrigger className={cn("w-full")}>
+                  <SelectValue placeholder="SELECCIONAR PROVEEDOR..." />
+                </SelectTrigger>
+                <SelectContent position="popper" side="bottom" align="start">
+                  <SelectItem value={SELECT_NONE}>SELECCIONAR PROVEEDOR...</SelectItem>
                   {proveedores.map((p) => (
-                    <option key={p.id} value={p.id}>[{p.prefijo}] {p.nombre}</option>
+                    <SelectItem key={p.id} value={p.id}>
+                      [{p.prefijo}] {p.nombre}
+                    </SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              </div>
+                </SelectContent>
+              </Select>
               {proveedorSeleccionado && (
                 <p className="text-xs text-muted-foreground">
                   Prefijo del código externo:{" "}
@@ -281,20 +293,28 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                         {filaEjemplo[i] ?? <span className="text-muted-foreground italic">—</span>}
                       </TableCell>
                       <TableCell className="py-2.5 px-3">
-                        <div className="relative">
-                          <select
-                            value={mapeo[i] ?? "ignorar"}
-                            onChange={(e) => setMapeo((prev) => ({ ...prev, [i]: e.target.value as CampoDestino }))}
-                            className="w-full appearance-none rounded border border-input bg-background px-2 py-1 pr-6 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                        <Select
+                          value={mapeo[i] ?? "ignorar"}
+                          onValueChange={(v) =>
+                            setMapeo((prev) => ({ ...prev, [i]: v as CampoDestino }))
+                          }
+                        >
+                          <SelectTrigger className={cn("h-8 w-full text-xs")}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent
+                            position="popper"
+                            side="bottom"
+                            align="start"
+                            className="select-content-filtro"
                           >
                             {CAMPOS.map((c) => (
-                              <option key={c.value} value={c.value}>
+                              <SelectItem key={c.value} value={c.value}>
                                 {c.required ? `${c.label} *` : c.label}
-                              </option>
+                              </SelectItem>
                             ))}
-                          </select>
-                          <ChevronDown className="pointer-events-none absolute right-1.5 top-1.5 h-3 w-3 text-muted-foreground" />
-                        </div>
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                     </TableRow>
                   ))}

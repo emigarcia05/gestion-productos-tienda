@@ -26,6 +26,7 @@ import {
   Sparkles,
   ScanSearch,
   Paintbrush,
+  ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -152,11 +153,22 @@ const MODULES: NavModule[] = [
   },
   {
     id: "control-stock",
-    label: "CONTROL STOCK",
+    label: "STOCK",
     icon: <Boxes className={iconClass} />,
-    href: GP_ROUTES.ayudaVendedor.controlStock,
-    permiso: PERMISOS.stock.acceso,
-    submodules: [],
+    submodules: [
+      {
+        href: GP_ROUTES.ayudaVendedor.controlStock,
+        label: "Control Stock",
+        icon: <Boxes className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.stock.acceso,
+      },
+      {
+        href: GP_ROUTES.ayudaVendedor.transfDepositos,
+        label: "Trans. Depósitos",
+        icon: <ArrowLeftRight className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.stock.acceso,
+      },
+    ],
   },
   {
     id: "cargar-gastos",
@@ -572,8 +584,17 @@ export default function Sidebar({ rol }: { rol: Rol }) {
           <SyncStatusIndicator rol={rol} />
           <ImportStatusIndicator pollEnabled={rol === "editor"} />
         </div>
-        <SidebarMainAppArea className="my-2" />
-        <div className="rounded-lg px-2">
+        <div
+          className={cn(
+            "sidebar-user-switcher-surface flex w-full min-w-0 flex-col gap-0.5 rounded-lg p-1"
+          )}
+          aria-label="Sesión"
+        >
+          <SidebarMainAppArea />
+          <div
+            className="mx-2 h-px shrink-0 bg-sidebar-foreground/40"
+            aria-hidden
+          />
           <SidebarAreaSwitcher rolActual={rol} />
         </div>
       </div>

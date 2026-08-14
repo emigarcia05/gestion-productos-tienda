@@ -93,6 +93,10 @@ export function getMainAppAreaById(id: MainAppAreaId): MainAppAreaDefinition {
   return found;
 }
 
+export function isMainAppAreaId(value: string): value is MainAppAreaId {
+  return MAIN_APP_AREAS.some((area) => area.id === value);
+}
+
 /** Nombre del área en MAYÚSCULAS para slidenav y modal (locale `es`). */
 export function areaLabelMayusculas(label: string): string {
   return label.toLocaleUpperCase("es");

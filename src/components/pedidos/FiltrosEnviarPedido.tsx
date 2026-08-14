@@ -20,9 +20,12 @@ import FilterBar, {
 } from "@/components/FilterBar";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { filterItemsBySelectSearch } from "@/lib/selectSearch";
+import SelectSearchInput from "@/components/shared/SelectSearchInput";
 import { TIPOS_PEDIDO, type SucursalPedido, type TipoPedido } from "@/lib/pedidos";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import { useAplicarSucursalPreferidaSiVacia } from "@/lib/hooks/useAplicarSucursalPreferidaSiVacia";
 
 type SucursalFiltroOption = { value: SucursalPedido; label: string };
 
@@ -59,6 +62,13 @@ export default function FiltrosEnviarPedido({
   const router = useRouter();
   const multiRef = useRef<HTMLDivElement>(null);
   const [multiOpen, setMultiOpen] = useState(false);
+  const [tipoQuery, setTipoQuery] = useState("");
+
+  const opcionesTipoFiltradas = filterItemsBySelectSearch(
+    OPCIONES_TIPO,
+    tipoQuery,
+    (o) => o.label
+  );
 
   function updateUrl(updates: {
     sucursal?: string;
@@ -96,6 +106,7 @@ export default function FiltrosEnviarPedido({
     function handleClickOutside(e: MouseEvent) {
       if (multiRef.current && !multiRef.current.contains(e.target as Node)) {
         setMultiOpen(false);
+        setTipoQuery("");
       }
     }
     if (multiOpen) {
@@ -104,9 +115,22 @@ export default function FiltrosEnviarPedido({
     }
   }, [multiOpen]);
 
+  useAplicarSucursalPreferidaSiVacia(sucursal || null, (codigo) => {
+    if (!sucursales.some((s) => s.value === codigo)) return;
+    const search = new URLSearchParams();
+    search.set("sucursal", codigo);
+    if (proveedor) search.set("proveedor", proveedor);
+    if (tipos.length > 0) search.set("tipo", tipos.join(","));
+    if (qActual.trim()) search.set("q", qActual.trim());
+    router.replace(`${pathname}?${search.toString()}`);
+  });
 
   function limpiarFiltros() {
     setQ("");
+    if (sucursal) {
+      updateUrl({ proveedor: "", tipos: [], q: "" });
+      return;
+    }
     updateUrl({ sucursal: "", proveedor: "", tipos: [], q: "" });
   }
 
@@ -175,7 +199,11 @@ export default function FiltrosEnviarPedido({
               disabled={!sucursal}
               onClick={() => {
                 if (!sucursal) return;
-                setMultiOpen((o) => !o);
+                setMultiOpen((o) => {
+                  const next = !o;
+                  if (!next) setTipoQuery("");
+                  return next;
+                });
               }}
               className={cn(
                 SELECT_TRIGGER_FILTER_CLASS,
@@ -192,33 +220,48 @@ export default function FiltrosEnviarPedido({
             </button>
             {multiOpen && (
               <div
-                className="absolute top-full left-0 z-50 mt-1 min-w-full rounded-md border border-border bg-popover p-1 shadow-md"
+                className="absolute top-full left-0 z-50 mt-1 flex min-w-full flex-col overflow-hidden rounded-md border border-border bg-popover shadow-md"
                 role="listbox"
                 aria-multiselectable="true"
               >
-                {OPCIONES_TIPO.map((opt) => {
-                  const selected = tipos.includes(opt.value);
-                  return (
-                    <label
-                      key={opt.value}
-                      role="option"
-                      aria-selected={selected}
-                      className={cn(
-                        "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
-                        selected && "bg-muted"
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => toggleTipo(opt.value)}
-                        className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                        aria-label={opt.label}
-                      />
-                      <span>{opt.label}</span>
-                    </label>
-                  );
-                })}
+                <div className="shrink-0 border-b border-border p-1">
+                  <SelectSearchInput
+                    value={tipoQuery}
+                    onValueChange={setTipoQuery}
+                    autoFocus
+                  />
+                </div>
+                <div className="max-h-48 overflow-y-auto p-1">
+                  {opcionesTipoFiltradas.length === 0 ? (
+                    <p className="px-2 py-1.5 text-sm text-muted-foreground" role="status">
+                      SIN RESULTADOS
+                    </p>
+                  ) : (
+                    opcionesTipoFiltradas.map((opt) => {
+                      const selected = tipos.includes(opt.value);
+                      return (
+                        <label
+                          key={opt.value}
+                          role="option"
+                          aria-selected={selected}
+                          className={cn(
+                            "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                            selected && "bg-muted"
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => toggleTipo(opt.value)}
+                            className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                            aria-label={opt.label}
+                          />
+                          <span>{opt.label}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
               </div>
             )}
           </div>

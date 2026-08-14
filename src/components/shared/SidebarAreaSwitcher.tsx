@@ -3,29 +3,40 @@
 import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Boxes,
   Eye,
   EyeOff,
   Landmark,
-  LayoutGrid,
   Megaphone,
   ShieldCheck,
+  Store,
   type LucideIcon,
 } from "lucide-react";
-import { cva } from "class-variance-authority";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AppModal from "@/components/shared/AppModal";
 import { activarModoEditor } from "@/actions/sesion";
+import { listUsuariosParaInicioSesionAction } from "@/actions/globalPersonal";
 import {
-  MAIN_APP_AREAS,
   areaLabelMayusculas,
   getMainAppAreaById,
   getMainAppAreaIdFromPathname,
   type MainAppAreaId,
 } from "@/lib/main-app-areas";
+import type { GlobalPersonalItem } from "@/services/globalPersonal.service";
+import {
+  guardarUsuarioSesion,
+  leerUsuarioSesion,
+  usuarioSesionDesdeItem,
+  type UsuarioSesion,
+} from "@/lib/usuarioSesion";
+import {
+  puedeCambiarModulo,
+  primerModuloPermitido,
+  etiquetaSucursalPorDefecto,
+  usuarioTieneAdministracion,
+} from "@/lib/usuarios";
 import type { Rol } from "@/lib/permisos";
 import { cn } from "@/lib/utils";
 
@@ -34,113 +45,132 @@ interface Props {
   rolActual: Rol;
 }
 
-/** Sesión de navegador: el usuario ya eligió un módulo de la app al menos una vez. */
-const STORAGE_AREA_ELEGIDA = "main-app-area-elegida";
-
-const areaOptionVariants = cva(
-  "w-full rounded-lg border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-  {
-    variants: {
-      current: {
-        true: "border-sidebar-indicator bg-sidebar-accent/40 text-sidebar-foreground",
-        false: "border-border bg-card text-foreground hover:bg-muted/80",
-      },
-    },
-    defaultVariants: {
-      current: false,
-    },
-  }
-);
-
-const areaIcons: Record<MainAppAreaId, LucideIcon> = {
-  "gestion-productos": Boxes,
+const ICONO_MODULO: Record<MainAppAreaId, LucideIcon> = {
+  "gestion-productos": Store,
   finanzas: Landmark,
   marketing: Megaphone,
 };
 
-function marcarAreaElegida(): void {
-  try {
-    sessionStorage.setItem(STORAGE_AREA_ELEGIDA, "1");
-  } catch {
-    /* ignore */
-  }
-}
-
-function yaEligioArea(): boolean {
-  try {
-    return sessionStorage.getItem(STORAGE_AREA_ELEGIDA) === "1";
-  } catch {
-    return false;
-  }
+function nombreUsuarioLabel(nombre: string): string {
+  return nombre.toLocaleUpperCase("es-AR");
 }
 
 /**
- * Botón inferior de la slidenav: navega entre módulos/áreas (Vendedor, Administración, Marketing).
- * Administración pide clave (`EDITOR_PASSWORD`) si la sesión aún es `simple`.
- * En la primera apertura de la app fuerza elegir un módulo (modal no descartable).
+ * Pie de slidenav: fila de usuario (ícono módulo si puede cambiar + nombre).
+ * Vive dentro del dock de sesión (`sidebar-user-switcher-surface` en `Sidebar`).
+ * Primera visita: modal **Elegir Usuario**; si el usuario tiene Administración, pide clave.
  */
 export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const [areasOpen, setAreasOpen] = useState(false);
-  const [forceChooseArea, setForceChooseArea] = useState(false);
+  const [forceChoose, setForceChoose] = useState(false);
+  const [usuarioOpen, setUsuarioOpen] = useState(false);
+  const [moduloOpen, setModuloOpen] = useState(false);
   const [claveOpen, setClaveOpen] = useState(false);
+  const [usuarios, setUsuarios] = useState<GlobalPersonalItem[]>([]);
+  const [usuariosError, setUsuariosError] = useState("");
+  const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
+  const [usuarioSesion, setUsuarioSesion] = useState<UsuarioSesion | null>(null);
   const [clave, setClave] = useState("");
   const [mostrarClave, setMostrarClave] = useState(false);
   const [error, setError] = useState("");
+  const [pendingUsuario, setPendingUsuario] = useState<UsuarioSesion | null>(null);
   const [pendingAreaId, setPendingAreaId] = useState<MainAppAreaId | null>(null);
   const [pending, startTransition] = useTransition();
 
   const currentId = getMainAppAreaIdFromPathname(pathname);
-  const current = getMainAppAreaById(currentId);
-  const labelActual = areaLabelMayusculas(current.label);
+  const puedeCambiar = usuarioSesion
+    ? puedeCambiarModulo(usuarioSesion.modulosPermitidos)
+    : false;
 
   useEffect(() => {
-    if (yaEligioArea()) return;
+    const guardado = leerUsuarioSesion();
     queueMicrotask(() => {
-      setForceChooseArea(true);
-      setAreasOpen(true);
+      setUsuarioSesion(guardado);
+      if (!guardado) {
+        setForceChoose(true);
+        setUsuarioOpen(true);
+      }
     });
   }, []);
 
-  function goToArea(id: MainAppAreaId) {
-    const area = getMainAppAreaById(id);
-    marcarAreaElegida();
-    setForceChooseArea(false);
+  useEffect(() => {
+    if (!usuarioOpen) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      setCargandoUsuarios(true);
+      setUsuariosError("");
+    });
+    void listUsuariosParaInicioSesionAction().then((res) => {
+      if (cancelled) return;
+      setCargandoUsuarios(false);
+      if (!res.ok) {
+        setUsuarios([]);
+        setUsuariosError(res.error);
+        return;
+      }
+      setUsuarios(res.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [usuarioOpen]);
+
+  function persistirYNavegar(usuario: UsuarioSesion, areaId: MainAppAreaId) {
+    guardarUsuarioSesion(usuario);
+    setUsuarioSesion(usuario);
+    setForceChoose(false);
+    const area = getMainAppAreaById(areaId);
     router.push(area.href);
-    setAreasOpen(false);
+    setUsuarioOpen(false);
+    setModuloOpen(false);
     setClaveOpen(false);
+    setPendingUsuario(null);
     setPendingAreaId(null);
   }
 
-  function handleSelectArea(id: MainAppAreaId) {
-    if (id === currentId && !forceChooseArea) {
-      setAreasOpen(false);
-      return;
-    }
-    if (id === currentId && forceChooseArea) {
-      marcarAreaElegida();
-      setForceChooseArea(false);
-      setAreasOpen(false);
-      return;
-    }
-    const area = getMainAppAreaById(id);
-    if (area.requierePassword && rolActual !== "editor") {
-      setPendingAreaId(id);
-      setAreasOpen(false);
-      setClave("");
-      setError("");
-      setMostrarClave(false);
-      setClaveOpen(true);
+  function pedirClave(usuario: UsuarioSesion, areaId: MainAppAreaId) {
+    setPendingUsuario(usuario);
+    setPendingAreaId(areaId);
+    setUsuarioOpen(false);
+    setModuloOpen(false);
+    setClave("");
+    setError("");
+    setMostrarClave(false);
+    setClaveOpen(true);
+  }
+
+  function aplicarUsuario(item: GlobalPersonalItem) {
+    const usuario = usuarioSesionDesdeItem(item);
+    if (!usuario) return;
+    const destino = primerModuloPermitido(usuario.modulosPermitidos);
+    if (!destino) return;
+    if (usuarioTieneAdministracion(usuario.modulosPermitidos) && rolActual !== "editor") {
+      pedirClave(usuario, destino);
       return;
     }
     startTransition(() => {
-      goToArea(id);
+      persistirYNavegar(usuario, destino);
+    });
+  }
+
+  function aplicarModulo(usuario: UsuarioSesion, areaId: MainAppAreaId) {
+    if (areaId === currentId && !forceChoose) {
+      setModuloOpen(false);
+      return;
+    }
+    const area = getMainAppAreaById(areaId);
+    if (area.requierePassword && rolActual !== "editor") {
+      pedirClave(usuario, areaId);
+      return;
+    }
+    startTransition(() => {
+      persistirYNavegar(usuario, areaId);
     });
   }
 
   function handleActivarYNavegar() {
-    if (!pendingAreaId) return;
+    if (!pendingUsuario || !pendingAreaId) return;
     setError("");
     startTransition(async () => {
       const res = await activarModoEditor(clave);
@@ -148,120 +178,214 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
         setError(res.error ?? "Error desconocido.");
         return;
       }
-      goToArea(pendingAreaId);
+      persistirYNavegar(pendingUsuario, pendingAreaId);
       router.refresh();
     });
   }
 
-  function handleAreasOpenChange(open: boolean) {
-    if (!open && forceChooseArea) {
-      setAreasOpen(true);
+  function handleUsuarioOpenChange(open: boolean) {
+    if (!open && forceChoose) {
+      setUsuarioOpen(true);
       return;
     }
-    setAreasOpen(open);
+    setUsuarioOpen(open);
+  }
+
+  function handleClaveOpenChange(open: boolean) {
+    setClaveOpen(open);
+    if (!open) {
+      setPendingUsuario(null);
+      setPendingAreaId(null);
+      if (forceChoose) {
+        setUsuarioOpen(true);
+      }
+    }
+  }
+
+  function handleCancelarClave() {
+    setClaveOpen(false);
+    setPendingUsuario(null);
+    setPendingAreaId(null);
+    if (forceChoose) {
+      setUsuarioOpen(true);
+    }
+  }
+
+  const labelUsuario = usuarioSesion
+    ? nombreUsuarioLabel(usuarioSesion.nombrePersonal)
+    : "USUARIO";
+
+  const IconoModulo = ICONO_MODULO[currentId];
+
+  function abrirCambiarModulo() {
+    setModuloOpen(true);
   }
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setAreasOpen(true)}
-        disabled={pending}
-        className={cn(
-          "w-full rounded-lg px-3 py-2",
-          "flex items-center justify-center gap-2",
-          "group",
-          "sidebar-user-switcher-surface",
-          "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-          pending && "cursor-not-allowed opacity-90"
-        )}
-        aria-label="Cambiar Módulo De La Aplicación"
-      >
-        <LayoutGrid className="h-4 w-4 shrink-0" aria-hidden />
-        <span className="relative flex items-center justify-center">
-          <span className="invisible whitespace-nowrap text-sm font-semibold tracking-wide">
-            CAMBIAR MÓDULO
+      {puedeCambiar ? (
+        <button
+          type="button"
+          onClick={abrirCambiarModulo}
+          disabled={pending || forceChoose}
+          aria-label="Cambiar Módulo"
+          title="Cambiar Módulo"
+          className={cn(
+            "flex h-9 w-full items-center justify-center gap-1.5 rounded-md px-2",
+            "text-sidebar-foreground",
+            "outline-none hover:bg-sidebar-accent/80",
+            "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+            pending && "cursor-not-allowed opacity-90"
+          )}
+        >
+          <span className="flex w-[15%] max-w-6 shrink-0 items-center justify-center">
+            <IconoModulo className="size-4 shrink-0" aria-hidden />
           </span>
-          <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-100 group-hover:opacity-0">
-            {forceChooseArea ? "ELEGIR MÓDULO" : labelActual}
+          <span className="min-w-0 max-w-[85%] truncate text-center text-xs font-semibold tracking-wide">
+            {labelUsuario}
           </span>
-          <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tracking-wide transition-opacity duration-150 opacity-0 group-hover:opacity-100">
-            CAMBIAR MÓDULO
-          </span>
-        </span>
-      </button>
+        </button>
+      ) : (
+        <p
+          className={cn(
+            "flex h-9 w-full items-center justify-center rounded-md px-2",
+            "truncate text-center text-xs font-semibold tracking-wide",
+            "text-sidebar-foreground"
+          )}
+        >
+          {labelUsuario}
+        </p>
+      )}
 
-      <Dialog open={areasOpen} onOpenChange={handleAreasOpenChange}>
+      <Dialog open={usuarioOpen} onOpenChange={handleUsuarioOpenChange}>
         <AppModal
           size="sm"
-          title="Módulos De La Aplicación"
+          title="Elegir Usuario"
           padding="sm"
-          showCloseButton={!forceChooseArea}
+          showCloseButton={!forceChoose}
+          footerClassName={forceChoose ? "justify-center" : undefined}
           actions={
-            forceChooseArea ? (
-              <p className="w-full text-center text-xs text-muted-foreground">
-                Elegí un módulo para empezar a navegar.
+            forceChoose ? (
+              <p className="w-full text-center text-sm text-muted-foreground">
+                Tocá un usuario para continuar
               </p>
             ) : (
-              <Button type="button" variant="ghost" onClick={() => setAreasOpen(false)}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setUsuarioOpen(false)}
+                disabled={pending}
+              >
                 Cerrar
               </Button>
             )
           }
         >
           <div className="flex w-full min-w-0 flex-col gap-2">
-            {forceChooseArea ? (
-              <p className="mb-1 text-sm text-foreground">
-                Seleccioná un módulo para comenzar.
+            {cargandoUsuarios ? (
+              <p className="text-sm text-foreground">Cargando…</p>
+            ) : null}
+            {usuariosError ? (
+              <p className="text-sm text-destructive">{usuariosError}</p>
+            ) : null}
+            {!cargandoUsuarios && !usuariosError && usuarios.length === 0 ? (
+              <p className="text-sm text-foreground">
+                No hay usuarios configurados. Cargá sucursal y módulos en Usuarios.
               </p>
             ) : null}
-            {MAIN_APP_AREAS.map((area) => {
-              const Icon = areaIcons[area.id];
-              const esActual = area.id === currentId && !forceChooseArea;
-              return (
-                <button
-                  key={area.id}
-                  type="button"
-                  onClick={() => handleSelectArea(area.id)}
-                  disabled={pending}
-                  className={cn(areaOptionVariants({ current: esActual }))}
-                >
-                  <span className="flex items-center gap-2">
-                    <Icon
+            {!cargandoUsuarios && usuarios.length > 0 ? (
+              <div
+                className="flex max-h-[min(24rem,50vh)] w-full min-w-0 flex-col gap-2 overflow-y-auto"
+                role="list"
+                aria-label="Usuarios disponibles"
+              >
+                {usuarios.map((u) => {
+                  const sucursal = etiquetaSucursalPorDefecto(u.sucursalPorDefecto);
+                  return (
+                    <Button
+                      key={u.idPersonal}
+                      type="button"
+                      variant="outline"
+                      role="listitem"
+                      disabled={pending}
+                      onClick={() => aplicarUsuario(u)}
                       className={cn(
-                        "h-4 w-4 shrink-0",
-                        esActual ? "text-foreground" : "text-muted-foreground"
+                        "h-auto w-full justify-start px-3 py-2.5 text-left",
+                        "whitespace-normal"
                       )}
-                      aria-hidden
-                    />
-                    <span className="block text-sm font-semibold leading-tight text-foreground">
-                      {areaLabelMayusculas(area.label)}
-                    </span>
-                    {area.requierePassword ? (
-                      <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                        Con clave
+                    >
+                      <span className="flex min-w-0 flex-col items-start gap-0.5">
+                        <span className="w-full truncate text-sm font-semibold tracking-wide">
+                          {nombreUsuarioLabel(u.nombrePersonal)}
+                        </span>
+                        {sucursal ? (
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {sucursal}
+                          </span>
+                        ) : null}
                       </span>
-                    ) : null}
+                    </Button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        </AppModal>
+      </Dialog>
+
+      <Dialog open={moduloOpen} onOpenChange={setModuloOpen}>
+        <AppModal
+          size="sm"
+          title="Cambiar Módulo"
+          padding="sm"
+          actions={
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setModuloOpen(false)}
+              disabled={pending}
+            >
+              Cerrar
+            </Button>
+          }
+        >
+          <div
+            className="flex w-full min-w-0 flex-col gap-2"
+            role="list"
+            aria-label="Módulos disponibles"
+          >
+            {(usuarioSesion?.modulosPermitidos ?? []).map((id) => {
+              const area = getMainAppAreaById(id);
+              const Icono = ICONO_MODULO[id];
+              const activo = id === currentId;
+              return (
+                <Button
+                  key={id}
+                  type="button"
+                  role="listitem"
+                  variant={activo ? "default" : "outline"}
+                  disabled={pending || !usuarioSesion}
+                  onClick={() => {
+                    if (!usuarioSesion) return;
+                    aplicarModulo(usuarioSesion, id);
+                  }}
+                  className={cn(
+                    "h-auto w-full justify-start gap-3 px-3 py-2.5 text-left",
+                    "whitespace-normal"
+                  )}
+                >
+                  <Icono className="size-4 shrink-0" aria-hidden />
+                  <span className="min-w-0 truncate text-sm font-semibold tracking-wide">
+                    {areaLabelMayusculas(area.label)}
                   </span>
-                </button>
+                </Button>
               );
             })}
           </div>
         </AppModal>
       </Dialog>
 
-      <Dialog
-        open={claveOpen}
-        onOpenChange={(open) => {
-          setClaveOpen(open);
-          if (!open) {
-            setPendingAreaId(null);
-            if (forceChooseArea || !yaEligioArea()) {
-              setAreasOpen(true);
-            }
-          }
-        }}
-      >
+      <Dialog open={claveOpen} onOpenChange={handleClaveOpenChange}>
         <AppModal
           size="sm"
           title={
@@ -274,20 +398,14 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
             <>
               <Button
                 variant="ghost"
-                onClick={() => {
-                  setClaveOpen(false);
-                  setPendingAreaId(null);
-                  if (forceChooseArea || !yaEligioArea()) {
-                    setAreasOpen(true);
-                  }
-                }}
+                onClick={handleCancelarClave}
                 disabled={pending}
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleActivarYNavegar}
-                disabled={pending || !clave || !pendingAreaId}
+                disabled={pending || !clave || !pendingUsuario || !pendingAreaId}
               >
                 {pending ? "Verificando..." : "Ingresar"}
               </Button>

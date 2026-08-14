@@ -19,6 +19,7 @@ import {
   Scale,
   Settings,
   Tags,
+  Users,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -46,4 +47,5 @@ export const ADM_ICON_MAP: Record<AdmIconId, LucideIcon> = {
   "link-2": Link2,
   "package-search": PackageSearch,
   tags: Tags,
+  users: Users,
 };

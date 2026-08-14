@@ -48,6 +48,7 @@ import NuevoItemTintometricoModal, {
 } from "@/components/pedidos/NuevoItemTintometricoModal";
 import { deletePedidoTintometricoItemAction } from "@/actions/pedidos";
 import { buildCodExtTintometrico } from "@/lib/pedidosTintometrico";
+import { useAplicarSucursalPreferidaSiVacia } from "@/lib/hooks/useAplicarSucursalPreferidaSiVacia";
 
 type ItemTintometrico = {
   key: string;
@@ -111,6 +112,11 @@ export default function PedidoTintometricoPageClient({
   const [q, setQ] = useState("");
   const [deletingKey, setDeletingKey] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  useAplicarSucursalPreferidaSiVacia(filtroSucursal || null, (codigo) => {
+    if (!sucursales.some((s) => s.codigo === codigo)) return;
+    setFiltroSucursal(codigo);
+  });
 
   const modalOpen = searchParams.get("modal") === MODAL_PARAM;
 

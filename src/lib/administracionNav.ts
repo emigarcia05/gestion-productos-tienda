@@ -1,11 +1,12 @@
 /**
- * Navegación del área **Administración**: 4 pilares en sidebar + árbol
+ * Navegación del área **Administración**: 5 pilares en sidebar + árbol
  * de decisiones en acordeón vertical (`AdministracionAccordionNav`).
  *
  * FINANZAS → BALANCE | OPERACIONES → pantallas
  * LISTA PRECIOS → PX TIENDA | PROVEEDORES | ANÁLISIS M.C. → pantallas
  * PEDIDO A FÁB. → pantallas
  * ESTADÍSTICAS → VENTAS (pantalla) | CONFIGURACION → pantallas
+ * USUARIOS → pantallas
  */
 
 import {
@@ -19,12 +20,14 @@ import {
   PEDIDO_A_FABRICA_ROUTES,
 } from "@/lib/pedidoAFabricaRoutes";
 import { PERMISOS } from "@/lib/permisos";
+import { USUARIOS_PATH } from "@/lib/usuarios";
 
 export type AdmPillarId =
   | "finanzas"
   | "listas-precios"
   | "pedido-a-fabrica"
-  | "estadisticas";
+  | "estadisticas"
+  | "usuarios";
 
 export type AdmIconId =
   | "landmark"
@@ -47,7 +50,8 @@ export type AdmIconId =
   | "list"
   | "link-2"
   | "package-search"
-  | "tags";
+  | "tags"
+  | "users";
 
 export interface AdmScreenDef {
   id: string;
@@ -257,6 +261,16 @@ const estadisticasConfiguracionScreens: AdmScreenDef[] = [
   },
 ];
 
+const usuariosScreens: AdmScreenDef[] = [
+  {
+    id: "usuarios",
+    label: "Usuarios",
+    href: USUARIOS_PATH,
+    icon: "users",
+    permiso: PERMISOS.usuarios.acceso,
+  },
+];
+
 export const ADM_PILLARS: AdmPillarDef[] = [
   {
     id: "finanzas",
@@ -321,6 +335,12 @@ export const ADM_PILLARS: AdmPillarDef[] = [
         screens: estadisticasConfiguracionScreens,
       },
     ],
+  },
+  {
+    id: "usuarios",
+    label: "USUARIOS",
+    icon: "users",
+    screens: usuariosScreens,
   },
 ];
 
@@ -392,8 +412,14 @@ export function isAdmPillarActive(pathname: string, pillar: AdmPillarDef): boole
       collectPillarScreens(pillar).some((s) => isAdmScreenActive(pathname, s))
     );
   }
-  // FINANZAS: /finanzas/* excepto analisis-mc (está en LISTA PRECIOS)
+  if (pillar.id === "usuarios") {
+    return pathname === USUARIOS_PATH || pathname.startsWith(`${USUARIOS_PATH}/`);
+  }
+  // FINANZAS: /finanzas/* excepto analisis-mc (LISTA PRECIOS) y usuarios (USUARIOS)
   if (pathname.startsWith("/finanzas/analisis-mc")) return false;
+  if (pathname === USUARIOS_PATH || pathname.startsWith(`${USUARIOS_PATH}/`)) {
+    return false;
+  }
   return (
     pathname === "/finanzas" ||
     pathname.startsWith("/finanzas/") ||

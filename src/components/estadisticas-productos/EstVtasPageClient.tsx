@@ -25,6 +25,8 @@ import EstVtasGraficoBarrasMensual from "@/components/estadisticas-productos/Est
 import EstVtasGraficoTopProductos from "@/components/estadisticas-productos/EstVtasGraficoTopProductos";
 import EstVtasGraficoVarianteBarras from "@/components/estadisticas-productos/EstVtasGraficoVarianteBarras";
 import { matchByMultiTerm } from "@/lib/busqueda";
+import { filterItemsBySelectSearch } from "@/lib/selectSearch";
+import SelectSearchInput from "@/components/shared/SelectSearchInput";
 import {
   agregarTopProductos,
   agregarUnidadesMensualesAnio,
@@ -150,6 +152,8 @@ export default function EstVtasPageClient({
   const [filtUnidad, setFiltUnidad] = useState<EstVtasModoUnidad>("unidad");
   const [aniosOpen, setAniosOpen] = useState(false);
   const [mesesOpen, setMesesOpen] = useState(false);
+  const [aniosQuery, setAniosQuery] = useState("");
+  const [mesesQuery, setMesesQuery] = useState("");
   const aniosMultiRef = useRef<HTMLDivElement>(null);
   const mesesMultiRef = useRef<HTMLDivElement>(null);
   const [dimension1, setDimension1] =
@@ -176,9 +180,11 @@ export default function EstVtasPageClient({
       const t = e.target as Node;
       if (aniosMultiRef.current && !aniosMultiRef.current.contains(t)) {
         setAniosOpen(false);
+        setAniosQuery("");
       }
       if (mesesMultiRef.current && !mesesMultiRef.current.contains(t)) {
         setMesesOpen(false);
+        setMesesQuery("");
       }
     }
     if (aniosOpen || mesesOpen) {
@@ -211,6 +217,20 @@ export default function EstVtasPageClient({
     const set = new Set(periodos.map((p) => p.anio));
     return [...set].sort((a, b) => b - a);
   }, [periodos]);
+
+  const aniosFiltrados = useMemo(
+    () =>
+      filterItemsBySelectSearch(aniosOpciones, aniosQuery, (a) => {
+        const conDatos = [...periodosConVentas].some((k) => k.startsWith(`${a}-`));
+        return conDatos ? String(a) : `${a} (SIN DATOS)`;
+      }),
+    [aniosOpciones, aniosQuery, periodosConVentas]
+  );
+
+  const mesesFiltrados = useMemo(
+    () => filterItemsBySelectSearch(MESES_CALENDARIO, mesesQuery, (m) => m.etiqueta),
+    [mesesQuery]
+  );
 
   const labelAnios = etiquetaAniosSeleccionados(filtAnios);
   const labelMeses = etiquetaMesesSeleccionados(filtMeses);
@@ -620,7 +640,12 @@ export default function EstVtasPageClient({
                       type="button"
                       onClick={() => {
                         setMesesOpen(false);
-                        setAniosOpen((o) => !o);
+                        setMesesQuery("");
+                        setAniosOpen((o) => {
+                          const next = !o;
+                          if (!next) setAniosQuery("");
+                          return next;
+                        });
                       }}
                       className={cn(
                         SELECT_TRIGGER_FILTER_CLASS,
@@ -638,38 +663,53 @@ export default function EstVtasPageClient({
                     </button>
                     {aniosOpen ? (
                       <div
-                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                        className="absolute top-full left-0 z-50 mt-1 flex max-h-72 min-w-full flex-col overflow-hidden rounded-md border border-border bg-popover shadow-md"
                         role="listbox"
                         aria-multiselectable="true"
                       >
-                        {aniosOpciones.map((a) => {
-                          const selected = filtAnios.includes(a);
-                          const conDatos = [...periodosConVentas].some((k) =>
-                            k.startsWith(`${a}-`)
-                          );
-                          return (
-                            <label
-                              key={a}
-                              role="option"
-                              aria-selected={selected}
-                              className={cn(
-                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
-                                selected && "bg-muted"
-                              )}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={() => toggleAnio(a)}
-                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                                aria-label={String(a)}
-                              />
-                              <span>
-                                {conDatos ? a : `${a} (SIN DATOS)`}
-                              </span>
-                            </label>
-                          );
-                        })}
+                        <div className="shrink-0 border-b border-border p-1">
+                          <SelectSearchInput
+                            value={aniosQuery}
+                            onValueChange={setAniosQuery}
+                            autoFocus
+                          />
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto p-1">
+                          {aniosFiltrados.length === 0 ? (
+                            <p className="px-2 py-1.5 text-sm text-muted-foreground" role="status">
+                              SIN RESULTADOS
+                            </p>
+                          ) : (
+                            aniosFiltrados.map((a) => {
+                              const selected = filtAnios.includes(a);
+                              const conDatos = [...periodosConVentas].some((k) =>
+                                k.startsWith(`${a}-`)
+                              );
+                              return (
+                                <label
+                                  key={a}
+                                  role="option"
+                                  aria-selected={selected}
+                                  className={cn(
+                                    "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                                    selected && "bg-muted"
+                                  )}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selected}
+                                    onChange={() => toggleAnio(a)}
+                                    className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                    aria-label={String(a)}
+                                  />
+                                  <span>
+                                    {conDatos ? a : `${a} (SIN DATOS)`}
+                                  </span>
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
                       </div>
                     ) : null}
                   </div>
@@ -685,7 +725,12 @@ export default function EstVtasPageClient({
                       type="button"
                       onClick={() => {
                         setAniosOpen(false);
-                        setMesesOpen((o) => !o);
+                        setAniosQuery("");
+                        setMesesOpen((o) => {
+                          const next = !o;
+                          if (!next) setMesesQuery("");
+                          return next;
+                        });
                       }}
                       className={cn(
                         SELECT_TRIGGER_FILTER_CLASS,
@@ -703,33 +748,48 @@ export default function EstVtasPageClient({
                     </button>
                     {mesesOpen ? (
                       <div
-                        className="absolute top-full left-0 z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                        className="absolute top-full left-0 z-50 mt-1 flex max-h-72 min-w-full flex-col overflow-hidden rounded-md border border-border bg-popover shadow-md"
                         role="listbox"
                         aria-multiselectable="true"
                       >
-                        {MESES_CALENDARIO.map((m) => {
-                          const selected = filtMeses.includes(m.valor);
-                          return (
-                            <label
-                              key={m.valor}
-                              role="option"
-                              aria-selected={selected}
-                              className={cn(
-                                "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
-                                selected && "bg-muted"
-                              )}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={() => toggleMes(m.valor)}
-                                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                                aria-label={m.etiqueta}
-                              />
-                              <span>{m.etiqueta}</span>
-                            </label>
-                          );
-                        })}
+                        <div className="shrink-0 border-b border-border p-1">
+                          <SelectSearchInput
+                            value={mesesQuery}
+                            onValueChange={setMesesQuery}
+                            autoFocus
+                          />
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto p-1">
+                          {mesesFiltrados.length === 0 ? (
+                            <p className="px-2 py-1.5 text-sm text-muted-foreground" role="status">
+                              SIN RESULTADOS
+                            </p>
+                          ) : (
+                            mesesFiltrados.map((m) => {
+                              const selected = filtMeses.includes(m.valor);
+                              return (
+                                <label
+                                  key={m.valor}
+                                  role="option"
+                                  aria-selected={selected}
+                                  className={cn(
+                                    "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted",
+                                    selected && "bg-muted"
+                                  )}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selected}
+                                    onChange={() => toggleMes(m.valor)}
+                                    className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                    aria-label={m.etiqueta}
+                                  />
+                                  <span>{m.etiqueta}</span>
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
                       </div>
                     ) : null}
                   </div>

@@ -30,6 +30,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { filterItemsBySelectSearch } from "@/lib/selectSearch";
+import SelectSearchInput from "@/components/shared/SelectSearchInput";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import {
   TIPOS_PEDIDO,
@@ -44,6 +46,8 @@ import {
   listarProveedoresConPedidoActivoAction,
 } from "@/actions/pedidos";
 import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
+import { avisarIndicadorSlidenav } from "@/lib/indicadorSlidenav";
+import { leerSucursalPreferida } from "@/lib/sucursalPreferida";
 import SobreStockReposicionAdvertenciaModal from "@/components/shared/SobreStockReposicionAdvertenciaModal";
 import ReposicionProveedorPrioritarioModal, {
   type ReposicionProveedorPrioritarioSeleccion,
@@ -133,6 +137,7 @@ export default function GenerarPedidoToolbarButton({
   const [reposicionPrioritarioSeleccion, setReposicionPrioritarioSeleccion] =
     useState<ReposicionProveedorPrioritarioSeleccion[] | null>(null);
   const [multiTipoOpen, setMultiTipoOpen] = useState(false);
+  const [tipoQuery, setTipoQuery] = useState("");
   const [hayItems, setHayItems] = useState<boolean | null>(null);
   const [verificandoItems, setVerificandoItems] = useState(false);
   const [errorVerificacion, setErrorVerificacion] = useState<string | null>(null);
@@ -142,7 +147,7 @@ export default function GenerarPedidoToolbarButton({
   const proveedoresSeqRef = useRef(0);
 
   const aplicarDefaults = useCallback(() => {
-    setSucursal(defaultSucursal);
+    setSucursal(defaultSucursal || leerSucursalPreferida() || "");
     setProveedor(defaultProveedor.trim());
     setTipos(tiposInicialesParaModulo(modulo, defaultTipos));
   }, [defaultSucursal, defaultProveedor, defaultTipos, modulo]);
@@ -326,6 +331,7 @@ export default function GenerarPedidoToolbarButton({
     sentViaWhatsApp: boolean;
   }) {
     onGeneradoExito?.();
+    avisarIndicadorSlidenav();
     router.refresh();
     setReposicionPrioritarioSeleccion(null);
     setReposicionPrioritarioOpen(false);
@@ -514,6 +520,7 @@ export default function GenerarPedidoToolbarButton({
                 onOpenChange={(next) => {
                   if (!sucursal) return;
                   setMultiTipoOpen(next);
+                  if (!next) setTipoQuery("");
                 }}
               >
                 <DropdownMenu.Trigger asChild>
@@ -544,54 +551,86 @@ export default function GenerarPedidoToolbarButton({
                 <DropdownMenu.Portal>
                   <DropdownMenu.Content
                     className={cn(
-                      "select-content-filtro z-[200] max-h-[min(18rem,var(--radix-dropdown-menu-content-available-height))] min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md",
+                      "select-content-filtro z-[200] flex max-h-[min(18rem,var(--radix-dropdown-menu-content-available-height))] min-w-[var(--radix-dropdown-menu-trigger-width)] flex-col overflow-hidden rounded-md border border-border bg-popover p-0 text-popover-foreground shadow-md",
                       "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
                     )}
                     side="bottom"
                     align="start"
                     sideOffset={4}
                     collisionPadding={8}
+                    onCloseAutoFocus={(e) => e.preventDefault()}
                   >
-                    {(modulo === "a-fabrica"
-                      ? OPCIONES_TIPO.filter((o) => o.value === "A FÁBRICA")
-                      : OPCIONES_TIPO
-                    ).map((opt) => {
-                      const selected = tipos.includes(opt.value);
-                      return (
-                        <DropdownMenu.Item
-                          key={opt.value}
-                          className={cn(
-                            "cursor-pointer rounded-sm px-2 py-1.5 text-sm font-medium outline-none select-none",
-                            "focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-muted"
-                          )}
-                          onSelect={(e) => e.preventDefault()}
-                          asChild
-                        >
-                          <label className="flex w-full cursor-pointer items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              onChange={() => {
-                                if (selected) {
-                                  setTipos((prev) => {
-                                    const next = prev.filter((k) => k !== opt.value);
-                                    if (next.length === 0) setProveedor("");
-                                    return next;
-                                  });
-                                } else {
-                                  setTipos((prev) =>
-                                    prev.includes(opt.value) ? prev : [...prev, opt.value]
-                                  );
-                                }
-                              }}
-                              className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
-                              aria-label={opt.label}
-                            />
-                            <span>{opt.label}</span>
-                          </label>
-                        </DropdownMenu.Item>
-                      );
-                    })}
+                    <div className="shrink-0 border-b border-border p-1">
+                      <SelectSearchInput
+                        value={tipoQuery}
+                        onValueChange={setTipoQuery}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-y-auto p-1">
+                      {(() => {
+                        const base =
+                          modulo === "a-fabrica"
+                            ? OPCIONES_TIPO.filter((o) => o.value === "A FÁBRICA")
+                            : OPCIONES_TIPO;
+                        const opciones = filterItemsBySelectSearch(
+                          base,
+                          tipoQuery,
+                          (o) => o.label
+                        );
+                        if (opciones.length === 0) {
+                          return (
+                            <p
+                              className="px-2 py-1.5 text-sm text-muted-foreground"
+                              role="status"
+                            >
+                              SIN RESULTADOS
+                            </p>
+                          );
+                        }
+                        return opciones.map((opt) => {
+                          const selected = tipos.includes(opt.value);
+                          return (
+                            <DropdownMenu.Item
+                              key={opt.value}
+                              className={cn(
+                                "cursor-pointer rounded-sm px-2 py-1.5 text-sm font-medium outline-none select-none",
+                                "focus:bg-accent focus:text-accent-foreground data-[highlighted]:bg-muted"
+                              )}
+                              onSelect={(e) => e.preventDefault()}
+                              asChild
+                            >
+                              <label className="flex w-full cursor-pointer items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={() => {
+                                    if (selected) {
+                                      setTipos((prev) => {
+                                        const next = prev.filter(
+                                          (k) => k !== opt.value
+                                        );
+                                        if (next.length === 0) setProveedor("");
+                                        return next;
+                                      });
+                                    } else {
+                                      setTipos((prev) =>
+                                        prev.includes(opt.value)
+                                          ? prev
+                                          : [...prev, opt.value]
+                                      );
+                                    }
+                                  }}
+                                  className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                                  aria-label={opt.label}
+                                />
+                                <span>{opt.label}</span>
+                              </label>
+                            </DropdownMenu.Item>
+                          );
+                        });
+                      })()}
+                    </div>
                   </DropdownMenu.Content>
                 </DropdownMenu.Portal>
               </DropdownMenu.Root>

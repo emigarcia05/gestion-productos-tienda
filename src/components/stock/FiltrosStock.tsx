@@ -21,6 +21,7 @@ import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
 import type { ControlStockData, Sucursal } from "@/actions/stock";
+import { useAplicarSucursalPreferidaSiVacia } from "@/lib/hooks/useAplicarSucursalPreferidaSiVacia";
 
 const SUCURSALES: { value: Sucursal; label: string }[] = [
   { value: "guaymallen", label: "GUAYMALLÉN" },
@@ -61,6 +62,17 @@ export default function FiltrosStock({
     qActual,
     debounceMs: 700,
     onDebouncedSearch: (value) => navigate({ q: value }),
+  });
+
+  useAplicarSucursalPreferidaSiVacia(sucursalActual, (preferida) => {
+    const p = new URLSearchParams();
+    p.set("sucursal", preferida);
+    if (q) p.set("q", q);
+    if (marcaActual) p.set("marca", marcaActual);
+    if (rubroActual) p.set("rubro", rubroActual);
+    if (soloNegativoActual) p.set("soloNegativo", "true");
+    if (ordenActual) p.set("orden", ordenActual);
+    router.replace(`${pathname}?${p.toString()}`);
   });
 
   function buildParams(updates: {
