@@ -1,8 +1,9 @@
 "use server";
 
+import { firstZodErrorMessage, requireEditorFinanzas } from "@/lib/actionHelpers";
 import { revalidatePath } from "next/cache";
 import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
-import { esEditor, getRol } from "@/lib/sesion";
+import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
@@ -43,27 +44,6 @@ function revalidateGastosPaths(): void {
   revalidatePath("/finanzas");
   revalidatePath("/finanzas/balance/gastos");
   revalidatePedidoUrgenteTrasCambioIvaSaldo();
-}
-
-function firstZodErrorMessage(error: {
-  flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
-}): string {
-  const flattened = error.flatten();
-  return (
-    [...Object.values(flattened.fieldErrors).flat(), ...flattened.formErrors][0] ??
-    "Datos inválidos."
-  );
-}
-
-async function requireEditorFinanzas(): Promise<{ ok: false; error: string } | null> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Sin permisos de editor." };
-  }
-  return null;
 }
 
 /** Gasto eventual: Ayuda Vendedor (`cargarGasto`) o el mismo flujo desde Balance · Gastos. */

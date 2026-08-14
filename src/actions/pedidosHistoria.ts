@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
-import { prismaCuidSchema } from "@/lib/validations/common";
+import { listaPreciosCodTiendaSchema, prismaCuidSchema } from "@/lib/validations/common";
 import { z } from "zod";
 import { generarPdfPedido } from "@/lib/generarPdfPedido";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
@@ -45,7 +45,7 @@ const guardarRecepcionSchema = z.object({
           (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
           prismaCuidSchema.optional()
         ),
-        codTienda: z.string().min(1, "Cod. tienda inválido."),
+        codTienda: listaPreciosCodTiendaSchema,
         cantPedida: z.coerce.number().int().min(0, "Cant. pedida inválida."),
         cantRecibida: z.coerce.number().int().min(0, "Cant. recibida inválida").nullable(),
       })

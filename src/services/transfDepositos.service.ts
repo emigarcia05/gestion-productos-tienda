@@ -5,7 +5,6 @@ import {
   TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS,
   TRANSF_DEPOSITOS_VENTANA_HISTORIAL_DIAS,
 } from "@/lib/transfDepositosControl";
-import type { RegistrarControlTransfDepositosInput } from "@/lib/validations/transfDepositos";
 
 export type SucursalCodigoTransf = "guaymallen" | "maipu";
 
@@ -13,13 +12,6 @@ export type ControlTransfDepositosReciente = {
   codTienda: string;
   cantidad: number;
   createdAtIso: string;
-};
-
-export type RegistrarControlTransfDepositosResult = {
-  id: string;
-  createdAtIso: string;
-  /** true si se persistió pese a haber un duplicado reciente (forzar). */
-  eraDuplicado: boolean;
 };
 
 export type HistorialTransfDepositosItem = {
@@ -136,89 +128,6 @@ export async function listarHistorialTransfDepositosPorProducto(
   return Array.from(porPar.values()).sort((a, b) =>
     a.titulo.localeCompare(b.titulo, "es")
   );
-}
-
-async function buscarDuplicadoReciente(input: {
-  codTienda: string;
-  origen: SucursalCodigoTransf;
-  destino: SucursalCodigoTransf;
-  cantidad: number;
-}): Promise<{ id: string; createdAt: Date } | null> {
-  const row = await prisma.prodStockTransfDep.findFirst({
-    where: {
-      codTienda: input.codTienda,
-      origenCodigo: input.origen,
-      destinoCodigo: input.destino,
-      cantidad: input.cantidad,
-      createdAt: { gte: desdeVentanaDuplicado() },
-    },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, createdAt: true },
-  });
-  return row;
-}
-
-/**
- * Registra un control de transferencia. Si hay duplicado reciente y `forzar` es false,
- * no persiste y devuelve advertencia con la fecha del último registro.
- * Reservado para el futuro export Excel.
- */
-export async function registrarControlTransfDepositos(
-  input: RegistrarControlTransfDepositosInput
-): Promise<
-  ServiceResult<
-    | RegistrarControlTransfDepositosResult
-    | {
-        requiereConfirmacion: true;
-        ultimoCreatedAtIso: string;
-      }
-  >
-> {
-  try {
-    const dup = await buscarDuplicadoReciente({
-      codTienda: input.codTienda,
-      origen: input.origen,
-      destino: input.destino,
-      cantidad: input.cantidad,
-    });
-
-    if (dup && !input.forzar) {
-      return {
-        success: true,
-        data: {
-          requiereConfirmacion: true,
-          ultimoCreatedAtIso: dup.createdAt.toISOString(),
-        },
-      };
-    }
-
-    const created = await prisma.prodStockTransfDep.create({
-      data: {
-        codTienda: input.codTienda,
-        origenCodigo: input.origen,
-        destinoCodigo: input.destino,
-        cantidad: input.cantidad,
-        /** Pendiente de Excel origen (EGRESO) y destino (INGRESO). */
-        exportadoOrigenAt: null,
-        exportadoDestinoAt: null,
-      },
-      select: { id: true, createdAt: true },
-    });
-
-    return {
-      success: true,
-      data: {
-        id: created.id,
-        createdAtIso: created.createdAt.toISOString(),
-        eraDuplicado: Boolean(dup),
-      },
-    };
-  } catch (e) {
-    console.error("[registrarControlTransfDepositos]", e);
-    const message =
-      e instanceof Error ? e.message : "Error al registrar control.";
-    return { success: false, error: message };
-  }
 }
 
 /** Transferir = Excel EGRESO (origen); Recibir = Excel INGRESO (destino). */

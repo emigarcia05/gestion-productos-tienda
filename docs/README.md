@@ -31,7 +31,7 @@ Prompts operativos de agentes (FullStack / Front / Back / Auditoría): [`.cursor
 - Estilos: tokens shadcn + `cn()` de `@/lib/utils`; no inventar clases globales sin documentarlas.
 - Filtros: `useFiltrosConBusqueda` + `FiltroBusquedaInput` cuando aplique.
 - Tablas: `Table` de `@/components/ui/table`; layouts `ClassicFilteredTableLayout` / `ClassicPageHeader` si el módulo ya los usa.
-- Auth: iron-session y helpers del proyecto; checklist de seguridad en BACKEND_GUIDELINES (§1.2.x).
+- Auth: iron-session y helpers del proyecto; checklist de seguridad en BACKEND_GUIDELINES (Guía para IA + §1.2).
 - Lógica de negocio en servicios, no en la UI ni embutida en actions.
 - Cambios estructurales grandes: preguntar antes de aplicar.
 - Lint: `npx eslint src --max-warnings 0` debe pasar.

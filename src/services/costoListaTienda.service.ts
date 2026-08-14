@@ -63,8 +63,8 @@ export async function establecerCodExtCostoLista(
     });
     return { success: true, data: undefined };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { success: false, error: msg };
+    console.error("[establecerCodExtCostoLista]", e);
+    return { success: false, error: "No se pudo guardar el costo de lista." };
   }
 }
 
@@ -123,17 +123,6 @@ export async function autoAsignarCodExtCostoListaTrasVincular(
   }
 }
 
-export async function listarCandidatosCostoPorCodTienda(codTienda: string) {
-  return prisma.listaPrecioProveedor.findMany({
-    where: { codTiendaVinculo: codTienda, habilitado: true },
-    select: {
-      codExt: true,
-      pxCompraFinalSinIva: true,
-      proveedor: { select: { nombre: true, prefijo: true } },
-    },
-  });
-}
-
 export function etiquetaProveedorCosto(prefijo: string | null, nombre: string): string {
   const p = (prefijo ?? "").trim();
   if (p) return p;
@@ -163,7 +152,7 @@ export async function limpiarCodExtCostoLista(codTienda: string): Promise<Servic
     });
     return { success: true, data: undefined };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { success: false, error: msg };
+    console.error("[limpiarCodExtCostoLista]", e);
+    return { success: false, error: "No se pudo limpiar el costo de lista." };
   }
 }
