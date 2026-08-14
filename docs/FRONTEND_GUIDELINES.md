@@ -941,7 +941,7 @@ Antes de dar por terminada una tarea de frontend:
 ## 6. Organización en Cursor (prompts y reglas persistentes)
 
 - Mapa de guías + **flujo de trabajo canónico** (contrato Zod/`ActionResult` → servicios → actions → UI → docs) y **criterio de hecho**: `docs/README.md`.
-- Archivo recomendado para acceso rápido a prompts operativos: `.cursor/prompts.md`.
+- Archivo recomendado para acceso rápido a prompts operativos: `.cursor/prompts.md`. Prompt de continuación desde `main`: `.cursor/continuacion_promp.md`.
 - `.cursor/prompts.md` incluye el bloque **Dream Team de agentes** (FullStack / Front / Back / Auditoría); para cambios de UI priorizar el perfil frontend o auditor frontend según el objetivo. Plantillas por agente: `.cursor/fullstack_promp.md`, `.cursor/front_promp.md`, `.cursor/back_promp.md`, `.cursor/auditoria_promp.md`.
 - Reglas persistentes activas en `.cursor/rules/`:
   - `manuales-obligatorios.mdc`: obliga lectura de `docs/README.md` y la guía del área (solo secciones relevantes) antes de codificar; la tarea no está completa sin docs al día.

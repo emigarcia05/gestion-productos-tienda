@@ -7,7 +7,9 @@
 | [AGENTEIA_GUIDELINES.md](./AGENTEIA_GUIDELINES.md) | IA Diseño: capas, CSV, scraper, UI Asistente IA |
 | [IA_DISEÑO/](./IA_DISEÑO/) | Índice del módulo, reglas, prompt GPT, ADRs, CSVs |
 
-Prompts operativos de agentes (FullStack / Front / Back / Auditoría): [`.cursor/prompts.md`](../.cursor/prompts.md).
+Prompts operativos de agentes (Continuación / FullStack / Front / Back / Auditoría): [`.cursor/prompts.md`](../.cursor/prompts.md).
+
+Para **seguir trabajando desde `main`** (stack con versiones + nombres de guías vigentes): [`.cursor/continuacion_promp.md`](../.cursor/continuacion_promp.md).
 
 ---
 

@@ -1644,7 +1644,7 @@ Antes de entregar código nuevo o modificado, verificar:
 ## 6. Organización en Cursor (prompts y reglas persistentes)
 
 - Mapa de guías + **flujo de trabajo canónico** (contrato Zod/`ActionResult` → servicios → actions → UI → docs) y **criterio de hecho**: `docs/README.md`.
-- Archivo recomendado para prompts reutilizables: `.cursor/prompts.md`.
+- Archivo recomendado para prompts reutilizables: `.cursor/prompts.md`. Prompt de continuación desde `main`: `.cursor/continuacion_promp.md`.
 - `.cursor/prompts.md` incluye el bloque **Dream Team de agentes** (FullStack / Front / Back / Auditoría); usar el perfil de backend/auditor backend cuando la tarea afecte `src/actions/`, `src/services/`, Prisma, seguridad o integraciones. Plantillas: `.cursor/fullstack_promp.md`, `.cursor/front_promp.md`, `.cursor/back_promp.md`, `.cursor/auditoria_promp.md`.
 - Reglas persistentes activas en `.cursor/rules/`:
   - `manuales-obligatorios.mdc`: exige revisar `docs/README.md` y la guía del área antes de modificar código; sin docs al día la tarea queda incompleta.
