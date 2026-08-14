@@ -53,18 +53,6 @@ export function montoArPesosEnterosToDisplay(pesos: number): string {
   return montoArCentsToDisplayWithCurrency(cents);
 }
 
-/** Saldo entero con signo: `$-36.013,00` / `$36.013,00` (máscara AR, sin decimales fraccionarios). */
-export function montoArPesosEnterosSignedToDisplay(pesos: number): string {
-  if (!Number.isFinite(pesos) || pesos === 0) {
-    return montoArCentsToDisplayWithCurrency(0);
-  }
-  const neg = pesos < 0;
-  const ent = Math.abs(Math.trunc(pesos));
-  const cents = Math.min(ent * 100, MONTO_AR_MASK_MAX_CENTS);
-  const body = montoArCentsToDisplayBody(cents);
-  return neg ? `$-${body}` : `$${body}`;
-}
-
 /** Toolbar / etiquetas compactas: `$-36.013` (sin `,00`). */
 export function montoArPesosEnterosSignedToDisplayCompact(pesos: number): string {
   if (!Number.isFinite(pesos) || pesos === 0) return "$0";

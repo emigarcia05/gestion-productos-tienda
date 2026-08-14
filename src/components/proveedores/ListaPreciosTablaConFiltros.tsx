@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { ArrowDown, Link2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ import FilterBar, {
   LimpiarFiltrosButton,
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import {
   Table,
   TableBody,
@@ -150,6 +151,20 @@ export default function ListaPreciosTablaConFiltros({
   const [habilitadoFilter, setHabilitadoFilter] = useState<string>("");
   const [vinculadoFilter, setVinculadoFilter] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
+  const {
+    q,
+    setQ,
+    ref: busquedaInputRef,
+    handleQChange,
+    isDebouncing,
+  } = useFiltrosConBusqueda({
+    qActual: busqueda,
+    debounceMs: 700,
+    onDebouncedSearch: (value) => {
+      setBusqueda(value);
+      setPagina(1);
+    },
+  });
   const [filasData, setFilasData] = useState<FilaListaPrecioParaCliente[]>([]);
   const [proveedoresOptions, setProveedoresOptions] = useState<ProveedorOption[]>(proveedores);
   const [marcasOptions, setMarcasOptions] = useState<MarcaOption[]>(marcas);
@@ -158,7 +173,6 @@ export default function ListaPreciosTablaConFiltros({
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [total, setTotal] = useState(0);
-  const busquedaInputRef = useRef<HTMLInputElement>(null);
 
   const hasFilterActive =
     !!proveedorId ||
@@ -216,11 +230,6 @@ export default function ListaPreciosTablaConFiltros({
 
   function cambiarVinculado(value: string) {
     setVinculadoFilter(value);
-    reiniciarPagina();
-  }
-
-  function cambiarBusqueda(value: string) {
-    setBusqueda(value);
     reiniciarPagina();
   }
 
@@ -340,6 +349,7 @@ export default function ListaPreciosTablaConFiltros({
     setRubroNombre("");
     setHabilitadoFilter("");
     setVinculadoFilter("");
+    setQ("");
     setBusqueda("");
     setPagina(1);
     setLoading(false);
@@ -471,9 +481,9 @@ export default function ListaPreciosTablaConFiltros({
           <FilterRowSearch className="flex-1">
             <FiltroBusquedaInput
               id="filtro-lista-precios-busqueda"
-              value={busqueda}
-              onChange={cambiarBusqueda}
-              isDebouncing={loading && busqueda.trim().length > 0}
+              value={q}
+              onChange={handleQChange}
+              isDebouncing={isDebouncing}
               inputRef={busquedaInputRef}
               placeholder="BUSCAR POR DESCRIPCIÓN (MÍN. 3 CARACTERES)"
             />

@@ -169,7 +169,7 @@ export default function GestionarEstPorProdColoresModal({
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar color por nombre..."
+                  placeholder="BUSCAR COLOR POR NOMBRE..."
                   className="h-10 pl-9"
                   aria-label="Buscar color por nombre"
                 />

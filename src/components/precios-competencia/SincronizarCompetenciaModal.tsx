@@ -176,7 +176,7 @@ export default function SincronizarCompetenciaModal({
             <Input
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar competidor..."
+              placeholder="BUSCAR COMPETIDOR..."
               disabled={syncing || loadingLista}
               className="w-full pl-9"
               aria-label="Filtrar competidores"

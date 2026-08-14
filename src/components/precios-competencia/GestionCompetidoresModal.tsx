@@ -101,7 +101,7 @@ export default function GestionCompetidoresModal({ open, onOpenChange, onChanged
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar competidor por nombre..."
+                  placeholder="BUSCAR COMPETIDOR POR NOMBRE..."
                   className="pl-9 h-10"
                   aria-label="Buscar competidor por nombre"
                 />

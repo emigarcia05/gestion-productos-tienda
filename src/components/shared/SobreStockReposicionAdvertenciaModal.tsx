@@ -30,8 +30,7 @@ function etiquetaSucursalTabla(codigo: SucursalPedidoEnvio): string {
   return codigo === "maipu" ? "MAIPÚ" : "GUAYMALLÉN";
 }
 
-/** Exportado para extensiones / documentación (mismo patrón que `TableEmptyState`). */
-export const sobreStockAdvertenciaLayoutVariants = cva("flex min-h-0 flex-col", {
+const sobreStockAdvertenciaLayoutVariants = cva("flex min-h-0 flex-col", {
   variants: {
     gap: {
       default: "gap-3",
@@ -43,7 +42,7 @@ export const sobreStockAdvertenciaLayoutVariants = cva("flex min-h-0 flex-col", 
   },
 });
 
-export const sobreStockAdvertenciaTableShellVariants = cva(
+const sobreStockAdvertenciaTableShellVariants = cva(
   "min-h-0 overflow-hidden rounded-lg border border-border bg-background",
   {
     variants: {

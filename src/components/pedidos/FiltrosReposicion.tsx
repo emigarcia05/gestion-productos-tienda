@@ -334,7 +334,7 @@ export default function FiltrosReposicion({
           <FilterRowSearch className="flex-1 w-auto max-w-none">
             <FiltroBusquedaInput
               id="filtro-reposicion-busqueda"
-              placeholder="DESCRIPCIÓN"
+              placeholder="BUSCAR POR DESCRIPCIÓN..."
               value={q}
               onChange={handleQChange}
               isDebouncing={isDebouncing}

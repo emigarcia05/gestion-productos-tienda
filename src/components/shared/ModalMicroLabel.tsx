@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * Color de fuente: `foreground` (negro de UI), no `muted`.
  * No sustituye un <label> asociado a control: usar dentro de <label> o junto a aria-labelledby.
  */
-export const modalMicroLabelVariants = cva(MODAL_MICRO_LABEL_CLASS, {
+const modalMicroLabelVariants = cva(MODAL_MICRO_LABEL_CLASS, {
   variants: {
     align: {
       left: "w-full text-left leading-tight",

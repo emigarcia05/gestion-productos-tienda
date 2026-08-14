@@ -474,7 +474,7 @@ export default function EstCategorizacionPageClient({
             <FilterRowSearch className="flex-1">
               <FiltroBusquedaInput
                 id="filtro-est-categorizacion-descripcion"
-                placeholder="Buscar por descripción..."
+                placeholder="BUSCAR POR DESCRIPCIÓN..."
                 value={q}
                 onChange={(value) => {
                   handleQChange(value);

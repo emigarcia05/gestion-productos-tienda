@@ -74,8 +74,8 @@ const CAT_LINEA_Y_INICIO = PAD.top + 32;
 
 /** Mismo lado que `tabla-row-btn-filled-brand` en fila compacta (`2rem − 0.75rem` → `size-5`). */
 const CHECK_CAT_CLASS = cn(
-  "tabla-check-toggle !size-5 shrink-0 rounded-[2px] border border-[#0072bb] !bg-white p-0",
-  "text-[#0072bb] hover:!bg-white hover:text-[#0072bb]"
+  "tabla-check-toggle !size-5 shrink-0 rounded-[2px] border border-[#0072bb] bg-card p-0",
+  "text-[#0072bb] hover:bg-card hover:text-[#0072bb]"
 );
 
 function fmtPct(n: number): string {
@@ -497,7 +497,7 @@ export default function GraficoMcVsPorcUtilidad({
                         disabled={idsFormas.length === 0}
                         onClick={toggleTodasFormas}
                         className={cn(
-                          "tabla-check-toggle !size-4 shrink-0 rounded-[2px] border border-[#0072bb] !bg-white p-0 text-[#0072bb] hover:!bg-white hover:text-[#0072bb]",
+                          "tabla-check-toggle !size-4 shrink-0 rounded-[2px] border border-[#0072bb] bg-card p-0 text-[#0072bb] hover:bg-card hover:text-[#0072bb]",
                           todasSeleccionadas && "[&_svg]:!text-[#0072bb]"
                         )}
                         aria-pressed={todasSeleccionadas}

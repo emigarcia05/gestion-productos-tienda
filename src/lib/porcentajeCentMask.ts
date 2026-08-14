@@ -42,15 +42,6 @@ export function porcentajeCentNormalizedToDisplay(
   return montoArCentsToDisplayBody(porcentajeCentNormalizedStringToCents(norm, maxCents));
 }
 
-/** Visual con sufijo `%`: `12,26%`. */
-export function porcentajeCentNormalizedToDisplayWithPct(
-  norm: string,
-  maxCents: number = PORCENTAJE_CENT_MASK_MAX_CENTS
-): string {
-  const body = porcentajeCentNormalizedToDisplay(norm, maxCents);
-  return body ? `${body}%` : "";
-}
-
 /** Valor inicial desde número en BD (incluye 0). Tope 0–100 % salvo `sinTope100`. */
 export function porcentajeCentFromNumber(
   n: number,

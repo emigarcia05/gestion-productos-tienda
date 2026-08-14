@@ -7,9 +7,8 @@ import {
   AlertCircle, X, ArrowRight, ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
 import {
   Select,
   SelectContent,
@@ -180,14 +179,40 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
         <TooltipContent>Importar productos desde CSV</TooltipContent>
       </Tooltip>
 
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Importar Productos</DialogTitle>
-        </DialogHeader>
-
+      <AppModal
+        size="lg"
+        className="max-w-2xl"
+        title="Importar Productos"
+        actions={
+          step === "upload" ? (
+            <Button variant="outline" onClick={() => handleClose(false)}>Cancelar</Button>
+          ) : step === "mapear" ? (
+            <>
+              <Button variant="outline" onClick={() => setStep("upload")} className="gap-1.5">
+                <ArrowLeft className="h-4 w-4" /> Volver
+              </Button>
+              <Button
+                onClick={handleImport}
+                disabled={pending || !camposRequeridosMapeados || !proveedorId}
+                className="gap-2 min-w-[130px]"
+              >
+                {pending
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</>
+                  : <><ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} Filas</>
+                }
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={resetForm}>Nueva Importación</Button>
+              <Button onClick={() => handleClose(false)}>Cerrar</Button>
+            </>
+          )
+        }
+      >
         {/* ── PASO 1: Subir archivo ── */}
         {step === "upload" && (
-          <div className="space-y-5 pt-2">
+          <div className="space-y-5">
             {/* Selector de proveedor */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium">PROVEEDOR</label>
@@ -259,16 +284,12 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
               <input ref={fileInputRef} type="file" accept=".csv" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) loadFile(f); }} />
             </div>
-
-            <div className="flex justify-end">
-              <Button variant="outline" onClick={() => handleClose(false)}>Cancelar</Button>
-            </div>
           </div>
         )}
 
         {/* ── PASO 2: Mapear columnas ── */}
         {step === "mapear" && (
-          <div className="space-y-5 pt-2">
+          <div className="space-y-5">
             <p className="text-sm text-muted-foreground">
               Asigná cada columna del archivo a su campo correspondiente.
               Los campos marcados con <span className="text-destructive">*</span> son obligatorios.
@@ -337,28 +358,12 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                 );
               })}
             </div>
-
-            <div className="flex justify-between gap-2">
-              <Button variant="outline" onClick={() => setStep("upload")} className="gap-1.5">
-                <ArrowLeft className="h-4 w-4" /> Volver
-              </Button>
-              <Button
-                onClick={handleImport}
-                disabled={pending || !camposRequeridosMapeados || !proveedorId}
-                className="gap-2 min-w-[130px]"
-              >
-                {pending
-                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</>
-                  : <><ArrowRight className="h-4 w-4" /> Importar {filasCrudas.length} Filas</>
-                }
-              </Button>
-            </div>
           </div>
         )}
 
         {/* ── PASO 3: Resultado ── */}
         {step === "result" && (
-          <div className="space-y-5 pt-2">
+          <div className="space-y-5">
             <div className="grid grid-cols-3 gap-3">
               <ResultStat label="CREADOS"      value={result?.creados ?? 0}      variant="created" />
               <ResultStat label="ACTUALIZADOS" value={result?.actualizados ?? 0} variant="updated" />
@@ -385,14 +390,9 @@ export default function ImportarModal({ proveedores, proveedorPreseleccionado }:
                 Importación completada sin errores.
               </div>
             )}
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={resetForm}>Nueva Importación</Button>
-              <Button onClick={() => handleClose(false)}>Cerrar</Button>
-            </div>
           </div>
         )}
-      </DialogContent>
+      </AppModal>
     </Dialog>
   );
 }

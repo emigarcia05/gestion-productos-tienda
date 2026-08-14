@@ -1000,7 +1000,7 @@ export default function EstVtasPageClient({
               <FilterRowSearch className="flex-1">
                 <FiltroBusquedaInput
                   id="filtro-est-vtas-descripcion"
-                  placeholder="Buscar por descripción..."
+                  placeholder="BUSCAR POR DESCRIPCIÓN..."
                   value={q}
                   onChange={(value) => {
                     handleQChange(value);

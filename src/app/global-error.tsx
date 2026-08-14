@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
@@ -64,23 +65,12 @@ export default function GlobalError({
             </p>
           ) : null}
           <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => reset()}
-              className={cn(
-                "cursor-pointer rounded-lg border border-primary bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground"
-              )}
-            >
+            <Button type="button" onClick={() => reset()}>
               Reintentar
-            </button>
-            <a
-              href={GP_ROUTES.defaultEntry}
-              className={cn(
-                "inline-flex items-center rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground no-underline"
-              )}
-            >
-              Ir al inicio
-            </a>
+            </Button>
+            <Button variant="outline" asChild>
+              <a href={GP_ROUTES.defaultEntry}>Ir Al Inicio</a>
+            </Button>
           </div>
         </div>
       </body>

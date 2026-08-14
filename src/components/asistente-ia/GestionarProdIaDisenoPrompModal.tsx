@@ -451,7 +451,7 @@ export default function GestionarProdIaDisenoPrompModal({
                   disabled={pending || submodulosDisponibles.length === 0}
                 >
                   <SelectTrigger className="h-10 w-full" aria-label="Submódulo">
-                    <SelectValue placeholder="Seleccionar módulo" />
+                    <SelectValue placeholder="SELECCIONAR MÓDULO" />
                   </SelectTrigger>
                   <SelectContent>
                     {submodulosDisponibles.map((nombre) => (

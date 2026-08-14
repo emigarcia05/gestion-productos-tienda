@@ -107,7 +107,7 @@ export const PERMISOS = {
     cargarGasto: { simple: true, editor: true },
   },
 
-  // ─── Página /importar ─────────────────────────────────────────────────────
+  // ─── Importar productos (`ImportarModal` / `importarProductos`) ───────────
   importar: {
     acceso: { simple: false, editor: true },
   },

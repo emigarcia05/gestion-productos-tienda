@@ -328,7 +328,7 @@ export default function GestionarEstPorProdPresentacionModal({
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar presentación..."
+                  placeholder="BUSCAR PRESENTACIÓN..."
                   className="h-10 pl-9"
                   aria-label="Buscar presentación"
                 />
@@ -464,7 +464,7 @@ export default function GestionarEstPorProdPresentacionModal({
                   disabled={pending}
                 >
                   <SelectTrigger className={SELECT_TRIGGER_CLASS} aria-label="Unidad medida">
-                    <SelectValue placeholder="Seleccionar unidad" />
+                    <SelectValue placeholder="SELECCIONAR UNIDAD" />
                   </SelectTrigger>
                   <SelectContent
                     position="popper"
@@ -526,7 +526,7 @@ export default function GestionarEstPorProdPresentacionModal({
                     className={SELECT_TRIGGER_CLASS}
                     aria-label="Convertir a un."
                   >
-                    <SelectValue placeholder="Sin conversion" />
+                    <SelectValue placeholder="SIN CONVERSIÓN" />
                   </SelectTrigger>
                   <SelectContent
                     position="popper"

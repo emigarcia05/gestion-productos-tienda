@@ -8,7 +8,7 @@ export interface RgbColor {
   b: number;
 }
 
-export interface RectSeleccion {
+interface RectSeleccion {
   x: number;
   y: number;
   w: number;
@@ -26,25 +26,11 @@ export function formatRgbTuple({ r, g, b }: RgbColor): string {
   return `(${r},${g},${b})`;
 }
 
-/** Normaliza un rectángulo (permite arrastre en cualquier dirección). */
-export function normalizeRect(
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-): RectSeleccion {
-  const x = Math.min(x0, x1);
-  const y = Math.min(y0, y1);
-  const w = Math.abs(x1 - x0);
-  const h = Math.abs(y1 - y0);
-  return { x, y, w, h };
-}
-
 /**
  * Promedia píxeles opacos en el rectángulo del bitmap del canvas.
  * Coordenadas en espacio del canvas (no CSS).
  */
-export function promedioRgbEnRect(
+function promedioRgbEnRect(
   ctx: CanvasRenderingContext2D,
   rect: RectSeleccion,
   canvasW: number,
@@ -97,23 +83,4 @@ export function promedioRgbEnPunto(
     canvasW,
     canvasH,
   );
-}
-
-/**
- * Convierte coordenadas del evento (CSS) al espacio del bitmap del canvas
- * cuando el canvas se estira a su caja CSS (sin letterbox).
- */
-export function cssPointToCanvasPoint(
-  clientX: number,
-  clientY: number,
-  canvas: HTMLCanvasElement,
-): { x: number; y: number } | null {
-  const rect = canvas.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return null;
-  if (canvas.width <= 0 || canvas.height <= 0) return null;
-
-  const x = ((clientX - rect.left) / rect.width) * canvas.width;
-  const y = ((clientY - rect.top) / rect.height) * canvas.height;
-  if (x < 0 || y < 0 || x > canvas.width || y > canvas.height) return null;
-  return { x, y };
 }

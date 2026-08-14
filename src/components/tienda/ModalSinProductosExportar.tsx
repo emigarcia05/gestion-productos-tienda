@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -17,17 +12,17 @@ interface Props {
 export default function ModalSinProductosExportar({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="text-base">Exportación</DialogTitle>
-        </DialogHeader>
-        <p className="text-sm text-foreground py-1">No hay actualizaciones para mostrar</p>
-        <DialogFooter>
+      <AppModal
+        size="sm"
+        title="Exportación"
+        actions={
           <Button type="button" onClick={() => onOpenChange(false)}>
             Aceptar
           </Button>
-        </DialogFooter>
-      </DialogContent>
+        }
+      >
+        <p className="text-sm text-foreground py-1">No hay actualizaciones para mostrar</p>
+      </AppModal>
     </Dialog>
   );
 }

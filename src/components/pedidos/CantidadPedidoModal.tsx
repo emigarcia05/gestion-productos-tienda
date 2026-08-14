@@ -1,13 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -55,12 +50,16 @@ export default function CantidadPedidoModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md text-center">
-        <DialogHeader>
-          <DialogTitle className="text-base text-center text-accent2">Agregar Al Pedido</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4 py-2">
+      <AppModal
+        size="sm"
+        title="Agregar Al Pedido"
+        actions={
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+        }
+      >
+        <div className="space-y-4 py-2 text-center">
           <div>
             <p className="text-xs text-muted-foreground mb-1">DESCRIPCIÓN</p>
             <p className="text-sm font-medium text-foreground">
@@ -70,9 +69,7 @@ export default function CantidadPedidoModal({
 
           <p className="text-sm font-medium">¿CUÁNTAS UNIDADES DESEA PEDIR?</p>
 
-          {/* Contenedor fijo para alinear las 3 filas */}
           <div className="w-[14rem] mx-auto space-y-3">
-            {/* Fila 1: 1, 2, 3, 4, 5 */}
             <div className="grid grid-cols-5 gap-2">
               {CANTIDADES_FILA1.map((n) => (
                 <Button
@@ -88,7 +85,6 @@ export default function CantidadPedidoModal({
               ))}
             </div>
 
-            {/* Fila 2: 6, 12, 24, 50 — centrada en el mismo ancho */}
             <div className="flex justify-center gap-2">
               {CANTIDADES_FILA2.map((n) => (
                 <Button
@@ -104,7 +100,6 @@ export default function CantidadPedidoModal({
               ))}
             </div>
 
-            {/* Fila 3: Otra Cantidad (una fila) + input y Agregar centrados */}
             <div className="flex flex-col items-center gap-2">
               <span className="text-sm text-muted-foreground">OTRA CANTIDAD</span>
               <div className="flex items-center justify-center gap-2">
@@ -131,13 +126,7 @@ export default function CantidadPedidoModal({
             </div>
           </div>
         </div>
-
-        <DialogFooter className="flex justify-center pt-8">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+      </AppModal>
     </Dialog>
   );
 }

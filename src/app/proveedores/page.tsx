@@ -5,7 +5,6 @@ import ImportarModal from "@/components/proveedores/ImportarModal";
 import TablaProductosFiltrada from "@/components/proveedores/TablaProductosFiltrada";
 import TablaListaPreciosConPedido from "@/components/proveedores/TablaListaPreciosConPedido";
 import FiltrosProductos from "@/components/proveedores/FiltrosProductos";
-import BuscadorSimple from "@/components/proveedores/BuscadorSimple";
 import AccionMasivaModal from "@/components/proveedores/AccionMasivaModal";
 import SectionHeader from "@/components/SectionHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,16 +53,12 @@ export default async function ProveedoresPage({ searchParams }: Props) {
 
       {/* Filtros */}
       <div className="shrink-0 max-w-7xl mx-auto w-full px-8 pt-4 pb-2">
-        {esEditor ? (
-          <FiltrosProductos
-            proveedores={proveedores}
-            totalProductos={total}
-            qActual={q}
-            proveedorActual={proveedor}
-          />
-        ) : (
-          <BuscadorSimple qActual={q} totalProductos={total} />
-        )}
+        <FiltrosProductos
+          proveedores={proveedores}
+          totalProductos={total}
+          qActual={q}
+          proveedorActual={proveedor}
+        />
       </div>
 
       <Separator className="bg-border" />
