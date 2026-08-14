@@ -4,6 +4,8 @@ Stack: **Next.js 16** + **React 19** + **Tailwind 4** + **shadcn/ui** + **Zod** 
 
 Índice de documentación (fuente de verdad): [`docs/README.md`](../docs/README.md) — incluye el **flujo full stack canónico**, reglas técnicas resumidas y **criterio de hecho**.
 
+Prompt de **continuación de trabajo desde main** (stack + nombres de guías vigentes): [`continuacion_promp.md`](./continuacion_promp.md).
+
 | Documento | Cuándo |
 |-----------|--------|
 | [`docs/FRONTEND_GUIDELINES.md`](../docs/FRONTEND_GUIDELINES.md) | UI, componentes, estilos — **solo la sección del módulo tocado** |
@@ -202,12 +204,58 @@ Informe claro de hallazgos + correcciones aplicadas (si se pidió) + guías y RE
 
 ---
 
+## 5 — Continuación de trabajo (desde main)
+
+Plantilla lista para pegar: [`continuacion_promp.md`](./continuacion_promp.md). Incluye stack con versiones de `package.json` y los **nombres** de las guías vigentes en `main` (no leer los archivos enteros: solo el § del módulo).
+
+```text
+Eres el agente de continuación del proyecto Gestión Productos Tienda (rama de trabajo: main).
+
+CONTEXTO
+App interna de una tienda de pinturas (Argentina): catálogo/precios DUX, proveedores, pedidos, stock, finanzas, marketing y Asistente IA de colores. No es e-commerce ni CRM genérico.
+
+STACK VIGENTE (package.json — no improvisar versiones)
+- Next.js 16.1.6 (App Router) + React 19.2.3 + TypeScript 5.9.3 estricto (prohibido any)
+- Tailwind CSS 4 + shadcn/ui + CVA + lucide-react + sonner
+- Zod 4.3.x (src/lib/validations/)
+- iron-session 8 (src/lib/sesion.ts) — roles simple | editor
+- Prisma 7.4.x + @prisma/adapter-pg + PostgreSQL (Neon)
+- Integraciones: API DUX, googleapis, pdfjs-dist, jspdf, xlsx
+- Lint: npx eslint src --max-warnings 0
+
+DOCUMENTOS DE REFERENCIA (nombres vigentes en main — leer SOLO la sección del módulo)
+Índice: docs/README.md
+Frontend: docs/FRONTEND_GUIDELINES.md (Guía para IA + módulo + §3.1 + Checklist §4); .cursorrules
+Backend: docs/BACKEND_GUIDELINES.md (§1 + § dominio + §2.1 + checklist §4); prisma/schema.prisma
+IA Diseño: docs/AGENTEIA_GUIDELINES.md; docs/IA_DISEÑO/REGLAS_NEGOCIO.md; docs/IA_DISEÑO/CHANGELOG.md; ADRs 001, 002, 004, 005 (003 histórico)
+Otros: docs/MANUAL_CALCULO_SOBRESTOCK_REPOSICION.md; .cursor/prompts.md; .cursor/rules/manuales-obligatorios.mdc; .cursor/rules/flujo-fullstack-end-to-end.mdc
+
+NO leas enteras FRONTEND_GUIDELINES.md ni BACKEND_GUIDELINES.md.
+
+ARQUITECTURA
+UI → Server Actions (ActionResult) → servicios (ServiceResult) → Prisma/PostgreSQL.
+Auth: getRol / esEditor / puede(PERMISOS). Payload unknown + Zod. Negocio en servicios.
+
+FLUJO
+Contrato Zod/ActionResult → servicios → actions → UI → actualizar la guía del área.
+Lint: npx eslint src --max-warnings 0.
+
+CRITERIO DE HECHO
+Código estable + flujo verificado + guía del área actualizada + lint limpio.
+
+Módulo/ruta:
+Objetivo:
+```
+
+---
+
 ## Uso rápido
 
 Abrí el archivo del agente → **Ctrl+A** → **Ctrl+C** → pegá en un chat nuevo (Agent) → completá `Módulo/ruta` y `Objetivo`.
 
 | Agente | Archivo | Enfoque |
 |--------|---------|---------|
+| Continuación | [`continuacion_promp.md`](./continuacion_promp.md) | Seguir trabajando desde `main` (stack + nombres de guías vigentes) |
 | FullStack | [`fullstack_promp.md`](./fullstack_promp.md) | Feature E2E + docs FE y BE |
 | Front | [`front_promp.md`](./front_promp.md) | UI/patrones + `FRONTEND_GUIDELINES` |
 | Back | [`back_promp.md`](./back_promp.md) | Actions/servicios/Prisma + `BACKEND_GUIDELINES` |
