@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Flujo de trabajo full stack
 
-1. Entender el objetivo y restricciones funcionales.
+1. Entender el objetivo y restricciones funcionales (contexto: `docs/PROYECTO_BRIEF_IA.md`).
 2. Diseñar el contrato de datos (Zod + tipos de respuesta `ActionResult`) antes de la UI.
 3. Implementar en este orden preferido:
    - Prisma / servicios en `src/services/`

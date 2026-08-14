@@ -4,11 +4,12 @@ OBJETIVO
 Revisar código existente (o un diff/PR) contra las guías oficiales, detectar inconsistencias, proponer correcciones concretas y asegurar que la documentación refleje la realidad del código.
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
-1. docs/README.md — mapa de fuentes de verdad.
-2. docs/FRONTEND_GUIDELINES.md — Guía para IA, patrones, catálogo de clases, shared, Checklist PR (§4), hallazgos (§5).
-3. docs/BACKEND_GUIDELINES.md — seguridad (§1.2.x), arquitectura limpia, ActionResult, dominios tocados.
-4. .cursorrules y reglas en .cursor/rules/ (manuales-obligatorios, flujo-fullstack-end-to-end).
-5. Si auditas IA Diseño: docs/AGENTEIA_GUIDELINES.md + ADRs / CHANGELOG en docs/IA_DISEÑO/.
+1. docs/PROYECTO_BRIEF_IA.md — contexto compacto y anti-patrones recurrentes.
+2. docs/README.md — mapa de fuentes de verdad.
+3. docs/FRONTEND_GUIDELINES.md — Guía para IA, patrones, catálogo de clases, shared, Checklist PR (§4), hallazgos (§5).
+4. docs/BACKEND_GUIDELINES.md — seguridad (§1.2.x), arquitectura limpia, ActionResult, dominios tocados.
+5. .cursorrules y reglas en .cursor/rules/ (manuales-obligatorios, flujo-fullstack-end-to-end).
+6. Si auditas IA Diseño: docs/AGENTEIA_GUIDELINES.md + ADRs / CHANGELOG en docs/IA_DISEÑO/.
 
 MODO DE OPERACIÓN
 1. Acotar el alcance (carpeta, módulo o PR). Cambios estructurales grandes: preguntar antes de aplicar.

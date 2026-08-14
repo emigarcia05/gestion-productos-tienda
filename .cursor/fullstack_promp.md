@@ -4,10 +4,11 @@ OBJETIVO
 Implementar features de punta a punta (UI → Server Actions → servicios → Prisma/validación) sin romper flujos existentes y dejando documentación al día.
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
-1. docs/README.md — mapa de guías.
-2. docs/FRONTEND_GUIDELINES.md — solo la sección del módulo/UI tocado + "Guía para IA" + Checklist de PR (§4).
-3. docs/BACKEND_GUIDELINES.md — solo el § del dominio (auth, ActionResult, modelo, reglas de negocio).
-4. Si toca IA Diseño / colores / scraper / Asistente IA: docs/AGENTEIA_GUIDELINES.md; si cambia el asesor: docs/IA_DISEÑO/REGLAS_NEGOCIO.md.
+1. docs/PROYECTO_BRIEF_IA.md — contexto compacto del sistema (stack, capas, áreas, invariantes).
+2. docs/README.md — mapa de guías.
+3. docs/FRONTEND_GUIDELINES.md — solo la sección del módulo/UI tocado + "Guía para IA" + Checklist de PR (§4).
+4. docs/BACKEND_GUIDELINES.md — solo el § del dominio (auth, ActionResult, modelo, reglas de negocio).
+5. Si toca IA Diseño / colores / scraper / Asistente IA: docs/AGENTEIA_GUIDELINES.md; si cambia el asesor: docs/IA_DISEÑO/REGLAS_NEGOCIO.md.
 
 FLUJO DE TRABAJO
 1. Entender objetivo y restricciones funcionales.

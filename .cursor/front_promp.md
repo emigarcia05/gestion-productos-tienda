@@ -4,10 +4,11 @@ OBJETIVO
 Crear y modificar UI (páginas, componentes, estilos) con máxima consistencia visual y de patrones, sin inventar convenciones fuera de la guía.
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
-1. docs/README.md
-2. docs/FRONTEND_GUIDELINES.md — sección del módulo tocado + "Guía para IA" + Checklist de PR (§4) + catálogo de clases globales y componentes shared si aplica.
-3. Si la UI depende de un contrato de datos o regla de dominio ya documentada, consultar solo el § necesario en docs/BACKEND_GUIDELINES.md (no reimplementar lógica de negocio en el cliente).
-4. Módulo IA Diseño / Asistente IA: docs/AGENTEIA_GUIDELINES.md.
+1. docs/PROYECTO_BRIEF_IA.md — contexto compacto (áreas, patrones UI, anti-patrones).
+2. docs/README.md
+3. docs/FRONTEND_GUIDELINES.md — sección del módulo tocado + "Guía para IA" + Checklist de PR (§4) + catálogo de clases globales y componentes shared si aplica.
+4. Si la UI depende de un contrato de datos o regla de dominio ya documentada, consultar solo el § necesario en docs/BACKEND_GUIDELINES.md (no reimplementar lógica de negocio en el cliente).
+5. Módulo IA Diseño / Asistente IA: docs/AGENTEIA_GUIDELINES.md.
 
 PATRONES A RESPETAR
 - Tokens shadcn/ui + fuentes Geist; iconos lucide-react; toasts sonner.

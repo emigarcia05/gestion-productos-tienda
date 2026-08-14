@@ -4,8 +4,11 @@ Stack: **Next.js 16** + **React 19** + **Tailwind 4** + **shadcn/ui** + **Zod** 
 
 Índice de documentación (fuente de verdad): [`docs/README.md`](../docs/README.md) — incluye el **flujo full stack canónico**, reglas técnicas resumidas y **criterio de hecho**.
 
+Contexto compacto para **inyectar al inicio de un prompt**: [`docs/PROYECTO_BRIEF_IA.md`](../docs/PROYECTO_BRIEF_IA.md) (stack, capas, áreas, invariantes). Después, solo el § de la guía del módulo.
+
 | Documento | Cuándo |
 |-----------|--------|
+| [`docs/PROYECTO_BRIEF_IA.md`](../docs/PROYECTO_BRIEF_IA.md) | Briefing de proyecto — pegar/referenciar al arrancar el agente |
 | [`docs/FRONTEND_GUIDELINES.md`](../docs/FRONTEND_GUIDELINES.md) | UI, componentes, estilos — **solo la sección del módulo tocado** |
 | [`docs/BACKEND_GUIDELINES.md`](../docs/BACKEND_GUIDELINES.md) | Actions, servicios, Prisma — **buscar el § del dominio** |
 | [`docs/AGENTEIA_GUIDELINES.md`](../docs/AGENTEIA_GUIDELINES.md) | IA Diseño, CSV, scraper, Asistente IA |
@@ -17,7 +20,7 @@ Reglas persistentes: `.cursor/rules/manuales-obligatorios.mdc`, `.cursor/rules/f
 
 ## Regla transversal (todos los agentes)
 
-1. **Antes de codificar:** leer `docs/README.md` y la guía del área (solo secciones relevantes; no el archivo entero).
+1. **Antes de codificar:** leer `docs/PROYECTO_BRIEF_IA.md` + `docs/README.md` y la guía del área (solo secciones relevantes; no el archivo entero).
 2. **No inventar** convenciones que contradigan las guías.
 3. **Cerrar la tarea documentando:** actualizar la guía tocada; si aplica IA Diseño → `AGENTEIA_GUIDELINES.md` / `IA_DISEÑO/CHANGELOG.md` / ADR nuevo.
 4. La tarea **no está completa** si el código cambia y la documentación del área no refleja el nuevo patrón, servicio, esquema o regla.
@@ -34,10 +37,11 @@ OBJETIVO
 Implementar features de punta a punta (UI → Server Actions → servicios → Prisma/validación) sin romper flujos existentes y dejando documentación al día.
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
-1. docs/README.md — mapa de guías.
-2. docs/FRONTEND_GUIDELINES.md — solo la sección del módulo/UI tocado + "Guía para IA" + Checklist de PR (§4).
-3. docs/BACKEND_GUIDELINES.md — solo el § del dominio (auth, ActionResult, modelo, reglas de negocio).
-4. Si toca IA Diseño / colores / scraper / Asistente IA: docs/AGENTEIA_GUIDELINES.md; si cambia el asesor: docs/IA_DISEÑO/REGLAS_NEGOCIO.md.
+1. docs/PROYECTO_BRIEF_IA.md — contexto compacto del sistema (stack, capas, áreas, invariantes).
+2. docs/README.md — mapa de guías.
+3. docs/FRONTEND_GUIDELINES.md — solo la sección del módulo/UI tocado + "Guía para IA" + Checklist de PR (§4).
+4. docs/BACKEND_GUIDELINES.md — solo el § del dominio (auth, ActionResult, modelo, reglas de negocio).
+5. Si toca IA Diseño / colores / scraper / Asistente IA: docs/AGENTEIA_GUIDELINES.md; si cambia el asesor: docs/IA_DISEÑO/REGLAS_NEGOCIO.md.
 
 FLUJO DE TRABAJO
 1. Entender objetivo y restricciones funcionales.
@@ -76,10 +80,11 @@ OBJETIVO
 Crear y modificar UI (páginas, componentes, estilos) con máxima consistencia visual y de patrones, sin inventar convenciones fuera de la guía.
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
-1. docs/README.md
-2. docs/FRONTEND_GUIDELINES.md — sección del módulo tocado + "Guía para IA" + Checklist de PR (§4) + catálogo de clases globales y componentes shared si aplica.
-3. Si la UI depende de un contrato de datos o regla de dominio ya documentada, consultar solo el § necesario en docs/BACKEND_GUIDELINES.md (no reimplementar lógica de negocio en el cliente).
-4. Módulo IA Diseño / Asistente IA: docs/AGENTEIA_GUIDELINES.md.
+1. docs/PROYECTO_BRIEF_IA.md — contexto compacto (áreas, patrones UI, anti-patrones).
+2. docs/README.md
+3. docs/FRONTEND_GUIDELINES.md — sección del módulo tocado + "Guía para IA" + Checklist de PR (§4) + catálogo de clases globales y componentes shared si aplica.
+4. Si la UI depende de un contrato de datos o regla de dominio ya documentada, consultar solo el § necesario en docs/BACKEND_GUIDELINES.md (no reimplementar lógica de negocio en el cliente).
+5. Módulo IA Diseño / Asistente IA: docs/AGENTEIA_GUIDELINES.md.
 
 PATRONES A RESPETAR
 - Tokens shadcn/ui + fuentes Geist; iconos lucide-react; toasts sonner.
@@ -119,10 +124,11 @@ OBJETIVO
 Diseñar e implementar persistencia, servicios y Server Actions con integridad referencial, seguridad y tipado perfecto; documentar cada cambio de esquema o regla.
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
-1. docs/README.md
-2. docs/BACKEND_GUIDELINES.md — § del dominio tocado + principios (§1) + esquemas de referencia (§2) + checklist de seguridad (§1.2.2 / §1.2.3).
-3. Si una pantalla consume el contrato, conocer el patrón UI solo lo necesario vía docs/FRONTEND_GUIDELINES.md (sin rediseñar UI).
-4. IA Diseño / scraper / CSV: docs/AGENTEIA_GUIDELINES.md (+ REGLAS_NEGOCIO.md si afecta el asesor).
+1. docs/PROYECTO_BRIEF_IA.md — contexto compacto (capas, auth, prefijos de tablas, invariantes).
+2. docs/README.md
+3. docs/BACKEND_GUIDELINES.md — § del dominio tocado + principios (§1) + esquemas de referencia (§2) + checklist de seguridad (§1.2.2 / §1.2.3).
+4. Si una pantalla consume el contrato, conocer el patrón UI solo lo necesario vía docs/FRONTEND_GUIDELINES.md (sin rediseñar UI).
+5. IA Diseño / scraper / CSV: docs/AGENTEIA_GUIDELINES.md (+ REGLAS_NEGOCIO.md si afecta el asesor).
 
 ARQUITECTURA
 - src/actions/: sesión (iron-session), rol/permisos, validación Zod, orquestación fina; devolver ActionResult.
@@ -161,11 +167,12 @@ OBJETIVO
 Revisar código existente (o un diff/PR) contra las guías oficiales, detectar inconsistencias, proponer correcciones concretas y asegurar que la documentación refleje la realidad del código.
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
-1. docs/README.md — mapa de fuentes de verdad.
-2. docs/FRONTEND_GUIDELINES.md — Guía para IA, patrones, catálogo de clases, shared, Checklist PR (§4), hallazgos (§5).
-3. docs/BACKEND_GUIDELINES.md — seguridad (§1.2.x), arquitectura limpia, ActionResult, dominios tocados.
-4. .cursorrules y reglas en .cursor/rules/ (manuales-obligatorios, flujo-fullstack-end-to-end).
-5. Si auditas IA Diseño: docs/AGENTEIA_GUIDELINES.md + ADRs / CHANGELOG en docs/IA_DISEÑO/.
+1. docs/PROYECTO_BRIEF_IA.md — contexto compacto y anti-patrones recurrentes.
+2. docs/README.md — mapa de fuentes de verdad.
+3. docs/FRONTEND_GUIDELINES.md — Guía para IA, patrones, catálogo de clases, shared, Checklist PR (§4), hallazgos (§5).
+4. docs/BACKEND_GUIDELINES.md — seguridad (§1.2.x), arquitectura limpia, ActionResult, dominios tocados.
+5. .cursorrules y reglas en .cursor/rules/ (manuales-obligatorios, flujo-fullstack-end-to-end).
+6. Si auditas IA Diseño: docs/AGENTEIA_GUIDELINES.md + ADRs / CHANGELOG en docs/IA_DISEÑO/.
 
 MODO DE OPERACIÓN
 1. Acotar el alcance (carpeta, módulo o PR). Cambios estructurales grandes: preguntar antes de aplicar.
