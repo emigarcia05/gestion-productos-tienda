@@ -1,10 +1,9 @@
 "use server";
 
+import { firstZodErrorMessage, requireEditorEstadisticas, requireEstadisticasLectura } from "@/lib/actionHelpers";
 import { revalidatePath } from "next/cache";
 import type { EstPorProdPresentacionItem } from "@/lib/estPorProdPresentacion";
 import { ESTADISTICAS_PRODUCTOS_ROUTES } from "@/lib/estadisticasProductosRoutes";
-import { PERMISOS, puede } from "@/lib/permisos";
-import { esEditor, getRol } from "@/lib/sesion";
 import type { ActionResult } from "@/lib/types";
 import {
   crearEstPorProdPresentacionSchema,
@@ -17,33 +16,6 @@ import {
   eliminarEstPorProdPresentacion,
   listarEstPorProdPresentaciones,
 } from "@/services/estPorProdPresentacion.service";
-
-function firstZodErrorMessage(error: {
-  flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
-}): string {
-  const flattened = error.flatten();
-  return (
-    [...Object.values(flattened.fieldErrors).flat(), ...flattened.formErrors][0] ??
-    "Datos inválidos."
-  );
-}
-
-async function requireEstadisticasLectura(): Promise<{ ok: false; error: string } | null> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) {
-    return { ok: false, error: "Sin permisos para estadísticas de productos." };
-  }
-  return null;
-}
-
-async function requireEditorEstadisticas(): Promise<{ ok: false; error: string } | null> {
-  const gate = await requireEstadisticasLectura();
-  if (gate) return gate;
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede gestionar presentaciones." };
-  }
-  return null;
-}
 
 function revalidateCategorizacion() {
   revalidatePath("/estadisticas-productos");

@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
-import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
+import { listaPreciosCodExtSchema, listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import { z } from "zod";
 import { CX_PROD_SELECCION_PROM } from "@/lib/cxPxTienda";
 import {
@@ -18,7 +18,7 @@ import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
 
 const guardarCostoCxProdSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
-  seleccion: z.union([z.literal(CX_PROD_SELECCION_PROM), z.string().min(1).max(128)]),
+  seleccion: z.union([z.literal(CX_PROD_SELECCION_PROM), listaPreciosCodExtSchema]),
 });
 
 /** Persiste costo CX PROD.: proveedor → `costo_compra_cod_ext`; Cx. Prom. → limpia FK. */

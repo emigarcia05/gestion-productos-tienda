@@ -58,10 +58,17 @@ const listaPreciosConOpcionesVacio: ListaPreciosConOpcionesResult = {
 export async function getListaPreciosConOpcionesAction(
   raw: unknown
 ): Promise<ListaPreciosConOpcionesResult> {
+  const rol = await getRol();
+  if (
+    !puede(rol, PERMISOS.proveedores.sugeridos) &&
+    !puede(rol, PERMISOS.proveedores.listaPrecios)
+  ) {
+    return listaPreciosConOpcionesVacio;
+  }
+
   const parsed = listaPreciosFiltrosLecturaSchema.safeParse(raw);
   if (!parsed.success) return listaPreciosConOpcionesVacio;
 
-  const rol = await getRol();
   const soloPxSugerido = parsed.data.opciones?.soloPxSugerido === true;
   const permisoLectura = soloPxSugerido
     ? PERMISOS.proveedores.sugeridos
@@ -138,6 +145,9 @@ export async function exportarListaPreciosAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.listaPrecios.acciones.importarLista)) {
     return { ok: false, error: "Sin permisos para exportar la lista de precios." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
   }
 
   const parsed = listaPreciosFiltrosExportSchema.safeParse(raw);
@@ -271,6 +281,9 @@ export async function actualizarListaPreciosMasivoAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
     return { ok: false, error: "Sin permisos para edición masiva." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
   }
   const parsed = actualizarListaPreciosMasivoPayloadSchema.safeParse(raw);
   if (!parsed.success) {

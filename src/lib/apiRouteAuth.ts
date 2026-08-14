@@ -47,6 +47,15 @@ export async function guardListaPreciosImportarEsEditor(): Promise<NextResponse 
   return null;
 }
 
+/** Detalle historial de pedidos (lectura). */
+export async function guardPedidosHistoriaLectura(): Promise<NextResponse | null> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.pedidos.acceso)) {
+    return NextResponse.json({ ok: false, error: "Sin permisos para pedidos." }, { status: 403 });
+  }
+  return null;
+}
+
 /** Import estadísticas por producto (`est_por_prod`). */
 export async function guardEstPorProdImportarEsEditor(): Promise<NextResponse | null> {
   const rol = await getRol();
