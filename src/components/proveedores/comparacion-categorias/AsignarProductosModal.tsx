@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { FiltroIndividualContainer } from "@/components/FilterBar";
 import ModalTablaConFiltros, { type ColumnaModalTabla } from "@/components/shared/ModalTablaConFiltros";
-import { getProveedores } from "@/actions/vinculos";
+import { getProveedoresMercaderiaParaVincular } from "@/actions/vinculos";
 import { buscarProductosParaAsignarAction, asignarProductosAPresentacionAction } from "@/actions/comparacionCategorias";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import { fmtPrecio } from "@/lib/format";
@@ -54,7 +54,7 @@ export default function AsignarProductosModal({
       setProveedorId("");
       setQ("");
     });
-    getProveedores().then(setProveedores);
+    getProveedoresMercaderiaParaVincular().then(setProveedores);
   }, [open]);
 
   useEffect(() => {

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRol } from "@/lib/sesion";
-import { PERMISOS, puede } from "@/lib/permisos";
+import { guardTiendaListaPreciosSincronizar } from "@/lib/apiRouteAuth";
 import { requestCancelListaPrecioTiendaSyncInDb } from "@/lib/syncDuxStatusDb";
 
 /**
@@ -9,10 +8,8 @@ import { requestCancelListaPrecioTiendaSyncInDb } from "@/lib/syncDuxStatusDb";
  * No actualiza `lastCompletedAt` (no cuenta como “Últ. Act.”).
  */
 export async function POST() {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acciones.sincronizar)) {
-    return NextResponse.json({ ok: false, error: "Sin permisos para sincronizar." }, { status: 403 });
-  }
+  const denied = await guardTiendaListaPreciosSincronizar();
+  if (denied) return denied;
   const cancelled = await requestCancelListaPrecioTiendaSyncInDb();
   return NextResponse.json({ ok: true, cancelled });
 }

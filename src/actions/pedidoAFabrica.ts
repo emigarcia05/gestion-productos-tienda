@@ -44,11 +44,11 @@ export async function getSucursalesPedidoAFabricaAction(): Promise<
 export async function getProductosPedidoAFabricaAction(
   raw: unknown
 ): Promise<ProductosPedidoAFabricaResult> {
-  const parsed = productosPedidoAFabricaFiltrosSchema.safeParse(raw);
-  if (!parsed.success) return VACIO;
-
   const rol = await getRol();
   if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) return VACIO;
+
+  const parsed = productosPedidoAFabricaFiltrosSchema.safeParse(raw);
+  if (!parsed.success) return VACIO;
 
   const { proveedorId, pagina, marca, rubro, subRubro, q } = parsed.data;
   return listarProductosPorProveedorFabrica(proveedorId, {

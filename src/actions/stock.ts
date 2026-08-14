@@ -16,7 +16,6 @@ import {
   encolarTransferenciasPendientesSchema,
   exportarPendientesTransfDepositosSchema,
   listarHistorialTransfDepositosProductoSchema,
-  registrarControlTransfDepositosSchema,
 } from "@/lib/validations/transfDepositos";
 import { GP_INTERNAL, GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import {
@@ -391,41 +390,6 @@ export async function getTransfDepositos(
     console.error("[getTransfDepositos]", e);
     return emptyTransfDepositos;
   }
-}
-
-/**
- * Marca un control de transferencia (anti-duplicado).
- * Si hay registro igual reciente y `forzar` es false → `requiereConfirmacion`.
- */
-export async function registrarControlTransfDepositosAction(
-  raw: unknown
-): Promise<
-  ActionResult<
-    | { id: string; createdAtIso: string; eraDuplicado: boolean }
-    | { requiereConfirmacion: true; ultimoCreatedAtIso: string }
-  >
-> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.stock.acceso)) {
-    return { ok: false, error: "Sin acceso." };
-  }
-  const parsed = registrarControlTransfDepositosSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, error: "Datos inválidos." };
-  }
-  const { registrarControlTransfDepositos } = await import(
-    "@/services/transfDepositos.service"
-  );
-  const result = await registrarControlTransfDepositos(parsed.data);
-  if (!result.success) {
-    return { ok: false, error: result.error };
-  }
-  if ("requiereConfirmacion" in result.data) {
-    return { ok: true, data: result.data };
-  }
-  revalidatePath(GP_ROUTES.ayudaVendedor.transfDepositos);
-  revalidatePath(GP_INTERNAL.ayudaVendedor.transfDepositos);
-  return { ok: true, data: result.data };
 }
 
 /**

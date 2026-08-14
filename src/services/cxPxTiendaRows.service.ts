@@ -8,7 +8,6 @@ import {
   calcularCostoPromedioVinculos,
   costoDesdeCandidato,
   etiquetaProveedorCosto,
-  listarCandidatosCostoPorCodTienda,
 } from "@/services/costoListaTienda.service";
 
 export type FilaCxProdDb = {
@@ -17,9 +16,11 @@ export type FilaCxProdDb = {
   costoCompraCodExt: string | null;
 };
 
-type CandidatoCostoVinculo = Awaited<
-  ReturnType<typeof listarCandidatosCostoPorCodTienda>
->[number];
+type CandidatoCostoVinculo = {
+  codExt: string;
+  pxCompraFinalSinIva: unknown;
+  proveedor: { nombre: string; prefijo: string | null };
+};
 
 async function cargarVinculosCostoPorCodTienda(codTiendas: string[]) {
   if (codTiendas.length === 0) return new Map<string, CandidatoCostoVinculo[]>();

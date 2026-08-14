@@ -1,8 +1,24 @@
 # Guía Backend — Next.js 16 App Router
 
-Documento de referencia para desarrolladores y **asistentes IA** que crean o modifican Server Actions, servicios y validaciones. **No leer el archivo completo:** buscar el § del dominio o principio que aplica (sesión, Zod, modelo Prisma, etc.).
+Documento de referencia para desarrolladores y **asistentes IA** que crean o modifican Server Actions, servicios, validaciones Zod, Route Handlers y Prisma. **No leer el archivo completo:** buscar el § del dominio o principio que aplica.
 
-Sigue estas reglas para mantener seguridad, integridad de datos y arquitectura limpia.
+Describe **solo el estado vigente** del backend. No es un changelog.
+
+---
+
+## Guía para IA (checklist obligatorio)
+
+Toda Server Action exportada desde `src/actions/*.ts` (`"use server"`) debe cumplir, **en este orden**:
+
+1. **Autorización primero**: `getRol()` / helpers de `@/lib/actionHelpers` (`requirePermiso`, `requireEditorConPermiso`, `requireEditorFinanzas`, `requireEditorMarketing`, …) **antes** de parsear o tocar servicios. No confiar en que la página esté protegida en layout: las Actions son invocables directo.
+2. **Payload `unknown` + Zod `.safeParse()`**: objetos/arrays del cliente como `unknown`. Excepción: `FormData` o un ID primitivo (`string`) que igual pasa por `prismaCuidSchema` / `uuidSchema` / clave natural.
+3. **IDs según el modelo**: `cuid` → `prismaCuidSchema`; UUID → `uuidSchema`; mixto/legacy → `prismaCuidOrUuidSchema` / `globalSucursalIdSchema`; `cod_ext` → `listaPreciosCodExtSchema`; `cod_tienda` → `listaPreciosCodTiendaSchema`. **No** mezclar.
+4. **Delegación**: lógica y Prisma en `src/services/`. La Action orquesta, `revalidatePath`, devuelve `ActionResult` (o shape vacío acordado en lecturas).
+5. **Sin fugas**: `{ ok: false, error: string }` genérico al cliente. Loguear el detalle con `mensajeErrorAction` / `console.error`. Nunca reenviar `Error.message` de Prisma/SQL/stack.
+6. **Una entrada por operación**: no duplicar un Route Handler con una Action huérfana. No invocar una Action desde otra (ir al servicio).
+7. **Lint**: `npx eslint src --max-warnings 0`. Prohibido `any`. Script de huérfanas: `node scripts/audit-actions-usage.mjs`.
+
+Route Handlers (`src/app/api/**`): mismo criterio de permiso que la operación equivalente, vía `@/lib/apiRouteAuth`.
 
 ---
 
@@ -10,208 +26,50 @@ Sigue estas reglas para mantener seguridad, integridad de datos y arquitectura l
 
 ### 1.1 Server Actions (`src/actions/`)
 
-- **Ubicación**: Todas las Server Actions viven en `src/actions/`, con `"use server"` al inicio del archivo.
-- **Restricción de exports (Next.js)**: en esos módulos las Server Actions deben ser **`export async function`** (o un default equivalente según doc). **No** re-exportar valores de runtime (strings, `export { CONSTANTE }`, instancias Zod, etc.); eso dispara `invalid-use-server-value`. Los `export type` son sólo tipos y no cuentan como valor en runtime; si hace falta un literal compartido, importarlo desde **`src/services/`** o **`src/lib/`**.
-- **Firma**: Siempre `async`, con tipado estricto. **Prohibido `any`**.
-- **Rol**: Son **controladores de entrada/salida**: validan sesión/rol, validan payload con Zod, delegan lógica a servicios, devuelven un formato de respuesta estándar.
-- **No** contienen lógica de negocio compleja ni acceso directo a Prisma (salvo casos legacy documentados); esa lógica va en `src/services/`.
+- **Ubicación**: `"use server"` al inicio. Exports: **`export async function`**. **No** re-exportar valores de runtime (strings, esquemas Zod, constantes); dispara `invalid-use-server-value`. `export type` sí. Literales compartidos: `src/services/` o `src/lib/`.
+- **Rol**: controladores I/O. **No** lógica de negocio pesada ni Prisma directo salvo excepciones vigentes (`tienda.ts`, `stock.ts`, `tiposPinturaRendimientos.ts` raw SQL, operaciones puntuales en `vinculos.ts` / `reposicion.ts`).
+- **Helpers de gate y Zod**: `@/lib/actionHelpers` (`firstZodErrorMessage`, `mensajeErrorAction`, `requireEditor*` / `require*Lectura`). Gates de API: `@/lib/apiRouteAuth`.
 
 ### 1.2 Seguridad y autorización
 
-- **Sesión**: Se usa **iron-session** vía `@/lib/sesion`: `getSesion()`, `getRol()`, `esEditor()`.
-- **Regla de oro**: Toda Action que **modifique datos** (crear, actualizar, eliminar) o exponga datos sensibles **debe** comprobar sesión/rol **al inicio**, antes de cualquier lógica.
-- **Lecturas (Server Actions)**: Aunque la ruta esté protegida en layout, **toda** Action invocable desde el cliente debe validar acceso con `getRol()` + `puede(rol, PERMISOS.*)` cuando exista permiso en `@/lib/permisos`, para evitar invocación directa sin pasar por la UI.
-- **Escrituras con dos niveles**: Si el módulo da **acceso de lectura** a `simple` y `editor` (`PERMISOS.*.acceso` con ambos `true`) pero la operación es **crítica** (p. ej. borrado o registro en sistemas externos), exigir además **`esEditor()`** tras el chequeo de `puede(rol, PERMISOS.*)`. Excepción documentada: en **historial de pedidos**, tanto **recepción** (guardar/corregir/marcar/reabrir/agregar ítems) como **eliminación de pedidos** están habilitadas para `simple` y `editor`.
-- **Importar** (`PERMISOS.importar.acceso`, solo editor en la matriz actual): comprobar **`puede(rol, PERMISOS.importar.acceso)`** y **`esEditor()`**, más validación Zod del payload (`@/lib/validations/importar.ts`).
-- **Helpers**: `esEditor()` para “solo editor”; para permisos granulares usar `getRol()` y `puede(rol, PERMISOS.modulo.accion)` desde `@/lib/permisos`.
-- **IDs de Prisma**: Los modelos usan **`cuid`** (no UUID) salvo tablas explícitas con `@default(uuid())` (p. ej. `ProdPedMerc2`, `prod_rendimientos`). Validar con `prismaCuidSchema`, `uuidSchema` o `listaPreciosCodExtSchema` / `listaPreciosCodTiendaSchema` según el modelo; **no** mezclar `.uuid()` donde el identificador ya no sea UUID. Claves naturales: **`prod_precios_provee.cod_ext`**, **`prod_tienda.cod_tienda`** (PK).
-- **Lecturas con datos sensibles** (precios, vínculos, catálogos):
-  - **Lista de precios** (`getListaPreciosConOpcionesAction`, `actualizarListaPreciosMasivoAction`): `getRol()` + lectura según módulo — `PERMISOS.proveedores.listaPrecios` (grilla lista precios) o `PERMISOS.proveedores.sugeridos` si `opciones.soloPxSugerido`; mutaciones con `PERMISOS.listaPrecios.acciones.edicionMasiva`; payload **`unknown`** → `listaPreciosFiltrosLecturaSchema` o `{ ids, data }` / `{ filtros, data }` con Zod (edición masiva por filtro = todos los ítems, sin paginación). **`proveedorId`** en filtros: `prismaCuidSchema.optional()` (no `z.string().max(128)`). En `getListaPreciosConTiendaFiltrada`, mapear siempre `px_vta_sugerido` a `pxVtaSugerido`; `opciones.soloPxSugerido` solo filtra filas.
-  - **Catálogo de proveedores** (`getProveedores`, `getProveedoresPageData`, `getProveedoresMercaderia`, `getProveedoresNoMercaderia`): `getRol()` + al menos uno de `PERMISOS.proveedores.sugeridos`, `PERMISOS.proveedores.lista` o `PERMISOS.listaPrecios.acciones.importarLista`; parámetros de página con `proveedoresPageParamsSchema`. `getProveedoresMercaderia` devuelve solo filas con `proveedor_mercaderia = true` y `getProveedoresNoMercaderia` su complemento (`= false`). Ambos reutilizan el índice `global_proveedores_proveedor_mercaderia_idx` (ver §1.11c).
-  - **Vínculos tienda** (`getVinculos`, `listarProductosParaVincular` en `vinculos.ts`): `getRol()` + `puede(rol, PERMISOS.tienda.acceso)` (**solo editor**); ítem tienda por `cod_tienda` (`listaPreciosCodTiendaSchema`); línea lista proveedor por `cod_ext` (`listaPreciosCodExtSchema`). Filtros de búsqueda acotados con Zod en la Action cuando aplique.
-  - **Sincronización DUX lista tienda** (`GET`/`POST` `/api/sync-lista-precios-tienda`, más `syncDuxStatusDb` / jobs internos que llaman `syncListaPrecioTiendaFromDux`): `getRol()` + `puede(rol, PERMISOS.tienda.acciones.sincronizar)` en **POST**, **GET** bloqueante, **cancel**, **`GET …/status`** (helpers en `@/lib/apiRouteAuth`). En la matriz actual **`simple` y `editor`** tienen `sincronizar: true`. Sin sesión válida o sin permiso → `403` en todas esas rutas (no hay “progreso global” público por URL). **Cancelación cooperativa:** `POST /api/sync-lista-precios-tienda/cancel` (mismo permiso) pone `running = false` en `sync_dux_status`; el servicio `syncListaPrecioTiendaFromDux` comprueba el flag entre lotes y aborta con `SyncListaPrecioTiendaCancelledError`. **No** se llama `setSyncDuxSuccessInDb`, por lo tanto **`last_completed_at` no cambia** (la cancelación no cuenta como “Últ. Act.”). **No** existe Server Action paralela para el mismo trabajo (evitar superficie invocable desde el cliente sin uso en UI). **Eliminado** el mock **`/api/sync-tienda`**. Progreso UI en **`SyncStatusIndicator`** + **`DuxSyncStyleButton`** (ver `FRONTEND_GUIDELINES` § SSOT progreso API DUX).
-- **Mutaciones sobre `Proveedor`**: validar `id` con `prismaCuidSchema` en editar/eliminar; `eliminarProveedor` delega en `deleteProveedor` del servicio (`ServiceResult`) y maneja restricciones FK (p. ej. historial de pedidos, comprobantes proveedor).
-- **`global_proveedores.id_proveedor_dux`**: índice **único** (`global_proveedores_id_proveedor_dux_key`). PostgreSQL permite varios `NULL`; cada valor no nulo debe ser único. Sirve como **FK referenciada** por `fin_compras_comprobante.id_proveedor` (mismo valor DUX; `onDelete: Restrict`): no se puede borrar un proveedor si tiene comprobantes vinculados.
-- **Lecturas de listados con filtros** (pedidos urgente/enviar, reposición, stock, tienda): además del permiso de módulo, validar el objeto de parámetros con esquemas dedicados (`@/lib/validations/pedidosLectura`, `pedidosMutaciones`, `reposicion`, `stock`, `tienda`) para acotar `q`, `pagina`, sucursales, `proveedorId` (CUID) y arrays (`tipos`).
+- **Sesión**: iron-session vía `@/lib/sesion`: `getSesion()`, `getRol()`, `esEditor()`.
+- **Regla de oro**: toda Action que **modifique datos** o exponga datos sensibles comprueba sesión/rol **al inicio**.
+- **Lecturas**: `getRol()` + `puede(rol, PERMISOS.*)` cuando exista permiso en `@/lib/permisos`.
+- **Escrituras — gate doble módulo + editor**: `puede(rol, PERMISOS.<modulo>…)` **y** `esEditor()`, salvo excepciones vigentes:
+  - **Historial de pedidos**: recepción, marcar registrado, eliminar y PDF con solo `PERMISOS.pedidos.acceso` (`simple` y `editor`).
+  - **Ayuda vendedor — gasto eventual**: `PERMISOS.ayudaVendedor.cargarGasto` (sin exigir editor).
+  - **Sync lista tienda DUX**: `PERMISOS.tienda.acciones.sincronizar` (`simple` y `editor`).
+- **Importar** (`PERMISOS.importar.acceso` / `listaPrecios.acciones.importarLista`): `puede` + `esEditor()` + Zod.
+- **IDs Prisma**: modelos `cuid` salvo tablas con `@default(uuid())` (`ProdPedMerc2`, `prod_rendimientos`). Claves naturales: `prod_precios_provee.cod_ext`, `prod_tienda.cod_tienda`.
+- **Lecturas sensibles**:
+  - **Lista de precios** (`getListaPreciosConOpcionesAction`, `actualizarListaPreciosMasivoAction`): `proveedores.listaPrecios` o `proveedores.sugeridos` si `opciones.soloPxSugerido`; mutaciones `listaPrecios.acciones.edicionMasiva` + `esEditor()`. Payload `unknown`. `proveedorId`: `prismaCuidSchema.optional()`. Mapear siempre `px_vta_sugerido` → `pxVtaSugerido`.
+  - **Catálogo proveedores** (`getProveedores`, `getProveedoresPageData`, `getProveedoresMercaderia`, `getProveedoresFabrica`): `getRol()` + al menos uno de `proveedores.sugeridos` / `proveedores.lista` / `listaPrecios.acciones.importarLista`. `getProveedoresMercaderia` = `proveedor_mercaderia = true`; `getProveedoresNoMercaderia` = complemento. Modal vínculos tienda: **`getProveedoresMercaderiaParaVincular`** (`vinculos.ts`) con `PERMISOS.tienda.acceso` (no confundir con `getProveedores` de `proveedores.ts`).
+  - **Vínculos tienda**: `PERMISOS.tienda.acceso` (solo editor en matriz); mutaciones + `esEditor()`. Ítem por `cod_tienda`; línea lista por `cod_ext`.
+  - **Sync DUX lista tienda**: `GET`/`POST` `/api/sync-lista-precios-tienda`, cancel y status — `guardTiendaListaPreciosSincronizar`. Worker: `syncListaPrecioTiendaRunStep` (pasos reanudables). Cancelación cooperativa: `running = false`; **no** actualiza `last_completed_at`. **No** hay Server Action paralela. **No** reintroducir mock `/api/sync-tienda`.
+- **Mutaciones `Proveedor`**: `id` con `prismaCuidSchema`; `eliminarProveedor` → `deleteProveedor` (`ServiceResult`); FK restrictivas (historial, comprobantes).
+- **`global_proveedores.id_proveedor_dux`**: unique; varios `NULL` permitidos. FK de `fin_compras_comprobante.id_proveedor` (`onDelete: Restrict`).
+- **Listados con filtros**: además del permiso, Zod dedicado (`pedidosLectura`, `pedidosMutaciones`, `reposicion`, `stock`, `tienda`, `pxListas`, `pxListasPrecios`).
 
 ### 1.2.1 Activación de modo editor (`sesion.ts`)
 
-- Entrada **`clave`**: validar con Zod (`z.string().min(1).max(500)`) antes de comparar con `EDITOR_PASSWORD`. Evita payloads anómalos y documenta el contrato.
-- **UI de activación**: `SidebarAreaSwitcher` en el **onboarding** si el usuario elegido tiene módulo **Administración** (`modulos_permitidos` incluye `finanzas`) y la sesión es `simple`. Tras `activarModoEditor`, puede cambiar de módulo sin volver a pedir clave. Ya no existe el switcher de “nivel de usuario” (`SelectorRol`). El usuario de la pestaña (`sessionStorage` `main-app-usuario-sesion`, `@/lib/usuarioSesion.ts`) **no** se persiste en iron-session ni en BD; la sucursal preferida se copia de `global_personal.sucursal_por_defecto`.
-- **Salida de modo editor**: no hay Server Action de “volver a simple” (`volverModoSimple` se eliminó). Al cerrar el navegador, la cookie de arranque (`tienda-app-arranque`, sin `maxAge`) + middleware fuerzan rol `simple` en la siguiente sesión (ver párrafo siguiente). `activarModoEditor` sigue siendo la única Action de sesión.
+- Entrada **`clave`**: Zod `z.string().min(1).max(500)` antes de comparar con `EDITOR_PASSWORD`.
+- **UI**: `SidebarAreaSwitcher` en onboarding si el usuario tiene Administración (`modulos_permitidos` incluye `finanzas`) y la sesión es `simple`. El usuario de pestaña (`sessionStorage` `main-app-usuario-sesion`) **no** se persiste en iron-session ni BD; sucursal preferida = `global_personal.sucursal_por_defecto`.
+- **Única Action de sesión**: `activarModoEditor`. No existe “volver a simple”: cookie de arranque `tienda-app-arranque` (sin `maxAge`) + middleware fuerzan `simple` al reabrir el navegador. `getRol()` honra `x-tienda-forzar-rol-simple` en el mismo render. Rutas `/api/*` fuera del matcher del middleware.
 
-- **Arranque por sesión de navegador** (`src/middleware.ts` + `src/lib/sesion-arranque.ts`): la cookie **`tienda-app-arranque`** es de **sesión de navegador** (sin `maxAge`). En la **primera** petición de documento de esa sesión, si existía la cookie iron-session del rol (`gestion-rol`), el middleware la **elimina** y añade la cabecera interna **`x-tienda-forzar-rol-simple`** al request para ese ciclo; **`getRol()`** devuelve **`"simple"`** al detectarla (el `Set-Cookie` de borrado no aplica aún a `cookies()` en el mismo render). Así, al abrir la app tras cerrar el navegador, el arranque no conserva modo editor de la cookie anterior. Las rutas **`/api/*`** quedan fuera del `matcher` del middleware para no alterar el orden de llamadas API en herramientas externas.
+### 1.2.2 Gate doble y superficie mínima
 
-### 1.2.2 Checklist de seguridad por Server Action (obligatorio)
+- Orden: **módulo** (`puede`) → **escritura** (`esEditor()`).
+- Confirmados: vínculos tienda; tipos pintura (`tintoLts` + editor); comparación categorías (`comparacionCategorias.editar` + editor); Px Listas / Cx Px (`cxPxTienda.acceso` + editor); lista precios mutaciones (`edicionMasiva` / `importarLista` + editor); finanzas catálogos (`requireEditorFinanzas`); marketing (`requireEditorMarketing`); estadísticas catálogos (`requireEditorEstadisticas`); Asistente IA CRUD (`requireEditorAsistenteIa`); usuarios (`usuarios.acceso` + editor); Google Sheets export (`requireEditorMarketing`).
+- **Una sola entrada**: import lista → `POST /api/import-lista-precios`; sync DUX lista → API; detalle historial pedido → `GET /api/pedidos-historia/[id]/detalle` + `guardPedidosHistoriaLectura`; listados pesados → RSC + servicio.
+- **ENV**: toda `process.env.*` leída en código debe estar en `.env.example`. Obligatorios de producción: `SESSION_SECRET`, `DATABASE_URL` (comentarlos como tales).
+- **Google Sheets**: `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` (`normalizeGooglePrivateKey`), `GOOGLE_SHEETS_SPREADSHEET_ID`. Export: `exportarMktGoogleSheetsAction`. Probe: `npm run test:google-sheets` (sin Action de probe).
+- **`z.record` con IDs**: `z.record(prismaCuidSchema, …)` + tope de cardinalidad (`cargarImputacionesMesParamsSchema.ivaPorGastoFinalId`).
 
-Cada función exportada desde `src/actions/*.ts` debe cumplir, en este orden:
+### 1.2.3 Edición inline `/proveedores` (`productos.ts`)
 
-1. **Autorización primero**: antes de parsear o tocar servicios, resolver `getRol()` y/o `esEditor()` y aplicar `puede(rol, PERMISOS.*)` según el módulo. Nunca confiar solo en que la página esté protegida en layout: las Actions son invocables directamente.
-2. **Payload como `unknown` cuando venga del cliente**: usar `.safeParse()` de Zod; mensajes de error genéricos o el primer error de `flatten()` hacia `ActionResult`.
-3. **IDs de Prisma**: `cuid` → `prismaCuidSchema`; UUID → `uuidSchema` o esquemas en `@/lib/validations/*`; no aceptar strings arbitrarios largos donde el modelo sea CUID.
-4. **Delegación**: mutaciones y lecturas complejas en `src/services/`; la Action solo orquesta, revalida rutas y devuelve `ActionResult` / tipos acordados.
-5. **Sin fugas en errores**: no exponer stack traces ni SQL al cliente; `{ ok: false, error: string }` controlado.
+- `editarProducto` / `aplicarCampoMasivo`: `listaPrecios.acciones.edicionMasiva` + `esEditor()`; `unknown` + Zod; solo `habilitado` (descuentos vía motor §1.8d). Revalida `/proveedores` y `/proveedores/lista-precios`.
 
-### 1.2.3 Gate doble: módulo + editor (mutaciones críticas)
-
-- **Historial de pedidos — mutaciones** (`pedidosHistoria.ts`): con `puede(rol, PERMISOS.pedidos.acceso)` se habilitan para `simple` y `editor`: **guardar recepción** (`guardarRecepcionPedidoHistoriaAction`), **marcar registrado**, **eliminar cabecera** y **descargar PDF**. Lecturas (listado RSC, detalle modal) usan servicio directo o **`GET /api/pedidos-historia/[id]/detalle`** — no Server Actions de lectura.
-- **Integraciones DUX / compras** (`comprobantesProveedor.ts`; sync masivo vía `comprobantesProveedorDuxSync.service.ts` + `duxComprasApi.ts`): `puede(rol, PERMISOS.finanzas.acceso)` **y** `esEditor()` antes de llamar APIs externas o sync masivo desde **Server Actions** (misma sensibilidad que otras escrituras financieras).
-- **Catálogos finanzas balance** (`finBalGastosCatalogo.ts`, etc.): ya documentado — `finanzas.acceso` + `esEditor()` en mutaciones de catálogo maestro.
-- **Usuarios** (`globalPersonal.ts` `actualizarUsuarioPersonalAction`): `puede(rol, PERMISOS.usuarios.acceso)` **y** `esEditor()`.
-
-### 1.2.4 Edición inline en `/proveedores` (`productos.ts`)
-
-- `editarProducto` / `aplicarCampoMasivo`: permiso `puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)`; payload `unknown` + Zod; solo `habilitado` (descuentos vía motor §1.8d). Revalida `/proveedores` y `/proveedores/lista-precios`.
-
-### 1.2.5 Auditoría de seguridad — patrones obligatorios (cierre 2026-05)
-
-Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumplen un patrón homogéneo. Documentado para fijar la línea base y servir de checklist para futuras IAs:
-
-**A. Firma de payloads provenientes del cliente**
-- Toda Action invocable desde el cliente que reciba un objeto/array de datos **debe** declarar el parámetro como `unknown` (o `string` cuando el dato sea un solo ID/string controlado).
-- Está prohibido tipar la firma con `z.infer<typeof X>` u otros tipos derivados que la “pinten” como segura: el cliente puede ignorar el tipo TS y mandar cualquier cosa por la red. La validación **siempre** se hace dentro de la Action con `schema.safeParse(raw)`.
-- Excepción tolerada (alineado a Next.js): firmas que reciben `FormData` (la propia API estándar) o tipos primitivos individuales (`id: string`) — pero igual deben pasar por Zod (`prismaCuidSchema`, `uuidSchema`, etc.) antes de tocar BD.
-
-**B. Gate doble “módulo + editor” en mutaciones de submódulos sensibles**
-- Convención: cada submódulo cuyo permiso de acceso sea `simple/editor` o `editor` debe exigir **`puede(rol, PERMISOS.<modulo>.<accion>)` antes** de `esEditor()` cuando la Action sea de escritura. El orden importa: el primer chequeo es el del **módulo** (rechaza acceso conceptual), el segundo es el de **escritura** (rechaza modo solo-lectura).
-- Ejemplos confirmados (no son los únicos):
-  - **Vínculos tienda** (`vinculos.ts`): lecturas (`getVinculos`, `listarProductosParaVincular`) con `puede(rol, PERMISOS.tienda.acceso)` (**solo editor**). `vincularProducto` y `desvincularProducto` exigen además `esEditor()`.
-  - **Tipos de pintura / rendimientos** (`tiposPinturaRendimientos.ts`): `upsertTipoPinturaRendimientoAction` y `deleteTipoPinturaRendimientoAction` exigen `puede(rol, PERMISOS.tienda.tintoLts) + esEditor()` (gate consistente con la lectura `getTiposPinturaRendimientosAction`).
-  - **Comparación categorías** (`comparacionCategorias.ts`): mutaciones (CRUD + asignar/quitar/dto-extra) ancladas a `puede(rol, PERMISOS.comparacionCategorias.editar)`.
-
-**C. IDs validados por modelo Prisma**
-- En filtros de listado (`q`/paginación/IDs opcionales), **`proveedorId`** debe usar `prismaCuidSchema.optional()` (Prisma `Proveedor` usa `cuid()`) — no `z.string().min(1).max(128)`. Aplicado en `listarParaVincularFiltrosSchema` (`vinculos.ts`) y lecturas de historial en RSC (`pedidos/historial/page.tsx`).
-- Reglas vigentes (referencia rápida):
-  - **CUID** (`Proveedor`, `PedidoHistoria`, `PedidoHistoriaItem`, `Marca`, `Sucursal`, `FinBalGastoTipo`, `FinBalGastoRubro`, `FinBalGasto`, `FinBalGastoFinal`, `FinBalGastoMensual`, `CajaTesoreria`, `ComprobanteProveedor`, `FinTesoreriaCheque`): `prismaCuidSchema`.
-  - **`cod_ext` / `cod_tienda`** (`prod_precios_provee`, `prod_precios_tienda`, payloads históricos que usaban UUID): `listaPreciosCodExtSchema`, `listaPreciosCodTiendaSchema` o listas (`listaPreciosCodExtListSchema`) en `@/lib/validations/common`.
-  - **UUID** (`ProdPedMerc2`, `prod_rendimientos`, …): `uuidSchema`.
-  - **Mixto / FK legacy / sucursal seed**: `prismaCuidOrUuidSchema` o `globalSucursalIdSchema`.
-
-**D. Sin throw al cliente**
-- Toda Action **debe** envolver llamadas a Prisma / servicios que puedan lanzar (incluso lecturas) en `try/catch` y devolver `{ ok: false, error: string }` con un mensaje legible.
-- Lecturas que devuelven un shape vacío (no `ActionResult`) deben caer al shape vacío también ante excepción (ej. `getPedidoUrgenteData`, `getControlStock`, `getTiendaPageData`): no propagar stack traces.
-- `actions/comparacionCategorias.ts` (lecturas), `actions/vinculos.ts` (`vincularProducto` / `desvincularProducto`), `actions/stock.ts` (`registrarExportacionExcelStock`) y `actions/pedidos.ts` (`getPedidoUrgenteData`, `comprobarItemsParaGenerarPedidoAction`) ya cumplen este contrato tras 2026-05.
-
-**E. Anti-patrón: una Action no debe llamar a otra Action**
-- Si una Action necesita reutilizar lógica de otra, **delegar al servicio común** (no invocar la Action vecina). Las Actions son orquestadores I/O; encadenarlas duplica chequeos de sesión y mezcla niveles de validación.
-- Ejemplo aplicado (2026-05): `comprobarItemsParaGenerarPedidoAction` ahora invoca `getItemsTablaEnviarPedido` (servicio) en lugar de `getEnviarPedidoTablaData` (Action vecina).
-
-**F. Helpers de gate compartidos**
-- Cuando un archivo tiene varias Actions con el mismo gate, definir un helper local que devuelva `{ ok: false; error: string } | null` (ej. `requireEditorFinanzas` en `finBalGastosCatalogo.ts` y `finBalGastoMensualBalance.ts`).
-- **Anti-patrón**: helpers tipo `canEdit() => () => Promise<boolean>` (doble función arrow). Se reemplazó por `tienePermisoEditar(): Promise<boolean>` en `comparacionCategorias.ts`.
-
-### 1.2.6 Superficie mínima y variables de entorno (post-auditoría 2026-05-10)
-
-- **Server Actions huérfanas**: si una Action no tiene call sites (`grep`/`tsserver`), **eliminarla** o integrarla de inmediato. Duplicar la misma operación ya cubierta por **Route Handler** (`app/api/…`) aumenta vectores CSRF/UI sin beneficio — preferir una sola entrada con el mismo gate (`getRol` + `puede`).
-
-### 1.2.7 Auditoría backend — seguridad y depuración (2026-06-04)
-
-**Depuración aplicada (no reintroducir):**
-
-| Eliminado | Motivo |
-|-----------|--------|
-| `getListaPreciosFiltradaAction` | Sin call sites; cubierta por `getListaPreciosConOpcionesAction`. |
-| `getUltimoSync` (`tienda.ts`) | Sin call sites; sync usa `sync_dux_status` / API route. |
-| `countVinculosConUrlCompetenciaAction` | Sin call sites; conteo en `competenciaPxSugerido.service` vía route sync. |
-| `MarcacionPxListaCelda` + `pxListasMarcacion.service.ts` | UI sin uso tras retiro de tabla `prod_precios_tienda_marcacion`. |
-
-**Contrato de payloads (refuerzo 2026-06):**
-
-- Lecturas/mutaciones desde cliente: parámetro **`raw: unknown`** + `.safeParse()` con esquema en `@/lib/validations/*` (ej. `getListaPreciosConOpcionesAction`, `actualizarListaPreciosMasivoAction`, `editarProducto`, `aplicarCampoMasivo`, `buscarProductosParaAsignarAction`).
-- El cliente pasa **un objeto** acorde al esquema (no argumentos posicionales sueltos en Actions nuevas).
-- **`listaPreciosFiltrosLecturaSchema.proveedorId`**: `prismaCuidSchema.optional()`.
-- **`buscarProductosAsignarSchema.proveedorId`**: `prismaCuidSchema.optional()`.
-
-**Gates corregidos:**
-
-| Action | Gate |
-|--------|------|
-| `crearProveedor` / `editarProveedor` / `eliminarProveedor` | `puede(rol, PERMISOS.proveedores.acciones.nuevoProveedor)` (antes solo `esEditor()` genérico). |
-| `actualizarCoeficientesTintometricosAction` | `puede(rol, PERMISOS.stock.acceso)` **y** `esEditor()` + `try/catch`. |
-
-**Tipado:** sin `any` en `src/` (TS 5.9).
-
-**Integración real `/proveedores` (2026-06-04, eficiencia/DRY):**
-
-- **`getProveedoresPageData`**: delega en `getProductosProveedoresPageFiltrados` (`listaPrecios.service.ts`) — misma query que lista-precios (`getListaPreciosConTiendaFiltrada`), sin `MOCK_PRODUCTOS`.
-- **`productos.ts`**: `editarProducto` / `aplicarCampoMasivo` solo permiten **`disponible`→`habilitado`**; descuentos gobernados por motor §1.8d.
-- **Tipo compartido:** `ProductoProveedoresPage` en `src/lib/productoProveedoresPage.ts` (mapper desde `FilaListaPrecioParaCliente`).
-- **`FilaListaPrecioParaCliente`**: incluye `codProdProveedor`, `habilitado` y `proveedor.codigoUnico` para todas las lecturas de lista.
-- **`proveedoresPageParamsSchema`**: `proveedor` = `prismaCuidSchema.optional()`; `pagina` numérica acotada.
-
-**Herramientas de auditoría:**
-
-- Tablas Prisma: `node scripts/audit-schema-usage.mjs` (o `npm run db:audit-schema`)
-- Columnas escalares sin match en `src/`: `node scripts/audit-schema-columns.mjs` (o `npm run db:audit-schema-columns`)
-- Server Actions huérfanas: `node scripts/audit-actions-usage.mjs` (o `grep` del nombre fuera de `src/actions/`).
-- **Lógica solo servidor**: integraciones sensibles que **no** deben exponerse como Server Actions invocables desde el navegador se mantienen en `src/services/` y solo las invocan Actions ya autorizadas. **No** re-exportar valores de runtime desde archivos `"use server"` (usar `@/lib/validations/*` o servicios sin `"use server"`).
-- **Catálogo de ENV**: todas las lecturas documentadas `process.env.*` deben estar listadas en **`.env.example`** (aunque sean opcionales), con una línea corta por variable. Valores obligatorios en producción (`SESSION_SECRET`, `DATABASE_URL`) deben estar comentados como tales al lado del ejemplo.
-- **Google Sheets (service account)**: `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` (normalizar `\n` literales vía `normalizeGooglePrivateKey` en `@/lib/googleSheets.ts`), `GOOGLE_SHEETS_SPREADSHEET_ID`. Auth JWT scope `spreadsheets`. Probe: `probarConexionGoogleSheets` escribe marca en `A1`. Helpers: `@/lib/googleSheetsWrite.ts` (`ensureGoogleSheetTab`, `replaceGoogleSheetTabValues`). Export Marketing (una sola acción, sobrescribe todas las pestañas; orden): `exportarMktAGoogleSheets` — **Indice** (diccionario estático `buildMktGoogleSheetsIndiceValues`: bloques **CATALOGO** hoja↔tabla_db/grano/pk/columnas y **RELACION** joins/cardinalidad; regenerado en cada export); **Publicaciones** (`mkt_publi` + N:M: **una fila por red** — mismos `id`/`fecha`/…, distinto `red_id`; columnas `id`, `red_id`, `tipo_contenido_id`, `idea_detalle_id`, `fecha` ISO `YYYY-MM-DD`, `publicacion`, `contenido_url`); **Publicaciones Redes** (`mkt_publi_tipo_redes`: `id`, `red_social_nombre`); **Publicaciones Secciones** (`mkt_publi_ideas_secciones`: `id`, `idea_nombre`, `idea_resumen`); **Publicaciones Ideas** (`mkt_publi_ideas_detalle`: `id`, `seccion_id`, `detalle`, `usada`); **Publi Tipo Contenido** (`mkt_publi_tipo_contenido`: `id`, `contenido_nombre`); **Contenido Multimedia** (`mkt_contenido_drive_url`: `id`, `nombre`, `descripcion`, `url`, `tipo_id`); **Contenido Multimedia Tipo** (`mkt_contenido_drive_tipo`: `id`, `tipo`); **Colores Marca** (`mkt_colores_marca`: `id`, `nombre`, `descripcion`, `cod_hexadecimales`). Booleans (`usada`) como `TRUE`/`FALSE`. Action solo `esEditor()`: `exportarMktGoogleSheetsAction`. Probe: servicio `probarConexionGoogleSheets` + script `npm run test:google-sheets` (no hay Server Action de probe). El Sheet debe estar compartido como **Editor** con el `client_email` de la service account.
-- **`z.record` con IDs**: mapas cliente→servidor cuyas claves sean FK Prisma (`cuid`) deben tiparse con `z.record(prismaCuidSchema, …)` más un tope de cardinalidad (`superRefine` / `max`) para evitar payloads enormes (aplicado en `cargarImputacionesMesParamsSchema.ivaPorGastoFinalId`).
-- **Route Handlers (`app/api/…`)**: compartir gates con `src/lib/apiRouteAuth.ts` (`guardTiendaListaPreciosSincronizar`, `guardFinanzasLectura`, `guardListaPreciosImportarEsEditor`) para que **GET de estado** y **POST** usen el mismo criterio (evita filtrar solo mutaciones y dejar el poll expuesto).
-
-### 1.2.8 Auditoría backend — seguridad y depuración (2026-06-30)
-
-**Cierre:** 151 Server Actions exportadas; `node scripts/audit-actions-usage.mjs` → **0 huérfanas**. Sin `any` en `src/`. ESLint `src/actions src/services src/lib --max-warnings 0` ✓.
-
-**Server Actions eliminadas (sin call sites — no reintroducir):**
-
-| Archivo | Eliminadas | SSOT vigente |
-|---------|------------|--------------|
-| `pedidosHistoria.ts` | `listarPedidosHistoriaAction`, `getPedidoHistoriaDetalleAction`, `actualizarPedidoHistoriaItemCantRecibidaAction`, `agregarPedidoHistoriaItemAction`, `reabrirPedidoHistoriaRecepcionAction` | Listado: RSC `pedidos/historial/page.tsx` → `listarPedidosHistoria` (servicio). Detalle: `fetchPedidoHistoriaDetalle` → `GET /api/pedidos-historia/[id]/detalle`. Mutaciones: `guardarRecepcionPedidoHistoriaAction`, `marcarPedidoHistoriaRegistradoAction`, `eliminarPedidoHistoriaAction`, `descargarPdfPedidoHistoriaAction`. |
-| `importar.ts` | `importarListaPreciosProveedor` | `POST /api/import-lista-precios` + `importarListaPreciosProveedorSchema` (Zod). |
-| `pedidos.ts` | `syncPedidoUrgenteEnvioAction` | `upsertPedidoUrgenteMercaderiaItemAction`. |
-| `finBalVtas.ts` | `listarFinBalVtasAction`, `listarSucursalesGeneraBalanceParaVtasAction`, `crearFinBalVtasAction` | Lecturas RSC + `listarFinBalVtasPorMesAnioAction` / `guardarFinBalVtasCargaPeriodoAction`. |
-| `cajasTesoreria.ts` | `listarCajasTesoreriaAction`, `listarFinTesoreriaTipoCajaAction`, `listarCajasTesoreriaTipoDigitalAction` | RSC/servicios; conservar `listarCajasTesoreriaTipoBancoAction` (modal acreditar cheque). |
-| `competenciaPrecios.ts` | `getCompetenciaPreciosListAction` | `getPxListasPageData` (`pxListas.ts` + `pxListasPage.service.ts`). |
-| `comparacionCategorias.ts` | `getArbolCategoriasAction`, `getPresentacionesConLabelAction`, `getPresentacionesParaGestionAction` | RSC importa servicios (`categoriasComparacion.service.ts`). |
-| `finBalPosicionIvaComparacionPedido.ts` | `getEstadoIvaComparacionPedidoAction` | Lectura en página RSC / servicio. |
-
-**Servicios / validaciones / libs eliminados:**
-
-| Eliminado | Motivo |
-|-----------|--------|
-| `competenciaPreciosList.service.ts` | Reemplazado por `pxListasPage.service.ts` + `pxListasRows.service.ts`. |
-| `syncPedidoUrgenteEnvio` + `syncPedidoUrgenteEnvioSchema` | Sin call sites tras unificación envío urgente. |
-| `crearFinBalVtas` + `crearFinBalVtasSchema` | Alta de ventas vía `guardarFinBalVtasCargaPeriodo`. |
-| `getPresentacionesConLabel`, `getPresentacionesParaGestion` (`categoriasComparacion.service.ts`) | Solo las Actions huérfanas las invocaban. |
-| `competenciaPreciosFiltros.ts`, `competenciaPreciosFiltrosQuery.ts`, `competenciaPreciosFiltrosSchema` | Filtros legacy Px Competencia; Px Listas usa `@/lib/pxListasFiltros` + `getPxListasPageParamsSchema`. |
-
-**Correcciones de seguridad:**
-
-| Área | Cambio |
-|------|--------|
-| `vinculos.ts` | Anti-patrón §1.2.5.E corregido: dejó de importar `@/actions/proveedores`; `getProveedoresMercaderia` desde `proveedor.service` con gate `PERMISOS.tienda.acceso`. |
-| `vinculos.ts` | `listarParaVincularFiltrosSchema.proveedorId` → `prismaCuidSchema.optional()`. |
-| `pxListasPrecios.ts` | `getPxListasPreciosPageData(params: unknown)` + `getPxListasPreciosPageParamsSchema.safeParse()`. |
-| `POST /api/import-lista-precios` | Body validado con `importarListaPreciosProveedorSchema` (`proveedorId`: `prismaCuidSchema`; límites filas/celdas). |
-| `POST /api/import-est-por-prod` | Body `importarEstPorProdSchema`; gate `guardEstPorProdImportarEsEditor`. Ver §2.5g. |
-| `importar.ts` (validaciones) | `importarProductosSchema` / `importarListaPreciosProveedorSchema`: `proveedorId` con `prismaCuidSchema` (antes `z.string().max(128)` local). |
-
-**Patrones a mantener:**
-
-- **Una sola entrada por operación:** import lista → API route; sync DUX → API route; detalle historial pedido → API route; listados pesados → RSC + servicio.
-- **Script de regresión:** `node scripts/audit-actions-usage.mjs` antes de cerrar PRs que toquen `src/actions/`.
-- **Serialización fechas historial:** `serializarPedidoHistoriaDetalleParaCliente` en wire (API route); tipo `PedidoHistoriaDetalle` admite `Date | string`.
-
-### 1.2.9 Auditoría backend — limpieza de superficie (2026-08-13)
-
-**Alcance:** `src/services/**`, `src/actions/**`, `src/lib/validations/**` y helpers de backend en `src/lib/**`. Sin cambios de contratos, queries ni reglas de negocio. `npx eslint src --max-warnings 0` y `node scripts/audit-actions-usage.mjs` → **0 huérfanas**.
-
-**Server Actions huérfanas eliminadas (no reintroducir):**
-
-| Archivo | Eliminadas | SSOT vigente |
-|---------|------------|--------------|
-| `estPorProd.ts` (archivo completo) | `verificarEstPorProdPeriodoAction`, `importarEstPorProdAction`, `eliminarEstPorProdAction`, `eliminarEstPorProdPorPeriodoAction` | `POST /api/import-est-por-prod`, `POST /api/import-est-por-prod/verificar`, `POST /api/est-por-prod/eliminar-periodo` |
-| `finAnaMargenContribucion.ts` | `listarDescuentosFpMargenContribucionAction`, `listarFormulasMargenContribucionAction`, `actualizarFormulaMargenContribucionAction`, `crearFinAnaMcCategoriaAction`, `editarFinAnaMcCategoriaAction`, `eliminarFinAnaMcCategoriaAction` | Lecturas RSC + servicios; UI de categorías → `reemplazarFinAnaMcCategoriasAction`; fórmulas = semilla + `listarFormulasMargenContribucion` |
-| `googleSheets.ts` | `probarConexionGoogleSheetsAction` | Script `npm run test:google-sheets` → `probarConexionGoogleSheets` (servicio) |
-| `mktColoresMarca.ts` / `mktContenidoUrlDrive.ts` / `mktPublicaciones.ts` / `mktPublicacionesIdeas.ts` | `listarMkt*Action` de lectura | RSC importa el servicio (`listarMktColoresMarca`, `listarMktContenidoUrlDrive`, `listarMktPublicacionesCalendario`, `listarMktIdeasJerarquia`) |
-| `descEspecialReglas.ts` | `obtenerReglaDescEspecialPorCodExtAction` | Detalle: `obtenerReglaDescEspecialDetalleAction` |
-| `sesion.ts` | `volverModoSimple` | Arranque de sesión de navegador (`sesion-arranque` + middleware) |
-
-**Libs / stores muertos eliminados:** `src/lib/db.ts` (pool `pg` huérfano; Prisma es SSOT), `importProgressStore.ts` (progreso en `importProgressDb.ts`), `syncProgressStore.ts` (progreso en `syncDuxStatusDb.ts`; además contenía ingest de debug), `whatsappApi.ts` (sin call sites). `duxApiBatchPolicy.ts` **se conserva** y pasa a usarse: `DUX_API_PAGE_LIMIT = DUX_API_BATCH_SIZE`; `DELAY_MS` del sync lista tienda = `DUX_API_BATCH_INTERVAL_MS`.
-
-**Servicios / validaciones / helpers muertos (mismas operaciones cubiertas por RSC, API, scripts o funciones vivas):** wrappers de stock/precio por sucursal (`getStockMaipu`/`getStockGuaymallen`, `getPrecioLista` / `getPrecioListaPrincipal` / `getPreciosPorCodTienda`); `getListaPreciosConTienda` (sin filtros; la grilla usa `getListaPreciosConTiendaFiltrada`); `fetchTodosLosItems` (sync usa `fetchItemsPage`); listados planos de catálogo de gastos (`listarFinBalGastoTipos` / `RubrosPorTipo` / `GastosPorRubro` — la UI usa `listarFinBalGastosJerarquia`); CRUD granular de categorías M.C. y mutación de fórmulas (UI usa `reemplazarFinAnaMcCategorias`; fórmulas = semilla + `listarFormulasMargenContribucion`); `agregarPedidoHistoriaItem` / `actualizarPedidoHistoriaItemCantRecibida` / `reabrirPedidoHistoriaRecepcion` (recepción consolidada en `guardarRecepcionPedidoHistoria`); `listarEstPorProd` / `eliminarEstPorProd` / tipo `EstPorProdItem` (carga por periodo vía API); aliases deprecados IVA débito / px sugerido (`buildMapPxVtaSugeridoPorCodTienda`, `buildMapPxSugeridoCompetenciaPorCodTienda`); `evaluarMktPublicacionObjs` (UI usa `evaluarMktPublicacionObjsCliente`); `listarMktIdeaSecciones` / `listarMktIdeaDetalles` (jerarquía `listarMktIdeasJerarquia`); `listarFinTesoreriaTipoCaja` / `listarCajasTesoreriaPorTipoValor`; `listarPeriodosConImputacionesEnDb`; `getMarcasFromListaTienda` / `getProveedoresFromListaTienda`; `resolverCostoCxPxParaFila` (grilla Cx/Px: `mapCxProdDesdeCandidatos` en `cxPxTiendaRows.service.ts`); `obtenerReglaDescEspecialPorCodExt`; `fechaHastaArgentinaComoDux`; `generarCodigoUnico`; `aplicarMapeo` (import productos es mock; lista precios usa `aplicarMapeoListaPrecios`); `uuidsSchema` / `paramsPaginaSchema`; `eliminarEstPorProdSchema`; schemas CRUD granular M.C. / `actualizarFormulaMargenContribucionSchema`; alias `IVA_PROVEEDOR_VALUES`; helpers fecha AR sin call sites (`diaDevengadoFinBalDesdeCalendarioArgentina`, `isoYearMonthArgentina`, `formatMesAnioTituloArgentina`). ENV `WHATSAPP_API_TOKEN` retirada de `.env.example` (sin lector).
+---
 
 ### 1.3 Integridad de datos
 
@@ -229,7 +87,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 - **Servicios** (`src/services/`): Encapsulan acceso a datos (Prisma, SQL raw) y lógica de negocio. Las Actions los invocan; no al revés.
 - **Actions**: Orquestan: sesión → validación → servicio → revalidatePath → respuesta.
-- **URLs canónicas área Gestión De Productos (2026-03):** la navegación pública usa prefijo `/gestion-productos/...` (área/módulo/submódulo). Si una mutación impacta vistas de esa área, revalidar al menos la ruta canónica correspondiente. Se permiten revalidaciones adicionales sobre rutas legacy (`/proveedores`, `/tienda`, `/stock`, `/pedidos/*`) mientras existan redirects/rewrites de compatibilidad.
+- **URLs canónicas área Gestión De Productos:** la navegación pública usa prefijo `/gestion-productos/...` (área/módulo/submódulo). Si una mutación impacta vistas de esa área, revalidar al menos la ruta canónica correspondiente. Se permiten revalidaciones adicionales sobre rutas legacy (`/proveedores`, `/tienda`, `/stock`, `/pedidos/*`) mientras existan redirects/rewrites de compatibilidad.
 
 - **Prisma / Neon**: `DATABASE_URL` en `.env` debe usar el **pooler** de Neon para el runtime (`src/lib/prisma.ts`). Para migraciones, definir además **`DIRECT_URL`** (host **sin** `-pooler`): `prisma.config.ts` usa `DIRECT_URL` si existe; si no, cae a `DATABASE_URL`. Plantilla: `.env.example`.
 - **Migraciones ítems historial pedidos**: `20260322120000_*` y `20260322140000_*` son **idempotentes** (`to_regclass`) respecto de `prod_ped_historial_items` / `prod_ped_merc_historial`. `20260322200000_*` renombra `prod_ped_merc_historial` → `prod_ped_historial_merc` si aún existe el nombre intermedio.
@@ -243,15 +101,15 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 ### 1.4.2 Vinculación tienda ↔ proveedor 100 % manual (`prod_tienda.proveedor` congelado; `cod_ext` eliminado)
 
-- A partir de **2026-05-28** la vinculación tienda ↔ proveedor dejó de depender de DUX. La única relación vigente es **`prod_precios_provee.cod_tienda`** (vínculo manual creado desde **Vínculos Con Proveedores**, action `vincularProducto`).
-- **Columna `prod_tienda.cod_ext` eliminada** (migración **`20260606120000_drop_prod_tienda_cod_ext`**): dejó de sincronizarse en 2026-05-28 y ya no tenía lecturas en app. **`descripcion_tienda`** para listados de proveedor se resuelve vía relación **`prod_precios_provee.prodTienda`** (`cod_tienda_vinculo`), no por coincidencia de `cod_ext`.
+- La única relación vigente es **`prod_precios_provee.cod_tienda`** (vínculo manual creado desde **Vínculos Con Proveedores**, action `vincularProducto`).
+- **Sin `prod_tienda.cod_ext`**. **`descripcion_tienda`** para listados de proveedor se resuelve vía **`prod_precios_provee.prodTienda`** (`cod_tienda_vinculo`).
 - **`prod_tienda.proveedor`**: sigue congelado (sync **no** escribe). Solo se usa como espejo DUX histórico en **`costoListaTienda.service.ts`** (`proveedorTextoCoincideConDux` entre candidatos habilitados).
 - **Sync DUX** (`syncListaPrecioTienda.service.ts`): no persiste `cod_ext` ni `proveedor`. Sin auto-vinculación por `cod_ext`.
 - **Filtro PROV. VINC.** (`getTiendaPageData` en `src/actions/tienda.ts`): la query `?proveedor=<idProveedor>` matchea **`listaPreciosProveedores: { some: { idProveedor, habilitado: true } }`** (CUID del proveedor); URLs legacy con texto se ignoran silenciosamente (parseo `prismaCuidSchema.safeParse`).
 - **Pedido Reposición** (`pedidosReposicionProveedor.service.ts`): `elegirListaPrecioProveedorReposicion` solo opera sobre vínculos manuales (`lpPorCodTienda`); sin vínculos → `null`. `codExt` en UI/reposición sale de **`prod_precios_provee`**, no de `prod_tienda`.
-- **Cx/Px Tienda** (`cxPxTiendaRows.service.ts` → `mapCxProdDesdeCandidatos` + `listarCandidatosCostoPorCodTienda`): FK persistida → único candidato habilitado → promedio de vínculos (`CX_PROD_SELECCION_PROM`) / espejo DUX (`costo_compra`).
+- **Cx/Px Tienda** (`cxPxTiendaRows.service.ts` → `mapCxProdDesdeCandidatos` + query batch en `cxPxTiendaRows.service`): FK persistida → único candidato habilitado → promedio de vínculos (`CX_PROD_SELECCION_PROM`) / espejo DUX (`costo_compra`).
 - **Cx Compra / Tienda** (`getTiendaPageData`): `ItemTiendaParaTabla.codigoExterno` queda **`null`** (no hay `cod_ext` en tienda).
-- **Control de Aumentos**: módulo eliminado por completo en este mismo cleanup (página `/tienda/aumentos`, servicio `controlAumentos.service.ts`, componentes `TablaAumentos` / `AumentosPageWithActions` / `ExportarAumentosButton`, interfaces `ItemAumento` / `GrupoAumento` / `ControlAumentosData`, redirects en `next.config.ts` y CSS exclusivo `--altura-paneles-aumentos` / `.paneles-aumentos`). Será reimplementado más adelante.
+- **Control de Aumentos**: no existe en el código vigente. No reintroducir `/tienda/aumentos` ni `controlAumentos.service.ts` sin un diseño nuevo.
 
 ### 1.4.3 Listas de precio DUX (`prod_tienda` + `prod_tienda_listas_precios` + `prod_tienda_precios`)
 
@@ -308,12 +166,12 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   - Actions: `encolarTransferenciasPendientesAction`, `listarPendientesExportTransfDepositosAction`, `exportarPendientesTransfDepositosAction`.
   - Indicador slidenav: `contarPendientesTransfPorSucursal` cuenta filas pendientes del modal (Emisión = TRANSFERIR, Recepción = RECIBIR) filtradas por `sucursalExcel`.
   - Backfill de la migración de flags: filas históricas se marcan exportadas para no aparecer como pendientes.
-- **Servicio** `src/services/transfDepositos.service.ts`: listados, historial, encolar/export pendientes; `registrarControlTransfDepositos` queda disponible para confirmación puntual.
-- **Zod**: `@/lib/validations/transfDepositos.ts` (`registrarControlTransfDepositosSchema`, `listarHistorialTransfDepositosProductoSchema`, `encolarTransferenciasPendientesSchema`, `exportarPendientesTransfDepositosSchema`, `conteosIndicadorSlidenavSchema`).
+- **Servicio** `src/services/transfDepositos.service.ts`: listados, historial, encolar y exportar pendientes. No hay Action de control unitario: el flujo vivo es encolar + Excel.
+- **Zod**: `@/lib/validations/transfDepositos.ts` (`listarHistorialTransfDepositosProductoSchema`, `encolarTransferenciasPendientesSchema`, `exportarPendientesTransfDepositosSchema`, `conteosIndicadorSlidenavSchema`).
 
-### 1.4.4 Purga de esquema — auditoría 2026-06-04
+### 1.4.4 Mapa de tablas Prisma vigentes
 
-**Objetivo:** esquema mínimo alineado al código en `src/`. **Fase 1 (tablas):** ningún `@@map` del `schema.prisma` vigente es candidato a `DROP` — los **35 modelos** tienen uso activo (`prisma.<modelo>` o SQL raw documentado). **Fase 2 (columnas):** en tablas vigentes no quedan columnas huérfanas en Prisma; las retiradas del negocio ya tienen migración.
+Esquema mínimo alineado a `src/`. Ningún `@@map` vigente es candidato a `DROP` sin evidencia de `prisma.<modelo>` / SQL raw. `FinTesoreriaTipoCaja` es catálogo seed (la UI usa `cajasTesoreriaTipos.ts`); no inventar `DROP`. Modelos usados solo por `tx.` o relaciones (`PedidoHistoriaItem`, `ProdPedUltComp`, `MktPublicacionRedLink`, `MktPublicacionIdeaDetalleRed`) **no** son huérfanos.
 
 **Mapa de tablas vigentes (Prisma → SQL):**
 
@@ -367,9 +225,9 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
 
 ### 1.6 Listados de solo lectura (catálogos)
 
-- Para catálogos de solo lectura (ej. `prod_precios_tienda`), exponer búsquedas mediante:
+- Para catálogos de solo lectura (ej. `prod_tienda`), exponer búsquedas mediante:
   - **Servicio** (consulta Prisma) + **Action** con sesión/rol + Zod + `ActionResult`.
-- Ejemplo aplicado: `buscarBasesTintometricasAction` (módulo Pedido Tintométrico) consulta `prod_precios_tienda` filtrando por `rubro = "Tintometrico"` y búsqueda por descripción/códigos.
+- Ejemplo aplicado: `buscarBasesTintometricasAction` (módulo Pedido Tintométrico) consulta `prod_tienda` filtrando por `rubro = "Tintometrico"` y búsqueda por descripción/códigos.
 
 ### 1.7 Filtros de búsqueda por texto (lecturas)
 
@@ -377,7 +235,7 @@ Tras la auditoría 2026-05, todas las Server Actions de `src/actions/*.ts` cumpl
   - **Normalizar**: `q?.trim()` y tratar vacío como `undefined`.
   - **Prisma**: usar `contains` con `mode: "insensitive"` y `OR` entre campos relevantes (p. ej. `descripcionTienda` / `descripcionProveedor`).
   - **Ubicación**: la lógica del `where` vive en `src/services/` y la Action solo pasa `q` normalizada.
-- **Historial de pedidos** (`listarPedidosHistoria`): `q` opcional; se parte en palabras (máx. 10, texto máx. 200 caracteres); cada palabra debe aparecer en `descripcion_tienda` de **`prod_precios_tienda`** (`AND`); los `cod_tienda` distintos obtenidos filtran cabeceras con `items: { some: { codTienda: { in } } }` (misma fuente de descripción que `getPedidoHistoriaDetalle`). **`estado`**: `PENDIENTE` \| `RECEPCIONADO` \| **`ALL`** (sin filtrar por estado). La página `/pedidos/historial` **sin** query `estado` aplica por defecto filtro **`PENDIENTE`**. Compatibilidad legacy: se acepta `SIN RECEPCION` y se normaliza a `PENDIENTE`. Validación de filtros en RSC (`pedidos/historial/page.tsx`): `proveedorId` con `prismaCuidSchema.optional()`; `q` con `.max(200).optional()`.
+- **Historial de pedidos** (`listarPedidosHistoria`): `q` opcional; se parte en palabras (máx. 10, texto máx. 200 caracteres); cada palabra debe aparecer en `descripcion_tienda` de **`prod_tienda`** (`AND`); los `cod_tienda` distintos obtenidos filtran cabeceras con `items: { some: { codTienda: { in } } }` (misma fuente de descripción que `getPedidoHistoriaDetalle`). **`estado`**: `PENDIENTE` \| `RECEPCIONADO` \| **`ALL`** (sin filtrar por estado). La página `/pedidos/historial` **sin** query `estado` aplica por defecto filtro **`PENDIENTE`**. Compatibilidad legacy: se acepta `SIN RECEPCION` y se normaliza a `PENDIENTE`. Validación de filtros en RSC (`pedidos/historial/page.tsx`): `proveedorId` con `prismaCuidSchema.optional()`; `q` con `.max(200).optional()`.
 
 ### 1.8 Precio de compra sin IVA (`px_compra_final_sin_iva`)
 
@@ -539,11 +397,11 @@ interface ReglaDescuentoListaPrecio {
 
 > **Cx Compra** (nombre vigente; antes «Vinculacion Con Prov.» / «Vinc. Con Prov.»). URL canónica sin cambio: `/gestion-productos/tienda/comp-proveedores`.
 
-- **`getTiendaPageData`**: sin filtros en URL lista **todo** `prod_precios_tienda` paginado (`where` vacío); cada filtro activo (`q`, rubro, subRubro, marca, proveedor, `vinculado`) reduce el conjunto.
-- Filtro de URL **`cxCompra`** (**CX COMPRA** en Cx Compra; reemplaza **SUB-RUBRO** en esa pantalla): valor = **id (CUID) del proveedor**; matchea ítems cuyo **CX PROD.** apunta a una fila lista de ese proveedor (`costoListaProveedor: { idProveedor }` vía `costo_compra_cod_ext`). Opciones del desplegable: `listarProveedoresCxCompraOpciones()` — solo proveedores con `proveedor_mercaderia = true` y al menos un `prod_precios_tienda.costo_compra_cod_ext` → su `cod_ext`. Tolerante a CUID inválido (se ignora).
+- **`getTiendaPageData`**: sin filtros en URL lista **todo** `prod_tienda` paginado (`where` vacío); cada filtro activo (`q`, rubro, subRubro, marca, proveedor, `vinculado`) reduce el conjunto.
+- Filtro de URL **`cxCompra`** (**CX COMPRA** en Cx Compra; reemplaza **SUB-RUBRO** en esa pantalla): valor = **id (CUID) del proveedor**; matchea ítems cuyo **CX PROD.** apunta a una fila lista de ese proveedor (`costoListaProveedor: { idProveedor }` vía `costo_compra_cod_ext`). Opciones del desplegable: `listarProveedoresCxCompraOpciones()` — solo proveedores con `proveedor_mercaderia = true` y al menos un `prod_tienda.costo_compra_cod_ext` → su `cod_ext`. Tolerante a CUID inválido (se ignora).
 - Filtro de URL **`proveedor`** (renombrado **PROV. VINC.** en la UI): valor = **id (CUID) del proveedor**; matchea `listaPreciosProveedores: { some: { idProveedor, habilitado: true } }`. Tolerante a URLs legacy con texto: si el valor no parsea como CUID (`prismaCuidSchema.safeParse`) se ignora silenciosamente y no se aplica el filtro (no rompe la pantalla). Ver §1.4.2.
 - Filtro de URL **`vinculado`**: `vinculado=no` → `{ listaPreciosProveedores: { none: {} } }`; `vinculado=si` → `{ listaPreciosProveedores: { some: {} } }`. Otros valores se ignoran.
-- **Unificación CX PROD. (2026-05-28):** `getTiendaPageData` enriquece cada fila con **`cxProd: CxProdDatosFila`** vía **`buildCxProdMapDesdeFilas`** (`src/services/cxPxTiendaRows.service.ts` → **`mapCxProdDesdeCandidatos`**). **`guardarCostoCxProdTiendaAction`** revalida **`/gestion-productos/tienda/comp-proveedores`** y **`/tienda`**. Permiso edición/export: **`PERMISOS.cxPxTienda.acceso`**.
+- **CX PROD.:** `getTiendaPageData` enriquece cada fila con **`cxProd: CxProdDatosFila`** vía **`buildCxProdMapDesdeFilas`** (`src/services/cxPxTiendaRows.service.ts` → **`mapCxProdDesdeCandidatos`**). **`guardarCostoCxProdTiendaAction`** revalida **`/gestion-productos/tienda/comp-proveedores`** y **`/tienda`**. Permiso edición/export: **`PERMISOS.cxPxTienda.acceso`**.
 
 ### 1.10 Margen sin IVA (Cx Compra — modal vínculos `/tienda`)
 
@@ -551,8 +409,8 @@ interface ReglaDescuentoListaPrecio {
 
 ### 1.10b Costo de compra elegido (`costo_compra_cod_ext`)
 
-- **Columna** `prod_precios_tienda.costo_compra_cod_ext` (`TEXT NULL`, FK → `prod_precios_provee.cod_ext`). Historial de nombres: `cod_ext_costo_lista` → `cod_ext_costo_compra` → `cx_px_cx_cod_ext` (migración **`20260528160000`**) → **`costo_compra_cod_ext`** (migración **`20260528200000_prod_precios_tienda_costo_compra_cod_ext`**). Campo Prisma: **`costoCompraCodExt`**.
-- **Convivencia con DUX**: `costo_compra` sigue siendo **espejo DUX** en `prod_tienda` (`syncListaPrecioTienda.service.ts`). Precios de venta por lista → **`prod_tienda_precios`** (§1.4.3). Desde **2026-05-28** **`proveedor` quedó congelado** (ya no se actualiza por DUX — ver §1.4.2); **`cod_ext` en tienda eliminado** (`20260606120000`). El sync **no** escribe ni borra `costo_compra_cod_ext`, **`es_producto_propio`** ni **`comparar_competencia`**. Migración **`20260528210000`** retiró `px_lista_cx_px` y `cx_px_px_comp_ref`; **`es_producto_propio`** se **restauró** en **`20260530120000`** para **Cx Compra** (ver § Producto propio). **`prod_precios_competencia`** no se modifica por sync DUX lista tienda.
+- **Columna** `prod_tienda.costo_compra_cod_ext` (`TEXT NULL`, FK → `prod_precios_provee.cod_ext`). Campo Prisma: **`costoCompraCodExt`**.
+- **Convivencia con DUX**: `costo_compra` sigue siendo **espejo DUX** en `prod_tienda` (`syncListaPrecioTienda.service.ts`). Precios de venta por lista → **`prod_tienda_precios`** (§1.4.3). **`proveedor` está congelado** (el sync no lo escribe — ver §1.4.2). El sync **no** escribe ni borra `costo_compra_cod_ext`, **`es_producto_propio`** ni **`comparar_competencia`**. **`prod_precios_competencia`** no se modifica por sync DUX lista tienda.
 - **CX PROD.** (`buildCxProdMapDesdeFilas` / `costoCxProdMostrado` en `src/lib/cxPxTienda.ts`): promedio de vínculos habilitados (**CX. PROM.**) o costo del proveedor elegido vía `costo_compra_cod_ext`.
 - **Candidatos** para asignar o validar: `prod_precios_provee` con `cod_tienda_vinculo = ítem`, `habilitado = true`.
 - **Vínculos** (`src/actions/vinculos.ts`): `getVinculos` devuelve `{ productos, costoCompraCodExt }`. Tras `vincularProducto`: `autoAsignarCodExtCostoListaTrasVincular` (solo si FK vacía: un candidato o match DUX). Tras `desvincularProducto`: `limpiarCodExtCostoListaSiCoincide` si la FK apuntaba a ese `cod_ext`. Elección explícita de costo en UI:
@@ -579,17 +437,16 @@ interface ReglaDescuentoListaPrecio {
 
 **Nuevos flujos DUX:** usar las constantes de `duxApiBatchPolicy.ts`; no hardcodear 100 ni intervalos menores a 5 s. Progreso UI en sidebar (`FRONTEND_GUIDELINES` § SSOT progreso API DUX).
 
-*Última actualización (2026-08-08): **Px Listas · seed REF MER→GAR** — script `db:seed-px-listas-ref-mer-gar` (dry-run / `--execute`); prioridad MER luego GAR; solo px ref > 0.
+*Px Listas · seed REF MER→GAR** — script `db:seed-px-listas-ref-mer-gar` (dry-run / `--execute`); prioridad MER luego GAR; solo px ref > 0.
 
-*Última actualización (2026-08-08): **Px Listas · filtro pxVinculado** — query filtra por `competencia_id_px_lista_general`; UI con etiqueta prefijo/abrev. 3 letras.
+*Px Listas · filtro pxVinculado** — query filtra por `competencia_id_px_lista_general`; UI con etiqueta prefijo/abrev. 3 letras.
 
-*Última actualización (2026-08-10): **global_proveedores.es_fabrica** — BOOLEAN NOT NULL default false; ver §1.11f.
+*global_proveedores.es_fabrica** — BOOLEAN NOT NULL default false; ver §1.11f.
 
-*Última actualización (2026-08-10): **global_proveedores.tiempo_entrega_en_dias** — INTEGER nullable (días de entrega); ver §1.11e.
+*global_proveedores.tiempo_entrega_en_dias** — INTEGER nullable (días de entrega); ver §1.11e.
 
-*Última actualización (2026-08-08): **Px Listas · competencia_id_px_lista_general** — FK en `prod_tienda` para REF. de **1 - GENERAL**; sync PX desde sugerido/scraping; Act. Px recalcula PORC. UTILIDAD.
+*Px Listas · competencia_id_px_lista_general** — FK en `prod_tienda` para REF. de **1 - GENERAL**; sync PX desde sugerido/scraping; Act. Px recalcula PORC. UTILIDAD.
 
-*Última actualización (2026-08-07): sync lista precios — eliminado `Promise.race` de 15 s incompatible con reintentos 429; timeout único en `fetchItemsPage` (default 30 s, env `DUX_FETCH_TIMEOUT_MS`).*
 
 ### 1.11 Coeficiente Tintométrico por proveedor
 
@@ -827,13 +684,18 @@ Esta sección **es obligatoria** para todas las páginas RSC y existe para evita
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { esEditor } from "@/lib/sesion";
+import { requireEditorConPermiso, firstZodErrorMessage, mensajeErrorAction } from "@/lib/actionHelpers";
+import { PERMISOS } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import { createProveedorSchema } from "@/lib/validations/proveedor";
 import * as proveedorService from "@/services/proveedor.service";
 
 export async function crearProveedor(formData: FormData): Promise<ActionResult<{ id: string }>> {
-  if (!(await esEditor())) return { ok: false, error: "Sin permisos de editor." };
+  const denied = await requireEditorConPermiso(
+    PERMISOS.proveedores.acciones.nuevoProveedor,
+    "Sin permisos para gestionar proveedores."
+  );
+  if (denied) return denied;
 
   const raw = {
     nombre: (formData.get("nombre") as string) ?? "",
@@ -841,9 +703,7 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
   };
   const parsed = createProveedorSchema.safeParse(raw);
   if (!parsed.success) {
-    const first = parsed.error.flatten().fieldErrors;
-    const msg = first.nombre?.[0] ?? first.prefijo?.[0] ?? "Datos inválidos.";
-    return { ok: false, error: msg };
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
 
   try {
@@ -851,8 +711,7 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
     revalidatePath("/proveedores");
     return { ok: true, data: { id } };
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Error al crear el proveedor.";
-    return { ok: false, error: message };
+    return { ok: false, error: mensajeErrorAction(e, "Error al crear el proveedor.") };
   }
 }
 ```
@@ -860,21 +719,19 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
 ### 2.2 Action con permiso granular (getRol + puede)
 
 ```ts
-import { getRol } from "@/lib/sesion";
-import { PERMISOS, puede } from "@/lib/permisos";
+import { requireEditorConPermiso } from "@/lib/actionHelpers";
+import { PERMISOS } from "@/lib/permisos";
 import { listaPreciosCodExtListSchema, actualizacionMasivaListaPreciosSchema } from "@/lib/validations/listaPrecios";
 
-export async function actualizarListaPreciosMasivoAction(
-  ids: string[],
-  data: ActualizacionMasivaListaPrecios
-): Promise<ActionResult<{ actualizados: number }>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
-    return { ok: false, error: "Sin permisos para edición masiva." };
-  }
-  const parsedIds = listaPreciosCodExtListSchema.safeParse(ids);
+export async function actualizarListaPreciosMasivoAction(payload: unknown): Promise<ActionResult<{ actualizados: number }>> {
+  const denied = await requireEditorConPermiso(
+    PERMISOS.listaPrecios.acciones.edicionMasiva,
+    "Sin permisos para edición masiva."
+  );
+  if (denied) return denied;
+  const parsedIds = listaPreciosCodExtListSchema.safeParse(/* ids desde payload */);
   if (!parsedIds.success) return { ok: false, error: "Cód. externos inválidos." };
-  const parsedData = actualizacionMasivaListaPreciosSchema.safeParse(data);
+  const parsedData = actualizacionMasivaListaPreciosSchema.safeParse(/* data */);
   if (!parsedData.success) return { ok: false, error: "Datos de actualización inválidos." };
 
   const result = await actualizarListaPreciosMasivo(parsedIds.data, parsedData.data);
@@ -891,12 +748,12 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { listaPreciosFiltrosLecturaSchema } from "@/lib/validations/listaPrecios";
 
-export async function getListaPreciosConOpcionesAction(/* ... */) {
+export async function getListaPreciosConOpcionesAction(payload: unknown) {
   const rol = await getRol();
-  if (!puede(rol, PERMISOS.listaPrecios.acciones.importarLista)) {
+  if (!puede(rol, PERMISOS.proveedores.listaPrecios)) {
     return { filas: [], total: 0, totalPaginas: 0, proveedoresDisponibles: [], marcasDisponibles: [], rubrosDisponibles: [] };
   }
-  const parsed = listaPreciosFiltrosLecturaSchema.safeParse({ proveedorId, marcaNombre, rubroNombre, busqueda, habilitado, opciones, pagina });
+  const parsed = listaPreciosFiltrosLecturaSchema.safeParse(payload);
   if (!parsed.success) return /* mismo vacío */;
   // delegar al servicio con parsed.data normalizado
 }
@@ -933,7 +790,7 @@ export type ServiceResult<T = void> =
 
 Este módulo agrega persistencia para el historial de pedidos generados por el flujo de “Generar Pedido”.
 
-- Cabecera: `pedido_historia` (Prisma: `PedidoHistoria`)
+- Cabecera: `prod_ped_historial` (Prisma: `PedidoHistoria`)
   - `generado_at`: fecha/hora del snapshot (momento en que se arma el pedido y se guarda el detalle).
   - `estado`: `PENDIENTE | RECEPCIONADO`.
     - `PENDIENTE`: snapshot creado (pendiente de recepción).
@@ -944,7 +801,7 @@ Este módulo agrega persistencia para el historial de pedidos generados por el f
 
 - Items: tabla física `prod_ped_historial_merc` (Prisma: `PedidoHistoriaItem`)
   - `pedido_historia_id -> prod_ped_historial.id` (FK, `onDelete: CASCADE`).
-  - `cod_tienda`: identificador del producto en la tabla `prod_precios_tienda` (se guarda como texto).
+  - `cod_tienda`: identificador del producto en `prod_tienda` (texto).
   - Cantidades:
     - `cant_pedida`: snapshot inicial (cargado al generar).
     - `cant_recibida`: nullable; al generar el snapshot queda **sin valor** (`NULL`) hasta la recepción. En UI se edita con OK/Editar/Cesto; el “cesto” persiste `cant_recibida = 0`.
@@ -988,7 +845,7 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
   - **Purga al finalizar cada sync**: `DELETE` lógico vía `deleteMany` donde `fecha_comp` &lt;= `fechaDesde` (purga inclusiva del borde de ventana para evitar arrastre de registros desactualizados); el conteo vuelve en `data.eliminadosAntiguos`.
   - **Paginación `/compras`**: la API DUX devuelve **como máximo 50** filas por GET (`DUX_COMPRAS_API_PAGE_LIMIT` en `duxComprasApi.ts`). `fetchComprasPagesAcumulado` usa `limit=50` y `offset=0,50,100…` hasta vacío o menos de 50 resultados. `DUX_COMPRAS_SYNC_LIMIT` (opcional) acota 1..50; `DUX_COMPRAS_SYNC_MAX_PAGES` default **500** (techo de seguridad, configurable). Entre páginas y entre sucursales se respeta `DUX_COMPRAS_MIN_INTERVAL_MS`.
   - **Omisiones**: filas sin `tipo_comp`, `fecha_comp` válida, `id_proveedor` que **no** exista en `global_proveedores.id_proveedor_dux`, o importes numéricos inválidos en `total` / `monto_aplicado`.
-- **Action**: `sincronizarComprobantesProveedorDesdeDuxAction` (`src/actions/comprobantesProveedor.ts`) — solo **`esEditor()`**; devuelve `ActionResult` con resumen (`eliminadosAntiguos`, `upserts`, `omitidos`, `detalleSucursal` con `error?` por sucursal).
+- **Action**: `sincronizarComprobantesProveedorDesdeDuxAction` (`src/actions/comprobantesProveedor.ts`) — `PERMISOS.finanzas.acceso` + `esEditor()`; devuelve `ActionResult` con resumen (`eliminadosAntiguos`, `upserts`, `omitidos`, `detalleSucursal` con `error?` por sucursal).
 - **Deuda por proveedor (Finanzas — pantalla *Venc. Provee. Merc.*, ruta `/finanzas/deuda-proveedores`)**: `listarDeudaProveedores` en `src/services/deudaProveedores.service.ts` — por cada línea con saldo (`total > monto_aplicado`), **fecha de vencimiento** = `fecha_comp` + primer plazo en `global_proveedores.plazos_pagos` (CSV; si falta o no es numérico → **30** días; mínimo **1** día). **Hoy** = fecha en `America/Argentina/Buenos_Aires`. Columnas agregadas: **deuda total**, **vencida** (`fecha_venc` &lt; hoy), **5 / 30 / 45 / 60 DÍAS** según ventanas `hoy … hoy+5`, `hoy+6 … hoy+30`, `hoy+31 … hoy+45`, `≥ hoy+46`. Además, `listarDetalleDeudaProveedoresMercaderia()` expone detalle por proveedor en shape `FlujoFondoDetalleDiaFila` con `fechaDevengadaIso` (=`fecha_comp`), `fechaVencimientoIso` (cálculo de plazo proveedor), `detalle` fijo `MERCADERÍA`, para modal de doble clic en la tabla. Lectura en **Server Component** con `getRol()` + `PERMISOS.finanzas.acceso`.
 - **Venc. por fecha (Finanzas)**: `listarVencimientosEnRango` + **`sumarSaldoVencimientosConFechaVencAnteriorA`** en `src/services/vencimientosPorFecha.service.ts` (misma CTE; **pendiente** = `total - monto_aplicado`); y **`listarVencimientosGastoFlujoEnRango`** + **`sumarPendienteGastosConFechaVencAnteriorA`** en `src/services/finBalGastoMensualBalance.service.ts` (imputaciones `fin_bal_gasto_mensual`, venc. desde devengo + **`fin_bal_gasto_final.plazo_pago_dias`** días; **pendiente** = fórmula devengado coherente con `/finanzas/balance/gastos`, corte = fecha de venc en ventana o &lt; hoy). El listado filtra `fecha_venc` en `[hoy, hoy + 150 días]` **inclusive** (compras) y venc. de gasto en el mismo rango. Grilla **Flujo De Fondo** (`/finanzas/venc-por-fecha`): cuatro columnas (**FECHA**, **VENCIMIENTO DEL DÍA**, **CAJA DISPONIBLE**, **SALDO**). Cálculo en **`calcularFilasFlujoDeFondo`** (`@/lib/flujoDeFondoFilas.ts`): fila 1 **SALDO** = vencimientos acumulados (previos + del día) − **CAJA** (tesorería + cheques diferidos acumulados ese día); filas 2+ **CAJA** fija según fila 1 (`saldo₁ > caja₁` → 0; si no → `caja₁ − saldo₁`); **SALDO** = saldo anterior + vencimiento del día − caja. La página unifica en servidor: detalle del modal **una fila por obligación** (comprobante o imputación), con columna fija `MERCADERÍA` para compras. Paginado: **`pagina`**, `PAGE_SIZE = 100` (cálculo sobre el calendario completo; slice server-side).
 - **Control Comprobantes (Finanzas)**:
@@ -997,15 +854,19 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
   - Orden de listado: por `fecha_comp` ascendente (más antiguo → más reciente), y luego `proveedorNombre` + `comprobante`.
   - Regla de **VENCIMIENTO**: `vencimientoSaldo` = `total - monto_aplicado` **solo** cuando `saldo > 0` y `fecha_venc < hoy` (misma fórmula de `fecha_venc` por primer plazo `plazos_pagos`, default 30, mínimo 1); en caso contrario `0`.
   - Escritura: `actualizarControladoComprobanteAction(raw)` en `src/actions/controlComprobantes.ts` valida `{ id, controlado }` con Zod (`id` CUID), exige `getRol()+puede(PERMISOS.finanzas.acceso)` y `esEditor()`, delega en `actualizarControladoComprobante()`, y revalida `/finanzas` + `/finanzas/control-comprobantes`.
-- **SQL / migraciones**: instalación nueva `scripts/neon-comprobantes-proveedor.sql`; evolución desde esquema anterior `20260330200000_fin_compras_comprobante_dux_campos` (renombres + `id_sucursal_empresa` + unique) y `20260417123000_add_controlado_to_fin_compras_comprobante` (`controlado BOOLEAN NOT NULL DEFAULT FALSE`). **Histórico**: la migración `20260418260000_rename_prod_comp_y_comprobantes` incluyó inicialmente `fin_compras_comprobante → prod_comp_provee`, pero fue **revertida** por `20260418270000_revert_rename_fin_compras_comprobante` manteniendo el nombre original — el prefijo `prod_comp_*` queda reservado exclusivamente al dominio "Comparación por Categoría".
+- **SQL / migraciones**: instalación nueva `scripts/neon-comprobantes-proveedor.sql`; evolución desde esquema anterior `20260330200000_fin_compras_comprobante_dux_campos` (renombres + `id_sucursal_empresa` + unique) y `20260417123000_add_controlado_to_fin_compras_comprobante` (`controlado BOOLEAN NOT NULL DEFAULT FALSE`). El prefijo `prod_comp_*` queda reservado al dominio Comparación por Categoría; comprobantes DUX viven en `fin_compras_comprobante`.
 
-### 2.5b Histórico: tabla `movimientos_finanzas` (**eliminada 2026-05-12**)
+### 2.5b Sucursales: `pedido`, `centro_costo`, `genera_balance`, `genera_est`
 
-- Existió como modelo Prisma **`MovimientoFinanzas`** con enum **`TipoMovimientoFinanzas`** (`EFECTIVO | BANCO | CHEQUE`) para gastos simples por sucursal; quedó **sin uso activo** al consolidar **`fin_bal_gasto_mensual`** en Balance · Gastos.
-- **Baja**: migración **`20260512210000_drop_movimientos_finanzas`** (`DROP TABLE "movimientos_finanzas";` + `DROP TYPE "TipoMovimientoFinanzas"`). Migraciones previas de alta/rename/consolidado de cheques: `20260402110000_*`, `20260418140000_*`, **`20260512203000_drop_movimientos_finanzas_cheques`**.
-- **`listarSucursalesParaGastos()`** (sucursales con `global_sucursales.centro_costo = true`) vive ahora en **`src/services/finBalGastoMensualBalance.service.ts`** junto al resto del flujo de `/finanzas/balance/gastos`; **tipo** exportado **`SucursalOption`**.
-- **Sucursal "CORPORATIVO"**: suele vivir en `global_sucursales` con `codigo = 'corporativo'`, `pedido = FALSE` e `id_dux = NULL` para imputaciones sin sucursal física. Queda fuera de selectores de pedidos porque **todas** las páginas de pedidos filtran `where: { pedido: true, codigo: { in: ["guaymallen", "maipu"] } }` (`src/app/pedidos/urgente/page.tsx`, `src/app/pedidos/reposicion/page.tsx`, `src/app/pedidos/enviar/page.tsx`) y los syncs DUX filtran por `idDux` numérico (`comprobantesProveedorDuxSync.service.ts`). Migración histórica `prisma/migrations/20260418150000_seed_sucursal_corporativo/migration.sql` insertó un id fijo `'suc_corporativo'`; **`listarSucursalesParaGastos()`** incluye esa fila cuando tiene **`centro_costo = true`**. Zod: `globalSucursalIdSchema` en `@/lib/validations/common.ts` acepta UUID, CUID o el literal `suc_corporativo` para `sucursalId` en gastos / gasto final.
-- **Flag `global_sucursales.centro_costo`** (Prisma: `Sucursal.centroCosto`, `BOOLEAN NOT NULL DEFAULT FALSE`): marca si la sucursal se considera **centro de costo** para reportes de balance / imputación contable. **Ortogonal a `pedido`**: `pedido` rige la participación en flujos de pedidos de mercadería; `centro_costo` sólo tiñe lecturas contables. Una sucursal puede ser `pedido = true, centro_costo = true` (ej. GUAYMALLEN / MAIPU si corresponde), `pedido = false, centro_costo = true` (ej. CORPORATIVO si se decide imputar contra él) o combinaciones opuestas. No hay UI de edición de sucursales: el flag se gestiona por **seed / UPDATE manual** en la DB (mismo canal que el resto de atributos de `global_sucursales`). Sin índice (cardinalidad = 2; se lee como payload, no como predicado masivo). Registros preexistentes quedan en `false` al aplicar la migración; marcar con `UPDATE global_sucursales SET centro_costo = TRUE WHERE codigo IN (...);` cuando se defina la política funcional. Migración: `prisma/migrations/20260418250000_add_sucursales_centro_costo/migration.sql` (SQL histórico sobre tabla `sucursales`, hoy `global_sucursales`).
+Flags en `global_sucursales` (Prisma `Sucursal`). **Ortogonales** entre sí:
+
+- **`pedido`**: participación en flujos de pedidos de mercadería. Si `pedido = false`, lecturas/filtros de pedidos devuelven vacío y las mutaciones responden `ok: false` (sucursal no habilitada). Las páginas de pedidos filtran `pedido: true` (y en urgente/reposición/enviar, códigos `guaymallen` / `maipu`).
+- **`centro_costo`**: imputación contable / Balance · Gastos. `listarSucursalesParaGastos()` (`finBalGastoMensualBalance.service.ts`) lista `centro_costo = true`. Tipo `SucursalOption`.
+- **`genera_balance`**: ventas de balance (`fin_bal_vtas`) y columnas de Balance mensual.
+- **`genera_est`**: columnas de Carga de Datos / Pedido A Fáb. (`est_por_prod`). Distinto de `genera_balance`.
+
+**Sucursal CORPORATIVO:** `codigo = 'corporativo'`, suele `pedido = false` e `id_dux = NULL`. Id seed `'suc_corporativo'`. `globalSucursalIdSchema` acepta UUID, CUID o el literal `suc_corporativo`. No reintroducir `movimientos_finanzas` / `TipoMovimientoFinanzas` (gastos viven en `fin_bal_gasto_mensual`).
+
 
 ### 2.5f Balance mensual (`/finanzas/balance/mensual`) y ventas de balance (`fin_bal_vtas`)
 
@@ -1016,8 +877,8 @@ Cabeceras persistidas desde la API **`/compras`** (mismo origen que `duxComprasA
   - **Por sucursal**: entran **todas** las sucursales con `genera_balance = true` (aunque no tengan imputaciones ese mes), más cualquier nombre con `genera_balance` que solo aparezca en filas de gasto; costos de sucursales `centro_costo` y **sin** `genera_balance` se reparten en partes **iguales** entre las que sí generan balance.
   - Clasificación **costos variables / fijos** por texto del tipo de gasto (`VARIABLE` / `FIJO`; si no coincide, se trata como fijo).
   - **Exportado para UI o informes**: `fmtMargenContribucionPct(p)` (porcentaje sobre ventas o `—`); `puntoEquilibrioVentasPesos(b)` — ventas en pesos necesarias para cubrir costos fijos con el ratio actual `(resultadoOperativo / ventas)`; devuelve `null` si no es calculable.
-- **Tabla `fin_bal_vtas`** (Prisma `FinBalVtas`): montos enteros por **`sucursal_id` + `mes` + `anio`**. **`@@unique([sucursalId, mes, anio])`** (`fin_bal_vtas_sucursal_mes_anio_ux`); migración **`20260427120000_fin_bal_vtas_unique_sucursal_mes_anio`** deduplica antes del unique. **`crearFinBalVtas`** y **`guardarFinBalVtasCargaPeriodo`** en `finBalVtas.service.ts` hacen **`upsert`** (carga masiva del modal: una o más sucursales del mismo periodo en transacción). Validación: `crearFinBalVtasSchema`, `guardarFinBalVtasCargaPeriodoSchema` y `listarFinBalVtasPorMesAnioSchema` en `@/lib/validations/finBalVtas.ts`. La sucursal debe tener **`genera_balance`** (validado en servicio).
-- **Actions** (`src/actions/finBalVtas.ts`): mutaciones con `esEditor()`; **`listarFinBalVtasPorMesAnioAction`** (lectura por periodo para precargar el modal); **`guardarFinBalVtasCargaPeriodoAction`** (carga/edición masiva). Tras crear/eliminar/guardar ventas, **`revalidatePath`** de `/finanzas/balance/vtas` y **`/finanzas/balance/mensual`**.
+- **Tabla `fin_bal_vtas`** (Prisma `FinBalVtas`): montos enteros por **`sucursal_id` + `mes` + `anio`**. **`@@unique([sucursalId, mes, anio])`** (`fin_bal_vtas_sucursal_mes_anio_ux`); migración **`20260427120000_fin_bal_vtas_unique_sucursal_mes_anio`** deduplica antes del unique. **`guardarFinBalVtasCargaPeriodo`** en `finBalVtas.service.ts` hace **`upsert`** (carga masiva del modal: una o más sucursales del mismo periodo en transacción). Validación: `guardarFinBalVtasCargaPeriodoSchema` y `listarFinBalVtasPorMesAnioSchema` en `@/lib/validations/finBalVtas.ts`. La sucursal debe tener **`genera_balance`** (validado en servicio).
+- **Actions** (`src/actions/finBalVtas.ts`): mutaciones con `requireEditorFinanzas()`; **`listarFinBalVtasPorMesAnioAction`** (lectura por periodo); **`guardarFinBalVtasCargaPeriodoAction`** (carga/edición masiva). Tras crear/eliminar/guardar ventas, **`revalidatePath`** de `/finanzas/balance/vtas` y **`/finanzas/balance/mensual`**.
 - **Lectura de periodo para desglose desde el historial** (`src/actions/finBalGastoMensualBalance.ts`): **`cargarFilasBalanceMensualPeriodoAction`** (`mes`/`anio` vía **`mesAnioQuerySchema`**) devuelve **`filas`** (`listarImputacionesMensualesBalance`) y **`ventasPorSucursalNombre`** (`listarFinBalVtasPorMesAnio`); solo **`PERMISOS.finanzas.acceso`**. La UI arma el resumen con **`resumenBalanceMensualDesdeFilas`** igual que la página.
 - **Serie temporal del total de una fila de la grilla** (ventas, costos, resultados, margen %, punto de equilibrio): **`listarSerieHistorialFilaBalanceMensualAction`** en el mismo archivo; payload **`serieHistorialFilaBalanceSchema`** (`filaConceptoId`, `columna` global/sucursal, `mesFin`/`anioFin`, `cantidadMeses` opcional 1–60, **default 12**). La pantalla no ofrece selector de rango: el cliente no envía `cantidadMeses` y aplica el default. Delegación en **`listarSerieHistorialFilaBalanceMensual`** (`src/services/balanceMensualHistorialFila.service.ts`), que por cada mes en ventana vuelve a llamar **`listarImputacionesMensualesBalance`** + **`listarFinBalVtasPorMesAnio`** y aplica **`montoFilaBalanceHistorial`** (`src/lib/balanceMensualHistorialFila.ts`) sobre el bloque de la columna elegida. **Distinto** de **`listarHistoricoMontosGastoFinalBalance`** (un solo `gasto_final_id`), usado desde el detalle por rubro/líneas.
 - **UI de carga/edición de ventas**: **`src/components/finanzas/CrearFinBalVtasModal.tsx`** y **`FinBalVtasPageClient.tsx`** en `/finanzas/balance/vtas`. El modal elige **mes/año** y muestra una fila **sucursal + monto** por cada sucursal con `genera_balance`; precarga con **`listarFinBalVtasPorMesAnioAction`**; guarda solo filas con monto ingresado vía **`guardarFinBalVtasCargaPeriodoAction`** (upsert). Eliminación individual en la grilla. No existe modal de ventas en Balance mensual.
@@ -1055,7 +916,7 @@ Dominio **Marketing · Publicaciones**. Dos catálogos **independientes** (red /
 - **Servicio** (`src/services/mktPublicacionesCatalogo.service.ts`): CRUD de redes y tipos de contenido (solo nombre).
 - **Validación** (`@/lib/validations/mktPublicacionesCatalogo.ts`): `crearMktCatalogoNombreSchema`, `editarMktCatalogoNombreSchema`, `eliminarMktCatalogoNombreSchema`.
 - **Actions** (`src/actions/mktPublicacionesCatalogo.ts`): lectura **`PERMISOS.marketing.acceso`**; mutaciones + **`esEditor()`**; `revalidatePath` calendario e ideas.
-- **Permiso de área**: **`PERMISOS.marketing.acceso`** (solo `editor`). Rutas UI: `/marketing/publicaciones/{calendario|ideas}`.
+- **Permiso de área**: **`PERMISOS.marketing.acceso`** (`simple` y `editor` para lectura; mutaciones + `esEditor()` / `requireEditorMarketing()`). Rutas UI: `/marketing/publicaciones/{calendario|ideas}`.
 
 ### 2.5g-ter Marketing · ideas (`mkt_publi_ideas_*`)
 
@@ -1272,19 +1133,10 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
   - Exportan: `crearFinBalGastoTipoAction`, `editarFinBalGastoTipoAction`, `eliminarFinBalGastoTipoAction`, `crearFinBalGastoRubroAction`, `editarFinBalGastoRubroAction`, `eliminarFinBalGastoRubroAction`, `crearFinBalGastoAction`, `editarFinBalGastoAction`, `eliminarFinBalGastoAction`, `crearFinBalGastoFinalAction`, `editarFinBalGastoFinalAction`, `eliminarFinBalGastoFinalAction`.
   - Las **lecturas** NO son Actions: se consumen directamente desde Server Components importando el servicio (mismo patrón que `listarImputacionesMensualesBalance` / `listarCajasTesoreria`).
 
-### 2.5d Catálogo finanzas — rubros y gastos (ELIMINADO 2026-04-18)
+### 2.5d Catálogo de gastos (vigente)
 
-> **Baja**: las tablas `finanzas_rubros` y `finanzas_gastos`, junto con el enum PostgreSQL `TipoCostoGasto`, fueron **eliminadas** el 2026-04-18 sin reemplazo (histórico: no había FK desde ese catálogo hacia el flujo actual de Balance; los nombres de gastos viven en **`fin_bal_cat_gasto` / jerarquía**).
->
-> - **Migración de baja**: `prisma/migrations/20260418160000_drop_finanzas_rubros_y_gastos_catalogo/migration.sql` — `DROP TABLE IF EXISTS "finanzas_gastos" CASCADE; DROP TABLE IF EXISTS "finanzas_rubros" CASCADE; DROP TYPE IF EXISTS "TipoCostoGasto";` (idempotente). La migración original de alta (`20260418120000_add_finanzas_rubros_y_gastos_catalogo`) se conserva por inmutabilidad del historial Prisma.
-> - **Código eliminado**:
->   - Modelos Prisma `FinanzasRubro` y `FinanzasGasto` + enum `TipoCostoGasto` en `prisma/schema.prisma`.
->   - Servicio `src/services/finanzasGastosCatalogo.service.ts`.
->   - Action `src/actions/finanzasGastosCatalogo.ts` (incluye `crearGastoCatalogoAction`).
->   - Validaciones `src/lib/validations/finanzasGastosCatalogo.ts` (`tipoCostoGastoSchema`, `crearGastoCatalogoSchema`).
->   - Componente `src/components/finanzas/CrearGastoCatalogoModal.tsx`.
->   - Prop `rubros` y botón **Crear Gasto** en `src/app/finanzas/balance/gastos/page.tsx` y `src/components/finanzas/FinanzasBalanceGastosPageClient.tsx`.
-> - **Consecuencia histórica**: la vista `/finanzas/balance/gastos` consolidó **`fin_bal_gasto_mensual`** del mes (Argentina) y el botón **Cargar Datos Mes.** genera filas desde `fin_bal_gasto_final` con `gasto_mensual = true` (ver §2.5e).
+El catálogo operativo es la jerarquía **`fin_bal_gasto_tipo` → `fin_bal_gasto_rubro` → `fin_bal_cat_gasto` → `fin_bal_gasto_final`** (§2.5e). No reintroducir `finanzas_rubros` / `finanzas_gastos` ni el enum `TipoCostoGasto`.
+
 
 #### `generarPdfEnviarPedidoAction` — ítems vacíos
 
@@ -1294,7 +1146,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 
 #### `prod_ped_merc` — modelo `ProdPedMerc2` (canónico)
 
-- **Tintométrico**: varias líneas pueden compartir `cod_tienda` y diferir por código de fórmula. El correlato con `cod_ext` de la era legada vive en **`urgente_cod_ext`** (`buildCodExtTintometrico` en `src/lib/pedidosTintometrico.ts`). Borrado: `deletePedidoTintometricoItem` por `id` o por `(sucursal, proveedor, cod_ext persistido)`. Para recepción/historial, `getItemsYProveedorParaEnviar` resuelve `cod_tienda` desde ese `cod_ext` (`parseCodTiendaFromCodExtTintometrico`) y lo valida contra `prod_precios_tienda`.
+- **Tintométrico**: varias líneas pueden compartir `cod_tienda` y diferir por código de fórmula. El correlato con `cod_ext` de la era legada vive en **`urgente_cod_ext`** (`buildCodExtTintometrico` en `src/lib/pedidosTintometrico.ts`). Borrado: `deletePedidoTintometricoItem` por `id` o por `(sucursal, proveedor, cod_ext persistido)`. Para recepción/historial, `getItemsYProveedorParaEnviar` resuelve `cod_tienda` desde ese `cod_ext` (`parseCodTiendaFromCodExtTintometrico`) y lo valida contra `prod_tienda`.
 - **Migraciones**: `20260429183000_add_prod_ped_merc_2` (crea `prod_ped_merc_2`); `20260429200000_copy_prod_ped_merc_to_prod_ped_merc_2` (copia desde el legado); `20260430103000_drop_prod_ped_merc_legacy` (borra el legado homónimo); `20260430120000_rename_prod_ped_merc_2_to_prod_ped_merc` (nombre final `prod_ped_merc`).
 - **Propósito**: única tabla de ítems de pedido de mercadería en runtime (`REPOSICION` \| `URGENTE` \| `TINTOMETRICO` \| **`A FÁBRICA`**).
 - **Columnas**: `id` (TEXT, default `gen_random_uuid()::text`), `tipo_de_pedido` (CHECK: `REPOSICION` \| `URGENTE` \| `TINTOMETRICO` \| **`A FÁBRICA`**), `sucursal_id` → FK `global_sucursales.id` (`ON DELETE RESTRICT`), `urgente_cod_ext`, `urgente_cant_pedir`, `tintometrico_descripcion`, `tintometrio_cant_pedir`, **`tintometrico_proveedor`**, `reposicion_forma_pedido`, `reposicion_punto_pedido`, `reposicion_cant_conf`, **`reposicion_cant_pedir`**, **`reposicion_cod_tienda`**. (Migraciones previas hicieron backfill desde la tabla legada `prod_ped_merc` antes de `20260430103000_drop_prod_ped_merc_legacy`.)
@@ -1306,7 +1158,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 
 - **Uso**: modal **Generar Pedido** (debounce en cliente ~320 ms) para saber si hay ítems antes de habilitar el botón.
 - **Entrada** (Zod): `proveedorId`, `sucursal` (`guaymallen` \| `maipu`), `tipos` (array no vacío de `URGENTE` \| `TINTOMETRICO` \| `REPOSICION`).
-- **Salida**: `ActionResult<{ hayItems: boolean }>` — delega en **`getItemsTablaEnviarPedido`** (servicio; misma resolución que la tabla de `/pedidos/enviar` con sucursal + proveedor + tipos). No invoca la Action vecina `getEnviarPedidoTablaData` (§1.2.5.E).
+- **Salida**: `ActionResult<{ hayItems: boolean }>` — delega en **`getItemsTablaEnviarPedido`** (servicio; misma resolución que la tabla de `/pedidos/enviar` con sucursal + proveedor + tipos). No invoca la Action vecina `getEnviarPedidoTablaData`.
 
 #### `getSobreStockReposicionParaModalAction` (modal sobrestock — otra sucursal)
 
@@ -1314,7 +1166,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 - **Entrada (Zod)**: `proveedorId`, `sucursal` (`guaymallen` \| `maipu`), `tipos` (array no vacío de `URGENTE` \| `TINTOMETRICO` \| `REPOSICION`).
 - **Salida**: `ActionResult<{ tieneSobreStock: boolean; items: SobreStockReposicionItem[] }>` donde cada ítem incluye:
   - `codExt`, `cantPedir` (línea de la sucursal que **genera** el pedido; solo `cant_pedir > 0`).
-  - `stockSucursal` y `topeReposicion`: medidos en la **otra** sucursal (`sucursalCodigoSobrestock`), desde `prod_precios_tienda` por `cod_tienda` de la línea y tope resuelto con filas `REPOSICION` en esa otra tienda.
+  - `stockSucursal` y `topeReposicion`: medidos en la **otra** sucursal (`sucursalCodigoSobrestock`), desde `prod_tienda_stock` / mapas de stock por `cod_tienda` de la línea y tope resuelto con filas `REPOSICION` en esa otra tienda.
   - `origenDeteccion`: en este flujo siempre **`OTRA_SUCURSAL`** (excedente en la otra tienda → aviso de posible **transferencia interna**).
   - **Reglas numéricas**: ver `getSobreStockOtraSucursalParaPedidoEnviar` en `sobreStock.service.ts` (`evaluarSobrestockEnValores`).
   - **Otra sucursal**: se buscan filas `REPOSICION` por `cod_tienda` en la otra tienda **sin** depender de `cod_ext` persistido; tope con prioridad mismo proveedor → fila con tope &gt; 0 → primera fila; si no hay filas en la otra sucursal pero la línea del pedido tiene `reposicion_cant_conf > 0`, se usa ese tope como referencia frente al stock de la otra tienda.
@@ -1342,7 +1194,7 @@ fin_bal_gasto_tipo (1) ──── (N) fin_bal_gasto_rubro (1) ──── (N)
 
 #### Tabla `/pedidos/enviar` — `getItemsTablaEnviarPedido` / `getEnviarPedidoTablaData`
 
-- **`getItemsTablaEnviarPedido`** (`pedidosEnvio.service.ts`): ítems desde **`prod_ped_merc`** con cantidad a pedir resuelta **`> 0`** por tipo. En **REPOSICIÓN** la cantidad se calcula siempre en runtime con la regla `stock <= punto` + forma (`CANT_FIJA`/`CANT_MAXIMA`) usando stock vigente de `prod_precios_tienda` (no depende de `reposicion_cant_pedir` persistido). El **proveedor** y el **`cod_ext`** de lista se resuelven por **`cod_tienda`** (`reposicion_cod_tienda`) con **`elegirListaPrecioProveedorReposicion`** (`pedidosReposicionProveedor.service.ts`): todos los vínculos `prod_precios_provee.cod_tienda` habilitados, menor **`pxComparablePedidoUrgenteReposicion`** según **`sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido`**; fallback legacy por `cod_ext` de tienda si no hay vínculos. Filtros opcionales: código de sucursal, `id` proveedor, lista de tipos, texto `q` (descripción tienda/proveedor). Sin ningún filtro → todas las filas elegibles.
+- **`getItemsTablaEnviarPedido`** (`pedidosEnvio.service.ts`): ítems desde **`prod_ped_merc`** con cantidad a pedir resuelta **`> 0`** por tipo. En **REPOSICIÓN** la cantidad se calcula siempre en runtime con la regla `stock <= punto` + forma (`CANT_FIJA`/`CANT_MAXIMA`) usando stock vigente de `prod_tienda_stock` (no depende de `reposicion_cant_pedir` persistido). El **proveedor** y el **`cod_ext`** de lista se resuelven por **`cod_tienda`** (`reposicion_cod_tienda`) con **`elegirListaPrecioProveedorReposicion`** (`pedidosReposicionProveedor.service.ts`): todos los vínculos `prod_precios_provee.cod_tienda` habilitados, menor **`pxComparablePedidoUrgenteReposicion`** según **`sumarIvaSaldoAcumuladoParaComparacionProveedoresPedido`**; fallback legacy por `cod_ext` de tienda si no hay vínculos. Filtros opcionales: código de sucursal, `id` proveedor, lista de tipos, texto `q` (descripción tienda/proveedor). Sin ningún filtro → todas las filas elegibles.
 - **`getEnviarPedidoTablaData`**: delega en **`getItemsTablaEnviarPedido`** pasando lo que venga de la URL (vacío = sin acotar).
 - **`getEnviarPedidoData`** / **`getProveedoresConPedidoActivo`**: el desplegable **PROVEEDOR** solo devuelve datos si hay **sucursal** y al menos un **tipo**; sin tipos, lista vacía. Incluye proveedores con al menos un ítem con **cantidad a pedir > 0** para esa sucursal y esos tipos (misma resolución que la tabla). **`listarProveedoresConPedidoActivoAction`** exige `tipos` con `.min(1)` y alimenta el modal cuando cambian sucursal/tipos.
 
@@ -1359,7 +1211,7 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 1. `listarPedidosHistoria({ pagina, estado?, proveedorId?, sucursalCodigo?, q? })`
    - Uso: obtener página de cabeceras para el módulo de historial (`/pedidos/historial`).
   - `estado`: `PENDIENTE`, `RECEPCIONADO` o `ALL`. La UI por defecto envía/equivale a `PENDIENTE` si no hay parámetro en la URL.
-   - Con `q` no vacío: solo pedidos que tengan al menos un ítem cuyo `cod_tienda` figure en `prod_precios_tienda` con descripción que contenga todas las palabras de `q` (insensible a mayúsculas).
+   - Con `q` no vacío: solo pedidos que tengan al menos un ítem cuyo `cod_tienda` figure en `prod_tienda` con descripción que contenga todas las palabras de `q` (insensible a mayúsculas).
    - Devuelve: `items` con `id`, `generadoAt`, `proveedorNombre`, `sucursalNombre`, `estado`, `registradoAt`, más `total`, `totalPaginas` y `paginaActual`.
 
 2. `crearPedidoHistoriaSnapshot({ proveedorId, sucursalCodigo, tipos })`
@@ -1372,12 +1224,12 @@ Contratos de funciones (SSOT de lógica y acceso a Prisma) para mantener consist
 
 3. `getPedidoHistoriaDetalle({ pedidoHistoriaId })`
    - Devuelve cabecera + lista de items ordenados por `codTienda`.
-   - Incluye `generado_at`, `registrado_at`, `cant_pedida`, `cant_recibida` y `descripcionTienda` (resuelta desde `prod_precios_tienda`) para renderizar la columna DESCRIPCIÓN en UI.
+   - Incluye `generado_at`, `registrado_at`, `cant_pedida`, `cant_recibida` y `descripcionTienda` (resuelta desde `prod_tienda`) para renderizar la columna DESCRIPCIÓN en UI.
    - **`serializarPedidoHistoriaDetalleParaCliente(d)`** (mismo archivo): antes de responder **`GET /api/pedidos-historia/[pedidoHistoriaId]/detalle`** (`src/app/api/pedidos-historia/[pedidoHistoriaId]/detalle/route.ts`), las fechas `generadoAt` / `registradoAt` deben pasarse a **ISO string**. El tipo **`PedidoHistoriaDetalle`** declara `generadoAt` y `registradoAt` como `Date | string` (o `null`) para cubrir servicio vs wire. El serializador **no usa spread `...d`**: reconstruye el objeto con primitivos para no arrastrar propiedades del runtime de Prisma.
    - **Route HTTP (`GET .../detalle`)**: gate `getRol` + **`PERMISOS.pedidos.acceso`**, mismo servicio + serializador. La UI carga el detalle vía **`fetchPedidoHistoriaDetalle`** (`src/lib/fetchPedidoHistoriaDetalle.ts`) — JSON puro (`NextResponse.json`), sin Server Action de lectura. En errores internos **500**, el servidor responde con **`supportId`** (UUID), cabecera **`x-support-id`** y log **`[api][pedidos-historia][detalle]`** grepeable.
 
 3b. `getPedidoHistoriaPdfPayload({ pedidoHistoriaId })`
-   - Arma `ItemPedidoParaPdf[]` para **`generarPdfPedido`**: cantidades y `cod_tienda` desde ítems del snapshot; `cod_prod_proveedor` y descripción desde **`prod_precios_provee`** (mismo proveedor) con fila de **`prod_precios_tienda`** cuyo `cod_tienda` coincide (primer `cod_ext` estable). Action **`descargarPdfPedidoHistoriaAction`** devuelve `pdfBase64` + `filename` (prefijo proveedor y fecha/hora de `generado_at`).
+   - Arma `ItemPedidoParaPdf[]` para **`generarPdfPedido`**: cantidades y `cod_tienda` desde ítems del snapshot; `cod_prod_proveedor` y descripción desde **`prod_precios_provee`** (mismo proveedor) con fila de **`prod_tienda`** cuyo `cod_tienda` coincide (primer `cod_ext` estable). Action **`descargarPdfPedidoHistoriaAction`** devuelve `pdfBase64` + `filename` (prefijo proveedor y fecha/hora de `generado_at`).
 
 4. `guardarRecepcionPedidoHistoria({ pedidoHistoriaId, items })`
    - Uso: persistencia consolidada al final del flujo (**Registrar En Dux** / **Guardar Corrección**). Alta, edición y baja de ítems van en este snapshot (no hay funciones granulares de ítem).
@@ -1422,7 +1274,7 @@ Contrato para aplicar ajustes de cantidades confirmadas en el modal de sobrestoc
 
 ### 2.7 Servicio `productosTienda.service.ts`
 
-Contrato para resolver listados de productos en `prod_precios_tienda` destinados a selección en UI (p. ej. “Agregar Productos” dentro del modal de historial de pedidos).
+Contrato para resolver listados de productos en `prod_tienda` destinados a selección en UI (p. ej. “Agregar Productos” dentro del modal de historial de pedidos).
 
 Función:
 1. `buscarProductosTiendaPorDescripcion({ q?, take? })`
@@ -1507,7 +1359,8 @@ Objetivo: preparar `RecepcionCompraDatosPreparados` para el POST DUX v2/compras 
 | `@/lib/validations/pedidosMutaciones.ts` | Mutaciones/envío: `proveedorIdPedidoSchema` (`prismaCuidSchema`), `listarProveedoresConPedidoActivoSchema`, `comprobarItemsParaGenerarPedidoSchema`, `generarPdfEnviarPedidoSchema` (`idItemPedidoEnvio` → `uuidSchema` / `prod_ped_merc`), `getSobreStockReposicionParaModalSchema`, `upsertPedidoUrgenteItemSchema`, `upsertPedidoTintometricoItemsSchema`, `deleteTintometricoItemSchema`. |
 | `@/lib/validations/reposicion.ts` | `sucursalReposicionSchema`, `reposicionFormaPedidoSchema` (`CANT_FIJA` \| `CANT_MAXIMA`), `getReposicionParamsSchema`, `productosReposicionSelectorSchema`. |
 | `@/lib/validations/stock.ts` | `getControlStockParamsSchema`. |
-| `@/lib/validations/transfDepositos.ts` | `registrarControlTransfDepositosSchema`; `listarHistorialTransfDepositosProductoSchema`; `encolarTransferenciasPendientesSchema`; `exportarPendientesTransfDepositosSchema`; `conteosIndicadorSlidenavSchema` (`sucursal`: `guaymallen` \| `maipu`). |
+| `@/lib/actionHelpers` | `requirePermiso`, `requireEditorConPermiso`, wrappers de módulo (`requireEditorFinanzas`, `requireEditorMarketing`, …), `firstZodErrorMessage`, `mensajeErrorAction`. |
+| `@/lib/validations/transfDepositos.ts` | `listarHistorialTransfDepositosProductoSchema`; `encolarTransferenciasPendientesSchema`; `exportarPendientesTransfDepositosSchema`; `conteosIndicadorSlidenavSchema` (`sucursal`: `guaymallen` \| `maipu`). |
 | `@/lib/validations/globalPersonal.ts` | `sucursalPorDefectoSchema`, `moduloPermitidoUsuarioSchema`, `actualizarUsuarioPersonalSchema`. |
 | `@/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
 | `@/lib/validations/cajasTesoreria.ts` | `crearCajaTesoreriaSchema`, `editarCajaTesoreriaSchema` (`entidadId` `prismaCuidOrUuidSchema`, `tipoValor`, `disponibilidad`), `eliminarCajaTesoreriaSchema`; catálogo entidades: `crearFinTesoreriaEntidadSchema`, `editarFinTesoreriaEntidadSchema`, `eliminarFinTesoreriaEntidadSchema`; `tipoCajaTesoreriaSchema`, `tipoValorTesoreriaSchema`, `disponibilidadCajaTesoreriaSchema`. |
@@ -1523,352 +1376,31 @@ Al extender tipos de dominio, preferir `src/types/*.ts`; para tipos ligados a va
 Antes de entregar código nuevo o modificado, verificar:
 
 - [ ] **Sesión/rol**: ¿Toda Action que modifica datos comprueba `esEditor()` o `getRol()` + `puede()` al inicio? ¿Las lecturas expuestas como Action comprueban `puede()` (incl. listas con precios, vínculos, proveedores)? ¿Las mutaciones sensibles en módulos con acceso compartido simple/editor exigen `esEditor()` además de `puede()`?
-- [ ] **Gate doble (módulo + editor)**: Si la mutación pertenece a un submódulo con permiso de módulo (`tienda.*`, `finanzas.*`, etc.), ¿se chequea **primero** `puede(rol, PERMISOS.<modulo>.<accion>)` y **después** `esEditor()`? Ver §1.2.5.B.
-- [ ] **Firma de payload**: ¿Las Actions que reciben objetos/arrays del cliente declaran el parámetro como `unknown` (o `string`/`FormData` para casos puntuales) y validan con `schema.safeParse(raw)`? Prohibido tipar con `z.infer<typeof X>` (§1.2.5.A).
+- [ ] **Gate doble (módulo + editor)**: Si la mutación pertenece a un submódulo con permiso de módulo (`tienda.*`, `finanzas.*`, etc.), ¿se chequea **primero** `puede(rol, PERMISOS.<modulo>.<accion>)` y **después** `esEditor()` (helpers en `actionHelpers`)? Ver Guía para IA y §1.2.2.
+- [ ] **Firma de payload**: ¿Las Actions que reciben objetos/arrays del cliente declaran el parámetro como `unknown` (o `string`/`FormData` para casos puntuales) y validan con `schema.safeParse(raw)`? Prohibido tipar con `z.infer<typeof X>` en la firma de la Action.
 - [ ] **Zod**: ¿Todo payload de entrada (IDs, FormData, objetos, **y parámetros de lectura** con `q`/paginación/filtros) se valida con un esquema Zod antes de usarse en BD o servicios?
 - [ ] **IDs**: ¿Los UUID y los `cuid` se validan con el esquema correcto (`uuidSchema` vs `prismaCuidSchema`) según el modelo Prisma? Casos especiales: `proveedorId` siempre `prismaCuidSchema` (modelo `Proveedor` usa `cuid()`).
 - [ ] **Sin `any`**: ¿El código evita `any` y usa tipos explícitos o inferidos?
 - [ ] **ActionResult**: ¿Las Actions que pueden fallar devuelven `ActionResult<T>` con `{ ok, data? }` o `{ ok: false, error }`?
 - [ ] **No throw al cliente**: ¿Los errores se capturan en `try/catch` y se devuelven como `{ ok: false, error: string }` (o shape vacío en lecturas que no usan `ActionResult`) en lugar de lanzar?
 - [ ] **Lógica en servicios**: ¿La lógica de negocio y el acceso a Prisma están en `src/services/` y no en la Action? (Excepciones documentadas: `tienda.ts`, `stock.ts`, `tiposPinturaRendimientos.ts`, ciertas operaciones puntuales en `vinculos.ts`/`reposicion.ts`).
-- [ ] **No anidar Actions**: ¿La Action delega a servicios y nunca invoca otra Action vecina? (§1.2.5.E).
+- [ ] **No anidar Actions**: ¿La Action delega a servicios y nunca invoca otra Action vecina?
 - [ ] **revalidatePath**: ¿Se llama a `revalidatePath` (o `revalidateTag`) tras mutaciones que afectan a rutas concretas?
 - [ ] **Permisos**: Si existe un permiso en `PERMISOS` para la funcionalidad, ¿se usa `puede(rol, PERMISOS.*)` en lugar de solo `esEditor()` cuando aplique?
 
 ---
 
-## 5. Resumen de auditoría (edición actual)
-
-### 5.1 Cumplen bien
-
-- **proveedores.ts**: `esEditor()`, Zod para crear/editar, `ActionResult`, servicios.
-- **listaPrecios.ts**: `getRol()` + `puede()` para edición masiva y para **lecturas** (`importarLista`); Zod en payload masivo y en filtros de lectura. **`exportarListaPreciosAction`**: mismos filtros que la grilla (`listaPreciosFiltrosExportSchema`, sin `pagina`); devuelve todas las filas vía `listarListaPreciosFiltradaParaExport`. **`eliminarListaPrecioAction`**: borra por `cod_ext` (`eliminarListaPrecioSchema`); gate `edicionMasiva` + `esEditor()`; servicio `eliminarListaPrecioProveedor` (cascada dto extra / margen manual; `SetNull` en costo lista tienda y ref. presentación). **`crearProductoListaPrecioAction`**: alta manual 1 fila (`crearProductoListaPrecioSchema`) → **`crearProductoListaPrecio`** en servicio (upsert por `(id_proveedor, cod_prod_proveedor)` + `cod_ext` = prefijo + código, defaults como import CSV: `habilitado=true`, descuentos 0); gate `importarLista` + `esEditor()`.
-- **comparacionCategorias.ts**: `getRol()` + `puede()` en todas las Actions; Zod unificado vía `@/lib/validations/comparacionCategorias` y búsqueda de productos a asignar.
-
-### 5.2 Estado tras auditoría de seguridad (2026-03)
-
-- **`tienda.ts`**: `getTiendaPageData` y `getProveedoresTintoLts` comprueban `getRol()` + `puede()`. **Cx Compra** (`PERMISOS.tienda.acceso`) solo **editor**. Módulo **Control de Aumentos** eliminado por completo (2026-05-28; será reimplementado más adelante). `getUltimoSync` y `convertirEnProveedor` eliminadas (sin uso).
-- **`cxPxTienda.ts` (actions)**: `guardarCostoCxProdTiendaAction`, **`exportarCostoCxDiffAction`**. Permiso `PERMISOS.cxPxTienda.acceso` (solo **editor**). FK `costo_compra_cod_ext` (ver §1.10b). **`costoListaTienda.service.ts`**, **`cxPxTiendaRows.service.ts`**, **`exportCostoCxDiff.service.ts`**, **`exportCostoCxExcelClient.ts`**.
-- **`comparacionCompetencia.ts` (actions)**: `buscarProductosParaComparacionAction`, `agregarProductoComparacionAction`, `quitarProductoComparacionAction` — gate `PERMISOS.competenciaPrecios.editar` + `esEditor()`. Servicio **`comparacionCompetencia.service.ts`**. Flag **`prod_tienda.comparar_competencia`**: la grilla **Px Competencia** lista solo filas con `comparar_competencia = true` (`pxListasPage.service.ts`); el sync DUX **no** modifica el flag. Al quitar de comparación se pone `false`; las filas en **`prod_precios_competencia`** se conservan. Migración **`20260610120000`**: backfill `true` donde ya existía fila en `prod_precios_competencia`.
-- **`pxListas.ts` (actions)**: `getPxListasPageData` — módulo **Px Competencia** (`/gestion-productos/tienda/cx-px-tienda`; componentes `px-listas/*`). **`exportarResumenAumentosPxAction`** (PDF aumentos; usado desde **Cx Compra**).
-- **`pxListasPrecios.ts` (actions)**: `getPxListasPreciosPageData`, `guardarPxListaMargenEdicionAction`, **`guardarPxListaPrecioEdicionAction`**, **`guardarPxListaCompetenciaRefAction`**, **`exportarPxListasMargenAction`** — módulo **Px Listas**. Staging en **`prod_tienda_precios_edicion`** (`pxListasPrecioEdicion.service.ts`); REF. competidor GENERAL en **`pxListasCompetenciaRef.service.ts`** (`prod_tienda.competencia_id_px_lista_general`); **Act. Px** re-sincroniza PX de ref. y limpia filas exportadas. Filtro **`actualizar`**: ítems con `pxEdicion` en staging. Export: **`exportPxListasMargen.service.ts`** — `.xls` por `nombre_lista` (**CODIGO**, **PORC UTILIDAD** numérico 4 dec. + formato `#.##0,0000`). Helpers: **`pxListasPreciosCelda.ts`**, **`pxListasPreciosFiltros.ts`**, **`pxListasCompetenciaRef.ts`**.
-- **`syncListaPrecioTienda.service.ts`**: deduplica por `cod_tienda` dentro de cada chunk y hace `upsert` con `where: { codTienda }`. En **`create`** y **`update`** se persisten las columnas sincronizadas desde DUX **excepto `proveedor`** (congelado — ver §1.4.2). Al finalizar la sync elimina de `prod_tienda` los `cod_tienda` que ya no llegaron en la corrida actual desde DUX.
-- **`importar.ts`**: `puede(rol, PERMISOS.importar.acceso)` + `esEditor()`; payloads validados con `@/lib/validations/importar.ts` (`safeParse`).
-- **`pedidosHistoria.ts`**: Lecturas y mutaciones (cantidades, agregar ítem, registrar en DUX, borrar) habilitadas para cualquier rol con `puede(rol, PERMISOS.pedidos.acceso)`.
-- **`pedidos.ts`**: mutaciones/envío validadas con `@/lib/validations/pedidosMutaciones` (`proveedorId` CUID, IDs `prod_ped_merc` UUID); permisos `pedidos.acceso` al inicio; lógica en `pedidosEnvio.service.ts`.
-- **`sesion.ts`**: `activarModoEditor` valida la clave con Zod.
-- **`tintometrico.ts` / `productosTienda.ts`**: Límites en `q` y `take` para reducir abuso.
-- **Pendientes de evolución** (no bloqueantes): mover lógica pesada de `tienda.ts` a servicios; revisar periódicamente nuevas Actions sin duplicar patrones anteriores (ver §5.8 y §1.2).
-
-### 5.3 Reglas añadidas en esta guía
-
-- Validar con Zod **todos** los payloads que afecten a la BD.
-- Acción de sincronización DUX protegida por rol.
-- Estandarizar respuestas de error: no `throw`, sí `ActionResult` con `error`.
-- Documentar uso de `getRol()` + `puede()` para permisos granulares.
-- PDF “Generar Pedido”: usar `src/lib/generarPdfPedido.ts` como SSOT para el layout. El PDF debe titular “Nota de Pedido”, incluir “Fecha” con formato `dddd de mmmm de aaaa` y una tabla con columnas `CANT.`, `COD.` y `DESCRIPCION` en ese orden; las filas van **ordenadas alfabéticamente** por el texto de **DESCRIPCION** (`localeCompare` `es`, `sensitivity: "base"`). Los datos deben venir de `cant_pedir`, `cod_proveedor` (vacío si no existe) y `descripcion_proveedor` priorizando `descripcion_proveedor`, luego `tintometrico_descripcion` (y como fallback `descripcion_tienda`). El archivo exportado debe llamarse `Nota Pedido - {Prefijo Proveedor} - dd/mm hh:mm.pdf`. Opción **`fechaDocumento`** en `generarPdfPedido`: al **volver a descargar** desde historial (`descargarPdfPedidoHistoriaAction`) usar `generado_at` del snapshot para encabezado y nombre de archivo, no la fecha actual. En celdas `COD.` y `DESCRIPCION`, el texto debe hacer wrap en múltiples líneas dentro de la columna y **no** truncarse con `...`.
-- Al ejecutar el botón de **Generar Pedido** (`generarPdfEnviarPedidoAction`), limpiar **`prod_ped_merc`** solo del **proveedor** del PDF: URGENTE por `urgente_cod_ext` ∈ catálogo del proveedor; TINTOMÉTRICO por `tintometrico_proveedor` = `proveedorId` (`limpiarPedidoMercaderiaTrasGenerarPdf`). No borrar ítems de otros proveedores en la misma sucursal. Revalidar rutas de pedidos afectadas.
-
-### 5.4 Cambios aplicados en esta auditoría
-
-| Archivo / Área | Cambio |
-|----------------|--------|
-| `src/services/pedidosEnvio.service.ts`, `src/services/sobreStock.service.ts`, `src/services/listaPrecios.service.ts` | **Circuito REPOSICIÓN por `cod_tienda` (2026-04-28):** no se persiste el `cod_ext` **comercial** de catálogo en reposición; la clave de negocio es `cod_tienda`. Por el unique de BD `(id_proveedor, tipo, sucursal, cod_ext)`, cada fila guarda un **surrogado** estable `REPO_TIENDA:{cod_tienda}` (no es el `cod_ext` de `prod_precios_tienda`). La resolución para PDF/envío usa `cod_tienda` → catálogo vigente. `getItemsYProveedorParaEnviar` recompone filas REPOSICIÓN con proveedor/código vigentes, `getSobreStockOtraSucursalParaPedidoEnviar` usa topes por `cod_tienda`, y `getListaPreciosParaPedidoUrgente` filtra reposición por `cod_tienda`. Migración `20260429120000_reposicion_cod_ext_surrogate`: dedupe + normalización de filas ya existentes. |
-| `prisma/migrations/20260429001000_reposicion_sync_por_cod_tienda/migration.sql` | (Histórico: aplicaba sobre la tabla legada `prod_ped_merc`.) Se redefine `sync_pedidos_mercaderia_cant_pedir` y el trigger `trg_sync_reposicion_on_precios_tienda_stock` para que REPOSICIÓN recalcule por `cod_tienda` (no por `cod_ext`) en `BEFORE INSERT/UPDATE` de pedidos mercadería y en cambios de stock en `prod_precios_tienda`. Tras `20260430103000_drop_prod_ped_merc_legacy` la función/trigger asociados a la tabla legada se eliminan; la lógica equivalente en runtime usa **`prod_ped_merc`**. |
-| `src/services/pedidosEnvio.service.ts` | `upsertPedidoMercaderiaReposicionConfig`: validación de `reposicion_punto_pedido` admite `0` (solo rechaza `< 0`). Persistencia REPOSICIÓN por `cod_tienda`: `prod_precios_tienda.cod_tienda` → `cod_ext` + proveedor vigentes; al guardar se eliminan otras filas **`prod_ped_merc`** `REPOSICION` para la misma `sucursal + cod_tienda` con proveedor/cod_ext obsoletos. |
-| `src/actions/syncListaPrecioTienda.ts` | **Eliminado (2026-05-10):** redundante con `/api/sync-lista-precios-tienda` + `syncListaPrecioTiendaFromDux` (superficie invocable desde cliente sin uso). Histórico: comprobación `PERMISOS.tienda.acciones.sincronizar`; no llegó a usar `esEditor()` en código final. |
-| `src/actions/duxCompras.ts` | **Eliminado (2026-05-10):** sin call sites; histórico: correlativo DUX para recepción. **2026-05-08:** removidos también `src/services/duxCompras.service.ts` y `src/lib/duxComprobanteCorrelativo.ts`; ver §2.8 y §2.9. |
-| `src/actions/importar.ts` | Solo `importarProductos` (mock). Import lista: `POST /api/import-lista-precios` + `importarListaPreciosProveedorSchema`. |
-| `prisma/migrations/20260508140000_precios_natural_pk_cod_tienda_cod_ext/migration.sql` | **`prod_precios_tienda`** PK = **`cod_tienda`**; **`prod_precios_provee`** PK = **`cod_ext`**; vínculo **`prod_precios_provee.cod_tienda`**; satélites comparación (`prod_comp_*`) referencian `cod_ext`. |
-| `src/actions/listaPrecios.ts` | `actualizarListaPreciosMasivoAction`: `{ ids, data }` (fila) o `{ filtros, data }` (todos los coincidentes vía `listarListaPreciosFiltradaParaExport`) + `actualizacionMasivaListaPreciosSchema`. **`exportarListaPreciosAction`**: exportación filtrada sin paginación. **`eliminarListaPrecioAction`**: borrado por `cod_ext`. |
-| `src/lib/validations/listaPrecios.ts` | Reexport `listaPreciosCodExtListSchema`; `actualizacionMasivaListaPreciosSchema` con `porcentajeListaPreciosSchema` (0–100, máx. 2 decimales) en `dto_*` y `cxTransporte`; `cotizacionDolar` y `pxListaProveedor` con **`.min(0)`** (0 permitido). **`listaPreciosFiltrosExportSchema`** (lectura/export sin `pagina`). **`vinculado`** opcional en filtros de lectura (vínculo REX). **`eliminarListaPrecioSchema`** (`codExt`). **`crearProductoListaPrecioSchema`** (alta manual: proveedor CUID, código, descripción, px lista, marca opcional). |
-| `prisma/migrations/20260527150000_prod_precios_provee_porcentajes_decimal/migration.sql` | Columnas `dto_*` y `cx_transporte`: **INTEGER → NUMERIC(5,2)**. Antes hay que **`DROP`** la columna generada `px_compra_final_sin_iva` y recrearla con la misma expresión (PostgreSQL no permite `ALTER TYPE` en columnas dependientes). Lecturas en servicios: `Number(prisma.Decimal)`. Si falló el primer intento: `npx prisma migrate resolve --rolled-back 20260527150000_prod_precios_provee_porcentajes_decimal` y luego `migrate deploy`. |
-| `src/components/proveedores/ImportarModal.tsx` | Manejo de respuesta: comprueba `res.ok` y usa `res.data` o `res.error` según corresponda. |
-| **Fase 2 (cierre de auditoría)** | |
-| `src/actions/pedidos.ts` | `getPedidoUrgenteData`: comprobación `getRol()` + `puede(rol, PERMISOS.pedidos.acceso)`; si no hay acceso se devuelve estructura vacía (proveedores mock, productos [], total 0). |
-| `src/actions/stock.ts` | `getControlStock`: … **`getTransfDepositos(origen, destino, params)`**: catálogo + `controlesRecientes` (14 días, par actual). **`listarHistorialTransfDepositosProductoAction`**: historial 14 días por producto (secciones origen→destino). **`registrarControlTransfDepositosAction`**: reservado para export Excel. **`getIndicadorSlidenavAction`**: conteos slidenav (Generar Pedido + filas pendientes TRANSFERIR/RECIBIR). |
-| `src/actions/vinculos.ts` | `vincularProducto` / `desvincularProducto`: `listaPreciosCodTiendaSchema` + `listaPreciosCodExtSchema` (`@/lib/validations/common`). `desvincularProducto` limpia `costo_compra_cod_ext` si apuntaba al `cod_ext` desvinculado; no bloquea por proveedor oficial DUX. |
-| `src/actions/productos.ts` | `editarProducto`: validación con `editarProductoSchema` (id + campos). `aplicarCampoMasivo`: validación con `aplicarCampoMasivoSchema` (proveedorId, campo, valor, q). |
-| `src/actions/comparacionCategorias.ts` | Acciones `ActionResult<T>`; Zod (`comparacionCategorias.ts` + `listaPreciosCodExtSchema`); presentaciones: **`ref_cod_tienda` + `ref_competencia_id`** → `prod_precios_competencia`; costo objetivo solo **`costo_compra_objetivo`** (sin FK legacy `prod_ref_cod_ext`); DTO extra: `listaPrecioProveedorId` validado como `cod_ext`. |
-| `src/lib/validations/common.ts` | Esquemas base: `uuidSchema`, `prismaCuidSchema`, `prismaCuidOrUuidSchema`, `globalSucursalIdSchema`; claves naturales **`listaPreciosCodExtSchema`**, **`listaPreciosCodTiendaSchema`**, **`listaPreciosCodExtListSchema`**. |
-| `src/lib/validations/productos.ts` | Nuevo: `camposEditablesProductoSchema`, `editarProductoSchema`, `campoMasivoSchema`, `aplicarCampoMasivoSchema`. |
-| `src/lib/validations/comparacionCategorias.ts` | CRUD + asignación por `listaPreciosCodExtSchema`; presentación → referencia competencia (`asignarReferenciaCompetenciaSchema`); costo objetivo numérico en `updatePresentacionSchema`. |
-| Componentes comparación/stock | `ComparacionCategoriasClient`: uso de `res.data` en `getProductosPorPresentacionAction`. `AsignarProductosModal`: uso de `res.data?.count`. `TablaStock`: manejo de `registrarExportacionExcelStock` con toast en error. |
-| Comp. Por Cat. | Nueva persistencia de `DTO. EXTRA` (0-99 o null) por ítem aislada en tabla `prod_comp_dto_extra` (antes `comparacion_dto_extra_items`), con Action `actualizarDtoExtraComparacionAction` y servicio `getProductosPorPresentacion` que devuelve `dtoExtraComparacion`. |
-
----
-
-### 5.5 Histórico: sucursal por ID en pedidos mercadería (antes `prod_ped_merc`)
-
-| Archivo / Área | Cambio |
-|----------------|--------|
-| `prisma/schema.prisma` | Modelo canónico **`ProdPedMerc2`** → tabla **`prod_ped_merc`** (`@@map`). El legado `ItemPedidoEnvio` / columnas viejas se eliminó con `20260430103000_drop_prod_ped_merc_legacy`; el rename `prod_ped_merc_2` → `prod_ped_merc` en `20260430120000_rename_prod_ped_merc_2_to_prod_ped_merc`. |
-| `prisma/migrations/20260317213000_migrate_prod_ped_merc_sucursal_to_fk_id/migration.sql` | Migración de datos y esquema: crea `sucursal_id`, migra datos desde `sucursal` por join a `sucursales.codigo` (hoy `global_sucursales.codigo`), elimina `sucursal`, crea FK a `sucursales.id` (hoy `global_sucursales.id`) e índice único nuevo por `sucursal_id`. |
-| `src/services/pedidosEnvio.service.ts` | Lecturas/escrituras en **`prodPedMerc2`** por `sucursalId`; helper para resolver `codigo -> id` sin romper contratos de frontend (p. ej. `idItemPedidoEnvio` en payloads = id de fila en `prod_ped_merc`). |
-| `src/actions/reposicion.ts` | Consultas de configuración REPOSICIÓN pasan de `where.sucursalCodigo` a `where.sucursal.codigo` para mantener filtros por código en UI con relación en BD. |
-| `src/services/listaPrecios.service.ts` | Consulta de estado URGENTE/REPOSICIÓN pasa de `sucursalCodigo` a relación `sucursal.codigo`. |
-| `prisma/migrations/20260319091000_update_px_compra_final_sum_discounts/migration.sql` | `px_compra_final` pasa a descuentos acumulados (sumados): `dtoTotal = dto_proveedor + dto_marca + dto_rubro + dto_cantidad + dto_financiero` (capado 0-100), manteniendo `cx_transporte` como factor porcentual final. |
-| `scripts/verify-pedidos-reposicion.ts` | Esquema esperado actualizado: `sucursal_id` y columnas actuales `reposicion_*`, `urgente_*`, `tintometrico_*`. |
-| `src/services/pedidosEnvio.service.ts` | Regla de fallback en vinculación por `cod_ext`: si no existe vínculo a tienda, `cod_tienda = "1503"`; si falta código proveedor, `cod_proveedor = ""` (vacío). |
-| `src/services/pedidosEnvio.service.ts` | `upsertPedidoMercaderiaUrgenteItem`: para persistir `cod_tienda` y `descripcion_tienda` usar la relación `listaPrecioProveedor.listaPrecioTienda` (vinculación explícita) y no lookup directo por `cod_ext` en `prod_precios_tienda`; esto evita descripciones erróneas en historial cuando el producto vinculado no coincide con el cod_ext oficial. |
-| `prisma/migrations/20260317223000_sync_cant_pedir_por_tipo_pedido/migration.sql` | Regla de negocio a nivel BD: `cant_pedir` se sincroniza automáticamente por `tipo_de_pedido` (`TINTOMETRICO -> tintometrio_cant_pedir`, `URGENTE -> urgente_cant_pedir`, `REPOSICION -> reposicion_cant_pedir`) con trigger `BEFORE INSERT OR UPDATE`. |
-| `prisma/migrations/20260317232000_sync_reposicion_cant_pedir_por_forma_y_stock/migration.sql` | Regla de reposición a nivel BD: `reposicion_cant_pedir` según forma y stock (versión inicial; ver migración canonical). |
-| `prisma/migrations/20260330120000_reposicion_forma_pedido_canonical/migration.sql` | `reposicion_forma_pedido` solo admite **`CANT_FIJA`** o **`CANT_MAXIMA`** (normaliza legados `CANT. FIJA` / `CANT. MAX.`). Trigger: `CANT_FIJA` => `reposicion_cant_pedir = reposicion_cant_conf`; `CANT_MAXIMA` => `GREATEST(0, reposicion_cant_conf - stock sucursal)`; luego `cant_pedir` para `REPOSICION`. |
-| `prisma/migrations/20260330153000_reposicion_punto_stock_trigger/migration.sql` | Reposición con condición inicial por punto: solo calcula pedido cuando `stock_sucursal <= reposicion_punto_pedido`; fuera de ese caso `reposicion_cant_pedir = 0`. Mantiene formas canónicas (`CANT_FIJA` / `CANT_MAXIMA`) y agrega trigger `AFTER UPDATE` en `prod_precios_tienda` (`stock_maipu`, `stock_guaymallen`) para forzar recálculo de ítems REPOSICION tras sincronización DUX. |
-| `prisma/migrations/20260318000000_add_sync_dux_status/migration.sql` | Nueva tabla `sync_dux_status` para persistir estado de sincronización DUX en BD (`running`, `phase`, `processed`, `total`, `error`, `last_completed_at`, `updated_at`) y soportar polling estable en sidebar. |
-| `prisma/schema.prisma` | Nuevo modelo `SyncDuxStatus` (mapeo a `sync_dux_status`) para tipado fuerte y evitar SQL raw en lecturas/escrituras. |
-| `src/lib/syncDuxStatusDb.ts` | Helper tipado de persistencia de estado DUX (start/progress/success/error + lectura) usando Prisma. `last_completed_at` se actualiza **solo en sync OK**; en error se mantiene `processed/total` (no se resetean al hacer update por conflicto). |
-| `src/app/api/sync-lista-precios-tienda/route.ts` | `GET` y `POST` validan `puede(rol, PERMISOS.tienda.acciones.sincronizar)` (simple y editor); comparten `ejecutarSyncListaPrecioTienda` (estado en BD + progreso await). **`export const maxDuration = 300`**. Persistencia en chunks de **25 ítems** (`DUX_SYNC_CHUNK_SIZE`, máx. 100) en **3 transacciones** (prod_tienda → stock → precios); catálogos `prod_depositos_dux` / `prod_tienda_listas_precios` deduplicados por chunk. Si ningún chunk persiste → error 500 explícito. Progreso en dos fases: `sincronizando` / `guardando`. Ante `SyncListaPrecioTiendaCancelledError` limpia estado con `clearListaPrecioTiendaSyncRunningStateInDb` y responde `200` con `cancelled: true` **sin** tocar `lastCompletedAt`. |
-| `src/app/api/sync-lista-precios-tienda/cancel/route.ts` | `POST`: mismo permiso; `requestCancelListaPrecioTiendaSyncInDb` (solo si `running`) para señalar cancelación sin actualizar `lastCompletedAt`. |
-| `src/app/api/sync-lista-precios-tienda/status/route.ts` | `GET`: mismo gate que POST (`guardTiendaListaPreciosSincronizar`); expone `lastCompletedAt`, `remainingMinutes`, etc., para sidebar y hooks. |
-
----
-
-### 5.6 Optimización de persistencia (lista precios)
-
-| Archivo / Área | Cambio |
-|----------------|--------|
-| `src/services/listaPrecios.service.ts` | `upsertListaPrecios()`: optimiza el conteo `creados/actualizados` con un prefetch en chunks de `codProdProv`, evitando el `findUnique()` por fila (patrón N+1) sin cambiar la lógica final del `upsert`. |
-| `prisma/migrations/20260413120000_add_stockeable_prod_precios_tienda/migration.sql` | Columna `stockeable` en `prod_precios_tienda` (default `true` para legado). |
-| `src/lib/duxApi.ts` | `ItemDux.stockeable` y `mapItem`: ambos depósitos DUX con `ctd_disponible` no nulo → `true`. |
-| `src/services/syncListaPrecioTienda.service.ts` | Upsert **no** persiste `stockeable` en `prod_tienda`; `ctd_disponible` en `prod_tienda_stock`. |
-| `src/actions/stock.ts`, `src/services/sobreStock.service.ts`, `src/services/pedidosEnvio.service.ts`, `src/actions/tienda.ts`, `src/components/tienda/TablaTienda.tsx` | Lecturas/filtros y reglas de reposición alineadas al flag. |
-
-### 5.9 Tienda — módulo `Px. Tinto / Cal. Lts.` (lectura por rol)
-
-| Archivo / Área | Cambio |
-|----------------|--------|
-| `src/lib/permisos.ts` | Nuevo permiso `PERMISOS.tienda.tintoLts` (`simple: true`, `editor: true`) para habilitar el submódulo sin abrir acceso a **Vinculacion Con Prov.** |
-| `src/actions/tienda.ts` | Nueva action de lectura `getProveedoresTintoLts()` con `getRol()` + `puede(rol, PERMISOS.tienda.tintoLts)`; devuelve `nombre`, `prefijo`, `coeficienteTintometrico` para cálculo frontend sin persistencia. |
-
-## 6. Organización en Cursor (prompts y reglas persistentes)
+## 6. Organización en Cursor
 
 - Mapa de guías + **flujo de trabajo canónico** (contrato Zod/`ActionResult` → servicios → actions → UI → docs) y **criterio de hecho**: `docs/README.md`.
 - Archivo recomendado para prompts reutilizables: `.cursor/prompts.md`.
 - `.cursor/prompts.md` incluye el bloque **Dream Team de agentes** (FullStack / Front / Back / Auditoría); usar el perfil de backend/auditor backend cuando la tarea afecte `src/actions/`, `src/services/`, Prisma, seguridad o integraciones. Plantillas: `.cursor/fullstack_promp.md`, `.cursor/front_promp.md`, `.cursor/back_promp.md`, `.cursor/auditoria_promp.md`.
 - Reglas persistentes activas en `.cursor/rules/`:
   - `manuales-obligatorios.mdc`: exige revisar `docs/README.md` y la guía del área antes de modificar código; sin docs al día la tarea queda incompleta.
-  - `flujo-fullstack-end-to-end.mdc`: ciclo end-to-end con contrato de datos antes de la UI, orden servicios → actions → UI, auth/checklist §1.2.x y criterio de hecho.
+  - `flujo-fullstack-end-to-end.mdc`: ciclo end-to-end con contrato de datos antes de la UI, orden servicios → actions → UI, auth/checklist (Guía para IA y §1.2) y criterio de hecho.
 - Si se crea o modifica una Server Action, servicio, validación Zod, contrato de respuesta o regla de seguridad, registrar el cambio en este documento y mantener coherencia con las reglas de `.cursor/rules/` y `docs/README.md`.
 
-*Última actualización (2026-08-13): **Auditoría exhaustiva backend** — Actions huérfanas, servicios/libs muertos y docs alineados. Ver §1.2.9. Sin cambios funcionales ni de contratos.*
-
-*Última actualización (2026-08-07): §6 alineada al flujo canónico en `docs/README.md` y reglas `.cursor/rules/` (contrato Zod/`ActionResult`, orden de implementación, criterio de hecho).*
-
-*Última actualización (2026-06-30): **Auditoría backend cerrada** — 17 Server Actions huérfanas eliminadas; servicios/libs legacy de Px Competencia retirados; anti-patrón Action→Action en `vinculos.ts` corregido; Zod en `POST /api/import-lista-precios` y `getPxListasPreciosPageData`. Ver §1.2.8.*
-
-*Última actualización (2026-06-04): **Recepción pedidos** — eliminados `exportarExcelRecepcionPedidoAction` y `getExportRecepcionPedidoExcelPayload`; registro único vía POST DUX (**Registrar En Dux**). SSOT: `prepararRecepcionCompraDatos`. Ver §1.11d.1, §2.8, §2.9, §2.9a.*
-
-*Última actualización (2026-05-27): **Caja CHEQUE — `ult_actualizacion`** — al registrar, acreditar en cuenta o marcar pago a proveedor se actualiza `ult_actualizacion` de la caja origen (`touchUltActualizacionCajaTesoreria`); trigger ampliado en **`20260527120000_fin_tesoreria_touch_ult_actualizacion_cheques`**. Ver §2.5c.*
-
-*Última actualización (2026-05-26): **Cheques listado transferidos** — `listarChequesPorCajaId` con `tenenciaFiltro = transferidos`: `orderBy` por **`fecha_acreditacion` DESC** (antes `fecha_transferencia` DESC). Ver §2.5c (cheques).*
-
-*Última actualización (2026-05-26): **Cheques tesorería — `tenedor` CHECK** — migración **`20260526100000_fin_tesoreria_cheques_tenedor_coorporativo`**: el CHECK `fin_tesoreria_cheques_tenedor_check` incluye **COORPORATIVO** (alineado a `TITULARES_CAJA_TESORERIA` / `cajasTesoreriaTitulares.ts`; antes solo seis valores en **`20260422160000_add_tenedor_fin_tesoreria_cheques`**). Ver §2.5c (cheques).*
-
-*Última actualización (2026-05-11): **Pago proveedor cheque — `fecha_transferencia`** — `marcarEntregaProveedorChequeSchema` incluye **`fechaTransferencia`**; **`marcarEntregaProveedorFinTesoreriaCheque`** la persiste (≤ hoy AR); sumas de caja **CHEQUE** excluyen filas con transferencia. Ver §2.5c (cheques).*
-
-*Última actualización (2026-05-11): **Cheques tesorería — fechas `@db.Date` en DTO:** `mapCheque` y comparación `fecha_acreditacion` ≤ hoy en `transferirChequeFinTesoreria` usan **`isoYmdFromPrismaDateOnly`** (`fechaArgentina.ts`); evita desfase de un día respecto al calendario guardado (UI **Editar Cheque** / `type="date"`). Ver §2.5c (cheques).*
-
-*Última actualización (2026-05-11): **Acreditar cheque** — destino solo **`tipo_caja = BANCO`** (`listarCajasTesoreriaTipoBancoAction` + validación en `transferirChequeFinTesoreria`). Ver §2.5c (cheques).*
-
-*Última actualización (2026-05-19): **Cajas tesorería** — migración **`20260519120000_fin_tesoreria_tipo_caja_valor_disponibilidad`** (`tipo_caja`, `tipo_valor`, `disponibilidad`); **`editarCajaTesoreria`** persiste `tipo_valor` y `disponibilidad` enviados por el cliente; acreditación de cheques en cuenta propia exige **`tipo_caja = BANCO`** (además de `tipo_valor = DIGITAL` en destino). Ver §2.5c.*
-
-*Última actualización (2026-05-11): **Cheques tesorería — tenencia** — migración **`20260511143000_fin_tesoreria_cheques_tenencia`**; `tenencia` en modelo y DTO; listado con `tenenciaFiltro`; transferencia pone `DEPOSITADO`; entrega proveedor pone `PROVEEDOR`. Ver §2.5c (cheques).*
-
-*Última actualización (2026-05-14): **Cheques tesorería — fechas** — migración **`20260516140000_fin_tesoreria_cheques_fechas_recibido_depositado`**: `fecha_recibido` + DATE de transferencia (hist. `fecha_depositado`); **`20260518143000_rename_fin_tesoreria_cheques_fecha_depositado_to_fecha_transferido`**: `fecha_transferido`; baja `entrega_proveedor`. `marcarEntregaProveedorChequeSchema` incluye `chequeId`, `proveedorId`, `fechaTransferencia`. Ver §2.5c (cheques).*
-*Última actualización (2026-05-16): **Cheques tesorería — grilla Detalles De Cheques** — **ACTUALES**: **DÍAS** y orden por DÍAS ↑; **TRANSFERIDOS**: columnas transferencia/tenencia en grilla y orden por transferencia ↓. Ver §2.5c (cheques).*
-
-*Última actualización (2026-05-13): **Cheques tesorería** — migración **`20260515190000_fin_tesoreria_cheques_transferencia_historial`** (`fecha_transferencia`, `caja_destino_id`); transferencia conserva fila **500 días** (`src/lib/finTesoreriaChequesRetencion.ts` + purge en `finTesoreriaCheques.service.ts`); sumas SQL filtran `fecha_transferencia IS NULL`. Ver §2.5c (cheques).*
-
-*Última actualización (2026-05-27): **Posición IVA — import IVA débito** — solo **`.txt` de alícuotas** (62 caracteres/línea; Libro IVA Digital ventas). `imp_iva` desde pos. 48–62 «Impuesto liquidado»; **sin** cálculo 21 %. Mes/anio = fila del modal. Rechaza TXT con líneas de cabecera (266). `listarIvaDebitoFinBalPorAnio` suma `imp_iva`.*
-
-*Última actualización (2026-05-13): **Rename** tabla **`fin_bal_pos_iva_final` → `fin_bal_iva_deb_import`** (historial CSV IVA débito; modelo Prisma **`FinBalIvaDebImportLine`**, `@@map("fin_bal_iva_deb_import")`). Migración **`20260513130000_rename_fin_bal_pos_iva_final_to_fin_bal_iva_deb_import`**. Antes: `fin_bal_iva_deb_import_line` → … → `fin_bal_pos_iva_final`. Servicio **`finBalIvaDeb.service.ts`**. Ver `schema.prisma`.*
-
-*Última actualización (2026-05-12): **Rename** tabla **`fin_bal_iva_deb_import_line` → `fin_bal_pos_iva_final`**. Migración **`20260512220000_rename_fin_bal_iva_deb_import_line_to_fin_bal_pos_iva_final`**. Cadena siguiente: ver entrada 2026-05-13 (`fin_bal_iva_deb_import`).*
-
-*Última actualización (2026-05-12): **Dominio gastos Balance** — migración **`20260512203000_drop_movimientos_finanzas_cheques`** (tabla hija huérfana) y **`20260512210000_drop_movimientos_finanzas`** con enum **`TipoMovimientoFinanzas`**; modelo Prisma **`MovimientoFinanzas`** fuera del schema; eliminados `movimientosFinanzas.service.ts`, **`actions/movimientosFinanzas.ts`**, **`validations/movimientosFinanzas.ts`**, **`NuevoGastoModal`**. **`listarSucursalesParaGastos`** + **`SucursalOption`** en **`finBalGastoMensualBalance.service.ts`**. Ver §2.5b.*
-
-*Última actualización (2026-05-10): **Superficie API** — Gates en `GET` de `/api/sync-lista-precios-tienda/status`, `/api/sync-compras-proveedor-dux/status`, `/api/import-lista-precios/status` y refuerzo de `POST` import lista (`listaPrecios.importarLista` + editor) vía `@/lib/apiRouteAuth`. Eliminados mock `/api/sync-tienda` y `useSyncDux`; cliente unificado en `useListaPreciosTiendaModalSync`. **[Histórico misma fecha]** **Limpieza de superficie** — eliminados `src/actions/duxCompras.ts` y `src/actions/syncListaPrecioTienda.ts` (sin call sites). **[2026-05-08]** Excel recepción: sin consulta DUX para **COMPROBANTE**; ver §2.8–§2.9. `finBalGastoMensualBalance.ts` endurece lecturas Prisma con `try/catch`; `ivaPorGastoFinalId` con claves `cuid` + tope en Zod (§1.2.6); `.env.example` ampliado.*
-
-*Última actualización (2026-05-27): **Lista Precios Proveedores** — `actualizacionMasivaListaPreciosSchema` y `ActualizacionMasivaListaPrecios` ahora aceptan `pxListaProveedor` (>= 0), y `actualizarListaPreciosMasivo` persiste ese campo en `prod_precios_provee.px_lista_proveedor` (además de los campos previos) para soportar edición individual desde la grilla.*
-
-*Última actualización (2026-05-07): **Auditoría de seguridad cerrada** — todas las Server Actions vigentes revisadas cumplen los gates documentados. Patrones consolidados en §1.2.5 (firma `unknown` para payloads de cliente, gate doble módulo+editor, IDs por modelo Prisma, no anidar Actions, sin throw al cliente, helpers de gate compartidos) + checklist en §4 + tabla en §5.11.*
-
-*Última actualización (2026-04-24): **Balance mensual** y **`fin_bal_vtas`** (resumen, upsert, unique, revalidaciones, helpers `fmtMargenContribucionPct` / `puntoEquilibrioVentasPesos`) — ver **§2.5f**.*
-
-*Última actualización (2026-04-21): `global_proveedores.prefijo` **opcional** (NULL permitido; unique PostgreSQL). Alta sin prefijo: servicio genera `codigo_unico` tipo `Z`+hex; importación de lista usa `prefijo` efectivo = prefijo trim o `codigo_unico`. Migración `20260421180000_global_proveedores_prefijo_nullable` + función `trg_lista_precios_set_cod_ext` con `COALESCE(NULLIF(trim(p.prefijo), ''), p.codigo_unico)` para `cod_ext`. Zod: `prefijoProveedorOpcionalSchema`, `proveedorMercaderiaFormSchema` (SI/NO obligatorio desde form). Ver §1.11c.*
-
-*Última actualización: 2026-04-21 — **rename** de catálogos maestros: `marcas` → `prod_marcas`, `proveedores` → `global_proveedores`, `sucursales` → `global_sucursales` (migración `20260421120000_rename_marcas_proveedores_sucursales`). Incluye renames de PK/uniques/índices y del CHECK de prefijo; coexiste el unique legado `global_proveedores_nombre_legacy_ux` (antes `idx_proveedores_nombre`) junto a `global_proveedores_nombre_key`. Se recrean `sync_pedidos_mercaderia_cant_pedir` (lee `global_sucursales`) y `trg_lista_precios_set_cod_ext` (lee `global_proveedores`). Prisma: `@@map` en `Marca`, `Proveedor`, `Sucursal` + `map:` en uniques y en `@@index([proveedorMercaderia])`. Raw SQL y comentarios alineados en services/actions listados en el diff del commit. — 2026-04-18 — **rename masivo** de 7 tablas al esquema de prefijado por dominio (`prod_*` para productos/pedidos/precios; `fin_*` para finanzas). Migración `20260418290000_rename_7_tablas_prod_fin`: (1) `pedidos_historia` → `prod_ped_historial`, (2) `pedidos_historial_mercaderia` → `prod_ped_historial_merc`, (3) `pedidos_mercaderia` → `prod_ped_merc`, (4) `precios_proveedores` → `prod_precios_provee`, (5) `precios_tienda` → `prod_precios_tienda`, (6) `cajas_tesoreria` → `fin_tesoreria_cajas`, (7) `comprobantes_proveedor` → `fin_compras_comprobante`. Cada rename incluyó `ALTER TABLE … RENAME TO` + renames explícitos de PK, FKs, índices y unique constraints (PostgreSQL no los auto-renombra al renombrar la tabla). Estrategia defensiva con `IF EXISTS` en todos los renames de constraints/índices: si algún nombre difiere de la convención por historia, se saltan silenciosamente — la tabla sigue funcional porque PostgreSQL resuelve FKs por OID, no por nombre. **Funciones plpgsql recreadas** con los nombres nuevos: `sync_pedidos_mercaderia_cant_pedir()` (referenciaba `precios_tienda` en su cuerpo) ahora usa `prod_precios_tienda`; `sync_reposicion_on_precios_tienda_stock_change()` (referenciaba `pedidos_mercaderia`) ahora usa `prod_ped_merc`. Los triggers siguen a la tabla automáticamente (sus nombres quedan desalineados — cosmético, funcional OK; se renombran en la misma migración vía `ALTER TRIGGER … RENAME TO …`). **`@@map` actualizados** en `schema.prisma` (7 tablas) + 2 unique nombrados (`cajas_tesoreria_nombre_titular_ux` → `fin_tesoreria_cajas_nombre_titular_ux`; `comprobantes_proveedor_natural_ux` → `fin_compras_comprobante_natural_ux`). **Nombres TypeScript sin cambios** (modelos Prisma `PedidoHistoria`, `PedidoHistoriaItem`, `ItemPedidoEnvio`, `ListaPrecioProveedor`, `ListaPrecioTienda`, `CajaTesoreria`, `ComprobanteProveedor` y todos sus Action/Service consumidores se mantienen — el rename afecta solo nombres físicos vía `@@map(...)`). Raw SQL actualizado en: services (`deudaProveedores`, `controlComprobantes`, `vencimientosPorFecha`, `listaPrecios`, `vinculosPorCodExt`), actions (`tienda`), scripts de verificación/simulación y `scripts/ensure-comparacion-dto-extra-items.js`. Script de bootstrap `scripts/neon-comprobantes-proveedor.sql` → `scripts/neon-fin-compras-comprobante.sql` (archivo viejo queda como redirector DEPRECADO). **Motivación**: unificar el prefijado por dominio que ya se había iniciado con `prod_comp_*` y `prod_rendimientos`, y el `fin_bal_*` / `movimientos_finanzas`. Con este batch, la base queda dividida limpiamente: `prod_*` para productos/pedidos/precios, `fin_*` para finanzas/tesorería/compras; los maestros de sucursal/proveedor pasaron luego a `global_*` y el catálogo de marcas a `prod_marcas` (ver entrada 2026-04-21). **Contradicción con revert anterior resuelta**: dos días atrás se había revertido el rename `comprobantes_proveedor` → `prod_comp_provee` porque `prod_comp_*` se reservó al dominio "Comparación por Categoría"; ahora la tabla pasa a `fin_compras_comprobante` (prefijo `fin_*`, domino correcto). Sin pérdida de datos: los registros de las 7 tablas persisten intactos. Rollback: migración inversa con los nombres viejos. — **rename** de la tabla de catálogo de rendimientos por tipo de pintura: `tipos_pintura_rendimientos` → `prod_rendimientos`. Migración `20260418280000_rename_tipos_pintura_rendimientos_a_prod_rendimientos`: `ALTER TABLE … RENAME TO` + renames de PK (`tipos_pintura_rendimientos_pkey` → `prod_rendimientos_pkey`), del índice UNIQUE case-insensitive con expresión `LOWER(tipo_pintura)` (`ux_tipos_pintura_rendimientos_tipo_lower` → `ux_prod_rendimientos_tipo_lower`) y del CHECK sobre `rendimiento` (`tipos_pintura_rendimientos_rendimiento_check` → `prod_rendimientos_rendimiento_check`). La tabla **no está modelada en `schema.prisma`** (se usa exclusivamente vía `$queryRaw` / `$executeRaw` en `src/actions/tiposPinturaRendimientos.ts`), por lo que no hubo `@@map(...)` que actualizar; sí se actualizaron las 4 raw SQL del Action (SELECT listado, UPDATE, INSERT, DELETE). **Nombres TypeScript sin cambios**: el archivo `tiposPinturaRendimientos.ts`, los exports `getTiposPinturaRendimientosAction`, `upsertTipoPinturaRendimientoAction`, `deleteTipoPinturaRendimientoAction`, y el tipo `TipoPinturaRendimiento` se mantienen — el rename afecta solo la capa física en PostgreSQL. Consumidor UI: `/tienda/litros` (Cálculo de Lts + modal Editar Rendimientos). Sin pérdida de datos. Rollback: inverso `ALTER … RENAME TO …` a los nombres originales. — **revert parcial del rename masivo** del mismo día: la tabla de comprobantes DUX **vuelve a su nombre original `comprobantes_proveedor`** (no se queda como `prod_comp_provee`). Migración `20260418270000_revert_rename_comprobantes_proveedor`: `ALTER TABLE prod_comp_provee RENAME TO comprobantes_proveedor` + rename inverso de PK, FK, índices `_fecha_comp_idx`, `_id_proveedor_idx` y del UNIQUE con `map:` explícito (`prod_comp_provee_natural_ux` → `comprobantes_proveedor_natural_ux`). **Nota**: este nombre original `comprobantes_proveedor` fue reemplazado definitivamente el mismo día por `fin_compras_comprobante` (migración `20260418290000_rename_7_tablas_prod_fin`, ver entrada más reciente arriba). `schema.prisma` restaurado en ese momento a `@@map("comprobantes_proveedor")` / `map: "comprobantes_proveedor_natural_ux"`. Raw SQL de `controlComprobantes.service.ts`, `vencimientosPorFecha.service.ts` y `deudaProveedores.service.ts` vuelto a `FROM comprobantes_proveedor` en ese momento. Script de bootstrap `scripts/neon-prod-comp-provee.sql` → `scripts/neon-comprobantes-proveedor.sql` (contenido restaurado). Comentarios en `src/lib/duxComprasApi.ts`, `src/actions/comprobantesProveedor.ts` y `schema.prisma` restaurados al nombre original en ese momento. **Motivación**: el prefijo `prod_comp_*` queda reservado exclusivamente al dominio "Comparación por Categoría" (lectura `prod[ucto]_comp[aración]`) y no debe mezclarse con tablas del dominio "Comprobantes DUX". Los 4 renames de comparación (`prod_comp_cat`, `prod_comp_sub_cat`, `prod_comp_presentaciones`, `prod_comp_dto_extra`) **se mantienen**. Sin pérdida de datos (los 475 comprobantes DUX persisten intactos durante ambos renames). — **rename masivo** de 5 tablas (migración `20260418260000_rename_prod_comp_y_comprobantes`) — inicialmente incluyó los 5 renames, pero la migración de revert anterior deja vigentes **solo 4** en producción: `comparacion_categorias` → `prod_comp_cat`, `comparacion_subcategorias` → `prod_comp_sub_cat`, `comparacion_presentaciones` → `prod_comp_presentaciones`, `comparacion_dto_extra_items` → `prod_comp_dto_extra`. Cada rename incluyó `ALTER TABLE … RENAME TO` + renames explícitos de PK, FKs e índices (PostgreSQL no los auto-renombra al renombrar la tabla). Los nombres de los **modelos Prisma** (y el API TS `prisma.categoriaComparacion.*`, `prisma.subcategoriaComparacion.*`, etc.) **no cambiaron**: el rename afecta solo nombres físicos vía `@@map(...)`. **Limpieza colateral**: eliminado `prisma/rename_comparacion_tables.sql` (script huérfano de un rename histórico que dejó las constraints con nombres desalineados — `categorias_comparacion_pkey`, `subcategorias_comparacion_categoria_id_fkey`, etc. — ahora ya alineados al prefijo `prod_comp_*`); `scripts/ensure-comparacion-dto-extra-items.js` actualizado para usar `prod_comp_dto_extra`. — **alta** del flag `sucursales.centro_costo` (Prisma `Sucursal.centroCosto`, `BOOLEAN NOT NULL DEFAULT FALSE`). Migración `20260418250000_add_sucursales_centro_costo` (`ALTER TABLE "sucursales" ADD COLUMN "centro_costo" BOOLEAN NOT NULL DEFAULT FALSE`). Concepto **ortogonal a `pedido`**: `pedido` gobierna participación en flujos de pedidos de mercadería; `centro_costo` marca a la sucursal como centro de imputación contable en reportes/balance. Sin índice (cardinalidad 2, se lee como payload). Sin UI de edición (no hay formulario de alta/edición de sucursales): el flag se administra por seed / UPDATE manual, igual que el resto de atributos del maestro `sucursales`. Sin backfill automático: los registros preexistentes quedan en `false` (opt-in explícito); cuando se defina la política funcional se marcan con `UPDATE sucursales SET centro_costo = TRUE WHERE codigo IN (...)`. Sin cambios en Zod/service/action (ningún consumidor filtra todavía por este flag). Ver §2.5b. — **baja** de la columna `fin_bal_gasto.repite_monto` (introducida horas antes en `20260418220000_add_fin_bal_gasto_flags_mensual_repite`). Migración `20260418240000_drop_fin_bal_gasto_repite_monto` (`ALTER TABLE … DROP COLUMN IF EXISTS`). Se saca el campo `repiteMonto` del schema Prisma, de `FinBalGastoItem`, de los Zod `crear/editar*Schema`, de la capa de servicio (writes y reads) y del modal `CrearEditarFinBalCatalogoItemModal` (Select `REPITE MONTO` + estado + prop `repiteMontoInicial`); la meta del gasto en la columna GASTOS deja de mostrar el badge "Repite monto". **`gasto_mensual` se conserva**. El caso de uso ("recordar último monto") se moverá a `movimientos_finanzas` cuando aplique. Sin impacto productivo: los gastos existentes tenían el valor `DEFAULT FALSE`. — **cambio de regla de unicidad** en `fin_bal_gasto`: de `UNIQUE (rubro_id, nombre)` a `UNIQUE (rubro_id, nombre, proveedor_id)` (Prisma `@@unique([rubroId, nombre, proveedorId])`, map `fin_bal_gasto_rubro_nombre_proveedor_ux`). Ahora dentro de un mismo rubro el `nombre` puede repetirse si el `proveedor` es distinto. Para cubrir el caso "dos gastos sin proveedor con el mismo nombre en el mismo rubro" (que el UNIQUE estándar no bloquea porque PostgreSQL trata `NULL ≠ NULL`), la migración agrega **adicionalmente** un UNIQUE parcial `fin_bal_gasto_rubro_nombre_sin_prov_ux ON (rubro_id, nombre) WHERE proveedor_id IS NULL`, que vive solo en SQL (Prisma 7.4.1 no soporta índices parciales ni `NULLS NOT DISTINCT` en `@@unique`). Migración `20260418230000_fin_bal_gasto_unique_rubro_nombre_proveedor` (compatible con datos existentes — el constraint previo era más restrictivo). `mapDbError` de `gasto` diferencia el mensaje de `P2002` leyendo `meta.target` / `meta.constraint` (si contiene `sin_prov` → "Ya existe un gasto sin proveedor con ese nombre…", si no → "Ya existe un gasto con ese nombre y ese proveedor…"). — **alta** de los flags `fin_bal_gasto.gasto_mensual` y `fin_bal_gasto.repite_monto` (ambos `BOOLEAN NOT NULL DEFAULT FALSE`). Migración `20260418220000_add_fin_bal_gasto_flags_mensual_repite` (idempotente: `ADD COLUMN … DEFAULT FALSE` x2). Schema Prisma: `gastoMensual` / `repiteMonto` en `FinBalGasto`. Zod: nuevo helper local `booleanFlagSchema` (union `string | boolean | null | undefined` → `boolean`; acepta `"si"/"sí"/"true"/"1"` como `true`) en `crearFinBalGastoSchema` y `editarFinBalGastoSchema`. Servicio: `FinBalGastoItem` expone `gastoMensual` / `repiteMonto` (siempre `boolean`); `crearFinBalGasto` / `editarFinBalGasto` los persisten; `listarFinBalGastosPorRubro` y `listarFinBalGastosJerarquia` los incluyen en el payload. Los registros preexistentes quedan en `false` (opt-in explícito desde el modal del catálogo). Sin índices: cardinalidad baja + el catálogo se lee siempre vía jerarquía rubro→gasto. — **alta** del helper `getProveedoresNoMercaderia()` en `src/services/proveedor.service.ts` (contraparte simétrica de `getProveedoresMercaderia()`): filtra `where: { proveedorMercaderia: false }` reutilizando `listarProveedoresInterno` y el índice `global_proveedores_proveedor_mercaderia_idx`. La página `/finanzas/balance/gastos/catalogo` ahora consume `getProveedoresNoMercaderia()` en lugar de `getProveedores()` para popular la columna "PROVEEDORES" con el catálogo maestro de **proveedores no-mercadería** (gastos operativos / servicios / impuestos), dejando los de mercadería circunscriptos a su propio módulo. La página previamente consumía `getProveedores()` cuando la columna se introdujo (histórico abajo). — **extensión** del flag `proveedor_mercaderia` al modal **Nuevo/Editar Proveedor** (`ProveedorForm.tsx` + `ProveedorModal.tsx`): Select SI/NO controlado + hidden `<input name="proveedorMercaderia">` para `FormData`; `proveedorMercaderiaSchema` (union string/boolean/null/undef → boolean) en `createProveedorSchema` y `updateProveedorSchema`; `CreateProveedorInput.proveedorMercaderia?` y `UpdateProveedorInput.proveedorMercaderia?` opcionales (undefined = no tocar). Default UX en alta: "SI". Consumidores del modal (`TablaProveedoresLista`, `TablaProveedoresGestion`) propagan el valor persistido a `ProveedorParaModal.proveedorMercaderia` para precarga en edición. — **alta** de `fin_bal_gasto.proveedor_id` (FK opcional a `proveedores`, `BOOLEAN NULLable`, `onDelete: SET NULL`, `onUpdate: CASCADE`, índice `fin_bal_gasto_proveedor_id_idx`). Migración `20260418210000_add_fin_bal_gasto_proveedor_id`. Schema Prisma: campo `proveedorId` + relación `proveedor Proveedor?` en `FinBalGasto` y relación inversa `finBalGastos FinBalGasto[]` en `Proveedor`. Zod (`crearFinBalGastoSchema` / `editarFinBalGastoSchema`) acepta `proveedorIdOpcionalSchema` (union de `prismaCuidSchema | ""` | `null` | `undefined` → normalizado a `string | null`). Servicio: `FinBalGastoItem` expone `proveedorId` + `proveedor: { id, nombre } | null` (expandido en lecturas vía `include: { proveedor: { select: { id, nombre } } }`); `mapDbError` distingue P2003 en gasto por `meta.field_name` / `meta.constraint` entre proveedor y rubro. UI: Select opcional "PROVEEDOR" (con opción "SIN PROVEEDOR") en modal de alta/edición de gasto (`CrearEditarFinBalCatalogoItemModal`); la columna 3 de `/finanzas/balance/gastos/catalogo` muestra el nombre del proveedor (o "Sin proveedor") como meta bajo el nombre del gasto; la página del catálogo carga proveedores vía `getProveedores()` en paralelo con la jerarquía. — **alta** de `global_proveedores.proveedor_mercaderia` (`BOOLEAN NOT NULL DEFAULT false` en schema final; backfill a `true` para existentes, índice `global_proveedores_proveedor_mercaderia_idx`). Migración `20260418200000_add_proveedores_proveedor_mercaderia`. Nueva lectura `getProveedoresMercaderia` en servicio y action; `/gestion-productos/proveedores/lista` filtra por `proveedor_mercaderia = true` (ver §1.11c). — **alta** de la jerarquía `fin_bal_gasto_tipo` → `fin_bal_gasto_rubro` → `fin_bal_gasto` (migraciones `20260418170000_add_fin_bal_gasto_tipo` y `20260418180000_add_fin_bal_gasto_rubro_y_gasto`), con FKs `onDelete: Restrict`, nombre único global en tipo y único por padre en rubro/gasto. Incluye capa completa backend: validaciones Zod (`finBalGastosCatalogo.ts`), servicio con lectura jerárquica + CRUD 3 niveles (`finBalGastosCatalogo.service.ts`) y Actions con gate `PERMISOS.finanzas.acceso` + `esEditor()` (`actions/finBalGastosCatalogo.ts`). **Baja** previa del catálogo `finanzas_rubros` / `finanzas_gastos` y enum `TipoCostoGasto` (migración `20260418160000_drop_finanzas_rubros_y_gastos_catalogo`); se eliminaron servicio, action, validaciones y modal asociados; `/finanzas/balance/gastos` queda solo con alta de movimientos en `movimientos_finanzas`. Histórico: `cajas_tesoreria` (2026-04-14, hoy `fin_tesoreria_cajas`), `precios_tienda.stockeable` (2026-04-13, hoy `prod_precios_tienda`), Finanzas 2026-04-02; reposición por punto/stock + DUX compras throttle.*
-
----
-
-### 5.7 Auditoría de seguridad — tabla de cambios (2026-03)
-
-| Área | Cambio |
-|------|--------|
-| `src/actions/tienda.ts` | `getTiendaPageData`, `getProveedoresTintoLts`: `getRol` + `puede`. |
-| `src/actions/importar.ts` | `puede(importar)` + `esEditor` + `importarProductosSchema`. Lista precios: API route (§1.2.8). |
-| `src/lib/validations/importar.ts` | Esquemas de mapeo y límites de filas/celdas. |
-| `src/actions/pedidosHistoria.ts` | Mutaciones con `esEditor()`; listado: `proveedorId` normalizado con Zod. |
-| `src/actions/pedidos.ts` | `generarPdfEnviarPedidoSchema`, `upsertPedidoUrgenteItemSchema`. |
-| `src/actions/sesion.ts` | `activarModoEditorSchema` (Zod). |
-| `src/actions/tintometrico.ts`, `productosTienda.ts` | Límites `q` / `take`. |
-| `HistorialPedidosPageClient` + `historial/page.tsx` | Prop `esEditor` para ocultar acciones no permitidas al rol simple. |
-
-### 5.8 Auditoría de seguridad — cierre 2026-03-23 (Server Actions + API sync)
-
-| Área | Cambio |
-|------|--------|
-| `src/actions/listaPrecios.ts` | Lecturas: `puede(rol, PERMISOS.listaPrecios.acciones.importarLista)` + `listaPreciosFiltrosLecturaSchema` / opciones estrictas. |
-| `src/lib/validations/listaPrecios.ts` | `listaPreciosOpcionesFiltroSchema`, `listaPreciosFiltrosLecturaSchema`. |
-| `src/actions/proveedores.ts` | `getProveedores` / `getProveedoresPageData`: permiso compuesto (sugeridos \| lista \| importar lista); `editarProveedor` / `eliminarProveedor`: `prismaCuidSchema`; eliminación vía servicio. |
-| `src/lib/validations/proveedores.ts` | `proveedoresPageParamsSchema`. |
-| `src/services/proveedor.service.ts` | `deleteProveedor` con `ServiceResult` y errores FK. |
-| `src/lib/validations/common.ts` | `prismaCuidSchema`. |
-| `src/actions/vinculos.ts` | `getVinculos` / `listarProductosParaVincular`: `PERMISOS.tienda.acceso` + Zod. |
-| `src/app/api/sync-lista-precios-tienda/route.ts` | `PERMISOS.tienda.acciones.sincronizar` (simple + editor desde 2026-03-25). Única entrada HTTP para disparar sync lista tienda; no existe Action paralela. |
-| `src/actions/tienda.ts` | `getTiendaPageData`: `getTiendaPageParamsSchema` (filtro `proveedor` validado a CUID con `prismaCuidSchema.safeParse` en la action). |
-| `src/lib/validations/tienda.ts` | `getTiendaPageParamsSchema`. |
-| `src/actions/reposicion.ts` | Zod sucursal/params selector; `upsertReglaReposicion`: `idProveedor` con `prismaCuidSchema` y `codTienda` como clave de entrada; `puntoReposicion` entero **≥ 0**; `cant` entero **≥ 1**. |
-| `src/services/pedidosEnvio.service.ts` | Reposición: `upsertPedidoMercaderiaReposicionConfig` recibe `codTienda`, resuelve `codExt` desde `prod_precios_tienda` y recién allí vincula con `prod_precios_provee` por (`idProveedor`, `codExt`). |
-| `src/lib/validations/reposicion.ts` | Esquemas de lectura reposición + forma canónica `reposicionFormaPedidoSchema`. |
-| `src/actions/pedidos.ts` | `getPedidoUrgenteData` / `getEnviarPedidoTablaData`: `pedidosLectura` Zod. |
-| `src/lib/validations/pedidosLectura.ts` | Nuevo. |
-| `src/actions/stock.ts` | `getControlStock`: Zod params + validación sucursal. |
-| `src/lib/validations/stock.ts` | Nuevo. |
-| `src/actions/comparacionCategorias.ts` | `buscarProductosParaAsignarAction`: Zod en `proveedorId` / `q`. |
-| `src/lib/validations/productos.ts` | `aplicarCampoMasivoSchema.proveedorId` → `cuid`; `editarProductoSchema.id` → string acotado (mock). |
-
-### 5.9 Sucursales habilitadas para Pedido De Mercadería (2026-04-15)
-
-- En `global_sucursales` se eliminó `phone_number_id` y se agregó `pedido` (`BOOLEAN NOT NULL DEFAULT TRUE`; migración histórica sobre tabla `sucursales`).
-- Migración: `20260415113000_replace_phone_number_id_with_pedido_in_sucursales`.
-- Regla de servicio/action: cualquier flujo de `pedidos` que opere por sucursal debe verificar `sucursal.pedido = true`.
-- Si la sucursal no está habilitada:
-  - lecturas/filtros devuelven vacío;
-  - mutaciones responden `ok: false` con mensaje de sucursal no habilitada.
-
-### 5.10 Exportación Excel de Recepción — distribución de precios (2026-04-15)
-
-- Servicio: `src/services/exportRecepcionPedidoExcel.service.ts`.
-- Regla nueva: en lugar de usar un único precio promedio para todos los ítems, se calculan **precios unitarios diferenciales** por fila para acercar la suma matricial al total ingresado:
-  - objetivo: minimizar `|totalObjetivo - Σ(cantidad * precioUnitario)|`;
-  - ajuste por ítem en pasos de `0.01`, con tope de `±0.10` respecto al precio base;
-  - tolerancia final permitida en exportación: `0.10`.
-- Si no se logra quedar dentro de la tolerancia, el servicio devuelve error y no genera payload de Excel.
-
-### 5.11 Auditoría de seguridad — cierre 2026-05 (Server Actions)
-
-Auditoría integral de los **26** Server Actions vigentes en `src/actions/*.ts` (dos archivos redundantes fueron eliminados el 2026-05-10; ver §1.2.6). Resultado: backend alineado con los gates documentados en §1.2.x.
-
-| Área | Cambio |
-|------|--------|
-| `src/actions/vinculos.ts` | **`vincularProducto`**: gate doble agregado (`puede(rol, PERMISOS.tienda.acceso) + esEditor()`) — antes solo `esEditor()`, vector potencial de bypass por rol con permisos de tienda revocados. Ambas mutaciones (`vincular` / `desvincular`) ahora envuelven Prisma en `try/catch` para evitar fugas de stack al cliente. |
-| `src/actions/tiposPinturaRendimientos.ts` | **`upsertTipoPinturaRendimientoAction` / `deleteTipoPinturaRendimientoAction`**: gate doble agregado (`puede(rol, PERMISOS.tienda.tintoLts) + esEditor()`) — antes solo `esEditor()`. Coherencia con la lectura `getTiposPinturaRendimientosAction` (que ya pedía `tienda.tintoLts`). |
-| `src/actions/pedidosHistoria.ts` | `listarPedidosHistoriaSchema.proveedorId`: cambio de `z.string().min(1).max(128).optional()` a `prismaCuidSchema.optional()`. El modelo `Proveedor` usa `cuid()`; aceptar strings arbitrarios de hasta 128 chars era una superficie de ataque para SQL/lookup probing. |
-| `src/actions/comparacionCategorias.ts` | Reemplazo del helper anti-patrón `canEdit()` (función que retorna función) por **`tienePermisoEditar(): Promise<boolean>`** (12 call sites). Se agregó `try/catch` a las 5 lecturas (`getArbolCategoriasAction`, `getProductosPorPresentacionAction`, `getPresentacionesConLabelAction`, `getPresentacionesParaGestionAction`, `buscarProductosParaAsignarAction`) para no propagar errores Prisma al cliente. |
-| `src/actions/pedidos.ts` | **`comprobarItemsParaGenerarPedidoAction`**: delega en `getItemsTablaEnviarPedido` (§1.2.5.E). Esquemas Zod en `@/lib/validations/pedidosMutaciones` + lectura en `pedidosLectura`; `proveedorId` con `prismaCuidSchema`, `idItemPedidoEnvio` / borrado tintométrico por `id` con `uuidSchema` (`prod_ped_merc`). Payloads de mutación con firma `raw: unknown` (`generarPdfEnviarPedidoAction`, `upsertPedidoUrgenteMercaderiaItemAction`, `upsertPedidoTintometricoItemsAction`, etc.). |
-| `src/actions/reposicion.ts` | `upsertReglaReposicion` y `deleteReglaReposicion`: firma `raw: unknown` (antes `z.infer<...>`). |
-| `src/actions/stock.ts` | `registrarExportacionExcelStock`: `try/catch` alrededor del `updateMany` para no propagar errores Prisma al cliente. |
-
-**Estado por archivo (cumplen gates los módulos listados):**
-
-| Action | Gate | Zod | ActionResult | Servicio | Estado |
-|--------|------|-----|--------------|----------|--------|
-| `cajasTesoreria.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
-| `comparacionCategorias.ts` | comparacionCategorias.{acceso,editar} | ✓ | ✓ | ✓ | ✅ |
-| `comprobantesProveedor.ts` | finanzas + editor | n/a (sin payload) | ✓ | ✓ | ✅ |
-| `controlComprobantes.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
-| `globalPersonal.ts` | pedidos (list recepción) / usuarios.inicioSesion (login) / usuarios + editor (update) | ✓ | ✓ | ✓ | ✅ |
-| `registrarRecepcionCompraDux.ts` | pedidos | ✓ | ✓ | ✓ | ✅ |
-| `finBalGastoMensualBalance.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
-| `finBalGastosCatalogo.ts` | finanzas + editor (todas) | ✓ | ✓ | ✓ | ✅ |
-| `finBalIvaDeb.ts` | finanzas + editor (import CSV) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
-| `finBalPosicionIva.ts` | finanzas | ✓ | ✓ | ✓ | ✅ |
-| `finBalPosicionIvaSaldoManual.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
-| `finBalPosicionIvaComparacionPedido.ts` | finanzas + editor | ✓ | ✓ | ✓ | ✅ |
-| `finBalVtas.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
-| `finTesoreriaCheques.ts` | finanzas + editor (mutaciones) / finanzas (lecturas) | ✓ | ✓ | ✓ | ✅ |
-| `importar.ts` | importar + editor | ✓ | ✓ | ✓ | ✅ |
-| `listaPrecios.ts` | listaPrecios.* | ✓ | ✓ | ✓ | ✅ |
-| `pedidos.ts` | pedidos.acceso | ✓ | ✓ | ✓ | ✅ |
-| `pedidosHistoria.ts` | pedidos.acceso | ✓ (CUIDs) | ✓ | ✓ | ✅ |
-| `productos.ts` (mock) | listaPrecios.acciones.edicionMasiva | ✓ | ✓ | n/a | ✅ |
-| `productosTienda.ts` | pedidos.acceso | ✓ | ✓ | ✓ | ✅ |
-| `proveedores.ts` | proveedores.* / editor (mutaciones) | ✓ | ✓ | ✓ | ✅ |
-| `reposicion.ts` | pedidos.acceso | ✓ | ✓ | ✓ (parcial) | ✅ |
-| `sesion.ts` | n/a (entrada para activar editor) | ✓ | n/a | n/a | ✅ |
-| `stock.ts` | stock.acceso | ✓ | ✓ | n/a (legacy con Prisma directa) | ✅ |
-| `tienda.ts` | tienda.{acceso,tintoLts} (acceso solo editor) | ✓ | ✓ | n/a (legacy con Prisma directa) | ✅ |
-| `tintometrico.ts` | pedidos.acceso | ✓ | ✓ | ✓ | ✅ |
-| `tiposPinturaRendimientos.ts` | tienda.tintoLts + editor (mutaciones) | ✓ | ✓ | n/a (raw SQL inline) | ✅ |
-| `vinculos.ts` | tienda.acceso + editor (mutaciones) | ✓ | ✓ | ✓ (parcial) | ✅ |
-
-**Deudas técnicas residuales (no bloqueantes, documentadas):**
-- `tienda.ts`, `stock.ts`, `tiposPinturaRendimientos.ts`: lógica de Prisma / raw SQL inline en la Action en lugar de delegar a un servicio. Funcional y con Zod + `try/catch` correcto; mover a `src/services/` queda como evolución arquitectural (§5.2).
-- `vinculos.ts` y `reposicion.ts`: una parte de la lógica vive en la Action (Prisma directa) — aceptable por simplicidad y volumen de SQL, pero candidato a extracción a servicio si crece.
-
-**Auditoría = COMPLETADA.** Cualquier nueva Server Action o cambio de gate debe documentarse aquí o en una sub-sección 5.x dedicada y respetar los patrones de §1.2.5 y §1.2.6.
-
-### 5.12 Triage y fix — error genérico de Server Components en Recepción Pedido (2026-05-08)
-
-**Síntoma reportado en producción:** al abrir el modal *Recepción Pedido* y operar sobre `/gestion-productos/pedidos/historial`, el cliente veía
-*"An error occurred in the Server Components render. The specific message is omitted in production builds... A digest property is included..."*
-Sin contenido y sin trazabilidad útil del lado del usuario.
-
-**Causa raíz (combinación):**
-
-1. **No existía ningún `error.tsx` en toda la app** (`src/app/**`) — confirmado vía `Glob`. En Next.js 16, una excepción no atrapada en cualquier Server Component se traduce literal a ese mensaje cuando no hay un boundary. Este fue el factor dominante: cualquier error transitorio se veía igual y opaco.
-2. **`src/app/pedidos/historial/page.tsx`** ejecutaba `prisma.proveedor.findMany(...)` y `pedidosHistoriaService.listarPedidosHistoria(...)` **sin `try/catch`** (el segundo devuelve `ServiceResult` pero el adapter Prisma puede lanzar fuera del catch interno cuando hay timeout / pool exhausted en serverless durante revalidaciones). `HistorialPedidosPageClient` llama a `router.refresh()` cada vez que se cierra el modal y cada Action hace `revalidatePath("/pedidos/historial")`, generando ráfagas de re-render del Server Component que aumentan la probabilidad de error transitorio.
-3. **`getRol()`** (`src/lib/sesion.ts`) lanzaba si la cookie estaba corrupta o firmada con un secret distinto. Como se usa en el root layout (`src/app/layout.tsx`) y en cada page RSC, una cookie inválida volaba la app entera con el mismo mensaje genérico.
-4. **Catches sin `console.error` en services/actions del flujo** dejaban el incidente sin rastro grepeable en Vercel Function Logs: el `digest` no podía emparejarse con un mensaje útil.
-
-**Fix aplicado:**
-
-- **Boundaries** (nuevos):
-  - `src/app/global-error.tsx` — captura errores del root layout (incluye `getRol()`); Client Component con `<html>`/`<body>` propios; loggea `digest` con prefijo `[global-error]`.
-  - `src/app/pedidos/historial/error.tsx` — boundary específico del módulo; UI con botones *Reintentar* / *Volver al inicio*; loggea con prefijo `[pedidos/historial][error-boundary]`.
-- **Page hardening** (`src/app/pedidos/historial/page.tsx`):
-  - `prisma.proveedor.findMany` y `pedidosHistoriaService.listarPedidosHistoria` envueltos en `try/catch` con fallback (`proveedores: []`, `res = { success: false }`) y log `[pedidos/historial][page]`.
-- **Sesión defensiva** (`src/lib/sesion.ts`): `getRol()` atrapa cualquier excepción de iron-session y retorna `"simple"` con log `[sesion][getRol]`. Con esto, una cookie inválida ya no rompe el render; la página redirige a inicio si exige permiso.
-- **Logging server-side** con prefijo identificable en cada `catch` de:
-  - `src/services/pedidosHistoria.service.ts` (`crearPedidoHistoriaSnapshot`, `getPedidoHistoriaDetalle`, `listarPedidosHistoria`, `guardarRecepcionPedidoHistoria`, `marcarPedidoHistoriaRegistrado`, `getPedidoHistoriaPdfPayload`, `eliminarPedidoHistoria`).
-  - `src/services/exportRecepcionPedidoExcel.service.ts` (`prepararRecepcionCompraDatos`).
-  - `src/actions/pedidosHistoria.ts` (helper `ejecutarActionSegura(scope, fn)` envolviendo las 9 Actions del módulo).
-  - `src/actions/registrarRecepcionCompraDux.ts` (`registrarRecepcionCompraDuxAction`, top-level `try/catch`).
-- **Defensa de shape** ante `proveedor`/`sucursal` undefined en:
-  - `getPedidoHistoriaDetalle` y `getPedidoHistoriaPdfPayload`: devuelven `ServiceResult` con error legible y log si la relación viene incompleta.
-  - `prepararRecepcionCompraDatos`: idéntico, antes de leer `pedido.proveedor.iva`.
-  - `listarPedidosHistoria`: `r.proveedor?.nombre ?? "—"` y `r.sucursal?.nombre ?? "—"` para no romper el listado completo si una fila trae datos corruptos.
-
-**Convención obligatoria para futuras IAs/módulos** (ver §1.5.1):
-
-- Toda nueva ruta con Server Component que lea Prisma o sesión debe agregar un `error.tsx` específico además del `global-error.tsx`.
-- Toda Action nueva del módulo Recepción Pedido debe envolverse en `ejecutarActionSegura("nombreCorto", async () => { ... })`.
-- Todo `catch` en services del módulo debe loggear con `[pedidoHistoria][<fn>]` o `[exportRecepcionPedidoExcel][<fn>]` antes de devolver `ServiceResult`.
-- Toda lectura de relación con `select.proveedor.{...}` o `select.sucursal.{...}` debe validar `!relacion` antes de acceder a subcampos.
-
-**Cómo grepear logs de futuros incidentes** (Vercel Function Logs → filtro por digest):
-
-```
-[pedidoHistoria]                    # prefijo de servicios del módulo
-[pedidoHistoria][action]            # prefijo de Actions envueltas con `ejecutarActionSegura`
-[exportRecepcionPedidoExcel]        # servicios de export Excel
-[exportRecepcionPedidoExcel][action]
-[pedidos/historial][page]           # errores en la página RSC
-[pedidos/historial][error-boundary] # captura del boundary específico del módulo
-[global-error]                      # captura del boundary global
-[sesion][getRol]                    # cookie inválida / iron-session falló
-```
-
-**Verificación:**
-- `tsc --noEmit` ✓
-- `ReadLints` sobre los 8 archivos modificados ✓
-- BD up-to-date (`prisma migrate status` → 119/119 aplicadas) ✓
-
----
-
-## Comparación de precios de competencia (2026-05)
+## 7. Comparación de precios de competencia
 
 ### Modelos Prisma
 
@@ -1924,15 +1456,7 @@ La UI de configuración de competidores **debe** permitir asignar `idProveedor` 
 
 **Despliegue BD:** aplicar `20260523120000_prod_competencia_id_proveedor` en el entorno (`prisma migrate deploy`).
 
-*Última actualización (2026-05-30): **Producto propio TiendaColor** — columna **`prod_precios_tienda.es_producto_propio`** (`20260530120000`); `setProductoPropioTienda` / `setProductoPropioTiendaAction`; no marcar si hay vínculos; `vincularProducto` rechaza si `es_producto_propio`; filtro **VINCULADO=NO** excluye propios.*
-
-*Última actualización (2026-05-28): **Retiro comparación tienda↔competencia** — migración **`20260528210000`**: DROP `px_lista_cx_px`, `cx_px_px_comp_ref` (y temporalmente `es_producto_propio`, reintroducida en Cx Compra). **`costo_compra_cod_ext`** y **CX PROD.** en **Cx Compra**.*
-
-*Última actualización (2026-05-28): **Px Listas** — `getPxListasPageData` en `src/actions/pxListas.ts`; URL canónica `/gestion-productos/tienda/cx-px-tienda`; permiso `PERMISOS.cxPxTienda.acceso`.*
-
-*Última actualización (2026-05-30): **Unificación Px Competencia → Px Listas** — grilla con PX PROMEDIO, DIF TIENDA, detalle y URLs; `getPxListasPageData` incluye `competencias`; `/gestion-productos/precios-competencia` redirige a Px Listas. Scraping desde **`PxListasPageClient`** (`SincronizarCompetenciaModal` → `POST /api/sync-competencia-precios`; permiso `competenciaPrecios.editar`).*
-
-### PDF matriz → Excel y REX (`prod_precios_rex`)
+### 7.1 PDF matriz → Excel y REX (`prod_precios_rex`)
 
 Conversión de listas en PDF con estructura matricial (filas = descripción, columnas = presentaciones) a filas tabulares. **Persistencia** en **`prod_precios_rex`** tras conversión exitosa (upsert por proveedor + descripción).
 
@@ -1955,306 +1479,29 @@ Conversión de listas en PDF con estructura matricial (filas = descripción, col
 
 **Pendiente calibración:** sin PDF fixture en repo, la extracción posicional puede requerir ajuste de umbrales (`COLUMN_GAP`, `Y_TOLERANCE`) o migrar a script Python (`pdfplumber`) si el PDF real no alinea columnas.
 
-*Última actualización (2026-06-04): **Sync DUX — dos capas** — (1) **Pasos reanudables** obligatorios: `syncListaPrecioTiendaRunStep` + `SYNC_STEP_TIME_BUDGET_MS` + estado en `sync_dux_status`; el cliente encadena POST con `continuing: true` (a más ítems, más pasos; no eliminar aunque se optimice tiempo). (2) **Pipeline** consulta/guardado en paralelo con `DELAY_MS` dentro de cada paso. Migración `20260604200000_sync_dux_status_resume`.*
-
-*Última actualización (2026-06-04): **Px Listas — export Excel por lista** — `exportarPxListasMargenAction`; un `.xls` por `nombre_lista` con **CODIGO** + **PORC UTILIDAD** (margen desde precio efectivo).*
-
-*Última actualización (2026-06-10): **Comp. Categorias — dto_extra_comparacion** — `calcCostoComparacion` suma `dto_extra` al dtoTotal solo en Comparacion; persistencia `prod_comp_dto_extra`; UI `CeldaDtoExtraComparacion`.*
-
-*Última actualización (2026-06-13): **Comp. Categorias — margen manual** — tabla `prod_comp_margen_manual` (`margen_manual` entero % por `cod_ext`); `actualizarMargenManualComparacionAction`; `getProductosPorPresentacion` → `margenManualComparacion`. Input UI **DIF PX REF MANUAL** deriva px/margen en cliente. Migración **`20260613150000_comp_margen_manual`**.*
-
-*Última actualización (2026-06-16): **Comp. Categorias — filtro competidor referencia** — `buscarOpcionesReferenciaCompetencia` acepta `competenciaId`; `listCompetidoresParaReferenciaAction` alimenta el select del modal.*
-
-*Última actualización (2026-06-16): **Comp. Categorias — búsqueda asignar productos** — `listarProductosProveedoresParaVincular` (modal Asignar + vincular) usa AND por término en descripción, `cod_ext`, `cod_prod_prov`, marca, rubro y proveedor; post-filtro `matchByMultiTerm`.*
-
-*Última actualización (2026-06-16): **Comp. Categorias — búsqueda referencia competencia** — `buscarOpcionesReferenciaCompetencia` usa AND por término (`recu fibr` → `recu` + `fibr` en descripción/código/competidor) vía `matchByMultiTerm`; antes buscaba la cadena literal completa.*
-
-*Última actualización (2026-06-11): **Comp. Categorias — referencia competencia (Px Sugerido)** — `buscarOpcionesReferenciaCompetencia` une `prod_precios_competencia` + `prod_precios_provee.px_vta_sugerido` (catálogo igual cx-px-tienda); `ensureVinculoCompetenciaParaReferencia` crea fila FK si solo hay sugerido.*
-
-*Última actualización (2026-06-10): **Comp. Categorias — múltiples referencias competencia** — tabla `prod_comp_present_refs_comp` (`presentacion_id`, `ref_cod_tienda`, `ref_competencia_id`, `orden`); migración **`20260613120000_comp_present_refs_comp`**; radio activa para margen.*
-
-*Última actualización (2026-06-11): **Comp. Categorias — referencia competencia** — FK compuesta migrada a `prod_comp_present_refs_comp` (N por presentación). Actions `asignarReferenciaCompetenciaAction`, `quitarReferenciaCompetenciaAction(refCompId)`.*
-
-*Última actualización (2026-06-10): **Px Competencia — catálogo explícito** — `prod_tienda.comparar_competencia`; actions `comparacionCompetencia.ts`; backfill en migración **`20260610120000`** para productos con filas en `prod_precios_competencia`.*
-
-*Última actualización (2026-06-04): **Act. Cx. Excel** — eliminado POST DUX `item/nuevoItem`; **Act. Cx.** exporta `.xls` CODIGO+COSTO (`exportarCostoCxDiffAction`) para import manual en DUX.*
-
-*Última actualización (2026-06-04): **Política lotes API DUX** — §1.10c: **50 ítems/lote**, **≥5 s** entre lotes (`duxApiBatchPolicy.ts`); sync lista precios. SSOT progreso sidebar en `FRONTEND_GUIDELINES`.*
-
-*Última actualización (2026-06-04): **Sync DUX — pipeline consulta/guardado** — tras cada página DUX (50 ítems), la persistencia en Neon corre en **`Promise.all` con `delayMs(DELAY_MS)`** para usar la espera de rate limit; tiempo por página ≈ `max(5s, persistencia)` en lugar de suma. Ver `persistPaginaDuxYActualizarEstado` en `syncListaPrecioTienda.service.ts`.*
-
-*Última actualización (2026-06-04): **Sync DUX — persistencia** — chunks de 25 ítems (3 tx: tienda/stock/precios), catálogos deduplicados, progreso await en BD, error si ningún chunk guarda; GET y POST unificados con progreso.*
-
-*Última actualización (2026-06-04): **Sync DUX lista tienda — UX progreso** — fases `sincronizando` / `guardando` en `syncListaPrecioTiendaFromDux`; `maxDuration = 300` en POST/GET bloqueante; sidebar distingue mensajes y toast al finalizar. **Import status polling** solo con rol editor (evita 403 en logs).*
-
-*Última actualización (2026-06-02): **PDF matriz lista precios** — parse + aplanado + API; export Excel en cliente; sin import a BD.*
-
-*Última actualización (2026-06-16): **Import CSV lista precios — MARCA opcional** — `campoDestinoListaPreciosSchema` incluye **`marca`**; `aplicarMapeoListaPrecios` rellena `FilaListaPrecio.marca` solo si el usuario mapeó una columna; `upsertListaPrecios` persiste `prod_precios_provee.marca` en create/update únicamente cuando viene en la fila mapeada (sin mapeo no altera marca existente).*
-
-*Última actualización (2026-06-16): **Edición masiva lista precios** — `actualizarListaPreciosMasivoAction` acepta `{ filtros, data }` y resuelve todos los `cod_ext` coincidentes (sin paginación), igual que exportación; la UI muestra el **total** del filtro, no solo la página visible.*
-
-*Última actualización (2026-06-16): **`buscarProductosTiendaParaComparacion`** — búsqueda multi-término por contiene en **descripción / código / marca / rubro** (`contains` en BD + `matchByMultiTerm`); ej. `Recu 20` → *Membrana Recuplast Fibrado 20 kg*.*
-
-*Última actualización (2026-07-02): **Comp. Categorias — `prod_comp_cat`** — unifica `prod_comp_dto_extra` + `prod_comp_dif_px_ref_manual` en una fila por `cod_ext` (`dto_extra`, `dif_px_ref_manual`); catálogo maestro **`CategoriaComparacion` → `prod_comp_categorias`**; helper `upsertComparacionItemParcial` en `categoriasComparacion.service.ts`; migración **`20260702120000_prod_comp_item_unify_ajustes`**.*
-
-*Última actualización (2026-07-06): **Comp. Categorias — P2022 columna `(not available)`** — suele indicar que prod no tiene `prod_comp_item_comparados.presentacion_id` (código nuevo sin **`20260706140000`** / **`20260706150000`**). Verificar `prisma migrate deploy` en build Vercel (`DIRECT_URL`) y SQL: `SELECT column_name FROM information_schema.columns WHERE table_name = 'prod_comp_item_comparados';` debe listar **`presentacion_id`**. Respaldo idempotente: **`20260706150000_ensure_comp_item_comparados_membership`**.*
-
-*Última actualización (2026-07-06): **Comp. Categorias — membresía en `prod_comp_item_comparados`** — productos comparados por presentación (`presentacion_id` + `cod_ext`); se elimina `prod_precios_provee.id_presentacion`; migración **`20260706140000_comp_item_comparados_membership`**; asignar/quitar vía create/delete en `ComparacionItem`.*
-
-*Última actualización (2026-07-06): **Comp. Categorias — referencia en UI** — `asignarReferenciaCompetenciaPresentacion` persiste en **`prod_comp_item_referencia`** y devuelve `ReferenciaCompetenciaPresentacion`; `asignarReferenciaCompetenciaAction` la retorna al modal; `ComparacionCategoriasClient` actualiza la columna **REFERENCIA COMPETENCIA** al instante y recarga con `loadProductos`.*
-
-*Última actualización (2026-07-06): **Px sugerido por competidor — helper SSOT** — `obtenerPxVtaSugeridoPorCompetenciaId(codTienda, competenciaId)` en `competenciaPxSugerido.service.ts` (lookup `prod_competencia.id_proveedor` → `obtenerPxVtaSugeridoParaCompetencia`); usado en `competenciaVinculo.service.ts` (bloqueo URL) y `syncCompetenciaPrecios.service.ts` (`relevarVinculoCompetenciaUnico`).*
-
-*Última actualización (2026-07-06): **Auditoría esquema — DROP `prod_tienda_margen_edicion`** — tabla huérfana tras migración a `prod_tienda_precios_edicion`; modelo `ProdTiendaMargenEdicion` retirado de Prisma; script `scripts/audit-schema-columns.mjs` para futuras auditorías columna a columna.*
-
-*Última actualización (2026-07-14): **Marketing · Calendario** — `mkt_publi.idea_detalle_id` 1:1 con ideas; al programar marca `usada` (`20260714280000_mkt_publi_idea_detalle`).*
-
-*Última actualización (2026-07-15): **Google Sheets — export Marketing** — un proceso `exportarMktAGoogleSheets`: pestañas Secciones, Redes, Tipo de Contenido, Ideas, Publicaciones (clear+write cada una); Action `exportarMktGoogleSheetsAction`; botón **Exportar a Sheets** en Calendario.*
-
-*Última actualización (2026-07-15): **Marketing · contenido_url** — `mkt_publi.contenido_url` (`20260715160000`); `contenido_creado` se sincroniza desde URL no vacía; form modal input URL.*
-
-*Última actualización (2026-07-16): **Google Sheets — Contenido Multimedia / Tipo** — pestaña renombrada a **Contenido Multimedia**; nueva **Contenido Multimedia Tipo** (`mkt_contenido_drive_tipo`: `id`, `tipo`).*
-
-*Última actualización (2026-07-16): **Google Sheets — Colores Marca** — pestaña **Colores Marca** (`mkt_colores_marca`) + entrada en **Indice**.*
-
-*Última actualización (2026-07-16): **Colores Marca** — `mkt_colores_marca`; CRUD `/marketing/base-multimedia/colores-marca`.*
-
-*Última actualización (2026-07-16): **Google Sheets — Indice** — pestaña **Indice** primera: catálogo hoja↔tabla + relaciones (`buildMktGoogleSheetsIndiceValues`).*
-
-*Última actualización (2026-07-16): **Google Sheets — renombre/orden pestañas** — Publicaciones → Publicaciones Redes → Publicaciones Secciones → Publicaciones Ideas → Publi Tipo Contenido → Contenido Multimedia → Contenido Multimedia Tipo.*
-
-*Última actualización (2026-07-16): **Rename `mkt_contenido_drive_url`** — tabla renombrada desde `mkt_contenido_url_drive` (`20260716140000`); Prisma `MktContenidoUrlDrive` sin cambio de modelo.*
-
-*Última actualización (2026-07-16): **Google Sheets — CONTENIDO MULTIMEDIA** — pestaña desde `mkt_contenido_url_drive` (`id`, `nombre`, `descripcion`, `url`) en el mismo export.*
-
-*Última actualización (2026-07-16): **Base Multimedia · tipos** — `mkt_contenido_drive_tipo` + FK `tipo_id` en `mkt_contenido_url_drive` (`20260716130000`); modal Gestionar Tipos.*
-
-*Última actualización (2026-07-16): **Marketing · Base Multimedia** — tabla `mkt_contenido_url_drive` (`20260716120000`); CRUD; ruta `/marketing/base-multimedia`.*
-
-*Última actualización (2026-07-15): **Marketing · publicaciones N:M redes** — `mkt_publi_redes` (`20260715170000`); quita `mkt_publi.red_id`; modal multi-red; objetivos/cuadro = 1 por red; export Sheets expande filas por red.*
-
-*Última actualización (2026-07-15): **Google Sheets — probe de conexión** — ENV service account + `probarConexionGoogleSheets` (servicio; **no** hay Server Action); escribe `A1`; script `npm run test:google-sheets`.*
-
-*Última actualización (2026-07-16): **Marketing · Objetivos** — UI de gestión en `/marketing/publicaciones/objetivos`; actions revalidan calendario + objetivo.*
-
-*Última actualización (2026-07-17): **Ideas · detalle** — alta/edición solo `titulo_idea` + `detalle` (opcional); `tipo_contenido_id` nullable (`20260717160000`); redes N:M legado no se escriben desde UI.*
-
-*Última actualización (2026-07-17): **Ideas · drop columnas** — `mkt_publi_ideas_detalle` sin `tipo_contenido_id` / `usada` (`20260717180000`); se conserva `seccion_id`; `usada` se deriva de `mkt_publi.idea_detalle_id`.*
-
-*Última actualización (2026-07-21): **Margen Contribución · signo descuento** — `descuento_pct` negativo = descuento, positivo = recargo; fórmula `1 + %/100`; migración `20260721140000` invierte signos previos.*
-
-*Última actualización (2026-07-22): **Margen Contribución · PX VENTA** — fórmula `PX LISTA × (1 − descuento % / 100)` (lista 100 y **−10** → venta **110**).*
-
-*Última actualización (2026-07-23): **Margen Contribución · DESCUENTO** — restaurada convención `1 + %/100`: **−25** → venta **75** (descuento); **+10** → **110** (recargo); input `defaultNegative`.*
-
-*Última actualización (2026-07-22): **Margen Contribución · fin_ana_mc_formulas** — parámetros configurables PX LISTA C/IVA, IVA_ALICUOTA, IIBB_ALICUOTA; motor usa `ParametrosFormulaMargenContribucion`.*
-
-*Última actualización (2026-07-23): **Margen Contribución · CX FINANCIERO** — **FACTURA A** = CX TOTAL S/ IVA; **FACTURA C** = CX TOTAL C/ IVA.*
-
-*Última actualización (2026-07-25): **Px Listas — CATEGORÍA MARGEN** — `getPxListasPreciosPageDataFromDb` expone `categoriasMc` + `idListaGeneral` (**1 - GENERAL**); resolución UI con `pxListasPreciosCategoria.ts` / `fin_ana_mc_cat`.*
-
-*Última actualización (2026-07-23): **Margen Contribución · gráfico M.C** — serie 20–200 % PORC. UTILIDAD; métrica **MC** | **MC_PONDERADO**; default forma **3 CUOTAS**; multi-serie por formas seleccionadas.*
-
-*Última actualización (2026-07-24): **Margen Contribución · categorías** — `fin_ana_mc_cat` rangos sobre la VARIABLE OBJETIVO; overlay gráfico en **MC** / **MC_PONDERADO**.*
-
-*Última actualización (2026-07-24): **Margen Contribución · config Cat. M.C.** — singleton `fin_ana_mc_cat_config` (TERMINAL, FACTURA, VARIABLE OBJETIVO); defaults del módulo; modal Gestionar Cat. M.C. los edita junto a los rangos.*
-
-*Última actualización (2026-07-24): **Margen Contribución · rename tablas Cat. M.C.** — `fin_ana_mc_categorias`→`fin_ana_mc_cat`; `fin_ana_mc_config`→`fin_ana_mc_cat_config`.*
-
-*Última actualización (2026-07-24): **Margen Contribución · Gestionar Cat. M.C.** — modal de rangos en cadena + `reemplazarFinAnaMcCategorias`; **+** deshabilitado si el último máx. = 100.*
-
-*Última actualización (2026-07-21): **Margen Contribución · orden columnas** — **EFECTIVO** antes de **DÉBITO** (`orden` en `fin_ana_cos_fina_pagos`; migración `20260721150000`).*
-
-*Última actualización (2026-07-15): **Marketing · Objetivos** — tabla `mkt_publi_obj` (`20260715130000`); servicio/actions `mktPublicacionesObj`; un objetivo por destino; cuenta publicaciones programadas; UI de evaluación diferida.*
-
-*Última actualización (2026-07-06): **Comp. Categorias — costo objetivo sin FK legacy** — columna `prod_ref_cod_ext` eliminada; prioridad objetivo: (1) primera referencia competencia `pxMostrar`, (2) `costo_compra_objetivo` numérico; modal «desde lista» persiste el valor en `costo_compra_objetivo` directamente.*
-
-*Última actualización (2026-07-03): **Comp. Categorias — búsqueda referencia competencia (todos los competidores)** — con `q` no vacío, `buscarOpcionesReferenciaCompetencia` resuelve `cod_tienda` en `prod_tienda` y expande **todos** los competidores del ítem; **`listarCompetenciasConPxSugeridoPorCodTiendas`** (misma lógica que `/cx-px-tienda`, sin exigir fila previa en `prod_precios_competencia` ni join `prod_tienda.comparar_competencia` en lista); resuelve `pxMostrar` con fallback directo desde lista + `buildMapPxVtaSugerido`; devuelve solo filas asignables (`pxMostrar > 0`) tras resolver precios.*
-
-*Última actualización (2026-07-29): **Balance · Gastos · Mes multi** — Select Mes con checkboxes (sin **TODOS**); URL `mes=6,7`; `listarImputacionesMensualesBalance({ meses, anio })`.*
-
-*Última actualización (2026-07-29): **Balance · Gastos · Mes TODOS** — Select Mes con **TODOS** (`mes=todos`); `listarImputacionesMensualesBalance` acepta `mes: null` (año completo); fila con `mes`/`anio`.*
-
-*Última actualización (2026-08-03): **prod_ia_diseno_catalogo · combinar** — `texto` en minúsculas (`normalizarTexto` + migración `20260803210000_prod_ia_diseno_combinar_texto_lower`).*
-
-*Última actualización (2026-08-03): **prod_ia_diseno_catalogo** — tabla unificada GESTION DISEÑO (`kind`, `nombre`, `texto`); migración `20260803200000_prod_ia_diseno_catalogo_unificado` (copia + drop de 7 tablas legacy).*
-
-*Última actualización (2026-08-03): **prod_ia_diseno_* · texto sentence case** — `normalizarTexto` (1ª mayúscula + resto minúsculas) en create/update; migración `20260803180000_prod_ia_diseno_catalogo_texto_sentence_case`.*
-
-*Última actualización (2026-08-03): **Diseñar Colores · reorden preguntas** — `PROD_IA_DISENO_CATALOGO_KINDS`: modo → objetivo → estilos → luz_nat → luz_art → combinar → sup_pintar.*
-
-*Última actualización (2026-08-03): **prod_ia_diseno_modo_diseno** — catálogo GESTION DISEÑO pregunta 1 (obligatorio, 1); kind `modo_diseno`; token `{{MODO_DISENO}}`; migración `20260803120000_prod_ia_diseno_modo_diseno`.*
-
-*Última actualización (2026-08-04): **Est. · Gestion Colores** — UI del catálogo `est_por_prod_colores` en header de **Categorizacion** (ya no en Ventas Por Producto).*
-
-*Última actualización (2026-08-04): **Est. · colores seed** — `estPorProdColorIdSchema` acepta CUID y `est_color_*` para editar/eliminar colores sembrados desde el modal.*
-
-*Última actualización (2026-08-04): **Est. · lts conversion** — tabla `est_por_prod_lts_conversion` (`texto` → `conversion_lts`); match regex + fallback «N LTS»; modal **Gestion Conversion**.*
-
-*Última actualización (2026-08-04): **Est. · terminacion** — tabla `est_por_prod_terminacion`; match regex; modal **Gestion Terminacion**; columna TERMINACION en Categorizacion.*
-
-*Última actualización (2026-08-06): **Áreas** — Estadísticas Productos bajo sidebar **Administración** (id `finanzas`); sin macro-área propia. Ver §2.5g.
-
-*Última actualización (2026-08-13): **Sesión slidenav** — onboarding por usuario (`listUsuariosParaInicioSesionAction`); clave Administración si el usuario tiene ese módulo.*
-
-*Última actualización (2026-08-13): **Usuarios** — `global_personal.sucursal_por_defecto` + `modulos_permitidos`; Action `actualizarUsuarioPersonalAction`.*
-
-*Última actualización (2026-08-14): **§1.2.1** — onboarding slidenav + sucursal preferida; salida de editor = cookie `tienda-app-arranque` (sin `volverModoSimple`).*
-
-*Última actualización (2026-08-13): **Slidenav** — sucursal preferida en `sessionStorage` (`main-app-sucursal-preferida`); default de filtros STOCK / Trans. Depósitos.*
-
-*Última actualización (2026-08-13): **Pedido Urgente** — filtro PEDIDO siembra desde `prod_ped_merc` (cant. &gt; 0), no catálogo completo.*
-
-*Última actualización (2026-08-13): **Pedido Urgente** — filtro `pedido` por cant. &gt; 0 (urgente / reposición / cualquiera) en `getListaPreciosParaPedidoUrgente`.*
-
-*Última actualización (2026-08-13): **Slidenav** — sin modal de transf. pendientes; indicador solo panel lateral.*
-
-*Última actualización (2026-08-13): **Slidenav** — eliminado `EVENTO_ADVERTIR_TRANSF_PENDIENTES` (ya no se avisaba al elegir usuario).*
-
-*Última actualización (2026-08-13): **Slidenav** — `getIndicadorSlidenavAction` (conteos Generar Pedido + pendientes transf. por sucursal).*
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — labels Presentacion (`variante`); listas eje Y / desglose con orden propio.
-
-*Última actualización (2026-08-10): **Pedido A Fábrica** — ruta canónica `/pedido-a-fabrica` (`pedidoAFabricaRoutes.ts`); legacy `est-para-compra` redirige. Sidebar Administración: 5 pilares (PEDIDO A FÁBRICA / ESTADÍSTICAS / CONFIGURACION separados).
-
-*Última actualización (2026-08-10): **Pedido A Fábrica** — `listarProductosPorProveedorFabrica` / `getProductosPedidoAFabricaAction` (productos `prod_precios_provee` del proveedor con `es_fabrica`).
-
-*Última actualización (2026-08-10): **Sidebar · Administración** — 4 pilares; ESTADÍSTICAS agrupa VENTAS + CONFIGURACION; PEDIDO A FÁB.
-
-*Última actualización (2026-08-10): **Pedido A Fáb.** — métricas por sucursal `genera_est=true` (stock_real + prom. vta. `est_por_prod`).
-
-*Última actualización (2026-08-10): **Pedido A Fáb.** — PROM. VTA. diario = 2 meses previos / 48 días (techo).
-
-*Última actualización (2026-08-10): **Pedido A Fáb.** — `calcularCantSugeridaPedidoAFabrica` (stock a llegada / stockeo → cant. sugerida).
-
-*Última actualización (2026-08-11): **Pedido A Fáb.** — descripción tienda→proveedor; filtros marca/rubro/subRubro + q.
-
-*Última actualización (2026-08-11): **Pedido A Fáb.** — `calcularStockEnDiasPedidoAFabrica` (stock / prom. vta.).
-
-*Última actualización (2026-08-11): **Pedido A Fáb.** — `calcularPromVtaDiariaDesdeTotal` usa **`Math.ceil`** (1,01→2; 2,01→3).
-
-*Última actualización (2026-08-11): **Pedido A Fáb.** — `calcularStockAFechaLlegadaPedidoAFabrica` + columna **STOCK HASTA LLEGADA DE PEDIDO**.
-
-*Última actualización (2026-08-11): **Pedido A Fáb.** — **FECHA PEDIDO** + `calcularFechaLlegadaPedidoIso` / `calcularFechaStockeoPedidoIso`.
-
-*Última actualización (2026-08-11): **Pedido A Fáb.** — `esStockQuebradoPedidoAFabrica` / `tienePedidoSugeridoPedidoAFabrica`.
-
-*Última actualización (2026-08-11): **Pedido A Fáb.** — `tipo_de_pedido = A FÁBRICA` en `prod_ped_merc` + PDF/historial.
-
-*Última actualización (2026-08-11): **Historial pedidos** — retención por `es_fabrica` (60 días fábrica / 14 días resto); reemplaza la regla por estado 4/30. Ver §2.5.
-
-*Última actualización (2026-08-11): **Pedido A Fáb.** — UI sin columna **PROM. VTA. P/ DÍA** (el cálculo sigue alimentando stock/días/sugerida).
-
-*Última actualización (2026-08-11): **Pedido A Fáb.** — sucursales de métricas/modal = `genera_est = true` (`listarSucursalesParaPedidoAFabrica`).
-
-*Última actualización (2026-08-13): **Stock · Trans. Depósitos** — pendientes filtrados en UI por sucursal (`sucursalExcel`).*
-
-*Última actualización (2026-08-12): **Stock · Trans. Depósitos** — pendientes Transferir/Recibir por par; botón **Generar Transf.** / modal **Transf. Pendiente Registro**.*
-
-*Última actualización (2026-08-12): **Stock · Trans. Depósitos** — Excel Importar Transferencias (EGRESO/INGRESO) con `exportado_origen_at` / `exportado_destino_at`.*
-
-*Última actualización (2026-08-12): **Stock · Trans. Depósitos** — aviso duplicado y historial unificados a 14 días; ACCIONES = borrar + historial + advertencia.*
-
-*Última actualización (2026-08-07): **Est. · rutas** — sidebar ESTADÍSTICAS / CONFIGURACION (Est. Para Compra migró a Pedido A Fábrica).
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — Top 10: `promedioMensual` = total / (`cantidadPeriodosFiltro` = años × meses).
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — Top 10 (`agregarTopProductos`) siempre con filtros de página; `filtros` dimensionales de G1 opcionales.
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — periodo G1/G2 con `anios` + `meses` multi; G3 usa `anios` (ignora meses).
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarTopProductos` con `totalPeriodo` + `promedioMensual` (tabla G2).
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarUnidadesMensualesAnio` con `anio: null` (G3 ignora FECHA; suma todos los años).
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarUnidadesPorDobleDimension` (cruce dimensión × desglose; `EstVtasGrupoDimension.hijos`); Dimensión/Desglose comparten opciones sin repetir.
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — historial (G3) siempre con filtro actual; `codTienda` / filtros dimensionales opcionales.
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarTopProductos` (Top N) + `codTienda` en `agregarUnidadesMensualesAnio`.
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarUnidadesPorEjeYDesgloseSucursal` (grupos categoría → sucursales para el gráfico 1).
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — UI gráfico 3: `EstVtasGraficoBarrasMensual` (barras verticales; misma agregación `agregarUnidadesMensualesAnio`).
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarUnidadesPorSucursal` (desglose gráfico 1 por sucursal).
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `agregarUnidadesMensualesAnio` (serie ENE…DIC del año de `fechaClave`, filtros dimensionales de gráficos 1 y 2).
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — `filtroPadre` en `agregarUnidadesPorEjeY` para gráfico dependiente.
-
-*Última actualización (2026-08-07): **Est. · Estadísticas Vtas** — agregación `agregarUnidadesPorEjeY` (dimensión eje Y seleccionable).
-
-*Última actualización (2026-08-05): **Est. · Estadísticas Vtas** — `listarVentasEstVtas` + agregación por presentación (`factorSuma` para SUMA DE UNIDADES).*
-
-*Última actualización (2026-08-05): **Est. · Estadísticas Vtas** — ruta `/estadisticas-productos/estadisticas-vtas`; filtros producto + sucursal/fecha/unidad; charts pendientes.*
-
-*Última actualización (2026-08-05): **Est. · Presentacion** — match pulgadas: `3''` ↔ `3"` (`normalizarMarcasPulgadaParaMatch`).*
-
-*Última actualización (2026-08-05): **Est. · Unidades** — enum `SUFIJO_SIN_ESPACIO` (migración `20260805200000`).*
-
-*Última actualización (2026-08-05): **Est. · Presentacion** — conversión opcional (nullable); destino solo unidades `suma=true` (migración `20260805193000`).*
-
-*Última actualización (2026-08-05): **Est. · Presentacion** — `conversion_a_unidad_id` ≠ `unidad_medida_id` (Zod + servicio); form UI en 2 secciones.*
-
-*Última actualización (2026-08-05): **Est. · Presentacion** — `texto` derivado en servicio (`formatearPresentacionConUnidad`); Zod create/edit sin `texto`.*
-
-*Última actualización (2026-08-05): **Est. · Presentacion** — `est_por_prod_un_presentacion` + rename `est_por_prod_lts_conversion` → `est_por_prod_presentacion` (migración `20260805190000`).*
-
-*Última actualización (2026-08-05): **Est. · Carga de Datos** — `EST_POR_PROD_CARGA_DESDE` = Mayo 2026.*
-
-*Última actualización (2026-08-05): **Est. · Carga de Datos** — `EST_POR_PROD_CARGA_DESDE` = Enero 2026.*
-
-*Última actualización (2026-08-05): **Est. · Carga de Datos** — borrado de periodo vía `POST /api/est-por-prod/eliminar-periodo` + UI optimista.*
-
-*Última actualización (2026-08-05): **Est. · Importar Datos** — `FILA_ENCABEZADO_DEFAULT_EST_POR_PROD = 3`; `separarEncabezadosYFilasEstPorProd(filas, filaEncabezado)`.*
-
-*Última actualización (2026-08-05): **`global_sucursales.genera_est`** — flag para columnas de Carga de Datos; migración `20260805160000_add_genera_est_global_sucursales`.*
-
-*Última actualización (2026-08-05): **Est. · Carga de Datos** — import/borrar operan sobre el bloque completo periodo × sucursal (`deleteMany` + `createMany`; sin ítem a ítem en UI).*
-
-*Última actualización (2026-08-05): **Est. · Carga de Datos** — grilla periodo × sucursal; `listarEstPorProdCeldasCargadas`; `eliminarEstPorProdPorPeriodo`; `estPorProdMesAnioSchema` desde 2025.*
-
-*Última actualización (2026-07-31): **Diseñar Colores · formatSuperficiesParaPrompt** — `Paint the {{Surface}} with a color of your choice (Color A|B|C|D)`; `etiquetaColorDesdeIndice`.*
-
-*Última actualización (2026-07-31): **prod_ia_diseno_promp.plantilla_superficies** — Text opcional; seed `- {{SUPERFICIE}} → {{COLOR}}` en Diseñar Colores; `formatSuperficiesParaPrompt(superficies, plantilla)`.*
-
-*Última actualización (2026-07-31): **prod_ia_diseno_* · texto** — rename `nombre_en`→`texto` (unique) en los 6 catálogos; UI `nombre`, prompt `texto`.*
-
-*Última actualización (2026-07-31): **Diseñar Colores · formatSuperficiesParaPrompt** — lista `- Nombre {{ColorN}}.` (reemplaza tabla Markdown / `Nombre, ColorN`).*
-
-*Última actualización (2026-07-31): **prod_ia_diseno_promp · lookup case-insensitive** — `getProdIaDisenoPrompPorSubmodulo` usa `findFirst` + `mode: "insensitive"`; helpers `normalizarSubmoduloPromp` / `mismoSubmoduloPromp` / `submoduloCanonicoDesdeBd`. Filas en MAYÚSCULAS ya resuelven (antes caía al default de código).*
-
-*Última actualización (2026-07-31): **Diseñar Colores · reglas UI** — `PROD_IA_DISENO_CATALOGO_KINDS` reordenado (luz antes de combinar); cardinalidad en cliente (máx. 4 superficies; objetivo/estilo/luz únicos; combinar 0–1).*
-
-*Última actualización (2026-07-30): **prod_ia_diseno_luz_nat / luz_art** — catálogos GESTION DISEÑO; seed opciones 1–6; listado luz por `createdAt`.*
-
-*Última actualización (2026-07-30): **Diseñar Colores · iluminación** — opciones fijas `ASISTENTE_IA_ILUMINACION_*_OPCIONES`; fuentes `ILUMINACION_NATURAL` / `ILUMINACION_ARTIFICIAL` en runtime.*
-
-*Última actualización (2026-07-30): **Asistente IA · resolverConfigAsistenteIa** — config runtime (promp/url/alias) leída al generar; `revalidatePath` también sobre ruta interna `/asistente-ia/...`.*
-
-*Última actualización (2026-07-30): **prod_ia_diseno_promp_var** — alias `fuente`→`variable` por prompt; CRUD `prodIaDisenoPrompVar`; expandir valores en runtime.*
-
-*Última actualización (2026-07-30): **Diseñar Colores · formatSuperficiesParaPrompt** — 1 fila `Nombre, ColorN`; ≥2 tabla Markdown; tokens canónicos en MAYÚSCULA (`SUPERFICIES`, `COMBINARCON`, …).*
-
-*Última actualización (2026-07-30): **GESTION PROMP & URL · submódulo** — create valida contra `ASISTENTE_IA_SUBMODULOS_PROMP`; edit solo `promp` + `url_redireccion` (sin renombrar).*
-
-*Última actualización (2026-07-30): **Asistente IA · Diseñar Colores · Prompt Maestro** — `buildPromptDisenarColoresDefault` + tokens `Superficies`/`Objetivos`/`Estilo`/`CombinarCon`; `formatSuperficiesParaPrompt` = `Nombre, ColorN`; vacíos si no hay datos.*
-
-*Última actualización (2026-07-30): **Asistente IA · Diseñar Colores** — submódulo `ASISTENTE_IA_SUBMODULO_DISENAR_COLORES`; lookup `prod_ia_diseno_promp`; variables de formulario + `aplicarRespuestasAlPromptDisenarColores`; catálogos de GESTION DISEÑO leídos en page server.*
-
-*Última actualización (2026-07-30): **Asistente IA · GESTION DISEÑO** — catálogos `prod_ia_diseno_sup_pintar` / `_estilos` / `_combinar`; actions `prodIaDisenoCatalogos`; UI hub + CRUD nombre (solo editor).*
-
-*Última actualización (2026-07-29): **Plan de áreas** — `PERMISOS.ayudaVendedor.cargarGasto` (`simple` + `editor`); `requireCargarGastoEventual` en listar/crear gasto eventual; UI rol **Vendedor** sin cambiar valor `"simple"`.*
-
-*Última actualización (2026-07-29): **Asistente IA · rol simple** — `PERMISOS.asistenteIa.acceso`: `simple: true`, `editor: true`. Mutaciones de `prod_ia_diseno_promp` siguen con `esEditor()`.*
-
-*Última actualización (2026-07-28): **Asistente IA · PDF aproximación** — generación **cliente** con jsPDF (`generarPdfAproximacionCodigoImagen`); sin action ni persistencia de imagen. Prompt seed con columna HEX opcional.*
-
-*Última actualización (2026-07-28): **Asistente IA · rename** — submódulo canónico **Buscar Código Desde Imagen** (`ASISTENTE_IA_SUBMODULO_BUSCAR_CODIGO_IMAGEN`); lookup también por legacy **Buscar Color Desde Imagen**.*
-
-*Última actualización (2026-07-27): **Asistente IA · variables de prompt** — plantillas usan `{{RGB}}` (`aplicarVariablesAlPrompt` / `aplicarRgbAlPromptBuscarColor` en `@/lib/asistenteIa`). Compatibilidad con `(R,G,B)`. Catálogo: `ASISTENTE_IA_VARIABLES_PROMPT`.*
-
-*Última actualización (2026-07-27): **Asistente IA · cuentagotas** — el muestreo RGB es **solo cliente** (`colorMuestraImagen.ts` + canvas); no hay action ni persistencia de imagen. El prompt viene de **`prod_ia_diseno_promp.promp`**; en cliente `aplicarRgbAlPromptBuscarColor` reemplaza **`{{RGB}}`**. `url_redireccion` sigue en la misma tabla.*
-
-*Última actualización (2026-07-27): **Asistente IA** — `PERMISOS.asistenteIa.acceso` (`simple: false`, `editor: true`). Página server `src/app/asistente-ia/buscar-color-imagen/page.tsx` gatea con `puede(rol, PERMISOS.asistenteIa.acceso)`. Tabla **`prod_ia_diseno_promp`** (modelo `ProdIaDisenoPromp`): `id`, `submodulo` (único), `promp`, `url_redireccion`, timestamps. Servicio `prodIaDisenoPromp.service.ts`; actions `prodIaDisenoPromp.ts` (lectura con permiso módulo; mutaciones + `esEditor()`). Seed: submódulo **Buscar Color Desde Imagen**. Fallbacks en `@/lib/asistenteIa` si no hay fila.*
+---
+
+## 8. Anti-patrones (no reintroducir)
+
+- Payload de Action **tipado** en la firma (`payload: { id: string }`). Usar `unknown` + `safeParse`.
+- Devolver `e.message` / `String(e)` al cliente. Usar `mensajeErrorAction`.
+- Mutación crítica con solo `esEditor()` o solo `puede(...)`. Gate doble módulo + editor (`requireEditorConPermiso` o wrapper del dominio), salvo excepciones de §1.2.
+- Autenticar **después** de parsear el payload.
+- Mezclar `prismaCuidSchema` y `uuidSchema`. Seguir Guía para IA / IDs del modelo.
+- Action o servicio nuevo **sin call site**. Ampliar `PERMISOS` sin UI y Action que lo consuman.
+- Lógica de negocio en el cliente o duplicada en la Action si ya existe el servicio.
+- Invocar una Server Action desde otra (ir al servicio).
+- Wrapper de sync DUX de un solo paso si el flujo vigente es job + `syncListaPrecioTiendaRunStep`.
+- Mock `/api/sync-tienda`, `volverModoSimple`, `registrarControlTransfDepositosAction`, `listarCandidatosCostoPorCodTienda`, `syncListaPrecioTiendaFromDux`, `controlAumentos.service`, `movimientos_finanzas`, `prod_tienda.cod_ext`, `prod_tienda.stockeable` como columna.
+- Changelog operativo o “resumen de auditoría” como cuerpo de esta guía.
+- Inventar clases globales o tokens en esta guía; el front se documenta en `FRONTEND_GUIDELINES.md`.
+
+---
+
+## 9. Referencias
+
+- `docs/README.md` — mapa de lectura.
+- `docs/FRONTEND_GUIDELINES.md` — UI, tokens, call sites.
+- `docs/AGENTEIA_GUIDELINES.md` — Asistente IA, scraper, diseño.
+- `prisma/schema.prisma` — modelos e índices.
+- Scripts: `node scripts/audit-actions-usage.mjs`, `node scripts/audit-schema-usage.mjs`, `npx eslint src --max-warnings 0`.

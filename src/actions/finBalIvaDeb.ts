@@ -1,5 +1,6 @@
 "use server";
 
+import { firstZodErrorMessage } from "@/lib/actionHelpers";
 import { revalidatePath } from "next/cache";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
@@ -11,16 +12,6 @@ import {
   type DetalleLineaIvaDebitoBalance,
   type ImportarIvaDebTxtResultado,
 } from "@/services/finBalIvaDeb.service";
-
-function firstZodErrorMessage(error: {
-  flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
-}): string {
-  const flattened = error.flatten();
-  return (
-    [...Object.values(flattened.fieldErrors).flat(), ...flattened.formErrors][0] ??
-    "Datos inválidos."
-  );
-}
 
 async function parseMesAnioFinanzas(
   raw: unknown,

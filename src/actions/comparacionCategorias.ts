@@ -25,7 +25,7 @@ import {
   type ReferenciaCompetenciaPresentacion,
 } from "@/services/categoriasComparacion.service";
 import { listarProductosProveedoresParaVincular } from "@/services/listaPrecios.service";
-import { getRol } from "@/lib/sesion";
+import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
@@ -66,10 +66,16 @@ function revalidateComparacionCategorias() {
   }
 }
 
-/** Resuelve si el rol vigente tiene permiso de edición de comparación-categorías. */
-async function tienePermisoEditar(): Promise<boolean> {
+/** Gate de escritura: módulo `editar` + modo editor. */
+async function requireEditorComparacion(): Promise<{ ok: false; error: string } | null> {
   const rol = await getRol();
-  return puede(rol, PERMISOS.comparacionCategorias.editar);
+  if (!puede(rol, PERMISOS.comparacionCategorias.editar)) {
+    return { ok: false, error: "Sin permisos." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+  return null;
 }
 
 /** Productos de una presentación con comparación vs objetivo. */
@@ -111,7 +117,8 @@ export async function getProductosPorPresentacionAction(
 export async function buscarProductosParaAsignarAction(
   raw: unknown
 ): Promise<ActionResult<Awaited<ReturnType<typeof listarProductosProveedoresParaVincular>>>> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = buscarProductosAsignarSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "Parámetros de búsqueda inválidos." };
   try {
@@ -127,7 +134,8 @@ export async function buscarProductosParaAsignarAction(
 
 // ─── CRUD Categorias ────────────────────────────────────────────────────────
 export async function createCategoriaAction(nombre: string): Promise<ActionResult> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = createCategoriaSchema.safeParse({ nombre });
   if (!parsed.success) {
     const msg = parsed.error.flatten().fieldErrors.nombre?.[0] ?? parsed.error.message;
@@ -143,7 +151,8 @@ export async function createCategoriaAction(nombre: string): Promise<ActionResul
 }
 
 export async function updateCategoriaAction(id: string, data: { nombre?: string }): Promise<ActionResult> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = updateCategoriaSchema.safeParse({ id, data });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
@@ -156,7 +165,8 @@ export async function updateCategoriaAction(id: string, data: { nombre?: string 
 }
 
 export async function deleteCategoriaAction(id: string): Promise<ActionResult> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = comparacionIdSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
@@ -170,7 +180,8 @@ export async function deleteCategoriaAction(id: string): Promise<ActionResult> {
 
 // ─── CRUD Subcategorias ─────────────────────────────────────────────────────
 export async function createSubcategoriaAction(categoriaId: string, nombre: string): Promise<ActionResult> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = createSubcategoriaSchema.safeParse({ categoriaId, nombre });
   if (!parsed.success) {
     const msg = parsed.error.flatten().fieldErrors.nombre?.[0] ?? parsed.error.message;
@@ -189,7 +200,8 @@ export async function updateSubcategoriaAction(
   id: string,
   data: { nombre?: string; categoriaId?: string }
 ): Promise<ActionResult> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = updateSubcategoriaSchema.safeParse({ id, data });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
@@ -202,7 +214,8 @@ export async function updateSubcategoriaAction(
 }
 
 export async function deleteSubcategoriaAction(id: string): Promise<ActionResult> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = comparacionIdSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
@@ -220,7 +233,8 @@ export async function createPresentacionAction(
   nombre: string,
   costoCompraObjetivo?: number | null
 ): Promise<ActionResult> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = createPresentacionSchema.safeParse({ subcategoriaId, nombre, costoCompraObjetivo });
   if (!parsed.success) {
     const msg = parsed.error.flatten().fieldErrors.nombre?.[0] ?? parsed.error.message;
@@ -243,7 +257,8 @@ export async function updatePresentacionAction(
     costoCompraObjetivo?: number | null;
   }
 ): Promise<ActionResult> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = updatePresentacionSchema.safeParse({ id, data });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
@@ -256,7 +271,8 @@ export async function updatePresentacionAction(
 }
 
 export async function deletePresentacionAction(id: string): Promise<ActionResult> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = comparacionIdSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "ID inválido." };
   try {
@@ -273,7 +289,8 @@ export async function asignarProductosAPresentacionAction(
   presentacionId: string,
   idsProductos: string[]
 ): Promise<ActionResult<{ count: number }>> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = asignarProductosSchema.safeParse({ presentacionId, idsProductos });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
   try {
@@ -290,7 +307,8 @@ export async function asignarProductosAPresentacionAction(
 export async function quitarAsignacionPresentacionAction(
   idsProductos: string[]
 ): Promise<ActionResult<{ count: number }>> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = idsProductosSchema.safeParse(idsProductos);
   if (!parsed.success) return { ok: false, error: "IDs inválidos." };
   try {
@@ -308,7 +326,8 @@ export async function actualizarDtoExtraComparacionAction(
   listaPrecioProveedorId: string,
   dtoExtra: number | null
 ): Promise<ActionResult<{ dtoExtra: number | null }>> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
 
   const parsed = actualizarDtoExtraComparacionSchema.safeParse({ listaPrecioProveedorId, dtoExtra });
   if (!parsed.success) return { ok: false, error: "Datos inválidos." };
@@ -327,7 +346,8 @@ export async function actualizarDifPxRefManualComparacionAction(
   listaPrecioProveedorId: string,
   difPxRefManual: number | null
 ): Promise<ActionResult<{ difPxRefManual: number | null }>> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
 
   const parsed = actualizarDifPxRefManualComparacionSchema.safeParse({
     listaPrecioProveedorId,
@@ -397,7 +417,8 @@ export async function asignarReferenciaCompetenciaAction(
   codTienda: string,
   competenciaId: string
 ): Promise<ActionResult<ReferenciaCompetenciaPresentacion>> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = asignarReferenciaCompetenciaSchema.safeParse({
     presentacionId,
     codTienda,
@@ -420,7 +441,8 @@ export async function asignarReferenciaCompetenciaAction(
 export async function quitarReferenciaCompetenciaAction(
   refCompId: string
 ): Promise<ActionResult> {
-  if (!(await tienePermisoEditar())) return { ok: false, error: "Sin permisos." };
+  const gate = await requireEditorComparacion();
+  if (gate) return gate;
   const parsed = quitarReferenciaCompetenciaItemSchema.safeParse({ refCompId });
   if (!parsed.success) return { ok: false, error: "ID de referencia inválido." };
   try {

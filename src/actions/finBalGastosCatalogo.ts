@@ -1,9 +1,8 @@
 "use server";
 
+import { firstZodErrorMessage, requireEditorFinanzas } from "@/lib/actionHelpers";
 import { revalidatePath } from "next/cache";
 import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
-import { esEditor, getRol } from "@/lib/sesion";
-import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
   crearFinBalGastoFinalSchema,
@@ -38,41 +37,7 @@ import {
   type FinBalGastoTipoItem,
 } from "@/services/finBalGastosCatalogo.service";
 
-/**
- * Actions CRUD para el catálogo jerárquico Finanzas → Balance → Gastos.
- *
- * Gate de seguridad (aplica a TODAS las Actions de este archivo):
- *   - `puede(rol, PERMISOS.finanzas.acceso)` — permiso de módulo.
- *   - `esEditor()` — todas las mutaciones son solo `editor` (son catálogos maestros).
- *
- * Las lecturas se consumen directamente desde Server Components vía el servicio.
- */
-
-function firstZodErrorMessage(error: {
-  flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
-}): string {
-  const flattened = error.flatten();
-  return (
-    [...Object.values(flattened.fieldErrors).flat(), ...flattened.formErrors][0] ??
-    "Datos inválidos."
-  );
-}
-
-/**
- * Gate compartido: devuelve `null` si el rol tiene permisos; caso contrario,
- * devuelve un `ActionResult` de error (variante `{ ok: false, error }`) que
- * es compatible con cualquier `ActionResult<T>` porque no incluye la rama de éxito.
- */
-async function requireEditorFinanzas(): Promise<{ ok: false; error: string } | null> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Sin permisos de editor." };
-  }
-  return null;
-}
+/** CRUD catálogo jerárquico Finanzas → Balance → Gastos. Mutaciones: `requireEditorFinanzas`. */
 
 function revalidateBalancePaths(): void {
   revalidatePath("/finanzas");

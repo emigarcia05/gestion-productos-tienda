@@ -3,6 +3,7 @@
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 
 import { revalidatePath } from "next/cache";
+import { mensajeErrorAction } from "@/lib/actionHelpers";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
@@ -60,13 +61,15 @@ export async function getVinculos(
       },
     };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { success: false, error: msg };
+    return {
+      success: false,
+      error: mensajeErrorAction(e, "Error al cargar vínculos."),
+    };
   }
 }
 
-/** Proveedores de mercadería (para modal de vinculación y otros). */
-export async function getProveedores() {
+/** Proveedores de mercadería (modal vínculos / asignar productos). Distinto de `getProveedores` en `proveedores.ts`. */
+export async function getProveedoresMercaderiaParaVincular() {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.acceso)) return [];
   return getProveedoresMercaderia();
@@ -92,8 +95,10 @@ export async function listarProductosParaVincular(
     );
     return { success: true, data };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { success: false, error: msg };
+    return {
+      success: false,
+      error: mensajeErrorAction(e, "Error al buscar productos para vincular."),
+    };
   }
 }
 
@@ -152,8 +157,7 @@ export async function vincularProducto(
     revalidatePath("/tienda");
     return { ok: true, data: undefined };
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Error al vincular el producto.";
-    return { ok: false, error: message };
+    return { ok: false, error: mensajeErrorAction(e, "Error al vincular el producto.") };
   }
 }
 
@@ -195,8 +199,7 @@ export async function desvincularProducto(
     revalidatePath("/tienda");
     return { ok: true, data: undefined };
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Error al desvincular el producto.";
-    return { ok: false, error: message };
+    return { ok: false, error: mensajeErrorAction(e, "Error al desvincular el producto.") };
   }
 }
 

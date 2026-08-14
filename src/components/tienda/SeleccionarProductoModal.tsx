@@ -29,7 +29,7 @@ import {
 import { Loader2, Lock, Tag } from "lucide-react";
 import { setProductoPropioTiendaAction } from "@/actions/tienda";
 import { FiltroIndividualContainer } from "@/components/FilterBar";
-import { getProveedores, listarProductosParaVincular } from "@/actions/vinculos";
+import { getProveedoresMercaderiaParaVincular, listarProductosParaVincular } from "@/actions/vinculos";
 import type { ProductoProveedorParaVincular } from "@/services/listaPrecios.service";
 import {
   TableEmptyState,
@@ -103,7 +103,7 @@ export default function SeleccionarProductoModal({
 
   useEffect(() => {
     if (!open) return;
-    getProveedores().then(setProveedores);
+    getProveedoresMercaderiaParaVincular().then(setProveedores);
   }, [open]);
 
   const hayFiltros = !!proveedorId || !!q.trim();
