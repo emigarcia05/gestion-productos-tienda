@@ -18,7 +18,6 @@ export const PERMISOS = {
     /** Acceso a Px Vta. Sugeridos (/proveedores/sugeridos). Solo este submódulo visible para simple. */
     sugeridos:       { simple: true,  editor: true },
     listaPrecios:   { simple: false, editor: true },
-    comparacionCat: { simple: false, editor: true },
     lista:           { simple: false, editor: true },
     acciones: {
       nuevoProveedor: { simple: false, editor: true },
@@ -79,13 +78,6 @@ export const PERMISOS = {
       sincronizar: { simple: true, editor: true },
     },
     tabla: {
-      codItem:      { simple: false, editor: true },
-      descripcion:  { simple: true,  editor: true },
-      costo:        { simple: false, editor: true },
-      proveedorDux: { simple: false, editor: true },
-      rubro:        { simple: true,  editor: true },
-      subRubro:     { simple: true,  editor: true },
-      vinculado: { simple: true, editor: true },
       /** Abrir modal de vínculos (doble clic). Pantalla solo editor; vincular/desvincular en Action con `esEditor()`. */
       vinculos: { simple: false, editor: true },
     },
@@ -146,7 +138,7 @@ export const PERMISOS = {
 
 /**
  * Helper para verificar si un rol tiene permiso para un elemento.
- * Uso: puede(rol, PERMISOS.tienda.tabla.costo)
+ * Uso: puede(rol, PERMISOS.tienda.tabla.vinculos)
  */
 export function puede(rol: Rol, permiso: { simple: boolean; editor: boolean }): boolean {
   return permiso[rol];

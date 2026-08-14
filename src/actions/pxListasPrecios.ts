@@ -3,7 +3,8 @@
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 
 import { revalidatePath } from "next/cache";
-import { getRol } from "@/lib/sesion";
+import { mensajeErrorAction } from "@/lib/actionHelpers";
+import { getRol, esEditor } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
@@ -67,6 +68,9 @@ export async function guardarPxListaMargenEdicionAction(
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
 
   const parsed = guardarPxListaMargenEdicionSchema.safeParse(raw);
   if (!parsed.success) {
@@ -100,7 +104,7 @@ export async function guardarPxListaMargenEdicionAction(
   } catch (e) {
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "No se pudo guardar el margen.",
+      error: mensajeErrorAction(e, "No se pudo guardar el margen."),
     };
   }
 }
@@ -118,6 +122,9 @@ export async function guardarPxListaPrecioEdicionAction(
   const rol = await getRol();
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
     return { ok: false, error: "Sin acceso." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
   }
 
   const parsed = guardarPxListaPrecioEdicionSchema.safeParse(raw);
@@ -152,7 +159,7 @@ export async function guardarPxListaPrecioEdicionAction(
   } catch (e) {
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "No se pudo guardar el precio.",
+      error: mensajeErrorAction(e, "No se pudo guardar el precio."),
     };
   }
 }
@@ -176,6 +183,9 @@ export async function guardarPxListaCompetenciaRefAction(
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
 
   const parsed = guardarPxListaCompetenciaRefSchema.safeParse(raw);
   if (!parsed.success) {
@@ -198,10 +208,7 @@ export async function guardarPxListaCompetenciaRefAction(
   } catch (e) {
     return {
       ok: false,
-      error:
-        e instanceof Error
-          ? e.message
-          : "No se pudo guardar el competidor de referencia.",
+      error: mensajeErrorAction(e, "No se pudo guardar el competidor de referencia."),
     };
   }
 }
@@ -214,6 +221,9 @@ export async function exportarPxListasMargenAction(): Promise<
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
   try {
     const grupos = await listarExportPxListasMargenPorLista();
     const claves = clavesDesdeGruposExportPxListas(grupos);
@@ -225,7 +235,7 @@ export async function exportarPxListasMargenAction(): Promise<
   } catch (e) {
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "No se pudo generar la exportación.",
+      error: mensajeErrorAction(e, "No se pudo generar la exportación."),
     };
   }
 }

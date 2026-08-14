@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getRol } from "@/lib/sesion";
+import { mensajeErrorAction } from "@/lib/actionHelpers";
+import { getRol, esEditor } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
@@ -29,6 +30,9 @@ export async function editarProducto(raw: unknown): Promise<ActionResult> {
   if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
     return { ok: false, error: "Sin permisos para editar productos de lista." };
   }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
   const parsed = editarProductoSchema.safeParse(raw);
   if (!parsed.success) {
     const msg = parsed.error.flatten().formErrors[0] ?? parsed.error.message;
@@ -55,7 +59,7 @@ export async function editarProducto(raw: unknown): Promise<ActionResult> {
     revalidatePath("/proveedores/lista-precios");
     return { ok: true, data: undefined };
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Error al editar el producto.";
+    const message = mensajeErrorAction(e, "Error al editar el producto.");
     return { ok: false, error: message };
   }
 }
@@ -64,6 +68,9 @@ export async function aplicarCampoMasivo(raw: unknown): Promise<ActionResult<{ a
   const rol = await getRol();
   if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
     return { ok: false, error: "Sin permisos para edición masiva." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
   }
   const parsed = aplicarCampoMasivoSchema.safeParse(raw);
   if (!parsed.success) {
@@ -86,7 +93,7 @@ export async function aplicarCampoMasivo(raw: unknown): Promise<ActionResult<{ a
     revalidatePath("/proveedores/lista-precios");
     return { ok: true, data: { afectados: result.afectados } };
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Error en edición masiva.";
+    const message = mensajeErrorAction(e, "Error en edición masiva.");
     return { ok: false, error: message };
   }
 }

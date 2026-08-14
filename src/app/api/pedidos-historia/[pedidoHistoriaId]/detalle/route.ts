@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRol } from "@/lib/sesion";
-import { PERMISOS, puede } from "@/lib/permisos";
+import { guardPedidosHistoriaLectura } from "@/lib/apiRouteAuth";
 import { prismaCuidSchema } from "@/lib/validations/common";
 import * as pedidosHistoriaService from "@/services/pedidosHistoria.service";
 
@@ -13,10 +12,8 @@ export async function GET(
   ctx: { params: Promise<{ pedidoHistoriaId: string }> }
 ) {
   try {
-    const rol = await getRol();
-    if (!puede(rol, PERMISOS.pedidos.acceso)) {
-      return NextResponse.json({ ok: false as const, error: "Sin permisos para pedidos." }, { status: 403 });
-    }
+    const denied = await guardPedidosHistoriaLectura();
+    if (denied) return denied;
 
     const { pedidoHistoriaId } = await ctx.params;
     const parsedId = prismaCuidSchema.safeParse(pedidoHistoriaId);

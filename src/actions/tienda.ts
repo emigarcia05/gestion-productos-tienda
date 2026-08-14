@@ -180,16 +180,7 @@ export async function getProveedoresTintoLts(): Promise<ProveedorTintoLts[]> {
  * Mapeo: cod_tienda → codItem, descripcion_tienda → descripcion, costo_compra → costo,
  * proveedor → proveedorDux (resuelto a prefijo de proveedores cuando hay match).
  */
-export async function getTiendaPageData(params: {
-  q?: string;
-  rubro?: string;
-  subRubro?: string;
-  cxCompra?: string;
-  marca?: string;
-  proveedor?: string;
-  vinculado?: string;
-  pagina?: string;
-}) {
+export async function getTiendaPageData(params: unknown) {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.tienda.acceso)) {
     return getTiendaEmptyWithOpciones();
@@ -199,6 +190,7 @@ export async function getTiendaPageData(params: {
   if (!parsedParams.success) {
     return getTiendaEmptyWithOpciones();
   }
+  try {
   const {
     q = "",
     rubro = "",
@@ -365,6 +357,10 @@ export async function getTiendaPageData(params: {
     subRubros: subRubrosDistinct.filter((s) => s.subRubro != null).map((s) => ({ subRubro: s.subRubro! })),
     totalPaginas,
   };
+  } catch (e) {
+    console.error("[getTiendaPageData]", e);
+    return getTiendaEmptyWithOpciones();
+  }
 }
 
 export async function setProductoPropioTiendaAction(

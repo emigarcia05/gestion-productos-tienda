@@ -1,5 +1,6 @@
 "use server";
 
+import { firstZodErrorMessage } from "@/lib/actionHelpers";
 import { revalidatePath } from "next/cache";
 import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import { z } from "zod";
@@ -15,16 +16,6 @@ import {
 const guardarSaldoSchema = mesAnioQuerySchema.extend({
   saldoPesos: z.coerce.number().finite(),
 });
-
-function firstZodErrorMessage(error: {
-  flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
-}): string {
-  const flattened = error.flatten();
-  return (
-    [...Object.values(flattened.fieldErrors).flat(), ...flattened.formErrors][0] ??
-    "Datos inválidos."
-  );
-}
 
 async function gateFinanzasEditor(): Promise<{ ok: true } | { ok: false; error: string }> {
   const rol = await getRol();
