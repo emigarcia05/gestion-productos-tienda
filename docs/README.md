@@ -2,6 +2,7 @@
 
 | Documento | Cuándo leerlo |
 |-----------|---------------|
+| [PROYECTO_BRIEF_IA.md](./PROYECTO_BRIEF_IA.md) | **Primero** — contexto compacto para prompts (stack, capas, áreas, invariantes). No sustituye las guías |
 | [FRONTEND_GUIDELINES.md](./FRONTEND_GUIDELINES.md) | UI / componentes / estilos — **solo la sección del módulo tocado**, no el archivo entero |
 | [BACKEND_GUIDELINES.md](./BACKEND_GUIDELINES.md) | Actions / servicios / Prisma — **buscar el § del dominio** |
 | [AGENTEIA_GUIDELINES.md](./AGENTEIA_GUIDELINES.md) | IA Diseño: capas, CSV, scraper, UI Asistente IA |
@@ -13,7 +14,7 @@ Prompts operativos de agentes (FullStack / Front / Back / Auditoría): [`.cursor
 
 ## Flujo de trabajo full stack
 
-1. Entender objetivo y restricciones funcionales.
+1. Entender objetivo y restricciones funcionales (contexto compacto: [PROYECTO_BRIEF_IA.md](./PROYECTO_BRIEF_IA.md)).
 2. Diseñar el contrato de datos (Zod + tipos de respuesta `ActionResult`) **antes** de la UI.
 3. Implementar en este orden preferido:
    - Prisma / servicios en `src/services/`

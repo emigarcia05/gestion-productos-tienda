@@ -941,6 +941,7 @@ Antes de dar por terminada una tarea de frontend:
 ## 6. Organización en Cursor (prompts y reglas persistentes)
 
 - Mapa de guías + **flujo de trabajo canónico** (contrato Zod/`ActionResult` → servicios → actions → UI → docs) y **criterio de hecho**: `docs/README.md`.
+- Briefing compacto para inyectar al inicio de un prompt: `docs/PROYECTO_BRIEF_IA.md`.
 - Archivo recomendado para acceso rápido a prompts operativos: `.cursor/prompts.md`.
 - `.cursor/prompts.md` incluye el bloque **Dream Team de agentes** (FullStack / Front / Back / Auditoría); para cambios de UI priorizar el perfil frontend o auditor frontend según el objetivo. Plantillas por agente: `.cursor/fullstack_promp.md`, `.cursor/front_promp.md`, `.cursor/back_promp.md`, `.cursor/auditoria_promp.md`.
 - Reglas persistentes activas en `.cursor/rules/`:
@@ -951,4 +952,4 @@ Antes de dar por terminada una tarea de frontend:
 
 ---
 
-**Para IA:** El archivo `.cursorrules` en la raíz indica que este documento (`docs/FRONTEND_GUIDELINES.md`) es la **referencia obligatoria** al crear o modificar código frontend. Usar la sección "Guía para IA" y el checklist de la sección 4 en cada tarea.
+**Para IA:** El archivo `.cursorrules` en la raíz indica que este documento (`docs/FRONTEND_GUIDELINES.md`) es la **referencia obligatoria** al crear o modificar código frontend. Usar la sección "Guía para IA" y el checklist de la sección 4 en cada tarea. Contexto compacto del sistema: `docs/PROYECTO_BRIEF_IA.md`.

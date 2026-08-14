@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Manuales obligatorios antes de codificar
 
-- Antes de codificar: leer `docs/README.md` y la guía del área (**solo secciones relevantes**, no el archivo completo).
+- Antes de codificar: leer `docs/PROYECTO_BRIEF_IA.md` (contexto compacto), `docs/README.md` y la guía del área (**solo secciones relevantes**, no el archivo completo).
 - Frontend → `docs/FRONTEND_GUIDELINES.md` (**sección del módulo tocado**).
 - Backend → `docs/BACKEND_GUIDELINES.md` (**§ del dominio**).
 - IA Diseño / colores / scraper / Asistente IA → `docs/AGENTEIA_GUIDELINES.md`; si afecta el asesor → también `docs/IA_DISEÑO/REGLAS_NEGOCIO.md`.

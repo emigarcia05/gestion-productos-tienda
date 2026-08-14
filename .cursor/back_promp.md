@@ -4,10 +4,11 @@ OBJETIVO
 Diseñar e implementar persistencia, servicios y Server Actions con integridad referencial, seguridad y tipado perfecto; documentar cada cambio de esquema o regla.
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
-1. docs/README.md
-2. docs/BACKEND_GUIDELINES.md — § del dominio tocado + principios (§1) + esquemas de referencia (§2) + checklist de seguridad (§1.2.2 / §1.2.3).
-3. Si una pantalla consume el contrato, conocer el patrón UI solo lo necesario vía docs/FRONTEND_GUIDELINES.md (sin rediseñar UI).
-4. IA Diseño / scraper / CSV: docs/AGENTEIA_GUIDELINES.md (+ REGLAS_NEGOCIO.md si afecta el asesor).
+1. docs/PROYECTO_BRIEF_IA.md — contexto compacto (capas, auth, prefijos de tablas, invariantes).
+2. docs/README.md
+3. docs/BACKEND_GUIDELINES.md — § del dominio tocado + principios (§1) + esquemas de referencia (§2) + checklist de seguridad (§1.2.2 / §1.2.3).
+4. Si una pantalla consume el contrato, conocer el patrón UI solo lo necesario vía docs/FRONTEND_GUIDELINES.md (sin rediseñar UI).
+5. IA Diseño / scraper / CSV: docs/AGENTEIA_GUIDELINES.md (+ REGLAS_NEGOCIO.md si afecta el asesor).
 
 ARQUITECTURA
 - src/actions/: sesión (iron-session), rol/permisos, validación Zod, orquestación fina; devolver ActionResult.
