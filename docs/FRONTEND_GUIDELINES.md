@@ -935,7 +935,7 @@ Antes de dar por terminada una tarea de frontend:
 Re-auditoría desde `origin/main` (post-limpieza 2026-08-13 + auditoría backend). 0 componentes/hooks huérfanos; 0 clases CSS globales sin call sites. Limpiezas de superficie pública y de docs desfasadas.
 
 **API / helpers de presentación:**
-- `LimpiarFiltrosButton`: eliminada la prop `visible` y las variables `hayFiltros*` que solo la alimentaban (el cesto ya era siempre visible).
+- `LimpiarFiltrosButton`: eliminada la prop `visible` y las variables `hayFiltros*` que solo la alimentaban (el cesto ya era siempre visible). **Trans. Depósitos** (`FiltrosTransfDepositos`) también queda sin `visible` / `hayFiltros` (el merge con `main` había dejado el call site viejo).
 - Eliminados helpers/alias sin call sites: `TIPO_PEDIDO_LABEL`, `parseMonto`/`formatMonto` (`tiendaCalculosLts`), `labelUltimaComparacionCompetencia`, `calcularResumenPreciosCompetenciaFila`, `INPUTS_MARGEN_CONTRIBUCION_VACIOS`, aliases `@deprecated` `EstVtasBarraSucursal` / `EstVtasBarraVariante`, `etiquetaEstVtasEjeY` / `etiquetaEstVtasDesglose`.
 - Internos dejados de exportar (siguen en el módulo): opciones Est. Vtas, parsers de competencia, `normalizarMarcasPulgadaParaMatch`, `LineaCondicionReglaDescuento`, `REGLAS_DESCUENTOS_ACCIONES_COL_PCT`, `MainAppAreaDefinition`, `diasCalendarioDesdeHastaIsoYmdArgentina`.
 - Kit shadcn recortado a lo usado (ver revisión anti-código muerto).
@@ -1861,6 +1861,8 @@ No quedan usos de `bg-white`, `text-slate-*`, `bg-slate-*` ni `border-slate-*` e
 *Última actualización (2026-08-13): **Slidenav** — **PENDIENTES** centrado MAYÚSCULAS; badge = categorías (Pedido/Transferencia, máx. 2).*
 
 *Última actualización (2026-08-14): **Select** — `SelectGroup` / `SelectLabel` / `SelectSeparator` quedan internos del filtro searchable de `SelectContent`; no reexportar ni borrar.*
+
+*Última actualización (2026-08-14): **Trans. Depósitos** — `LimpiarFiltrosButton` sin prop `visible` (cesto siempre visible, igual que el resto de filtros).*
 
 *Última actualización (2026-08-13): **Slidenav** — onboarding **Elegir Usuario**; pie muestra nombre + **Cambiar Módulo** si hay más de un módulo permitido.*
 

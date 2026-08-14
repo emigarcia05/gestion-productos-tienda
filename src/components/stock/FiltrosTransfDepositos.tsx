@@ -68,14 +68,6 @@ export default function FiltrosTransfDepositos({
     onDebouncedSearch: (value) => navigate({ q: value }),
   });
 
-  const hayFiltros = !!(
-    q ||
-    marcaActual ||
-    rubroActual ||
-    origenActual ||
-    destinoActual
-  );
-
   function buildParams(updates: {
     origen?: Sucursal | null;
     destino?: Sucursal | null;
@@ -332,7 +324,7 @@ export default function FiltrosTransfDepositos({
               disabled={!origenSeleccionado}
             />
           </FilterRowSearch>
-          <LimpiarFiltrosButton visible={hayFiltros} onClick={limpiarFiltros} />
+          <LimpiarFiltrosButton onClick={limpiarFiltros} />
           <span className={cn(FILTER_COUNT_CLASS, "ml-auto")}>
             {totalItems.toLocaleString("es-AR")} ÍTEM
             {totalItems !== 1 ? "S" : ""}
