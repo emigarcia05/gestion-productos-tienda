@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
-import { esEditor, getRol } from "@/lib/sesion";
-import { PERMISOS, puede } from "@/lib/permisos";
+import { requireCargarGastoEventual, requireEditorFinanzas, requireFinanzasLectura } from "@/lib/actionGates";
 import type { ActionResult } from "@/lib/types";
 import {
   cargarImputacionesMesParamsSchema,
@@ -55,25 +54,7 @@ function firstZodErrorMessage(error: {
   );
 }
 
-async function requireEditorFinanzas(): Promise<{ ok: false; error: string } | null> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Sin permisos de editor." };
-  }
-  return null;
-}
 
-/** Gasto eventual: Ayuda Vendedor (`cargarGasto`) o el mismo flujo desde Balance · Gastos. */
-async function requireCargarGastoEventual(): Promise<{ ok: false; error: string } | null> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.ayudaVendedor.cargarGasto)) {
-    return { ok: false, error: "Sin permisos para cargar gasto eventual." };
-  }
-  return null;
-}
 
 /** Carga imputaciones del mes `(mes, anio)` desde el catálogo (`gasto_mensual = true`). */
 export async function cargarFinBalGastoMensualMesAction(
@@ -203,10 +184,8 @@ export async function eliminarFinBalGastoMensualAction(
 export async function obtenerMontoMesAnteriorFinBalGastoMensualAction(
   raw: unknown
 ): Promise<ActionResult<{ monto: number | null }>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
+  const gate = await requireFinanzasLectura();
+  if (gate) return gate;
 
   const parsed = obtenerMontoMesAnteriorSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
@@ -224,10 +203,8 @@ export async function obtenerMontoMesAnteriorFinBalGastoMensualAction(
 export async function listarHistoricoMontosGastoFinalBalanceAction(
   raw: unknown,
 ): Promise<ActionResult<HistoricoMontoGastoFinalBalanceItem[]>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
+  const gate = await requireFinanzasLectura();
+  if (gate) return gate;
 
   const parsed = historicoMontosGastoFinalBalanceSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
@@ -246,10 +223,8 @@ export async function listarHistoricoMontosGastoFinalBalanceAction(
 export async function listarSerieHistorialFilaBalanceMensualAction(
   raw: unknown,
 ): Promise<ActionResult<HistoricoMontoGastoFinalBalanceItem[]>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
+  const gate = await requireFinanzasLectura();
+  if (gate) return gate;
 
   const parsed = serieHistorialFilaBalanceSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
@@ -273,10 +248,8 @@ export async function cargarFilasBalanceMensualPeriodoAction(
     ventasPorSucursalNombre: Record<string, number>;
   }>
 > {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
+  const gate = await requireFinanzasLectura();
+  if (gate) return gate;
 
   const parsed = mesAnioQuerySchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };

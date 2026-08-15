@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
-import { esEditor, getRol } from "@/lib/sesion";
-import { PERMISOS, puede } from "@/lib/permisos";
+import { requireEditorFinanzas } from "@/lib/actionGates";
 import type { ActionResult } from "@/lib/types";
 import { guardarIvaComparacionPedidoSchema } from "@/lib/validations/finBalPosicionIvaComparacionPedido";
 import {
@@ -13,22 +12,12 @@ import {
 
 export type { EstadoIvaComparacionPedido } from "@/services/finBalPosicionIvaComparacionPedido.service";
 
-async function gateFinanzasEditor(): Promise<{ ok: true } | { ok: false; error: string }> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede configurar la comparación de pedidos." };
-  }
-  return { ok: true };
-}
 
 export async function guardarIvaComparacionPedidoAction(
   raw: unknown
 ): Promise<ActionResult<EstadoIvaComparacionPedido>> {
-  const gate = await gateFinanzasEditor();
-  if (!gate.ok) return { ok: false, error: gate.error };
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
 
   const parsed = guardarIvaComparacionPedidoSchema.safeParse(raw);
   if (!parsed.success) {

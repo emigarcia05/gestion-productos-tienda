@@ -8,8 +8,7 @@ import type {
   AsistenteIaModuloVariable,
   ProdIaDisenoPrompItem,
 } from "@/lib/asistenteIa";
-import { PERMISOS, puede } from "@/lib/permisos";
-import { esEditor, getRol } from "@/lib/sesion";
+import { requireAsistenteIaLectura, requireEditorAsistenteIa } from "@/lib/actionGates";
 import type { ActionResult } from "@/lib/types";
 import {
   crearProdIaDisenoPrompSchema,
@@ -43,22 +42,7 @@ const resolverConfigSchema = z.object({
   slot: z.enum(["buscar_codigo", "disenar_colores"]),
 });
 
-async function requireAsistenteIaLectura(): Promise<{ ok: false; error: string } | null> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.asistenteIa.acceso)) {
-    return { ok: false, error: "Sin permisos para Asistente IA." };
-  }
-  return null;
-}
 
-async function requireEditorAsistenteIa(): Promise<{ ok: false; error: string } | null> {
-  const gate = await requireAsistenteIaLectura();
-  if (gate) return gate;
-  if (!(await esEditor())) {
-    return { ok: false, error: "Sin permisos de editor." };
-  }
-  return null;
-}
 
 export async function listarProdIaDisenoPrompsAction(): Promise<
   ActionResult<ProdIaDisenoPrompItem[]>

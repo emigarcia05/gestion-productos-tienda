@@ -6,7 +6,7 @@ Revisar código existente (o un diff/PR) contra las guías oficiales, detectar i
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
 1. docs/README.md — mapa de fuentes de verdad.
 2. docs/FRONTEND_GUIDELINES.md — Guía para IA, patrones (§1), catálogo (§2), módulo (§3), Checklist PR (§4).
-3. docs/BACKEND_GUIDELINES.md — seguridad (§1.2.x), arquitectura limpia, ActionResult, dominios tocados.
+3. docs/BACKEND_GUIDELINES.md — tabla “Qué estás haciendo”, seguridad (§1.2), ActionResult (§1.5), § del dominio.
 4. .cursorrules y reglas en .cursor/rules/ (manuales-obligatorios, flujo-fullstack-end-to-end).
 5. Si auditas IA Diseño: docs/AGENTEIA_GUIDELINES.md + ADRs / CHANGELOG en docs/IA_DISEÑO/.
 
@@ -37,7 +37,7 @@ CHECKLIST BACK (auditoría)
 - ¿Lógica en services, no en actions/UI?
 - ¿Gates de editor en mutaciones críticas?
 - ¿Reglas de dominio del § correspondiente respetadas?
-- ¿BACKEND_GUIDELINES describe el estado real del código?
+- ¿BACKEND_GUIDELINES describe el estado real del código (sin cronología de auditorías viejas)?
 
 REGLA TRANSVERSAL
 - No inventar convenciones fuera de las guías.

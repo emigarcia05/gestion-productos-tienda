@@ -1,6 +1,6 @@
 "use server";
 
-import { esEditor } from "@/lib/sesion";
+import { requireEditorMarketing } from "@/lib/actionGates";
 import type { ActionResult } from "@/lib/types";
 import {
   exportarMktAGoogleSheets,
@@ -8,25 +8,21 @@ import {
 } from "@/services/googleSheetsExportMktSecciones.service";
 
 /**
- * Exporta Marketing a Google Sheets (solo editor): Secciones, Redes,
+ * Exporta Marketing a Google Sheets (módulo + editor): Secciones, Redes,
  * Tipo de Contenido, Ideas y Publicaciones (sobrescribe cada pestaña).
  * Probe de conexión: script `npm run test:google-sheets` → `probarConexionGoogleSheets`.
  */
 export async function exportarMktGoogleSheetsAction(): Promise<
   ActionResult<ExportMktGoogleSheetsResult>
 > {
-  if (!(await esEditor())) {
-    return { ok: false, error: "Sin permisos de editor." };
-  }
+  const gate = await requireEditorMarketing();
+  if (gate) return gate;
   try {
     const res = await exportarMktAGoogleSheets();
     if (!res.success) return { ok: false, error: res.error };
     return { ok: true, data: res.data };
   } catch (e) {
-    return {
-      ok: false,
-      error:
-        e instanceof Error ? e.message : "No se pudo exportar a Google Sheets.",
-    };
+    console.error("[exportarMktGoogleSheetsAction]", e);
+    return { ok: false, error: "No se pudo exportar a Google Sheets." };
   }
 }

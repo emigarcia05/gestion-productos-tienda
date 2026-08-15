@@ -602,13 +602,3 @@ export async function syncListaPrecioTiendaRunStep(
   };
 }
 
-/** Ejecuta todos los pasos en la misma invocación (solo catálogos chicos o pruebas locales). */
-export async function syncListaPrecioTiendaFromDux(
-  options?: SyncProgressCallback
-): Promise<SyncListaPrecioTiendaResult> {
-  let last: SyncListaPrecioTiendaStepResult | null = null;
-  while (true) {
-    last = await syncListaPrecioTiendaRunStep(options);
-    if (last.done) return last;
-  }
-}

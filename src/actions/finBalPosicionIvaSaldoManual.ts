@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { revalidatePedidoUrgenteTrasCambioIvaSaldo } from "@/lib/revalidatePedidoUrgenteTrasCambioIvaSaldo";
 import { z } from "zod";
-import { esEditor, getRol } from "@/lib/sesion";
-import { PERMISOS, puede } from "@/lib/permisos";
+import { requireEditorFinanzas } from "@/lib/actionGates";
 import type { ActionResult } from "@/lib/types";
 import { mesAnioQuerySchema } from "@/lib/validations/finBalGastoMensualBalance";
 import {
@@ -26,22 +25,12 @@ function firstZodErrorMessage(error: {
   );
 }
 
-async function gateFinanzasEditor(): Promise<{ ok: true } | { ok: false; error: string }> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.finanzas.acceso)) {
-    return { ok: false, error: "Sin permisos para finanzas." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede modificar el saldo manual." };
-  }
-  return { ok: true };
-}
 
 export async function guardarFinBalPosicionIvaSaldoManualAction(
   raw: unknown,
 ): Promise<ActionResult<{ saldoPesos: number }>> {
-  const gate = await gateFinanzasEditor();
-  if (!gate.ok) return { ok: false, error: gate.error };
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
 
   const parsed = guardarSaldoSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
@@ -66,8 +55,8 @@ export async function guardarFinBalPosicionIvaSaldoManualAction(
 export async function eliminarFinBalPosicionIvaSaldoManualAction(
   raw: unknown,
 ): Promise<ActionResult<void>> {
-  const gate = await gateFinanzasEditor();
-  if (!gate.ok) return { ok: false, error: gate.error };
+  const gate = await requireEditorFinanzas();
+  if (gate) return gate;
 
   const parsed = mesAnioQuerySchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };

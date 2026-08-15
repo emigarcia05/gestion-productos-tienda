@@ -3,24 +3,23 @@
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
+import { getPxCompetenciaPageParamsSchema } from "@/lib/validations/pxCompetencia";
 import { getPxCompetenciaPageDataFromDb } from "@/services/pxCompetenciaPage.service";
 import type { InformeAumentosPxExport } from "@/lib/exportPxDiffTypes";
 import { obtenerInformeAumentosCostos } from "@/services/exportResumenAumentos.service";
 
 /** Listado paginado **Px Competencia** (comparación precios vs competidores). */
-export async function getPxCompetenciaPageData(params: {
-  q?: string;
-  rubro?: string;
-  marca?: string;
-  filtroPxPromedio?: string;
-  pagina?: string;
-}) {
+export async function getPxCompetenciaPageData(params: unknown) {
   const rol = await getRol();
+  const vacio = await getPxCompetenciaPageDataFromDb({});
   if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
-    const vacio = await getPxCompetenciaPageDataFromDb({});
     return { ...vacio, items: [], total: 0, totalPaginas: 1 };
   }
-  return getPxCompetenciaPageDataFromDb(params);
+  const parsed = getPxCompetenciaPageParamsSchema.safeParse(params);
+  if (!parsed.success) {
+    return { ...vacio, items: [], total: 0, totalPaginas: 1 };
+  }
+  return getPxCompetenciaPageDataFromDb(parsed.data);
 }
 
 /** Informe de aumentos (resumen + detalle por producto; PDF en cliente; **Cx Compra**). */

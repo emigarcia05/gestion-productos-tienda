@@ -2,7 +2,7 @@
  * Política de lotes para consultas a la API DUX ERP (`erp.duxsoftware.com.ar`).
  * Aplica a GET paginados y POST con arrays de ítems (sync productos, Act. Cx., etc.).
  *
- * @see BACKEND_GUIDELINES §1.10c
+ * @see BACKEND_GUIDELINES §1.4
  * @see FRONTEND_GUIDELINES § SSOT — Progreso de consultas API DUX
  */
 

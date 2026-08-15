@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { EstPorProdPresentacionItem } from "@/lib/estPorProdPresentacion";
 import { ESTADISTICAS_PRODUCTOS_ROUTES } from "@/lib/estadisticasProductosRoutes";
-import { PERMISOS, puede } from "@/lib/permisos";
-import { esEditor, getRol } from "@/lib/sesion";
+import { requireEditorEstadisticas, requireEstadisticasLectura } from "@/lib/actionGates";
 import type { ActionResult } from "@/lib/types";
 import {
   crearEstPorProdPresentacionSchema,
@@ -28,22 +27,7 @@ function firstZodErrorMessage(error: {
   );
 }
 
-async function requireEstadisticasLectura(): Promise<{ ok: false; error: string } | null> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.estadisticasProductos.acceso)) {
-    return { ok: false, error: "Sin permisos para estadísticas de productos." };
-  }
-  return null;
-}
 
-async function requireEditorEstadisticas(): Promise<{ ok: false; error: string } | null> {
-  const gate = await requireEstadisticasLectura();
-  if (gate) return gate;
-  if (!(await esEditor())) {
-    return { ok: false, error: "Solo el modo editor puede gestionar presentaciones." };
-  }
-  return null;
-}
 
 function revalidateCategorizacion() {
   revalidatePath("/estadisticas-productos");

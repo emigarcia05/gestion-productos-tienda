@@ -478,7 +478,7 @@ export interface UpsertListaPreciosOptions {
  * Upsert de filas en prod_precios_provee.
  * Clave lógica: cod_ext (único) = [SUFIJO]-[codProdProv].
  * Si existe, actualiza; si no, crea con descuentos y cx_transporte en 0 (defaults BD).
- * precioEnDolares: mapea al switch SÍ/NO del modal; se persiste en px_dolares. Si true, cotizacion_dolar = cotización global USD (§1.8e).
+ * precioEnDolares: mapea al switch SÍ/NO del modal; se persiste en px_dolares. Si true, cotizacion_dolar = cotización global USD (BACKEND_GUIDELINES §3.2).
  * habilitado: mapea opción Habilitado SÍ/NO del modal importar; por defecto true.
  * marca: opcional en mapeo CSV; si no se asigna columna MARCA, no se modifica en update; si se asigna, persiste texto (vacío → null).
  */

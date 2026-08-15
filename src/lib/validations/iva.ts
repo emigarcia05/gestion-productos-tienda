@@ -6,7 +6,7 @@ import { z } from "zod";
  * lo necesiten (hoy `global_proveedores.iva` y `fin_bal_gasto_final.iva`).
  *
  * Convención: el enum NO se rebautiza en BD aunque ahora aplique fuera del
- * dominio de proveedor — ver docs/BACKEND_GUIDELINES.md §1.11d. Documentar acá
+ * dominio de proveedor — ver docs/BACKEND_GUIDELINES.md §3.1. Documentar acá
  * cualquier nuevo consumidor.
  */
 export const IVA_VALUES = ["SIEMPRE", "NUNCA", "PREGUNTA"] as const;

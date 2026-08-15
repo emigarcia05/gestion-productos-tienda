@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { GP_INTERNAL, GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import type { ProdIaDisenoPrompVarItem } from "@/lib/asistenteIa";
-import { PERMISOS, puede } from "@/lib/permisos";
-import { esEditor, getRol } from "@/lib/sesion";
+import { requireAsistenteIaLectura, requireEditorAsistenteIa } from "@/lib/actionGates";
 import type { ActionResult } from "@/lib/types";
 import {
   guardarProdIaDisenoPrompVarsSchema,
@@ -30,22 +29,7 @@ function revalidateAsistenteIa(): void {
   revalidatePath(GP_INTERNAL.asistenteIa.buscarColorImagen);
 }
 
-async function requireAsistenteIaLectura(): Promise<{ ok: false; error: string } | null> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.asistenteIa.acceso)) {
-    return { ok: false, error: "Sin permisos para Asistente IA." };
-  }
-  return null;
-}
 
-async function requireEditorAsistenteIa(): Promise<{ ok: false; error: string } | null> {
-  const gate = await requireAsistenteIaLectura();
-  if (gate) return gate;
-  if (!(await esEditor())) {
-    return { ok: false, error: "Sin permisos de administrador." };
-  }
-  return null;
-}
 
 export async function listarProdIaDisenoPrompVarsAction(
   raw: unknown,

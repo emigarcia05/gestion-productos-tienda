@@ -7,7 +7,7 @@ Stack: **Next.js 16** + **React 19** + **Tailwind 4** + **shadcn/ui** + **Zod** 
 | Documento | Cuándo |
 |-----------|--------|
 | [`docs/FRONTEND_GUIDELINES.md`](../docs/FRONTEND_GUIDELINES.md) | UI — tabla “Qué estás haciendo” al inicio + sección del patrón/módulo |
-| [`docs/BACKEND_GUIDELINES.md`](../docs/BACKEND_GUIDELINES.md) | Actions, servicios, Prisma — **buscar el § del dominio** |
+| [`docs/BACKEND_GUIDELINES.md`](../docs/BACKEND_GUIDELINES.md) | Actions, servicios, Prisma — **tabla “Qué estás haciendo” al inicio** + § del dominio |
 | [`docs/AGENTEIA_GUIDELINES.md`](../docs/AGENTEIA_GUIDELINES.md) | IA Diseño, CSV, scraper, Asistente IA |
 | [`docs/IA_DISEÑO/`](../docs/IA_DISEÑO/) | Reglas de negocio, ADRs, CHANGELOG, prompt GPT |
 
@@ -36,7 +36,7 @@ Implementar features de punta a punta (UI → Server Actions → servicios → P
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
 1. docs/README.md — mapa de guías.
 2. docs/FRONTEND_GUIDELINES.md — tabla “Qué estás haciendo” + Guía para IA + sección del patrón/módulo + Checklist de PR (§4).
-3. docs/BACKEND_GUIDELINES.md — solo el § del dominio (auth, ActionResult, modelo, reglas de negocio).
+3. docs/BACKEND_GUIDELINES.md — solo el § del dominio (tabla “Qué estás haciendo”; auth, ActionResult, modelo, reglas).
 4. Si toca IA Diseño / colores / scraper / Asistente IA: docs/AGENTEIA_GUIDELINES.md; si cambia el asesor: docs/IA_DISEÑO/REGLAS_NEGOCIO.md.
 
 FLUJO DE TRABAJO
@@ -119,7 +119,7 @@ Diseñar e implementar persistencia, servicios y Server Actions con integridad r
 
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
 1. docs/README.md
-2. docs/BACKEND_GUIDELINES.md — § del dominio tocado + principios (§1) + esquemas de referencia (§2) + checklist de seguridad (§1.2.2 / §1.2.3).
+2. docs/BACKEND_GUIDELINES.md — tabla “Qué estás haciendo” + § del dominio tocado + principios (§1) + patrones (§2) + checklist (§4).
 3. Si una pantalla consume el contrato, conocer el patrón UI solo lo necesario vía docs/FRONTEND_GUIDELINES.md (sin rediseñar UI).
 4. IA Diseño / scraper / CSV: docs/AGENTEIA_GUIDELINES.md (+ REGLAS_NEGOCIO.md si afecta el asesor).
 
@@ -128,12 +128,12 @@ ARQUITECTURA
 - src/services/: lógica de negocio y acceso a datos (testeable, sin UI).
 - Prisma: esquemas normalizados, índices y relaciones coherentes con lo documentado.
 - Zona horaria de negocio: Argentina (UTC−3), según la guía.
-- No exponer secretos ni ampliar superficie de API sin justificación (§1.2.6).
+- No exponer secretos ni ampliar superficie de API sin justificación (§1.2.5).
 
 SEGURIDAD (obligatorio en mutaciones)
 - Gate de sesión + permiso de módulo; mutaciones críticas: gate doble módulo + editor.
 - Validar input con Zod (v4) en el borde de la action.
-- Seguir patrones de auditoría de seguridad ya cerrados en BACKEND_GUIDELINES (§1.2.5+).
+- Seguir el checklist §1.2.2 y el gate doble §1.2.3 (excepciones de vendedor ya listadas).
 
 INTEGRIDAD
 - Respetar reglas de dominio ya documentadas (ej. vinculación tienda↔proveedor, stock multi-depósito, finanzas/balance, pedidos, marketing, etc.): buscar el § exacto antes de cambiar.
@@ -142,7 +142,7 @@ INTEGRIDAD
 CIERRE DOCUMENTAL (obligatorio)
 Tras cada cambio de esquema, servicio nuevo, regla de negocio o patrón de action:
 → actualizar docs/BACKEND_GUIDELINES.md (modelo, relaciones, funciones del servicio, ejemplos si aplica).
-Balance mensual / fin_bal_vtas: fuente de verdad en BACKEND_GUIDELINES §2.5f (UI en FRONTEND_GUIDELINES §3 Finanzas).
+Balance mensual / fin_bal_vtas: fuente de verdad en BACKEND_GUIDELINES §3.8 (UI en FRONTEND_GUIDELINES, subsección Balance mensual).
 Sin guía actualizada, el backend no está “completado”.
 
 CRITERIO DE HECHO
@@ -162,7 +162,7 @@ Revisar código existente (o un diff/PR) contra las guías oficiales, detectar i
 DOCUMENTACIÓN OBLIGATORIA (leer primero)
 1. docs/README.md — mapa de fuentes de verdad.
 2. docs/FRONTEND_GUIDELINES.md — Guía para IA, patrones (§1), catálogo (§2), módulo (§3), Checklist PR (§4).
-3. docs/BACKEND_GUIDELINES.md — seguridad (§1.2.x), arquitectura limpia, ActionResult, dominios tocados.
+3. docs/BACKEND_GUIDELINES.md — tabla “Qué estás haciendo”, seguridad (§1.2), ActionResult (§1.5), dominios tocados.
 4. .cursorrules y reglas en .cursor/rules/ (manuales-obligatorios, flujo-fullstack-end-to-end).
 5. Si auditas IA Diseño: docs/AGENTEIA_GUIDELINES.md + ADRs / CHANGELOG en docs/IA_DISEÑO/.
 

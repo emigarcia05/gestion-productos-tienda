@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { syncListaPrecioTiendaRunStep } from "@/services/syncListaPrecioTienda.service";
-import { getRol } from "@/lib/sesion";
-import { PERMISOS, puede } from "@/lib/permisos";
+import { guardTiendaListaPreciosSincronizar } from "@/lib/apiRouteAuth";
 import {
   clearListaPrecioTiendaSyncRunningStateInDb,
   getSyncDuxWorkerStateFromDb,
@@ -74,10 +73,8 @@ async function ejecutarPasoSyncListaPrecioTienda() {
  * GET: un paso de sincronización (consulta + guardado reanudable).
  */
 export async function GET() {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acciones.sincronizar)) {
-    return NextResponse.json({ ok: false, error: "Sin permisos para sincronizar." }, { status: 403 });
-  }
+  const denied = await guardTiendaListaPreciosSincronizar();
+  if (denied) return denied;
   return ejecutarPasoSyncListaPrecioTienda();
 }
 
@@ -86,9 +83,7 @@ export async function GET() {
  * El cliente encadena POST mientras `continuing === true` (catálogos grandes superan el límite Vercel).
  */
 export async function POST() {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.tienda.acciones.sincronizar)) {
-    return NextResponse.json({ ok: false, error: "Sin permisos para sincronizar." }, { status: 403 });
-  }
+  const denied = await guardTiendaListaPreciosSincronizar();
+  if (denied) return denied;
   return ejecutarPasoSyncListaPrecioTienda();
 }

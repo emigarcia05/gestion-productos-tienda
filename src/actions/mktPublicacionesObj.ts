@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { MARKETING_ROUTES } from "@/lib/marketingRoutes";
 import type { MktPublicacionObjItem } from "@/lib/mktPublicacionesObj";
-import { PERMISOS, puede } from "@/lib/permisos";
-import { esEditor, getRol } from "@/lib/sesion";
+import { requireEditorMarketing, requireMarketingLectura } from "@/lib/actionGates";
 import type { ActionResult } from "@/lib/types";
 import {
   crearMktPublicacionObjSchema,
@@ -28,22 +27,7 @@ function firstZodErrorMessage(error: {
   );
 }
 
-async function requireMarketingLectura(): Promise<{ ok: false; error: string } | null> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.marketing.acceso)) {
-    return { ok: false, error: "Sin permisos para marketing." };
-  }
-  return null;
-}
 
-async function requireEditorMarketing(): Promise<{ ok: false; error: string } | null> {
-  const gate = await requireMarketingLectura();
-  if (gate) return gate;
-  if (!(await esEditor())) {
-    return { ok: false, error: "Sin permisos de editor." };
-  }
-  return null;
-}
 
 export async function listarMktPublicacionObjsAction(): Promise<
   ActionResult<MktPublicacionObjItem[]>
