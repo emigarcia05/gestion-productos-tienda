@@ -31,6 +31,7 @@ import {
   usuarioSesionDesdeItem,
   type UsuarioSesion,
 } from "@/lib/usuarioSesion";
+import { type SucursalPreferida } from "@/lib/sucursalPreferida";
 import {
   puedeCambiarModulo,
   primerModuloPermitido,
@@ -70,6 +71,8 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const [usuarios, setUsuarios] = useState<GlobalPersonalItem[]>([]);
   const [usuariosError, setUsuariosError] = useState("");
   const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
+  const [sucursalSeleccionadaUsuario, setSucursalSeleccionadaUsuario] =
+    useState<SucursalPreferida | null>(null);
   const [usuarioSesion, setUsuarioSesion] = useState<UsuarioSesion | null>(null);
   const [clave, setClave] = useState("");
   const [mostrarClave, setMostrarClave] = useState(false);
@@ -188,6 +191,9 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
       setUsuarioOpen(true);
       return;
     }
+    if (open) {
+      setSucursalSeleccionadaUsuario(null);
+    }
     setUsuarioOpen(open);
   }
 
@@ -214,6 +220,21 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const labelUsuario = usuarioSesion
     ? nombreUsuarioLabel(usuarioSesion.nombrePersonal)
     : "USUARIO";
+  const sucursalesUsuario = Array.from(
+    new Set(
+      usuarios
+        .map((u) => u.sucursalPorDefecto)
+        .filter((s): s is SucursalPreferida => s === "guaymallen" || s === "maipu")
+    )
+  );
+  const usuariosSucursalSeleccionada =
+    sucursalSeleccionadaUsuario == null
+      ? []
+      : usuarios.filter((u) => u.sucursalPorDefecto === sucursalSeleccionadaUsuario);
+  const tituloElegirUsuario =
+    sucursalSeleccionadaUsuario == null
+      ? "Elegir Sucursal"
+      : `Usuarios ${etiquetaSucursalPorDefecto(sucursalSeleccionadaUsuario)}`;
 
   const IconoModulo = ICONO_MODULO[currentId];
 
@@ -221,53 +242,84 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     setModuloOpen(true);
   }
 
+  function abrirCambiarUsuario() {
+    setUsuariosError("");
+    setUsuarioOpen(true);
+  }
+
   return (
     <>
       {puedeCambiar ? (
-        <button
-          type="button"
-          onClick={abrirCambiarModulo}
-          disabled={pending || forceChoose}
-          aria-label="Cambiar Módulo"
-          title="Cambiar Módulo"
+        <div
           className={cn(
             "flex h-9 w-full items-center justify-center gap-1.5 rounded-md px-2",
+            "text-sidebar-foreground"
+          )}
+        >
+          <button
+            type="button"
+            onClick={abrirCambiarModulo}
+            disabled={pending || forceChoose}
+            aria-label="Cambiar Módulo"
+            title="Cambiar Módulo"
+            className={cn(
+              "flex h-8 w-[15%] max-w-6 shrink-0 items-center justify-center rounded-md",
+              "outline-none hover:bg-sidebar-accent/80",
+              "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+              pending && "cursor-not-allowed opacity-90"
+            )}
+          >
+            <IconoModulo className="size-4 shrink-0" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={abrirCambiarUsuario}
+            disabled={pending || forceChoose}
+            aria-label="Cambiar Usuario"
+            title="Cambiar Usuario"
+            className={cn(
+              "h-8 min-w-0 max-w-[85%] flex-1 truncate rounded-md px-2 text-center text-xs font-semibold tracking-wide",
+              "outline-none hover:bg-sidebar-accent/80",
+              "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+              pending && "cursor-not-allowed opacity-90"
+            )}
+          >
+            {labelUsuario}
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={abrirCambiarUsuario}
+          disabled={pending || forceChoose}
+          aria-label="Cambiar Usuario"
+          title="Cambiar Usuario"
+          className={cn(
+            "flex h-9 w-full items-center justify-center rounded-md px-2",
+            "truncate text-center text-xs font-semibold tracking-wide",
             "text-sidebar-foreground",
             "outline-none hover:bg-sidebar-accent/80",
             "focus-visible:ring-2 focus-visible:ring-sidebar-ring",
             pending && "cursor-not-allowed opacity-90"
           )}
         >
-          <span className="flex w-[15%] max-w-6 shrink-0 items-center justify-center">
-            <IconoModulo className="size-4 shrink-0" aria-hidden />
-          </span>
-          <span className="min-w-0 max-w-[85%] truncate text-center text-xs font-semibold tracking-wide">
-            {labelUsuario}
-          </span>
-        </button>
-      ) : (
-        <p
-          className={cn(
-            "flex h-9 w-full items-center justify-center rounded-md px-2",
-            "truncate text-center text-xs font-semibold tracking-wide",
-            "text-sidebar-foreground"
-          )}
-        >
           {labelUsuario}
-        </p>
+        </button>
       )}
 
       <Dialog open={usuarioOpen} onOpenChange={handleUsuarioOpenChange}>
         <AppModal
           size="sm"
-          title="Elegir Usuario"
+          title={tituloElegirUsuario}
           padding="sm"
           showCloseButton={!forceChoose}
           footerClassName={forceChoose ? "justify-center" : undefined}
           actions={
             forceChoose ? (
               <p className="w-full text-center text-sm text-muted-foreground">
-                Tocá un usuario para continuar
+                {sucursalSeleccionadaUsuario == null
+                  ? "Tocá una sucursal para continuar"
+                  : "Tocá un usuario para continuar"}
               </p>
             ) : (
               <Button
@@ -293,41 +345,91 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
                 No hay usuarios configurados. Cargá sucursal y módulos en Usuarios.
               </p>
             ) : null}
-            {!cargandoUsuarios && usuarios.length > 0 ? (
+            {!cargandoUsuarios &&
+            !usuariosError &&
+            usuarios.length > 0 &&
+            sucursalSeleccionadaUsuario == null ? (
               <div
                 className="flex max-h-[min(24rem,50vh)] w-full min-w-0 flex-col gap-2 overflow-y-auto"
                 role="list"
-                aria-label="Usuarios disponibles"
+                aria-label="Sucursales disponibles"
               >
-                {usuarios.map((u) => {
-                  const sucursal = etiquetaSucursalPorDefecto(u.sucursalPorDefecto);
-                  return (
-                    <Button
-                      key={u.idPersonal}
-                      type="button"
-                      variant="outline"
-                      role="listitem"
-                      disabled={pending}
-                      onClick={() => aplicarUsuario(u)}
-                      className={cn(
-                        "h-auto w-full justify-start px-3 py-2.5 text-left",
-                        "whitespace-normal"
-                      )}
-                    >
-                      <span className="flex min-w-0 flex-col items-start gap-0.5">
-                        <span className="w-full truncate text-sm font-semibold tracking-wide">
-                          {nombreUsuarioLabel(u.nombrePersonal)}
-                        </span>
-                        {sucursal ? (
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {sucursal}
-                          </span>
-                        ) : null}
+                {sucursalesUsuario.map((sucursal) => (
+                  <Button
+                    key={sucursal}
+                    type="button"
+                    variant="outline"
+                    role="listitem"
+                    disabled={pending}
+                    onClick={() => setSucursalSeleccionadaUsuario(sucursal)}
+                    className={cn(
+                      "h-auto w-full justify-start px-3 py-2.5 text-left",
+                      "whitespace-normal"
+                    )}
+                  >
+                    <span className="flex min-w-0 flex-col items-start gap-0.5">
+                      <span className="w-full truncate text-sm font-semibold tracking-wide">
+                        {etiquetaSucursalPorDefecto(sucursal)}
                       </span>
-                    </Button>
-                  );
-                })}
+                    </span>
+                  </Button>
+                ))}
               </div>
+            ) : null}
+            {!cargandoUsuarios &&
+            !usuariosError &&
+            usuarios.length > 0 &&
+            sucursalSeleccionadaUsuario != null ? (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={pending}
+                  onClick={() => setSucursalSeleccionadaUsuario(null)}
+                  className="justify-start"
+                >
+                  Volver a sucursales
+                </Button>
+                <div
+                  className="flex max-h-[min(24rem,50vh)] w-full min-w-0 flex-col gap-2 overflow-y-auto"
+                  role="list"
+                  aria-label="Usuarios disponibles"
+                >
+                  {usuariosSucursalSeleccionada.map((u) => {
+                    const sucursal = etiquetaSucursalPorDefecto(u.sucursalPorDefecto);
+                    return (
+                      <Button
+                        key={u.idPersonal}
+                        type="button"
+                        variant="outline"
+                        role="listitem"
+                        disabled={pending}
+                        onClick={() => aplicarUsuario(u)}
+                        className={cn(
+                          "h-auto w-full justify-start px-3 py-2.5 text-left",
+                          "whitespace-normal"
+                        )}
+                      >
+                        <span className="flex min-w-0 flex-col items-start gap-0.5">
+                          <span className="w-full truncate text-sm font-semibold tracking-wide">
+                            {nombreUsuarioLabel(u.nombrePersonal)}
+                          </span>
+                          {sucursal ? (
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {sucursal}
+                            </span>
+                          ) : null}
+                        </span>
+                      </Button>
+                    );
+                  })}
+                </div>
+                {usuariosSucursalSeleccionada.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No hay usuarios disponibles para esta sucursal.
+                  </p>
+                ) : null}
+              </>
             ) : null}
           </div>
         </AppModal>

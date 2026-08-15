@@ -912,10 +912,23 @@ export async function contarItemsPedidoPorTipoParaSlidenav(
     reposicion: 0,
     proveedores: [],
   };
+  const proveedorIds = [...new Set(items.map((it) => it.proveedorId.trim()).filter(Boolean))];
+  const proveedoresNoFabrica =
+    proveedorIds.length > 0
+      ? await prisma.proveedor.findMany({
+          where: {
+            id: { in: proveedorIds },
+            esFabrica: false,
+          },
+          select: { id: true },
+        })
+      : [];
+  const proveedoresNoFabricaSet = new Set(proveedoresNoFabrica.map((p) => p.id));
   const porProv = new Map<string, ConteosPedidoProveedorSlidenav>();
   for (const it of items) {
     const pid = it.proveedorId.trim();
     if (!pid) continue;
+    if (!proveedoresNoFabricaSet.has(pid)) continue;
     let bucket = porProv.get(pid);
     if (!bucket) {
       bucket = conteosVaciosProveedorSlidenav(pid, it.proveedor);

@@ -97,6 +97,21 @@ async function sucursalPedidoHabilitada(codigo: SucursalReposicion): Promise<boo
   return row?.pedido === true;
 }
 
+async function listarCodTiendasConProveedorVendedor(): Promise<string[]> {
+  const rows = await prisma.listaPrecioProveedor.findMany({
+    where: {
+      habilitado: true,
+      codTiendaVinculo: { not: null },
+      proveedor: { esFabrica: false },
+    },
+    select: { codTiendaVinculo: true },
+    distinct: ["codTiendaVinculo"],
+  });
+  return rows
+    .map((r) => (r.codTiendaVinculo ?? "").trim())
+    .filter((v) => v.length > 0);
+}
+
 function baseWhere(
   sucursal: SucursalReposicion,
   params: GetReposicionParams,
@@ -149,6 +164,10 @@ export async function getReposicionData(
     pagina: paginaNum,
   };
   const skip = (paginaNum - 1) * PAGE_SIZE;
+  const codTiendasVendedor = await listarCodTiendasConProveedorVendedor();
+  if (codTiendasVendedor.length === 0) {
+    return emptyReposicionData;
+  }
 
   const codTiendaMerc2 =
     configurado === "si"
@@ -175,7 +194,10 @@ export async function getReposicionData(
 
   const baseParts = baseWhere(sucursal, paramsNorm);
   const whereItems: Prisma.ProdTiendaWhereInput = (() => {
-    const parts = [...baseParts];
+    const parts: Prisma.ProdTiendaWhereInput[] = [
+      ...baseParts,
+      { codTienda: { in: codTiendasVendedor } },
+    ];
     if (configurado === "si") {
       // Si no hay configurados, devolvemos vacío rápido.
       if (codTiendaList.length === 0) return { codTienda: { in: ["__none__"] } };
@@ -191,7 +213,9 @@ export async function getReposicionData(
     const notNull = {
       [key]: { not: null },
     } as Prisma.ProdTiendaWhereInput;
-    const extra = [];
+    const extra: Prisma.ProdTiendaWhereInput[] = [
+      { codTienda: { in: codTiendasVendedor } },
+    ];
     if (configurado === "si") {
       if (codTiendaList.length === 0) return { codTienda: { in: ["__none__"] } };
       extra.push({ codTienda: { in: codTiendaList } });
@@ -390,9 +414,23 @@ export async function getProductosReposicionSelector(
   const codTiendasBulto = bultoRows.map((r) => r.codTienda).filter(Boolean);
   if (codTiendasBulto.length === 0) return [];
 
+  const proveedorRows = await prisma.listaPrecioProveedor.findMany({
+    where: {
+      habilitado: true,
+      codTiendaVinculo: { in: codTiendasBulto },
+      proveedor: { esFabrica: false },
+    },
+    select: { codTiendaVinculo: true },
+    distinct: ["codTiendaVinculo"],
+  });
+  const codTiendasPermitidos = proveedorRows
+    .map((r) => (r.codTiendaVinculo ?? "").trim())
+    .filter((v) => v.length > 0);
+  if (codTiendasPermitidos.length === 0) return [];
+
   const textFilter = filtroTexto(qNorm, ["descripcionTienda", "codTienda"]);
   const whereParts: Prisma.ProdTiendaWhereInput[] = [
-    { codTienda: { in: codTiendasBulto } },
+    { codTienda: { in: codTiendasPermitidos } },
   ];
   if (textFilter.AND?.length) whereParts.push(textFilter);
   const where: Prisma.ProdTiendaWhereInput =

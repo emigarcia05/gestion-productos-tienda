@@ -156,7 +156,11 @@ export async function existeListaPrecioParaReposicionCodTienda(
   if (!ct) return false;
 
   const vinculo = await prisma.listaPrecioProveedor.findFirst({
-    where: { codTiendaVinculo: ct, habilitado: true },
+    where: {
+      codTiendaVinculo: ct,
+      habilitado: true,
+      proveedor: { esFabrica: false },
+    },
     select: { codExt: true },
   });
   return vinculo != null;
