@@ -137,8 +137,8 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       )) ?? 0;
     // Regla de negocio:
     // - Solo pedir si stock <= punto de reposición.
-    // - CANT_FIJA_POR_BULTO / CANT_FIJA_POR_UNIDAD: pedir la cantidad configurada.
-    // - CANT_MAX: pedir faltante hasta la cantidad configurada.
+    // - POR_BULTO / UNIDADES_FIJAS: pedir la cantidad configurada.
+    // - UNIDADES_MAX: pedir faltante hasta la cantidad configurada.
     const cantPedir =
       stock <= punto
         ? esFormaCantFijaReposicion(formaPedir)
@@ -239,7 +239,7 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
 /**
  * Persiste **A FÁBRICA** en `prod_ped_merc` para todas las sucursales `pedido = true`.
  * Reutiliza `urgente_cod_ext` / `urgente_cant_pedir` (mismo patrón que URGENTE).
- * `reposicion_forma_pedido`: CANT_FIJA_POR_BULTO | CANT_FIJA_POR_UNIDAD (no CANT_MAX).
+ * `reposicion_forma_pedido`: POR_BULTO | UNIDADES_FIJAS (no UNIDADES_MAX).
  */
 export async function upsertPedidoMercaderiaAFabricaItem(params: {
   listaPrecioProveedorId: string;
@@ -272,7 +272,7 @@ export async function upsertPedidoMercaderiaAFabricaItem(params: {
     }
 
     let forma: ReposicionFormaPedidoFabrica =
-      params.formaPedir ?? "CANT_FIJA_POR_UNIDAD";
+      params.formaPedir ?? "UNIDADES_FIJAS";
     if (!params.formaPedir) {
       const existente = await prisma.prodPedMerc2.findFirst({
         where: {
@@ -282,7 +282,7 @@ export async function upsertPedidoMercaderiaAFabricaItem(params: {
         select: { reposicionFormaPedido: true },
       });
       const n = normalizarReposicionFormaPedido(existente?.reposicionFormaPedido);
-      if (n === "CANT_FIJA_POR_BULTO" || n === "CANT_FIJA_POR_UNIDAD") {
+      if (n === "POR_BULTO" || n === "UNIDADES_FIJAS") {
         forma = n;
       }
     }
@@ -367,7 +367,7 @@ export async function buildMapCantAPedirAFabricaPorProveedor(
     if (cant <= 0) continue;
     cantAPedirByCodExt[cod] = cant;
     const n = normalizarReposicionFormaPedido(r.reposicionFormaPedido);
-    if (n === "CANT_FIJA_POR_BULTO" || n === "CANT_FIJA_POR_UNIDAD") {
+    if (n === "POR_BULTO" || n === "UNIDADES_FIJAS") {
       formaPedirByCodExt[cod] = n;
     }
   }
@@ -536,9 +536,11 @@ export type ProveedorPedidoActivoOpcion = {
 export async function getProveedoresConPedidoActivo(params?: {
   sucursalCodigo?: string;
   tipos?: string[];
+  soloNoFabrica?: boolean;
 }): Promise<ProveedorPedidoActivoOpcion[]> {
   const sucursalCodigo = params?.sucursalCodigo?.trim() || "";
   const tipos = params?.tipos ?? [];
+  const soloNoFabrica = params?.soloNoFabrica === true;
   if (!sucursalCodigo || tipos.length === 0) return [];
 
   const { items } = await getItemsTablaEnviarPedido({
@@ -549,7 +551,11 @@ export async function getProveedoresConPedidoActivo(params?: {
   if (ids.length === 0) return [];
 
   const rows = await prisma.proveedor.findMany({
-    where: { id: { in: ids }, proveedorMercaderia: true },
+    where: {
+      id: { in: ids },
+      proveedorMercaderia: true,
+      ...(soloNoFabrica ? { esFabrica: false } : {}),
+    },
     select: { id: true, nombre: true, prefijo: true },
     orderBy: [{ prefijo: "asc" }, { nombre: "asc" }],
   });
@@ -579,7 +585,7 @@ function proveedorEtiquetaDesdeRow(p: {
 
 /**
  * Misma regla que `upsertPedidoMercaderiaReposicionConfig`: pedir solo si `stock <= punto`;
- * CANT_FIJA_* → cantidad configurada; CANT_MAX → `max(0, cantConf - stock)`.
+ * CANT_FIJA_* → cantidad configurada; UNIDADES_MAX → `max(0, cantConf - stock)`.
  */
 export function cantPedirReposicionMerc2(params: {
   forma: string | null | undefined;

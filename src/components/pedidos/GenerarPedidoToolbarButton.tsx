@@ -186,6 +186,7 @@ export default function GenerarPedidoToolbarButton({
         const res = await listarProveedoresConPedidoActivoAction({
           sucursal,
           tipos,
+          soloNoFabrica: modulo === "reposicion",
         });
         if (seq !== proveedoresSeqRef.current) return;
         setCargandoProveedores(false);
@@ -204,7 +205,7 @@ export default function GenerarPedidoToolbarButton({
     }, 280);
 
     return () => window.clearTimeout(timeoutId);
-  }, [open, sucursal, tipos]);
+  }, [open, sucursal, tipos, modulo]);
 
   const filtrosCompletos =
     !!sucursal && !!proveedor.trim() && tipos.length > 0;

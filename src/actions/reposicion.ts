@@ -441,7 +441,7 @@ export async function upsertReglaReposicion(raw: unknown): Promise<ActionResult<
   if (!(await sucursalPedidoHabilitada(sucursalCodigo))) {
     return { ok: false, error: "La sucursal no está habilitada para pedidos." };
   }
-  if (formaPedir === "CANT_FIJA_POR_BULTO") {
+  if (formaPedir === "POR_BULTO") {
     const bultosMap = await buildMapBultosProdTienda([codTienda]);
     const bulto = bultosMap.get(codTienda);
     if (bulto == null || bulto < 1) {

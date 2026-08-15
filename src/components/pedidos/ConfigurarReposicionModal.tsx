@@ -47,7 +47,7 @@ function formaPedirOptions(hayBulto: boolean): {
   return [
     { value: "", label: "—" },
     ...REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES.filter(
-      (value) => value !== "CANT_FIJA_POR_BULTO" || hayBulto
+      (value) => value !== "POR_BULTO" || hayBulto
     ).map((value) => ({
       value,
       label: REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS[value],
@@ -104,7 +104,7 @@ export default function ConfigurarReposicionModal({
   useEffect(() => {
     if (open) {
       const formaInicial =
-        item.formaPedir === "CANT_FIJA_POR_BULTO" &&
+        item.formaPedir === "POR_BULTO" &&
         !hayBultoConfigurado(item.bulto)
           ? ""
           : item.formaPedir || "";
@@ -131,13 +131,14 @@ export default function ConfigurarReposicionModal({
   ]);
 
   const nombreProducto = item.descripcionTienda ?? "—";
-  const esFormaBulto = formaPedir === "CANT_FIJA_POR_BULTO";
-  const esFormaUnidadesMaximas = formaPedir === "CANT_MAX";
+  const esFormaBulto = formaPedir === "POR_BULTO";
+  const esFormaUnidadesMaximas = formaPedir === "UNIDADES_MAX";
   const tituloCant = esFormaBulto ? "BULTO" : esFormaUnidadesMaximas ? "UN. MÁXIMAS" : "";
   const tieneConfigInicial = Boolean(item.idReposicion) || Boolean(item.formaPedir);
   const puntoResuelto = parsePuntoReposicionInput(puntoInput) !== null;
   const mostrarPunto = tieneConfigInicial || Boolean(formaPedir);
   const mostrarCant = tieneConfigInicial || (Boolean(formaPedir) && puntoResuelto);
+  const mostrarTotalEnUnidades = esFormaBulto && puntoResuelto;
   const invisPunto = !mostrarPunto;
   const invisCant = !mostrarCant;
   const bultoCantidad = parseCantReposicionInput(cantInput);
@@ -174,7 +175,7 @@ export default function ConfigurarReposicionModal({
       toast.error("Seleccioná Forma Pedir.");
       return;
     }
-    if (formaParsed.data === "CANT_FIJA_POR_BULTO" && !hayBulto) {
+    if (formaParsed.data === "POR_BULTO" && !hayBulto) {
       toast.error("BULTO solo está disponible si el producto tiene bulto configurado.");
       return;
     }
@@ -249,7 +250,7 @@ export default function ConfigurarReposicionModal({
               <div
                 className={cn(
                   "grid gap-4 items-center",
-                  esFormaBulto ? "grid-cols-4" : "grid-cols-3"
+                  esFormaBulto && mostrarTotalEnUnidades ? "grid-cols-4" : "grid-cols-3"
                 )}
               >
               <div className="flex flex-col items-center gap-1">
@@ -327,7 +328,7 @@ export default function ConfigurarReposicionModal({
                 />
               </div>
 
-              {esFormaBulto ? (
+              {mostrarTotalEnUnidades ? (
                 <div className="flex flex-col items-center gap-1">
                   <Label className={claseEtiquetaCampo}>
                     TOTAL EN UN.
@@ -347,10 +348,10 @@ export default function ConfigurarReposicionModal({
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="flex justify-end">
+              <div className="flex justify-center">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="default"
                   size="icon"
                   className="h-9 w-9 shrink-0"
                   onClick={() => setSelectorOpen(true)}

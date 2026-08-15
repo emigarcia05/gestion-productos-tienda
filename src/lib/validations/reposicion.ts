@@ -2,21 +2,21 @@ import { z } from "zod";
 
 /** Valores persistidos en `prod_ped_merc.reposicion_forma_pedido`. */
 export const REPOSICION_FORMA_PEDIDO_VALUES = [
-  "CANT_MAX",
-  "CANT_FIJA_POR_BULTO",
-  "CANT_FIJA_POR_UNIDAD",
+  "UNIDADES_MAX",
+  "POR_BULTO",
+  "UNIDADES_FIJAS",
 ] as const;
 
-/** Vendedor → Reposición: no incluye CANT_FIJA_POR_UNIDAD. */
+/** Vendedor → Reposición: no incluye UNIDADES_FIJAS. */
 export const REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES = [
-  "CANT_MAX",
-  "CANT_FIJA_POR_BULTO",
+  "UNIDADES_MAX",
+  "POR_BULTO",
 ] as const;
 
-/** Pedido A Fáb.: no incluye CANT_MAX. */
+/** Pedido A Fáb.: no incluye UNIDADES_MAX. */
 export const REPOSICION_FORMA_PEDIDO_FABRICA_VALUES = [
-  "CANT_FIJA_POR_BULTO",
-  "CANT_FIJA_POR_UNIDAD",
+  "POR_BULTO",
+  "UNIDADES_FIJAS",
 ] as const;
 
 export const reposicionFormaPedidoSchema = z.enum(REPOSICION_FORMA_PEDIDO_VALUES);
@@ -36,9 +36,9 @@ export type ReposicionFormaPedidoFabrica = z.infer<
 >;
 
 export const REPOSICION_FORMA_PEDIDO_LABELS: Record<ReposicionFormaPedido, string> = {
-  CANT_MAX: "CANT. MAX.",
-  CANT_FIJA_POR_BULTO: "CANT. FIJA POR BULTO",
-  CANT_FIJA_POR_UNIDAD: "CANT. FIJA POR UNID.",
+  UNIDADES_MAX: "UN. MÁXIMAS",
+  POR_BULTO: "POR BULTO",
+  UNIDADES_FIJAS: "UNIDADES FIJAS",
 };
 
 /** Labels cortos de FORMA PEDIR en Pedido A Fáb. */
@@ -46,8 +46,8 @@ export const REPOSICION_FORMA_PEDIDO_FABRICA_LABELS: Record<
   ReposicionFormaPedidoFabrica,
   string
 > = {
-  CANT_FIJA_POR_BULTO: "BULTO",
-  CANT_FIJA_POR_UNIDAD: "UNIDAD",
+  POR_BULTO: "BULTO",
+  UNIDADES_FIJAS: "UNIDAD",
 };
 
 /** Labels de FORMA PEDIR en Configurar Reposición (vendedor). */
@@ -55,8 +55,8 @@ export const REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS: Record<
   ReposicionFormaPedidoVendedor,
   string
 > = {
-  CANT_MAX: "UN. MÁXIMAS",
-  CANT_FIJA_POR_BULTO: "BULTO",
+  UNIDADES_MAX: "UN. MÁXIMAS",
+  POR_BULTO: "BULTO",
 };
 
 /** Lee valor persistido (incluye alias previos a la migración). */
@@ -64,13 +64,25 @@ export function normalizarReposicionFormaPedido(
   raw: string | null | undefined
 ): ReposicionFormaPedido | null {
   const v = (raw ?? "").trim().toUpperCase();
-  if (v === "CANT_MAX" || v === "CANT_MAXIMA" || v === "CANT. MAX.") {
-    return "CANT_MAX";
+  if (
+    v === "UNIDADES_MAX" ||
+    v === "CANT_MAX" ||
+    v === "CANT_MAXIMA" ||
+    v === "CANT. MAX."
+  ) {
+    return "UNIDADES_MAX";
   }
-  if (v === "CANT_FIJA_POR_BULTO" || v === "CANT_FIJA" || v === "CANT. FIJA") {
-    return "CANT_FIJA_POR_BULTO";
+  if (
+    v === "POR_BULTO" ||
+    v === "CANT_FIJA_POR_BULTO" ||
+    v === "CANT_FIJA" ||
+    v === "CANT. FIJA"
+  ) {
+    return "POR_BULTO";
   }
-  if (v === "CANT_FIJA_POR_UNIDAD") return "CANT_FIJA_POR_UNIDAD";
+  if (v === "UNIDADES_FIJAS" || v === "CANT_FIJA_POR_UNIDAD") {
+    return "UNIDADES_FIJAS";
+  }
   return null;
 }
 
@@ -85,7 +97,7 @@ export function labelReposicionFormaPedidoVendedor(
   raw: string | null | undefined
 ): string {
   const n = normalizarReposicionFormaPedido(raw);
-  if (n === "CANT_MAX" || n === "CANT_FIJA_POR_BULTO") {
+  if (n === "UNIDADES_MAX" || n === "POR_BULTO") {
     return REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS[n];
   }
   return "";
@@ -94,9 +106,7 @@ export function labelReposicionFormaPedidoVendedor(
 export function esFormaCantFijaReposicion(
   forma: ReposicionFormaPedido
 ): boolean {
-  return (
-    forma === "CANT_FIJA_POR_BULTO" || forma === "CANT_FIJA_POR_UNIDAD"
-  );
+  return forma === "POR_BULTO" || forma === "UNIDADES_FIJAS";
 }
 
 export const sucursalReposicionSchema = z.enum(["guaymallen", "maipu"]);

@@ -300,7 +300,7 @@ export default function PedidoAFabricaPageClient({
     persistPedidoAFabrica(
       codExt,
       value,
-      formaPedirRef.current[codExt] ?? "CANT_FIJA_POR_UNIDAD"
+      formaPedirRef.current[codExt] ?? "UNIDADES_FIJAS"
     );
   }
 

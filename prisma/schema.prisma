@@ -1054,7 +1054,7 @@ model ImportProgress {
 /**
  * Pedidos de mercadería (REPOSICION | URGENTE | TINTOMETRICO | A FÁBRICA). Tabla física `prod_ped_merc`.
  * `tipo_de_pedido`: CHECK en migraciones SQL.
- * `reposicion_forma_pedido`: CANT_MAX | CANT_FIJA_POR_BULTO | CANT_FIJA_POR_UNIDAD.
+ * `reposicion_forma_pedido`: UNIDADES_MAX | POR_BULTO | UNIDADES_FIJAS.
  */
 model ProdPedMerc2 {
   id                       String  @id @default(uuid())

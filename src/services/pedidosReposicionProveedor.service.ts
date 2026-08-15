@@ -90,7 +90,11 @@ export async function cargarListaPrecioReposicionPorCodTiendas(
   if (keys.length === 0) return new Map();
 
   const filas = await prisma.listaPrecioProveedor.findMany({
-    where: { codTiendaVinculo: { in: keys }, habilitado: true },
+    where: {
+      codTiendaVinculo: { in: keys },
+      habilitado: true,
+      proveedor: { esFabrica: false },
+    },
     select: selectListaPrecioReposicion,
     orderBy: [{ codTiendaVinculo: "asc" }, { idProveedor: "asc" }],
   });
