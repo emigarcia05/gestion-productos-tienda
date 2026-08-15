@@ -200,13 +200,14 @@ export async function listarProveedoresConPedidoActivoAction(
   if (!parsed.success) {
     return { ok: false, error: "Datos inválidos." };
   }
-  const { sucursal, tipos } = parsed.data;
+  const { sucursal, tipos, soloNoFabrica } = parsed.data;
   if (!(await sucursalPedidoHabilitada(sucursal))) {
     return { ok: false, error: "La sucursal no está habilitada para pedidos." };
   }
   const proveedores = await getProveedoresConPedidoActivo({
     sucursalCodigo: sucursal,
     tipos,
+    soloNoFabrica,
   });
   return { ok: true, data: { proveedores } };
 }

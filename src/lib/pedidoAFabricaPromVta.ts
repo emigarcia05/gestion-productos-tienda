@@ -256,7 +256,7 @@ export function redondearCantSugeridaPorFormaPedidoAFabrica(
   bulto: number | null
 ): number | null {
   if (!Number.isFinite(crudo) || crudo < 0) return null;
-  if (forma === "CANT_FIJA_POR_UNIDAD") {
+  if (forma === "UNIDADES_FIJAS") {
     return Math.ceil(crudo);
   }
   if (bulto == null || !Number.isFinite(bulto) || bulto < 1) return null;

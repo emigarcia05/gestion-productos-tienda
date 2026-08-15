@@ -16,6 +16,7 @@ export const proveedorIdPedidoSchema = prismaCuidSchema;
 export const listarProveedoresConPedidoActivoSchema = z.object({
   sucursal: sucursalPedidoCodigoSchema,
   tipos: tiposPedidoMercaderiaSchema,
+  soloNoFabrica: z.boolean().optional().default(false),
 });
 
 export const comprobarItemsParaGenerarPedidoSchema = z.object({

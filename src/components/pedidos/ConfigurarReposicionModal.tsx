@@ -47,7 +47,7 @@ function formaPedirOptions(hayBulto: boolean): {
   return [
     { value: "", label: "—" },
     ...REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES.filter(
-      (value) => value !== "CANT_FIJA_POR_BULTO" || hayBulto
+      (value) => value !== "POR_BULTO" || hayBulto
     ).map((value) => ({
       value,
       label: REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS[value],
@@ -104,7 +104,7 @@ export default function ConfigurarReposicionModal({
   useEffect(() => {
     if (open) {
       const formaInicial =
-        item.formaPedir === "CANT_FIJA_POR_BULTO" &&
+        item.formaPedir === "POR_BULTO" &&
         !hayBultoConfigurado(item.bulto)
           ? ""
           : item.formaPedir || "";
@@ -131,24 +131,23 @@ export default function ConfigurarReposicionModal({
   ]);
 
   const nombreProducto = item.descripcionTienda ?? "—";
-  const tituloCant =
-    formaPedir
-      ? opcionesForma.find((o) => o.value === formaPedir)?.label ?? ""
-      : "";
+  const esFormaBulto = formaPedir === "POR_BULTO";
+  const esFormaUnidadesMaximas = formaPedir === "UNIDADES_MAX";
+  const tituloCant = esFormaBulto ? "BULTO" : esFormaUnidadesMaximas ? "UN. MÁXIMAS" : "";
   const tieneConfigInicial = Boolean(item.idReposicion) || Boolean(item.formaPedir);
   const puntoResuelto = parsePuntoReposicionInput(puntoInput) !== null;
   const mostrarPunto = tieneConfigInicial || Boolean(formaPedir);
   const mostrarCant = tieneConfigInicial || (Boolean(formaPedir) && puntoResuelto);
+  const mostrarTotalEnUnidades = esFormaBulto && puntoResuelto;
   const invisPunto = !mostrarPunto;
   const invisCant = !mostrarCant;
-  const esFormaBulto = formaPedir === "CANT_FIJA_POR_BULTO";
-  const cantResuelta = parseCantReposicionInput(cantInput);
-  const totalUnidades =
-    esFormaBulto && item.bulto != null && item.bulto >= 1 && cantResuelta != null
-      ? cantResuelta * item.bulto
+  const bultoCantidad = parseCantReposicionInput(cantInput);
+  const totalEnUnidades =
+    esFormaBulto && item.bulto != null && bultoCantidad !== null
+      ? bultoCantidad * item.bulto
       : null;
-  const bultoFiltroSelector =
-    esFormaBulto && item.bulto != null && item.bulto >= 1 ? item.bulto : null;
+  const claseEtiquetaCampo =
+    "min-h-10 justify-center px-1 text-xs font-medium text-foreground text-center leading-tight";
 
   const handleAgregarProductos = (seleccionados: ItemSelectorReposicion[]) => {
     setProductosAdicionales((prev) => {
@@ -176,7 +175,7 @@ export default function ConfigurarReposicionModal({
       toast.error("Seleccioná Forma Pedir.");
       return;
     }
-    if (formaParsed.data === "CANT_FIJA_POR_BULTO" && !hayBulto) {
+    if (formaParsed.data === "POR_BULTO" && !hayBulto) {
       toast.error("BULTO solo está disponible si el producto tiene bulto configurado.");
       return;
     }
@@ -251,13 +250,11 @@ export default function ConfigurarReposicionModal({
               <div
                 className={cn(
                   "grid gap-4 items-center",
-                  esFormaBulto
-                    ? "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
-                    : "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
+                  esFormaBulto && mostrarTotalEnUnidades ? "grid-cols-4" : "grid-cols-3"
                 )}
               >
               <div className="flex flex-col items-center gap-1">
-                <Label className="text-xs font-medium text-foreground text-center">
+                <Label className={claseEtiquetaCampo}>
                   FORMA PEDIR
                 </Label>
                 <Select
@@ -294,8 +291,8 @@ export default function ConfigurarReposicionModal({
                 )}
                 aria-hidden={invisPunto}
               >
-                <Label className="text-xs font-medium text-foreground text-center">
-                  {esFormaBulto ? "PUNTO REPOSIC. (EN UN.)" : "PUNTO REPOSIC."}
+                <Label className={claseEtiquetaCampo}>
+                  {esFormaBulto ? "PUNTO REPOSICIÓN (EN UN.)" : "PUNTO REPOSICIÓN"}
                 </Label>
                 <Input
                   type="number"
@@ -316,7 +313,7 @@ export default function ConfigurarReposicionModal({
                 )}
                 aria-hidden={invisCant}
               >
-                <Label className="text-xs font-medium text-foreground text-center">
+                <Label className={claseEtiquetaCampo}>
                   {tituloCant}
                 </Label>
                 <Input
@@ -331,24 +328,19 @@ export default function ConfigurarReposicionModal({
                 />
               </div>
 
-              {esFormaBulto ? (
-                <div
-                  className={cn(
-                    "flex flex-col items-center gap-1",
-                    invisCant && "invisible pointer-events-none select-none"
-                  )}
-                  aria-hidden={invisCant}
-                >
-                  <Label className="text-xs font-medium text-foreground text-center">
-                    TOTAL UNIDADES
+              {mostrarTotalEnUnidades ? (
+                <div className="flex flex-col items-center gap-1">
+                  <Label className={claseEtiquetaCampo}>
+                    TOTAL EN UN.
                   </Label>
                   <Input
                     type="text"
+                    value={totalEnUnidades === null ? "" : fmtNumero(totalEnUnidades)}
                     readOnly
-                    value={totalUnidades == null ? "" : fmtNumero(totalUnidades)}
+                    aria-readonly="true"
                     className="tabular-nums text-center"
-                    aria-label="Total unidades"
-                    tabIndex={-1}
+                    aria-label="Total en unidades"
+                    tabIndex={0}
                   />
                 </div>
               ) : null}
@@ -356,6 +348,18 @@ export default function ConfigurarReposicionModal({
             </div>
 
             <div className="flex flex-col gap-2">
+              <div className="flex justify-center">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => setSelectorOpen(true)}
+                  aria-label="Agregar productos con esta configuración"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
               <div className="border border-border rounded-lg overflow-auto max-h-64">
                 <Table variant="compact" scrollX={false} className="w-full tabla-gestion-compacta">
                   <TableHeader>
@@ -408,18 +412,6 @@ export default function ConfigurarReposicionModal({
                   </TableBody>
                 </Table>
               </div>
-              <div className="flex justify-center">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 shrink-0"
-                  onClick={() => setSelectorOpen(true)}
-                  aria-label="Abrir selector de productos"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
           </div>
         </AppModal>
@@ -429,9 +421,9 @@ export default function ConfigurarReposicionModal({
         open={selectorOpen}
         onOpenChange={setSelectorOpen}
         sucursal={sucursal}
+        bultoReferencia={item.bulto ?? null}
         onConfirmar={handleAgregarProductos}
         excludeIds={[item.idListaTienda]}
-        bultoIgualA={bultoFiltroSelector}
       />
     </>
   );

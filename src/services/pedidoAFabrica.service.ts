@@ -69,7 +69,7 @@ export type ProductosPedidoAFabricaResult = {
   subRubros: string[];
   /** Cantidades `A FÁBRICA` persistidas en `prod_ped_merc` (`cod_ext` → cant). */
   cantAPedirByCodExt: Record<string, number>;
-  /** Forma pedir de filas A FÁBRICA (`CANT_FIJA_POR_BULTO` | `CANT_FIJA_POR_UNIDAD`). */
+  /** Forma pedir de filas A FÁBRICA (`POR_BULTO` | `UNIDADES_FIJAS`). */
   formaPedirByCodExt: Record<string, ReposicionFormaPedidoFabrica>;
 };
 

@@ -313,7 +313,7 @@ export default function TablaPedidoAFabrica({
                 const stockQuebrado =
                   esStockQuebradoPedidoAFabrica(stockHastaLlegada);
                 const formaPedir =
-                  formaPedirByCodExt[p.codExt] ?? "CANT_FIJA_POR_UNIDAD";
+                  formaPedirByCodExt[p.codExt] ?? "UNIDADES_FIJAS";
                 const cantSugerida = resolverCantSugeridaPedidoAFabrica(
                   {
                     stockActual: stockUnidades ?? 0,
@@ -510,8 +510,8 @@ export default function TablaPedidoAFabrica({
         formaPedir={
           detalleProducto
             ? (formaPedirByCodExt[detalleProducto.codExt] ??
-              "CANT_FIJA_POR_UNIDAD")
-            : "CANT_FIJA_POR_UNIDAD"
+              "UNIDADES_FIJAS")
+            : "UNIDADES_FIJAS"
         }
       />
     </div>
