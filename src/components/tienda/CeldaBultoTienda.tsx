@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import EnteroStepperInput from "@/components/shared/EnteroStepperInput";
@@ -30,18 +30,17 @@ export default function CeldaBultoTienda({
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState(() => bultoADraft(bulto));
+  const committedRef = useRef(bulto);
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    setDraft(bultoADraft(bulto));
-  }, [bulto]);
 
   function persist(nextRaw: string) {
     const parsed = draftABulto(nextRaw);
-    if (parsed === bulto || (parsed == null && bulto == null)) {
-      setDraft(bultoADraft(bulto));
+    const actual = committedRef.current;
+    if (parsed === actual || (parsed == null && actual == null)) {
+      setDraft(bultoADraft(actual));
       return;
     }
+    committedRef.current = parsed;
     startTransition(async () => {
       const res = await guardarBultoTiendaAction({
         codTienda,
@@ -49,9 +48,11 @@ export default function CeldaBultoTienda({
       });
       if (!res.ok) {
         toast.error(res.error);
+        committedRef.current = bulto;
         setDraft(bultoADraft(bulto));
         return;
       }
+      committedRef.current = res.data.bulto;
       setDraft(bultoADraft(res.data.bulto));
       router.refresh();
     });

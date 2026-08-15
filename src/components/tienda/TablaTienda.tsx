@@ -16,6 +16,7 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import CeldaCxProdTienda from "@/components/shared/CeldaCxProdTienda";
+import CeldaBultoTienda from "@/components/tienda/CeldaBultoTienda";
 import CxCompraVinculosDetalle, {
   recargarVinculosItemTienda,
 } from "@/components/tienda/CxCompraVinculosDetalle";
@@ -32,8 +33,8 @@ import {
 } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
-const COL_COUNT = 5;
-const COL_WIDTHS = [12, 38, 10, 28, 12] as const;
+const COL_COUNT = 6;
+const COL_WIDTHS = [11, 32, 9, 22, 12, 14] as const;
 
 const MENSAJE_SIN_FILTRO =
   "Aplicá al menos un filtro (Marca, Rubro, Sub-rubro o búsqueda) para ver los productos.";
@@ -129,6 +130,17 @@ function FilaTienda({
             ) : null}
           </div>
         </TableCell>
+        <TableCell
+          className="celda-datos tabla-bloque-secundario-cell-divider"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <CeldaBultoTienda
+            key={`${item.codItem}-${item.bulto ?? ""}`}
+            codTienda={item.codItem}
+            bulto={item.bulto}
+            puedeEditar={puedeEditarCxProd}
+          />
+        </TableCell>
       </TableRow>
       {expandido ? (
         <CxCompraVinculosDetalle
@@ -220,6 +232,9 @@ export default function TablaTienda({
             </TableHead>
             <TableHead className="text-center tabla-bloque-secundario-head-divider">
               ACCIONES
+            </TableHead>
+            <TableHead className="text-center tabla-bloque-secundario-head-divider">
+              BULTO
             </TableHead>
           </TableRow>
         </TableHeader>

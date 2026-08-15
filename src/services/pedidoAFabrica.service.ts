@@ -14,6 +14,7 @@ import {
   getIdDepositoPorSucursalCodigo,
 } from "@/services/prodTiendaStock.service";
 import { buildMapCantAPedirAFabricaPorProveedor } from "@/services/pedidosEnvio.service";
+import { buildMapBultosProdTienda } from "@/services/tiendaBultos.service";
 import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
 
 export type SucursalPedidoAFabrica = {
@@ -40,6 +41,8 @@ export type ProductoPedidoAFabricaItem = {
    */
   descripcion: string;
   codTienda: string | null;
+  /** Unidades por bulto (`prod_tienda_bultos`); `null` = sin configurar. */
+  bulto: number | null;
   /** Clave = `sucursal.id`. */
   porSucursal: Record<string, DatosSucursalProductoPedidoAFabrica>;
 };
@@ -285,10 +288,13 @@ export async function listarProductosPorProveedorFabrica(
     })
   );
 
-  const promMap = await buildMapPromVtaDiaria(
-    codTiendas,
-    sucursales.map((s) => s.id)
-  );
+  const [promMap, bultosMap] = await Promise.all([
+    buildMapPromVtaDiaria(
+      codTiendas,
+      sucursales.map((s) => s.id)
+    ),
+    buildMapBultosProdTienda(codTiendas),
+  ]);
 
   const productos: ProductoPedidoAFabricaItem[] = filas.map((f) => {
     const codTienda = f.codTiendaVinculo?.trim() || null;
@@ -309,6 +315,7 @@ export async function listarProductosPorProveedorFabrica(
       codExt: f.codExt,
       descripcion,
       codTienda,
+      bulto: codTienda ? (bultosMap.get(codTienda) ?? null) : null,
       porSucursal,
     };
   });

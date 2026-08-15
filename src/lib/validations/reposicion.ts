@@ -41,6 +41,15 @@ export const REPOSICION_FORMA_PEDIDO_LABELS: Record<ReposicionFormaPedido, strin
   CANT_FIJA_POR_UNIDAD: "CANT. FIJA POR UNID.",
 };
 
+/** Labels cortos del desplegable FORMA PEDIR en Pedido A Fáb. (vendedor sigue usando los de arriba). */
+export const REPOSICION_FORMA_PEDIDO_FABRICA_LABELS: Record<
+  ReposicionFormaPedidoFabrica,
+  string
+> = {
+  CANT_FIJA_POR_BULTO: "Bulto",
+  CANT_FIJA_POR_UNIDAD: "Unidad",
+};
+
 /** Lee valor persistido (incluye alias previos a la migración). */
 export function normalizarReposicionFormaPedido(
   raw: string | null | undefined

@@ -323,7 +323,7 @@ export default function PedidoAFabricaPageClient({
     persistPedidoAFabrica(codExt, cantRaw, forma);
   }
 
-  function handleCantAPedirChange(codExt: string, value: string) {
+  function applyCantAPedirLocal(codExt: string, value: string) {
     setCantAPedirByCodExt((prev) => {
       if (value === "") {
         if (!(codExt in prev)) return prev;
@@ -333,15 +333,20 @@ export default function PedidoAFabricaPageClient({
       }
       return { ...prev, [codExt]: value };
     });
+  }
+
+  function handleCantAPedirChange(codExt: string, value: string) {
+    applyCantAPedirLocal(codExt, value);
+  }
+
+  function handleCantAPedirCommit(codExt: string, value: string) {
+    applyCantAPedirLocal(codExt, value);
     persistCantAPedir(codExt, value);
   }
 
   function handleAplicarCantSugerida(codExt: string, cantSugerida: number) {
     const value = String(cantSugerida);
-    setCantAPedirByCodExt((prev) => ({
-      ...prev,
-      [codExt]: value,
-    }));
+    applyCantAPedirLocal(codExt, value);
     persistCantAPedir(codExt, value);
   }
 
@@ -784,6 +789,7 @@ export default function PedidoAFabricaPageClient({
             cantAPedirByCodExt={cantAPedirByCodExt}
             formaPedirByCodExt={formaPedirByCodExt}
             onCantAPedirChange={handleCantAPedirChange}
+            onCantAPedirCommit={handleCantAPedirCommit}
             onFormaPedirChange={handleFormaPedirChange}
             onAplicarCantSugerida={handleAplicarCantSugerida}
           />

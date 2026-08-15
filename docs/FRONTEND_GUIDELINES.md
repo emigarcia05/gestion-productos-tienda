@@ -158,7 +158,7 @@ Aliases viejos (`/pedidos/*`, `/proveedores`, `/proveedores/gestion`, `/finanzas
 | `.btn-primario-gestion` | CTA toolbar legacy; nuevas toolbars → `ToolbarActionButton` |
 | `--gris` `--gris-inset` `--primary` | Lienzo / inset / marca |
 
-Variantes de tabla (misma familia compacta): `tabla-flujo-de-fondo`, `tabla-deuda-proveedores`, `tabla-recepcion-pedido`, `tabla-est-carga-datos`, `tabla-px-competencia-listado`, `tabla-px-listas-*`, `tabla-fin-ana-margen-contribucion`, `tabla-vinculos-modal`.
+Variantes de tabla (misma familia compacta): `tabla-flujo-de-fondo`, `tabla-deuda-proveedores`, `tabla-recepcion-pedido`, `tabla-est-carga-datos`, `tabla-px-competencia-listado`, `tabla-px-listas-*`, `tabla-fin-ana-margen-contribucion`, `tabla-vinculos-modal`, `tabla-tienda-listado`.
 
 ### 2.2 `@/lib/ui-classes`
 
@@ -186,6 +186,7 @@ Nuevo shared: CVA + tokens + `"use client"` solo si hay estado/hooks. Documentar
 | `FiltroRangoFechasCalendarioModal` | Rango de fechas |
 | `TablaSubencabezadoSeccionRow` | Subencabezado en tbody |
 | `CeldaDifPct` / `CeldaCxProdTienda` | Celdas de variación / Cx |
+| `EnteroStepperInput` | Entero − / número / + (mismo patrón que Control Stock). Vacío permitido; el padre persiste en `onCommit` |
 | `catalogo-finder/*` | Finder |
 | `SidebarAreaSwitcher` / `SidebarMainAppArea` | Dock sesión / Pendientes (Pedido → proveedor → tipos) |
 | `ReposicionProveedorPrioritarioModal` / `SobreStockReposicionAdvertenciaModal` | Confirmaciones al generar pedido |
@@ -209,7 +210,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 
 ### Tienda / precios
 
-- **Cx Compra:** Link2 → `SeleccionarProductoModal`. Vínculos en subfilas `CxCompraVinculosDetalle` (no modal de lista). CX PROD. = BASE + variación. Header **Act. Cx.** (`ActCxButton`).
+- **Cx Compra:** 6 columnas (`tabla-tienda-listado`, colgroup 11/32/9/22/12/14 %). Link2 → `SeleccionarProductoModal`. Vínculos en subfilas `CxCompraVinculosDetalle` (no modal de lista; `colSpan` 6; hueca extra en BULTO). CX PROD. = BASE + variación. **BULTO** a la derecha de ACCIONES: `CeldaBultoTienda` + `EnteroStepperInput`; vacío = sin fila en `prod_tienda_bultos`. Header **Act. Cx.** (`ActCxButton`).
 - **Px Listas** (`px-listas-precios/`): columnas fijas sticky 50% (DESCRIPCIÓN + CATEGORÍA M.C.) + listas DUX (PX / PORC. UTILIDAD; GENERAL + REF.). Staging `prod_tienda_precios_edicion`. Header **Act. Px.** → Excel por lista.
 - **Px Competencia** (`PxCompetenciaPageClient` en `/tienda/cx-px`; **no** confundir con Px Listas): solo `comparar_competencia = true`. Filtros MARCA / RUBRO / PX PROMEDIO + búsqueda. Grilla DESCRIPCIÓN / PX PROMEDIO / DIF TIENDA / ACCIONES. Banner `CompetenciaSyncProgresoBanner`. UI en `px-competencia/` (`FiltrosPxCompetencia`, `TablaPxCompetencia`) + modales en `precios-competencia/`. Actions/servicios: `pxCompetencia.ts`, `pxCompetenciaPage.service.ts`. URL interna `/tienda/cx-px` (no renombrar).
 - **Px Sugeridos:** `habilitado = true`; DESCRIPCIÓN = `descripcion_tienda` fallback proveedor; `px_vta_sugerido` nulo → celda vacía.
@@ -240,7 +241,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Carga De Datos:** grilla periodo × sucursal (`tabla-est-carga-datos`); celda pendiente `.celda-est-carga-pendiente`.
 - **Configuracion:** `FilaFiltrosDesplegables` `columnas={6}` + búsqueda.
 - **Ventas:** dos FilterBar + tres gráficos (clases `.est-vtas-*`).
-- **Pedido A Fáb.:** dos FilterBar; CANT. PEDIR debounce a `prod_ped_merc` tipo A FÁBRICA; columna FORMA PEDIR (**CANT. FIJA POR BULTO** / **CANT. FIJA POR UNID.**, no CANT. MAX.); header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
+- **Pedido A Fáb.:** dos FilterBar; COMPRA = FORMA PEDIR (**Bulto** / **Unidad**, persiste `CANT_FIJA_POR_BULTO` / `CANT_FIJA_POR_UNIDAD`) | BULTO (solo si Bulto: valor de `prod_tienda_bultos`) | CANT. PEDIR (`EnteroStepperInput`, debounce a `prod_ped_merc` tipo A FÁBRICA) | CANT. SUGERIDA (cálculo actual; lógica nueva pendiente). Header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
 
 ### Marketing
 

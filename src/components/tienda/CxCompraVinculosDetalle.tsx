@@ -163,6 +163,7 @@ function SubfilaVinculo({
           </div>
         ) : null}
       </TableCell>
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
     </TableRow>
   );
 }
@@ -183,6 +184,7 @@ export function CxCompraDetallePropio() {
         </p>
       </TableCell>
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
     </TableRow>
   );
 }
@@ -202,6 +204,7 @@ export function CxCompraDetalleVacio({ codTienda }: { codTienda: string }) {
           Sin vínculos con proveedores para {codTienda}.
         </p>
       </TableCell>
+      <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
       <TableCell className={cn("celda-datos", SUBFILA_CELDA_HUECA_CLASS)} aria-hidden />
     </TableRow>
   );
@@ -295,7 +298,7 @@ export default function CxCompraVinculosDetalle({
   if (cargando) {
     return (
       <TableRow className={cn(SUBFILA_DETALLE_CLASS, "hover:bg-transparent")}>
-        <TableCell colSpan={5} className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}>
+        <TableCell colSpan={6} className={cn("celda-datos", SUBFILA_CELDA_BLOQUE_CLASS)}>
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
             Cargando vínculos...

@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { Check, Info, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -13,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import PaginacionClient from "@/components/shared/PaginacionClient";
+import EnteroStepperInput from "@/components/shared/EnteroStepperInput";
 import DetalleSucursalesPedidoAFabricaModal from "@/components/pedido-a-fabrica/DetalleSucursalesPedidoAFabricaModal";
 import { cn } from "@/lib/utils";
 import { fmtNumero } from "@/lib/format";
@@ -38,8 +38,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  REPOSICION_FORMA_PEDIDO_FABRICA_LABELS,
   REPOSICION_FORMA_PEDIDO_FABRICA_VALUES,
-  REPOSICION_FORMA_PEDIDO_LABELS,
   reposicionFormaPedidoFabricaSchema,
   type ReposicionFormaPedidoFabrica,
 } from "@/lib/validations/reposicion";
@@ -71,29 +71,26 @@ interface Props {
   cantAPedirByCodExt: Record<string, string>;
   formaPedirByCodExt: Record<string, ReposicionFormaPedidoFabrica>;
   onCantAPedirChange: (codExt: string, value: string) => void;
+  onCantAPedirCommit: (codExt: string, value: string) => void;
   onFormaPedirChange: (codExt: string, forma: ReposicionFormaPedidoFabrica) => void;
   onAplicarCantSugerida: (codExt: string, cantSugerida: number) => void;
 }
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
-/** Anchos fijos (suma 100 %). */
-const PCT_DESC = 47;
-const PCT_STOCK_UNIDADES = 7;
-const PCT_STOCK_DIAS = 7;
-const PCT_STOCK_HASTA_LLEGADA = 7;
+/** Anchos fijos (suma 100 %). COMPRA: FORMA PEDIR | BULTO | CANT. PEDIR | CANT. SUGERIDA. */
+const PCT_DESC = 40;
+const PCT_STOCK_UNIDADES = 6;
+const PCT_STOCK_DIAS = 6;
+const PCT_STOCK_HASTA_LLEGADA = 8;
+const PCT_FORMA = 9;
+const PCT_BULTO = 6;
+const PCT_CANT_PEDIR = 12;
 const PCT_CANT_SUGERIDA = 7;
-const PCT_CANT_PEDIR = 7;
-const PCT_FORMA = 12;
 const PCT_TILDE = 3;
 const PCT_INFO = 3;
 
-const COL_COUNT = 9;
-
-/** Solo dígitos (enteros ≥ 0); vacío permitido. */
-function sanitizeCantAPedirInput(raw: string): string {
-  return raw.replace(/\D/g, "");
-}
+const COL_COUNT = 10;
 
 /** Suma de STOCK ACTUAL y PROM. VTA. de todas las sucursales de la fila. */
 export function totalPorSucursalesPedidoAFabrica(
@@ -156,7 +153,8 @@ function productoPasaFiltrosDerivados(
 /**
  * Grilla Pedido A Fáb.
  * **DESCRIPCIÓN** (aviso stock quebrado) · **STOCK ACTUAL**
- * · **STOCK HASTA LLEGADA DE PEDIDO** · **COMPRA** · tilde · Info.
+ * · **STOCK HASTA LLEGADA DE PEDIDO** · **COMPRA** (FORMA PEDIR / BULTO / CANT. PEDIR / CANT. SUGERIDA)
+ * · tilde · Info.
  * (PROM. VTA. se calcula en backend/cliente pero no se muestra como columna.)
  */
 export default function TablaPedidoAFabrica({
@@ -174,6 +172,7 @@ export default function TablaPedidoAFabrica({
   cantAPedirByCodExt,
   formaPedirByCodExt,
   onCantAPedirChange,
+  onCantAPedirCommit,
   onFormaPedirChange,
   onAplicarCantSugerida,
 }: Props) {
@@ -220,9 +219,10 @@ export default function TablaPedidoAFabrica({
             <col style={{ width: `${PCT_STOCK_UNIDADES}%` }} />
             <col style={{ width: `${PCT_STOCK_DIAS}%` }} />
             <col style={{ width: `${PCT_STOCK_HASTA_LLEGADA}%` }} />
-            <col style={{ width: `${PCT_CANT_SUGERIDA}%` }} />
-            <col style={{ width: `${PCT_CANT_PEDIR}%` }} />
             <col style={{ width: `${PCT_FORMA}%` }} />
+            <col style={{ width: `${PCT_BULTO}%` }} />
+            <col style={{ width: `${PCT_CANT_PEDIR}%` }} />
+            <col style={{ width: `${PCT_CANT_SUGERIDA}%` }} />
             <col style={{ width: `${PCT_TILDE}%` }} />
             <col style={{ width: `${PCT_INFO}%` }} />
           </colgroup>
@@ -244,7 +244,7 @@ export default function TablaPedidoAFabrica({
                 STOCK HASTA LLEGADA DE PEDIDO
               </TableHead>
               <TableHead
-                colSpan={3}
+                colSpan={4}
                 className="text-center align-middle tabla-bloque-secundario-head-divider"
               >
                 COMPRA
@@ -276,13 +276,16 @@ export default function TablaPedidoAFabrica({
                 EN DÍAS
               </TableHead>
               <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                CANT. SUGERIDA
+                FORMA PEDIR
+              </TableHead>
+              <TableHead className="text-center tabla-bloque-secundario-head-divider">
+                BULTO
               </TableHead>
               <TableHead className="text-center tabla-bloque-secundario-head-divider">
                 CANT. PEDIR
               </TableHead>
               <TableHead className="text-center tabla-bloque-secundario-head">
-                FORMA PEDIR
+                CANT. SUGERIDA
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -330,6 +333,9 @@ export default function TablaPedidoAFabrica({
                 });
                 const cantSugerida = calc?.cantSugerida ?? null;
                 const cantAPedirRaw = cantAPedirByCodExt[p.codExt] ?? "";
+                const formaPedir =
+                  formaPedirByCodExt[p.codExt] ?? "CANT_FIJA_POR_UNIDAD";
+                const pidePorBulto = formaPedir === "CANT_FIJA_POR_BULTO";
 
                 return (
                   <TableRow key={p.codExt}>
@@ -384,39 +390,9 @@ export default function TablaPedidoAFabrica({
                     >
                       {fmtNumero(stockHastaLlegada)}
                     </TableCell>
-                    <TableCell
-                      className={cn(
-                        TD_NUM,
-                        "tabla-bloque-secundario-cell-divider"
-                      )}
-                    >
-                      {cantSugerida != null ? fmtNumero(cantSugerida) : ""}
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        "celda-datos tabla-bloque-secundario-cell"
-                      )}
-                    >
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={cantAPedirRaw}
-                        onChange={(e) =>
-                          onCantAPedirChange(
-                            p.codExt,
-                            sanitizeCantAPedirInput(e.target.value)
-                          )
-                        }
-                        aria-label={`Cantidad a pedir ${p.descripcion}`}
-                        className="h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-h-0 w-full min-w-0 rounded-sm border-0 bg-transparent px-1 text-center text-xs shadow-none focus-visible:ring-0"
-                      />
-                    </TableCell>
-                    <TableCell className="celda-datos tabla-bloque-secundario-cell">
+                    <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
                       <Select
-                        value={
-                          formaPedirByCodExt[p.codExt] ?? "CANT_FIJA_POR_UNIDAD"
-                        }
+                        value={formaPedir}
                         onValueChange={(v) => {
                           const parsed =
                             reposicionFormaPedidoFabricaSchema.safeParse(v);
@@ -428,7 +404,7 @@ export default function TablaPedidoAFabrica({
                         <SelectTrigger
                           className={cn(
                             SELECT_TRIGGER_FILTER_CLASS,
-                            "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-h-0 w-full min-w-0 px-1 text-[10px]"
+                            "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-h-0 w-full min-w-0 px-1 text-xs"
                           )}
                           aria-label={`Forma pedir ${p.descripcion}`}
                         >
@@ -442,11 +418,41 @@ export default function TablaPedidoAFabrica({
                         >
                           {REPOSICION_FORMA_PEDIDO_FABRICA_VALUES.map((val) => (
                             <SelectItem key={val} value={val}>
-                              {REPOSICION_FORMA_PEDIDO_LABELS[val]}
+                              {REPOSICION_FORMA_PEDIDO_FABRICA_LABELS[val]}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        TD_NUM,
+                        "tabla-bloque-secundario-cell-divider"
+                      )}
+                    >
+                      {pidePorBulto ? fmtNumero(p.bulto) : ""}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "celda-datos tabla-bloque-secundario-cell-divider"
+                      )}
+                    >
+                      <EnteroStepperInput
+                        value={cantAPedirRaw}
+                        onChange={(v) => onCantAPedirChange(p.codExt, v)}
+                        onCommit={(v) => onCantAPedirCommit(p.codExt, v)}
+                        min={1}
+                        allowEmpty
+                        ariaLabel={`Cantidad a pedir ${p.descripcion}`}
+                      />
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        TD_NUM,
+                        "tabla-bloque-secundario-cell"
+                      )}
+                    >
+                      {cantSugerida != null ? fmtNumero(cantSugerida) : ""}
                     </TableCell>
                     <TableCell className="celda-datos celda-datos--accion-relleno-fila text-center tabla-bloque-secundario-cell-divider">
                       <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
