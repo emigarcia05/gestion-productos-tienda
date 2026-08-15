@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,6 +34,7 @@ export default function EnteroStepperInput({
   disabled = false,
   ariaLabel,
   className,
+  endAction,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -42,6 +44,8 @@ export default function EnteroStepperInput({
   disabled?: boolean;
   ariaLabel: string;
   className?: string;
+  /** Acción extra a la derecha del + (p. ej. tilde en Pedido A Fáb.). */
+  endAction?: ReactNode;
 }) {
   function commitParsed(raw: string) {
     const parsed = parseEnteroDraft(raw, min);
@@ -104,6 +108,7 @@ export default function EnteroStepperInput({
       >
         +
       </Button>
+      {endAction}
     </div>
   );
 }

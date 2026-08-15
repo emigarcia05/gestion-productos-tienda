@@ -164,7 +164,7 @@ export function esStockQuebradoPedidoAFabrica(
   );
 }
 
-/** PEDIDO SUGERIDO: cant. sugerida calculada &gt; 0 (requiere TIEMPO STOCKEO). */
+/** Cant. sugerida calculada &gt; 0 (requiere TIEMPO STOCKEO). */
 export function tienePedidoSugeridoPedidoAFabrica(
   cantSugerida: number | null | undefined
 ): boolean {

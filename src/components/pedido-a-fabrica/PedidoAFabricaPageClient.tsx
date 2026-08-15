@@ -48,8 +48,6 @@ import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolba
 import {
   calcularStockAFechaLlegadaPedidoAFabrica,
   esStockQuebradoPedidoAFabrica,
-  resolverCantSugeridaPedidoAFabrica,
-  tienePedidoSugeridoPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
 import type { SucursalPedido } from "@/lib/pedidos";
 import { toast } from "sonner";
@@ -93,7 +91,7 @@ function abrirSelectorFechaPedidoNativo(el: HTMLInputElement | null) {
 
 /**
  * Módulo **Pedido A Fáb.** (pilar sidebar Administración).
- * Filtros 1: **PROVEEDOR** + **FECHA DE PEDIDO** + **TIEMPO STOCKEO** + **PEDIDO SUGERIDO** + **STOCK QUEBRADO**.
+ * Filtros 1: **PROVEEDOR** + **FECHA DE PEDIDO** + **TIEMPO STOCKEO** + **PROD. VINCULADO** + **STOCK QUEBRADO**.
  * Filtros 2: **MARCA** | **RUBRO** | **SUB-RUBRO** + buscar por descripción.
  */
 export default function PedidoAFabricaPageClient({
@@ -105,7 +103,7 @@ export default function PedidoAFabricaPageClient({
   /** Display `dd/mm/aaaa` del filtro **FECHA DE PEDIDO** (vacío = sin valor). */
   const [fechaPedidoDdMm, setFechaPedidoDdMm] = useState<string>("");
   const [tiempoStockeo, setTiempoStockeo] = useState<string>("");
-  const [pedidoSugerido, setPedidoSugerido] =
+  const [prodVinculado, setProdVinculado] =
     useState<FiltroSiNoPedidoAFabrica>("");
   const [stockQuebrado, setStockQuebrado] =
     useState<FiltroSiNoPedidoAFabrica>("");
@@ -158,7 +156,7 @@ export default function PedidoAFabricaPageClient({
   const fechaPedidoIsoParseada = parseDdMmYyyyToIsoYmdArgentina(fechaPedidoDdMm);
   const fechaPedidoActiva = fechaPedidoDdMm !== "";
   const tiempoStockeoActivo = tiempoStockeo !== "";
-  const pedidoSugeridoActivo = pedidoSugerido !== "";
+  const prodVinculadoActivo = prodVinculado !== "";
   const stockQuebradoActivo = stockQuebrado !== "";
   const marcaActiva = marca !== FILTRO_TODOS;
   const rubroActivo = rubro !== FILTRO_TODOS;
@@ -179,44 +177,33 @@ export default function PedidoAFabricaPageClient({
     fechaPedidoIsoParseada || dateToIsoYmdArgentina(new Date());
 
   const productosVisibles = useMemo(() => {
-    if (!pedidoSugerido && !stockQuebrado) return productos;
+    if (!prodVinculado && !stockQuebrado) return productos;
     return productos.filter((p) => {
+      const vinculado = p.codTienda != null;
+      if (prodVinculado === "si" && !vinculado) return false;
+      if (prodVinculado === "no" && vinculado) return false;
+      if (!stockQuebrado) return true;
       const total = totalPorSucursalesPedidoAFabrica(p, sucursales);
       const stockHasta = calcularStockAFechaLlegadaPedidoAFabrica(
         total.stockActual,
         total.promVta,
         tiempoEntregaEnDias
       );
-      const cantSugerida = resolverCantSugeridaPedidoAFabrica(
-        {
-          stockActual: total.stockActual ?? 0,
-          promVtaTotal: total.promVta ?? 0,
-          tiempoEntregaEnDias,
-          tiempoStockeo: tiempoStockeoValor,
-        },
-        formaPedirByCodExt[p.codExt] ?? "CANT_FIJA_POR_UNIDAD",
-        p.bulto
-      );
       const quebrado = esStockQuebradoPedidoAFabrica(stockHasta);
-      const sugerido = tienePedidoSugeridoPedidoAFabrica(cantSugerida);
       if (stockQuebrado === "si" && !quebrado) return false;
       if (stockQuebrado === "no" && quebrado) return false;
-      if (pedidoSugerido === "si" && !sugerido) return false;
-      if (pedidoSugerido === "no" && sugerido) return false;
       return true;
     });
   }, [
     productos,
     sucursales,
     tiempoEntregaEnDias,
-    tiempoStockeoValor,
-    pedidoSugerido,
+    prodVinculado,
     stockQuebrado,
-    formaPedirByCodExt,
   ]);
 
   const contadorProductos =
-    pedidoSugeridoActivo || stockQuebradoActivo
+    prodVinculadoActivo || stockQuebradoActivo
       ? productosVisibles.length
       : total;
 
@@ -582,20 +569,20 @@ export default function PedidoAFabricaPageClient({
 
                   <FiltroIndividualContainer
                     className={FILTER_SELECT_WRAPPER_CLASS}
-                    activo={pedidoSugeridoActivo}
-                    onLimpiar={() => setPedidoSugerido("")}
+                    activo={prodVinculadoActivo}
+                    onLimpiar={() => setProdVinculado("")}
                   >
                     <Select
-                      value={pedidoSugerido || undefined}
+                      value={prodVinculado || undefined}
                       onValueChange={(v) =>
-                        setPedidoSugerido(v as FiltroSiNoPedidoAFabrica)
+                        setProdVinculado(v as FiltroSiNoPedidoAFabrica)
                       }
                     >
                       <SelectTrigger
                         className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
-                        aria-label="PEDIDO SUGERIDO"
+                        aria-label="PROD. VINCULADO"
                       >
-                        <SelectValue placeholder="PEDIDO SUGERIDO" />
+                        <SelectValue placeholder="PROD. VINCULADO" />
                       </SelectTrigger>
                       <SelectContent
                         position="popper"
@@ -787,7 +774,7 @@ export default function PedidoAFabricaPageClient({
             emptyMessage="Este proveedor no tiene productos en la lista de precios."
             tiempoEntregaEnDias={tiempoEntregaEnDias}
             tiempoStockeo={tiempoStockeoValor}
-            filtroPedidoSugerido={pedidoSugerido}
+            filtroProdVinculado={prodVinculado}
             filtroStockQuebrado={stockQuebrado}
             cantAPedirByCodExt={cantAPedirByCodExt}
             formaPedirByCodExt={formaPedirByCodExt}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Info, TriangleAlert } from "lucide-react";
+import { Check, Info, Trash2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -27,7 +27,6 @@ import {
   calcularStockEnDiasPedidoAFabrica,
   esStockQuebradoPedidoAFabrica,
   resolverCantSugeridaPedidoAFabrica,
-  tienePedidoSugeridoPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import {
@@ -63,8 +62,8 @@ interface Props {
   tiempoEntregaEnDias: number | null;
   /** Días de stockeo del filtro **TIEMPO STOCKEO** (null si vacío). */
   tiempoStockeo: number | null;
-  /** Filtro **PEDIDO SUGERIDO** (cant. sugerida > 0). */
-  filtroPedidoSugerido: FiltroSiNoPedidoAFabrica;
+  /** Filtro **PROD. VINCULADO** (`cod_tienda` en lista proveedor). */
+  filtroProdVinculado: FiltroSiNoPedidoAFabrica;
   /** Filtro **STOCK QUEBRADO** (stock hasta llegada ≤ 0). */
   filtroStockQuebrado: FiltroSiNoPedidoAFabrica;
   /** Cant. a pedir por `codExt` (texto; solo dígitos). */
@@ -79,15 +78,15 @@ interface Props {
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
 /** Anchos fijos (suma 100 %). STOCK: UNIDADES | DÍAS | A FECHA LLEGADA. COMPRA: FORMA | BULTO | CANT. PEDIR | CANT. SUGERIDA. */
-const PCT_DESC = 40;
+const PCT_DESC = 36;
 const PCT_STOCK_UNIDADES = 6;
 const PCT_STOCK_DIAS = 6;
 const PCT_STOCK_HASTA_LLEGADA = 8;
 const PCT_FORMA = 9;
 const PCT_BULTO = 6;
-const PCT_CANT_PEDIR = 12;
+const PCT_CANT_PEDIR = 16;
 const PCT_CANT_SUGERIDA = 7;
-const PCT_TILDE = 3;
+const PCT_ACCIONES = 3;
 const PCT_INFO = 3;
 
 const COL_COUNT = 10;
@@ -121,38 +120,25 @@ function productoPasaFiltrosDerivados(
   producto: ProductoPedidoAFabricaItem,
   sucursales: SucursalPedidoAFabrica[],
   tiempoEntregaEnDias: number | null,
-  tiempoStockeo: number | null,
-  filtroPedidoSugerido: FiltroSiNoPedidoAFabrica,
-  filtroStockQuebrado: FiltroSiNoPedidoAFabrica,
-  formaPedirByCodExt: Record<string, ReposicionFormaPedidoFabrica>
+  filtroProdVinculado: FiltroSiNoPedidoAFabrica,
+  filtroStockQuebrado: FiltroSiNoPedidoAFabrica
 ): boolean {
-  if (!filtroPedidoSugerido && !filtroStockQuebrado) return true;
+  if (!filtroProdVinculado && !filtroStockQuebrado) return true;
 
+  const vinculado = producto.codTienda != null;
+  if (filtroProdVinculado === "si" && !vinculado) return false;
+  if (filtroProdVinculado === "no" && vinculado) return false;
+
+  if (!filtroStockQuebrado) return true;
   const total = totalPorSucursalesPedidoAFabrica(producto, sucursales);
   const stockHastaLlegada = calcularStockAFechaLlegadaPedidoAFabrica(
     total.stockActual,
     total.promVta,
     tiempoEntregaEnDias
   );
-  const forma =
-    formaPedirByCodExt[producto.codExt] ?? "CANT_FIJA_POR_UNIDAD";
-  const cantSugerida = resolverCantSugeridaPedidoAFabrica(
-    {
-      stockActual: total.stockActual ?? 0,
-      promVtaTotal: total.promVta ?? 0,
-      tiempoEntregaEnDias,
-      tiempoStockeo,
-    },
-    forma,
-    producto.bulto
-  );
   const quebrado = esStockQuebradoPedidoAFabrica(stockHastaLlegada);
-  const sugerido = tienePedidoSugeridoPedidoAFabrica(cantSugerida);
-
   if (filtroStockQuebrado === "si" && !quebrado) return false;
   if (filtroStockQuebrado === "no" && quebrado) return false;
-  if (filtroPedidoSugerido === "si" && !sugerido) return false;
-  if (filtroPedidoSugerido === "no" && sugerido) return false;
   return true;
 }
 
@@ -173,7 +159,7 @@ export default function TablaPedidoAFabrica({
   emptyMessage,
   tiempoEntregaEnDias,
   tiempoStockeo,
-  filtroPedidoSugerido,
+  filtroProdVinculado,
   filtroStockQuebrado,
   cantAPedirByCodExt,
   formaPedirByCodExt,
@@ -192,30 +178,26 @@ export default function TablaPedidoAFabrica({
           p,
           sucursales,
           tiempoEntregaEnDias,
-          tiempoStockeo,
-          filtroPedidoSugerido,
-          filtroStockQuebrado,
-          formaPedirByCodExt
+          filtroProdVinculado,
+          filtroStockQuebrado
         )
       ),
     [
       productos,
       sucursales,
       tiempoEntregaEnDias,
-      tiempoStockeo,
-      filtroPedidoSugerido,
+      filtroProdVinculado,
       filtroStockQuebrado,
-      formaPedirByCodExt,
     ]
   );
 
   const hayFiltrosDerivados =
-    filtroPedidoSugerido !== "" || filtroStockQuebrado !== "";
+    filtroProdVinculado !== "" || filtroStockQuebrado !== "";
   const mensajeVacio =
     productos.length > 0 &&
     productosFiltrados.length === 0 &&
     hayFiltrosDerivados
-      ? "Ningún producto coincide con PEDIDO SUGERIDO / STOCK QUEBRADO."
+      ? "Ningún producto coincide con PROD. VINCULADO / STOCK QUEBRADO."
       : emptyMessage;
 
   return (
@@ -231,7 +213,7 @@ export default function TablaPedidoAFabrica({
             <col style={{ width: `${PCT_BULTO}%` }} />
             <col style={{ width: `${PCT_CANT_PEDIR}%` }} />
             <col style={{ width: `${PCT_CANT_SUGERIDA}%` }} />
-            <col style={{ width: `${PCT_TILDE}%` }} />
+            <col style={{ width: `${PCT_ACCIONES}%` }} />
             <col style={{ width: `${PCT_INFO}%` }} />
           </colgroup>
           <TableHeader>
@@ -254,10 +236,10 @@ export default function TablaPedidoAFabrica({
               <TableHead
                 rowSpan={2}
                 className="text-center align-middle tabla-bloque-secundario-head-divider"
-                aria-label="Confirmar cantidad sugerida"
+                aria-label="Vaciar cantidad a pedir"
               >
                 <div className="flex w-full items-center justify-center">
-                  <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                  <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                 </div>
               </TableHead>
               <TableHead
@@ -439,6 +421,25 @@ export default function TablaPedidoAFabrica({
                         min={1}
                         allowEmpty
                         ariaLabel={`Cantidad a pedir ${p.descripcion}`}
+                        endAction={
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={cantSugerida == null}
+                            onClick={() => {
+                              if (cantSugerida == null) return;
+                              onAplicarCantSugerida(p.codExt, cantSugerida);
+                            }}
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            aria-label={`Confirmar cantidad sugerida: ${p.descripcion}`}
+                          >
+                            <Check
+                              className={TABLE_ROW_ACTION_ICON_CLASS}
+                              aria-hidden
+                            />
+                          </Button>
+                        }
                       />
                     </TableCell>
                     <TableCell
@@ -455,15 +456,12 @@ export default function TablaPedidoAFabrica({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          disabled={cantSugerida == null}
-                          onClick={() => {
-                            if (cantSugerida == null) return;
-                            onAplicarCantSugerida(p.codExt, cantSugerida);
-                          }}
+                          disabled={cantAPedirRaw === ""}
+                          onClick={() => onCantAPedirCommit(p.codExt, "")}
                           className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                          aria-label={`Confirmar cantidad sugerida: ${p.descripcion}`}
+                          aria-label={`Vaciar cantidad a pedir: ${p.descripcion}`}
                         >
-                          <Check
+                          <Trash2
                             className={TABLE_ROW_ACTION_ICON_CLASS}
                             aria-hidden
                           />

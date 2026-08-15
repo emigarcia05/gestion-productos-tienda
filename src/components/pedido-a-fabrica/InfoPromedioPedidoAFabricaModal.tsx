@@ -172,8 +172,8 @@ export default function InfoPromedioPedidoAFabricaModal({
                 right="Stock Hasta Llegada De Pedido ≤ 0 (filtro SI/NO; aviso TriangleAlert en DESCRIPCIÓN)"
               />
               <FormulaLine
-                left="Pedido Sugerido"
-                right="Cant. Sugerida > 0 (filtro SI/NO; requiere Tiempo Stockeo)"
+                left="Prod. Vinculado"
+                right="Hay vínculo lista proveedor ↔ prod_tienda por cod_tienda (filtro SI/NO)"
               />
               <FormulaLine
                 left="Stock Para Tiempo Stockeo"

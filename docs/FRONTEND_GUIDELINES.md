@@ -186,7 +186,7 @@ Nuevo shared: CVA + tokens + `"use client"` solo si hay estado/hooks. Documentar
 | `FiltroRangoFechasCalendarioModal` | Rango de fechas |
 | `TablaSubencabezadoSeccionRow` | Subencabezado en tbody |
 | `CeldaDifPct` / `CeldaCxProdTienda` | Celdas de variación / Cx |
-| `EnteroStepperInput` | Entero − / número / + (mismo patrón que Control Stock). Vacío permitido; el padre persiste en `onCommit` |
+| `EnteroStepperInput` | Entero − / número / + (mismo patrón que Control Stock). Vacío permitido; el padre persiste en `onCommit`. `endAction?` a la derecha del + |
 | `catalogo-finder/*` | Finder |
 | `SidebarAreaSwitcher` / `SidebarMainAppArea` | Dock sesión / Pendientes (Pedido → proveedor → tipos) |
 | `ReposicionProveedorPrioritarioModal` / `SobreStockReposicionAdvertenciaModal` | Confirmaciones al generar pedido |
@@ -241,7 +241,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Carga De Datos:** grilla periodo × sucursal (`tabla-est-carga-datos`); celda pendiente `.celda-est-carga-pendiente`.
 - **Configuracion:** `FilaFiltrosDesplegables` `columnas={6}` + búsqueda.
 - **Ventas:** dos FilterBar + tres gráficos (clases `.est-vtas-*`).
-- **Pedido A Fáb.:** dos FilterBar. Secciones: **STOCK** (UNIDADES / DÍAS / A FECHA LLEGADA) y **COMPRA** (FORMA **BULTO**/**UNIDAD** | BULTO si vínculo `cod_tienda` | CANT. PEDIR `EnteroStepperInput` | CANT. SUGERIDA: UNIDAD techo entero; BULTO techo al múltiplo de `prod_tienda_bultos`). DESCRIPCIÓN = `descripcion_tienda` si hay vínculo, si no `descripcion_proveedor`. Header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
+- **Pedido A Fáb.:** dos FilterBar. Fila 1: PROVEEDOR / FECHA DE PEDIDO / TIEMPO STOCKEO / **PROD. VINCULADO** (SI = `cod_tienda` en lista; NO = sin vínculo) / STOCK QUEBRADO. Secciones: **STOCK** (UNIDADES / DÍAS / A FECHA LLEGADA) y **COMPRA** (FORMA **BULTO**/**UNIDAD** | BULTO si vínculo `cod_tienda` | CANT. PEDIR `EnteroStepperInput` + tilde que copia CANT. SUGERIDA | CANT. SUGERIDA: UNIDAD techo entero; BULTO techo al múltiplo de `prod_tienda_bultos`). Basura en columna de acciones vacía CANT. PEDIR. DESCRIPCIÓN = `descripcion_tienda` si hay vínculo, si no `descripcion_proveedor`. Header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
 
 ### Marketing
 
