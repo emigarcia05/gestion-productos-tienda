@@ -195,8 +195,18 @@ export default function InfoPromedioPedidoAFabricaModal({
                     Si Stock a Fecha Llegada &gt; 0
                   </span>
                   {" → "}
-                  Stock Para Tiempo Stockeo − Stock a Fecha Llegada (piso 0,
-                  redondeo)
+                  Stock Para Tiempo Stockeo − Stock a Fecha Llegada (piso 0)
+                </li>
+                <li>
+                  <span className="font-semibold">UNIDAD</span>
+                  {" → "}
+                  techo al entero siguiente (6,7 → 7)
+                </li>
+                <li>
+                  <span className="font-semibold">BULTO</span>
+                  {" → "}
+                  techo al próximo múltiplo del bulto (6,7 y bulto 12 → 12). Sin
+                  bulto: vacío
                 </li>
               </ul>
             </div>

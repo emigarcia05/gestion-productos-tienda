@@ -46,9 +46,9 @@ import TablaPedidoAFabrica, {
 import InfoPromedioPedidoAFabricaModal from "@/components/pedido-a-fabrica/InfoPromedioPedidoAFabricaModal";
 import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import {
-  calcularCantSugeridaPedidoAFabrica,
   calcularStockAFechaLlegadaPedidoAFabrica,
   esStockQuebradoPedidoAFabrica,
+  resolverCantSugeridaPedidoAFabrica,
   tienePedidoSugeridoPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
 import type { SucursalPedido } from "@/lib/pedidos";
@@ -187,16 +187,18 @@ export default function PedidoAFabricaPageClient({
         total.promVta,
         tiempoEntregaEnDias
       );
-      const calc = calcularCantSugeridaPedidoAFabrica({
-        stockActual: total.stockActual ?? 0,
-        promVtaTotal: total.promVta ?? 0,
-        tiempoEntregaEnDias,
-        tiempoStockeo: tiempoStockeoValor,
-      });
-      const quebrado = esStockQuebradoPedidoAFabrica(stockHasta);
-      const sugerido = tienePedidoSugeridoPedidoAFabrica(
-        calc?.cantSugerida ?? null
+      const cantSugerida = resolverCantSugeridaPedidoAFabrica(
+        {
+          stockActual: total.stockActual ?? 0,
+          promVtaTotal: total.promVta ?? 0,
+          tiempoEntregaEnDias,
+          tiempoStockeo: tiempoStockeoValor,
+        },
+        formaPedirByCodExt[p.codExt] ?? "CANT_FIJA_POR_UNIDAD",
+        p.bulto
       );
+      const quebrado = esStockQuebradoPedidoAFabrica(stockHasta);
+      const sugerido = tienePedidoSugeridoPedidoAFabrica(cantSugerida);
       if (stockQuebrado === "si" && !quebrado) return false;
       if (stockQuebrado === "no" && quebrado) return false;
       if (pedidoSugerido === "si" && !sugerido) return false;
@@ -210,6 +212,7 @@ export default function PedidoAFabricaPageClient({
     tiempoStockeoValor,
     pedidoSugerido,
     stockQuebrado,
+    formaPedirByCodExt,
   ]);
 
   const contadorProductos =

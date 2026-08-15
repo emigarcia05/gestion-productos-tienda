@@ -241,7 +241,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Carga De Datos:** grilla periodo × sucursal (`tabla-est-carga-datos`); celda pendiente `.celda-est-carga-pendiente`.
 - **Configuracion:** `FilaFiltrosDesplegables` `columnas={6}` + búsqueda.
 - **Ventas:** dos FilterBar + tres gráficos (clases `.est-vtas-*`).
-- **Pedido A Fáb.:** dos FilterBar; DESCRIPCIÓN = `descripcion_tienda` si hay vínculo `cod_tienda`, si no `descripcion_proveedor`. COMPRA = FORMA PEDIR (**Bulto** / **Unidad**) | BULTO (vinculado: `prod_tienda_bultos`; sin vínculo: vacío) | CANT. PEDIR (`EnteroStepperInput`) | CANT. SUGERIDA (cálculo actual; lógica nueva pendiente). Header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
+- **Pedido A Fáb.:** dos FilterBar. Secciones: **STOCK** (UNIDADES / DÍAS / A FECHA LLEGADA) y **COMPRA** (FORMA **BULTO**/**UNIDAD** | BULTO si vínculo `cod_tienda` | CANT. PEDIR `EnteroStepperInput` | CANT. SUGERIDA: UNIDAD techo entero; BULTO techo al múltiplo de `prod_tienda_bultos`). DESCRIPCIÓN = `descripcion_tienda` si hay vínculo, si no `descripcion_proveedor`. Header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
 
 ### Marketing
 

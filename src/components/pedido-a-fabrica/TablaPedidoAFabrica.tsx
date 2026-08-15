@@ -23,10 +23,10 @@ import {
   TEXT_WARNING_CLASS,
 } from "@/lib/ui-classes";
 import {
-  calcularCantSugeridaPedidoAFabrica,
   calcularStockAFechaLlegadaPedidoAFabrica,
   calcularStockEnDiasPedidoAFabrica,
   esStockQuebradoPedidoAFabrica,
+  resolverCantSugeridaPedidoAFabrica,
   tienePedidoSugeridoPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
@@ -78,7 +78,7 @@ interface Props {
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
-/** Anchos fijos (suma 100 %). COMPRA: FORMA PEDIR | BULTO | CANT. PEDIR | CANT. SUGERIDA. */
+/** Anchos fijos (suma 100 %). STOCK: UNIDADES | DÍAS | A FECHA LLEGADA. COMPRA: FORMA | BULTO | CANT. PEDIR | CANT. SUGERIDA. */
 const PCT_DESC = 40;
 const PCT_STOCK_UNIDADES = 6;
 const PCT_STOCK_DIAS = 6;
@@ -123,7 +123,8 @@ function productoPasaFiltrosDerivados(
   tiempoEntregaEnDias: number | null,
   tiempoStockeo: number | null,
   filtroPedidoSugerido: FiltroSiNoPedidoAFabrica,
-  filtroStockQuebrado: FiltroSiNoPedidoAFabrica
+  filtroStockQuebrado: FiltroSiNoPedidoAFabrica,
+  formaPedirByCodExt: Record<string, ReposicionFormaPedidoFabrica>
 ): boolean {
   if (!filtroPedidoSugerido && !filtroStockQuebrado) return true;
 
@@ -133,13 +134,18 @@ function productoPasaFiltrosDerivados(
     total.promVta,
     tiempoEntregaEnDias
   );
-  const calc = calcularCantSugeridaPedidoAFabrica({
-    stockActual: total.stockActual ?? 0,
-    promVtaTotal: total.promVta ?? 0,
-    tiempoEntregaEnDias,
-    tiempoStockeo,
-  });
-  const cantSugerida = calc?.cantSugerida ?? null;
+  const forma =
+    formaPedirByCodExt[producto.codExt] ?? "CANT_FIJA_POR_UNIDAD";
+  const cantSugerida = resolverCantSugeridaPedidoAFabrica(
+    {
+      stockActual: total.stockActual ?? 0,
+      promVtaTotal: total.promVta ?? 0,
+      tiempoEntregaEnDias,
+      tiempoStockeo,
+    },
+    forma,
+    producto.bulto
+  );
   const quebrado = esStockQuebradoPedidoAFabrica(stockHastaLlegada);
   const sugerido = tienePedidoSugeridoPedidoAFabrica(cantSugerida);
 
@@ -152,8 +158,8 @@ function productoPasaFiltrosDerivados(
 
 /**
  * Grilla Pedido A Fáb.
- * **DESCRIPCIÓN** (aviso stock quebrado) · **STOCK ACTUAL**
- * · **STOCK HASTA LLEGADA DE PEDIDO** · **COMPRA** (FORMA PEDIR / BULTO / CANT. PEDIR / CANT. SUGERIDA)
+ * **DESCRIPCIÓN** (aviso stock quebrado) · **STOCK** (UNIDADES / DÍAS / A FECHA LLEGADA)
+ * · **COMPRA** (FORMA / BULTO / CANT. PEDIR / CANT. SUGERIDA UNIDAD techo / BULTO múltiplo)
  * · tilde · Info.
  * (PROM. VTA. se calcula en backend/cliente pero no se muestra como columna.)
  */
@@ -188,7 +194,8 @@ export default function TablaPedidoAFabrica({
           tiempoEntregaEnDias,
           tiempoStockeo,
           filtroPedidoSugerido,
-          filtroStockQuebrado
+          filtroStockQuebrado,
+          formaPedirByCodExt
         )
       ),
     [
@@ -198,6 +205,7 @@ export default function TablaPedidoAFabrica({
       tiempoStockeo,
       filtroPedidoSugerido,
       filtroStockQuebrado,
+      formaPedirByCodExt,
     ]
   );
 
@@ -232,16 +240,10 @@ export default function TablaPedidoAFabrica({
                 DESCRIPCIÓN
               </TableHead>
               <TableHead
-                colSpan={2}
+                colSpan={3}
                 className="text-center align-middle tabla-bloque-secundario-head-divider"
               >
-                STOCK ACTUAL
-              </TableHead>
-              <TableHead
-                rowSpan={2}
-                className="text-center align-middle leading-tight tabla-bloque-secundario-head-divider"
-              >
-                STOCK HASTA LLEGADA DE PEDIDO
+                STOCK
               </TableHead>
               <TableHead
                 colSpan={4}
@@ -270,18 +272,21 @@ export default function TablaPedidoAFabrica({
             </TableRow>
             <TableRow className="hover:bg-transparent">
               <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                EN UNIDADES
+                UNIDADES
               </TableHead>
               <TableHead className="text-center tabla-bloque-secundario-head">
-                EN DÍAS
+                DÍAS
+              </TableHead>
+              <TableHead className="text-center leading-tight tabla-bloque-secundario-head">
+                A FECHA LLEGADA
               </TableHead>
               <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                FORMA PEDIR
+                FORMA
               </TableHead>
-              <TableHead className="text-center tabla-bloque-secundario-head-divider">
+              <TableHead className="text-center tabla-bloque-secundario-head">
                 BULTO
               </TableHead>
-              <TableHead className="text-center tabla-bloque-secundario-head-divider">
+              <TableHead className="text-center tabla-bloque-secundario-head">
                 CANT. PEDIR
               </TableHead>
               <TableHead className="text-center tabla-bloque-secundario-head">
@@ -325,16 +330,19 @@ export default function TablaPedidoAFabrica({
                   );
                 const stockQuebrado =
                   esStockQuebradoPedidoAFabrica(stockHastaLlegada);
-                const calc = calcularCantSugeridaPedidoAFabrica({
-                  stockActual: stockUnidades ?? 0,
-                  promVtaTotal: promVtaTotal ?? 0,
-                  tiempoEntregaEnDias,
-                  tiempoStockeo,
-                });
-                const cantSugerida = calc?.cantSugerida ?? null;
-                const cantAPedirRaw = cantAPedirByCodExt[p.codExt] ?? "";
                 const formaPedir =
                   formaPedirByCodExt[p.codExt] ?? "CANT_FIJA_POR_UNIDAD";
+                const cantSugerida = resolverCantSugeridaPedidoAFabrica(
+                  {
+                    stockActual: stockUnidades ?? 0,
+                    promVtaTotal: promVtaTotal ?? 0,
+                    tiempoEntregaEnDias,
+                    tiempoStockeo,
+                  },
+                  formaPedir,
+                  p.bulto
+                );
+                const cantAPedirRaw = cantAPedirByCodExt[p.codExt] ?? "";
 
                 return (
                   <TableRow key={p.codExt}>
@@ -382,10 +390,7 @@ export default function TablaPedidoAFabrica({
                       {fmtNumero(stockDias)}
                     </TableCell>
                     <TableCell
-                      className={cn(
-                        TD_NUM,
-                        "tabla-bloque-secundario-cell-divider"
-                      )}
+                      className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
                     >
                       {fmtNumero(stockHastaLlegada)}
                     </TableCell>
@@ -407,7 +412,7 @@ export default function TablaPedidoAFabrica({
                           )}
                           aria-label={`Forma pedir ${p.descripcion}`}
                         >
-                          <SelectValue placeholder="FORMA PEDIR" />
+                          <SelectValue placeholder="FORMA" />
                         </SelectTrigger>
                         <SelectContent
                           className="select-content-filtro"
@@ -423,19 +428,10 @@ export default function TablaPedidoAFabrica({
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell
-                      className={cn(
-                        TD_NUM,
-                        "tabla-bloque-secundario-cell-divider"
-                      )}
-                    >
+                    <TableCell className={cn(TD_NUM, "tabla-bloque-secundario-cell")}>
                       {p.codTienda ? fmtNumero(p.bulto) : ""}
                     </TableCell>
-                    <TableCell
-                      className={cn(
-                        "celda-datos tabla-bloque-secundario-cell-divider"
-                      )}
-                    >
+                    <TableCell className="celda-datos tabla-bloque-secundario-cell">
                       <EnteroStepperInput
                         value={cantAPedirRaw}
                         onChange={(v) => onCantAPedirChange(p.codExt, v)}
@@ -513,6 +509,12 @@ export default function TablaPedidoAFabrica({
         sucursales={sucursales}
         tiempoEntregaEnDias={tiempoEntregaEnDias}
         tiempoStockeo={tiempoStockeo}
+        formaPedir={
+          detalleProducto
+            ? (formaPedirByCodExt[detalleProducto.codExt] ??
+              "CANT_FIJA_POR_UNIDAD")
+            : "CANT_FIJA_POR_UNIDAD"
+        }
       />
     </div>
   );

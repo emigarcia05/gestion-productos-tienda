@@ -17,10 +17,11 @@ import { totalPorSucursalesPedidoAFabrica } from "@/components/pedido-a-fabrica/
 import { cn } from "@/lib/utils";
 import { fmtNumero } from "@/lib/format";
 import {
-  calcularCantSugeridaPedidoAFabrica,
   calcularStockAFechaLlegadaPedidoAFabrica,
   calcularStockEnDiasPedidoAFabrica,
+  resolverCantSugeridaPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
+import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
 import type {
   ProductoPedidoAFabricaItem,
   SucursalPedidoAFabrica,
@@ -33,6 +34,7 @@ interface Props {
   sucursales: SucursalPedidoAFabrica[];
   tiempoEntregaEnDias: number | null;
   tiempoStockeo: number | null;
+  formaPedir: ReposicionFormaPedidoFabrica;
 }
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
@@ -48,7 +50,7 @@ interface FilaSucursalDetalle {
 
 /**
  * Detalle por sucursal de un ítem Pedido A Fáb.:
- * Stock Actual · Stock hasta llegada · Compra sugerida + fila **TOTAL**.
+ * Stock (unidades / días / a fecha llegada) · Compra sugerida + fila **TOTAL**.
  * (PROM. VTA. alimenta los cálculos pero no se muestra como columna.)
  */
 export default function DetalleSucursalesPedidoAFabricaModal({
@@ -58,6 +60,7 @@ export default function DetalleSucursalesPedidoAFabricaModal({
   sucursales,
   tiempoEntregaEnDias,
   tiempoStockeo,
+  formaPedir,
 }: Props) {
   const titulo = producto?.descripcion?.trim()
     ? producto.descripcion
@@ -81,19 +84,23 @@ export default function DetalleSucursalesPedidoAFabricaModal({
         promVta,
         tiempoEntregaEnDias
       );
-      const calc = calcularCantSugeridaPedidoAFabrica({
-        stockActual: stockUnidades ?? 0,
-        promVtaTotal: promVta ?? 0,
-        tiempoEntregaEnDias,
-        tiempoStockeo,
-      });
+      const sugerida = resolverCantSugeridaPedidoAFabrica(
+        {
+          stockActual: stockUnidades ?? 0,
+          promVtaTotal: promVta ?? 0,
+          tiempoEntregaEnDias,
+          tiempoStockeo,
+        },
+        formaPedir,
+        producto.bulto
+      );
       return {
         id: s.id,
         nombre: s.nombre.toLocaleUpperCase("es"),
         stockUnidades,
         stockDias,
         stockHastaLlegada,
-        sugerida: calc?.cantSugerida ?? null,
+        sugerida,
       };
     });
 
@@ -109,12 +116,16 @@ export default function DetalleSucursalesPedidoAFabricaModal({
       agg.promVta,
       tiempoEntregaEnDias
     );
-    const calcTotal = calcularCantSugeridaPedidoAFabrica({
-      stockActual: stockUnidades ?? 0,
-      promVtaTotal: agg.promVta ?? 0,
-      tiempoEntregaEnDias,
-      tiempoStockeo,
-    });
+    const calcTotal = resolverCantSugeridaPedidoAFabrica(
+      {
+        stockActual: stockUnidades ?? 0,
+        promVtaTotal: agg.promVta ?? 0,
+        tiempoEntregaEnDias,
+        tiempoStockeo,
+      },
+      formaPedir,
+      producto.bulto
+    );
 
     return {
       filas: filasCalc,
@@ -122,10 +133,10 @@ export default function DetalleSucursalesPedidoAFabricaModal({
         stockUnidades,
         stockDias,
         stockHastaLlegada,
-        sugerida: calcTotal?.cantSugerida ?? null,
+        sugerida: calcTotal,
       },
     };
-  }, [producto, sucursales, tiempoEntregaEnDias, tiempoStockeo]);
+  }, [producto, sucursales, tiempoEntregaEnDias, tiempoStockeo, formaPedir]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,16 +170,10 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                     SUCURSAL
                   </TableHead>
                   <TableHead
-                    colSpan={2}
+                    colSpan={3}
                     className="text-center align-middle tabla-bloque-secundario-head-divider"
                   >
-                    STOCK ACTUAL
-                  </TableHead>
-                  <TableHead
-                    rowSpan={2}
-                    className="text-center align-middle leading-tight tabla-bloque-secundario-head-divider"
-                  >
-                    STOCK HASTA LLEGADA DE PEDIDO
+                    STOCK
                   </TableHead>
                   <TableHead className="text-center align-middle tabla-bloque-secundario-head-divider">
                     COMPRA
@@ -176,13 +181,16 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                 </TableRow>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                    EN UNIDADES
+                    UNIDADES
                   </TableHead>
                   <TableHead className="text-center tabla-bloque-secundario-head">
-                    EN DÍAS
+                    DÍAS
+                  </TableHead>
+                  <TableHead className="text-center leading-tight tabla-bloque-secundario-head">
+                    A FECHA LLEGADA
                   </TableHead>
                   <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                    SUGERIDA
+                    CANT. SUGERIDA
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -208,10 +216,7 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                       {fmtNumero(f.stockDias)}
                     </TableCell>
                     <TableCell
-                      className={cn(
-                        TD_NUM,
-                        "tabla-bloque-secundario-cell-divider"
-                      )}
+                      className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
                     >
                       {fmtNumero(f.stockHastaLlegada)}
                     </TableCell>
@@ -251,7 +256,7 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                     <TableCell
                       className={cn(
                         TD_NUM,
-                        "font-bold tabla-bloque-secundario-cell-divider"
+                        "font-bold tabla-bloque-secundario-cell"
                       )}
                     >
                       {fmtNumero(total.stockHastaLlegada)}

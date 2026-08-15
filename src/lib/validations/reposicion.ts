@@ -46,8 +46,8 @@ export const REPOSICION_FORMA_PEDIDO_FABRICA_LABELS: Record<
   ReposicionFormaPedidoFabrica,
   string
 > = {
-  CANT_FIJA_POR_BULTO: "Bulto",
-  CANT_FIJA_POR_UNIDAD: "Unidad",
+  CANT_FIJA_POR_BULTO: "BULTO",
+  CANT_FIJA_POR_UNIDAD: "UNIDAD",
 };
 
 /** Lee valor persistido (incluye alias previos a la migración). */

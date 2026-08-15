@@ -10,6 +10,7 @@ import {
   dateToIsoYmdArgentina,
 } from "@/lib/fechaArgentina";
 import { etiquetaMesEstPorProd } from "@/lib/estPorProdPeriodo";
+import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
 
 /** Días de venta contables por mes. */
 export const PEDIDO_A_FABRICA_DIAS_VENTA_POR_MES = 24;
@@ -191,9 +192,8 @@ export type ResultadoCantSugeridaPedidoAFabrica = {
   /** Cobertura deseada al stockear: stockeo × prom. */
   stockParaTiempoStockeo: number;
   /**
-   * Cantidad sugerida a pedir (≥ 0, redondeada).
-   * Si stock a llegada ≤ 0 → stock para stockeo;
-   * si stock a llegada > 0 → stockeo − stock a llegada (piso 0).
+   * Cantidad cruda (≥ 0, sin redondeo de forma).
+   * UNIDAD/BULTO se aplican con `redondearCantSugeridaPorFormaPedidoAFabrica`.
    */
   cantSugerida: number;
 };
@@ -240,6 +240,41 @@ export function calcularCantSugeridaPedidoAFabrica(
   return {
     stockAFechaLlegadaPedido,
     stockParaTiempoStockeo,
-    cantSugerida: Math.max(0, Math.round(crudo)),
+    cantSugerida: Math.max(0, crudo),
   };
+}
+
+/**
+ * Redondeo de CANT. SUGERIDA según FORMA:
+ * - UNIDAD → techo al entero siguiente (6,7 → 7).
+ * - BULTO → techo al próximo múltiplo de `prod_tienda_bultos` (6,7 y bulto 12 → 12).
+ *   Sin bulto configurado → `null` (celda vacía).
+ */
+export function redondearCantSugeridaPorFormaPedidoAFabrica(
+  crudo: number,
+  forma: ReposicionFormaPedidoFabrica,
+  bulto: number | null
+): number | null {
+  if (!Number.isFinite(crudo) || crudo < 0) return null;
+  if (forma === "CANT_FIJA_POR_UNIDAD") {
+    return Math.ceil(crudo);
+  }
+  if (bulto == null || !Number.isFinite(bulto) || bulto < 1) return null;
+  if (crudo === 0) return 0;
+  return Math.ceil(crudo / bulto) * bulto;
+}
+
+/** Crudo de la fórmula + redondeo UNIDAD/BULTO. `null` si no hay Tiempo Stockeo o no se puede redondear. */
+export function resolverCantSugeridaPedidoAFabrica(
+  input: InputsCantSugeridaPedidoAFabrica,
+  forma: ReposicionFormaPedidoFabrica,
+  bulto: number | null
+): number | null {
+  const calc = calcularCantSugeridaPedidoAFabrica(input);
+  if (!calc) return null;
+  return redondearCantSugeridaPorFormaPedidoAFabrica(
+    calc.cantSugerida,
+    forma,
+    bulto
+  );
 }
