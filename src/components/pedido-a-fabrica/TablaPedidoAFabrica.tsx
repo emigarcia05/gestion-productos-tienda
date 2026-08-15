@@ -335,7 +335,6 @@ export default function TablaPedidoAFabrica({
                 const cantAPedirRaw = cantAPedirByCodExt[p.codExt] ?? "";
                 const formaPedir =
                   formaPedirByCodExt[p.codExt] ?? "CANT_FIJA_POR_UNIDAD";
-                const pidePorBulto = formaPedir === "CANT_FIJA_POR_BULTO";
 
                 return (
                   <TableRow key={p.codExt}>
@@ -430,7 +429,7 @@ export default function TablaPedidoAFabrica({
                         "tabla-bloque-secundario-cell-divider"
                       )}
                     >
-                      {pidePorBulto ? fmtNumero(p.bulto) : ""}
+                      {p.codTienda ? fmtNumero(p.bulto) : ""}
                     </TableCell>
                     <TableCell
                       className={cn(

@@ -14,7 +14,6 @@ import {
   getIdDepositoPorSucursalCodigo,
 } from "@/services/prodTiendaStock.service";
 import { buildMapCantAPedirAFabricaPorProveedor } from "@/services/pedidosEnvio.service";
-import { buildMapBultosProdTienda } from "@/services/tiendaBultos.service";
 import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
 
 export type SucursalPedidoAFabrica = {
@@ -36,12 +35,16 @@ export type DatosSucursalProductoPedidoAFabrica = {
 export type ProductoPedidoAFabricaItem = {
   codExt: string;
   /**
-   * Prioridad: `prod_tienda.descripcion_tienda` (vía `cod_tienda`) →
-   * fallback `prod_precios_provee.descripcion_proveedor`.
+   * Vinculado (`prod_precios_provee.cod_tienda` → `prod_tienda`): `descripcion_tienda`.
+   * Sin vínculo: `descripcion_proveedor`.
    */
   descripcion: string;
+  /** `prod_precios_provee.cod_tienda` si hay fila en `prod_tienda`; si no, `null`. */
   codTienda: string | null;
-  /** Unidades por bulto (`prod_tienda_bultos`); `null` = sin configurar. */
+  /**
+   * Vinculado: unidades de `prod_tienda_bultos` (`null` = sin configurar).
+   * Sin vínculo: siempre `null` (celda vacía).
+   */
   bulto: number | null;
   /** Clave = `sucursal.id`. */
   porSucursal: Record<string, DatosSucursalProductoPedidoAFabrica>;
@@ -223,7 +226,9 @@ async function opcionesCampoTienda(
 
 /**
  * Lista productos de `prod_precios_provee` del proveedor, solo si `es_fabrica = true`.
- * Descripción: `descripcion_tienda` (vínculo) → fallback `descripcion_proveedor`.
+ * Vínculo con tienda: `prod_precios_provee.cod_tienda` → `prod_tienda.cod_tienda`.
+ * Descripción: vinculada → `descripcion_tienda`; si no → `descripcion_proveedor`.
+ * BULTO: vinculado → `prod_tienda_bultos`; si no → vacío.
  * Solo filas `habilitado = true`. Filtros opcionales: marca / rubro / sub_rubro (tienda) + q.
  * Por cada sucursal `genera_est = true`: **STOCK ACTUAL** + **PROM. VTA.**
  */
@@ -255,7 +260,10 @@ export async function listarProductosPorProveedorFabrica(
         descripcionProveedor: true,
         codTiendaVinculo: true,
         prodTienda: {
-          select: { descripcionTienda: true },
+          select: {
+            descripcionTienda: true,
+            bulto: { select: { bulto: true } },
+          },
         },
       },
       orderBy: { descripcionProveedor: "asc" },
@@ -288,18 +296,20 @@ export async function listarProductosPorProveedorFabrica(
     })
   );
 
-  const [promMap, bultosMap] = await Promise.all([
-    buildMapPromVtaDiaria(
-      codTiendas,
-      sucursales.map((s) => s.id)
-    ),
-    buildMapBultosProdTienda(codTiendas),
-  ]);
+  const promMap = await buildMapPromVtaDiaria(
+    codTiendas,
+    sucursales.map((s) => s.id)
+  );
 
   const productos: ProductoPedidoAFabricaItem[] = filas.map((f) => {
-    const codTienda = f.codTiendaVinculo?.trim() || null;
-    const descTienda = f.prodTienda?.descripcionTienda?.trim() || "";
-    const descripcion = descTienda || f.descripcionProveedor;
+    const vinculado = f.prodTienda != null;
+    const codTienda = vinculado
+      ? (f.codTiendaVinculo?.trim() || null)
+      : null;
+    const descripcion = vinculado
+      ? (f.prodTienda?.descripcionTienda?.trim() ?? "")
+      : f.descripcionProveedor;
+    const bulto = vinculado ? (f.prodTienda?.bulto?.bulto ?? null) : null;
     const porSucursal = emptyPorSucursal(sucursales);
     if (codTienda) {
       for (const s of sucursales) {
@@ -315,7 +325,7 @@ export async function listarProductosPorProveedorFabrica(
       codExt: f.codExt,
       descripcion,
       codTienda,
-      bulto: codTienda ? (bultosMap.get(codTienda) ?? null) : null,
+      bulto,
       porSucursal,
     };
   });
