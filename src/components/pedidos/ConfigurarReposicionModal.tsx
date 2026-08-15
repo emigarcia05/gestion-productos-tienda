@@ -59,18 +59,6 @@ function hayBultoConfigurado(bulto: number | null | undefined): boolean {
   return bulto != null && bulto >= 1;
 }
 
-function textoAyudaBulto(
-  bulto: number,
-  cantInput: string,
-  formaPedir: FormaPedirReposicionOption
-): string {
-  const base = `BULTO TRAE ${fmtNumero(bulto)} UN.`;
-  if (formaPedir !== "CANT_FIJA_POR_BULTO") return base;
-  const cant = parseCantReposicionInput(cantInput);
-  if (cant === null) return base;
-  return `${base} → TOTAL EN UN. = ${fmtNumero(cant * bulto)}`;
-}
-
 /** Entero ≥ 0 si el usuario ingresó algo; vacío o inválido → null (no habilita cantidad). */
 function parsePuntoReposicionInput(raw: string): number | null {
   const t = raw.trim();
@@ -143,16 +131,20 @@ export default function ConfigurarReposicionModal({
   ]);
 
   const nombreProducto = item.descripcionTienda ?? "—";
-  const tituloCant =
-    formaPedir
-      ? opcionesForma.find((o) => o.value === formaPedir)?.label ?? ""
-      : "";
+  const esFormaBulto = formaPedir === "CANT_FIJA_POR_BULTO";
+  const esFormaUnidadesMaximas = formaPedir === "CANT_MAX";
+  const tituloCant = esFormaBulto ? "BULTO" : esFormaUnidadesMaximas ? "UN. MÁXIMAS" : "";
   const tieneConfigInicial = Boolean(item.idReposicion) || Boolean(item.formaPedir);
   const puntoResuelto = parsePuntoReposicionInput(puntoInput) !== null;
   const mostrarPunto = tieneConfigInicial || Boolean(formaPedir);
   const mostrarCant = tieneConfigInicial || (Boolean(formaPedir) && puntoResuelto);
   const invisPunto = !mostrarPunto;
   const invisCant = !mostrarCant;
+  const bultoCantidad = parseCantReposicionInput(cantInput);
+  const totalEnUnidades =
+    esFormaBulto && item.bulto != null && bultoCantidad !== null
+      ? bultoCantidad * item.bulto
+      : null;
 
   const handleAgregarProductos = (seleccionados: ItemSelectorReposicion[]) => {
     setProductosAdicionales((prev) => {
@@ -252,7 +244,12 @@ export default function ConfigurarReposicionModal({
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="grid grid-cols-3 gap-4 items-center">
+              <div
+                className={cn(
+                  "grid gap-4 items-center",
+                  esFormaBulto ? "grid-cols-4" : "grid-cols-3"
+                )}
+              >
               <div className="flex flex-col items-center gap-1">
                 <Label className="text-xs font-medium text-foreground text-center">
                   FORMA PEDIR
@@ -292,7 +289,7 @@ export default function ConfigurarReposicionModal({
                 aria-hidden={invisPunto}
               >
                 <Label className="text-xs font-medium text-foreground text-center">
-                  PUNTO REPOSIC.
+                  {esFormaBulto ? "PUNTO REPOSICIÓN (EN UN.)" : "PUNTO REPOSICIÓN"}
                 </Label>
                 <Input
                   type="number"
@@ -327,36 +324,27 @@ export default function ConfigurarReposicionModal({
                   tabIndex={invisCant ? -1 : 0}
                 />
               </div>
-            </div>
-              {hayBulto && item.bulto != null ? (
-                <p className="text-sm text-foreground uppercase tracking-wide">
-                  {textoAyudaBulto(item.bulto, cantInput, formaPedir)}
-                </p>
+
+              {esFormaBulto ? (
+                <div className="flex flex-col items-center gap-1">
+                  <Label className="text-xs font-medium text-foreground text-center">
+                    TOTAL EN UN.
+                  </Label>
+                  <Input
+                    type="text"
+                    value={totalEnUnidades === null ? "" : fmtNumero(totalEnUnidades)}
+                    readOnly
+                    aria-readonly="true"
+                    className="tabular-nums text-center"
+                    aria-label="Total en unidades"
+                    tabIndex={0}
+                  />
+                </div>
               ) : null}
             </div>
-
-            <div className="flex flex-col items-center gap-3">
-              <span className="text-sm text-foreground uppercase tracking-wide">
-                AGREGAR ESTA CONFIGURACIÓN A ESTOS PRODUCTOS
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 shrink-0"
-                onClick={() => setSelectorOpen(true)}
-                aria-label="Abrir selector de productos"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="text-xs text-muted-foreground text-center">
-                {productosAdicionales.length === 0
-                  ? "La primera fila es el producto abierto desde la grilla. Sumá más con +."
-                  : `${1 + productosAdicionales.length} producto(s): el primero es el abierto; el resto se agrega con +.`}
-              </div>
               <div className="border border-border rounded-lg overflow-auto max-h-64">
                 <Table variant="compact" scrollX={false} className="w-full tabla-gestion-compacta">
                   <TableHeader>
