@@ -115,4 +115,12 @@ export const getReposicionParamsSchema = z.object({
 
 export const productosReposicionSelectorSchema = z.object({
   q: z.string().max(500).optional().default(""),
+  bulto: z
+    .number()
+    .int()
+    .min(1)
+    .max(1_000_000)
+    .nullable()
+    .optional()
+    .default(null),
 });

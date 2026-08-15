@@ -363,19 +363,28 @@ const SELECTOR_LIMIT = 300;
  */
 export async function getProductosReposicionSelector(
   sucursal: SucursalReposicion | null,
-  q: string = ""
+  q: string = "",
+  bulto: number | null = null
 ): Promise<ItemSelectorReposicion[]> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) return [];
   if (!sucursal) return [];
   if (!sucursalReposicionSchema.safeParse(sucursal).success) return [];
   if (!(await sucursalPedidoHabilitada(sucursal))) return [];
-  const parsedQ = productosReposicionSelectorSchema.safeParse({ q });
+  const parsedQ = productosReposicionSelectorSchema.safeParse({ q, bulto });
   const qNorm = parsedQ.success ? parsedQ.data.q : "";
+  const bultoNorm = parsedQ.success ? parsedQ.data.bulto : null;
 
   const textFilter = filtroTexto(qNorm, ["descripcionTienda", "codTienda"]);
+  const whereParts: Prisma.ProdTiendaWhereInput[] = [];
+  if (textFilter.AND?.length) whereParts.push(textFilter);
+  if (bultoNorm != null) {
+    whereParts.push({
+      bulto: { is: { bulto: bultoNorm } },
+    });
+  }
   const where: Prisma.ProdTiendaWhereInput =
-    textFilter.AND?.length ? textFilter : {};
+    whereParts.length > 0 ? { AND: whereParts } : {};
 
   const rows = await prisma.prodTienda.findMany({
     where,
