@@ -31,6 +31,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sucursal: SucursalReposicion;
+  bultoReferencia: number | null;
   onConfirmar: (seleccionados: ItemSelectorReposicion[]) => void;
   excludeIds?: string[];
 }
@@ -39,6 +40,7 @@ export default function SelectorProductosReposicionModal({
   open,
   onOpenChange,
   sucursal,
+  bultoReferencia,
   onConfirmar,
   excludeIds = [],
 }: Props) {
@@ -55,10 +57,14 @@ export default function SelectorProductosReposicionModal({
 
   const load = useCallback(async () => {
     setLoading(true);
-    const list = await getProductosReposicionSelector(sucursal, debouncedQ);
+    const list = await getProductosReposicionSelector({
+      sucursal,
+      q: debouncedQ,
+      bultoReferencia,
+    });
     setItems(list);
     setLoading(false);
-  }, [sucursal, debouncedQ]);
+  }, [sucursal, debouncedQ, bultoReferencia]);
 
   useEffect(() => {
     if (open) queueMicrotask(() => void load());

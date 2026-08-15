@@ -145,6 +145,8 @@ export default function ConfigurarReposicionModal({
     esFormaBulto && item.bulto != null && bultoCantidad !== null
       ? bultoCantidad * item.bulto
       : null;
+  const claseEtiquetaCampo =
+    "min-h-10 justify-center px-1 text-xs font-medium text-foreground text-center leading-tight";
 
   const handleAgregarProductos = (seleccionados: ItemSelectorReposicion[]) => {
     setProductosAdicionales((prev) => {
@@ -251,7 +253,7 @@ export default function ConfigurarReposicionModal({
                 )}
               >
               <div className="flex flex-col items-center gap-1">
-                <Label className="text-xs font-medium text-foreground text-center">
+                <Label className={claseEtiquetaCampo}>
                   FORMA PEDIR
                 </Label>
                 <Select
@@ -288,7 +290,7 @@ export default function ConfigurarReposicionModal({
                 )}
                 aria-hidden={invisPunto}
               >
-                <Label className="text-xs font-medium text-foreground text-center">
+                <Label className={claseEtiquetaCampo}>
                   {esFormaBulto ? "PUNTO REPOSICIÓN (EN UN.)" : "PUNTO REPOSICIÓN"}
                 </Label>
                 <Input
@@ -310,7 +312,7 @@ export default function ConfigurarReposicionModal({
                 )}
                 aria-hidden={invisCant}
               >
-                <Label className="text-xs font-medium text-foreground text-center">
+                <Label className={claseEtiquetaCampo}>
                   {tituloCant}
                 </Label>
                 <Input
@@ -327,7 +329,7 @@ export default function ConfigurarReposicionModal({
 
               {esFormaBulto ? (
                 <div className="flex flex-col items-center gap-1">
-                  <Label className="text-xs font-medium text-foreground text-center">
+                  <Label className={claseEtiquetaCampo}>
                     TOTAL EN UN.
                   </Label>
                   <Input
@@ -345,6 +347,18 @@ export default function ConfigurarReposicionModal({
             </div>
 
             <div className="flex flex-col gap-2">
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => setSelectorOpen(true)}
+                  aria-label="Agregar productos con esta configuración"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
               <div className="border border-border rounded-lg overflow-auto max-h-64">
                 <Table variant="compact" scrollX={false} className="w-full tabla-gestion-compacta">
                   <TableHeader>
@@ -406,6 +420,7 @@ export default function ConfigurarReposicionModal({
         open={selectorOpen}
         onOpenChange={setSelectorOpen}
         sucursal={sucursal}
+        bultoReferencia={item.bulto ?? null}
         onConfirmar={handleAgregarProductos}
         excludeIds={[item.idListaTienda]}
       />

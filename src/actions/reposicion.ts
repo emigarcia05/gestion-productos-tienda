@@ -356,26 +356,47 @@ export interface ItemSelectorReposicion {
 }
 
 const SELECTOR_LIMIT = 300;
+const getProductosReposicionSelectorSchema = z.object({
+  sucursal: sucursalReposicionSchema.nullable(),
+  q: z.string().max(500).optional().default(""),
+  bultoReferencia: z.preprocess(
+    (v) => (v === undefined || v === "" ? null : v),
+    z.coerce.number().int().min(1).nullable()
+  ),
+});
 
 /**
  * Productos de lista_tienda con proveedor para el selector del modal "Agregar configuración".
  * Búsqueda por descripción; máximo SELECTOR_LIMIT resultados.
  */
 export async function getProductosReposicionSelector(
-  sucursal: SucursalReposicion | null,
-  q: string = ""
+  raw: unknown
 ): Promise<ItemSelectorReposicion[]> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.pedidos.acceso)) return [];
+  const parsed = getProductosReposicionSelectorSchema.safeParse(raw);
+  if (!parsed.success) return [];
+  const { sucursal, bultoReferencia } = parsed.data;
   if (!sucursal) return [];
-  if (!sucursalReposicionSchema.safeParse(sucursal).success) return [];
   if (!(await sucursalPedidoHabilitada(sucursal))) return [];
-  const parsedQ = productosReposicionSelectorSchema.safeParse({ q });
+  if (bultoReferencia == null) return [];
+  const parsedQ = productosReposicionSelectorSchema.safeParse({ q: parsed.data.q });
   const qNorm = parsedQ.success ? parsedQ.data.q : "";
 
+  const bultoRows = await prisma.prodTiendaBulto.findMany({
+    where: { bulto: bultoReferencia },
+    select: { codTienda: true },
+  });
+  const codTiendasBulto = bultoRows.map((r) => r.codTienda).filter(Boolean);
+  if (codTiendasBulto.length === 0) return [];
+
   const textFilter = filtroTexto(qNorm, ["descripcionTienda", "codTienda"]);
+  const whereParts: Prisma.ProdTiendaWhereInput[] = [
+    { codTienda: { in: codTiendasBulto } },
+  ];
+  if (textFilter.AND?.length) whereParts.push(textFilter);
   const where: Prisma.ProdTiendaWhereInput =
-    textFilter.AND?.length ? textFilter : {};
+    whereParts.length > 1 ? { AND: whereParts } : whereParts[0];
 
   const rows = await prisma.prodTienda.findMany({
     where,
