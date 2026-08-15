@@ -33,19 +33,43 @@ import SelectorProductosReposicionModal from "./SelectorProductosReposicionModal
 import type { ItemReposicion, SucursalReposicion, FormaPedirReposicionOption } from "@/actions/reposicion";
 import { upsertReglaReposicion } from "@/actions/reposicion";
 import type { ItemSelectorReposicion } from "@/actions/reposicion";
+import { fmtNumero } from "@/lib/format";
 import {
-  REPOSICION_FORMA_PEDIDO_LABELS,
+  REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS,
   REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES,
   reposicionFormaPedidoVendedorSchema,
 } from "@/lib/validations/reposicion";
 
-const FORMA_PEDIR_OPTIONS: { value: FormaPedirReposicionOption; label: string }[] = [
-  { value: "", label: "—" },
-  ...REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES.map((value) => ({
-    value,
-    label: REPOSICION_FORMA_PEDIDO_LABELS[value],
-  })),
-];
+function formaPedirOptions(hayBulto: boolean): {
+  value: FormaPedirReposicionOption;
+  label: string;
+}[] {
+  return [
+    { value: "", label: "—" },
+    ...REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES.filter(
+      (value) => value !== "CANT_FIJA_POR_BULTO" || hayBulto
+    ).map((value) => ({
+      value,
+      label: REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS[value],
+    })),
+  ];
+}
+
+function hayBultoConfigurado(bulto: number | null | undefined): boolean {
+  return bulto != null && bulto >= 1;
+}
+
+function textoAyudaBulto(
+  bulto: number,
+  cantInput: string,
+  formaPedir: FormaPedirReposicionOption
+): string {
+  const base = `BULTO TRAE ${fmtNumero(bulto)} UN.`;
+  if (formaPedir !== "CANT_FIJA_POR_BULTO") return base;
+  const cant = parseCantReposicionInput(cantInput);
+  if (cant === null) return base;
+  return `${base} → TOTAL EN UN. = ${fmtNumero(cant * bulto)}`;
+}
 
 /** Entero ≥ 0 si el usuario ingresó algo; vacío o inválido → null (no habilita cantidad). */
 function parsePuntoReposicionInput(raw: string): number | null {
@@ -86,9 +110,17 @@ export default function ConfigurarReposicionModal({
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
+  const hayBulto = hayBultoConfigurado(item.bulto);
+  const opcionesForma = formaPedirOptions(hayBulto);
+
   useEffect(() => {
     if (open) {
-      setFormaPedir(item.formaPedir || "");
+      const formaInicial =
+        item.formaPedir === "CANT_FIJA_POR_BULTO" &&
+        !hayBultoConfigurado(item.bulto)
+          ? ""
+          : item.formaPedir || "";
+      setFormaPedir(formaInicial);
       const guardado = Boolean(item.idReposicion) || Boolean(item.formaPedir);
       if (guardado) {
         setPuntoInput(String(item.puntoReposicion));
@@ -107,12 +139,13 @@ export default function ConfigurarReposicionModal({
     item.formaPedir,
     item.puntoReposicion,
     item.cant,
+    item.bulto,
   ]);
 
   const nombreProducto = item.descripcionTienda ?? "—";
   const tituloCant =
     formaPedir
-      ? FORMA_PEDIR_OPTIONS.find((o) => o.value === formaPedir)?.label ?? ""
+      ? opcionesForma.find((o) => o.value === formaPedir)?.label ?? ""
       : "";
   const tieneConfigInicial = Boolean(item.idReposicion) || Boolean(item.formaPedir);
   const puntoResuelto = parsePuntoReposicionInput(puntoInput) !== null;
@@ -145,6 +178,10 @@ export default function ConfigurarReposicionModal({
     const formaParsed = reposicionFormaPedidoVendedorSchema.safeParse(formaPedir);
     if (!formaParsed.success) {
       toast.error("Seleccioná Forma Pedir.");
+      return;
+    }
+    if (formaParsed.data === "CANT_FIJA_POR_BULTO" && !hayBulto) {
+      toast.error("BULTO solo está disponible si el producto tiene bulto configurado.");
       return;
     }
     const punto = parsePuntoReposicionInput(puntoInput);
@@ -214,7 +251,8 @@ export default function ConfigurarReposicionModal({
               <div className="w-full h-px bg-[#0072BB]" />
             </div>
 
-            <div className="grid grid-cols-3 gap-4 items-center">
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-3 gap-4 items-center">
               <div className="flex flex-col items-center gap-1">
                 <Label className="text-xs font-medium text-foreground text-center">
                   FORMA PEDIR
@@ -237,7 +275,7 @@ export default function ConfigurarReposicionModal({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper" side="bottom" align="start">
-                    {FORMA_PEDIR_OPTIONS.map((opt) => (
+                    {opcionesForma.map((opt) => (
                       <SelectItem key={opt.value || "none"} value={opt.value || "none"}>
                         {opt.label}
                       </SelectItem>
@@ -289,6 +327,12 @@ export default function ConfigurarReposicionModal({
                   tabIndex={invisCant ? -1 : 0}
                 />
               </div>
+            </div>
+              {hayBulto && item.bulto != null ? (
+                <p className="text-sm text-foreground uppercase tracking-wide">
+                  {textoAyudaBulto(item.bulto, cantInput, formaPedir)}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-col items-center gap-3">

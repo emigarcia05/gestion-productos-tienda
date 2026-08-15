@@ -24,6 +24,7 @@ import {
   elegirListaPrecioProveedorReposicion,
   sumarIvaSaldoParaReposicion,
 } from "@/services/pedidosReposicionProveedor.service";
+import { buildMapBultosProdTienda } from "@/services/tiendaBultos.service";
 import {
   getReposicionParamsSchema,
   productosReposicionSelectorSchema,
@@ -56,6 +57,8 @@ export interface ItemReposicion {
   cantPedidaReposicion: number;
   /** Cantidad a pedir recalculada (stock / forma); misma regla que Generar pedido. */
   cantPedir: number;
+  /** Unidades por bulto (`prod_tienda_bultos`). `null` = sin fila / vacío. */
+  bulto: number | null;
 }
 
 export interface ReposicionData {
@@ -281,12 +284,14 @@ export async function getReposicionData(
   }
 
   const codTiendasPage = rows.map((r) => r.codTienda.trim()).filter(Boolean);
-  const [ivaSaldoReposicion, lpPorCodTienda, stockMaps, stockeableMap] = await Promise.all([
-    sumarIvaSaldoParaReposicion(),
-    cargarListaPrecioReposicionPorCodTiendas(codTiendasPage),
-    buildMapsStockSucursalesPrincipales(codTiendasPage),
-    buildMapStockeable(codTiendasPage),
-  ]);
+  const [ivaSaldoReposicion, lpPorCodTienda, stockMaps, stockeableMap, bultosMap] =
+    await Promise.all([
+      sumarIvaSaldoParaReposicion(),
+      cargarListaPrecioReposicionPorCodTiendas(codTiendasPage),
+      buildMapsStockSucursalesPrincipales(codTiendasPage),
+      buildMapStockeable(codTiendasPage),
+      buildMapBultosProdTienda(codTiendasPage),
+    ]);
 
   const items: ItemReposicion[] = rows.map((r) => {
     const codTienda = r.codTienda.trim();
@@ -324,6 +329,7 @@ export async function getReposicionData(
       cant: cantCfg,
       cantPedidaReposicion: cantPedidaDb,
       cantPedir: cantAPedir,
+      bulto: bultosMap.get(codTienda) ?? null,
     };
   });
 
@@ -413,6 +419,16 @@ export async function upsertReglaReposicion(raw: unknown): Promise<ActionResult<
     parsed.data;
   if (!(await sucursalPedidoHabilitada(sucursalCodigo))) {
     return { ok: false, error: "La sucursal no está habilitada para pedidos." };
+  }
+  if (formaPedir === "CANT_FIJA_POR_BULTO") {
+    const bultosMap = await buildMapBultosProdTienda([codTienda]);
+    const bulto = bultosMap.get(codTienda);
+    if (bulto == null || bulto < 1) {
+      return {
+        ok: false,
+        error: "BULTO solo está disponible si el producto tiene bulto configurado.",
+      };
+    }
   }
 
   try {

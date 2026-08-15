@@ -41,13 +41,22 @@ export const REPOSICION_FORMA_PEDIDO_LABELS: Record<ReposicionFormaPedido, strin
   CANT_FIJA_POR_UNIDAD: "CANT. FIJA POR UNID.",
 };
 
-/** Labels cortos del desplegable FORMA PEDIR en Pedido A Fáb. (vendedor sigue usando los de arriba). */
+/** Labels cortos de FORMA PEDIR en Pedido A Fáb. */
 export const REPOSICION_FORMA_PEDIDO_FABRICA_LABELS: Record<
   ReposicionFormaPedidoFabrica,
   string
 > = {
   CANT_FIJA_POR_BULTO: "BULTO",
   CANT_FIJA_POR_UNIDAD: "UNIDAD",
+};
+
+/** Labels de FORMA PEDIR en Configurar Reposición (vendedor). */
+export const REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS: Record<
+  ReposicionFormaPedidoVendedor,
+  string
+> = {
+  CANT_MAX: "UN. MÁXIMAS",
+  CANT_FIJA_POR_BULTO: "BULTO",
 };
 
 /** Lee valor persistido (incluye alias previos a la migración). */
@@ -70,6 +79,16 @@ export function labelReposicionFormaPedido(
 ): string {
   const n = normalizarReposicionFormaPedido(raw);
   return n ? REPOSICION_FORMA_PEDIDO_LABELS[n] : "";
+}
+
+export function labelReposicionFormaPedidoVendedor(
+  raw: string | null | undefined
+): string {
+  const n = normalizarReposicionFormaPedido(raw);
+  if (n === "CANT_MAX" || n === "CANT_FIJA_POR_BULTO") {
+    return REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS[n];
+  }
+  return "";
 }
 
 export function esFormaCantFijaReposicion(

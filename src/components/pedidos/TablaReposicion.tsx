@@ -28,7 +28,7 @@ import type { ReposicionData, ItemReposicion, SucursalReposicion } from "@/actio
 import { deleteReglaReposicion } from "@/actions/reposicion";
 import ConfigurarReposicionModal from "./ConfigurarReposicionModal";
 import { fmtCelda } from "@/lib/format";
-import { labelReposicionFormaPedido } from "@/lib/validations/reposicion";
+import { labelReposicionFormaPedidoVendedor } from "@/lib/validations/reposicion";
 
 const COL_WIDTHS_PCT = [50, 12, 8, 8, 8, 7, 7] as const;
 const CELL_MIN = "min-w-0";
@@ -159,7 +159,9 @@ export default function TablaReposicion({
                     {fmtCelda(item.descripcionTienda)}
                   </TableCell>
                   <TableCell className="celda-datos">
-                    {item.formaPedir ? labelReposicionFormaPedido(item.formaPedir) : fmtCelda(null)}
+                    {item.formaPedir
+                      ? labelReposicionFormaPedidoVendedor(item.formaPedir)
+                      : fmtCelda(null)}
                   </TableCell>
                   <TableCell className="celda-datos tabular-nums">
                     {puntoVal === "" ? "" : puntoVal}
