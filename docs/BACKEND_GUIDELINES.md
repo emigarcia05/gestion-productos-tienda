@@ -264,7 +264,7 @@ URL: `/gestion-productos/tienda/comp-proveedores`. Permiso lectura/edición CX: 
 
 - Stock por depósito: `prod_tienda_stock` PK `(cod_tienda, id_deposito)`. Catálogo `prod_depositos_dux`. Lecturas: `prodTiendaStock.service.ts`.
 - Control stock / transf.: Actions en `stock.ts` (Prisma legacy en lecturas). Permiso `stock.acceso` (simple+editor).
-- **`prod_stock_transf_dep`:** no mueve stock DUX; Excel luego se importa en DUX. Ventana historial/duplicado **14 días**. Encolar + export EGRESO/INGRESO (`transfDepositos.service.ts`). Indicador slidenav: `getIndicadorSlidenavAction`.
+- **`prod_stock_transf_dep`:** no mueve stock DUX; Excel luego se importa en DUX. Ventana historial/duplicado **14 días**. Encolar + export EGRESO/INGRESO (`transfDepositos.service.ts`). Indicador slidenav: `getIndicadorSlidenavAction` (pedido agrupado por proveedor + transferencias).
 
 ### 3.5 Px Listas DUX y Px Competencia
 
@@ -287,10 +287,11 @@ Jerarquía `CategoriaComparacion` → sub → presentación. Membresía en `prod
 Permiso módulo: `PERMISOS.pedidos.acceso` (simple+editor). Ítems vivos: `prod_ped_merc` (`ProdPedMerc2`, UUID).
 
 - Urgente / enviar / tintométrico: `pedidos.ts` + `pedidosEnvio.service.ts`. `comprobarItemsParaGenerarPedidoAction` usa el **servicio** `getItemsTablaEnviarPedido` (no la Action vecina).
-- Reposición: `reposicion.ts` (Prisma parcial en Action).
+- Indicador slidenav: `contarItemsPedidoPorTipoParaSlidenav` (mismos ítems que Generar Pedido, sucursal preferida) agrupa por proveedor; solo proveedores con cant. pedir > 0. `getIndicadorSlidenavAction` expone `proveedoresPedido` + totales por tipo + transferencias. Permiso `pedidos.acceso` / `stock.acceso` por bloque; sin permiso el bloque va en 0 / lista vacía.
+- Reposición: `reposicion.ts` (Prisma parcial en Action). `reposicion_forma_pedido`: `CANT_MAX` | `CANT_FIJA_POR_BULTO` | `CANT_FIJA_POR_UNIDAD`. Vendedor (upsert regla): solo `CANT_MAX` + `CANT_FIJA_POR_BULTO`. Pedido A Fáb. (filas `A FÁBRICA`): solo `CANT_FIJA_POR_BULTO` + `CANT_FIJA_POR_UNIDAD`. Cálculo `cantPedirReposicionMerc2`: CANT_MAX → `cantConf - stock`; CANT_FIJA_* → `cantConf`. No reintroducir `CANT_MAXIMA` / `CANT_FIJA`.
 - **Historial:** cabecera `prod_ped_historial`; ítems `prod_ped_historial_merc` (writes vía `tx.pedidoHistoriaItem`). Estados `PENDIENTE` | `RECEPCIONADO`. Retención: fábrica 60 días / resto 14 (`purgarPedidosHistoriaExpirados` al inicio de cada mutación, no en lecturas). Listado: RSC. Detalle: API. Mutaciones: Actions.
 - **Recepción DUX:** `registrarRecepcionCompraDuxAction`. `iva` proveedor → `tipo_comprobante` (`resolverTipoComprobantePorIva` en `exportRecepcionPedidoExcel.service.ts`). `PREGUNTA` sin decisión → `REQUIERE_DECISION_FISCAL`. Nro comprobante: `prod_ped_ult_comp`. Personal: `idPersonal` de `global_personal`. Precios netos 4 decimales.
-- **Pedido A Fáb.:** `pedidoAFabrica.ts` — lectura `estadisticasProductos.acceso` (auth **antes** de Zod); upsert con pedidos **o** estadísticas. Métricas sucursales `genera_est`. Cálculos UI en `@/lib/pedidoAFabricaPromVta`.
+- **Pedido A Fáb.:** `pedidoAFabrica.ts` — lectura `estadisticasProductos.acceso` (auth **antes** de Zod); upsert con pedidos **o** estadísticas. Métricas sucursales `genera_est`. Cálculos UI en `@/lib/pedidoAFabricaPromVta`. FORMA PEDIR en `reposicion_forma_pedido` de filas `A FÁBRICA` (no CANT_MAX).
 
 ### 3.8 Finanzas
 
@@ -378,6 +379,7 @@ Los ~71 modelos de `schema.prisma` están en uso (directo, `tx.` o include). Scr
 | Pool `pg` suelto (`src/lib/db.ts`), WhatsApp API | Prisma; sin WhatsApp |
 | Helpers `canEdit() => () => Promise<boolean>` | `tienePermisoEditar()` / `actionGates.ts` |
 | Re-exportar constantes desde `"use server"` | `src/lib/` / `src/services/` |
+| `CANT_MAXIMA` / `CANT_FIJA` en `reposicion_forma_pedido` | `CANT_MAX` / `CANT_FIJA_POR_BULTO` / `CANT_FIJA_POR_UNIDAD` |
 
 **Deuda aceptada (no copiar en código nuevo):** Prisma / SQL inline en `tienda.ts`, `stock.ts`, `reposicion.ts`, `vinculos.ts`, `tiposPinturaRendimientos.ts`. Extraer a servicio si se toca en profundidad. Firmas tipadas (no `unknown`) en varios listados legacy (`comparacionCategorias`, `getPedidoUrgenteData`, etc.): al tocarlas, pasar a `unknown` + Zod.
 

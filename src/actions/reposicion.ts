@@ -27,13 +27,15 @@ import {
 import {
   getReposicionParamsSchema,
   productosReposicionSelectorSchema,
-  reposicionFormaPedidoSchema,
+  reposicionFormaPedidoVendedorSchema,
   sucursalReposicionSchema,
+  normalizarReposicionFormaPedido,
+  type ReposicionFormaPedido,
 } from "@/lib/validations/reposicion";
 
 export type SucursalReposicion = "guaymallen" | "maipu";
 
-export type FormaPedirReposicionOption = "CANT_MAXIMA" | "CANT_FIJA" | "";
+export type FormaPedirReposicionOption = ReposicionFormaPedido | "";
 
 export interface ItemReposicion {
   /** Clave estable de fila tienda (= `prod_precios_tienda.cod_tienda`). El nombre conserva compatibilidad con la UI */
@@ -269,7 +271,7 @@ export async function getReposicionData(
         idProveedor: null,
         nombreProveedor: null,
         codExt: "",
-        formaPedir: (r.reposicionFormaPedido as FormaPedirReposicionOption) ?? "",
+        formaPedir: normalizarReposicionFormaPedido(r.reposicionFormaPedido) ?? "",
         puntoReposicion: Math.max(0, Math.floor(Number(r.reposicionPuntoPedido ?? 0))),
         cant: Math.max(0, Math.floor(Number(r.reposicionCantConf ?? 0))),
         cantPedidaReposicion: Math.max(0, Math.floor(Number(r.reposicionCantPedir ?? 0))),
@@ -386,7 +388,7 @@ export async function getProductosReposicionSelector(
 const upsertReglaSchema = z.object({
   sucursalCodigo: z.enum(["guaymallen", "maipu"]),
   codTienda: z.string().min(1, "Código tienda requerido"),
-  formaPedir: reposicionFormaPedidoSchema,
+  formaPedir: reposicionFormaPedidoVendedorSchema,
   puntoReposicion: z.number().int().min(0, "Punto reposición inválido"),
   cant: z.number().int().min(1, "Cant. reposición requerida"),
 });

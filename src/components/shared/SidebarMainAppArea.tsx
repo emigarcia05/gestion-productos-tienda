@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   getIndicadorSlidenavAction,
   type IndicadorSlidenavDto,
+  type IndicadorSlidenavProveedorPedidoDto,
 } from "@/actions/stock";
 import { EVENTO_INDICADOR_SLIDENAV } from "@/lib/indicadorSlidenav";
 import {
@@ -29,6 +30,7 @@ const VACIO: IndicadorSlidenavDto = {
   urgente: 0,
   tintometrico: 0,
   reposicion: 0,
+  proveedoresPedido: [],
   emision: 0,
   recepcion: 0,
 };
@@ -48,6 +50,51 @@ function FilaDetalle({
   );
 }
 
+function FilaProveedorPedido({
+  proveedor,
+  urgente,
+  tintometrico,
+  reposicion,
+}: IndicadorSlidenavProveedorPedidoDto) {
+  return (
+    <div
+      tabIndex={0}
+      className={cn(
+        "group relative flex min-w-0 items-center gap-1 rounded-sm",
+        "outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      )}
+      aria-label={`${proveedor}: urgente ${urgente}, tintométrico ${tintometrico}, reposición ${reposicion}`}
+    >
+      <span
+        className={cn(
+          "min-w-0 flex-1 truncate text-xs leading-tight",
+          "group-hover:text-primary group-focus-within:text-primary"
+        )}
+      >
+        {proveedor}
+      </span>
+      <ChevronRight
+        className="size-3 shrink-0 text-muted-foreground group-hover:text-primary group-focus-within:text-primary"
+        aria-hidden
+      />
+      <div
+        role="tooltip"
+        className={cn(
+          "pointer-events-none invisible absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2",
+          "group-hover:visible group-focus-within:visible",
+          "rounded-md border border-border bg-card p-2.5 text-card-foreground shadow-md"
+        )}
+      >
+        <div className="grid min-w-[9rem] grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+          <FilaDetalle label="Urgente" valor={urgente} />
+          <FilaDetalle label="Tintométrico" valor={tintometrico} />
+          <FilaDetalle label="Reposición" valor={reposicion} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function hrefTransfDepositosConOrigen(): string {
   const sucursal = leerSucursalPreferida();
   if (!sucursal) return GP_ROUTES.ayudaVendedor.transfDepositos;
@@ -56,11 +103,11 @@ function hrefTransfDepositosConOrigen(): string {
 
 function BotonCategoriaPendiente({
   label,
-  rowSpanClass,
+  className,
   onNavigate,
 }: {
   label: string;
-  rowSpanClass: string;
+  className?: string;
   onNavigate: () => void;
 }) {
   return (
@@ -72,11 +119,11 @@ function BotonCategoriaPendiente({
         onNavigate();
       }}
       className={cn(
-        rowSpanClass,
         "w-full self-center text-center text-xs font-semibold uppercase tracking-wide",
         "rounded-sm text-foreground underline-offset-2",
         "hover:text-primary hover:underline",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        className
       )}
     >
       {label}
@@ -87,8 +134,9 @@ function BotonCategoriaPendiente({
 /**
  * Fila **Pendientes** del dock de sesión (slidenav).
  * Label **PENDIENTES** centrado; badge = categorías con pendientes (Pedido y/o
- * Transferencia; máx. 2). Hover o click: detalle lateral con botones **PEDIDO** /
- * **TRANSFERENCIA** (MAYÚSCULAS, centrados y alineados entre sí).
+ * Transferencia; máx. 2). Hover o click: detalle lateral. Pedido lista proveedores
+ * con pendientes; hover/foco en el nombre muestra Urgente / Tintométrico /
+ * Reposición. Transferencia: Emisión / Recepción.
  */
 export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProps) {
   const pathname = usePathname();
@@ -137,8 +185,7 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
     };
   }, [pathname]);
 
-  const hayPedidoPendiente =
-    conteos.urgente + conteos.tintometrico + conteos.reposicion > 0;
+  const hayPedidoPendiente = conteos.proveedoresPedido.length > 0;
   const hayTransfPendiente = conteos.emision > 0 || conteos.recepcion > 0;
   /** Categorías con pendientes (Pedido y/o Transferencia); máximo 2. */
   const categoriasPendientes =
@@ -199,30 +246,29 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
         side="right"
         align="center"
         sideOffset={10}
-        className="pointer-events-auto border-border bg-card p-2.5 text-card-foreground"
+        className="pointer-events-auto overflow-visible border-border bg-card p-2.5 text-card-foreground"
       >
         <div
-          className="grid min-w-[13.5rem] grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1"
+          className="grid min-w-[13.5rem] grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1"
           aria-label="Detalle de pendientes"
         >
-          <BotonCategoriaPendiente
-            label="Pedido"
-            rowSpanClass="row-span-3"
-            onNavigate={irAGenerarPedido}
-          />
-          <FilaDetalle label="Urgente" valor={conteos.urgente} />
-          <FilaDetalle label="Tintométrico" valor={conteos.tintometrico} />
-          <FilaDetalle label="Reposición" valor={conteos.reposicion} />
+          <BotonCategoriaPendiente label="Pedido" onNavigate={irAGenerarPedido} />
+          <div className="flex min-w-0 flex-col gap-1">
+            {conteos.proveedoresPedido.map((p) => (
+              <FilaProveedorPedido key={p.proveedorId} {...p} />
+            ))}
+          </div>
 
-          <span className="col-span-3 my-1 h-px bg-primary" aria-hidden />
+          <span className="col-span-2 my-1 h-px bg-primary" aria-hidden />
 
           <BotonCategoriaPendiente
             label="Transferencia"
-            rowSpanClass="row-span-2"
             onNavigate={irATransfDepositos}
           />
-          <FilaDetalle label="Emisión" valor={conteos.emision} />
-          <FilaDetalle label="Recepción" valor={conteos.recepcion} />
+          <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+            <FilaDetalle label="Emisión" valor={conteos.emision} />
+            <FilaDetalle label="Recepción" valor={conteos.recepcion} />
+          </div>
         </div>
       </TooltipContent>
     </Tooltip>

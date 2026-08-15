@@ -28,15 +28,10 @@ import type { ReposicionData, ItemReposicion, SucursalReposicion } from "@/actio
 import { deleteReglaReposicion } from "@/actions/reposicion";
 import ConfigurarReposicionModal from "./ConfigurarReposicionModal";
 import { fmtCelda } from "@/lib/format";
+import { labelReposicionFormaPedido } from "@/lib/validations/reposicion";
 
 const COL_WIDTHS_PCT = [50, 12, 8, 8, 8, 7, 7] as const;
 const CELL_MIN = "min-w-0";
-
-function formaPedirLabel(formaPedir: string): string {
-  if (formaPedir === "CANT_MAXIMA") return "CANT. MAX.";
-  if (formaPedir === "CANT_FIJA") return "CANT. FIJA";
-  return "";
-}
 
 interface Props {
   data: ReposicionData;
@@ -164,7 +159,7 @@ export default function TablaReposicion({
                     {fmtCelda(item.descripcionTienda)}
                   </TableCell>
                   <TableCell className="celda-datos">
-                    {item.formaPedir ? formaPedirLabel(item.formaPedir) : fmtCelda(null)}
+                    {item.formaPedir ? labelReposicionFormaPedido(item.formaPedir) : fmtCelda(null)}
                   </TableCell>
                   <TableCell className="celda-datos tabular-nums">
                     {puntoVal === "" ? "" : puntoVal}

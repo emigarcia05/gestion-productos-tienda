@@ -501,16 +501,38 @@ export async function exportarPendientesTransfDepositosAction(
   return { ok: true, data: result.data };
 }
 
+export type IndicadorSlidenavProveedorPedidoDto = {
+  proveedorId: string;
+  proveedor: string;
+  urgente: number;
+  tintometrico: number;
+  reposicion: number;
+};
+
 export type IndicadorSlidenavDto = {
   urgente: number;
   tintometrico: number;
   reposicion: number;
+  proveedoresPedido: IndicadorSlidenavProveedorPedidoDto[];
   emision: number;
   recepcion: number;
 };
 
+const PEDIDOS_SLIDENAV_VACIO: {
+  urgente: number;
+  tintometrico: number;
+  reposicion: number;
+  proveedores: IndicadorSlidenavProveedorPedidoDto[];
+} = {
+  urgente: 0,
+  tintometrico: 0,
+  reposicion: 0,
+  proveedores: [],
+};
+
 /**
- * Conteos del indicador de slidenav: pedidos (Generar Pedido) + transferencias pendientes.
+ * Conteos del indicador de slidenav: pedidos (Generar Pedido, por proveedor) +
+ * transferencias pendientes.
  */
 export async function getIndicadorSlidenavAction(
   raw: unknown
@@ -527,7 +549,7 @@ export async function getIndicadorSlidenavAction(
         ? import("@/services/pedidosEnvio.service").then((m) =>
             m.contarItemsPedidoPorTipoParaSlidenav(sucursal)
           )
-        : Promise.resolve({ urgente: 0, tintometrico: 0, reposicion: 0 }),
+        : Promise.resolve(PEDIDOS_SLIDENAV_VACIO),
       puede(rol, PERMISOS.stock.acceso)
         ? import("@/services/transfDepositos.service").then((m) =>
             m.contarPendientesTransfPorSucursal(sucursal)
@@ -540,6 +562,7 @@ export async function getIndicadorSlidenavAction(
         urgente: pedidos.urgente,
         tintometrico: pedidos.tintometrico,
         reposicion: pedidos.reposicion,
+        proveedoresPedido: pedidos.proveedores,
         emision: transf.emision,
         recepcion: transf.recepcion,
       },

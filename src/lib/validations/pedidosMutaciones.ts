@@ -8,6 +8,7 @@ import {
   sucursalPedidoCodigoSchema,
   tiposPedidoMercaderiaSchema,
 } from "@/lib/validations/pedidosLectura";
+import { reposicionFormaPedidoFabricaSchema } from "@/lib/validations/reposicion";
 
 /** Proveedor del flujo Generar Pedido / envío (`Proveedor.id` = CUID). */
 export const proveedorIdPedidoSchema = prismaCuidSchema;
@@ -80,6 +81,7 @@ export const upsertPedidoUrgenteItemSchema = z.object({
 export const upsertPedidoAFabricaItemSchema = z.object({
   listaPrecioProveedorId: listaPreciosCodExtSchema,
   cant: z.number().int().min(0),
+  formaPedir: reposicionFormaPedidoFabricaSchema.optional(),
 });
 
 export const pedidoTintometricoItemSchema = z.object({

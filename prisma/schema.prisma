@@ -932,11 +932,25 @@ model ProdTienda {
   preciosLista            ProdTiendaPrecio[]
   preciosListaEdicion     ProdTiendaPrecioEdicion[]
   stocks                  ProdTiendaStock[]
+  bulto                   ProdTiendaBulto?
   estPorProd              EstPorProd[]
   transfDepositosControles ProdStockTransfDep[]
 
   @@index([competenciaIdPxListaGeneral], map: "prod_tienda_competencia_id_px_lista_general_idx")
   @@map("prod_tienda")
+}
+
+/**
+ * Unidades por bulto del ítem tienda. 1:1 con `prod_tienda` (PK = `cod_tienda`).
+ * Sin fila = BULTO vacío en Cx Compra. `bulto` siempre entero positivo.
+ */
+model ProdTiendaBulto {
+  codTienda String @id @map("cod_tienda")
+  bulto     Int    @map("bulto")
+
+  prodTienda ProdTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+
+  @@map("prod_tienda_bultos")
 }
 
 /**
@@ -1040,6 +1054,7 @@ model ImportProgress {
 /**
  * Pedidos de mercadería (REPOSICION | URGENTE | TINTOMETRICO | A FÁBRICA). Tabla física `prod_ped_merc`.
  * `tipo_de_pedido`: CHECK en migraciones SQL.
+ * `reposicion_forma_pedido`: CANT_MAX | CANT_FIJA_POR_BULTO | CANT_FIJA_POR_UNIDAD.
  */
 model ProdPedMerc2 {
   id                       String  @id @default(uuid())

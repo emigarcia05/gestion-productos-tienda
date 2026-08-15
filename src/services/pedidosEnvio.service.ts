@@ -29,6 +29,12 @@ import {
   isStockeableCodTienda,
   type MapsStockSucursalesPrincipales,
 } from "@/services/prodTiendaStock.service";
+import {
+  esFormaCantFijaReposicion,
+  normalizarReposicionFormaPedido,
+  type ReposicionFormaPedidoFabrica,
+  type ReposicionFormaPedidoVendedor,
+} from "@/lib/validations/reposicion";
 
 const TIPO_URGENTE = "URGENTE";
 const TIPO_REPOSICION = "REPOSICION";
@@ -82,7 +88,7 @@ async function getSucursalIdByCodigo(codigo: SucursalPedidoEnvio): Promise<strin
 export async function upsertPedidoMercaderiaReposicionConfig(params: {
   sucursal: SucursalPedidoEnvio;
   codTienda: string;
-  formaPedir: "CANT_MAXIMA" | "CANT_FIJA";
+  formaPedir: ReposicionFormaPedidoVendedor;
   puntoReposicion: number;
   cantConf: number;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -131,11 +137,11 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
       )) ?? 0;
     // Regla de negocio:
     // - Solo pedir si stock <= punto de reposición.
-    // - CANT_FIJA: pedir la cantidad configurada.
-    // - CANT_MAXIMA: pedir faltante hasta la cantidad configurada.
+    // - CANT_FIJA_POR_BULTO / CANT_FIJA_POR_UNIDAD: pedir la cantidad configurada.
+    // - CANT_MAX: pedir faltante hasta la cantidad configurada.
     const cantPedir =
       stock <= punto
-        ? formaPedir === "CANT_FIJA"
+        ? esFormaCantFijaReposicion(formaPedir)
           ? cant
           : Math.max(0, cant - stock)
         : 0;
@@ -233,10 +239,12 @@ export async function upsertPedidoMercaderiaUrgenteItem(params: {
 /**
  * Persiste **A FÁBRICA** en `prod_ped_merc` para todas las sucursales `pedido = true`.
  * Reutiliza `urgente_cod_ext` / `urgente_cant_pedir` (mismo patrón que URGENTE).
+ * `reposicion_forma_pedido`: CANT_FIJA_POR_BULTO | CANT_FIJA_POR_UNIDAD (no CANT_MAX).
  */
 export async function upsertPedidoMercaderiaAFabricaItem(params: {
   listaPrecioProveedorId: string;
   cant: number;
+  formaPedir?: ReposicionFormaPedidoFabrica;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const cantNorm = Math.max(0, Math.floor(Number(params.cant) || 0));
 
@@ -263,6 +271,22 @@ export async function upsertPedidoMercaderiaAFabricaItem(params: {
       return { ok: false, error: "No hay sucursales con pedido habilitado." };
     }
 
+    let forma: ReposicionFormaPedidoFabrica =
+      params.formaPedir ?? "CANT_FIJA_POR_UNIDAD";
+    if (!params.formaPedir) {
+      const existente = await prisma.prodPedMerc2.findFirst({
+        where: {
+          tipoDePedido: TIPO_A_FABRICA,
+          urgenteCodExt: item.codExt,
+        },
+        select: { reposicionFormaPedido: true },
+      });
+      const n = normalizarReposicionFormaPedido(existente?.reposicionFormaPedido);
+      if (n === "CANT_FIJA_POR_BULTO" || n === "CANT_FIJA_POR_UNIDAD") {
+        forma = n;
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       for (const s of sucursales) {
         await tx.prodPedMerc2.deleteMany({
@@ -279,6 +303,7 @@ export async function upsertPedidoMercaderiaAFabricaItem(params: {
             sucursalId: s.id,
             urgenteCodExt: item.codExt,
             urgenteCantPedir: cantNorm,
+            reposicionFormaPedido: forma,
           },
         });
       }
@@ -291,14 +316,23 @@ export async function upsertPedidoMercaderiaAFabricaItem(params: {
   }
 }
 
+export type EstadoPedidoAFabricaPorCodExt = {
+  cantAPedirByCodExt: Record<string, number>;
+  formaPedirByCodExt: Record<string, ReposicionFormaPedidoFabrica>;
+};
+
 /**
- * Mapa `cod_ext` → cant. pedir para filas **A FÁBRICA** del proveedor (todas las sucursales).
+ * Mapa `cod_ext` → cant. pedir y forma para filas **A FÁBRICA** del proveedor (todas las sucursales).
  */
 export async function buildMapCantAPedirAFabricaPorProveedor(
   proveedorId: string
-): Promise<Record<string, number>> {
+): Promise<EstadoPedidoAFabricaPorCodExt> {
+  const vacio: EstadoPedidoAFabricaPorCodExt = {
+    cantAPedirByCodExt: {},
+    formaPedirByCodExt: {},
+  };
   const pid = proveedorId.trim();
-  if (!pid) return {};
+  if (!pid) return vacio;
 
   const lps = await prisma.listaPrecioProveedor.findMany({
     where: { idProveedor: pid, habilitado: true },
@@ -309,7 +343,7 @@ export async function buildMapCantAPedirAFabricaPorProveedor(
       lps.map((r) => r.codExt?.trim()).filter((c): c is string => Boolean(c))
     ),
   ];
-  if (codExts.length === 0) return {};
+  if (codExts.length === 0) return vacio;
 
   const rows = await prisma.prodPedMerc2.findMany({
     where: {
@@ -317,18 +351,27 @@ export async function buildMapCantAPedirAFabricaPorProveedor(
       urgenteCodExt: { in: codExts },
       urgenteCantPedir: { gt: 0 },
     },
-    select: { urgenteCodExt: true, urgenteCantPedir: true },
+    select: {
+      urgenteCodExt: true,
+      urgenteCantPedir: true,
+      reposicionFormaPedido: true,
+    },
   });
 
-  const map: Record<string, number> = {};
+  const cantAPedirByCodExt: Record<string, number> = {};
+  const formaPedirByCodExt: Record<string, ReposicionFormaPedidoFabrica> = {};
   for (const r of rows) {
     const cod = r.urgenteCodExt?.trim();
     if (!cod) continue;
     const cant = Math.max(0, Math.floor(Number(r.urgenteCantPedir) || 0));
     if (cant <= 0) continue;
-    map[cod] = cant;
+    cantAPedirByCodExt[cod] = cant;
+    const n = normalizarReposicionFormaPedido(r.reposicionFormaPedido);
+    if (n === "CANT_FIJA_POR_BULTO" || n === "CANT_FIJA_POR_UNIDAD") {
+      formaPedirByCodExt[cod] = n;
+    }
   }
-  return map;
+  return { cantAPedirByCodExt, formaPedirByCodExt };
 }
 
 export async function upsertPedidoTintometricoItems(
@@ -536,7 +579,7 @@ function proveedorEtiquetaDesdeRow(p: {
 
 /**
  * Misma regla que `upsertPedidoMercaderiaReposicionConfig`: pedir solo si `stock <= punto`;
- * `CANT_FIJA` → cantidad configurada; `CANT_MAXIMA` → `max(0, cantConf - stock)`.
+ * CANT_FIJA_* → cantidad configurada; CANT_MAX → `max(0, cantConf - stock)`.
  */
 export function cantPedirReposicionMerc2(params: {
   forma: string | null | undefined;
@@ -546,12 +589,14 @@ export function cantPedirReposicionMerc2(params: {
   stockeable: boolean;
 }): number {
   if (!params.stockeable) return 0;
-  const forma = params.forma;
-  if (forma !== "CANT_FIJA" && forma !== "CANT_MAXIMA") return 0;
+  const forma = normalizarReposicionFormaPedido(params.forma);
+  if (!forma) return 0;
   const punto = Math.max(0, Math.floor(Number(params.punto ?? 0)));
   const cant = Math.max(0, Math.floor(Number(params.cantConf ?? 0)));
   if (params.stock > punto) return 0;
-  return forma === "CANT_FIJA" ? cant : Math.max(0, cant - params.stock);
+  return esFormaCantFijaReposicion(forma)
+    ? cant
+    : Math.max(0, cant - params.stock);
 }
 
 export type LpRowPick = {
@@ -815,15 +860,38 @@ export async function getItemsTablaEnviarPedido(params: {
   return { items: out };
 }
 
-export type ConteosPedidoSlidenav = {
+export type ConteosPedidoProveedorSlidenav = {
+  proveedorId: string;
+  proveedor: string;
   urgente: number;
   tintometrico: number;
   reposicion: number;
 };
 
+export type ConteosPedidoSlidenav = {
+  urgente: number;
+  tintometrico: number;
+  reposicion: number;
+  /** Solo proveedores con al menos un ítem pendiente (cant. pedir > 0). */
+  proveedores: ConteosPedidoProveedorSlidenav[];
+};
+
+function conteosVaciosProveedorSlidenav(
+  proveedorId: string,
+  proveedor: string
+): ConteosPedidoProveedorSlidenav {
+  return {
+    proveedorId,
+    proveedor,
+    urgente: 0,
+    tintometrico: 0,
+    reposicion: 0,
+  };
+}
+
 /**
  * Conteos de ítems con cant. pedir > 0 (misma resolución que Generar Pedido)
- * para el indicador de slidenav, filtrados por sucursal.
+ * para el indicador de slidenav, filtrados por sucursal y agrupados por proveedor.
  */
 export async function contarItemsPedidoPorTipoParaSlidenav(
   sucursalCodigo: string
@@ -836,12 +904,31 @@ export async function contarItemsPedidoPorTipoParaSlidenav(
     urgente: 0,
     tintometrico: 0,
     reposicion: 0,
+    proveedores: [],
   };
+  const porProv = new Map<string, ConteosPedidoProveedorSlidenav>();
   for (const it of items) {
-    if (it.tipoPedido === TIPO_URGENTE) out.urgente += 1;
-    else if (it.tipoPedido === TIPO_TINTOMETRICO) out.tintometrico += 1;
-    else if (it.tipoPedido === TIPO_REPOSICION) out.reposicion += 1;
+    const pid = it.proveedorId.trim();
+    if (!pid) continue;
+    let bucket = porProv.get(pid);
+    if (!bucket) {
+      bucket = conteosVaciosProveedorSlidenav(pid, it.proveedor);
+      porProv.set(pid, bucket);
+    }
+    if (it.tipoPedido === TIPO_URGENTE) {
+      bucket.urgente += 1;
+      out.urgente += 1;
+    } else if (it.tipoPedido === TIPO_TINTOMETRICO) {
+      bucket.tintometrico += 1;
+      out.tintometrico += 1;
+    } else if (it.tipoPedido === TIPO_REPOSICION) {
+      bucket.reposicion += 1;
+      out.reposicion += 1;
+    }
   }
+  out.proveedores = [...porProv.values()].sort((a, b) =>
+    a.proveedor.localeCompare(b.proveedor, "es")
+  );
   return out;
 }
 

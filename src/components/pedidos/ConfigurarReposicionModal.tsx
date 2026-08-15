@@ -33,11 +33,18 @@ import SelectorProductosReposicionModal from "./SelectorProductosReposicionModal
 import type { ItemReposicion, SucursalReposicion, FormaPedirReposicionOption } from "@/actions/reposicion";
 import { upsertReglaReposicion } from "@/actions/reposicion";
 import type { ItemSelectorReposicion } from "@/actions/reposicion";
+import {
+  REPOSICION_FORMA_PEDIDO_LABELS,
+  REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES,
+  reposicionFormaPedidoVendedorSchema,
+} from "@/lib/validations/reposicion";
 
 const FORMA_PEDIR_OPTIONS: { value: FormaPedirReposicionOption; label: string }[] = [
   { value: "", label: "—" },
-  { value: "CANT_MAXIMA", label: "CANT. MAX." },
-  { value: "CANT_FIJA", label: "CANT. FIJA" },
+  ...REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES.map((value) => ({
+    value,
+    label: REPOSICION_FORMA_PEDIDO_LABELS[value],
+  })),
 ];
 
 /** Entero ≥ 0 si el usuario ingresó algo; vacío o inválido → null (no habilita cantidad). */
@@ -135,7 +142,8 @@ export default function ConfigurarReposicionModal({
   };
 
   const handleGuardar = async () => {
-    if (!formaPedir) {
+    const formaParsed = reposicionFormaPedidoVendedorSchema.safeParse(formaPedir);
+    if (!formaParsed.success) {
       toast.error("Seleccioná Forma Pedir.");
       return;
     }
@@ -162,7 +170,7 @@ export default function ConfigurarReposicionModal({
         const res = await upsertReglaReposicion({
           sucursalCodigo: sucursal,
           codTienda: t.codTienda,
-          formaPedir: formaPedir as "CANT_MAXIMA" | "CANT_FIJA",
+          formaPedir: formaParsed.data,
           puntoReposicion: punto,
           cant: cantNum,
         });

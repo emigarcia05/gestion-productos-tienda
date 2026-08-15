@@ -38,6 +38,7 @@ import type {
   ProductoPedidoAFabricaItem,
   SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
+import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
 import TablaPedidoAFabrica, {
   totalPorSucursalesPedidoAFabrica,
   type FiltroSiNoPedidoAFabrica,
@@ -126,9 +127,17 @@ export default function PedidoAFabricaPageClient({
   const [cantAPedirByCodExt, setCantAPedirByCodExt] = useState<
     Record<string, string>
   >({});
+  const [formaPedirByCodExt, setFormaPedirByCodExt] = useState<
+    Record<string, ReposicionFormaPedidoFabrica>
+  >({});
   const cantPersistTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>(
     {}
   );
+  const formaPedirRef = useRef(formaPedirByCodExt);
+
+  useEffect(() => {
+    formaPedirRef.current = formaPedirByCodExt;
+  }, [formaPedirByCodExt]);
 
   const {
     q,
@@ -220,6 +229,7 @@ export default function PedidoAFabricaPageClient({
     setProveedorId(value);
     setPagina(1);
     setCantAPedirByCodExt({});
+    setFormaPedirByCodExt({});
     resetFiltrosCatalogo();
   }
 
@@ -234,6 +244,7 @@ export default function PedidoAFabricaPageClient({
     setRubros([]);
     setSubRubros([]);
     setCantAPedirByCodExt({});
+    setFormaPedirByCodExt({});
     resetFiltrosCatalogo();
   }
 
@@ -272,7 +283,11 @@ export default function PedidoAFabricaPageClient({
     setPagina(1);
   }
 
-  function persistCantAPedir(codExt: string, value: string) {
+  function persistPedidoAFabrica(
+    codExt: string,
+    value: string,
+    forma: ReposicionFormaPedidoFabrica
+  ) {
     const prev = cantPersistTimersRef.current[codExt];
     if (prev) clearTimeout(prev);
     cantPersistTimersRef.current[codExt] = setTimeout(() => {
@@ -282,12 +297,30 @@ export default function PedidoAFabricaPageClient({
         const res = await upsertPedidoAFabricaItemAction({
           listaPrecioProveedorId: codExt,
           cant: Math.floor(cant),
+          formaPedir: forma,
         });
         if (!res.ok) {
-          toast.error(res.error || "No se pudo guardar la cantidad.");
+          toast.error(res.error || "No se pudo guardar el pedido a fábrica.");
         }
       })();
     }, DEBOUNCE_CANT_PEDIR_MS);
+  }
+
+  function persistCantAPedir(codExt: string, value: string) {
+    persistPedidoAFabrica(
+      codExt,
+      value,
+      formaPedirRef.current[codExt] ?? "CANT_FIJA_POR_UNIDAD"
+    );
+  }
+
+  function handleFormaPedirChange(
+    codExt: string,
+    forma: ReposicionFormaPedidoFabrica
+  ) {
+    setFormaPedirByCodExt((prev) => ({ ...prev, [codExt]: forma }));
+    const cantRaw = cantAPedirByCodExt[codExt] ?? "";
+    persistPedidoAFabrica(codExt, cantRaw, forma);
   }
 
   function handleCantAPedirChange(codExt: string, value: string) {
@@ -314,6 +347,7 @@ export default function PedidoAFabricaPageClient({
 
   function handleGeneradoPedidoExito() {
     setCantAPedirByCodExt({});
+    setFormaPedirByCodExt({});
   }
 
   useEffect(() => {
@@ -328,6 +362,7 @@ export default function PedidoAFabricaPageClient({
         setRubros([]);
         setSubRubros([]);
         setCantAPedirByCodExt({});
+        setFormaPedirByCodExt({});
       });
       return;
     }
@@ -360,6 +395,7 @@ export default function PedidoAFabricaPageClient({
           if (n > 0) nextCant[cod] = String(n);
         }
         setCantAPedirByCodExt(nextCant);
+        setFormaPedirByCodExt(res.formaPedirByCodExt ?? {});
         setLoading(false);
       })();
     });
@@ -746,7 +782,9 @@ export default function PedidoAFabricaPageClient({
             filtroPedidoSugerido={pedidoSugerido}
             filtroStockQuebrado={stockQuebrado}
             cantAPedirByCodExt={cantAPedirByCodExt}
+            formaPedirByCodExt={formaPedirByCodExt}
             onCantAPedirChange={handleCantAPedirChange}
+            onFormaPedirChange={handleFormaPedirChange}
             onAplicarCantSugerida={handleAplicarCantSugerida}
           />
         ) : (

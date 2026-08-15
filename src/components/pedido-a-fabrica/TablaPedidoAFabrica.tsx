@@ -29,6 +29,20 @@ import {
   esStockQuebradoPedidoAFabrica,
   tienePedidoSugeridoPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
+import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  REPOSICION_FORMA_PEDIDO_FABRICA_VALUES,
+  REPOSICION_FORMA_PEDIDO_LABELS,
+  reposicionFormaPedidoFabricaSchema,
+  type ReposicionFormaPedidoFabrica,
+} from "@/lib/validations/reposicion";
 import type {
   DatosSucursalProductoPedidoAFabrica,
   ProductoPedidoAFabricaItem,
@@ -55,23 +69,26 @@ interface Props {
   filtroStockQuebrado: FiltroSiNoPedidoAFabrica;
   /** Cant. a pedir por `codExt` (texto; solo dígitos). */
   cantAPedirByCodExt: Record<string, string>;
+  formaPedirByCodExt: Record<string, ReposicionFormaPedidoFabrica>;
   onCantAPedirChange: (codExt: string, value: string) => void;
+  onFormaPedirChange: (codExt: string, forma: ReposicionFormaPedidoFabrica) => void;
   onAplicarCantSugerida: (codExt: string, cantSugerida: number) => void;
 }
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
 /** Anchos fijos (suma 100 %). */
-const PCT_DESC = 59;
+const PCT_DESC = 47;
 const PCT_STOCK_UNIDADES = 7;
 const PCT_STOCK_DIAS = 7;
 const PCT_STOCK_HASTA_LLEGADA = 7;
 const PCT_CANT_SUGERIDA = 7;
 const PCT_CANT_PEDIR = 7;
+const PCT_FORMA = 12;
 const PCT_TILDE = 3;
 const PCT_INFO = 3;
 
-const COL_COUNT = 8;
+const COL_COUNT = 9;
 
 /** Solo dígitos (enteros ≥ 0); vacío permitido. */
 function sanitizeCantAPedirInput(raw: string): string {
@@ -155,7 +172,9 @@ export default function TablaPedidoAFabrica({
   filtroPedidoSugerido,
   filtroStockQuebrado,
   cantAPedirByCodExt,
+  formaPedirByCodExt,
   onCantAPedirChange,
+  onFormaPedirChange,
   onAplicarCantSugerida,
 }: Props) {
   const [detalleProducto, setDetalleProducto] =
@@ -203,6 +222,7 @@ export default function TablaPedidoAFabrica({
             <col style={{ width: `${PCT_STOCK_HASTA_LLEGADA}%` }} />
             <col style={{ width: `${PCT_CANT_SUGERIDA}%` }} />
             <col style={{ width: `${PCT_CANT_PEDIR}%` }} />
+            <col style={{ width: `${PCT_FORMA}%` }} />
             <col style={{ width: `${PCT_TILDE}%` }} />
             <col style={{ width: `${PCT_INFO}%` }} />
           </colgroup>
@@ -224,7 +244,7 @@ export default function TablaPedidoAFabrica({
                 STOCK HASTA LLEGADA DE PEDIDO
               </TableHead>
               <TableHead
-                colSpan={2}
+                colSpan={3}
                 className="text-center align-middle tabla-bloque-secundario-head-divider"
               >
                 COMPRA
@@ -258,8 +278,11 @@ export default function TablaPedidoAFabrica({
               <TableHead className="text-center tabla-bloque-secundario-head-divider">
                 CANT. SUGERIDA
               </TableHead>
-              <TableHead className="text-center tabla-bloque-secundario-head">
+              <TableHead className="text-center tabla-bloque-secundario-head-divider">
                 CANT. PEDIR
+              </TableHead>
+              <TableHead className="text-center tabla-bloque-secundario-head">
+                FORMA PEDIR
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -388,6 +411,42 @@ export default function TablaPedidoAFabrica({
                         aria-label={`Cantidad a pedir ${p.descripcion}`}
                         className="h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-h-0 w-full min-w-0 rounded-sm border-0 bg-transparent px-1 text-center text-xs shadow-none focus-visible:ring-0"
                       />
+                    </TableCell>
+                    <TableCell className="celda-datos tabla-bloque-secundario-cell">
+                      <Select
+                        value={
+                          formaPedirByCodExt[p.codExt] ?? "CANT_FIJA_POR_UNIDAD"
+                        }
+                        onValueChange={(v) => {
+                          const parsed =
+                            reposicionFormaPedidoFabricaSchema.safeParse(v);
+                          if (parsed.success) {
+                            onFormaPedirChange(p.codExt, parsed.data);
+                          }
+                        }}
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            SELECT_TRIGGER_FILTER_CLASS,
+                            "h-[calc(var(--tabla-body-row-min-height)-0.5rem)] min-h-0 w-full min-w-0 px-1 text-[10px]"
+                          )}
+                          aria-label={`Forma pedir ${p.descripcion}`}
+                        >
+                          <SelectValue placeholder="FORMA PEDIR" />
+                        </SelectTrigger>
+                        <SelectContent
+                          className="select-content-filtro"
+                          position="popper"
+                          side="bottom"
+                          align="start"
+                        >
+                          {REPOSICION_FORMA_PEDIDO_FABRICA_VALUES.map((val) => (
+                            <SelectItem key={val} value={val}>
+                              {REPOSICION_FORMA_PEDIDO_LABELS[val]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="celda-datos celda-datos--accion-relleno-fila text-center tabla-bloque-secundario-cell-divider">
                       <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>

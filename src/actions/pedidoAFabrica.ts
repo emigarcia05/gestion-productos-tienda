@@ -22,6 +22,7 @@ const VACIO: ProductosPedidoAFabricaResult = {
   rubros: [],
   subRubros: [],
   cantAPedirByCodExt: {},
+  formaPedirByCodExt: {},
 };
 
 /**
@@ -90,6 +91,7 @@ export async function upsertPedidoAFabricaItemAction(
   const result = await upsertPedidoMercaderiaAFabricaItem({
     listaPrecioProveedorId: parsed.data.listaPrecioProveedorId,
     cant: parsed.data.cant,
+    formaPedir: parsed.data.formaPedir,
   });
   if (!result.ok) return { ok: false, error: result.error };
   return { ok: true, data: undefined };

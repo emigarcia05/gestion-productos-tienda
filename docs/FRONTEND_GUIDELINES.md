@@ -114,7 +114,7 @@ SSOT: `src/lib/main-app-areas.ts`, `administracionNav.ts`, `marketingRoutes.ts`,
 
 **Dock** (abajo, `mt-auto`): Sync DUX (`SyncStatusIndicator` / `DuxSyncStyleButton`) → superficie sesión (`Pendientes` + usuario). Sync **no** se duplica en headers de página. Editor: modal Productos / Compras. Simple: sync productos. Import Excel: `ImportStatusIndicator` (independiente).
 
-**Pendientes:** badge 0–2 (pedido / transferencia); hover o click abre detalle; no modal al entrar a Stock.
+**Pendientes:** badge 0–2 (pedido / transferencia); hover o click abre detalle. Pedido: solo proveedores con ítems pendientes (misma resolución que Generar Pedido); hover o foco en el nombre muestra Urgente / Tintométrico / Reposición (los tres tipos, aunque el conteo sea 0). Transferencia: Emisión / Recepción. Click **PEDIDO** → Generar Pedido; **TRANSFERENCIA** → Trans. Depósitos. No modal al entrar a Stock.
 
 ### 1.7 URLs
 
@@ -187,7 +187,7 @@ Nuevo shared: CVA + tokens + `"use client"` solo si hay estado/hooks. Documentar
 | `TablaSubencabezadoSeccionRow` | Subencabezado en tbody |
 | `CeldaDifPct` / `CeldaCxProdTienda` | Celdas de variación / Cx |
 | `catalogo-finder/*` | Finder |
-| `SidebarAreaSwitcher` / `SidebarMainAppArea` | Dock sesión / Pendientes |
+| `SidebarAreaSwitcher` / `SidebarMainAppArea` | Dock sesión / Pendientes (Pedido → proveedor → tipos) |
 | `ReposicionProveedorPrioritarioModal` / `SobreStockReposicionAdvertenciaModal` | Confirmaciones al generar pedido |
 | `ExportarMktSeccionesGoogleSheetsButton` | Export Marketing |
 
@@ -203,7 +203,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 
 - **Urgente** (`PedidoUrgentePageClient`): sucursal obligatoria para listar. 7 columnas (PROVEEDOR 10%, DESCRIPCIÓN 60%, CANT. PED. / PROV. PED. / cesto / CONF. REPO. / CANT. REPO. 6% c/u). Sin columna VINC.; registro Dux vía `TablaSubencabezadoSeccionRow`. Filtro PEDIDO: urgente / reposición / cualquiera. Doble clic: varios proveedores → Elegir Proveedor (también con filtro PROVEEDOR). Header: solo `GenerarPedidoToolbarButton`. Auto-refresh IVA: `PosicionIvaComparacionAutoRefresh`.
 - **Tintométrico:** `cod_ext` = `buildCodExtTintometrico`. Alta: sucursal → proveedor → COD. TINTOMÉTRICO.
-- **Reposición:** desplegables SUCURSAL → PROVEEDOR → MARCA → RUBRO → CONFIGURADO. Bloque secundario STOCK / CANT. A PEDIR. `ConfigurarReposicionModal`: punto/cant vacíos (no `0`) si no hay regla.
+- **Reposición:** desplegables SUCURSAL → PROVEEDOR → MARCA → RUBRO → CONFIGURADO. Bloque secundario STOCK / CANT. A PEDIR. `ConfigurarReposicionModal`: punto/cant vacíos (no `0`) si no hay regla. FORMA PEDIR (vendedor): **CANT. MAX.** / **CANT. FIJA POR BULTO** (no CANT. FIJA POR UNID.).
 - **Generar Pedido** (`/pedidos/enviar` + botón en urgentes): modal SUCURSAL → TIPO (multi checkbox) → PROVEEDOR. Footer solo con tres filtros y `hayItems`. Tras PDF/WhatsApp: `router.refresh()`. Confirmaciones: `ReposicionProveedorPrioritarioModal` luego `SobreStockReposicionAdvertenciaModal`.
 - **Recepción** (`PedidoHistoriaDetalleModal`): `AppModal` `size="xl"` + `max-w-[66rem] h-[95vh]`. Scroll solo en tabla; pie TOTAL PEDIDO fuera. Checklist local hasta **Registrar En Dux** (fiscal → personal → POST). Corrección: **Corregir Recepcion** / **Guardar Corrección**. Tabla `tabla-recepcion-pedido`. Listado: `FiltrosHistorialPedidos` default PENDIENTE; acciones Recepción / Ver (`PedidoHistoriaLecturaModal`) / Borrar.
 
@@ -240,7 +240,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Carga De Datos:** grilla periodo × sucursal (`tabla-est-carga-datos`); celda pendiente `.celda-est-carga-pendiente`.
 - **Configuracion:** `FilaFiltrosDesplegables` `columnas={6}` + búsqueda.
 - **Ventas:** dos FilterBar + tres gráficos (clases `.est-vtas-*`).
-- **Pedido A Fáb.:** dos FilterBar; CANT. PEDIR debounce a `prod_ped_merc` tipo A FÁBRICA; header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
+- **Pedido A Fáb.:** dos FilterBar; CANT. PEDIR debounce a `prod_ped_merc` tipo A FÁBRICA; columna FORMA PEDIR (**CANT. FIJA POR BULTO** / **CANT. FIJA POR UNID.**, no CANT. MAX.); header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
 
 ### Marketing
 
