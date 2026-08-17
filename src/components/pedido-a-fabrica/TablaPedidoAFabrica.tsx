@@ -249,11 +249,11 @@ export default function TablaPedidoAFabrica({
               </TableHead>
             </TableRow>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                UN. ACTUALES
+              <TableHead className="text-center whitespace-nowrap tabla-bloque-secundario-head-divider">
+                UN. ACT.
               </TableHead>
-              <TableHead className="text-center tabla-bloque-secundario-head">
-                QUEBRADO
+              <TableHead className="text-center whitespace-nowrap tabla-bloque-secundario-head">
+                QUEBR.
               </TableHead>
               <TableHead className="text-center tabla-bloque-secundario-head-divider">
                 FORMA
@@ -261,11 +261,11 @@ export default function TablaPedidoAFabrica({
               <TableHead className="text-center tabla-bloque-secundario-head">
                 BULTO
               </TableHead>
-              <TableHead className="text-center tabla-bloque-secundario-head">
-                CANT. PEDIR
+              <TableHead className="text-center whitespace-nowrap tabla-bloque-secundario-head">
+                CANT. PED.
               </TableHead>
-              <TableHead className="text-center tabla-bloque-secundario-head">
-                CANT. SUGERIDA
+              <TableHead className="text-center whitespace-nowrap tabla-bloque-secundario-head">
+                CANT. SUG.
               </TableHead>
             </TableRow>
           </TableHeader>

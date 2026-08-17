@@ -571,7 +571,7 @@ export default function EstVtasPageClient({
       subtitle="Ventas"
       contentWidth="full"
       filters={
-        <div className="flex flex-col gap-2">
+        <div className="filtros-doble-bloque-compacto">
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilterRowSelection className="w-full min-w-0">
               <FilaFiltrosDesplegables>

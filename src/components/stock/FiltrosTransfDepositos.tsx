@@ -177,7 +177,7 @@ export default function FiltrosTransfDepositos({
   ]);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="filtros-doble-bloque-compacto">
       <FilterBar className="filtros-contenedor-tienda bg-card">
         <FilterRowSelection>
           <FilaFiltrosDesplegables>

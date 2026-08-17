@@ -602,6 +602,23 @@
     margin-bottom: var(--filtros-margin-bottom-tabla);
   }
 
+  /**
+   * Doble bloque de filtros compacto (dos `FilterBar` apilados):
+   * reduce separaciones verticales para recuperar alto útil de tabla
+   * sin perder la división visual entre secciones.
+   */
+  .filtros-doble-bloque-compacto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+  .filtros-doble-bloque-compacto > .seccion-filtros {
+    margin-bottom: 0;
+  }
+  .filtros-doble-bloque-compacto > .seccion-filtros:last-child {
+    margin-bottom: 0.5rem;
+  }
+
   /* Contenedor de filtros: más separación entre desplegables, input y botones (variables en :root) */
   .filtros-contenedor {
     row-gap: var(--filtros-gap-y) !important;

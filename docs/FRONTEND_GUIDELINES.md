@@ -65,6 +65,7 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 ### 1.2 Filtros
 
 - `FilterBar` > `FilaFiltrosDesplegables` (default **5** columnas; `columnas={6}` solo con 6 Selects) + `FilterRowSearch` + `LimpiarFiltrosButton` (siempre visible).
+- Si la pantalla usa **dos** `FilterBar` apilados, envolver ambos en `.filtros-doble-bloque-compacto` para compactar separaciones verticales y ganar filas visibles de tabla sin perder separación visual.
 - Cada Select de página en `FiltroIndividualContainer`. En modal: `FiltroIndividualContainer` o `FiltroBusquedaInput` (X propia); no `LimpiarFiltrosButton`.
 - Sin búsqueda: acciones en la misma fila (`FILTER_INLINE_ACTION_SLOT_CLASS`, a menudo `col-span-2`).
 - Contador: `FILTER_COUNT_CLASS`, texto MAYÚSCULAS (`X PRODUCTO(S)`).
@@ -147,7 +148,7 @@ Aliases viejos (`/pedidos/*`, `/proveedores`, `/proveedores/gestion`, `/finanzas
 | `.area-page-shell` | Cascarón de página |
 | `.contenedor-pagina-con-filtros` | Gap header / filtros / tabla |
 | `.section-header` + `__titulo` `__subtitulo-*` | Encabezado |
-| `.filtros-contenedor-tienda` `.input-filtro-unificado` `.select-content-filtro` `.fila-filtros-4\|5\|6` `.filtro-individual-*` `.filtro-count-label` | Filtros |
+| `.filtros-contenedor-tienda` `.filtros-doble-bloque-compacto` `.input-filtro-unificado` `.select-content-filtro` `.fila-filtros-4\|5\|6` `.filtro-individual-*` `.filtro-count-label` | Filtros |
 | `.contenedor-tabla-gestion` (+ `--pie-fijo`, `--mc-overlay`, `no-scroll-x`) | Scrollport de tabla |
 | `.card-tabla-envoltorio` | Card alrededor de tabla |
 | `.tabla-gestion-compacta` `.celda-datos` `.tabla-check-toggle` `.tabla-row-btn-filled-brand` `.tabla-bloque-secundario-*` `.tabla-fila-seccion-subencabezado*` | Tablas |
@@ -241,7 +242,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Carga De Datos:** grilla periodo × sucursal (`tabla-est-carga-datos`); celda pendiente `.celda-est-carga-pendiente`.
 - **Configuracion:** `FilaFiltrosDesplegables` `columnas={6}` + búsqueda.
 - **Ventas:** dos FilterBar + tres gráficos (clases `.est-vtas-*`).
-- **Pedido A Fáb.:** dos FilterBar. Fila 1: PROVEEDOR / FECHA DE PEDIDO / TIEMPO STOCKEO / **PROD. VINCULADO** (SI = `cod_tienda` en lista; NO = sin vínculo) / STOCK QUEBRADO. Secciones: **STOCK** (UN. ACTUALES / QUEBRADO) y **COMPRA** (FORMA **BULTO**/**UNIDAD** | BULTO si vínculo `cod_tienda` | CANT. PEDIR `EnteroStepperInput` en orden `- | input | + | check | borrar` (check copia CANT. SUGERIDA y borrar limpia el valor) | CANT. SUGERIDA: UNIDAD techo entero; BULTO techo al múltiplo de `prod_tienda_bultos`). En **QUEBRADO** mostrar tilde solo cuando `Stock Hasta Llegada De Pedido < 0`; si es `>= 0` dejar vacío. Si **FECHA DE PEDIDO** está vacía, el cálculo inicial usa hoy (AR) como base y proyecta provisión hasta `tiempo_entrega_en_dias`. Modal de soporte: título `INFO FORMULAS` y fórmulas alineadas a la lógica vigente de provisión/quiebre/cant. sugerida. Última columna de acciones: solo botón de detalle por sucursal (ícono `Info`). En el modal de detalle por sucursal mostrar solo `SUCURSALES` y `PROM. VTA POR DÍA` con fila final `TOTAL`; `PROM. VTA POR DÍA` admite decimal con un dígito. DESCRIPCIÓN = `descripcion_tienda` si hay vínculo, si no `descripcion_proveedor`. Header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
+- **Pedido A Fáb.:** dos FilterBar. Fila 1: PROVEEDOR / FECHA DE PEDIDO / TIEMPO STOCKEO / **PROD. VINCULADO** (SI = `cod_tienda` en lista; NO = sin vínculo) / STOCK QUEBRADO. Secciones: **STOCK** (`UN. ACT.` / `QUEBR.`) y **COMPRA** (FORMA **BULTO**/**UNIDAD** | BULTO si vínculo `cod_tienda` | `CANT. PED.` `EnteroStepperInput` en orden `- | input | + | check | borrar` (check copia CANT. SUGERIDA y borrar limpia el valor) | `CANT. SUG.`: UNIDAD techo entero; BULTO techo al múltiplo de `prod_tienda_bultos`). En **QUEBR.** mostrar tilde solo cuando `Stock Hasta Llegada De Pedido < 0`; si es `>= 0` dejar vacío. Si **FECHA DE PEDIDO** está vacía, el cálculo inicial usa hoy (AR) como base y proyecta provisión hasta `tiempo_entrega_en_dias`. Modal de soporte: título `INFO FORMULAS` y fórmulas alineadas a la lógica vigente de provisión/quiebre/cant. sugerida. Última columna de acciones: solo botón de detalle por sucursal (ícono `Info`). En el modal de detalle por sucursal mostrar solo `SUCURSALES` y `PROM. VTA POR DÍA` con fila final `TOTAL`; `PROM. VTA POR DÍA` admite decimal con un dígito. DESCRIPCIÓN = `descripcion_tienda` si hay vínculo, si no `descripcion_proveedor`. Header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
 
 ### Marketing
 
