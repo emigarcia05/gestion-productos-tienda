@@ -153,14 +153,14 @@ export function calcularStockAFechaLlegadaPedidoAFabrica(
   return Math.max(0, stockActual) - entrega * prom;
 }
 
-/** STOCK QUEBRADO: stock hasta llegada de pedido ≤ 0. */
+/** STOCK QUEBRADO: stock hasta llegada de pedido < 0. */
 export function esStockQuebradoPedidoAFabrica(
   stockHastaLlegada: number | null | undefined
 ): boolean {
   return (
     stockHastaLlegada != null &&
     Number.isFinite(stockHastaLlegada) &&
-    stockHastaLlegada <= 0
+    stockHastaLlegada < 0
   );
 }
 

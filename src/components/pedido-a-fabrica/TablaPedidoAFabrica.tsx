@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Info, Trash2, TriangleAlert } from "lucide-react";
+import { Check, Info, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -20,11 +20,9 @@ import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
-  TEXT_WARNING_CLASS,
 } from "@/lib/ui-classes";
 import {
   calcularStockAFechaLlegadaPedidoAFabrica,
-  calcularStockEnDiasPedidoAFabrica,
   esStockQuebradoPedidoAFabrica,
   resolverCantSugeridaPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
@@ -77,7 +75,7 @@ interface Props {
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
-/** Anchos fijos (suma 100 %). STOCK: UNIDADES | DÍAS | A FECHA LLEGADA. COMPRA: FORMA | BULTO | CANT. PEDIR | CANT. SUGERIDA. */
+/** Anchos fijos (suma 100 %). STOCK: UN. ACTUALES | QUEBRADO | A FECHA LLEGADA. COMPRA: FORMA | BULTO | CANT. PEDIR | CANT. SUGERIDA. */
 const PCT_DESC = 36;
 const PCT_STOCK_UNIDADES = 6;
 const PCT_STOCK_DIAS = 6;
@@ -144,7 +142,7 @@ function productoPasaFiltrosDerivados(
 
 /**
  * Grilla Pedido A Fáb.
- * **DESCRIPCIÓN** (aviso stock quebrado) · **STOCK** (UNIDADES / DÍAS / A FECHA LLEGADA)
+ * **DESCRIPCIÓN** · **STOCK** (UN. ACTUALES / QUEBRADO / A FECHA LLEGADA)
  * · **COMPRA** (FORMA / BULTO / CANT. PEDIR / CANT. SUGERIDA UNIDAD techo / BULTO múltiplo)
  * · tilde · Info.
  * (PROM. VTA. se calcula en backend/cliente pero no se muestra como columna.)
@@ -254,10 +252,10 @@ export default function TablaPedidoAFabrica({
             </TableRow>
             <TableRow className="hover:bg-transparent">
               <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                UNIDADES
+                UN. ACTUALES
               </TableHead>
               <TableHead className="text-center tabla-bloque-secundario-head">
-                DÍAS
+                QUEBRADO
               </TableHead>
               <TableHead className="text-center leading-tight tabla-bloque-secundario-head">
                 A FECHA LLEGADA
@@ -300,10 +298,6 @@ export default function TablaPedidoAFabrica({
                 const total = totalPorSucursalesPedidoAFabrica(p, sucursales);
                 const stockUnidades = total.stockActual;
                 const promVtaTotal = total.promVta;
-                const stockDias = calcularStockEnDiasPedidoAFabrica(
-                  stockUnidades,
-                  promVtaTotal
-                );
                 const stockHastaLlegada =
                   calcularStockAFechaLlegadaPedidoAFabrica(
                     stockUnidades,
@@ -329,34 +323,12 @@ export default function TablaPedidoAFabrica({
                 return (
                   <TableRow key={p.codExt}>
                     <TableCell className="celda-datos min-w-0">
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        {stockQuebrado ? (
-                          <span
-                            className="inline-flex shrink-0"
-                            title="Stock quebrado: stock hasta llegada de pedido ≤ 0"
-                            aria-label="Stock quebrado"
-                          >
-                            <TriangleAlert
-                              className={cn(
-                                "size-4 shrink-0",
-                                TEXT_WARNING_CLASS
-                              )}
-                              aria-hidden
-                            />
-                          </span>
-                        ) : (
-                          <span
-                            className="inline-block size-4 shrink-0"
-                            aria-hidden
-                          />
-                        )}
-                        <span
-                          className="block min-w-0 flex-1 truncate"
-                          title={p.descripcion}
-                        >
-                          {p.descripcion}
-                        </span>
-                      </div>
+                      <span
+                        className="block min-w-0 flex-1 truncate"
+                        title={p.descripcion}
+                      >
+                        {p.descripcion}
+                      </span>
                     </TableCell>
                     <TableCell
                       className={cn(
@@ -369,7 +341,16 @@ export default function TablaPedidoAFabrica({
                     <TableCell
                       className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
                     >
-                      {fmtNumero(stockDias)}
+                      {stockQuebrado ? (
+                        <div className="flex w-full items-center justify-center">
+                          <Check
+                            className={TABLE_ROW_ACTION_ICON_CLASS}
+                            aria-label="Stock quebrado"
+                          />
+                        </div>
+                      ) : (
+                        ""
+                      )}
                     </TableCell>
                     <TableCell
                       className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
