@@ -30,7 +30,7 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 7. **Selects.** Prohibido `<select>` nativo. `Select` shadcn; `SelectContent` incluye buscador **BUSCAR...**. Valor vacío: sentinel `"none"` / `"todos"` (Radix no admite `""`). Triggers de filtro: `SELECT_TRIGGER_FILTER_CLASS` + `className="select-content-filtro"` `position="popper" side="bottom" align="start"`.
 8. **Tablas.** Un solo look: `.tabla-gestion-compacta`. Encabezados **MAYÚSCULAS + negrita**. Celdas `.celda-datos`. Vacío = `""` (no `"-"`/`"—"`; `fmtCelda` / `fmtNumero` de `@/lib/format`). Scroll **solo** en `.contenedor-tabla-gestion` (el wrapper `data-slot="table-container"` **no** lleva `overflow-y-auto`). Sticky: `thead th`. 100 ítems/página (`PAGE_SIZE`). Botón solo ícono en fila: `variant="ghost"` `size="icon"` + `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS` (no `outline` + `icon-xs`). Columna tilde: encabezado = ícono `Check`.
 9. **Modales.** `AppModal` (o `ModalTablaConFiltros` si hay tabla seleccionable). Botones: `Button` shadcn (`default` / `outline`). Pares SÍ/NO: `ModalSiNoChoice`. Labels de campo: `text-foreground` (`ModalMicroLabel`). No `max-w-*` extra si coincide con `size`.
-10. **Texto.** Títulos de modal y botones: Title Case. Sidebar: módulo MAYÚSCULAS, submódulo Title Case. Filtros, placeholders y `TableHead`: MAYÚSCULAS. Abreviaturas con punto (Px., Cx., Dto., Cant., Cod.).
+10. **Texto.** Títulos de modal: MAYÚSCULAS. Botones: Title Case. Sidebar: módulo MAYÚSCULAS, submódulo Title Case. Filtros, placeholders y `TableHead`: MAYÚSCULAS. Abreviaturas con punto (Px., Cx., Dto., Cant., Cod.).
 11. **Fechas de negocio.** `@/lib/fechaArgentina`. `@db.Date` → `isoYmdFromPrismaDateOnly` (no `dateToIsoYmdArgentina` sobre ese `Date`).
 12. **Navegación interna.** `useRouter().push`, no `window.location.href`.
 13. **Excepción hex (no copiar).** Solo **Balance mensual**: cabecera `#0072BB` + texto blanco; filas resultado `#a9d6f1` / `#063652`.
@@ -260,7 +260,7 @@ UI en `src/components/asistente-ia/`. Contratos, prompts y scraper: **`docs/AGEN
 - [ ] Página con tabla: CFTL + `FilterBar` `filtros-contenedor-tienda bg-card` + `Table` compacta + sticky thead + vacío `TableEmptyState`.
 - [ ] Búsqueda: `useFiltrosConBusqueda` + `FiltroBusquedaInput`. Selects shadcn con buscador. Fila desplegables: 5 cols (6 solo si hay 6).
 - [ ] Íconos de fila: `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`. Toolbar ícono+label: `ToolbarActionButton`.
-- [ ] Title Case / MAYÚSCULAS / abreviaturas con punto según **Guía para IA** punto 10.
+- [ ] MAYÚSCULAS / Title Case / abreviaturas con punto según **Guía para IA** punto 10.
 - [ ] Labels de modal en `text-foreground`.
 - [ ] lucide-react + sonner + Geist. Sin `any`. Zod en el borde si hay input.
 - [ ] Clase global o shared nuevo → **§2**. Comportamiento único de pantalla → **§3**.
