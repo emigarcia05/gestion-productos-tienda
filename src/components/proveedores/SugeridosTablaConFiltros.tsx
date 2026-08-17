@@ -177,7 +177,7 @@ export default function SugeridosTablaConFiltros({
               onLimpiar={() => setProveedorId("")}
             >
               <Select
-                value={proveedorId || undefined}
+                value={proveedorId ?? ""}
                 onValueChange={(v) => setProveedorId(v)}
               >
                 <SelectTrigger id="filtro-sugeridos-proveedor" className="input-filtro-unificado">
@@ -203,7 +203,7 @@ export default function SugeridosTablaConFiltros({
               onLimpiar={() => setMarcaNombre("")}
             >
               <Select
-                value={marcaNombre || undefined}
+                value={marcaNombre ?? ""}
                 onValueChange={(v) => setMarcaNombre(v)}
               >
                 <SelectTrigger id="filtro-sugeridos-marca" className="input-filtro-unificado">

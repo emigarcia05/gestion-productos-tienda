@@ -136,7 +136,7 @@ export default function FiltrosPxListasPrecios({
             onLimpiar={() => handleMarca("")}
           >
             <Select
-              value={marcaActual || undefined}
+              value={marcaActual ?? ""}
               onValueChange={(v) => handleMarca(v)}
             >
               <SelectTrigger
@@ -166,7 +166,7 @@ export default function FiltrosPxListasPrecios({
             onLimpiar={() => handleRubro("")}
           >
             <Select
-              value={rubroActual || undefined}
+              value={rubroActual ?? ""}
               onValueChange={(v) => handleRubro(v)}
             >
               <SelectTrigger
@@ -196,7 +196,7 @@ export default function FiltrosPxListasPrecios({
             onLimpiar={() => handleSubRubro("")}
           >
             <Select
-              value={subRubroActual || undefined}
+              value={subRubroActual ?? ""}
               onValueChange={(v) => handleSubRubro(v)}
             >
               <SelectTrigger
@@ -226,7 +226,7 @@ export default function FiltrosPxListasPrecios({
             onLimpiar={() => handlePxVinculado("")}
           >
             <Select
-              value={pxVinculadoActual || undefined}
+              value={pxVinculadoActual ?? ""}
               onValueChange={(v) => handlePxVinculado(v)}
             >
               <SelectTrigger
@@ -260,7 +260,7 @@ export default function FiltrosPxListasPrecios({
             onLimpiar={() => handleActualizar("")}
           >
             <Select
-              value={actualizarActual || undefined}
+              value={actualizarActual ?? ""}
               onValueChange={(v) => handleActualizar(v)}
             >
               <SelectTrigger

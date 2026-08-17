@@ -108,7 +108,7 @@ export default function FinanzasTesoreriaPageClient({
                   activo={Boolean(filtroEntidad)}
                   onLimpiar={() => setFiltroEntidad("")}
                 >
-                  <Select value={filtroEntidad || undefined} onValueChange={(v) => setFiltroEntidad(v)}>
+                  <Select value={filtroEntidad ?? ""} onValueChange={(v) => setFiltroEntidad(v)}>
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="ENTIDAD" />
                     </SelectTrigger>
@@ -132,7 +132,7 @@ export default function FinanzasTesoreriaPageClient({
                   onLimpiar={() => setFiltroTitular("")}
                 >
                   <Select
-                    value={filtroTitular || undefined}
+                    value={filtroTitular ?? ""}
                     onValueChange={(v) => setFiltroTitular(v)}
                   >
                     <SelectTrigger className="input-filtro-unificado">
@@ -158,7 +158,7 @@ export default function FinanzasTesoreriaPageClient({
                   onLimpiar={() => setFiltroTipoCaja("")}
                 >
                   <Select
-                    value={filtroTipoCaja || undefined}
+                    value={filtroTipoCaja ?? ""}
                     onValueChange={(v) => setFiltroTipoCaja(v)}
                   >
                     <SelectTrigger className="input-filtro-unificado">
@@ -184,7 +184,7 @@ export default function FinanzasTesoreriaPageClient({
                   onLimpiar={() => setFiltroTipoValor("")}
                 >
                   <Select
-                    value={filtroTipoValor || undefined}
+                    value={filtroTipoValor ?? ""}
                     onValueChange={(v) => setFiltroTipoValor(v)}
                   >
                     <SelectTrigger className="input-filtro-unificado">

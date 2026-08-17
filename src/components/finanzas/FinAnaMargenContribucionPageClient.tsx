@@ -412,7 +412,7 @@ export default function FinAnaMargenContribucionPageClient({
                   }
                 >
                   <Select
-                    value={config.terminalId || undefined}
+                    value={config.terminalId ?? ""}
                     onValueChange={(value) =>
                       setConfig((prev) => ({ ...prev, terminalId: value }))
                     }

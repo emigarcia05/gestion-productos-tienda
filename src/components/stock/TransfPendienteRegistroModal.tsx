@@ -186,7 +186,7 @@ export default function TransfPendienteRegistroModal({
           onLimpiar={() => setSucursalFiltro("")}
         >
           <Select
-            value={sucursalFiltro || undefined}
+            value={sucursalFiltro ?? ""}
             onValueChange={(v) => setSucursalFiltro(v as Sucursal)}
           >
             <SelectTrigger

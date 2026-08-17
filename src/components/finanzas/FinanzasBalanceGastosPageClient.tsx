@@ -440,7 +440,7 @@ export default function FinanzasBalanceGastosPageClient({
                   onLimpiar={() => setFiltSucursal("")}
                 >
                   <Select
-                    value={filtSucursal || undefined}
+                    value={filtSucursal ?? ""}
                     onValueChange={(v) => setFiltSucursal(v)}
                   >
                     <SelectTrigger className="input-filtro-unificado">
@@ -467,7 +467,7 @@ export default function FinanzasBalanceGastosPageClient({
                   onLimpiar={() => setFiltProveedor("")}
                 >
                   <Select
-                    value={filtProveedor || undefined}
+                    value={filtProveedor ?? ""}
                     onValueChange={(v) => setFiltProveedor(v)}
                   >
                     <SelectTrigger className="input-filtro-unificado">
@@ -493,7 +493,7 @@ export default function FinanzasBalanceGastosPageClient({
                   activo={Boolean(filtRubro)}
                   onLimpiar={() => setFiltRubro("")}
                 >
-                  <Select value={filtRubro || undefined} onValueChange={(v) => setFiltRubro(v)}>
+                  <Select value={filtRubro ?? ""} onValueChange={(v) => setFiltRubro(v)}>
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="RUBRO" />
                     </SelectTrigger>
@@ -517,7 +517,7 @@ export default function FinanzasBalanceGastosPageClient({
                   activo={Boolean(filtGasto)}
                   onLimpiar={() => setFiltGasto("")}
                 >
-                  <Select value={filtGasto || undefined} onValueChange={(v) => setFiltGasto(v)}>
+                  <Select value={filtGasto ?? ""} onValueChange={(v) => setFiltGasto(v)}>
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="GASTO" />
                     </SelectTrigger>
@@ -542,7 +542,7 @@ export default function FinanzasBalanceGastosPageClient({
                   onLimpiar={() => setFiltEstado("")}
                 >
                   <Select
-                    value={filtEstado || undefined}
+                    value={filtEstado ?? ""}
                     onValueChange={(v) => setFiltEstado(v as FiltroEstadoBalanceGastos)}
                   >
                     <SelectTrigger className="input-filtro-unificado" aria-label="Estado (monto / pagado)">
@@ -671,7 +671,7 @@ export default function FinanzasBalanceGastosPageClient({
                   onLimpiar={() => setFiltTipo("")}
                 >
                   <Select
-                    value={filtTipo || undefined}
+                    value={filtTipo ?? ""}
                     onValueChange={(v) => setFiltTipo(v as FiltroTipoBalanceGastos)}
                   >
                     <SelectTrigger className="input-filtro-unificado" aria-label="Tipo de gasto (mensual / eventual)">

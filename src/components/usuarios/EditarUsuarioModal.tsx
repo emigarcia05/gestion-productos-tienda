@@ -119,7 +119,7 @@ export default function EditarUsuarioModal({
           <div className="flex flex-col gap-1">
             <ModalMicroLabel>Sucursal Por Defecto</ModalMicroLabel>
             <Select
-              value={sucursal || undefined}
+              value={sucursal ?? ""}
               onValueChange={(v) => setSucursal(v as SucursalPreferida)}
               disabled={saving}
             >

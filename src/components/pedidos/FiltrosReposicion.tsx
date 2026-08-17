@@ -213,7 +213,7 @@ export default function FiltrosReposicion({
             }}
           >
             <Select
-              value={proveedorActual || undefined}
+              value={proveedorActual ?? ""}
               onValueChange={(v) => {
                 const next = v;
                 onProveedorChange(next);
@@ -247,7 +247,7 @@ export default function FiltrosReposicion({
             onLimpiar={() => handleMarca("")}
           >
             <Select
-              value={marcaActual || undefined}
+              value={marcaActual ?? ""}
               onValueChange={(v) => handleMarca(v)}
               disabled={!sucursalSeleccionada}
             >
@@ -277,7 +277,7 @@ export default function FiltrosReposicion({
             onLimpiar={() => handleRubro("")}
           >
             <Select
-              value={rubroActual || undefined}
+              value={rubroActual ?? ""}
               onValueChange={(v) => handleRubro(v)}
               disabled={!sucursalSeleccionada}
             >

@@ -104,7 +104,7 @@ export default function FiltrosPxCompetencia({
             onLimpiar={() => navigate({ marca: "" })}
           >
             <Select
-              value={marcaActual || undefined}
+              value={marcaActual ?? ""}
               onValueChange={(v) => navigate({ marca: v, rubro: "" })}
             >
               <SelectTrigger
@@ -133,7 +133,7 @@ export default function FiltrosPxCompetencia({
             onLimpiar={() => navigate({ rubro: "" })}
           >
             <Select
-              value={rubroActual || undefined}
+              value={rubroActual ?? ""}
               onValueChange={(v) => navigate({ rubro: v })}
             >
               <SelectTrigger
@@ -162,7 +162,7 @@ export default function FiltrosPxCompetencia({
             onLimpiar={() => navigate({ filtroPxPromedio: "" })}
           >
             <Select
-              value={filtroPxPromedioActual || undefined}
+              value={filtroPxPromedioActual ?? ""}
               onValueChange={(v) =>
                 navigate({ filtroPxPromedio: v as FiltroPxPromedioCompetencia })
               }

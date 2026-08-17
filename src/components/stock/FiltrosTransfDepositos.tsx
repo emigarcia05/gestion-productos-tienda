@@ -187,7 +187,7 @@ export default function FiltrosTransfDepositos({
               onLimpiar={() => handleOrigen("")}
             >
               <Select
-                value={origenActual ?? undefined}
+                value={origenActual ?? ""}
                 onValueChange={(v) => handleOrigen(v)}
               >
                 <SelectTrigger
@@ -218,7 +218,7 @@ export default function FiltrosTransfDepositos({
               onLimpiar={() => handleDestino("")}
             >
               <Select
-                value={destinoActual ?? undefined}
+                value={destinoActual ?? ""}
                 onValueChange={(v) => handleDestino(v)}
               >
                 <SelectTrigger
@@ -256,7 +256,7 @@ export default function FiltrosTransfDepositos({
               onLimpiar={() => handleMarca("")}
             >
               <Select
-                value={marcaActual || undefined}
+                value={marcaActual ?? ""}
                 onValueChange={(v) => handleMarca(v)}
                 disabled={!origenSeleccionado}
               >
@@ -286,7 +286,7 @@ export default function FiltrosTransfDepositos({
               onLimpiar={() => handleRubro("")}
             >
               <Select
-                value={rubroActual || undefined}
+                value={rubroActual ?? ""}
                 onValueChange={(v) => handleRubro(v)}
                 disabled={!origenSeleccionado}
               >

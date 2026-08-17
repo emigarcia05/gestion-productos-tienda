@@ -95,7 +95,7 @@ export default function FinanzasVencPorFechaPageClient({
                   onLimpiar={() => setFiltroProveedor("")}
                 >
                   <Select
-                    value={filtroProveedor || undefined}
+                    value={filtroProveedor ?? ""}
                     onValueChange={(valor) => setFiltroProveedor(valor)}
                   >
                     <SelectTrigger className="input-filtro-unificado">

@@ -436,7 +436,7 @@ export default function GestionarProdIaDisenoPrompModal({
                 />
               ) : (
                 <Select
-                  value={formSubmodulo || undefined}
+                  value={formSubmodulo ?? ""}
                   onValueChange={(v) => {
                     setFormSubmodulo(v);
                     if (

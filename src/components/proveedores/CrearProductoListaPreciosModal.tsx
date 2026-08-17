@@ -145,7 +145,7 @@ export default function CrearProductoListaPreciosModal({
   const formulario = (
     <div className={cn(FORM_GRID_CLASS, "py-1")}>
       <ModalFormRow id="crear-prod-proveedor" label="PROVEEDOR">
-        <Select value={proveedorId || undefined} onValueChange={setProveedorId}>
+        <Select value={proveedorId ?? ""} onValueChange={setProveedorId}>
           <SelectTrigger
             id="crear-prod-proveedor"
             className={cn("input-filtro-unificado", INPUT_CONTROL_CLASS)}

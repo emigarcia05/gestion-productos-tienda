@@ -14,7 +14,11 @@ import SelectSearchInput from "@/components/shared/SelectSearchInput";
 function Select({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />;
+  const isControlled = Object.prototype.hasOwnProperty.call(props, "value");
+  const normalizedProps = isControlled
+    ? { ...props, value: props.value ?? "" }
+    : props;
+  return <SelectPrimitive.Root data-slot="select" {...normalizedProps} />;
 }
 
 function SelectGroup({

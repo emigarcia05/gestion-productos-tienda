@@ -194,7 +194,7 @@ export default function FiltrosStock({
             onLimpiar={() => handleMarca("")}
           >
             <Select
-              value={marcaActual || undefined}
+              value={marcaActual ?? ""}
               onValueChange={(v) => handleMarca(v)}
               disabled={!sucursalSeleccionada}
             >
@@ -224,7 +224,7 @@ export default function FiltrosStock({
             onLimpiar={() => handleRubro("")}
           >
             <Select
-              value={rubroActual || undefined}
+              value={rubroActual ?? ""}
               onValueChange={(v) => handleRubro(v)}
               disabled={!sucursalSeleccionada}
             >

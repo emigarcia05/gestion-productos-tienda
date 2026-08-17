@@ -373,7 +373,7 @@ export default function CrearEditarFinBalGastoFinalModal({
             <ModalMicroLabel>SUCURSAL</ModalMicroLabel>
             {gastoMensual === true ? (
               <Select
-                value={sucursalId || undefined}
+                value={sucursalId ?? ""}
                 onValueChange={setSucursalId}
                 disabled={saving || sucursales.length === 0}
               >
@@ -421,7 +421,7 @@ export default function CrearEditarFinBalGastoFinalModal({
           <label className="flex flex-col gap-1">
             <ModalMicroLabel>PROVEEDOR</ModalMicroLabel>
             <Select
-              value={proveedorId || undefined}
+              value={proveedorId ?? ""}
               onValueChange={setProveedorId}
               disabled={
                 saving ||

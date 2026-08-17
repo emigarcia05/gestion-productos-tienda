@@ -101,7 +101,7 @@ export default function TiendaCalcTintometricoPageClient({
               </span>
               <div className="min-w-0">
                 <Select
-                  value={proveedorId || undefined}
+                  value={proveedorId ?? ""}
                   onValueChange={(value) => setProveedorId(value)}
                 >
                   <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "h-10")}>

@@ -469,7 +469,7 @@ export default function PedidoAFabricaPageClient({
                     onLimpiar={handleLimpiarProveedor}
                   >
                     <Select
-                      value={proveedorId || undefined}
+                      value={proveedorId ?? ""}
                       onValueChange={handleProveedorChange}
                     >
                       <SelectTrigger
@@ -580,7 +580,7 @@ export default function PedidoAFabricaPageClient({
                     onLimpiar={() => setProdVinculado("")}
                   >
                     <Select
-                      value={prodVinculado || undefined}
+                      value={prodVinculado ?? ""}
                       onValueChange={(v) =>
                         setProdVinculado(v as FiltroSiNoPedidoAFabrica)
                       }
@@ -609,7 +609,7 @@ export default function PedidoAFabricaPageClient({
                     onLimpiar={() => setStockQuebrado("")}
                   >
                     <Select
-                      value={stockQuebrado || undefined}
+                      value={stockQuebrado ?? ""}
                       onValueChange={(v) =>
                         setStockQuebrado(v as FiltroSiNoPedidoAFabrica)
                       }

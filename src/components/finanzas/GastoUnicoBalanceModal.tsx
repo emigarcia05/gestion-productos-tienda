@@ -503,7 +503,7 @@ export default function GastoUnicoBalanceModal({
                   Plazo De Pago {plazoRequerido ? <span className="text-destructive">*</span> : null}
                 </ModalMicroLabel>
                 <Select
-                  value={pagoTotal ? undefined : plazoPago || undefined}
+                  value={pagoTotal ? undefined : plazoPago ?? ""}
                   onValueChange={setPlazoPago}
                   disabled={guardando || pagoTotal || imputacionSucursalId === ""}
                 >

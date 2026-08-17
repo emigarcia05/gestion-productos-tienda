@@ -162,7 +162,7 @@ export default function FiltrosEnviarPedido({
             onLimpiar={() => updateUrl({ sucursal: "", tipos: [], proveedor: "" })}
           >
             <Select
-              value={sucursal || undefined}
+              value={sucursal ?? ""}
               onValueChange={(v) =>
                 updateUrl({
                   sucursal: v as SucursalPedido,
@@ -272,7 +272,7 @@ export default function FiltrosEnviarPedido({
             onLimpiar={() => updateUrl({ proveedor: "" })}
           >
             <Select
-              value={proveedor || undefined}
+              value={proveedor ?? ""}
               onValueChange={(v) => updateUrl({ proveedor: v })}
               disabled={!proveedorHabilitado}
             >

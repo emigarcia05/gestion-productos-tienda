@@ -365,7 +365,7 @@ export default function ListaPreciosTablaConFiltros({
               activo={Boolean(proveedorId)}
               onLimpiar={() => cambiarProveedor("")}
             >
-              <Select value={proveedorId || undefined} onValueChange={cambiarProveedor}>
+              <Select value={proveedorId ?? ""} onValueChange={cambiarProveedor}>
                 <SelectTrigger id="filtro-proveedor" className="input-filtro-unificado">
                   <SelectValue placeholder="PROVEEDOR" />
                 </SelectTrigger>
@@ -388,7 +388,7 @@ export default function ListaPreciosTablaConFiltros({
               activo={Boolean(marcaNombre)}
               onLimpiar={() => cambiarMarca("")}
             >
-              <Select value={marcaNombre || undefined} onValueChange={cambiarMarca}>
+              <Select value={marcaNombre ?? ""} onValueChange={cambiarMarca}>
                 <SelectTrigger id="filtro-marca" className="input-filtro-unificado">
                   <SelectValue placeholder="MARCA" />
                 </SelectTrigger>
@@ -414,7 +414,7 @@ export default function ListaPreciosTablaConFiltros({
               activo={Boolean(rubroNombre)}
               onLimpiar={() => cambiarRubro("")}
             >
-              <Select value={rubroNombre || undefined} onValueChange={cambiarRubro}>
+              <Select value={rubroNombre ?? ""} onValueChange={cambiarRubro}>
                 <SelectTrigger id="filtro-rubro" className="input-filtro-unificado">
                   <SelectValue placeholder="RUBRO" />
                 </SelectTrigger>
@@ -440,7 +440,7 @@ export default function ListaPreciosTablaConFiltros({
               activo={habilitadoFilter === "si" || habilitadoFilter === "no"}
               onLimpiar={() => cambiarHabilitado("")}
             >
-              <Select value={habilitadoFilter || undefined} onValueChange={cambiarHabilitado}>
+              <Select value={habilitadoFilter ?? ""} onValueChange={cambiarHabilitado}>
                 <SelectTrigger id="filtro-habilitado" className="input-filtro-unificado">
                   <SelectValue placeholder="HABILITADO" />
                 </SelectTrigger>
@@ -460,7 +460,7 @@ export default function ListaPreciosTablaConFiltros({
               activo={vinculadoFilter === "si" || vinculadoFilter === "no"}
               onLimpiar={() => cambiarVinculado("")}
             >
-              <Select value={vinculadoFilter || undefined} onValueChange={cambiarVinculado}>
+              <Select value={vinculadoFilter ?? ""} onValueChange={cambiarVinculado}>
                 <SelectTrigger id="filtro-vinculado" className="input-filtro-unificado">
                   <SelectValue placeholder="VINCULADO" />
                 </SelectTrigger>

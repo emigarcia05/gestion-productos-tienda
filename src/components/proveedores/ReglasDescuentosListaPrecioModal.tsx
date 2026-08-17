@@ -255,7 +255,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                     onLimpiar={() => setFiltroCampo("")}
                   >
                     <Select
-                      value={filtroCampo || undefined}
+                      value={filtroCampo ?? ""}
                       onValueChange={(v) =>
                         setFiltroCampo(v as CampoReglaDescuentoListaPrecioInput)
                       }
@@ -284,7 +284,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                     onLimpiar={() => setFiltroProveedorId("")}
                   >
                     <Select
-                      value={filtroProveedorId || undefined}
+                      value={filtroProveedorId ?? ""}
                       onValueChange={setFiltroProveedorId}
                     >
                       <SelectTrigger id="filtro-regla-proveedor" className="input-filtro-unificado">
@@ -311,7 +311,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                     activo={Boolean(filtroMarcaId)}
                     onLimpiar={() => setFiltroMarcaId("")}
                   >
-                    <Select value={filtroMarcaId || undefined} onValueChange={setFiltroMarcaId}>
+                    <Select value={filtroMarcaId ?? ""} onValueChange={setFiltroMarcaId}>
                       <SelectTrigger id="filtro-regla-marca" className="input-filtro-unificado">
                         <SelectValue placeholder="MARCA" />
                       </SelectTrigger>
@@ -335,7 +335,7 @@ export default function ReglasDescuentosListaPrecioModal({ onSuccess }: Props) {
                     activo={Boolean(filtroRubroId)}
                     onLimpiar={() => setFiltroRubroId("")}
                   >
-                    <Select value={filtroRubroId || undefined} onValueChange={setFiltroRubroId}>
+                    <Select value={filtroRubroId ?? ""} onValueChange={setFiltroRubroId}>
                       <SelectTrigger id="filtro-regla-rubro" className="input-filtro-unificado">
                         <SelectValue placeholder="RUBRO" />
                       </SelectTrigger>

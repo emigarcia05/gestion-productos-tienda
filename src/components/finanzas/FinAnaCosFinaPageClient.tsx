@@ -131,7 +131,7 @@ export default function FinAnaCosFinaPageClient({ filas, terminales, pagos, esEd
                   onLimpiar={() => setFiltroTerminalId("")}
                 >
                   <Select
-                    value={filtroTerminalId || undefined}
+                    value={filtroTerminalId ?? ""}
                     onValueChange={(value) => setFiltroTerminalId(value)}
                   >
                     <SelectTrigger className="input-filtro-unificado">
@@ -156,7 +156,7 @@ export default function FinAnaCosFinaPageClient({ filas, terminales, pagos, esEd
                   activo={Boolean(filtroPago)}
                   onLimpiar={() => setFiltroPago("")}
                 >
-                  <Select value={filtroPago || undefined} onValueChange={(value) => setFiltroPago(value)}>
+                  <Select value={filtroPago ?? ""} onValueChange={(value) => setFiltroPago(value)}>
                     <SelectTrigger className="input-filtro-unificado">
                       <SelectValue placeholder="PAGO" />
                     </SelectTrigger>
@@ -180,7 +180,7 @@ export default function FinAnaCosFinaPageClient({ filas, terminales, pagos, esEd
                   onLimpiar={() => setFiltroHabilitado("")}
                 >
                   <Select
-                    value={filtroHabilitado || undefined}
+                    value={filtroHabilitado ?? ""}
                     onValueChange={(value) => setFiltroHabilitado(value)}
                   >
                     <SelectTrigger className="input-filtro-unificado">

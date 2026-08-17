@@ -444,7 +444,7 @@ export default function AsociarUrlsCompetenciaModal({
                             <>
                               {f.reglas.length > 0 ? (
                                 <Select
-                                  value={f.tipoPagina || undefined}
+                                  value={f.tipoPagina ?? ""}
                                   disabled={!puedeEditar || accionesDeshabilitadas}
                                   onValueChange={(v) =>
                                     setFilas((prev) =>

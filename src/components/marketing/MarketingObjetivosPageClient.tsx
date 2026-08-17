@@ -427,7 +427,7 @@ export default function MarketingObjetivosPageClient({
               />
             ) : (
               <Select
-                value={destinoId || undefined}
+                value={destinoId ?? ""}
                 onValueChange={setDestinoId}
                 disabled={pending || opcionesDestinoDisponibles.length === 0}
               >

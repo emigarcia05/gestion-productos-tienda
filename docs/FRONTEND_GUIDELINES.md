@@ -67,6 +67,8 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 - `FilterBar` > `FilaFiltrosDesplegables` (default **5** columnas; `columnas={6}` solo con 6 Selects) + `FilterRowSearch` + `LimpiarFiltrosButton` (siempre visible).
 - Si la pantalla usa **dos** `FilterBar` apilados, envolver ambos en `.filtros-doble-bloque-compacto` para compactar separaciones verticales y ganar filas visibles de tabla sin perder separación visual.
 - Cada Select de página en `FiltroIndividualContainer`. En modal: `FiltroIndividualContainer` o `FiltroBusquedaInput` (X propia); no `LimpiarFiltrosButton`.
+- Al limpiar un Select de filtros, el trigger debe volver a mostrar su placeholder (máscara). A nivel app, `Select` normaliza `value null/undefined` a `""` para evitar que quede renderizado el último valor elegido.
+- Consistencia recomendada en call sites: preferir `value={estado ?? ""}` (en vez de `|| undefined` / `?? undefined`) cuando el estado representa “sin filtro”.
 - Sin búsqueda: acciones en la misma fila (`FILTER_INLINE_ACTION_SLOT_CLASS`, a menudo `col-span-2`).
 - Contador: `FILTER_COUNT_CLASS`, texto MAYÚSCULAS (`X PRODUCTO(S)`).
 - Rango de fechas: `FilterRowDateRange` + `FiltroRangoFechasCalendarioModal`.

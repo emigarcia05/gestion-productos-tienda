@@ -136,7 +136,7 @@ export default function CrearEditarMktContenidoUrlDriveModal({
             />
           </div>
           <Select
-            value={tipoId || undefined}
+            value={tipoId ?? ""}
             onValueChange={setTipoId}
             disabled={saving || tipos.length === 0}
           >

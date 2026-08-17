@@ -145,7 +145,7 @@ export default function TablaControlComprobantes({
               onLimpiar={() => setFiltroProveedor("")}
             >
               <Select
-                value={filtroProveedor || undefined}
+                value={filtroProveedor ?? ""}
                 onValueChange={(v) => setFiltroProveedor(v)}
               >
                 <SelectTrigger className="input-filtro-unificado">
@@ -166,7 +166,7 @@ export default function TablaControlComprobantes({
               onLimpiar={() => setFiltroSucursal("")}
             >
               <Select
-                value={filtroSucursal || undefined}
+                value={filtroSucursal ?? ""}
                 onValueChange={(v) => setFiltroSucursal(v)}
               >
                 <SelectTrigger className="input-filtro-unificado">
@@ -187,7 +187,7 @@ export default function TablaControlComprobantes({
               onLimpiar={() => setFiltroPagado("")}
             >
               <Select
-                value={filtroPagado || undefined}
+                value={filtroPagado ?? ""}
                 onValueChange={(v) => setFiltroPagado(v)}
               >
                 <SelectTrigger className="input-filtro-unificado">
@@ -204,7 +204,7 @@ export default function TablaControlComprobantes({
               onLimpiar={() => setFiltroVencido("")}
             >
               <Select
-                value={filtroVencido || undefined}
+                value={filtroVencido ?? ""}
                 onValueChange={(v) => setFiltroVencido(v)}
               >
                 <SelectTrigger className="input-filtro-unificado">
@@ -218,7 +218,7 @@ export default function TablaControlComprobantes({
             <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "gap-2")}>
               <FiltroIndividualContainer className={cn(FILTER_SELECT_WRAPPER_CLASS, "w-full")} activo={Boolean(filtroControlado)} onLimpiar={() => setFiltroControlado("")}>
                 <Select
-                  value={filtroControlado || undefined}
+                  value={filtroControlado ?? ""}
                   onValueChange={(v) => setFiltroControlado(v)}
                 >
                   <SelectTrigger className="input-filtro-unificado">

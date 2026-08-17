@@ -76,7 +76,7 @@ export default function CompetenciaExtraccionReglasEditor({ value, onChange, cla
             <div>
               <ModalMicroLabel>Plantilla por defecto</ModalMicroLabel>
               <Select
-                value={reglaDefaultValue || undefined}
+                value={reglaDefaultValue ?? ""}
                 onValueChange={(v) => onChange({ ...value, reglaDefaultId: v })}
               >
                 <SelectTrigger

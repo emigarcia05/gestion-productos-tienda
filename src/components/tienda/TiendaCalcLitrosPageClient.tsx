@@ -274,7 +274,7 @@ export default function TiendaCalcLitrosPageClient({
               </Select>
 
               <Select
-                value={tipoPinturaId || undefined}
+                value={tipoPinturaId ?? ""}
                 onValueChange={(value) => setTipoPinturaId(value)}
               >
                 <SelectTrigger className={cn(SELECT_TRIGGER_FILTER_CLASS, "h-10")}>

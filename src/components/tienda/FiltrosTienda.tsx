@@ -155,7 +155,7 @@ export default function FiltrosTienda({
             onLimpiar={() => handleMarca("")}
           >
             <Select
-              value={marcaActual || undefined}
+              value={marcaActual ?? ""}
               onValueChange={(v) => handleMarca(v)}
             >
               <SelectTrigger
@@ -184,7 +184,7 @@ export default function FiltrosTienda({
             onLimpiar={() => handleRubro("")}
           >
             <Select
-              value={rubroActual || undefined}
+              value={rubroActual ?? ""}
               onValueChange={(v) => handleRubro(v)}
             >
               <SelectTrigger
@@ -214,7 +214,7 @@ export default function FiltrosTienda({
               onLimpiar={() => handleCxCompra("")}
             >
               <Select
-                value={cxCompraActual || undefined}
+                value={cxCompraActual ?? ""}
                 onValueChange={(v) => handleCxCompra(v)}
               >
                 <SelectTrigger
@@ -245,7 +245,7 @@ export default function FiltrosTienda({
               onLimpiar={() => handleSubRubro("")}
             >
               <Select
-                value={subRubroActual || undefined}
+                value={subRubroActual ?? ""}
                 onValueChange={(v) => handleSubRubro(v)}
               >
                 <SelectTrigger
@@ -275,7 +275,7 @@ export default function FiltrosTienda({
             onLimpiar={() => handleProveedor("")}
           >
             <Select
-              value={proveedorActual || undefined}
+              value={proveedorActual ?? ""}
               onValueChange={(v) => handleProveedor(v)}
             >
               <SelectTrigger
@@ -305,7 +305,7 @@ export default function FiltrosTienda({
             onLimpiar={() => handleVinculado("")}
           >
             <Select
-              value={vinculadoActual || undefined}
+              value={vinculadoActual ?? ""}
               onValueChange={(v) => handleVinculado(v)}
             >
               <SelectTrigger

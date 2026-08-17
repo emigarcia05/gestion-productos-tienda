@@ -225,7 +225,7 @@ export default function CrearEditarMktPublicacionModal({
                 disabled={saving}
               />
               <Select
-                value={tipoContenidoId || undefined}
+                value={tipoContenidoId ?? ""}
                 onValueChange={setTipoContenidoId}
                 disabled={saving || contenidos.length === 0}
               >
@@ -255,7 +255,7 @@ export default function CrearEditarMktPublicacionModal({
               </h3>
               <div className="flex items-center gap-2">
                 <Select
-                  value={seccionId || undefined}
+                  value={seccionId ?? ""}
                   onValueChange={handleSeccionChange}
                   disabled={saving || seccionesIdeas.length === 0}
                 >
@@ -287,7 +287,7 @@ export default function CrearEditarMktPublicacionModal({
                 </Button>
               </div>
               <Select
-                value={ideaDetalleId || undefined}
+                value={ideaDetalleId ?? ""}
                 onValueChange={handleIdeaChange}
                 disabled={saving || !seccionId || ideasDisponibles.length === 0}
               >

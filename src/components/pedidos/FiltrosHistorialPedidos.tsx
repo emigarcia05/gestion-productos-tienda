@@ -122,7 +122,7 @@ export default function FiltrosHistorialPedidos({
             onLimpiar={() => applyNavigate({ proveedorId: "" })}
           >
             <Select
-              value={proveedorId || undefined}
+              value={proveedorId ?? ""}
               onValueChange={(v) => applyNavigate({ proveedorId: v })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
@@ -149,7 +149,7 @@ export default function FiltrosHistorialPedidos({
             onLimpiar={() => applyNavigate({ sucursalCodigo: "" })}
           >
             <Select
-              value={sucursalCodigo || undefined}
+              value={sucursalCodigo ?? ""}
               onValueChange={(v) => applyNavigate({ sucursalCodigo: v })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>

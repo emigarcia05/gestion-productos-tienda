@@ -488,7 +488,7 @@ export default function GenerarPedidoToolbarButton({
           <div className="flex w-full min-w-0 flex-col gap-4">
             <div className="w-full min-w-0">
               <Select
-                value={sucursal || undefined}
+                value={sucursal ?? ""}
                 onValueChange={(v) => {
                   const next = v as SucursalPedido;
                   setSucursal(next);
@@ -639,7 +639,7 @@ export default function GenerarPedidoToolbarButton({
 
             <div className="w-full min-w-0">
               <Select
-                value={proveedor || undefined}
+                value={proveedor ?? ""}
                 onValueChange={(v) => setProveedor(v)}
                 disabled={!sucursal || tipos.length === 0 || cargandoProveedores}
               >

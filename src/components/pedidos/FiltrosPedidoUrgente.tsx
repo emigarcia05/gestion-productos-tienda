@@ -127,7 +127,7 @@ export default function FiltrosPedidoUrgente({
             onLimpiar={() => updateUrl({ sucursal: "" })}
           >
             <Select
-              value={sucursal || undefined}
+              value={sucursal ?? ""}
               onValueChange={(v) => updateUrl({ sucursal: v as SucursalPedido })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
@@ -153,7 +153,7 @@ export default function FiltrosPedidoUrgente({
             onLimpiar={() => updateUrl({ proveedor: "" })}
           >
             <Select
-              value={proveedor || undefined}
+              value={proveedor ?? ""}
               onValueChange={(v) => updateUrl({ proveedor: v })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
@@ -179,7 +179,7 @@ export default function FiltrosPedidoUrgente({
             onLimpiar={() => updateUrl({ pedido: "" })}
           >
             <Select
-              value={pedido || undefined}
+              value={pedido ?? ""}
               onValueChange={(v) => updateUrl({ pedido: v as FiltroPedidoValor })}
             >
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>

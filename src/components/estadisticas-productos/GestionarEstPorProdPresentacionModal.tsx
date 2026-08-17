@@ -459,7 +459,7 @@ export default function GestionarEstPorProdPresentacionModal({
               <div className="flex flex-col gap-1">
                 <ModalMicroLabel>Unidad medida</ModalMicroLabel>
                 <Select
-                  value={formUnidadMedidaId || undefined}
+                  value={formUnidadMedidaId ?? ""}
                   onValueChange={onChangeUnidadMedida}
                   disabled={pending}
                 >
