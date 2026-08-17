@@ -13,14 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import AppModal from "@/components/shared/AppModal";
-import { totalPorSucursalesPedidoAFabrica } from "@/components/pedido-a-fabrica/TablaPedidoAFabrica";
 import { cn } from "@/lib/utils";
-import { fmtNumero } from "@/lib/format";
-import {
-  calcularStockAFechaLlegadaPedidoAFabrica,
-  calcularStockEnDiasPedidoAFabrica,
-  resolverCantSugeridaPedidoAFabrica,
-} from "@/lib/pedidoAFabricaPromVta";
+import { fmtCelda } from "@/lib/format";
 import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
 import type {
   ProductoPedidoAFabricaItem,
@@ -42,25 +36,26 @@ const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 interface FilaSucursalDetalle {
   id: string;
   nombre: string;
-  stockUnidades: number | null;
-  stockDias: number | null;
-  stockHastaLlegada: number | null;
-  sugerida: number | null;
+  promVtaPorDia: number | null;
+}
+
+function fmtPromVtaUnDecimal(n: number | null | undefined): string {
+  if (n == null || Number.isNaN(n)) return "";
+  return n.toLocaleString("es-AR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
 }
 
 /**
  * Detalle por sucursal de un ítem Pedido A Fáb.:
- * Stock (unidades / días / a fecha llegada) · Compra sugerida + fila **TOTAL**.
- * (PROM. VTA. alimenta los cálculos pero no se muestra como columna.)
+ * Muestra **SUCURSALES** y **PROM. VTA POR DÍA** + fila **TOTAL**.
  */
 export default function DetalleSucursalesPedidoAFabricaModal({
   open,
   onOpenChange,
   producto,
   sucursales,
-  tiempoEntregaEnDias,
-  tiempoStockeo,
-  formaPedir,
 }: Props) {
   const titulo = producto?.descripcion?.trim()
     ? producto.descripcion
@@ -73,70 +68,29 @@ export default function DetalleSucursalesPedidoAFabricaModal({
 
     const filasCalc: FilaSucursalDetalle[] = sucursales.map((s) => {
       const datos = producto.porSucursal[s.id];
-      const stockUnidades = datos?.stockActual ?? null;
-      const promVta = datos?.promVta ?? null;
-      const stockDias = calcularStockEnDiasPedidoAFabrica(
-        stockUnidades,
-        promVta
-      );
-      const stockHastaLlegada = calcularStockAFechaLlegadaPedidoAFabrica(
-        stockUnidades,
-        promVta,
-        tiempoEntregaEnDias
-      );
-      const sugerida = resolverCantSugeridaPedidoAFabrica(
-        {
-          stockActual: stockUnidades ?? 0,
-          promVtaTotal: promVta ?? 0,
-          tiempoEntregaEnDias,
-          tiempoStockeo,
-        },
-        formaPedir,
-        producto.bulto
-      );
+      const promVtaPorDia = datos?.promVta ?? null;
       return {
         id: s.id,
         nombre: s.nombre.toLocaleUpperCase("es"),
-        stockUnidades,
-        stockDias,
-        stockHastaLlegada,
-        sugerida,
+        promVtaPorDia,
       };
     });
 
-    /** Totales = misma lógica que la grilla (suma stock/prom → métricas derivadas). */
-    const agg = totalPorSucursalesPedidoAFabrica(producto, sucursales);
-    const stockUnidades = agg.stockActual;
-    const stockDias = calcularStockEnDiasPedidoAFabrica(
-      stockUnidades,
-      agg.promVta
-    );
-    const stockHastaLlegada = calcularStockAFechaLlegadaPedidoAFabrica(
-      stockUnidades,
-      agg.promVta,
-      tiempoEntregaEnDias
-    );
-    const calcTotal = resolverCantSugeridaPedidoAFabrica(
-      {
-        stockActual: stockUnidades ?? 0,
-        promVtaTotal: agg.promVta ?? 0,
-        tiempoEntregaEnDias,
-        tiempoStockeo,
-      },
-      formaPedir,
-      producto.bulto
-    );
+    const promsValidos = filasCalc
+      .map((f) => f.promVtaPorDia)
+      .filter((v): v is number => v != null && !Number.isNaN(v));
+    const totalPromVtaPorDia =
+      promsValidos.length > 0
+        ? promsValidos.reduce((acc, n) => acc + n, 0)
+        : null;
 
     return {
       filas: filasCalc,
       total: {
-        stockUnidades,
-        stockDias,
-        stockHastaLlegada,
-        sugerida: calcTotal,
+        promVtaPorDia: totalPromVtaPorDia,
       },
     };
-  }, [producto, sucursales, tiempoEntregaEnDias, tiempoStockeo, formaPedir]);
+  }, [producto, sucursales]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -158,39 +112,16 @@ export default function DetalleSucursalesPedidoAFabricaModal({
           <div className="contenedor-tabla-gestion no-scroll-x min-h-0">
             <Table variant="compact" scrollX={false}>
               <colgroup>
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "28%" }} />
-                <col style={{ width: "22%" }} />
+                <col style={{ width: "70%" }} />
+                <col style={{ width: "30%" }} />
               </colgroup>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead rowSpan={2} className="min-w-0 align-middle">
-                    SUCURSAL
-                  </TableHead>
-                  <TableHead
-                    colSpan={3}
-                    className="text-center align-middle tabla-bloque-secundario-head-divider"
-                  >
-                    STOCK
-                  </TableHead>
-                  <TableHead className="text-center align-middle tabla-bloque-secundario-head-divider">
-                    COMPRA
-                  </TableHead>
-                </TableRow>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                    UNIDADES
-                  </TableHead>
-                  <TableHead className="text-center tabla-bloque-secundario-head">
-                    DÍAS
-                  </TableHead>
-                  <TableHead className="text-center leading-tight tabla-bloque-secundario-head">
-                    A FECHA LLEGADA
+                  <TableHead className="min-w-0 align-middle">
+                    SUCURSALES
                   </TableHead>
                   <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                    CANT. SUGERIDA
+                    PROM. VTA POR DÍA
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -208,25 +139,7 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                         "tabla-bloque-secundario-cell-divider"
                       )}
                     >
-                      {fmtNumero(f.stockUnidades)}
-                    </TableCell>
-                    <TableCell
-                      className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
-                    >
-                      {fmtNumero(f.stockDias)}
-                    </TableCell>
-                    <TableCell
-                      className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
-                    >
-                      {fmtNumero(f.stockHastaLlegada)}
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        TD_NUM,
-                        "tabla-bloque-secundario-cell-divider"
-                      )}
-                    >
-                      {f.sugerida != null ? fmtNumero(f.sugerida) : ""}
+                      {fmtPromVtaUnDecimal(f.promVtaPorDia)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -243,31 +156,7 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                         "font-bold tabla-bloque-secundario-cell-divider"
                       )}
                     >
-                      {fmtNumero(total.stockUnidades)}
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        TD_NUM,
-                        "font-bold tabla-bloque-secundario-cell"
-                      )}
-                    >
-                      {fmtNumero(total.stockDias)}
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        TD_NUM,
-                        "font-bold tabla-bloque-secundario-cell"
-                      )}
-                    >
-                      {fmtNumero(total.stockHastaLlegada)}
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        TD_NUM,
-                        "font-bold tabla-bloque-secundario-cell-divider"
-                      )}
-                    >
-                      {total.sugerida != null ? fmtNumero(total.sugerida) : ""}
+                      {fmtCelda(fmtPromVtaUnDecimal(total.promVtaPorDia))}
                     </TableCell>
                   </TableRow>
                 </TableFooter>

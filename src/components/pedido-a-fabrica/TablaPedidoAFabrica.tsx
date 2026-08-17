@@ -84,12 +84,11 @@ const PCT_STOCK_UNIDADES = 6;
 const PCT_STOCK_DIAS = 6;
 const PCT_FORMA = 9;
 const PCT_BULTO = 6;
-const PCT_CANT_PEDIR = 16;
+const PCT_CANT_PEDIR = 19;
 const PCT_CANT_SUGERIDA = 7;
-const PCT_ACCIONES = 3;
 const PCT_INFO = 3;
 
-const COL_COUNT = 9;
+const COL_COUNT = 8;
 
 /** Suma de STOCK ACTUAL y PROM. VTA. de todas las sucursales de la fila. */
 export function totalPorSucursalesPedidoAFabrica(
@@ -220,7 +219,6 @@ export default function TablaPedidoAFabrica({
             <col style={{ width: `${PCT_BULTO}%` }} />
             <col style={{ width: `${PCT_CANT_PEDIR}%` }} />
             <col style={{ width: `${PCT_CANT_SUGERIDA}%` }} />
-            <col style={{ width: `${PCT_ACCIONES}%` }} />
             <col style={{ width: `${PCT_INFO}%` }} />
           </colgroup>
           <TableHeader>
@@ -243,15 +241,6 @@ export default function TablaPedidoAFabrica({
               <TableHead
                 rowSpan={2}
                 className="text-center align-middle tabla-bloque-secundario-head-divider"
-                aria-label="Vaciar cantidad a pedir"
-              >
-                <div className="flex w-full items-center justify-center">
-                  <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                </div>
-              </TableHead>
-              <TableHead
-                rowSpan={2}
-                className="text-center align-middle tabla-bloque-secundario-head"
                 aria-label="Detalle por sucursal"
               >
                 <div className="flex w-full items-center justify-center">
@@ -409,23 +398,39 @@ export default function TablaPedidoAFabrica({
                         allowEmpty
                         ariaLabel={`Cantidad a pedir ${p.descripcion}`}
                         endAction={
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            disabled={cantSugerida == null}
-                            onClick={() => {
-                              if (cantSugerida == null) return;
-                              onAplicarCantSugerida(p.codExt, cantSugerida);
-                            }}
-                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                            aria-label={`Confirmar cantidad sugerida: ${p.descripcion}`}
-                          >
-                            <Check
-                              className={TABLE_ROW_ACTION_ICON_CLASS}
-                              aria-hidden
-                            />
-                          </Button>
+                          <>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={cantSugerida == null}
+                              onClick={() => {
+                                if (cantSugerida == null) return;
+                                onAplicarCantSugerida(p.codExt, cantSugerida);
+                              }}
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                              aria-label={`Confirmar cantidad sugerida: ${p.descripcion}`}
+                            >
+                              <Check
+                                className={TABLE_ROW_ACTION_ICON_CLASS}
+                                aria-hidden
+                              />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={cantAPedirRaw === ""}
+                              onClick={() => onCantAPedirCommit(p.codExt, "")}
+                              className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                              aria-label={`Vaciar cantidad a pedir: ${p.descripcion}`}
+                            >
+                              <Trash2
+                                className={TABLE_ROW_ACTION_ICON_CLASS}
+                                aria-hidden
+                              />
+                            </Button>
+                          </>
                         }
                       />
                     </TableCell>
@@ -436,24 +441,6 @@ export default function TablaPedidoAFabrica({
                       )}
                     >
                       {cantSugerida != null ? fmtNumero(cantSugerida) : ""}
-                    </TableCell>
-                    <TableCell className="celda-datos celda-datos--accion-relleno-fila text-center tabla-bloque-secundario-cell-divider">
-                      <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={cantAPedirRaw === ""}
-                          onClick={() => onCantAPedirCommit(p.codExt, "")}
-                          className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                          aria-label={`Vaciar cantidad a pedir: ${p.descripcion}`}
-                        >
-                          <Trash2
-                            className={TABLE_ROW_ACTION_ICON_CLASS}
-                            aria-hidden
-                          />
-                        </Button>
-                      </div>
                     </TableCell>
                     <TableCell className="celda-datos celda-datos--accion-relleno-fila text-center tabla-bloque-secundario-cell">
                       <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
