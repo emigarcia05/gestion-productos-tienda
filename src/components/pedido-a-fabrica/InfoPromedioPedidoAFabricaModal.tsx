@@ -66,7 +66,7 @@ export default function InfoPromedioPedidoAFabricaModal({
       <AppModal
         size="md"
         padding="sm"
-        title="Info Formulas"
+        title="INFO FORMULAS"
         actions={
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cerrar
@@ -134,6 +134,10 @@ export default function InfoPromedioPedidoAFabricaModal({
                 }
               />
               <FormulaLine
+                left="Días Provisión Hasta Llegada"
+                right="días entre hoy (AR) y Fecha Llegada Pedido (mínimo 0)"
+              />
+              <FormulaLine
                 left="Fecha Stockeo"
                 right={
                   fechaStockeo != null ? (
@@ -165,11 +169,11 @@ export default function InfoPromedioPedidoAFabricaModal({
               />
               <FormulaLine
                 left="Stock Hasta Llegada De Pedido"
-                right="Stock Actual − (tiempo_entrega_en_dias × Prom. Vta.) — columna grilla/modal; no requiere Tiempo Stockeo"
+                right="Stock Actual − (Días Provisión Hasta Llegada × Prom. Vta.)"
               />
               <FormulaLine
                 left="Stock Quebrado"
-                right="Stock Hasta Llegada De Pedido ≤ 0 (filtro SI/NO; aviso TriangleAlert en DESCRIPCIÓN)"
+                right="Stock Hasta Llegada De Pedido < 0 (columna QUEBRADO con tilde)"
               />
               <FormulaLine
                 left="Prod. Vinculado"

@@ -22,6 +22,7 @@ import {
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import {
+  calcularDiasProvisionHastaLlegadaPedidoAFabrica,
   calcularStockAFechaLlegadaPedidoAFabrica,
   esStockQuebradoPedidoAFabrica,
   resolverCantSugeridaPedidoAFabrica,
@@ -58,6 +59,8 @@ interface Props {
   emptyMessage: string;
   /** Días de entrega del proveedor seleccionado (`tiempo_entrega_en_dias`). */
   tiempoEntregaEnDias: number | null;
+  /** `YYYY-MM-DD` (vacío/inválido → hoy AR para cálculo de provisión). */
+  fechaPedidoIso: string;
   /** Días de stockeo del filtro **TIEMPO STOCKEO** (null si vacío). */
   tiempoStockeo: number | null;
   /** Filtro **PROD. VINCULADO** (`cod_tienda` en lista proveedor). */
@@ -75,11 +78,10 @@ interface Props {
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
-/** Anchos fijos (suma 100 %). STOCK: UN. ACTUALES | QUEBRADO | A FECHA LLEGADA. COMPRA: FORMA | BULTO | CANT. PEDIR | CANT. SUGERIDA. */
-const PCT_DESC = 36;
+/** Anchos fijos (suma 100 %). STOCK: UN. ACTUALES | QUEBRADO. COMPRA: FORMA | BULTO | CANT. PEDIR | CANT. SUGERIDA. */
+const PCT_DESC = 44;
 const PCT_STOCK_UNIDADES = 6;
 const PCT_STOCK_DIAS = 6;
-const PCT_STOCK_HASTA_LLEGADA = 8;
 const PCT_FORMA = 9;
 const PCT_BULTO = 6;
 const PCT_CANT_PEDIR = 16;
@@ -87,7 +89,7 @@ const PCT_CANT_SUGERIDA = 7;
 const PCT_ACCIONES = 3;
 const PCT_INFO = 3;
 
-const COL_COUNT = 10;
+const COL_COUNT = 9;
 
 /** Suma de STOCK ACTUAL y PROM. VTA. de todas las sucursales de la fila. */
 export function totalPorSucursalesPedidoAFabrica(
@@ -117,6 +119,7 @@ export function totalPorSucursalesPedidoAFabrica(
 function productoPasaFiltrosDerivados(
   producto: ProductoPedidoAFabricaItem,
   sucursales: SucursalPedidoAFabrica[],
+  fechaPedidoIso: string,
   tiempoEntregaEnDias: number | null,
   filtroProdVinculado: FiltroSiNoPedidoAFabrica,
   filtroStockQuebrado: FiltroSiNoPedidoAFabrica
@@ -129,10 +132,14 @@ function productoPasaFiltrosDerivados(
 
   if (!filtroStockQuebrado) return true;
   const total = totalPorSucursalesPedidoAFabrica(producto, sucursales);
+  const diasProvisionHastaLlegada = calcularDiasProvisionHastaLlegadaPedidoAFabrica(
+    fechaPedidoIso,
+    tiempoEntregaEnDias
+  );
   const stockHastaLlegada = calcularStockAFechaLlegadaPedidoAFabrica(
     total.stockActual,
     total.promVta,
-    tiempoEntregaEnDias
+    diasProvisionHastaLlegada
   );
   const quebrado = esStockQuebradoPedidoAFabrica(stockHastaLlegada);
   if (filtroStockQuebrado === "si" && !quebrado) return false;
@@ -142,7 +149,7 @@ function productoPasaFiltrosDerivados(
 
 /**
  * Grilla Pedido A Fáb.
- * **DESCRIPCIÓN** · **STOCK** (UN. ACTUALES / QUEBRADO / A FECHA LLEGADA)
+ * **DESCRIPCIÓN** · **STOCK** (UN. ACTUALES / QUEBRADO)
  * · **COMPRA** (FORMA / BULTO / CANT. PEDIR / CANT. SUGERIDA UNIDAD techo / BULTO múltiplo)
  * · tilde · Info.
  * (PROM. VTA. se calcula en backend/cliente pero no se muestra como columna.)
@@ -155,6 +162,7 @@ export default function TablaPedidoAFabrica({
   onPaginaChange,
   loading = false,
   emptyMessage,
+  fechaPedidoIso,
   tiempoEntregaEnDias,
   tiempoStockeo,
   filtroProdVinculado,
@@ -175,6 +183,7 @@ export default function TablaPedidoAFabrica({
         productoPasaFiltrosDerivados(
           p,
           sucursales,
+          fechaPedidoIso,
           tiempoEntregaEnDias,
           filtroProdVinculado,
           filtroStockQuebrado
@@ -183,6 +192,7 @@ export default function TablaPedidoAFabrica({
     [
       productos,
       sucursales,
+      fechaPedidoIso,
       tiempoEntregaEnDias,
       filtroProdVinculado,
       filtroStockQuebrado,
@@ -206,7 +216,6 @@ export default function TablaPedidoAFabrica({
             <col style={{ width: `${PCT_DESC}%` }} />
             <col style={{ width: `${PCT_STOCK_UNIDADES}%` }} />
             <col style={{ width: `${PCT_STOCK_DIAS}%` }} />
-            <col style={{ width: `${PCT_STOCK_HASTA_LLEGADA}%` }} />
             <col style={{ width: `${PCT_FORMA}%` }} />
             <col style={{ width: `${PCT_BULTO}%` }} />
             <col style={{ width: `${PCT_CANT_PEDIR}%` }} />
@@ -220,7 +229,7 @@ export default function TablaPedidoAFabrica({
                 DESCRIPCIÓN
               </TableHead>
               <TableHead
-                colSpan={3}
+                colSpan={2}
                 className="text-center align-middle tabla-bloque-secundario-head-divider"
               >
                 STOCK
@@ -256,9 +265,6 @@ export default function TablaPedidoAFabrica({
               </TableHead>
               <TableHead className="text-center tabla-bloque-secundario-head">
                 QUEBRADO
-              </TableHead>
-              <TableHead className="text-center leading-tight tabla-bloque-secundario-head">
-                A FECHA LLEGADA
               </TableHead>
               <TableHead className="text-center tabla-bloque-secundario-head-divider">
                 FORMA
@@ -298,11 +304,16 @@ export default function TablaPedidoAFabrica({
                 const total = totalPorSucursalesPedidoAFabrica(p, sucursales);
                 const stockUnidades = total.stockActual;
                 const promVtaTotal = total.promVta;
+                const diasProvisionHastaLlegada =
+                  calcularDiasProvisionHastaLlegadaPedidoAFabrica(
+                    fechaPedidoIso,
+                    tiempoEntregaEnDias
+                  );
                 const stockHastaLlegada =
                   calcularStockAFechaLlegadaPedidoAFabrica(
                     stockUnidades,
                     promVtaTotal,
-                    tiempoEntregaEnDias
+                    diasProvisionHastaLlegada
                   );
                 const stockQuebrado =
                   esStockQuebradoPedidoAFabrica(stockHastaLlegada);
@@ -351,11 +362,6 @@ export default function TablaPedidoAFabrica({
                       ) : (
                         ""
                       )}
-                    </TableCell>
-                    <TableCell
-                      className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
-                    >
-                      {fmtNumero(stockHastaLlegada)}
                     </TableCell>
                     <TableCell className="celda-datos tabla-bloque-secundario-cell-divider">
                       <Select

@@ -46,6 +46,7 @@ import TablaPedidoAFabrica, {
 import InfoPromedioPedidoAFabricaModal from "@/components/pedido-a-fabrica/InfoPromedioPedidoAFabricaModal";
 import GenerarPedidoToolbarButton from "@/components/pedidos/GenerarPedidoToolbarButton";
 import {
+  calcularDiasProvisionHastaLlegadaPedidoAFabrica,
   calcularStockAFechaLlegadaPedidoAFabrica,
   esStockQuebradoPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
@@ -184,10 +185,15 @@ export default function PedidoAFabricaPageClient({
       if (prodVinculado === "no" && vinculado) return false;
       if (!stockQuebrado) return true;
       const total = totalPorSucursalesPedidoAFabrica(p, sucursales);
+      const diasProvisionHastaLlegada =
+        calcularDiasProvisionHastaLlegadaPedidoAFabrica(
+          fechaPedidoIsoParseada,
+          tiempoEntregaEnDias
+        );
       const stockHasta = calcularStockAFechaLlegadaPedidoAFabrica(
         total.stockActual,
         total.promVta,
-        tiempoEntregaEnDias
+        diasProvisionHastaLlegada
       );
       const quebrado = esStockQuebradoPedidoAFabrica(stockHasta);
       if (stockQuebrado === "si" && !quebrado) return false;
@@ -197,6 +203,7 @@ export default function PedidoAFabricaPageClient({
   }, [
     productos,
     sucursales,
+    fechaPedidoIsoParseada,
     tiempoEntregaEnDias,
     prodVinculado,
     stockQuebrado,
@@ -772,6 +779,7 @@ export default function PedidoAFabricaPageClient({
             onPaginaChange={setPagina}
             loading={loading}
             emptyMessage="Este proveedor no tiene productos en la lista de precios."
+            fechaPedidoIso={fechaPedidoIsoParseada}
             tiempoEntregaEnDias={tiempoEntregaEnDias}
             tiempoStockeo={tiempoStockeoValor}
             filtroProdVinculado={prodVinculado}

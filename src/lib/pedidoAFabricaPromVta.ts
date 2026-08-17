@@ -8,6 +8,7 @@
 import {
   addDaysToIsoYmdArgentina,
   dateToIsoYmdArgentina,
+  diasNumericosAcreditacionMenosHoyArgentina,
 } from "@/lib/fechaArgentina";
 import { etiquetaMesEstPorProd } from "@/lib/estPorProdPeriodo";
 import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
@@ -79,6 +80,23 @@ export function calcularFechaLlegadaPedidoIso(
       ? Math.max(0, Math.trunc(tiempoEntregaEnDias))
       : 0;
   return addDaysToIsoYmdArgentina(base, entrega);
+}
+
+/**
+ * Días de provisión desde hoy (AR) hasta la fecha de llegada del pedido.
+ * Si FECHA PEDIDO está vacía/inválida, usa hoy como base.
+ * Nunca devuelve negativo.
+ */
+export function calcularDiasProvisionHastaLlegadaPedidoAFabrica(
+  fechaPedidoIso: string | null | undefined,
+  tiempoEntregaEnDias: number | null | undefined,
+  ahora: Date = new Date()
+): number {
+  const fechaBase = normalizarFechaPedidoPedidoAFabrica(fechaPedidoIso, ahora);
+  const llegadaIso = calcularFechaLlegadaPedidoIso(fechaBase, tiempoEntregaEnDias);
+  const diasDesdeHoy = diasNumericosAcreditacionMenosHoyArgentina(llegadaIso);
+  if (!Number.isFinite(diasDesdeHoy)) return 0;
+  return Math.max(0, Math.trunc(diasDesdeHoy));
 }
 
 /**
