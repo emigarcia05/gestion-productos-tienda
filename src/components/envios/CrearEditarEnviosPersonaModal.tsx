@@ -65,7 +65,7 @@ export default function CrearEditarEnviosPersonaModal({
     nombre.trim() !== "" && apellido.trim() !== "" && cel.trim() !== "" && tipo !== "";
 
   async function handleSubmit() {
-    if (!puedeGuardar || tipo === "" || saving) return;
+    if (!puedeGuardar || saving) return;
     setSaving(true);
     try {
       const payload = { nombre, apellido, cel, tipo };
