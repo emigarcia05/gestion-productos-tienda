@@ -106,6 +106,12 @@ export const PERMISOS = {
     cargarGasto: { simple: true, editor: true },
   },
 
+  // ─── Módulo Envios (Vendedor) ─────────────────────────────────────────────
+  envios: {
+    /** CRUD de personas, direcciones y envío final. Flujo vendedor (`simple` + `editor`). */
+    acceso: { simple: true, editor: true },
+  },
+
   // ─── Área /finanzas (deuda proveedores, tesorería, balance, etc.) ────────
   finanzas: {
     acceso: { simple: true, editor: true },

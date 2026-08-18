@@ -58,9 +58,9 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 ```
 
 - Header: `ClassicFilteredTableLayout` usa `ClassicPageHeader` (`tone="card"`). API ES: `SectionHeader`. Núcleo: `PageSectionHeader`. Visual: **MÓDULO** → **SUBMÓDULO 1** → **Submódulo 2**.
-- `contentWidth`: `default` (`max-w-7xl`) | `wide150` (Comp. Categorías) | `full` (Balance, Gastos, Flujo, Calcular Lts, Px Tintométricos).
+- `contentWidth`: `default` (`max-w-7xl`) | `wide150` (Comp. Categorías) | `full` (Balance, Gastos, Flujo, Calcular Lts, Px Tintométricos, Envios).
 - Card envolviendo tabla: `className={cn("card-tabla-envoltorio", "flex-1")}`.
-- CFTL **sin** `filters`: Calcular Lts, Px Tintométricos, Cargar Gasto (card de cálculo / modal; acciones de editor en `actions`). Hubs vacíos: `return null`. Finder sin `FilterBar`: Catálogo Gastos, Comp. Categorías, Ideas Marketing.
+- CFTL **sin** `filters`: Calcular Lts, Px Tintométricos, Cargar Gasto (card de cálculo / modal; acciones de editor en `actions`). Hubs vacíos: `return null`. Finder sin `FilterBar`: Catálogo Gastos, Comp. Categorías, Ideas Marketing, Envios · Crear Envío.
 
 ### 1.2 Filtros
 
@@ -97,7 +97,7 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 
 ### 1.5 Finder
 
-`@/components/shared/catalogo-finder/` + `CATALOGO_FINDER_*` en `ui-classes`. Columnas con header `bg-primary`, `+` (`nuevoLado`: `end` default, `start` en Ideas). Filas: hover editar/eliminar; selección `CATALOGO_FINDER_ROW_SELECTED_CLASS`. Usos: Catálogo Gastos (5 cols), Comp. Categorías (4), Ideas (2).
+`@/components/shared/catalogo-finder/` + `CATALOGO_FINDER_*` en `ui-classes`. Columnas con header `bg-primary`, `+` (`nuevoLado`: `end` default, `start` en Ideas). Filas: hover editar/eliminar; selección `CATALOGO_FINDER_ROW_SELECTED_CLASS`. Usos: Catálogo Gastos (5 cols), Comp. Categorías (4), Ideas (2), Envios · Crear Envío (2: clientes / direcciones del cliente).
 
 ### 1.6 Sidebar y áreas
 
@@ -109,7 +109,7 @@ SSOT: `src/lib/main-app-areas.ts`, `administracionNav.ts`, `marketingRoutes.ts`,
 | Administración | `finanzas` (pide clave) | `/finanzas` |
 | Marketing | `marketing` | `/marketing` |
 
-**Vendedor** (acordeón, módulos cerrados al inicio): **MERCADERÍA** (Cant. Pedida → Urgente / Tintométrico / Reposición → Generar Pedido → Recepción) → **PRECIOS** (Px Sugeridos, Px Tintométricos) → **CALCULAR LTS** → **STOCK** (Control Stock, Trans. Depósitos) → **CARGAR GASTOS** → **ASISTENTE IA**. Rol `simple` ve estos módulos; CRUD de prompts IA solo `editor`.
+**Vendedor** (acordeón, módulos cerrados al inicio): **MERCADERÍA** (Cant. Pedida → Urgente / Tintométrico / Reposición → Generar Pedido → Recepción) → **PRECIOS** (Px Sugeridos, Px Tintométricos) → **CALCULAR LTS** → **STOCK** (Control Stock, Trans. Depósitos) → **CARGAR GASTOS** → **ENVIOS** (Programados / Crear Envío) → **ASISTENTE IA**. Rol `simple` ve estos módulos; CRUD de prompts IA solo `editor`.
 
 **Administración** (`AdministracionAccordionNav`): **FINANZAS** (BALANCE / OPERACIONES) → **LISTA PRECIOS** (PX TIENDA / PROVEEDORES / ANÁLISIS M.C.) → **PEDIDO A FÁB.** → **ESTADÍSTICAS** → **USUARIOS**. Un solo destino → click navega (sin chevron).
 
@@ -136,6 +136,8 @@ Canónicas Vendedor / Análisis: `GP_ROUTES` (`src/lib/gestionProductosRoutes.ts
 | Lista Prov. | `…/lista` → `/proveedores/lista` |
 | Flujo De Fondo | `/finanzas/venc-por-fecha` |
 | Pedido A Fáb. | `/pedido-a-fabrica` |
+| Envios | `/gestion-productos/envios/programados` → `/envios/programados` |
+| Crear Envío | `/gestion-productos/envios/crear` → `/envios/crear` |
 
 Aliases viejos (`/pedidos/*`, `/proveedores`, `/proveedores/gestion`, `/finanzas/flujo-de-fondo`, …) **redirigen**; no crear páginas ahí.
 
@@ -225,6 +227,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Trans. Depósitos:** origen ≠ destino; origen default = sucursal preferida. **Generar Transf.** → `TransfPendienteRegistroModal`.
 - **Px Tintométrico / Calc. Litros:** CFTL `contentWidth="full"` sin FilterBar; card de cálculo. Coeficientes / rendimientos solo `editor`, en `actions` del header (**Editar Coeficientes** / **Editar Rendimientos**).
 - **Cargar Gasto:** CFTL; al entrar abre `GastoUnicoBalanceModal` (gasto eventual, mes/año AR). Header **Nuevo Gasto Eventual**.
+- **Envios:** sidenav **Programados** / **Crear Envío**. Programados = CFTL `contentWidth="full"` con tabla de `envios_final` (PAGADO = ícono `Check`; PDF vía `GET /api/envios/[id]/comprobante`). **Crear Envío:** paso 1 en card `1. SELECCIONAR CLIENTE` con Finder 2 columnas (CLIENTES + DIRECCIONES). Click en cliente lista solo sus direcciones (`envios_direcciones.persona_id`). Cada columna tiene `FiltroBusquedaInput`. `+` crea cliente (`CLIENTE_FINAL`) o dirección del cliente seleccionado.
 
 ### Finanzas
 

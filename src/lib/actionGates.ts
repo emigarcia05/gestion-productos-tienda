@@ -72,3 +72,8 @@ export function requireCargarGastoEventual(): Promise<ActionGateFail | null> {
     "Sin permisos para cargar gasto eventual."
   );
 }
+
+/** Envios (Vendedor): `simple` y `editor` pueden leer y mutar. */
+export function requireEnvios(): Promise<ActionGateFail | null> {
+  return requirePermiso(PERMISOS.envios.acceso, "Sin permisos para envíos.");
+}

@@ -23,6 +23,9 @@ import {
   Target,
   Images,
   Palette,
+  CalendarClock,
+  Plus,
+  Truck,
   Sparkles,
   ScanSearch,
   Paintbrush,
@@ -54,6 +57,7 @@ type ModuleId =
   | "asistencia-precios"
   | "calcular-lts"
   | "cargar-gastos"
+  | "envios"
   | "asistente-ia";
 type MarketingModuleId = "publicaciones" | "base-multimedia";
 type SidebarModuleId = ModuleId | MarketingModuleId;
@@ -177,6 +181,25 @@ const MODULES: NavModule[] = [
     href: GP_ROUTES.ayudaVendedor.cargarGasto,
     permiso: PERMISOS.ayudaVendedor.cargarGasto,
     submodules: [],
+  },
+  {
+    id: "envios",
+    label: "ENVIOS",
+    icon: <Truck className={iconClass} />,
+    submodules: [
+      {
+        href: GP_ROUTES.envios.programados,
+        label: "Programados",
+        icon: <CalendarClock className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.envios.acceso,
+      },
+      {
+        href: GP_ROUTES.envios.crear,
+        label: "Crear Envío",
+        icon: <Plus className="h-4 w-4 shrink-0" />,
+        permiso: PERMISOS.envios.acceso,
+      },
+    ],
   },
   {
     id: "asistente-ia",

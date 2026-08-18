@@ -2,6 +2,15 @@ import { NextResponse } from "next/server";
 import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
+/** Lectura/descarga de comprobante PDF de Envios. */
+export async function guardEnviosLectura(): Promise<NextResponse | null> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.envios.acceso)) {
+    return NextResponse.json({ ok: false, error: "Sin permisos para envíos." }, { status: 403 });
+  }
+  return null;
+}
+
 /** Lectura de historial de pedidos (detalle HTTP). */
 export async function guardPedidosLectura(): Promise<NextResponse | null> {
   const rol = await getRol();

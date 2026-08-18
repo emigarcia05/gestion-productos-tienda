@@ -62,6 +62,8 @@ function canonicalGestionProductosRewrites(): { source: string; destination: str
     { source: R.ayudaVendedor.pxVenta.pxTintometrico, destination: I.ayudaVendedor.pxVenta.pxTintometrico },
     { source: R.ayudaVendedor.calcLitros, destination: I.ayudaVendedor.calcLitros },
     { source: R.ayudaVendedor.cargarGasto, destination: I.ayudaVendedor.cargarGasto },
+    { source: R.envios.programados, destination: I.envios.programados },
+    { source: R.envios.crear, destination: I.envios.crear },
     { source: R.ayudaVendedor.controlStock, destination: I.ayudaVendedor.controlStock },
     { source: R.ayudaVendedor.transfDepositos, destination: I.ayudaVendedor.transfDepositos },
     {
@@ -238,6 +240,26 @@ const nextConfig: NextConfig = {
       {
         source: "/cargar-gasto",
         destination: R.ayudaVendedor.cargarGasto,
+        permanent: true,
+      },
+      {
+        source: "/envios",
+        destination: R.envios.programados,
+        permanent: true,
+      },
+      {
+        source: "/envios/programados",
+        destination: R.envios.programados,
+        permanent: true,
+      },
+      {
+        source: "/envios/crear",
+        destination: R.envios.crear,
+        permanent: true,
+      },
+      {
+        source: "/gestion-productos/envios",
+        destination: R.envios.programados,
         permanent: true,
       },
       {

@@ -23,6 +23,7 @@ Stack: **Next.js 16 App Router**, **Prisma 7**, **Zod v4**, **iron-session**. Zo
 | Asistente IA | **§3.12** |
 | Sync DUX / Route Handlers | **§3.13** |
 | Tipos pintura / rendimientos | **§3.14** |
+| Envios (Vendedor) | **§3.15** |
 | Prohibido reintroducir | **§5** |
 | IA Diseño / scraper / CSV | `docs/AGENTEIA_GUIDELINES.md` |
 
@@ -83,6 +84,7 @@ Convención: `puede(rol, PERMISOS.<modulo>…)` **antes** de `esEditor()`. El pr
 | Stock / Trans. Depósitos | Encolar, exportar Excel, marcar exportado. Flujo vendedor. |
 | Sync DUX lista tienda | `PERMISOS.tienda.acciones.sincronizar` (`simple` y `editor`). Solo API, no Action. |
 | Ayuda vendedor · gasto eventual | `PERMISOS.ayudaVendedor.cargarGasto` (`requireCargarGastoEventual`). |
+| Envios | CRUD personas / direcciones / envío final + PDF (`requireEnvios`). Flujo vendedor. |
 
 **Todo lo demás crítico** (catálogos maestros, finanzas, marketing CRUD, competencia, lista precios, usuarios, import, scraping, Google Sheets): módulo + `esEditor()`.
 
@@ -90,7 +92,7 @@ Convención: `puede(rol, PERMISOS.<modulo>…)` **antes** de `esEditor()`. El pr
 
 | Tipo | Schema | Modelos típicos |
 |------|--------|-----------------|
-| CUID | `prismaCuidSchema` | `Proveedor`, `PedidoHistoria`, gastos balance, tesorería, competencia, marketing |
+| CUID | `prismaCuidSchema` | `Proveedor`, `PedidoHistoria`, gastos balance, tesorería, competencia, marketing, envíos |
 | UUID | `uuidSchema` | `ProdPedMerc2`, `prod_rendimientos` |
 | Mixto / seed | `prismaCuidOrUuidSchema`, `globalSucursalIdSchema` | sucursales (incluye literal `suc_corporativo`) |
 | `cod_ext` | `listaPreciosCodExtSchema` / `listaPreciosCodExtListSchema` | `prod_precios_provee` |
@@ -335,7 +337,7 @@ Lectura: `PERMISOS.finanzas.acceso`. Mutaciones de catálogo/tesorería/IVA: + `
 
 Única entrada: `GET`/`POST /api/sync-lista-precios-tienda` + `…/status` + `…/cancel`. Guard `guardTiendaListaPreciosSincronizar`. Pasos reanudables: `syncListaPrecioTiendaRunStep` + estado `sync_dux_status`. Cancelación cooperativa (`running = false`); **no** actualiza `last_completed_at`. Cliente encadena POST con `continuing: true`. Persistencia por chunks; huérfanos: `limpiarHuerfanosProdTienda`.
 
-Otras APIs: import lista, parse PDF, sync competencia, import/borrar `est_por_prod`, detalle historial pedidos. Todas con guard en `apiRouteAuth` (o el mismo criterio).
+Otras APIs: import lista, parse PDF, sync competencia, import/borrar `est_por_prod`, detalle historial pedidos, PDF comprobante de envíos (`GET /api/envios/[id]/comprobante`). Todas con guard en `apiRouteAuth` (o el mismo criterio).
 
 ### 3.13 Tipos de pintura (`prod_rendimientos`)
 
@@ -346,6 +348,16 @@ Tabla en BD **sin modelo Prisma**. CRUD raw SQL en `tiposPinturaRendimientos.ts`
 Los ~71 modelos de `schema.prisma` están en uso (directo, `tx.` o include). Script: `npm run db:audit-schema`. El script solo cuenta `prisma.<camel>`: `PedidoHistoriaItem`, `ProdPedUltComp`, `MktPublicacionRedLink` se usan vía `tx.` / relaciones.
 
 `prod_rendimientos` no tiene `@@map` en schema (raw SQL, **§3.13**).
+
+### 3.15 Envios (Vendedor)
+
+URL canónica: `/gestion-productos/envios/programados` y `/gestion-productos/envios/crear` → `src/app/envios/...`. Permiso `PERMISOS.envios.acceso` (`requireEnvios`): `simple` y `editor` leen y mutan (excepción **§1.2.3**).
+
+Tablas: `envios_personas` (catálogo; `tipo` = `CLIENTE_FINAL` | `PINTOR`), `envios_direcciones` (**`persona_id`** FK a persona; en el alta, al cliente), `envios_final` (envío). IDs CUID.
+
+**`envios_final`:** hasta **dos** personas, una por tipo — FKs `cliente_final_id` y `pintor_id` (opcionales, `Restrict`). CHECK SQL + Zod + servicio: al menos una; el cliente debe ser `CLIENTE_FINAL` y el pintor `PINTOR`. Dirección obligatoria (`direccion_id`) y debe pertenecer al cliente (o al pintor si no hay cliente). `forma_pagado`: `EFECTIVO` | `TRANSFERENCIA` | `POSNET` | `CUENTA_CORRIENTE`. PDF opcional: `pdf_comprobante` (`BYTEA`, máx. 5 MB, magia `%PDF`) + `pdf_comprobante_nombre`. Listados **no** seleccionan bytes.
+
+Servicios: `enviosPersonas.service.ts`, `enviosDirecciones.service.ts`, `enviosFinal.service.ts`. Actions: `src/actions/envios.ts`. Descarga PDF: `GET /api/envios/[id]/comprobante` (`guardEnviosLectura`). No borrar persona/dirección si hay envío asociado (`P2003`).
 
 ---
 
