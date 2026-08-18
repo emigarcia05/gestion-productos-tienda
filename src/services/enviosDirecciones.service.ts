@@ -38,7 +38,7 @@ function prismaErrorMessage(error: unknown, fallback: string): string {
     const code = (error as { code?: string }).code;
     if (code === "P2025") return "La dirección no existe.";
     if (code === "P2003") {
-      return "No se puede eliminar: la dirección está asociada a un envío o la persona no existe.";
+      return "No se puede eliminar: la dirección está asociada a un envío o el cliente no existe.";
     }
   }
   return error instanceof Error ? error.message : fallback;
@@ -64,12 +64,12 @@ export async function crearEnviosDireccion(
   input: CrearEnviosDireccionInput
 ): Promise<ServiceResult<EnviosDireccionItem>> {
   try {
-    const persona = await prisma.enviosPersona.findUnique({
+    const cliente = await prisma.cliente.findUnique({
       where: { id: input.personaId },
       select: { id: true },
     });
-    if (!persona) {
-      return { success: false, error: "La persona de la dirección no existe." };
+    if (!cliente) {
+      return { success: false, error: "El cliente de la dirección no existe." };
     }
     const row = await prisma.enviosDireccion.create({
       data: {

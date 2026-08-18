@@ -84,7 +84,7 @@ Convención: `puede(rol, PERMISOS.<modulo>…)` **antes** de `esEditor()`. El pr
 | Stock / Trans. Depósitos | Encolar, exportar Excel, marcar exportado. Flujo vendedor. |
 | Sync DUX lista tienda | `PERMISOS.tienda.acciones.sincronizar` (`simple` y `editor`). Solo API, no Action. |
 | Ayuda vendedor · gasto eventual | `PERMISOS.ayudaVendedor.cargarGasto` (`requireCargarGastoEventual`). |
-| Envios | CRUD personas / direcciones / envío final + PDF (`requireEnvios`). Flujo vendedor. |
+| Envios | CRUD clientes / direcciones / envío final + PDF (`requireEnvios`). Flujo vendedor. |
 
 **Todo lo demás crítico** (catálogos maestros, finanzas, marketing CRUD, competencia, lista precios, usuarios, import, scraping, Google Sheets): módulo + `esEditor()`.
 
@@ -353,11 +353,13 @@ Los ~71 modelos de `schema.prisma` están en uso (directo, `tx.` o include). Scr
 
 URL canónica: `/gestion-productos/envios/programados` y `/gestion-productos/envios/crear` → `src/app/envios/...`. Permiso `PERMISOS.envios.acceso` (`requireEnvios`): `simple` y `editor` leen y mutan (excepción **§1.2.3**).
 
-Tablas: `envios_personas` (catálogo; `tipo` = `CLIENTE_FINAL` | `PINTOR`), `envios_direcciones` (**`persona_id`** FK a persona; en el alta, al cliente), `envios_final` (envío). IDs CUID.
+Tablas: `clientes` (catálogo; `tipo` = `FINAL` | `PINTOR`; **`pintor_asociado`** FK opcional a otro `clientes`), `envios_direcciones` (**`persona_id`** FK a cliente; en el alta, al `FINAL`), `envios_final` (envío). IDs CUID.
 
-**`envios_final`:** hasta **dos** personas, una por tipo — FKs `cliente_final_id` y `pintor_id` (opcionales, `Restrict`). CHECK SQL + Zod + servicio: al menos una; el cliente debe ser `CLIENTE_FINAL` y el pintor `PINTOR`. Dirección obligatoria (`direccion_id`) y debe pertenecer al cliente (o al pintor si no hay cliente). `forma_pagado`: `EFECTIVO` | `TRANSFERENCIA` | `POSNET` | `CUENTA_CORRIENTE`. PDF opcional: `pdf_comprobante` (`BYTEA`, máx. 5 MB, magia `%PDF`) + `pdf_comprobante_nombre`. Listados **no** seleccionan bytes.
+**`clientes.pintor_asociado`:** solo si `tipo = FINAL`, apunta a un cliente `PINTOR` (no a sí mismo). Si `tipo = PINTOR`, debe ser `NULL` (CHECK SQL + Zod + servicio). Varios `FINAL` pueden compartir el mismo pintor. No borrar un pintor si está asociado (`Restrict` / `P2003`).
 
-Servicios: `enviosPersonas.service.ts`, `enviosDirecciones.service.ts`, `enviosFinal.service.ts`. Actions: `src/actions/envios.ts`. Descarga PDF: `GET /api/envios/[id]/comprobante` (`guardEnviosLectura`). No borrar persona/dirección si hay envío asociado (`P2003`).
+**`envios_final`:** hasta **dos** clientes, uno por tipo — FKs `cliente_final_id` y `pintor_id` (opcionales, `Restrict`). CHECK SQL + Zod + servicio: al menos uno; el cliente debe ser `FINAL` y el pintor `PINTOR`. Dirección obligatoria (`direccion_id`) y debe pertenecer al cliente (o al pintor si no hay cliente). `forma_pagado`: `EFECTIVO` | `TRANSFERENCIA` | `POSNET` | `CUENTA_CORRIENTE`. PDF opcional: `pdf_comprobante` (`BYTEA`, máx. 5 MB, magia `%PDF`) + `pdf_comprobante_nombre`. Listados **no** seleccionan bytes.
+
+Servicios: `clientes.service.ts`, `enviosDirecciones.service.ts`, `enviosFinal.service.ts`. Actions: `src/actions/envios.ts`. Descarga PDF: `GET /api/envios/[id]/comprobante` (`guardEnviosLectura`). No borrar cliente/dirección si hay envío asociado (`P2003`).
 
 ---
 

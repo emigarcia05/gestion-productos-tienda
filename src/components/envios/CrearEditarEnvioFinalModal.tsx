@@ -19,11 +19,11 @@ import {
   ENVIOS_FORMA_PAGADO_LABELS,
   ENVIOS_FORMA_PAGADO_VALUES,
   etiquetaDireccionEnvio,
-  nombreCompletoPersonaEnvio,
+  nombreCompletoCliente,
+  type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
   type EnviosFormaPagadoValue,
-  type EnviosPersonaItem,
 } from "@/lib/envios";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +35,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   modo: "crear" | "editar";
   item?: EnviosFinalListItem | null;
-  personas: EnviosPersonaItem[];
+  clientes: ClienteItem[];
   direcciones: EnviosDireccionItem[];
   onSuccess?: () => void;
 }
@@ -64,7 +64,7 @@ export default function CrearEditarEnvioFinalModal({
   onOpenChange,
   modo,
   item = null,
-  personas,
+  clientes,
   direcciones,
   onSuccess,
 }: Props) {
@@ -78,11 +78,11 @@ export default function CrearEditarEnvioFinalModal({
   const [quitarPdf, setQuitarPdf] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const clientes = useMemo(
-    () => personas.filter((p) => p.tipo === "CLIENTE_FINAL"),
-    [personas]
+  const clientesFinal = useMemo(
+    () => clientes.filter((p) => p.tipo === "FINAL"),
+    [clientes]
   );
-  const pintores = useMemo(() => personas.filter((p) => p.tipo === "PINTOR"), [personas]);
+  const pintores = useMemo(() => clientes.filter((p) => p.tipo === "PINTOR"), [clientes]);
   const direccionesFiltradas = useMemo(() => {
     const dueñoId =
       clienteFinalId !== SENTINEL_NONE
@@ -198,9 +198,9 @@ export default function CrearEditarEnvioFinalModal({
               </SelectTrigger>
               <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
                 <SelectItem value={SENTINEL_NONE}>SIN CLIENTE FINAL</SelectItem>
-                {clientes.map((p) => (
+                {clientesFinal.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {nombreCompletoPersonaEnvio(p)} · {p.cel}
+                    {nombreCompletoCliente(p)} · {p.cel}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -216,7 +216,7 @@ export default function CrearEditarEnvioFinalModal({
                 <SelectItem value={SENTINEL_NONE}>SIN PINTOR</SelectItem>
                 {pintores.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {nombreCompletoPersonaEnvio(p)} · {p.cel}
+                    {nombreCompletoCliente(p)} · {p.cel}
                   </SelectItem>
                 ))}
               </SelectContent>

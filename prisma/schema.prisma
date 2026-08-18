@@ -1493,9 +1493,9 @@ model ProdIaDisenoCatalogo {
   @@map("prod_ia_diseno_catalogo")
 }
 
-/** Tipo de persona reutilizable en un envío (como máximo una de cada tipo por `envios_final`). */
-enum EnviosPersonaTipo {
-  CLIENTE_FINAL
+/** Tipo de fila en `clientes` (como máximo una de cada tipo por `envios_final`). */
+enum ClienteTipo {
+  FINAL
   PINTOR
 }
 
@@ -1507,26 +1507,33 @@ enum EnviosFormaPagado {
   CUENTA_CORRIENTE
 }
 
-/** Catálogo de personas de envío (cliente final o pintor). */
-model EnviosPersona {
-  id        String            @id @default(cuid())
-  nombre    String            @map("nombre")
-  apellido  String            @map("apellido")
-  cel       String            @map("cel")
-  tipo      EnviosPersonaTipo @map("tipo")
-  createdAt DateTime          @default(now()) @map("created_at")
-  updatedAt DateTime          @updatedAt @map("updated_at")
+/**
+ * Catálogo de clientes de envío (`FINAL` o `PINTOR`).
+ * `pintor_asociado` solo aplica a `FINAL` y apunta a un `PINTOR` (CHECK SQL + servicio).
+ */
+model Cliente {
+  id                String      @id @default(cuid())
+  nombre            String      @map("nombre")
+  apellido          String      @map("apellido")
+  cel               String      @map("cel")
+  tipo              ClienteTipo @map("tipo")
+  pintorAsociadoId  String?     @map("pintor_asociado")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
 
+  pintorAsociado     Cliente?  @relation("ClientePintorAsociado", fields: [pintorAsociadoId], references: [id], onDelete: Restrict)
+  clientesAsociados  Cliente[] @relation("ClientePintorAsociado")
   enviosComoClienteFinal EnviosFinal[] @relation("EnviosFinalClienteFinal")
   enviosComoPintor       EnviosFinal[] @relation("EnviosFinalPintor")
   direcciones            EnviosDireccion[]
 
-  @@index([tipo], map: "envios_personas_tipo_idx")
-  @@index([apellido, nombre], map: "envios_personas_apellido_nombre_idx")
-  @@map("envios_personas")
+  @@index([tipo], map: "clientes_tipo_idx")
+  @@index([apellido, nombre], map: "clientes_apellido_nombre_idx")
+  @@index([pintorAsociadoId], map: "clientes_pintor_asociado_idx")
+  @@map("clientes")
 }
 
-/** Dirección de envío asociada a una persona (en el alta, al cliente seleccionado). */
+/** Dirección de envío asociada a un cliente (en el alta, al `FINAL` seleccionado). */
 model EnviosDireccion {
   id         String   @id @default(cuid())
   personaId  String   @map("persona_id")
@@ -1537,7 +1544,7 @@ model EnviosDireccion {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  persona EnviosPersona @relation(fields: [personaId], references: [id], onDelete: Restrict)
+  persona Cliente @relation(fields: [personaId], references: [id], onDelete: Restrict)
   envios  EnviosFinal[]
 
   @@index([personaId], map: "envios_direcciones_persona_id_idx")
@@ -1546,7 +1553,7 @@ model EnviosDireccion {
 }
 
 /**
- * Envío concreto. Hasta dos personas: una `CLIENTE_FINAL` y/o una `PINTOR`.
+ * Envío concreto. Hasta dos clientes: uno `FINAL` y/o uno `PINTOR`.
  * Dirección obligatoria. PDF de comprobante opcional (bytes + nombre).
  */
 model EnviosFinal {
@@ -1562,8 +1569,8 @@ model EnviosFinal {
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
-  clienteFinal EnviosPersona?   @relation("EnviosFinalClienteFinal", fields: [clienteFinalId], references: [id], onDelete: Restrict)
-  pintor       EnviosPersona?   @relation("EnviosFinalPintor", fields: [pintorId], references: [id], onDelete: Restrict)
+  clienteFinal Cliente?         @relation("EnviosFinalClienteFinal", fields: [clienteFinalId], references: [id], onDelete: Restrict)
+  pintor       Cliente?         @relation("EnviosFinalPintor", fields: [pintorId], references: [id], onDelete: Restrict)
   direccion    EnviosDireccion  @relation(fields: [direccionId], references: [id], onDelete: Restrict)
 
   @@index([clienteFinalId], map: "envios_final_cliente_final_id_idx")

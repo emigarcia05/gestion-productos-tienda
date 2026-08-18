@@ -5,7 +5,7 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarEnviosDirecciones } from "@/services/enviosDirecciones.service";
 import { listarEnviosFinal } from "@/services/enviosFinal.service";
-import { listarEnviosPersonas } from "@/services/enviosPersonas.service";
+import { listarClientes } from "@/services/clientes.service";
 
 export const dynamic = "force-dynamic";
 
@@ -15,15 +15,15 @@ export default async function EnviosProgramadosPage() {
     redirect(GP_ROUTES.defaultEntry);
   }
 
-  const [envios, personas, direcciones] = await Promise.all([
+  const [envios, clientes, direcciones] = await Promise.all([
     listarEnviosFinal(),
-    listarEnviosPersonas(),
+    listarClientes(),
     listarEnviosDirecciones(),
   ]);
 
   return (
     <div className="area-page-shell">
-      <EnviosPageClient envios={envios} personas={personas} direcciones={direcciones} />
+      <EnviosPageClient envios={envios} clientes={clientes} direcciones={direcciones} />
     </div>
   );
 }

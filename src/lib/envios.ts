@@ -1,7 +1,7 @@
-import type { EnviosFormaPagado, EnviosPersonaTipo } from "@prisma/client";
+import type { ClienteTipo, EnviosFormaPagado } from "@prisma/client";
 
-export const ENVIOS_PERSONA_TIPO_VALUES = ["CLIENTE_FINAL", "PINTOR"] as const;
-export type EnviosPersonaTipoValue = (typeof ENVIOS_PERSONA_TIPO_VALUES)[number];
+export const CLIENTE_TIPO_VALUES = ["FINAL", "PINTOR"] as const;
+export type ClienteTipoValue = (typeof CLIENTE_TIPO_VALUES)[number];
 
 export const ENVIOS_FORMA_PAGADO_VALUES = [
   "EFECTIVO",
@@ -11,8 +11,8 @@ export const ENVIOS_FORMA_PAGADO_VALUES = [
 ] as const;
 export type EnviosFormaPagadoValue = (typeof ENVIOS_FORMA_PAGADO_VALUES)[number];
 
-export const ENVIOS_PERSONA_TIPO_LABELS: Record<EnviosPersonaTipo, string> = {
-  CLIENTE_FINAL: "CLIENTE FINAL",
+export const CLIENTE_TIPO_LABELS: Record<ClienteTipo, string> = {
+  FINAL: "FINAL",
   PINTOR: "PINTOR",
 };
 
@@ -23,27 +23,32 @@ export const ENVIOS_FORMA_PAGADO_LABELS: Record<EnviosFormaPagado, string> = {
   CUENTA_CORRIENTE: "CUENTA CORRIENTE",
 };
 
-export function etiquetaTipoPersonaEnvio(tipo: EnviosPersonaTipo): string {
-  return ENVIOS_PERSONA_TIPO_LABELS[tipo];
+export function etiquetaTipoCliente(tipo: ClienteTipo): string {
+  return CLIENTE_TIPO_LABELS[tipo];
 }
 
 export function etiquetaFormaPagadoEnvio(forma: EnviosFormaPagado): string {
   return ENVIOS_FORMA_PAGADO_LABELS[forma];
 }
 
-export function nombreCompletoPersonaEnvio(persona: {
+export function nombreCompletoCliente(cliente: {
   nombre: string;
   apellido: string;
 }): string {
-  return `${persona.apellido} ${persona.nombre}`.trim();
+  return `${cliente.apellido} ${cliente.nombre}`.trim();
 }
 
-export interface EnviosPersonaItem {
+export interface ClienteResumen {
   id: string;
   nombre: string;
   apellido: string;
   cel: string;
-  tipo: EnviosPersonaTipo;
+  tipo: ClienteTipo;
+}
+
+export interface ClienteItem extends ClienteResumen {
+  pintorAsociadoId: string | null;
+  pintorAsociado: ClienteResumen | null;
 }
 
 export interface EnviosDireccionItem {
@@ -57,8 +62,8 @@ export interface EnviosDireccionItem {
 
 export interface EnviosFinalListItem {
   id: string;
-  clienteFinal: EnviosPersonaItem | null;
-  pintor: EnviosPersonaItem | null;
+  clienteFinal: ClienteItem | null;
+  pintor: ClienteItem | null;
   direccion: EnviosDireccionItem;
   observacionEnvio: string;
   pagado: boolean;

@@ -42,10 +42,10 @@ import {
   ENVIOS_FORMA_PAGADO_VALUES,
   etiquetaDireccionEnvio,
   etiquetaFormaPagadoEnvio,
-  nombreCompletoPersonaEnvio,
+  nombreCompletoCliente,
+  type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
-  type EnviosPersonaItem,
 } from "@/lib/envios";
 import { fmtCelda } from "@/lib/format";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
@@ -60,11 +60,11 @@ const FILTRO_TODOS = "__todos__";
 
 interface Props {
   envios: EnviosFinalListItem[];
-  personas: EnviosPersonaItem[];
+  clientes: ClienteItem[];
   direcciones: EnviosDireccionItem[];
 }
 
-export default function EnviosPageClient({ envios, personas, direcciones }: Props) {
+export default function EnviosPageClient({ envios, clientes, direcciones }: Props) {
   const router = useRouter();
   const [filtroPagado, setFiltroPagado] = useState(FILTRO_TODOS);
   const [filtroForma, setFiltroForma] = useState(FILTRO_TODOS);
@@ -91,9 +91,9 @@ export default function EnviosPageClient({ envios, personas, direcciones }: Prop
         qDebounced.trim() &&
         !matchByMultiTerm(
           [
-            item.clienteFinal ? nombreCompletoPersonaEnvio(item.clienteFinal) : "",
+            item.clienteFinal ? nombreCompletoCliente(item.clienteFinal) : "",
             item.clienteFinal?.cel ?? "",
-            item.pintor ? nombreCompletoPersonaEnvio(item.pintor) : "",
+            item.pintor ? nombreCompletoCliente(item.pintor) : "",
             item.pintor?.cel ?? "",
             etiquetaDireccionEnvio(item.direccion),
             item.direccion.referencia,
@@ -247,11 +247,11 @@ export default function EnviosPageClient({ envios, personas, direcciones }: Prop
                   <TableRow key={item.id}>
                     <TableCell className="celda-datos">
                       {item.clienteFinal
-                        ? nombreCompletoPersonaEnvio(item.clienteFinal)
+                        ? nombreCompletoCliente(item.clienteFinal)
                         : fmtCelda("")}
                     </TableCell>
                     <TableCell className="celda-datos">
-                      {item.pintor ? nombreCompletoPersonaEnvio(item.pintor) : fmtCelda("")}
+                      {item.pintor ? nombreCompletoCliente(item.pintor) : fmtCelda("")}
                     </TableCell>
                     <TableCell className="celda-datos">
                       {etiquetaDireccionEnvio(item.direccion)}
@@ -342,7 +342,7 @@ export default function EnviosPageClient({ envios, personas, direcciones }: Prop
         }}
         modo="editar"
         item={modalForm.open ? modalForm.item : null}
-        personas={personas}
+        clientes={clientes}
         direcciones={direcciones}
         onSuccess={refresh}
       />

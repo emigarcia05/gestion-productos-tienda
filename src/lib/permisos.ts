@@ -108,7 +108,7 @@ export const PERMISOS = {
 
   // ─── Módulo Envios (Vendedor) ─────────────────────────────────────────────
   envios: {
-    /** CRUD de personas, direcciones y envío final. Flujo vendedor (`simple` + `editor`). */
+    /** CRUD de clientes, direcciones y envío final. Flujo vendedor (`simple` + `editor`). */
     acceso: { simple: true, editor: true },
   },
 

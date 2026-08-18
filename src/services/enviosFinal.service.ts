@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { EnviosDireccionItem, EnviosFinalListItem, EnviosPersonaItem } from "@/lib/envios";
+import type { ClienteItem, EnviosDireccionItem, EnviosFinalListItem } from "@/lib/envios";
 import type {
   CrearEnviosFinalInput,
   EditarEnviosFinalInput,
@@ -8,12 +8,18 @@ import type { ServiceResult } from "@/types/service.types";
 
 const PDF_MAX_BYTES = 5 * 1024 * 1024;
 
-const personaSelect = {
+const clienteResumenSelect = {
   id: true,
   nombre: true,
   apellido: true,
   cel: true,
   tipo: true,
+} as const;
+
+const clienteSelect = {
+  ...clienteResumenSelect,
+  pintorAsociadoId: true,
+  pintorAsociado: { select: clienteResumenSelect },
 } as const;
 
 const direccionSelect = {
@@ -31,12 +37,26 @@ const listSelect = {
   pagado: true,
   formaPagado: true,
   pdfComprobanteNombre: true,
-  clienteFinal: { select: personaSelect },
-  pintor: { select: personaSelect },
+  clienteFinal: { select: clienteSelect },
+  pintor: { select: clienteSelect },
   direccion: { select: direccionSelect },
 } as const;
 
-function mapPersona(row: EnviosPersonaItem | null): EnviosPersonaItem | null {
+function mapCliente(row: {
+  id: string;
+  nombre: string;
+  apellido: string;
+  cel: string;
+  tipo: ClienteItem["tipo"];
+  pintorAsociadoId: string | null;
+  pintorAsociado: {
+    id: string;
+    nombre: string;
+    apellido: string;
+    cel: string;
+    tipo: ClienteItem["tipo"];
+  } | null;
+} | null): ClienteItem | null {
   if (!row) return null;
   return {
     id: row.id,
@@ -44,6 +64,16 @@ function mapPersona(row: EnviosPersonaItem | null): EnviosPersonaItem | null {
     apellido: row.apellido.trim(),
     cel: row.cel.trim(),
     tipo: row.tipo,
+    pintorAsociadoId: row.pintorAsociadoId,
+    pintorAsociado: row.pintorAsociado
+      ? {
+          id: row.pintorAsociado.id,
+          nombre: row.pintorAsociado.nombre.trim(),
+          apellido: row.pintorAsociado.apellido.trim(),
+          cel: row.pintorAsociado.cel.trim(),
+          tipo: row.pintorAsociado.tipo,
+        }
+      : null,
   };
 }
 
@@ -71,8 +101,8 @@ function mapListRow(row: {
   pagado: boolean;
   formaPagado: EnviosFinalListItem["formaPagado"];
   pdfComprobanteNombre: string | null;
-  clienteFinal: EnviosPersonaItem | null;
-  pintor: EnviosPersonaItem | null;
+  clienteFinal: Parameters<typeof mapCliente>[0];
+  pintor: Parameters<typeof mapCliente>[0];
   direccion: {
     id: string;
     personaId: string;
@@ -85,8 +115,8 @@ function mapListRow(row: {
   const nombrePdf = row.pdfComprobanteNombre?.trim() || null;
   return {
     id: row.id,
-    clienteFinal: mapPersona(row.clienteFinal),
-    pintor: mapPersona(row.pintor),
+    clienteFinal: mapCliente(row.clienteFinal),
+    pintor: mapCliente(row.pintor),
     direccion: mapDireccion(row.direccion),
     observacionEnvio: row.observacionEnvio.trim(),
     pagado: row.pagado,
@@ -100,7 +130,7 @@ function prismaErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === "object" && "code" in error) {
     const code = (error as { code?: string }).code;
     if (code === "P2025") return "El envío no existe.";
-    if (code === "P2003") return "Persona o dirección inválida.";
+    if (code === "P2003") return "Cliente o dirección inválida.";
   }
   return error instanceof Error ? error.message : fallback;
 }
@@ -162,13 +192,13 @@ async function validarPersonasYDireccion(input: {
   if (!direccion) return { success: false, error: "La dirección no existe." };
 
   if (clienteFinalId) {
-    const persona = await prisma.enviosPersona.findUnique({
+    const cliente = await prisma.cliente.findUnique({
       where: { id: clienteFinalId },
       select: { tipo: true },
     });
-    if (!persona) return { success: false, error: "El cliente final no existe." };
-    if (persona.tipo !== "CLIENTE_FINAL") {
-      return { success: false, error: "La persona de cliente final debe ser de tipo CLIENTE FINAL." };
+    if (!cliente) return { success: false, error: "El cliente final no existe." };
+    if (cliente.tipo !== "FINAL") {
+      return { success: false, error: "El cliente debe ser de tipo FINAL." };
     }
     if (direccion.personaId !== clienteFinalId) {
       return { success: false, error: "La dirección debe pertenecer al cliente final seleccionado." };
@@ -176,13 +206,13 @@ async function validarPersonasYDireccion(input: {
   }
 
   if (pintorId) {
-    const persona = await prisma.enviosPersona.findUnique({
+    const clientePintor = await prisma.cliente.findUnique({
       where: { id: pintorId },
       select: { tipo: true },
     });
-    if (!persona) return { success: false, error: "El pintor no existe." };
-    if (persona.tipo !== "PINTOR") {
-      return { success: false, error: "La persona de pintor debe ser de tipo PINTOR." };
+    if (!clientePintor) return { success: false, error: "El pintor no existe." };
+    if (clientePintor.tipo !== "PINTOR") {
+      return { success: false, error: "El pintor debe ser de tipo PINTOR." };
     }
     if (!clienteFinalId && direccion.personaId !== pintorId) {
       return { success: false, error: "La dirección debe pertenecer al pintor seleccionado." };

@@ -4,7 +4,7 @@ import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarEnviosDirecciones } from "@/services/enviosDirecciones.service";
-import { listarEnviosPersonas } from "@/services/enviosPersonas.service";
+import { listarClientes } from "@/services/clientes.service";
 
 export const dynamic = "force-dynamic";
 
@@ -14,14 +14,14 @@ export default async function EnviosCrearPage() {
     redirect(GP_ROUTES.defaultEntry);
   }
 
-  const [personas, direcciones] = await Promise.all([
-    listarEnviosPersonas(),
+  const [clientesCatalogo, direcciones] = await Promise.all([
+    listarClientes(),
     listarEnviosDirecciones(),
   ]);
 
   return (
     <div className="area-page-shell">
-      <CrearEnvioPageClient personas={personas} direcciones={direcciones} />
+      <CrearEnvioPageClient clientesCatalogo={clientesCatalogo} direcciones={direcciones} />
     </div>
   );
 }

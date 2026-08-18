@@ -8,27 +8,27 @@ import CatalogoFinderColumn from "@/components/shared/catalogo-finder/CatalogoFi
 import CatalogoFinderEmpty from "@/components/shared/catalogo-finder/CatalogoFinderEmpty";
 import CatalogoFinderRow from "@/components/shared/catalogo-finder/CatalogoFinderRow";
 import CrearEditarEnviosDireccionModal from "@/components/envios/CrearEditarEnviosDireccionModal";
-import CrearEditarEnviosPersonaModal from "@/components/envios/CrearEditarEnviosPersonaModal";
+import CrearEditarClienteModal from "@/components/envios/CrearEditarClienteModal";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import AppModal from "@/components/shared/AppModal";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { eliminarEnviosDireccionAction, eliminarEnviosPersonaAction } from "@/actions/envios";
+import { eliminarClienteAction, eliminarEnviosDireccionAction } from "@/actions/envios";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   etiquetaDireccionEnvio,
-  nombreCompletoPersonaEnvio,
+  nombreCompletoCliente,
+  type ClienteItem,
   type EnviosDireccionItem,
-  type EnviosPersonaItem,
 } from "@/lib/envios";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 
 interface Props {
-  personas: EnviosPersonaItem[];
+  clientesCatalogo: ClienteItem[];
   direcciones: EnviosDireccionItem[];
 }
 
-export default function CrearEnvioPageClient({ personas, direcciones }: Props) {
+export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: Props) {
   const router = useRouter();
   const [clienteId, setClienteId] = useState<string | null>(null);
   const [direccionId, setDireccionId] = useState<string | null>(null);
@@ -44,8 +44,8 @@ export default function CrearEnvioPageClient({ personas, direcciones }: Props) {
     debounceMs: 300,
     onDebouncedSearch: setQDireccionDebounced,
   });
-  const [modalPersona, setModalPersona] = useState<
-    { open: false } | { open: true; modo: "crear" | "editar"; item?: EnviosPersonaItem }
+  const [modalCliente, setModalCliente] = useState<
+    { open: false } | { open: true; modo: "crear" | "editar"; item?: ClienteItem }
   >({ open: false });
   const [modalDireccion, setModalDireccion] = useState<
     { open: false } | { open: true; modo: "crear" | "editar"; item?: EnviosDireccionItem }
@@ -55,9 +55,13 @@ export default function CrearEnvioPageClient({ personas, direcciones }: Props) {
   >({ open: false });
   const [deleting, setDeleting] = useState(false);
 
+  const pintores = useMemo(
+    () => clientesCatalogo.filter((c) => c.tipo === "PINTOR"),
+    [clientesCatalogo]
+  );
   const clientes = useMemo(
-    () => personas.filter((p) => p.tipo === "CLIENTE_FINAL"),
-    [personas]
+    () => clientesCatalogo.filter((c) => c.tipo === "FINAL"),
+    [clientesCatalogo]
   );
 
   const clientesFiltrados = useMemo(() => {
@@ -104,7 +108,7 @@ export default function CrearEnvioPageClient({ personas, direcciones }: Props) {
     try {
       const res =
         modalEliminar.kind === "cliente"
-          ? await eliminarEnviosPersonaAction({ id: modalEliminar.id })
+          ? await eliminarClienteAction({ id: modalEliminar.id })
           : await eliminarEnviosDireccionAction({ id: modalEliminar.id });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo eliminar.");
@@ -138,7 +142,7 @@ export default function CrearEnvioPageClient({ personas, direcciones }: Props) {
                 titulo="CLIENTES"
                 subtitulo={`${clientesFiltrados.length} cliente(s)`}
                 mostrarNuevo
-                onNuevo={() => setModalPersona({ open: true, modo: "crear" })}
+                onNuevo={() => setModalCliente({ open: true, modo: "crear" })}
               >
                 <div className="sticky top-0 z-10 border-b border-border bg-card p-2">
                   <FiltroBusquedaInput
@@ -158,18 +162,22 @@ export default function CrearEnvioPageClient({ personas, direcciones }: Props) {
                   clientesFiltrados.map((item) => (
                     <CatalogoFinderRow
                       key={item.id}
-                      nombre={nombreCompletoPersonaEnvio(item)}
-                      meta={item.cel}
+                      nombre={nombreCompletoCliente(item)}
+                      meta={
+                        item.pintorAsociado
+                          ? `${item.cel} · Pintor: ${nombreCompletoCliente(item.pintorAsociado)}`
+                          : item.cel
+                      }
                       selected={item.id === clienteId}
                       onClick={() => handleSelectCliente(item.id)}
                       mostrarAcciones
-                      onEditar={() => setModalPersona({ open: true, modo: "editar", item })}
+                      onEditar={() => setModalCliente({ open: true, modo: "editar", item })}
                       onEliminar={() =>
                         setModalEliminar({
                           open: true,
                           kind: "cliente",
                           id: item.id,
-                          label: nombreCompletoPersonaEnvio(item),
+                          label: nombreCompletoCliente(item),
                         })
                       }
                     />
@@ -181,7 +189,7 @@ export default function CrearEnvioPageClient({ personas, direcciones }: Props) {
                 titulo="DIRECCIONES"
                 subtitulo={
                   clienteSeleccionado
-                    ? nombreCompletoPersonaEnvio(clienteSeleccionado)
+                    ? nombreCompletoCliente(clienteSeleccionado)
                     : "Seleccioná un cliente"
                 }
                 mostrarNuevo={Boolean(clienteSeleccionado)}
@@ -238,17 +246,20 @@ export default function CrearEnvioPageClient({ personas, direcciones }: Props) {
         </div>
       </ClassicFilteredTableLayout>
 
-      <CrearEditarEnviosPersonaModal
-        open={modalPersona.open}
+      <CrearEditarClienteModal
+        open={modalCliente.open}
         onOpenChange={(open) => {
-          if (!open) setModalPersona({ open: false });
+          if (!open) setModalCliente({ open: false });
         }}
-        modo={modalPersona.open ? modalPersona.modo : "crear"}
-        item={modalPersona.open ? modalPersona.item : null}
-        tipoFijo="CLIENTE_FINAL"
+        modo={modalCliente.open ? modalCliente.modo : "crear"}
+        item={modalCliente.open ? modalCliente.item : null}
+        pintores={pintores}
+        onCatalogoChanged={refresh}
         onSuccess={(item) => {
-          setClienteId(item.id);
-          setDireccionId(null);
+          if (item.tipo === "FINAL") {
+            setClienteId(item.id);
+            setDireccionId(null);
+          }
           refresh();
         }}
       />

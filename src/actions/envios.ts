@@ -3,40 +3,34 @@
 import { revalidatePath } from "next/cache";
 import { requireEnvios } from "@/lib/actionGates";
 import type {
+  ClienteItem,
   EnviosDireccionItem,
   EnviosFinalListItem,
-  EnviosPersonaItem,
 } from "@/lib/envios";
 import { REVALIDATE_ENVIOS } from "@/lib/gestionProductosRoutes";
 import type { ActionResult } from "@/lib/types";
 import {
+  crearClienteSchema,
   crearEnviosDireccionSchema,
   crearEnviosFinalSchema,
-  crearEnviosPersonaSchema,
+  editarClienteSchema,
   editarEnviosDireccionSchema,
   editarEnviosFinalSchema,
-  editarEnviosPersonaSchema,
+  eliminarClienteSchema,
   eliminarEnviosDireccionSchema,
   eliminarEnviosFinalSchema,
-  eliminarEnviosPersonaSchema,
 } from "@/lib/validations/envios";
+import { crearCliente, editarCliente, eliminarCliente } from "@/services/clientes.service";
 import {
   crearEnviosDireccion,
   editarEnviosDireccion,
   eliminarEnviosDireccion,
-  listarEnviosDirecciones,
 } from "@/services/enviosDirecciones.service";
 import {
   crearEnviosFinal,
   editarEnviosFinal,
   eliminarEnviosFinal,
 } from "@/services/enviosFinal.service";
-import {
-  crearEnviosPersona,
-  editarEnviosPersona,
-  eliminarEnviosPersona,
-  listarEnviosPersonas,
-} from "@/services/enviosPersonas.service";
 
 function firstZodErrorMessage(error: {
   flatten: () => { fieldErrors: Record<string, string[] | undefined>; formErrors: string[] };
@@ -54,81 +48,51 @@ function revalidateEnvios(): void {
   }
 }
 
-export async function listarEnviosPersonasAction(): Promise<ActionResult<EnviosPersonaItem[]>> {
+export async function crearClienteAction(raw: unknown): Promise<ActionResult<ClienteItem>> {
   const gate = await requireEnvios();
   if (gate) return gate;
-  try {
-    return { ok: true, data: await listarEnviosPersonas() };
-  } catch (e) {
-    console.error("[listarEnviosPersonasAction]", e);
-    return { ok: false, error: "No se pudieron listar las personas." };
-  }
-}
-
-export async function crearEnviosPersonaAction(
-  raw: unknown
-): Promise<ActionResult<EnviosPersonaItem>> {
-  const gate = await requireEnvios();
-  if (gate) return gate;
-  const parsed = crearEnviosPersonaSchema.safeParse(raw);
+  const parsed = crearClienteSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
   try {
-    const res = await crearEnviosPersona(parsed.data);
+    const res = await crearCliente(parsed.data);
     if (!res.success) return { ok: false, error: res.error };
     revalidateEnvios();
     return { ok: true, data: res.data };
   } catch (e) {
-    console.error("[crearEnviosPersonaAction]", e);
-    return { ok: false, error: "No se pudo crear la persona." };
+    console.error("[crearClienteAction]", e);
+    return { ok: false, error: "No se pudo crear el cliente." };
   }
 }
 
-export async function editarEnviosPersonaAction(
-  raw: unknown
-): Promise<ActionResult<EnviosPersonaItem>> {
+export async function editarClienteAction(raw: unknown): Promise<ActionResult<ClienteItem>> {
   const gate = await requireEnvios();
   if (gate) return gate;
-  const parsed = editarEnviosPersonaSchema.safeParse(raw);
+  const parsed = editarClienteSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
   try {
-    const res = await editarEnviosPersona(parsed.data);
+    const res = await editarCliente(parsed.data);
     if (!res.success) return { ok: false, error: res.error };
     revalidateEnvios();
     return { ok: true, data: res.data };
   } catch (e) {
-    console.error("[editarEnviosPersonaAction]", e);
-    return { ok: false, error: "No se pudo actualizar la persona." };
+    console.error("[editarClienteAction]", e);
+    return { ok: false, error: "No se pudo actualizar el cliente." };
   }
 }
 
-export async function eliminarEnviosPersonaAction(
-  raw: unknown
-): Promise<ActionResult<{ id: string }>> {
+export async function eliminarClienteAction(raw: unknown): Promise<ActionResult<{ id: string }>> {
   const gate = await requireEnvios();
   if (gate) return gate;
-  const parsed = eliminarEnviosPersonaSchema.safeParse(raw);
+  const parsed = eliminarClienteSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
   try {
-    const res = await eliminarEnviosPersona(parsed.data.id);
+    const res = await eliminarCliente(parsed.data.id);
     if (!res.success) return { ok: false, error: res.error };
     revalidateEnvios();
     return { ok: true, data: res.data };
   } catch (e) {
-    console.error("[eliminarEnviosPersonaAction]", e);
-    return { ok: false, error: "No se pudo eliminar la persona." };
-  }
-}
-
-export async function listarEnviosDireccionesAction(): Promise<
-  ActionResult<EnviosDireccionItem[]>
-> {
-  const gate = await requireEnvios();
-  if (gate) return gate;
-  try {
-    return { ok: true, data: await listarEnviosDirecciones() };
-  } catch (e) {
-    console.error("[listarEnviosDireccionesAction]", e);
-    return { ok: false, error: "No se pudieron listar las direcciones." };
+    console.error("[eliminarClienteAction]", e);
+    return { ok: false, error: "No se pudo eliminar el cliente." };
   }
 }
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
+  CLIENTE_TIPO_VALUES,
   ENVIOS_FORMA_PAGADO_VALUES,
-  ENVIOS_PERSONA_TIPO_VALUES,
 } from "@/lib/envios";
 import {
   prismaCuidSchema,
@@ -52,18 +52,44 @@ export const enviosPdfComprobanteSchema = z.object({
   base64: pdfBase64Schema,
 });
 
-export const crearEnviosPersonaSchema = z.object({
+const clienteCampos = {
   nombre: textoCortoSchema("el nombre"),
   apellido: textoCortoSchema("el apellido"),
   cel: textoCortoSchema("el celular", 40),
-  tipo: z.enum(ENVIOS_PERSONA_TIPO_VALUES),
-});
+  tipo: z.enum(CLIENTE_TIPO_VALUES),
+  pintorAsociadoId: prismaIdOptionalNullableSchema,
+};
 
-export const editarEnviosPersonaSchema = crearEnviosPersonaSchema.extend({
-  id: prismaCuidSchema,
-});
+function refineClientePintorAsociado(
+  data: { id?: string; tipo: "FINAL" | "PINTOR"; pintorAsociadoId?: string | null },
+  ctx: z.RefinementCtx
+): void {
+  if (data.tipo === "PINTOR" && data.pintorAsociadoId) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Un pintor no puede tener pintor asociado.",
+      path: ["pintorAsociadoId"],
+    });
+  }
+  if (data.id && data.pintorAsociadoId && data.pintorAsociadoId === data.id) {
+    ctx.addIssue({
+      code: "custom",
+      message: "El cliente no puede asociarse a sí mismo.",
+      path: ["pintorAsociadoId"],
+    });
+  }
+}
 
-export const eliminarEnviosPersonaSchema = z.object({
+export const crearClienteSchema = z.object(clienteCampos).superRefine(refineClientePintorAsociado);
+
+export const editarClienteSchema = z
+  .object({
+    id: prismaCuidSchema,
+    ...clienteCampos,
+  })
+  .superRefine(refineClientePintorAsociado);
+
+export const eliminarClienteSchema = z.object({
   id: prismaCuidSchema,
 });
 
@@ -102,7 +128,7 @@ function refinePersonasEnvio(
   if (data.clienteFinalId && data.pintorId && data.clienteFinalId === data.pintorId) {
     ctx.addIssue({
       code: "custom",
-      message: "El cliente final y el pintor deben ser personas distintas.",
+      message: "El cliente final y el pintor deben ser clientes distintos.",
       path: ["pintorId"],
     });
   }
@@ -149,8 +175,8 @@ export const enviosFinalIdSchema = z.object({
   id: prismaCuidSchema,
 });
 
-export type CrearEnviosPersonaInput = z.infer<typeof crearEnviosPersonaSchema>;
-export type EditarEnviosPersonaInput = z.infer<typeof editarEnviosPersonaSchema>;
+export type CrearClienteInput = z.infer<typeof crearClienteSchema>;
+export type EditarClienteInput = z.infer<typeof editarClienteSchema>;
 export type CrearEnviosDireccionInput = z.infer<typeof crearEnviosDireccionSchema>;
 export type EditarEnviosDireccionInput = z.infer<typeof editarEnviosDireccionSchema>;
 export type CrearEnviosFinalInput = z.infer<typeof crearEnviosFinalSchema>;
