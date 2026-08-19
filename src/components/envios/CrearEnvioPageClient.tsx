@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { eliminarClienteAction, eliminarEnviosDireccionAction } from "@/actions/envios";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
+  etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
+  metaDireccionEnvio,
   nombreCompletoCliente,
   type ClienteItem,
   type EnviosDireccionItem,
@@ -85,7 +87,14 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
     if (!qDireccionDebounced.trim()) return direccionesDelCliente;
     return direccionesDelCliente.filter((item) =>
       matchByMultiTerm(
-        [item.direccion, item.numeracion, item.referencia, item.urlMaps],
+        [
+          item.calleNombre,
+          item.numeracion,
+          item.distrito,
+          etiquetaDepartamentoEnvio(item.departamento),
+          item.referencia,
+          item.urlMaps,
+        ],
         qDireccionDebounced
       )
     );
@@ -222,7 +231,7 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
                         <CatalogoFinderRow
                           key={item.id}
                           nombre={etiquetaDireccionEnvio(item)}
-                          meta={item.referencia || undefined}
+                          meta={metaDireccionEnvio(item) || undefined}
                           selected={item.id === direccionId}
                           onClick={() => setDireccionId(item.id)}
                           mostrarAcciones

@@ -40,6 +40,7 @@ import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   ENVIOS_FORMA_PAGADO_LABELS,
   ENVIOS_FORMA_PAGADO_VALUES,
+  etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
   etiquetaFormaPagadoEnvio,
   nombreCompletoCliente,
@@ -96,6 +97,8 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
             item.pintor ? nombreCompletoCliente(item.pintor) : "",
             item.pintor?.cel ?? "",
             etiquetaDireccionEnvio(item.direccion),
+            item.direccion.distrito,
+            etiquetaDepartamentoEnvio(item.direccion.departamento),
             item.direccion.referencia,
             item.observacionEnvio,
             etiquetaFormaPagadoEnvio(item.formaPagado),

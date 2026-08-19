@@ -1533,22 +1533,37 @@ model Cliente {
   @@map("clientes")
 }
 
-/** Dirección de envío asociada a un cliente (en el alta, al `CONSUMIDOR_FINAL` seleccionado). */
+/** Departamento (Mendoza) de la dirección de envío. */
+enum EnviosDepartamento {
+  LAS_HERAS
+  GODOY_CRUZ
+  GUAYMALLEN
+  MAIPU
+  LUJAN
+}
+
+/** Dirección de envío asociada a un cliente (en el alta, al `CONSUMIDOR_FINAL` seleccionado).
+ * Textos libres (`calle_nombre`, `distrito`, `numeracion`, `referencia`): primera mayúscula, resto minúsculas.
+ * Al persistir hace falta al menos un dato (CHECK SQL + Zod + servicio).
+ */
 model EnviosDireccion {
-  id         String   @id @default(cuid())
-  personaId  String   @map("persona_id")
-  direccion  String   @map("direccion")
-  numeracion String   @map("numeracion")
-  urlMaps    String?  @map("url_maps") @db.Text
-  referencia String?  @map("referencia") @db.Text
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id           String              @id @default(cuid())
+  personaId    String              @map("persona_id")
+  calleNombre  String              @map("calle_nombre")
+  numeracion   String              @map("numeracion")
+  distrito     String               @map("distrito")
+  departamento EnviosDepartamento?  @map("departamento")
+  urlMaps      String?             @map("url_maps") @db.Text
+  referencia   String?             @map("referencia") @db.Text
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
 
   persona Cliente @relation(fields: [personaId], references: [id], onDelete: Restrict)
   envios  EnviosFinal[]
 
   @@index([personaId], map: "envios_direcciones_persona_id_idx")
-  @@index([direccion], map: "envios_direcciones_direccion_idx")
+  @@index([calleNombre], map: "envios_direcciones_calle_nombre_idx")
+  @@index([departamento], map: "envios_direcciones_departamento_idx")
   @@map("envios_direcciones")
 }
 

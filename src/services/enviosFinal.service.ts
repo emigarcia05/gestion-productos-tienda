@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import {
+  capitalizarTextoEnvio,
   normalizarNombreCliente,
   type ClienteItem,
   type EnviosDireccionItem,
@@ -29,8 +30,10 @@ const clienteSelect = {
 const direccionSelect = {
   id: true,
   personaId: true,
-  direccion: true,
+  calleNombre: true,
   numeracion: true,
+  distrito: true,
+  departamento: true,
   urlMaps: true,
   referencia: true,
 } as const;
@@ -80,18 +83,22 @@ function mapCliente(row: {
 function mapDireccion(row: {
   id: string;
   personaId: string;
-  direccion: string;
+  calleNombre: string;
   numeracion: string;
+  distrito: string;
+  departamento: EnviosDireccionItem["departamento"];
   urlMaps: string | null;
   referencia: string | null;
 }): EnviosDireccionItem {
   return {
     id: row.id,
     personaId: row.personaId,
-    direccion: row.direccion.trim(),
-    numeracion: row.numeracion.trim(),
+    calleNombre: capitalizarTextoEnvio(row.calleNombre),
+    numeracion: capitalizarTextoEnvio(row.numeracion),
+    distrito: capitalizarTextoEnvio(row.distrito),
+    departamento: row.departamento,
     urlMaps: (row.urlMaps ?? "").trim(),
-    referencia: (row.referencia ?? "").trim(),
+    referencia: row.referencia ? capitalizarTextoEnvio(row.referencia) : "",
   };
 }
 
@@ -106,8 +113,10 @@ function mapListRow(row: {
   direccion: {
     id: string;
     personaId: string;
-    direccion: string;
+    calleNombre: string;
     numeracion: string;
+    distrito: string;
+    departamento: EnviosDireccionItem["departamento"];
     urlMaps: string | null;
     referencia: string | null;
   };

@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import type { EnviosDireccionItem } from "@/lib/envios";
+import {
+  capitalizarTextoEnvio,
+  direccionEnvioTieneDato,
+  type EnviosDireccionItem,
+} from "@/lib/envios";
 import type {
   CrearEnviosDireccionInput,
   EditarEnviosDireccionInput,
@@ -9,8 +13,10 @@ import type { ServiceResult } from "@/types/service.types";
 const select = {
   id: true,
   personaId: true,
-  direccion: true,
+  calleNombre: true,
   numeracion: true,
+  distrito: true,
+  departamento: true,
   urlMaps: true,
   referencia: true,
 } as const;
@@ -18,18 +24,22 @@ const select = {
 function mapRow(row: {
   id: string;
   personaId: string;
-  direccion: string;
+  calleNombre: string;
   numeracion: string;
+  distrito: string;
+  departamento: EnviosDireccionItem["departamento"];
   urlMaps: string | null;
   referencia: string | null;
 }): EnviosDireccionItem {
   return {
     id: row.id,
     personaId: row.personaId,
-    direccion: row.direccion.trim(),
-    numeracion: row.numeracion.trim(),
+    calleNombre: capitalizarTextoEnvio(row.calleNombre),
+    numeracion: capitalizarTextoEnvio(row.numeracion),
+    distrito: capitalizarTextoEnvio(row.distrito),
+    departamento: row.departamento,
     urlMaps: (row.urlMaps ?? "").trim(),
-    referencia: (row.referencia ?? "").trim(),
+    referencia: row.referencia ? capitalizarTextoEnvio(row.referencia) : "",
   };
 }
 
@@ -50,7 +60,7 @@ export async function listarEnviosDirecciones(
   try {
     const rows = await prisma.enviosDireccion.findMany({
       where: personaId ? { personaId } : undefined,
-      orderBy: [{ direccion: "asc" }, { numeracion: "asc" }, { createdAt: "asc" }],
+      orderBy: [{ calleNombre: "asc" }, { numeracion: "asc" }, { createdAt: "asc" }],
       select,
     });
     return rows.map(mapRow);
@@ -71,13 +81,19 @@ export async function crearEnviosDireccion(
     if (!cliente) {
       return { success: false, error: "El cliente de la dirección no existe." };
     }
+    if (!direccionEnvioTieneDato(input)) {
+      return { success: false, error: "Completá al menos un dato de la dirección." };
+    }
     const row = await prisma.enviosDireccion.create({
       data: {
         personaId: input.personaId,
-        direccion: input.direccion.trim(),
-        numeracion: input.numeracion.trim(),
+        calleNombre: capitalizarTextoEnvio(input.calleNombre),
+        numeracion: capitalizarTextoEnvio(input.numeracion),
+        distrito: capitalizarTextoEnvio(input.distrito),
+        departamento: input.departamento,
         urlMaps: input.urlMaps.trim() === "" ? null : input.urlMaps.trim(),
-        referencia: input.referencia.trim() === "" ? null : input.referencia.trim(),
+        referencia:
+          input.referencia.trim() === "" ? null : capitalizarTextoEnvio(input.referencia),
       },
       select,
     });
@@ -92,14 +108,20 @@ export async function editarEnviosDireccion(
   input: EditarEnviosDireccionInput
 ): Promise<ServiceResult<EnviosDireccionItem>> {
   try {
+    if (!direccionEnvioTieneDato(input)) {
+      return { success: false, error: "Completá al menos un dato de la dirección." };
+    }
     const row = await prisma.enviosDireccion.update({
       where: { id: input.id },
       data: {
         personaId: input.personaId,
-        direccion: input.direccion.trim(),
-        numeracion: input.numeracion.trim(),
+        calleNombre: capitalizarTextoEnvio(input.calleNombre),
+        numeracion: capitalizarTextoEnvio(input.numeracion),
+        distrito: capitalizarTextoEnvio(input.distrito),
+        departamento: input.departamento,
         urlMaps: input.urlMaps.trim() === "" ? null : input.urlMaps.trim(),
-        referencia: input.referencia.trim() === "" ? null : input.referencia.trim(),
+        referencia:
+          input.referencia.trim() === "" ? null : capitalizarTextoEnvio(input.referencia),
       },
       select,
     });

@@ -1,7 +1,10 @@
 import { z } from "zod";
 import {
   CLIENTE_TIPO_VALUES,
+  ENVIOS_DEPARTAMENTO_VALUES,
   ENVIOS_FORMA_PAGADO_VALUES,
+  capitalizarTextoEnvio,
+  direccionEnvioTieneDato,
   normalizarNombreCliente,
   type ClienteTipoValue,
 } from "@/lib/envios";
@@ -96,13 +99,45 @@ export const eliminarClienteSchema = z.object({
   id: prismaCuidSchema,
 });
 
-export const crearEnviosDireccionSchema = z.object({
-  personaId: prismaCuidSchema,
-  direccion: textoCortoSchema("la dirección", 400),
-  numeracion: textoCortoSchema("la numeración", 40),
-  urlMaps: urlMapsSchema,
-  referencia: textoOpcionalSchema(2000),
-});
+const textoEnvioOpcionalSchema = (max: number) =>
+  textoOpcionalSchema(max).transform((v) => (v === "" ? "" : capitalizarTextoEnvio(v)));
+
+const departamentoOpcionalSchema = z.preprocess(
+  (value) => (value === "" || value === undefined ? null : value),
+  z.enum(ENVIOS_DEPARTAMENTO_VALUES).nullable()
+);
+
+function refineDireccionAlMenosUnDato(
+  data: {
+    calleNombre?: string;
+    numeracion?: string;
+    distrito?: string;
+    departamento?: string | null;
+    urlMaps?: string;
+    referencia?: string;
+  },
+  ctx: z.RefinementCtx
+): void {
+  if (!direccionEnvioTieneDato(data)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Completá al menos un dato de la dirección.",
+      path: ["calleNombre"],
+    });
+  }
+}
+
+export const crearEnviosDireccionSchema = z
+  .object({
+    personaId: prismaCuidSchema,
+    calleNombre: textoEnvioOpcionalSchema(400),
+    numeracion: textoEnvioOpcionalSchema(40),
+    distrito: textoEnvioOpcionalSchema(200),
+    departamento: departamentoOpcionalSchema,
+    urlMaps: urlMapsSchema,
+    referencia: textoEnvioOpcionalSchema(2000),
+  })
+  .superRefine(refineDireccionAlMenosUnDato);
 
 export const editarEnviosDireccionSchema = crearEnviosDireccionSchema.extend({
   id: prismaCuidSchema,

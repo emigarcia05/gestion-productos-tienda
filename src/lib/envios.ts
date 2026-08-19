@@ -1,4 +1,4 @@
-import type { ClienteTipo, EnviosFormaPagado } from "@prisma/client";
+import type { ClienteTipo, EnviosDepartamento, EnviosFormaPagado } from "@prisma/client";
 
 export const CLIENTE_TIPO_VALUES = ["CONSUMIDOR_FINAL", "PINTOR"] as const;
 export type ClienteTipoValue = (typeof CLIENTE_TIPO_VALUES)[number];
@@ -15,6 +15,27 @@ export const CLIENTE_TIPO_LABELS: Record<ClienteTipo, string> = {
   CONSUMIDOR_FINAL: "CONSUMIDOR FINAL",
   PINTOR: "PINTOR",
 };
+
+export const ENVIOS_DEPARTAMENTO_VALUES = [
+  "LAS_HERAS",
+  "GODOY_CRUZ",
+  "GUAYMALLEN",
+  "MAIPU",
+  "LUJAN",
+] as const;
+export type EnviosDepartamentoValue = (typeof ENVIOS_DEPARTAMENTO_VALUES)[number];
+
+export const ENVIOS_DEPARTAMENTO_LABELS: Record<EnviosDepartamento, string> = {
+  LAS_HERAS: "LAS HERAS",
+  GODOY_CRUZ: "GODOY CRUZ",
+  GUAYMALLEN: "GUAYMALLEN",
+  MAIPU: "MAIPU",
+  LUJAN: "LUJAN",
+};
+
+export function etiquetaDepartamentoEnvio(departamento: EnviosDepartamento | null): string {
+  return departamento ? ENVIOS_DEPARTAMENTO_LABELS[departamento] : "";
+}
 
 export const ENVIOS_FORMA_PAGADO_LABELS: Record<EnviosFormaPagado, string> = {
   EFECTIVO: "EFECTIVO",
@@ -42,6 +63,22 @@ export function nombreCompletoCliente(cliente: {
   return normalizarNombreCliente(cliente.nombreCompleto);
 }
 
+/** Textos de `envios_direcciones`: primera letra mayúscula, resto minúsculas. */
+export function capitalizarTextoEnvio(value: string): string {
+  const t = value.trim().replace(/\s+/g, " ");
+  if (t === "") return t;
+  const lower = t.toLocaleLowerCase("es-AR");
+  return lower.charAt(0).toLocaleUpperCase("es-AR") + lower.slice(1);
+}
+
+/** Misma regla mientras se escribe (sin recortar espacios al final). */
+export function capitalizarTextoEnvioInput(value: string): string {
+  if (value === "") return value;
+  const first = value.charAt(0).toLocaleUpperCase("es-AR");
+  const rest = value.slice(1).toLocaleLowerCase("es-AR");
+  return first + rest;
+}
+
 export interface ClienteResumen {
   id: string;
   nombreCompleto: string;
@@ -57,8 +94,10 @@ export interface ClienteItem extends ClienteResumen {
 export interface EnviosDireccionItem {
   id: string;
   personaId: string;
-  direccion: string;
+  calleNombre: string;
   numeracion: string;
+  distrito: string;
+  departamento: EnviosDepartamento | null;
   urlMaps: string;
   referencia: string;
 }
@@ -76,5 +115,32 @@ export interface EnviosFinalListItem {
 }
 
 export function etiquetaDireccionEnvio(dir: EnviosDireccionItem): string {
-  return `${dir.direccion} ${dir.numeracion}`.trim();
+  const calle = `${dir.calleNombre} ${dir.numeracion}`.trim();
+  if (calle !== "") return calle;
+  return metaDireccionEnvio(dir) || "Dirección";
+}
+
+export function metaDireccionEnvio(dir: EnviosDireccionItem): string {
+  return [dir.distrito, etiquetaDepartamentoEnvio(dir.departamento), dir.referencia]
+    .map((s) => s.trim())
+    .filter((s) => s !== "")
+    .join(" · ");
+}
+
+export function direccionEnvioTieneDato(data: {
+  calleNombre?: string | null;
+  numeracion?: string | null;
+  distrito?: string | null;
+  departamento?: string | null;
+  urlMaps?: string | null;
+  referencia?: string | null;
+}): boolean {
+  return (
+    (data.calleNombre ?? "").trim() !== "" ||
+    (data.numeracion ?? "").trim() !== "" ||
+    (data.distrito ?? "").trim() !== "" ||
+    Boolean(data.departamento) ||
+    (data.urlMaps ?? "").trim() !== "" ||
+    (data.referencia ?? "").trim() !== ""
+  );
 }
