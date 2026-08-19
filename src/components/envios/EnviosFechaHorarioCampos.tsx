@@ -1,24 +1,17 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useRef, useState } from "react";
 import { CalendarDays } from "lucide-react";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   addDaysToIsoYmdArgentina,
   dateToIsoYmdArgentina,
   formatIsoYmdDdMmYyyyArgentina,
 } from "@/lib/fechaArgentina";
 import {
-  horasDesdeDisponibles,
-  horasHastaDisponibles,
+  ENVIOS_HORA_VALUES,
+  rangoHorarioDesdeClicks,
   type EnviosHoraValue,
 } from "@/lib/envios";
 import { cn } from "@/lib/utils";
@@ -40,6 +33,8 @@ interface Props {
   onFechaChange: (iso: string) => void;
   onHoraDesdeChange: (hora: EnviosHoraValue | "") => void;
   onHoraHastaChange: (hora: EnviosHoraValue | "") => void;
+  /** Tras fecha + rango válidos (p. ej. wizard: pasar al paso siguiente). */
+  onCompleto?: () => void;
 }
 
 export default function EnviosFechaHorarioCampos({
@@ -50,31 +45,51 @@ export default function EnviosFechaHorarioCampos({
   onFechaChange,
   onHoraDesdeChange,
   onHoraHastaChange,
+  onCompleto,
 }: Props) {
   const hiddenFechaRef = useRef<HTMLInputElement>(null);
+  const [horaPendiente, setHoraPendiente] = useState<EnviosHoraValue | "">("");
   const hoyIso = dateToIsoYmdArgentina(new Date());
   const mananaIso = addDaysToIsoYmdArgentina(hoyIso, 1);
-  const horasDesde = useMemo(() => horasDesdeDisponibles(), []);
-  const horasHasta = useMemo(() => horasHastaDisponibles(horaDesde), [horaDesde]);
+  const fechaOtra = fechaIso !== "" && fechaIso !== hoyIso && fechaIso !== mananaIso;
+  const rangoListo = horaDesde !== "" && horaHasta !== "" && horaDesde < horaHasta;
 
-  function handleHoraDesde(value: string) {
-    const next = value as EnviosHoraValue;
-    onHoraDesdeChange(next);
-    if (horaHasta !== "" && horaHasta <= next) {
-      onHoraHastaChange("");
+  function intentarCompletar(nextFecha: string, nextDesde: string, nextHasta: string) {
+    if (nextFecha !== "" && nextDesde !== "" && nextHasta !== "" && nextDesde < nextHasta) {
+      onCompleto?.();
     }
   }
 
+  function handleFecha(iso: string) {
+    onFechaChange(iso);
+    intentarCompletar(iso, horaDesde, horaHasta);
+  }
+
+  function handleHoraClick(hora: EnviosHoraValue) {
+    if (horaPendiente === "") {
+      setHoraPendiente(hora);
+      onHoraDesdeChange("");
+      onHoraHastaChange("");
+      return;
+    }
+    const rango = rangoHorarioDesdeClicks(horaPendiente, hora);
+    if (!rango) return;
+    setHoraPendiente("");
+    onHoraDesdeChange(rango.horaDesde);
+    onHoraHastaChange(rango.horaHasta);
+    intentarCompletar(fechaIso, rango.horaDesde, rango.horaHasta);
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <ModalMicroLabel>FECHA</ModalMicroLabel>
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="flex w-full flex-col items-center gap-6">
+      <div className="flex w-full flex-col items-center gap-2">
+        <ModalMicroLabel align="center">FECHA</ModalMicroLabel>
+        <div className="flex items-center justify-center gap-2">
           <Button
             type="button"
             variant={fechaIso === hoyIso ? "default" : "outline"}
             disabled={disabled}
-            onClick={() => onFechaChange(hoyIso)}
+            onClick={() => handleFecha(hoyIso)}
           >
             HOY
           </Button>
@@ -82,19 +97,16 @@ export default function EnviosFechaHorarioCampos({
             type="button"
             variant={fechaIso === mananaIso ? "default" : "outline"}
             disabled={disabled}
-            onClick={() => onFechaChange(mananaIso)}
+            onClick={() => handleFecha(mananaIso)}
           >
             MAÑANA
           </Button>
           <Button
             type="button"
-            variant="ghost"
+            variant={fechaOtra ? "default" : "outline"}
             size="icon"
             disabled={disabled}
-            className={cn(
-              "size-9 shrink-0 rounded-md border border-input bg-background text-muted-foreground",
-              "hover:bg-accent hover:text-foreground"
-            )}
+            className="size-9 shrink-0"
             onClick={() => abrirSelectorFechaNativo(hiddenFechaRef.current)}
             aria-label="Abrir calendario"
             title="Abrir calendario"
@@ -111,54 +123,51 @@ export default function EnviosFechaHorarioCampos({
             disabled={disabled}
             onChange={(e) => {
               const v = e.target.value;
-              if (v) onFechaChange(v);
+              if (v) handleFecha(v);
             }}
           />
-          {fechaIso ? (
-            <span className="text-sm tabular-nums text-foreground">
-              {formatIsoYmdDdMmYyyyArgentina(fechaIso)}
-            </span>
-          ) : null}
         </div>
+        {fechaIso ? (
+          <p className="text-sm tabular-nums text-foreground">
+            {formatIsoYmdDdMmYyyyArgentina(fechaIso)}
+          </p>
+        ) : null}
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <ModalMicroLabel>HORA DESDE</ModalMicroLabel>
-          <Select
-            value={horaDesde || undefined}
-            disabled={disabled}
-            onValueChange={handleHoraDesde}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="DESDE..." />
-            </SelectTrigger>
-            <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-              {horasDesde.map((hora) => (
-                <SelectItem key={hora} value={hora}>
-                  {hora}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1">
-          <ModalMicroLabel>HORA HASTA</ModalMicroLabel>
-          <Select
-            value={horaHasta || undefined}
-            disabled={disabled || horaDesde === ""}
-            onValueChange={(v) => onHoraHastaChange(v as EnviosHoraValue)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="HASTA..." />
-            </SelectTrigger>
-            <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-              {horasHasta.map((hora) => (
-                <SelectItem key={hora} value={hora}>
-                  {hora}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+      <div className="flex w-full flex-col items-center gap-2">
+        <ModalMicroLabel align="center">RANGO HORARIO</ModalMicroLabel>
+        {rangoListo ? (
+          <p className="text-sm tabular-nums text-foreground">
+            {horaDesde} / {horaHasta}
+          </p>
+        ) : null}
+        <div
+          className="flex max-w-full flex-wrap items-center justify-center gap-1"
+          role="group"
+          aria-label="Rango horario"
+        >
+          {ENVIOS_HORA_VALUES.map((hora) => {
+            const esPendiente = horaPendiente === hora;
+            const esExtremo = hora === horaDesde || hora === horaHasta;
+            const enMedio =
+              rangoListo && hora > horaDesde && hora < horaHasta;
+            return (
+              <Button
+                key={hora}
+                type="button"
+                variant={esPendiente || esExtremo ? "default" : "outline"}
+                disabled={disabled}
+                aria-pressed={esPendiente || esExtremo || enMedio}
+                className={cn(
+                  "h-8 min-w-12 px-2 text-xs font-medium tabular-nums",
+                  enMedio && "border-primary/40 bg-primary/20 text-foreground"
+                )}
+                onClick={() => handleHoraClick(hora)}
+              >
+                {hora}
+              </Button>
+            );
+          })}
         </div>
       </div>
     </div>

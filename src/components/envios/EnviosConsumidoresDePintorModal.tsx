@@ -87,6 +87,7 @@ export default function EnviosConsumidoresDePintorModal({
                   key={item.id}
                   nombre={nombreCompletoCliente(item)}
                   nombreSufijo={nombrePintorAsociadoCliente(item) ?? undefined}
+                  nombreCentrado
                   nombreAccion={
                     item.cel.trim() ? <EnviosTelLink cel={item.cel} /> : undefined
                   }

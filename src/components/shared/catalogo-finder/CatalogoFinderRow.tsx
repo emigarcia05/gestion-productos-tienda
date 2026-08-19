@@ -37,6 +37,7 @@ export default function CatalogoFinderRow({
   onEliminar,
   nombreAccion,
   nombreSufijo,
+  nombreCentrado = false,
   eliminarSiempreVisible = false,
 }: {
   nombre: string;
@@ -54,8 +55,10 @@ export default function CatalogoFinderRow({
   onEliminar: () => void;
   /** Adornment a la derecha del nombre (p. ej. ícono Maps). */
   nombreAccion?: ReactNode;
-  /** Texto a la derecha del nombre (` - sufijo`), `font-normal` al 50 % del nombre. */
+  /** Texto a la derecha del nombre (` - sufijo`), `font-normal` al 75 % del nombre. */
   nombreSufijo?: string;
+  /** Centra el nombre (y el sufijo) en el espacio de la fila. */
+  nombreCentrado?: boolean;
   /** Si true, el eliminar no va en el hover: queda fijo a la derecha de la fila. */
   eliminarSiempreVisible?: boolean;
 }) {
@@ -130,18 +133,31 @@ export default function CatalogoFinderRow({
           </>
         ) : (
           <>
-            <div className="flex min-w-0 items-center gap-1.5">
+            <div
+              className={cn(
+                "relative flex min-w-0 items-center gap-1.5",
+                nombreCentrado && "w-full justify-center"
+              )}
+            >
               <div
-                className="min-w-0 flex-1 truncate font-medium"
+                className={cn(
+                  "min-w-0 truncate font-medium",
+                  nombreCentrado ? "w-full text-center" : "flex-1",
+                  nombreCentrado && nombreAccion ? "px-16" : null
+                )}
                 title={nombreSufijo ? `${nombre} - ${nombreSufijo}` : nombre}
               >
                 {nombre}
                 {nombreSufijo ? (
-                  <span className="font-normal text-[0.5em]"> - {nombreSufijo}</span>
+                  <span className="font-normal text-[0.75em]"> - {nombreSufijo}</span>
                 ) : null}
               </div>
               {nombreAccion ? (
-                <div className="shrink-0" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                <div
+                  className={cn("shrink-0", nombreCentrado && "absolute right-0 top-1/2 -translate-y-1/2")}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
                   {nombreAccion}
                 </div>
               ) : null}

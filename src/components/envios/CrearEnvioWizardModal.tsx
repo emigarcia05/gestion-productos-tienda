@@ -193,6 +193,11 @@ export default function CrearEnvioWizardModal({
     setPaso(2);
   }
 
+  function handleSelectDireccion(id: string) {
+    setDireccionId(id);
+    setPaso(3);
+  }
+
   function handleCerrar() {
     if (saving) return;
     onOpenChange(false);
@@ -302,7 +307,7 @@ export default function CrearEnvioWizardModal({
           size="xl"
           scrollBody={false}
           padding="sm"
-          className="top-4 right-4 bottom-4 left-4 h-auto max-h-none w-auto max-w-none translate-x-0 translate-y-0"
+          className="h-[60vh] max-h-[60vh]"
           bodyShellClassName="h-full min-h-0"
           bodyClassName="flex h-full min-h-0 flex-col overflow-hidden p-0"
           actions={
@@ -368,6 +373,7 @@ export default function CrearEnvioWizardModal({
                             key={item.id}
                             nombre={nombreCompletoCliente(item)}
                             nombreSufijo={nombrePintorAsociadoCliente(item) ?? undefined}
+                            nombreCentrado
                             nombreAccion={
                               item.tipo === "PINTOR" || item.cel.trim() ? (
                                 <span className="flex shrink-0 items-center gap-1">
@@ -457,7 +463,7 @@ export default function CrearEnvioWizardModal({
                               item.urlMaps ? <EnviosMapsLink url={item.urlMaps} /> : undefined
                             }
                             selected={item.id === direccionId}
-                            onClick={() => setDireccionId(item.id)}
+                            onClick={() => handleSelectDireccion(item.id)}
                             mostrarAcciones
                             onEditar={() => setModalDireccion({ open: true, modo: "editar", item })}
                             onEliminar={() =>
@@ -477,7 +483,7 @@ export default function CrearEnvioWizardModal({
               ) : null}
 
               {paso === 3 ? (
-                <div className="min-h-0 flex-1 overflow-auto">
+                <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4">
                   <EnviosFechaHorarioCampos
                     fechaIso={fechaIso}
                     horaDesde={horaDesde}
@@ -486,6 +492,7 @@ export default function CrearEnvioWizardModal({
                     onFechaChange={setFechaIso}
                     onHoraDesdeChange={setHoraDesde}
                     onHoraHastaChange={setHoraHasta}
+                    onCompleto={() => setPaso(4)}
                   />
                 </div>
               ) : null}
