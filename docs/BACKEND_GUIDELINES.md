@@ -353,11 +353,11 @@ Los ~71 modelos de `schema.prisma` están en uso (directo, `tx.` o include). Scr
 
 URL canónica: `/gestion-productos/envios/programados` y `/gestion-productos/envios/crear` → `src/app/envios/...`. Permiso `PERMISOS.envios.acceso` (`requireEnvios`): `simple` y `editor` leen y mutan (excepción **§1.2.3**).
 
-Tablas: `clientes` (catálogo; `tipo` = `FINAL` | `PINTOR`; **`pintor_asociado`** FK opcional a otro `clientes`), `envios_direcciones` (**`persona_id`** FK a cliente; en el alta, al `FINAL`), `envios_final` (envío). IDs CUID.
+Tablas: `clientes` (catálogo; `nombre_completo`; `tipo` = `CONSUMIDOR_FINAL` | `PINTOR`; **`pintor_asociado`** FK opcional a otro `clientes`), `envios_direcciones` (**`persona_id`** FK a cliente; en el alta, al `CONSUMIDOR_FINAL`), `envios_final` (envío). IDs CUID.
 
-**`clientes.pintor_asociado`:** solo si `tipo = FINAL`, apunta a un cliente `PINTOR` (no a sí mismo). Si `tipo = PINTOR`, debe ser `NULL` (CHECK SQL + Zod + servicio). Varios `FINAL` pueden compartir el mismo pintor. No borrar un pintor si está asociado (`Restrict` / `P2003`).
+**`clientes.pintor_asociado`:** solo si `tipo = CONSUMIDOR_FINAL`, apunta a un cliente `PINTOR` (no a sí mismo). Si `tipo = PINTOR`, debe ser `NULL` (CHECK SQL + Zod + servicio). Varios `CONSUMIDOR_FINAL` pueden compartir el mismo pintor. No borrar un pintor si está asociado (`Restrict` / `P2003`).
 
-**`envios_final`:** hasta **dos** clientes, uno por tipo — FKs `cliente_final_id` y `pintor_id` (opcionales, `Restrict`). CHECK SQL + Zod + servicio: al menos uno; el cliente debe ser `FINAL` y el pintor `PINTOR`. Dirección obligatoria (`direccion_id`) y debe pertenecer al cliente (o al pintor si no hay cliente). `forma_pagado`: `EFECTIVO` | `TRANSFERENCIA` | `POSNET` | `CUENTA_CORRIENTE`. PDF opcional: `pdf_comprobante` (`BYTEA`, máx. 5 MB, magia `%PDF`) + `pdf_comprobante_nombre`. Listados **no** seleccionan bytes.
+**`envios_final`:** hasta **dos** clientes, uno por tipo — FKs `cliente_final_id` y `pintor_id` (opcionales, `Restrict`). CHECK SQL + Zod + servicio: al menos uno; el cliente debe ser `CONSUMIDOR_FINAL` y el pintor `PINTOR`. Dirección obligatoria (`direccion_id`) y debe pertenecer al cliente (o al pintor si no hay cliente). `forma_pagado`: `EFECTIVO` | `TRANSFERENCIA` | `POSNET` | `CUENTA_CORRIENTE`. PDF opcional: `pdf_comprobante` (`BYTEA`, máx. 5 MB, magia `%PDF`) + `pdf_comprobante_nombre`. Listados **no** seleccionan bytes.
 
 Servicios: `clientes.service.ts`, `enviosDirecciones.service.ts`, `enviosFinal.service.ts`. Actions: `src/actions/envios.ts`. Descarga PDF: `GET /api/envios/[id]/comprobante` (`guardEnviosLectura`). No borrar cliente/dirección si hay envío asociado (`P2003`).
 

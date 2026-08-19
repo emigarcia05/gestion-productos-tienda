@@ -5,8 +5,7 @@ import type { ServiceResult } from "@/types/service.types";
 
 const resumenSelect = {
   id: true,
-  nombre: true,
-  apellido: true,
+  nombreCompleto: true,
   cel: true,
   tipo: true,
 } as const;
@@ -20,8 +19,7 @@ const select = {
 function mapResumen(row: ClienteResumen): ClienteResumen {
   return {
     id: row.id,
-    nombre: row.nombre.trim(),
-    apellido: row.apellido.trim(),
+    nombreCompleto: row.nombreCompleto.trim(),
     cel: row.cel.trim(),
     tipo: row.tipo,
   };
@@ -29,8 +27,7 @@ function mapResumen(row: ClienteResumen): ClienteResumen {
 
 function mapRow(row: {
   id: string;
-  nombre: string;
-  apellido: string;
+  nombreCompleto: string;
   cel: string;
   tipo: ClienteResumen["tipo"];
   pintorAsociadoId: string | null;
@@ -85,7 +82,7 @@ async function resolverPintorAsociadoId(input: {
 export async function listarClientes(): Promise<ClienteItem[]> {
   try {
     const rows = await prisma.cliente.findMany({
-      orderBy: [{ apellido: "asc" }, { nombre: "asc" }, { createdAt: "asc" }],
+      orderBy: [{ nombreCompleto: "asc" }, { createdAt: "asc" }],
       select,
     });
     return rows.map(mapRow);
@@ -103,8 +100,7 @@ export async function crearCliente(
     if (!pintor.success) return pintor;
     const row = await prisma.cliente.create({
       data: {
-        nombre: input.nombre.trim(),
-        apellido: input.apellido.trim(),
+        nombreCompleto: input.nombreCompleto.trim(),
         cel: input.cel.trim(),
         tipo: input.tipo,
         pintorAsociadoId: pintor.data,
@@ -123,7 +119,7 @@ export async function editarCliente(
 ): Promise<ServiceResult<ClienteItem>> {
   try {
     const usada = await prisma.enviosFinal.findFirst({
-      where: input.tipo === "FINAL" ? { pintorId: input.id } : { clienteFinalId: input.id },
+      where: input.tipo === "CONSUMIDOR_FINAL" ? { pintorId: input.id } : { clienteFinalId: input.id },
       select: { id: true },
     });
     if (usada) {
@@ -133,7 +129,7 @@ export async function editarCliente(
           "No se puede cambiar el tipo: el cliente ya está asociado a un envío con el tipo actual.",
       };
     }
-    if (input.tipo === "FINAL") {
+    if (input.tipo === "CONSUMIDOR_FINAL") {
       const asociadoComoPintor = await prisma.cliente.findFirst({
         where: { pintorAsociadoId: input.id },
         select: { id: true },
@@ -141,7 +137,7 @@ export async function editarCliente(
       if (asociadoComoPintor) {
         return {
           success: false,
-          error: "No se puede cambiar a FINAL: hay clientes que lo tienen como pintor asociado.",
+          error: "No se puede cambiar a CONSUMIDOR FINAL: hay clientes que lo tienen como pintor asociado.",
         };
       }
     }
@@ -150,8 +146,7 @@ export async function editarCliente(
     const row = await prisma.cliente.update({
       where: { id: input.id },
       data: {
-        nombre: input.nombre.trim(),
-        apellido: input.apellido.trim(),
+        nombreCompleto: input.nombreCompleto.trim(),
         cel: input.cel.trim(),
         tipo: input.tipo,
         pintorAsociadoId: pintor.data,

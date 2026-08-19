@@ -1495,7 +1495,7 @@ model ProdIaDisenoCatalogo {
 
 /** Tipo de fila en `clientes` (como máximo una de cada tipo por `envios_final`). */
 enum ClienteTipo {
-  FINAL
+  CONSUMIDOR_FINAL
   PINTOR
 }
 
@@ -1508,13 +1508,12 @@ enum EnviosFormaPagado {
 }
 
 /**
- * Catálogo de clientes de envío (`FINAL` o `PINTOR`).
- * `pintor_asociado` solo aplica a `FINAL` y apunta a un `PINTOR` (CHECK SQL + servicio).
+ * Catálogo de clientes de envío (`CONSUMIDOR_FINAL` o `PINTOR`).
+ * `pintor_asociado` solo aplica a `CONSUMIDOR_FINAL` y apunta a un `PINTOR` (CHECK SQL + servicio).
  */
 model Cliente {
   id                String      @id @default(cuid())
-  nombre            String      @map("nombre")
-  apellido          String      @map("apellido")
+  nombreCompleto    String      @map("nombre_completo")
   cel               String      @map("cel")
   tipo              ClienteTipo @map("tipo")
   pintorAsociadoId  String?     @map("pintor_asociado")
@@ -1528,12 +1527,12 @@ model Cliente {
   direcciones            EnviosDireccion[]
 
   @@index([tipo], map: "clientes_tipo_idx")
-  @@index([apellido, nombre], map: "clientes_apellido_nombre_idx")
+  @@index([nombreCompleto], map: "clientes_nombre_completo_idx")
   @@index([pintorAsociadoId], map: "clientes_pintor_asociado_idx")
   @@map("clientes")
 }
 
-/** Dirección de envío asociada a un cliente (en el alta, al `FINAL` seleccionado). */
+/** Dirección de envío asociada a un cliente (en el alta, al `CONSUMIDOR_FINAL` seleccionado). */
 model EnviosDireccion {
   id         String   @id @default(cuid())
   personaId  String   @map("persona_id")
@@ -1553,7 +1552,7 @@ model EnviosDireccion {
 }
 
 /**
- * Envío concreto. Hasta dos clientes: uno `FINAL` y/o uno `PINTOR`.
+ * Envío concreto. Hasta dos clientes: uno `CONSUMIDOR_FINAL` y/o uno `PINTOR`.
  * Dirección obligatoria. PDF de comprobante opcional (bytes + nombre).
  */
 model EnviosFinal {

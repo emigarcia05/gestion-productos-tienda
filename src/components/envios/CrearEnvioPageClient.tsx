@@ -60,14 +60,14 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
     [clientesCatalogo]
   );
   const clientes = useMemo(
-    () => clientesCatalogo.filter((c) => c.tipo === "FINAL"),
+    () => clientesCatalogo.filter((c) => c.tipo === "CONSUMIDOR_FINAL"),
     [clientesCatalogo]
   );
 
   const clientesFiltrados = useMemo(() => {
     if (!qClienteDebounced.trim()) return clientes;
     return clientes.filter((item) =>
-      matchByMultiTerm([item.nombre, item.apellido, item.cel], qClienteDebounced)
+      matchByMultiTerm([item.nombreCompleto, item.cel], qClienteDebounced)
     );
   }, [clientes, qClienteDebounced]);
 
@@ -256,7 +256,7 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
         pintores={pintores}
         onCatalogoChanged={refresh}
         onSuccess={(item) => {
-          if (item.tipo === "FINAL") {
+          if (item.tipo === "CONSUMIDOR_FINAL") {
             setClienteId(item.id);
             setDireccionId(null);
           }

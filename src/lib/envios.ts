@@ -1,6 +1,6 @@
 import type { ClienteTipo, EnviosFormaPagado } from "@prisma/client";
 
-export const CLIENTE_TIPO_VALUES = ["FINAL", "PINTOR"] as const;
+export const CLIENTE_TIPO_VALUES = ["CONSUMIDOR_FINAL", "PINTOR"] as const;
 export type ClienteTipoValue = (typeof CLIENTE_TIPO_VALUES)[number];
 
 export const ENVIOS_FORMA_PAGADO_VALUES = [
@@ -12,7 +12,7 @@ export const ENVIOS_FORMA_PAGADO_VALUES = [
 export type EnviosFormaPagadoValue = (typeof ENVIOS_FORMA_PAGADO_VALUES)[number];
 
 export const CLIENTE_TIPO_LABELS: Record<ClienteTipo, string> = {
-  FINAL: "FINAL",
+  CONSUMIDOR_FINAL: "CONSUMIDOR FINAL",
   PINTOR: "PINTOR",
 };
 
@@ -32,16 +32,14 @@ export function etiquetaFormaPagadoEnvio(forma: EnviosFormaPagado): string {
 }
 
 export function nombreCompletoCliente(cliente: {
-  nombre: string;
-  apellido: string;
+  nombreCompleto: string;
 }): string {
-  return `${cliente.apellido} ${cliente.nombre}`.trim();
+  return cliente.nombreCompleto.trim();
 }
 
 export interface ClienteResumen {
   id: string;
-  nombre: string;
-  apellido: string;
+  nombreCompleto: string;
   cel: string;
   tipo: ClienteTipo;
 }

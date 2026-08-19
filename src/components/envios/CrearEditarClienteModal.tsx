@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -14,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import SeleccionarPintorModal from "@/components/envios/SeleccionarPintorModal";
 import { crearClienteAction, editarClienteAction } from "@/actions/envios";
 import {
   CLIENTE_TIPO_LABELS,
@@ -22,9 +24,11 @@ import {
   type ClienteItem,
   type ClienteTipoValue,
 } from "@/lib/envios";
+import {
+  CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
+  TABLE_ROW_ACTION_ICON_CLASS,
+} from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
-
-const SENTINEL_NONE = "none";
 
 interface Props {
   open: boolean;
@@ -48,59 +52,60 @@ export default function CrearEditarClienteModal({
   onSuccess,
   onCatalogoChanged,
 }: Props) {
-  const [nombre, setNombre] = useState("");
-  const [apellido, setApellido] = useState("");
+  const [nombreCompleto, setNombreCompleto] = useState("");
   const [cel, setCel] = useState("");
-  const [tipo, setTipo] = useState<ClienteTipoValue | "">(tipoFijo ?? "");
-  const [pintorAsociadoId, setPintorAsociadoId] = useState(SENTINEL_NONE);
+  const [tipo, setTipo] = useState<ClienteTipoValue>(tipoFijo ?? "CONSUMIDOR_FINAL");
+  const [pintorAsociadoId, setPintorAsociadoId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [modalPintor, setModalPintor] = useState(false);
+  const [modalListaPintores, setModalListaPintores] = useState(false);
+  const [modalFormPintor, setModalFormPintor] = useState<
+    { open: false } | { open: true; modo: "crear" | "editar"; item?: ClienteItem }
+  >({ open: false });
 
   const tipoEfectivo = tipoFijo ?? tipo;
-  const muestraPintorAsociado = tipoEfectivo === "FINAL";
+  const muestraPintorAsociado = tipoEfectivo === "CONSUMIDOR_FINAL";
 
   const pintoresDisponibles = useMemo(
     () => pintores.filter((p) => p.tipo === "PINTOR" && p.id !== item?.id),
     [pintores, item?.id]
   );
 
+  const pintorAsociado = useMemo(() => {
+    if (!pintorAsociadoId) return null;
+    return (
+      pintoresDisponibles.find((p) => p.id === pintorAsociadoId) ??
+      (item?.pintorAsociado?.id === pintorAsociadoId ? item.pintorAsociado : null)
+    );
+  }, [pintorAsociadoId, pintoresDisponibles, item?.pintorAsociado]);
+
   useEffect(() => {
     if (!open) return;
     if (modo === "editar" && item) {
-      setNombre(item.nombre);
-      setApellido(item.apellido);
+      setNombreCompleto(item.nombreCompleto);
       setCel(item.cel);
       setTipo(tipoFijo ?? item.tipo);
-      setPintorAsociadoId(item.pintorAsociadoId ?? SENTINEL_NONE);
+      setPintorAsociadoId(item.pintorAsociadoId);
       return;
     }
-    setNombre("");
-    setApellido("");
+    setNombreCompleto("");
     setCel("");
-    setTipo(tipoFijo ?? "");
-    setPintorAsociadoId(SENTINEL_NONE);
+    setTipo(tipoFijo ?? "CONSUMIDOR_FINAL");
+    setPintorAsociadoId(null);
   }, [open, modo, item, tipoFijo]);
 
-  const puedeGuardar =
-    nombre.trim() !== "" &&
-    apellido.trim() !== "" &&
-    cel.trim() !== "" &&
-    (tipoFijo != null || tipo === "FINAL" || tipo === "PINTOR");
+  const puedeGuardar = nombreCompleto.trim() !== "" && cel.trim() !== "";
   const tituloBase = tipoFijo === "PINTOR" || tipoEfectivo === "PINTOR" ? "Pintor" : "Cliente";
 
   async function handleSubmit() {
     if (!puedeGuardar || saving) return;
     const tipoGuardar = tipoFijo ?? tipo;
-    if (tipoGuardar !== "FINAL" && tipoGuardar !== "PINTOR") return;
     setSaving(true);
     try {
       const payload = {
-        nombre,
-        apellido,
+        nombreCompleto,
         cel,
         tipo: tipoGuardar,
-        pintorAsociadoId:
-          tipoGuardar === "FINAL" && pintorAsociadoId !== SENTINEL_NONE ? pintorAsociadoId : null,
+        pintorAsociadoId: tipoGuardar === "CONSUMIDOR_FINAL" ? pintorAsociadoId : null,
       };
       const res =
         modo === "editar" && item
@@ -137,12 +142,12 @@ export default function CrearEditarClienteModal({
         >
           <div className="flex flex-col gap-4">
             <label className="flex flex-col gap-1">
-              <ModalMicroLabel>NOMBRE</ModalMicroLabel>
-              <Input value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="off" />
-            </label>
-            <label className="flex flex-col gap-1">
-              <ModalMicroLabel>APELLIDO</ModalMicroLabel>
-              <Input value={apellido} onChange={(e) => setApellido(e.target.value)} autoComplete="off" />
+              <ModalMicroLabel>NOMBRE COMPLETO</ModalMicroLabel>
+              <Input
+                value={nombreCompleto}
+                onChange={(e) => setNombreCompleto(e.target.value)}
+                autoComplete="off"
+              />
             </label>
             <label className="flex flex-col gap-1">
               <ModalMicroLabel>CEL</ModalMicroLabel>
@@ -156,10 +161,10 @@ export default function CrearEditarClienteModal({
                   onValueChange={(v) => {
                     const next = v as ClienteTipoValue;
                     setTipo(next);
-                    if (next === "PINTOR") setPintorAsociadoId(SENTINEL_NONE);
+                    if (next === "PINTOR") setPintorAsociadoId(null);
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={cn("w-full")}>
                     <SelectValue placeholder="ELEGIR TIPO..." />
                   </SelectTrigger>
                   <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
@@ -175,44 +180,100 @@ export default function CrearEditarClienteModal({
             {muestraPintorAsociado ? (
               <div className="flex flex-col gap-2">
                 <ModalMicroLabel>PINTOR ASOCIADO</ModalMicroLabel>
-                <Select value={pintorAsociadoId} onValueChange={setPintorAsociadoId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="SIN PINTOR..." />
-                  </SelectTrigger>
-                  <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                    <SelectItem value={SENTINEL_NONE}>SIN PINTOR</SelectItem>
-                    {pintoresDisponibles.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {nombreCompletoCliente(p)} · {p.cel}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn("self-start")}
-                  disabled={saving}
-                  onClick={() => setModalPintor(true)}
-                >
-                  Nuevo Pintor
-                </Button>
+                {pintorAsociado ? (
+                  <div
+                    className={cn(
+                      "flex min-h-9 items-center gap-2 rounded-md border border-input px-3 py-1"
+                    )}
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                      {nombreCompletoCliente(pintorAsociado)}
+                    </span>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS}
+                        title="Editar"
+                        aria-label={`Editar ${nombreCompletoCliente(pintorAsociado)}`}
+                        disabled={saving}
+                        onClick={() => {
+                          const pintorItem =
+                            pintoresDisponibles.find((p) => p.id === pintorAsociado.id) ??
+                            (item?.pintorAsociado?.id === pintorAsociado.id
+                              ? {
+                                  ...item.pintorAsociado,
+                                  pintorAsociadoId: null,
+                                  pintorAsociado: null,
+                                }
+                              : null);
+                          if (!pintorItem) return;
+                          setModalFormPintor({ open: true, modo: "editar", item: pintorItem });
+                        }}
+                      >
+                        <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS}
+                        title="Borrar"
+                        aria-label={`Quitar pintor asociado ${nombreCompletoCliente(pintorAsociado)}`}
+                        disabled={saving}
+                        onClick={() => setPintorAsociadoId(null)}
+                      >
+                        <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn(CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS, "self-end")}
+                    title="Nuevo"
+                    aria-label="Asociar pintor"
+                    disabled={saving}
+                    onClick={() => setModalListaPintores(true)}
+                  >
+                    <Plus className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                  </Button>
+                )}
               </div>
             ) : null}
           </div>
         </AppModal>
       </Dialog>
       {muestraPintorAsociado ? (
-        <CrearEditarClienteModal
-          open={modalPintor}
-          onOpenChange={setModalPintor}
-          modo="crear"
-          tipoFijo="PINTOR"
-          onSuccess={(creado) => {
-            setPintorAsociadoId(creado.id);
-            onCatalogoChanged?.();
-          }}
-        />
+        <>
+          <SeleccionarPintorModal
+            open={modalListaPintores}
+            onOpenChange={setModalListaPintores}
+            pintores={pintoresDisponibles}
+            seleccionadoId={pintorAsociadoId}
+            onSelect={(pintor) => {
+              setPintorAsociadoId(pintor.id);
+              setModalListaPintores(false);
+            }}
+          />
+          <CrearEditarClienteModal
+            open={modalFormPintor.open}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) setModalFormPintor({ open: false });
+            }}
+            modo={modalFormPintor.open ? modalFormPintor.modo : "crear"}
+            item={modalFormPintor.open ? modalFormPintor.item : null}
+            tipoFijo="PINTOR"
+            onCatalogoChanged={onCatalogoChanged}
+            onSuccess={(creado) => {
+              setPintorAsociadoId(creado.id);
+              onCatalogoChanged?.();
+            }}
+          />
+        </>
       ) : null}
     </>
   );

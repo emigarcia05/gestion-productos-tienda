@@ -10,8 +10,7 @@ const PDF_MAX_BYTES = 5 * 1024 * 1024;
 
 const clienteResumenSelect = {
   id: true,
-  nombre: true,
-  apellido: true,
+  nombreCompleto: true,
   cel: true,
   tipo: true,
 } as const;
@@ -44,15 +43,13 @@ const listSelect = {
 
 function mapCliente(row: {
   id: string;
-  nombre: string;
-  apellido: string;
+  nombreCompleto: string;
   cel: string;
   tipo: ClienteItem["tipo"];
   pintorAsociadoId: string | null;
   pintorAsociado: {
     id: string;
-    nombre: string;
-    apellido: string;
+    nombreCompleto: string;
     cel: string;
     tipo: ClienteItem["tipo"];
   } | null;
@@ -60,16 +57,14 @@ function mapCliente(row: {
   if (!row) return null;
   return {
     id: row.id,
-    nombre: row.nombre.trim(),
-    apellido: row.apellido.trim(),
+    nombreCompleto: row.nombreCompleto.trim(),
     cel: row.cel.trim(),
     tipo: row.tipo,
     pintorAsociadoId: row.pintorAsociadoId,
     pintorAsociado: row.pintorAsociado
       ? {
           id: row.pintorAsociado.id,
-          nombre: row.pintorAsociado.nombre.trim(),
-          apellido: row.pintorAsociado.apellido.trim(),
+          nombreCompleto: row.pintorAsociado.nombreCompleto.trim(),
           cel: row.pintorAsociado.cel.trim(),
           tipo: row.pintorAsociado.tipo,
         }
@@ -197,8 +192,8 @@ async function validarPersonasYDireccion(input: {
       select: { tipo: true },
     });
     if (!cliente) return { success: false, error: "El cliente final no existe." };
-    if (cliente.tipo !== "FINAL") {
-      return { success: false, error: "El cliente debe ser de tipo FINAL." };
+    if (cliente.tipo !== "CONSUMIDOR_FINAL") {
+      return { success: false, error: "El cliente debe ser de tipo CONSUMIDOR FINAL." };
     }
     if (direccion.personaId !== clienteFinalId) {
       return { success: false, error: "La dirección debe pertenecer al cliente final seleccionado." };

@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   CLIENTE_TIPO_VALUES,
   ENVIOS_FORMA_PAGADO_VALUES,
+  type ClienteTipoValue,
 } from "@/lib/envios";
 import {
   prismaCuidSchema,
@@ -53,15 +54,14 @@ export const enviosPdfComprobanteSchema = z.object({
 });
 
 const clienteCampos = {
-  nombre: textoCortoSchema("el nombre"),
-  apellido: textoCortoSchema("el apellido"),
+  nombreCompleto: textoCortoSchema("el nombre completo", 400),
   cel: textoCortoSchema("el celular", 40),
   tipo: z.enum(CLIENTE_TIPO_VALUES),
   pintorAsociadoId: prismaIdOptionalNullableSchema,
 };
 
 function refineClientePintorAsociado(
-  data: { id?: string; tipo: "FINAL" | "PINTOR"; pintorAsociadoId?: string | null },
+  data: { id?: string; tipo: ClienteTipoValue; pintorAsociadoId?: string | null },
   ctx: z.RefinementCtx
 ): void {
   if (data.tipo === "PINTOR" && data.pintorAsociadoId) {

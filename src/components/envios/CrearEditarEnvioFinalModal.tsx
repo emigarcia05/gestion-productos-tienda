@@ -79,7 +79,7 @@ export default function CrearEditarEnvioFinalModal({
   const [saving, setSaving] = useState(false);
 
   const clientesFinal = useMemo(
-    () => clientes.filter((p) => p.tipo === "FINAL"),
+    () => clientes.filter((p) => p.tipo === "CONSUMIDOR_FINAL"),
     [clientes]
   );
   const pintores = useMemo(() => clientes.filter((p) => p.tipo === "PINTOR"), [clientes]);
