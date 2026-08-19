@@ -4,6 +4,7 @@ export const CLIENTE_TIPO_VALUES = ["CONSUMIDOR_FINAL", "PINTOR"] as const;
 export type ClienteTipoValue = (typeof CLIENTE_TIPO_VALUES)[number];
 
 export const ENVIOS_FORMA_PAGADO_VALUES = [
+  "PAGADO",
   "EFECTIVO",
   "TRANSFERENCIA",
   "POSNET",
@@ -38,6 +39,7 @@ export function etiquetaDepartamentoEnvio(departamento: EnviosDepartamento | nul
 }
 
 export const ENVIOS_FORMA_PAGADO_LABELS: Record<EnviosFormaPagado, string> = {
+  PAGADO: "PAGADO",
   EFECTIVO: "EFECTIVO",
   TRANSFERENCIA: "TRANSFERENCIA",
   POSNET: "POSNET",
@@ -74,6 +76,18 @@ export const ENVIOS_PDF_MAX_BYTES = 5 * 1024 * 1024;
 
 export function esHoraEnvioValida(value: string): value is EnviosHoraValue {
   return (ENVIOS_HORA_VALUES as readonly string[]).includes(value);
+}
+
+export function esFormaPagadoEnvioValida(value: string): value is EnviosFormaPagadoValue {
+  return (ENVIOS_FORMA_PAGADO_VALUES as readonly string[]).includes(value);
+}
+
+/** `PAGADO` como forma siempre marca el envío como pagado. */
+export function pagadoDesdeFormaPagado(
+  forma: EnviosFormaPagadoValue,
+  pagado: boolean
+): boolean {
+  return forma === "PAGADO" || pagado;
 }
 
 /** `desde` no puede ser 19:00: hace falta un `hasta` posterior. */
@@ -220,6 +234,24 @@ export function etiquetaDireccionEnvio(dir: EnviosDireccionItem): string {
     texto = texto ? `${texto}. ${depto}` : depto;
   }
   return texto || "Dirección";
+}
+
+/** Línea de listado wizard: `calle numeracion, distrito - departamento.` */
+export function etiquetaDireccionEnvioListado(dir: EnviosDireccionItem): string {
+  const calleNum = [dir.calleNombre.trim(), dir.numeracion.trim()].filter((s) => s !== "").join(" ");
+  const distrito = dir.distrito.trim();
+  const depto = etiquetaDepartamentoEnvio(dir.departamento);
+  const calleDistrito = [calleNum, distrito].filter((s) => s !== "").join(", ");
+  let texto = calleDistrito;
+  if (depto) {
+    texto = texto ? `${texto} - ${depto}` : depto;
+  }
+  if (!texto) return "Dirección.";
+  return texto.endsWith(".") ? texto : `${texto}.`;
+}
+
+export function etiquetaOrdinalDireccionEnvio(orden: number): string {
+  return `DIRECCIÓN ${orden}:`;
 }
 
 export function metaDireccionEnvio(dir: EnviosDireccionItem): string {

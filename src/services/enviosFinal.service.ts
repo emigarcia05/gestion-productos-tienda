@@ -4,6 +4,7 @@ import {
   ENVIOS_PDF_MAX_BYTES,
   capitalizarTextoEnvio,
   normalizarNombreCliente,
+  pagadoDesdeFormaPagado,
   properTextoEnvio,
   type ClienteItem,
   type EnviosDireccionItem,
@@ -348,7 +349,7 @@ export async function crearEnviosFinal(
         horaDesde: input.horaDesde,
         horaHasta: input.horaHasta,
         observacionEnvio: input.observacionEnvio.trim(),
-        pagado: input.pagado,
+        pagado: pagadoDesdeFormaPagado(input.formaPagado, input.pagado),
         formaPagado: input.formaPagado,
         pdfComprobanteNombre: pdfNombre,
         pdfComprobante: pdfBytes,
@@ -394,7 +395,7 @@ export async function editarEnviosFinal(
       horaDesde: input.horaDesde,
       horaHasta: input.horaHasta,
       observacionEnvio: input.observacionEnvio.trim(),
-      pagado: input.pagado,
+      pagado: pagadoDesdeFormaPagado(input.formaPagado, input.pagado),
       formaPagado: input.formaPagado,
     };
 

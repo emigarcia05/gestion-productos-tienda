@@ -1500,8 +1500,9 @@ enum ClienteTipo {
   PINTOR
 }
 
-/** Forma de cobro del envío. */
+/** Forma de cobro del envío. `PAGADO` implica `envios_final.pagado = true`. */
 enum EnviosFormaPagado {
+  PAGADO
   EFECTIVO
   TRANSFERENCIA
   POSNET

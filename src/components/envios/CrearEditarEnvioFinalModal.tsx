@@ -20,7 +20,9 @@ import { leerPdfComprobante } from "@/components/envios/leerPdfComprobante";
 import {
   ENVIOS_FORMA_PAGADO_LABELS,
   ENVIOS_FORMA_PAGADO_VALUES,
+  esFormaPagadoEnvioValida,
   esHoraEnvioValida,
+  pagadoDesdeFormaPagado,
   etiquetaDireccionEnvio,
   etiquetaSucursalEnvio,
   nombreCompletoCliente,
@@ -142,12 +144,7 @@ export default function CrearEditarEnvioFinalModal({
 
   async function handleSubmit() {
     if (!puedeGuardar || saving || !sucursalId) return;
-    if (
-      formaPagado !== "EFECTIVO" &&
-      formaPagado !== "TRANSFERENCIA" &&
-      formaPagado !== "POSNET" &&
-      formaPagado !== "CUENTA_CORRIENTE"
-    ) {
+    if (!esFormaPagadoEnvioValida(formaPagado)) {
       return;
     }
     if (!esHoraEnvioValida(horaDesde) || !esHoraEnvioValida(horaHasta)) {
@@ -164,7 +161,7 @@ export default function CrearEditarEnvioFinalModal({
         horaDesde,
         horaHasta,
         observacionEnvio,
-        pagado: pagado === "si",
+        pagado: pagadoDesdeFormaPagado(formaPagado, pagado === "si"),
         formaPagado,
         ...(pdfAdjunto ? { pdfComprobante: pdfAdjunto } : {}),
       };
@@ -311,7 +308,11 @@ export default function CrearEditarEnvioFinalModal({
               <ModalMicroLabel>FORMA PAGADO</ModalMicroLabel>
               <Select
                 value={formaPagado}
-                onValueChange={(v) => setFormaPagado(v as EnviosFormaPagadoValue)}
+                onValueChange={(v) => {
+                  const forma = v as EnviosFormaPagadoValue;
+                  setFormaPagado(forma);
+                  if (forma === "PAGADO") setPagado("si");
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="ELEGIR FORMA..." />

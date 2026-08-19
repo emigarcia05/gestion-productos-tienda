@@ -35,8 +35,6 @@ interface Props {
   onHoraHastaChange: (hora: EnviosHoraValue | "") => void;
   /** Tras fecha + rango válidos (p. ej. wizard: pasar al paso siguiente). */
   onCompleto?: () => void;
-  /** Oculta el label FECHA (el wizard ya lo muestra como título de paso). */
-  ocultarTituloFecha?: boolean;
 }
 
 export default function EnviosFechaHorarioCampos({
@@ -48,14 +46,18 @@ export default function EnviosFechaHorarioCampos({
   onHoraDesdeChange,
   onHoraHastaChange,
   onCompleto,
-  ocultarTituloFecha = false,
 }: Props) {
   const hiddenFechaRef = useRef<HTMLInputElement>(null);
   const [horaPendiente, setHoraPendiente] = useState<EnviosHoraValue | "">("");
+  const [horaHover, setHoraHover] = useState<EnviosHoraValue | "">("");
   const hoyIso = dateToIsoYmdArgentina(new Date());
   const mananaIso = addDaysToIsoYmdArgentina(hoyIso, 1);
   const fechaOtra = fechaIso !== "" && fechaIso !== hoyIso && fechaIso !== mananaIso;
   const rangoListo = horaDesde !== "" && horaHasta !== "" && horaDesde < horaHasta;
+  const rangoPreview =
+    horaPendiente !== "" && horaHover !== ""
+      ? rangoHorarioDesdeClicks(horaPendiente, horaHover)
+      : null;
 
   function intentarCompletar(nextFecha: string, nextDesde: string, nextHasta: string) {
     if (nextFecha !== "" && nextDesde !== "" && nextHasta !== "" && nextDesde < nextHasta) {
@@ -71,6 +73,7 @@ export default function EnviosFechaHorarioCampos({
   function handleHoraClick(hora: EnviosHoraValue) {
     if (horaPendiente === "") {
       setHoraPendiente(hora);
+      setHoraHover("");
       onHoraDesdeChange("");
       onHoraHastaChange("");
       return;
@@ -78,6 +81,7 @@ export default function EnviosFechaHorarioCampos({
     const rango = rangoHorarioDesdeClicks(horaPendiente, hora);
     if (!rango) return;
     setHoraPendiente("");
+    setHoraHover("");
     onHoraDesdeChange(rango.horaDesde);
     onHoraHastaChange(rango.horaHasta);
     intentarCompletar(fechaIso, rango.horaDesde, rango.horaHasta);
@@ -86,7 +90,7 @@ export default function EnviosFechaHorarioCampos({
   return (
     <div className="flex w-full flex-col items-center gap-6">
       <div className="flex w-full flex-col items-center gap-2">
-        {ocultarTituloFecha ? null : <ModalMicroLabel align="center">FECHA</ModalMicroLabel>}
+        <ModalMicroLabel align="center">FECHA</ModalMicroLabel>
         <div className="flex items-center justify-center gap-2">
           <Button
             type="button"
@@ -130,7 +134,7 @@ export default function EnviosFechaHorarioCampos({
             }}
           />
         </div>
-        {fechaIso && !ocultarTituloFecha ? (
+        {fechaIso ? (
           <p className="text-sm tabular-nums text-foreground">
             {formatIsoYmdDdMmYyyyArgentina(fechaIso)}
           </p>
@@ -139,7 +143,11 @@ export default function EnviosFechaHorarioCampos({
 
       <div className="flex w-full flex-col items-center gap-2">
         <ModalMicroLabel align="center">RANGO HORARIO</ModalMicroLabel>
-        {rangoListo ? (
+        {rangoPreview ? (
+          <p className="text-sm tabular-nums text-foreground">
+            {rangoPreview.horaDesde} / {rangoPreview.horaHasta}
+          </p>
+        ) : rangoListo ? (
           <p className="text-sm tabular-nums text-foreground">
             {horaDesde} / {horaHasta}
           </p>
@@ -148,23 +156,33 @@ export default function EnviosFechaHorarioCampos({
           className="flex max-w-full flex-wrap items-center justify-center gap-1"
           role="group"
           aria-label="Rango horario"
+          onMouseLeave={() => setHoraHover("")}
         >
           {ENVIOS_HORA_VALUES.map((hora) => {
             const esPendiente = horaPendiente === hora;
-            const esExtremo = hora === horaDesde || hora === horaHasta;
-            const enMedio =
-              rangoListo && hora > horaDesde && hora < horaHasta;
+            const esExtremo = rangoPreview
+              ? hora === rangoPreview.horaDesde || hora === rangoPreview.horaHasta
+              : hora === horaDesde || hora === horaHasta;
+            const enMedio = rangoPreview
+              ? hora > rangoPreview.horaDesde && hora < rangoPreview.horaHasta
+              : rangoListo && hora > horaDesde && hora < horaHasta;
             return (
               <Button
                 key={hora}
                 type="button"
                 variant={esPendiente || esExtremo ? "default" : "outline"}
                 disabled={disabled}
-                aria-pressed={esPendiente || esExtremo || enMedio}
+                aria-pressed={esPendiente || esExtremo || Boolean(enMedio)}
                 className={cn(
                   "h-8 min-w-12 px-2 text-xs font-medium tabular-nums",
                   enMedio && "border-primary/40 bg-primary/20 text-foreground"
                 )}
+                onMouseEnter={() => {
+                  if (!disabled && horaPendiente !== "") setHoraHover(hora);
+                }}
+                onFocus={() => {
+                  if (!disabled && horaPendiente !== "") setHoraHover(hora);
+                }}
                 onClick={() => handleHoraClick(hora)}
               >
                 {hora}

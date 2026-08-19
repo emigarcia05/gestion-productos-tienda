@@ -38,6 +38,8 @@ export default function CatalogoFinderRow({
   nombreAccion,
   nombreSufijo,
   nombreCentrado = false,
+  etiquetaIzquierda,
+  iconoIzquierda,
   eliminarSiempreVisible = false,
 }: {
   nombre: string;
@@ -59,11 +61,16 @@ export default function CatalogoFinderRow({
   nombreSufijo?: string;
   /** Centra el nombre (y el sufijo) en el espacio de la fila. */
   nombreCentrado?: boolean;
+  /** Columna izquierda de etiqueta (p. ej. Envios · `DIRECCIÓN 1:`). */
+  etiquetaIzquierda?: string;
+  /** Ícono a la izquierda del nombre (p. ej. Envios · PINTOR). */
+  iconoIzquierda?: ReactNode;
   /** Si true, el eliminar no va en el hover: queda fijo a la derecha de la fila. */
   eliminarSiempreVisible?: boolean;
 }) {
   const isClickable = typeof onClick === "function";
   const gastoFinalComentarios = gastoFinalDetalle?.comentarios?.trim() ?? "";
+  const accionJuntoAEliminar = Boolean(eliminarSiempreVisible && !nombreCentrado && nombreAccion);
   return (
     <div
       className={cn(
@@ -136,23 +143,44 @@ export default function CatalogoFinderRow({
             <div
               className={cn(
                 "relative flex min-w-0 items-center gap-1.5",
-                nombreCentrado && "w-full justify-center"
+                nombreCentrado && !etiquetaIzquierda && "w-full justify-center"
               )}
             >
+              {etiquetaIzquierda ? (
+                <span className="w-[9rem] shrink-0 truncate font-semibold uppercase tracking-wide text-foreground">
+                  {etiquetaIzquierda}
+                </span>
+              ) : null}
+              {iconoIzquierda ? (
+                <div
+                  className="shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  {iconoIzquierda}
+                </div>
+              ) : null}
               <div
                 className={cn(
                   "min-w-0 truncate font-medium",
-                  nombreCentrado ? "w-full text-center" : "flex-1",
-                  nombreCentrado && nombreAccion ? "px-16" : null
+                  nombreCentrado && !etiquetaIzquierda ? "w-full text-center" : "flex-1",
+                  nombreCentrado && nombreAccion && !etiquetaIzquierda ? "px-16" : null
                 )}
-                title={nombreSufijo ? `${nombre} - ${nombreSufijo}` : nombre}
+                title={
+                  [
+                    etiquetaIzquierda,
+                    nombreSufijo ? `${nombre} - ${nombreSufijo}` : nombre,
+                  ]
+                    .filter((s): s is string => Boolean(s))
+                    .join(" ")
+                }
               >
                 {nombre}
                 {nombreSufijo ? (
                   <span className="font-normal text-[0.75em]"> - {nombreSufijo}</span>
                 ) : null}
               </div>
-              {nombreAccion ? (
+              {nombreAccion && !accionJuntoAEliminar ? (
                 <div
                   className={cn("shrink-0", nombreCentrado && "absolute right-0 top-1/2 -translate-y-1/2")}
                   onClick={(e) => e.stopPropagation()}
@@ -177,47 +205,66 @@ export default function CatalogoFinderRow({
 
       {mostrarAcciones && eliminarSiempreVisible ? (
         <div
-          className="relative flex shrink-0 items-center"
+          className="flex shrink-0 items-center gap-1"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
-          <div className="pointer-events-none absolute right-full mr-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
-            {onVer ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
-                title="Ver"
-                aria-label={`Ver ${nombre}`}
-                onClick={() => onVer()}
-              >
-                <Eye className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-              </Button>
-            ) : null}
+          {accionJuntoAEliminar ? <div className="shrink-0">{nombreAccion}</div> : null}
+          <div className="relative flex shrink-0 items-center">
+            {accionJuntoAEliminar ? (
+              <div className="pointer-events-none mr-1 flex w-7 shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
+                  title="Editar"
+                  aria-label={`Editar ${nombre}`}
+                  onClick={() => onEditar()}
+                >
+                  <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                </Button>
+              </div>
+            ) : (
+              <div className="pointer-events-none absolute right-full mr-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                {onVer ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
+                    title="Ver"
+                    aria-label={`Ver ${nombre}`}
+                    onClick={() => onVer()}
+                  >
+                    <Eye className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
+                  title="Editar"
+                  aria-label={`Editar ${nombre}`}
+                  onClick={() => onEditar()}
+                >
+                  <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                </Button>
+              </div>
+            )}
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
-              title="Editar"
-              aria-label={`Editar ${nombre}`}
-              onClick={() => onEditar()}
+              className={CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS}
+              title="Eliminar"
+              aria-label={`Eliminar ${nombre}`}
+              onClick={() => onEliminar()}
             >
-              <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+              <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
             </Button>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS}
-            title="Eliminar"
-            aria-label={`Eliminar ${nombre}`}
-            onClick={() => onEliminar()}
-          >
-            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-          </Button>
         </div>
       ) : null}
 

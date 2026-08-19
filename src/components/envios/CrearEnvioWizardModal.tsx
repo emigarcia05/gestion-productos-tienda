@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import EnviosMapsLink from "@/components/envios/EnviosMapsLink";
 import EnviosTelLink from "@/components/envios/EnviosTelLink";
 import EnviosPintorConsumidoresButton from "@/components/envios/EnviosPintorConsumidoresButton";
-import EnviosConsumidoresDePintorModal from "@/components/envios/EnviosConsumidoresDePintorModal";
 import EnviosFechaHorarioCampos from "@/components/envios/EnviosFechaHorarioCampos";
 import EnviosWizardPasos, {
   type EnvioWizardPaso,
@@ -20,7 +19,6 @@ import CatalogoFinderRow from "@/components/shared/catalogo-finder/CatalogoFinde
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
-import ModalSiNoChoice from "@/components/shared/ModalSiNoChoice";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,9 +34,13 @@ import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   ENVIOS_FORMA_PAGADO_LABELS,
   ENVIOS_FORMA_PAGADO_VALUES,
+  esFormaPagadoEnvioValida,
   esHoraEnvioValida,
+  pagadoDesdeFormaPagado,
   etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
+  etiquetaDireccionEnvioListado,
+  etiquetaOrdinalDireccionEnvio,
   etiquetaSucursalEnvio,
   metaDireccionEnvio,
   nombreCompletoCliente,
@@ -79,7 +81,6 @@ export default function CrearEnvioWizardModal({
   const [fechaIso, setFechaIso] = useState(() => dateToIsoYmdArgentina(new Date()));
   const [horaDesde, setHoraDesde] = useState<EnviosHoraValue | "">("");
   const [horaHasta, setHoraHasta] = useState<EnviosHoraValue | "">("");
-  const [pagado, setPagado] = useState(false);
   const [formaPagado, setFormaPagado] = useState<EnviosFormaPagadoValue | "">("");
   const [pdfAdjunto, setPdfAdjunto] = useState<{ nombre: string; base64: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -104,7 +105,7 @@ export default function CrearEnvioWizardModal({
   const [modalEliminar, setModalEliminar] = useState<
     { open: false } | { open: true; kind: "cliente" | "direccion"; id: string; label: string }
   >({ open: false });
-  const [pintorConsumidores, setPintorConsumidores] = useState<ClienteItem | null>(null);
+  const [filtroPintorId, setFiltroPintorId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -116,7 +117,6 @@ export default function CrearEnvioWizardModal({
     setFechaIso(dateToIsoYmdArgentina(new Date()));
     setHoraDesde("");
     setHoraHasta("");
-    setPagado(false);
     setFormaPagado("");
     setPdfAdjunto(null);
     setQClienteDebounced("");
@@ -124,37 +124,38 @@ export default function CrearEnvioWizardModal({
     setModalCliente({ open: false });
     setModalDireccion({ open: false });
     setModalEliminar({ open: false });
-    setPintorConsumidores(null);
+    setFiltroPintorId(null);
   }, [open]);
 
   const pintores = useMemo(
     () => clientesCatalogo.filter((c) => c.tipo === "PINTOR"),
     [clientesCatalogo]
   );
-  const consumidoresFinales = useMemo(
-    () => clientesCatalogo.filter((c) => c.tipo === "CONSUMIDOR_FINAL"),
-    [clientesCatalogo]
-  );
 
   const clientesFiltrados = useMemo(() => {
-    if (!qClienteDebounced.trim()) return clientesCatalogo;
-    return clientesCatalogo.filter((item) =>
+    const asociados = filtroPintorId
+      ? clientesCatalogo.filter(
+          (item) => item.id === filtroPintorId || item.pintorAsociadoId === filtroPintorId
+        )
+      : clientesCatalogo;
+    if (!qClienteDebounced.trim()) return asociados;
+    return asociados.filter((item) =>
       matchByMultiTerm(
         [item.nombreCompleto, item.cel, item.pintorAsociado?.nombreCompleto ?? ""],
         qClienteDebounced
       )
     );
-  }, [clientesCatalogo, qClienteDebounced]);
+  }, [clientesCatalogo, qClienteDebounced, filtroPintorId]);
+
+  const pintorFiltro = useMemo(
+    () => (filtroPintorId ? clientesCatalogo.find((c) => c.id === filtroPintorId) ?? null : null),
+    [clientesCatalogo, filtroPintorId]
+  );
 
   const clienteSeleccionado = useMemo(
     () => clientesCatalogo.find((c) => c.id === clienteId) ?? null,
     [clientesCatalogo, clienteId]
   );
-
-  const consumidoresDelPintor = useMemo(() => {
-    if (!pintorConsumidores) return [];
-    return consumidoresFinales.filter((c) => c.pintorAsociadoId === pintorConsumidores.id);
-  }, [consumidoresFinales, pintorConsumidores]);
 
   const direccionesDelCliente = useMemo(() => {
     if (!clienteId) return [];
@@ -306,10 +307,7 @@ export default function CrearEnvioWizardModal({
     if (
       !esHoraEnvioValida(horaDesde) ||
       !esHoraEnvioValida(horaHasta) ||
-      (formaPagado !== "EFECTIVO" &&
-        formaPagado !== "TRANSFERENCIA" &&
-        formaPagado !== "POSNET" &&
-        formaPagado !== "CUENTA_CORRIENTE")
+      !esFormaPagadoEnvioValida(formaPagado)
     ) {
       return;
     }
@@ -325,7 +323,7 @@ export default function CrearEnvioWizardModal({
         horaDesde,
         horaHasta,
         observacionEnvio: "",
-        pagado,
+        pagado: pagadoDesdeFormaPagado(formaPagado, false),
         formaPagado,
         ...(pdfAdjunto ? { pdfComprobante: pdfAdjunto } : {}),
       });
@@ -399,20 +397,16 @@ export default function CrearEnvioWizardModal({
               <div
                 className={cn(
                   "flex min-h-0 flex-1 flex-col overflow-hidden px-4",
-                  paso !== 2 && "pb-4"
+                  paso !== 2 && !(paso === 3 && clienteSeleccionado) && "pb-4"
                 )}
               >
                 <CatalogoFinderColumn
                   titulo={tituloPaso}
                   subtitulo={subtituloPaso}
-                  mostrarNuevo={paso === 3 && Boolean(clienteSeleccionado)}
+                  mostrarNuevo={false}
                   deshabilitada={paso === 3 && !clienteSeleccionado}
                   headerVariant="titulo"
                   className="h-full min-h-0 flex-1"
-                  onNuevo={() => {
-                    if (paso !== 3 || !clienteSeleccionado) return;
-                    setModalDireccion({ open: true, modo: "crear" });
-                  }}
                 >
                   {paso === 1 ? (
                     <div className="flex flex-col gap-2 p-2">
@@ -448,30 +442,46 @@ export default function CrearEnvioWizardModal({
                           isDebouncing={busquedaCliente.isDebouncing}
                           inputRef={busquedaCliente.ref}
                         />
+                        {pintorFiltro ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="mt-2 h-8 w-full"
+                            onClick={() => setFiltroPintorId(null)}
+                          >
+                            {nombreCompletoCliente(pintorFiltro)} · Limpiar Filtro
+                          </Button>
+                        ) : null}
                       </div>
                       {clientesCatalogo.length === 0 ? (
-                        <CatalogoFinderEmpty mensaje="No hay clientes. Usá + para crear el primero." />
+                        <CatalogoFinderEmpty mensaje="No hay clientes. Usá Nuevo Cliente para crear el primero." />
                       ) : clientesFiltrados.length === 0 ? (
-                        <CatalogoFinderEmpty mensaje="Ningún cliente coincide con la búsqueda." />
+                        <CatalogoFinderEmpty
+                          mensaje={
+                            pintorFiltro
+                              ? "Ningún cliente asociado a ese pintor coincide con la búsqueda."
+                              : "Ningún cliente coincide con la búsqueda."
+                          }
+                        />
                       ) : (
                         clientesFiltrados.map((item) => (
                           <CatalogoFinderRow
                             key={item.id}
+                            iconoIzquierda={
+                              item.tipo === "PINTOR" ? (
+                                <EnviosPintorConsumidoresButton
+                                  pintorNombre={nombreCompletoCliente(item)}
+                                  activo={filtroPintorId === item.id}
+                                  onClick={() =>
+                                    setFiltroPintorId((prev) => (prev === item.id ? null : item.id))
+                                  }
+                                />
+                              ) : undefined
+                            }
                             nombre={nombreCompletoCliente(item)}
                             nombreSufijo={nombrePintorAsociadoCliente(item) ?? undefined}
-                            nombreCentrado
                             nombreAccion={
-                              item.tipo === "PINTOR" || item.cel.trim() ? (
-                                <span className="flex shrink-0 items-center gap-1">
-                                  {item.tipo === "PINTOR" ? (
-                                    <EnviosPintorConsumidoresButton
-                                      pintorNombre={nombreCompletoCliente(item)}
-                                      onClick={() => setPintorConsumidores(item)}
-                                    />
-                                  ) : null}
-                                  {item.cel.trim() ? <EnviosTelLink cel={item.cel} /> : null}
-                                </span>
-                              ) : undefined
+                              item.cel.trim() ? <EnviosTelLink cel={item.cel} /> : undefined
                             }
                             selected={item.id === clienteId}
                             onClick={() => handleSelectCliente(item.id)}
@@ -508,21 +518,23 @@ export default function CrearEnvioWizardModal({
                           />
                         </div>
                         {direccionesDelCliente.length === 0 ? (
-                          <CatalogoFinderEmpty mensaje="No hay direcciones. Usá + para crear la primera." />
+                          <CatalogoFinderEmpty mensaje="No hay direcciones. Usá Nueva Dirección para crear la primera." />
                         ) : direccionesFiltradas.length === 0 ? (
                           <CatalogoFinderEmpty mensaje="Ninguna dirección coincide con la búsqueda." />
                         ) : (
-                          direccionesFiltradas.map((item) => (
+                          direccionesFiltradas.map((item, index) => (
                             <CatalogoFinderRow
                               key={item.id}
-                              nombre={etiquetaDireccionEnvio(item)}
-                              meta={metaDireccionEnvio(item) || undefined}
+                              etiquetaIzquierda={etiquetaOrdinalDireccionEnvio(index + 1)}
+                              nombre={etiquetaDireccionEnvioListado(item)}
+                              nombreSufijo={metaDireccionEnvio(item) || undefined}
                               nombreAccion={
                                 item.urlMaps ? <EnviosMapsLink url={item.urlMaps} /> : undefined
                               }
                               selected={item.id === direccionId}
                               onClick={() => handleSelectDireccion(item.id)}
                               mostrarAcciones
+                              eliminarSiempreVisible
                               onEditar={() => setModalDireccion({ open: true, modo: "editar", item })}
                               onEliminar={() =>
                                 setModalEliminar({
@@ -546,7 +558,6 @@ export default function CrearEnvioWizardModal({
                         horaDesde={horaDesde}
                         horaHasta={horaHasta}
                         disabled={saving}
-                        ocultarTituloFecha
                         onFechaChange={setFechaIso}
                         onHoraDesdeChange={setHoraDesde}
                         onHoraHastaChange={setHoraHasta}
@@ -568,10 +579,6 @@ export default function CrearEnvioWizardModal({
                           disabled={saving}
                           onChange={(e) => void handlePdfChange(e.target.files)}
                         />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <ModalMicroLabel>PAGADO</ModalMicroLabel>
-                        <ModalSiNoChoice value={pagado} onChange={setPagado} disabled={saving} />
                       </div>
                       <div className="flex flex-col gap-1">
                         <ModalMicroLabel>FORMA DE PAGO</ModalMicroLabel>
@@ -596,17 +603,23 @@ export default function CrearEnvioWizardModal({
                   ) : null}
                 </CatalogoFinderColumn>
               </div>
-              {paso === 2 ? (
+              {paso === 2 || (paso === 3 && clienteSeleccionado) ? (
                 <div className="shrink-0 p-4">
                   <Button
                     type="button"
                     className="h-10 w-full"
                     title="Nuevo"
-                    aria-label="Nuevo Cliente"
-                    onClick={() => setModalCliente({ open: true, modo: "crear" })}
+                    aria-label={paso === 2 ? "Nuevo Cliente" : "Nueva Dirección"}
+                    onClick={() => {
+                      if (paso === 2) {
+                        setModalCliente({ open: true, modo: "crear" });
+                        return;
+                      }
+                      setModalDireccion({ open: true, modo: "crear" });
+                    }}
                   >
                     <Plus className="h-4 w-4 shrink-0" aria-hidden />
-                    Nuevo Cliente
+                    {paso === 2 ? "Nuevo Cliente" : "Nueva Dirección"}
                   </Button>
                 </div>
               ) : null}
@@ -615,18 +628,6 @@ export default function CrearEnvioWizardModal({
         </AppModal>
       </Dialog>
 
-      <EnviosConsumidoresDePintorModal
-        open={pintorConsumidores != null}
-        onOpenChange={(next) => {
-          if (!next) setPintorConsumidores(null);
-        }}
-        pintor={pintorConsumidores}
-        consumidores={consumidoresDelPintor}
-        onSelect={(item) => {
-          handleSelectCliente(item.id);
-          setPintorConsumidores(null);
-        }}
-      />
       <CrearEditarClienteModal
         open={modalCliente.open}
         onOpenChange={(next) => {

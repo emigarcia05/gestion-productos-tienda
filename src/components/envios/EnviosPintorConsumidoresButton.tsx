@@ -7,18 +7,24 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   pintorNombre: string;
+  activo?: boolean;
   onClick: () => void;
 }
 
-export default function EnviosPintorConsumidoresButton({ pintorNombre, onClick }: Props) {
+export default function EnviosPintorConsumidoresButton({ pintorNombre, activo = false, onClick }: Props) {
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant={activo ? "default" : "ghost"}
       size="icon"
-      className={cn(CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS)}
-      title="Consumidores finales"
-      aria-label={`Ver consumidores finales de ${pintorNombre}`}
+      className={cn(!activo && CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS)}
+      title={activo ? "Quitar filtro de pintor" : "Filtrar clientes de este pintor"}
+      aria-label={
+        activo
+          ? `Quitar filtro de ${pintorNombre}`
+          : `Filtrar clientes asociados a ${pintorNombre}`
+      }
+      aria-pressed={activo}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
