@@ -1510,6 +1510,7 @@ enum EnviosFormaPagado {
 /**
  * Catálogo de clientes de envío (`CONSUMIDOR_FINAL` o `PINTOR`).
  * `nombre_completo` se persiste en mayúsculas.
+ * `cel` es opcional (puede persistirse vacío).
  * `pintor_asociado` solo aplica a `CONSUMIDOR_FINAL` y apunta a un `PINTOR` (CHECK SQL + servicio).
  */
 model Cliente {

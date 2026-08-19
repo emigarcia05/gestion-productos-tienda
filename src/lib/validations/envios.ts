@@ -63,7 +63,7 @@ const clienteCampos = {
   nombreCompleto: textoCortoSchema("el nombre completo", 400).transform(
     normalizarNombreCliente
   ),
-  cel: textoCortoSchema("el celular", 40),
+  cel: textoOpcionalSchema(40),
   tipo: z.enum(CLIENTE_TIPO_VALUES),
   pintorAsociadoId: prismaIdOptionalNullableSchema,
 };

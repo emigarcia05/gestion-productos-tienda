@@ -40,6 +40,7 @@ import {
   etiquetaDireccionEnvio,
   metaDireccionEnvio,
   nombreCompletoCliente,
+  nombrePintorAsociadoCliente,
   type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFormaPagadoValue,
@@ -128,7 +129,10 @@ export default function CrearEnvioWizardModal({
   const clientesFiltrados = useMemo(() => {
     if (!qClienteDebounced.trim()) return clientesCatalogo;
     return clientesCatalogo.filter((item) =>
-      matchByMultiTerm([item.nombreCompleto, item.cel], qClienteDebounced)
+      matchByMultiTerm(
+        [item.nombreCompleto, item.cel, item.pintorAsociado?.nombreCompleto ?? ""],
+        qClienteDebounced
+      )
     );
   }, [clientesCatalogo, qClienteDebounced]);
 
@@ -186,6 +190,7 @@ export default function CrearEnvioWizardModal({
     setDireccionId(null);
     busquedaDireccion.setQ("");
     setQDireccionDebounced("");
+    setPaso(2);
   }
 
   function handleCerrar() {
@@ -297,7 +302,7 @@ export default function CrearEnvioWizardModal({
           size="xl"
           scrollBody={false}
           padding="sm"
-          className="h-[90vh]"
+          className="top-4 right-4 bottom-4 left-4 h-auto max-h-none w-auto max-w-none translate-x-0 translate-y-0"
           bodyShellClassName="h-full min-h-0"
           bodyClassName="flex h-full min-h-0 flex-col overflow-hidden p-0"
           actions={
@@ -362,6 +367,7 @@ export default function CrearEnvioWizardModal({
                           <CatalogoFinderRow
                             key={item.id}
                             nombre={nombreCompletoCliente(item)}
+                            nombreSufijo={nombrePintorAsociadoCliente(item) ?? undefined}
                             nombreAccion={
                               item.tipo === "PINTOR" || item.cel.trim() ? (
                                 <span className="flex shrink-0 items-center gap-1">
@@ -378,6 +384,7 @@ export default function CrearEnvioWizardModal({
                             selected={item.id === clienteId}
                             onClick={() => handleSelectCliente(item.id)}
                             mostrarAcciones
+                            eliminarSiempreVisible
                             onEditar={() => setModalCliente({ open: true, modo: "editar", item })}
                             onEliminar={() =>
                               setModalEliminar({

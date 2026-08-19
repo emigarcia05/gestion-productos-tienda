@@ -2,6 +2,7 @@ import { ChevronRight, Eye, Pencil, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import {
+  CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
   CATALOGO_FINDER_ROW_INTERACTIVE_CLASS,
   CATALOGO_FINDER_ROW_SELECTED_CLASS,
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -35,6 +36,8 @@ export default function CatalogoFinderRow({
   onEditar,
   onEliminar,
   nombreAccion,
+  nombreSufijo,
+  eliminarSiempreVisible = false,
 }: {
   nombre: string;
   meta?: string;
@@ -51,6 +54,10 @@ export default function CatalogoFinderRow({
   onEliminar: () => void;
   /** Adornment a la derecha del nombre (p. ej. ícono Maps). */
   nombreAccion?: ReactNode;
+  /** Texto a la derecha del nombre (` - sufijo`), `font-normal` al 50 % del nombre. */
+  nombreSufijo?: string;
+  /** Si true, el eliminar no va en el hover: queda fijo a la derecha de la fila. */
+  eliminarSiempreVisible?: boolean;
 }) {
   const isClickable = typeof onClick === "function";
   const gastoFinalComentarios = gastoFinalDetalle?.comentarios?.trim() ?? "";
@@ -124,8 +131,14 @@ export default function CatalogoFinderRow({
         ) : (
           <>
             <div className="flex min-w-0 items-center gap-1.5">
-              <div className="min-w-0 flex-1 truncate font-medium" title={nombre}>
+              <div
+                className="min-w-0 flex-1 truncate font-medium"
+                title={nombreSufijo ? `${nombre} - ${nombreSufijo}` : nombre}
+              >
                 {nombre}
+                {nombreSufijo ? (
+                  <span className="font-normal text-[0.5em]"> - {nombreSufijo}</span>
+                ) : null}
               </div>
               {nombreAccion ? (
                 <div className="shrink-0" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
@@ -146,7 +159,53 @@ export default function CatalogoFinderRow({
         )}
       </div>
 
-      {mostrarAcciones && (
+      {mostrarAcciones && eliminarSiempreVisible ? (
+        <div
+          className="relative flex shrink-0 items-center"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <div className="pointer-events-none absolute right-full mr-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+            {onVer ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
+                title="Ver"
+                aria-label={`Ver ${nombre}`}
+                onClick={() => onVer()}
+              >
+                <Eye className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
+              title="Editar"
+              aria-label={`Editar ${nombre}`}
+              onClick={() => onEditar()}
+            >
+              <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+            </Button>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS}
+            title="Eliminar"
+            aria-label={`Eliminar ${nombre}`}
+            onClick={() => onEliminar()}
+          >
+            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+          </Button>
+        </div>
+      ) : null}
+
+      {mostrarAcciones && !eliminarSiempreVisible ? (
         <div className="pointer-events-none absolute right-2 bottom-2 flex items-center justify-end gap-1 bg-card/75 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           {onVer ? (
             <Button
@@ -193,16 +252,16 @@ export default function CatalogoFinderRow({
             <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
           </Button>
         </div>
-      )}
+      ) : null}
 
-      {isClickable && (
+      {isClickable && !eliminarSiempreVisible ? (
         <ChevronRight
           className={cn(
             "h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:opacity-0",
             selected && "text-primary"
           )}
         />
-      )}
+      ) : null}
     </div>
   );
 }

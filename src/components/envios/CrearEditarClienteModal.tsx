@@ -121,7 +121,7 @@ export default function CrearEditarClienteModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- direcciones solo al abrir
   }, [open, modo, item, tipoFijo]);
 
-  const puedeGuardar = nombreCompleto.trim() !== "" && cel.trim() !== "";
+  const puedeGuardar = nombreCompleto.trim() !== "";
   const tituloBase = tipoFijo === "PINTOR" || tipoEfectivo === "PINTOR" ? "Pintor" : "Cliente";
   const yaPersistido = Boolean(clienteId);
 
@@ -161,7 +161,7 @@ export default function CrearEditarClienteModal({
   async function handleNuevaDireccion() {
     if (saving) return;
     if (!puedeGuardar) {
-      toast.error("Completá el nombre y el celular para asociar una dirección.");
+      toast.error("Completá el nombre para asociar una dirección.");
       return;
     }
     let personaId = clienteId;

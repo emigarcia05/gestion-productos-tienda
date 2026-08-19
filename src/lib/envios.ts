@@ -154,6 +154,12 @@ export interface ClienteItem extends ClienteResumen {
   pintorAsociado: ClienteResumen | null;
 }
 
+/** Nombre del pintor asociado, solo si el cliente es CONSUMIDOR_FINAL y tiene uno. */
+export function nombrePintorAsociadoCliente(cliente: ClienteItem): string | null {
+  if (cliente.tipo !== "CONSUMIDOR_FINAL" || !cliente.pintorAsociado) return null;
+  return nombreCompletoCliente(cliente.pintorAsociado);
+}
+
 export interface EnviosDireccionItem {
   id: string;
   personaId: string;
