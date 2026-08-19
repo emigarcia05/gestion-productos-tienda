@@ -20,6 +20,7 @@ export default function CatalogoFinderColumn({
   /** Alineación del botón `+` respecto al título (default: derecha, como Catálogo Gastos). */
   nuevoLado = "end",
   children,
+  className,
 }: {
   titulo: string;
   subtitulo?: string;
@@ -28,6 +29,7 @@ export default function CatalogoFinderColumn({
   deshabilitada?: boolean;
   nuevoLado?: "start" | "end";
   children: React.ReactNode;
+  className?: string;
 }) {
   const headerCompacto = !subtitulo;
   const novoClass = headerCompacto
@@ -64,7 +66,8 @@ export default function CatalogoFinderColumn({
     <section
       className={cn(
         "flex min-h-0 flex-col overflow-hidden rounded-lg border bg-card shadow-sm",
-        deshabilitada && "opacity-95"
+        deshabilitada && "opacity-95",
+        className
       )}
     >
       <header
