@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import type { ClienteItem, EnviosDireccionItem, EnviosFinalListItem } from "@/lib/envios";
+import {
+  normalizarNombreCliente,
+  type ClienteItem,
+  type EnviosDireccionItem,
+  type EnviosFinalListItem,
+} from "@/lib/envios";
 import type {
   CrearEnviosFinalInput,
   EditarEnviosFinalInput,
@@ -57,14 +62,14 @@ function mapCliente(row: {
   if (!row) return null;
   return {
     id: row.id,
-    nombreCompleto: row.nombreCompleto.trim(),
+    nombreCompleto: normalizarNombreCliente(row.nombreCompleto),
     cel: row.cel.trim(),
     tipo: row.tipo,
     pintorAsociadoId: row.pintorAsociadoId,
     pintorAsociado: row.pintorAsociado
       ? {
           id: row.pintorAsociado.id,
-          nombreCompleto: row.pintorAsociado.nombreCompleto.trim(),
+          nombreCompleto: normalizarNombreCliente(row.pintorAsociado.nombreCompleto),
           cel: row.pintorAsociado.cel.trim(),
           tipo: row.pintorAsociado.tipo,
         }

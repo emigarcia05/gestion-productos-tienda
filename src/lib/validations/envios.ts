@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   CLIENTE_TIPO_VALUES,
   ENVIOS_FORMA_PAGADO_VALUES,
+  normalizarNombreCliente,
   type ClienteTipoValue,
 } from "@/lib/envios";
 import {
@@ -54,7 +55,9 @@ export const enviosPdfComprobanteSchema = z.object({
 });
 
 const clienteCampos = {
-  nombreCompleto: textoCortoSchema("el nombre completo", 400),
+  nombreCompleto: textoCortoSchema("el nombre completo", 400).transform(
+    normalizarNombreCliente
+  ),
   cel: textoCortoSchema("el celular", 40),
   tipo: z.enum(CLIENTE_TIPO_VALUES),
   pintorAsociadoId: prismaIdOptionalNullableSchema,

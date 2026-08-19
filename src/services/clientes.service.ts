@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { ClienteItem, ClienteResumen } from "@/lib/envios";
+import { normalizarNombreCliente, type ClienteItem, type ClienteResumen } from "@/lib/envios";
 import type { CrearClienteInput, EditarClienteInput } from "@/lib/validations/envios";
 import type { ServiceResult } from "@/types/service.types";
 
@@ -19,7 +19,7 @@ const select = {
 function mapResumen(row: ClienteResumen): ClienteResumen {
   return {
     id: row.id,
-    nombreCompleto: row.nombreCompleto.trim(),
+    nombreCompleto: normalizarNombreCliente(row.nombreCompleto),
     cel: row.cel.trim(),
     tipo: row.tipo,
   };
@@ -100,7 +100,7 @@ export async function crearCliente(
     if (!pintor.success) return pintor;
     const row = await prisma.cliente.create({
       data: {
-        nombreCompleto: input.nombreCompleto.trim(),
+        nombreCompleto: normalizarNombreCliente(input.nombreCompleto),
         cel: input.cel.trim(),
         tipo: input.tipo,
         pintorAsociadoId: pintor.data,
@@ -146,7 +146,7 @@ export async function editarCliente(
     const row = await prisma.cliente.update({
       where: { id: input.id },
       data: {
-        nombreCompleto: input.nombreCompleto.trim(),
+        nombreCompleto: normalizarNombreCliente(input.nombreCompleto),
         cel: input.cel.trim(),
         tipo: input.tipo,
         pintorAsociadoId: pintor.data,

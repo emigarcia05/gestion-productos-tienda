@@ -254,6 +254,7 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
         modo={modalCliente.open ? modalCliente.modo : "crear"}
         item={modalCliente.open ? modalCliente.item : null}
         pintores={pintores}
+        direcciones={direcciones}
         onCatalogoChanged={refresh}
         onSuccess={(item) => {
           if (item.tipo === "CONSUMIDOR_FINAL") {

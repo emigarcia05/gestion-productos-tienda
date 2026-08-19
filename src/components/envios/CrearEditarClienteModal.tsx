@@ -15,14 +15,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import CrearEditarEnviosDireccionModal from "@/components/envios/CrearEditarEnviosDireccionModal";
 import SeleccionarPintorModal from "@/components/envios/SeleccionarPintorModal";
-import { crearClienteAction, editarClienteAction } from "@/actions/envios";
+import {
+  crearClienteAction,
+  editarClienteAction,
+  eliminarEnviosDireccionAction,
+} from "@/actions/envios";
 import {
   CLIENTE_TIPO_LABELS,
   CLIENTE_TIPO_VALUES,
+  etiquetaDireccionEnvio,
   nombreCompletoCliente,
+  normalizarNombreCliente,
   type ClienteItem,
   type ClienteTipoValue,
+  type EnviosDireccionItem,
 } from "@/lib/envios";
 import {
   CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
@@ -38,6 +46,7 @@ interface Props {
   /** Si está definido, el tipo no se elige en el formulario. */
   tipoFijo?: ClienteTipoValue;
   pintores?: ClienteItem[];
+  direcciones?: EnviosDireccionItem[];
   onSuccess?: (item: ClienteItem) => void;
   onCatalogoChanged?: () => void;
 }
@@ -49,6 +58,7 @@ export default function CrearEditarClienteModal({
   item = null,
   tipoFijo,
   pintores = [],
+  direcciones = [],
   onSuccess,
   onCatalogoChanged,
 }: Props) {
@@ -56,14 +66,25 @@ export default function CrearEditarClienteModal({
   const [cel, setCel] = useState("");
   const [tipo, setTipo] = useState<ClienteTipoValue>(tipoFijo ?? "CONSUMIDOR_FINAL");
   const [pintorAsociadoId, setPintorAsociadoId] = useState<string | null>(null);
+  const [clienteId, setClienteId] = useState<string | null>(null);
+  const [direccionesLocal, setDireccionesLocal] = useState<EnviosDireccionItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [modalListaPintores, setModalListaPintores] = useState(false);
   const [modalFormPintor, setModalFormPintor] = useState<
     { open: false } | { open: true; modo: "crear" | "editar"; item?: ClienteItem }
   >({ open: false });
+  const [modalDireccion, setModalDireccion] = useState<
+    | { open: false }
+    | { open: true; modo: "crear" | "editar"; personaId: string; item?: EnviosDireccionItem }
+  >({ open: false });
+  const [modalEliminarDireccion, setModalEliminarDireccion] = useState<
+    { open: false } | { open: true; item: EnviosDireccionItem }
+  >({ open: false });
+  const [deletingDireccion, setDeletingDireccion] = useState(false);
 
   const tipoEfectivo = tipoFijo ?? tipo;
   const muestraPintorAsociado = tipoEfectivo === "CONSUMIDOR_FINAL";
+  const muestraDirecciones = tipoEfectivo === "CONSUMIDOR_FINAL";
 
   const pintoresDisponibles = useMemo(
     () => pintores.filter((p) => p.tipo === "PINTOR" && p.id !== item?.id),
@@ -81,45 +102,100 @@ export default function CrearEditarClienteModal({
   useEffect(() => {
     if (!open) return;
     if (modo === "editar" && item) {
-      setNombreCompleto(item.nombreCompleto);
+      setNombreCompleto(normalizarNombreCliente(item.nombreCompleto));
       setCel(item.cel);
       setTipo(tipoFijo ?? item.tipo);
       setPintorAsociadoId(item.pintorAsociadoId);
+      setClienteId(item.id);
+      setDireccionesLocal(direcciones.filter((d) => d.personaId === item.id));
       return;
     }
     setNombreCompleto("");
     setCel("");
     setTipo(tipoFijo ?? "CONSUMIDOR_FINAL");
     setPintorAsociadoId(null);
+    setClienteId(null);
+    setDireccionesLocal([]);
+    // Init al abrir: no re-sincronizar si el catálogo se refresca con el modal abierto.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- direcciones solo al abrir
   }, [open, modo, item, tipoFijo]);
 
   const puedeGuardar = nombreCompleto.trim() !== "" && cel.trim() !== "";
   const tituloBase = tipoFijo === "PINTOR" || tipoEfectivo === "PINTOR" ? "Pintor" : "Cliente";
+  const yaPersistido = Boolean(clienteId);
+
+  async function persistirCliente(): Promise<ClienteItem | null> {
+    const tipoGuardar = tipoFijo ?? tipo;
+    const payload = {
+      nombreCompleto,
+      cel,
+      tipo: tipoGuardar,
+      pintorAsociadoId: tipoGuardar === "CONSUMIDOR_FINAL" ? pintorAsociadoId : null,
+    };
+    const res = clienteId
+      ? await editarClienteAction({ id: clienteId, ...payload })
+      : await crearClienteAction(payload);
+    if (!res.ok) {
+      toast.error(res.error ?? "No se pudo guardar.");
+      return null;
+    }
+    setClienteId(res.data.id);
+    return res.data;
+  }
 
   async function handleSubmit() {
     if (!puedeGuardar || saving) return;
-    const tipoGuardar = tipoFijo ?? tipo;
     setSaving(true);
     try {
-      const payload = {
-        nombreCompleto,
-        cel,
-        tipo: tipoGuardar,
-        pintorAsociadoId: tipoGuardar === "CONSUMIDOR_FINAL" ? pintorAsociadoId : null,
-      };
-      const res =
-        modo === "editar" && item
-          ? await editarClienteAction({ id: item.id, ...payload })
-          : await crearClienteAction(payload);
-      if (!res.ok) {
-        toast.error(res.error ?? "No se pudo guardar.");
-        return;
-      }
-      toast.success(modo === "editar" ? `${tituloBase} actualizado.` : `${tituloBase} creado.`);
+      const data = await persistirCliente();
+      if (!data) return;
+      toast.success(yaPersistido ? `${tituloBase} actualizado.` : `${tituloBase} creado.`);
       onOpenChange(false);
-      onSuccess?.(res.data);
+      onSuccess?.(data);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleNuevaDireccion() {
+    if (saving) return;
+    if (!puedeGuardar) {
+      toast.error("Completá el nombre y el celular para asociar una dirección.");
+      return;
+    }
+    let personaId = clienteId;
+    if (!personaId) {
+      setSaving(true);
+      try {
+        const data = await persistirCliente();
+        if (!data) return;
+        personaId = data.id;
+        toast.success(`${tituloBase} creado.`);
+        onSuccess?.(data);
+        onCatalogoChanged?.();
+      } finally {
+        setSaving(false);
+      }
+    }
+    if (!personaId) return;
+    setModalDireccion({ open: true, modo: "crear", personaId });
+  }
+
+  async function handleEliminarDireccion() {
+    if (!modalEliminarDireccion.open || deletingDireccion) return;
+    setDeletingDireccion(true);
+    try {
+      const res = await eliminarEnviosDireccionAction({ id: modalEliminarDireccion.item.id });
+      if (!res.ok) {
+        toast.error(res.error ?? "No se pudo eliminar.");
+        return;
+      }
+      toast.success("Dirección eliminada.");
+      setDireccionesLocal((prev) => prev.filter((d) => d.id !== modalEliminarDireccion.item.id));
+      setModalEliminarDireccion({ open: false });
+      onCatalogoChanged?.();
+    } finally {
+      setDeletingDireccion(false);
     }
   }
 
@@ -145,7 +221,9 @@ export default function CrearEditarClienteModal({
               <ModalMicroLabel>NOMBRE COMPLETO</ModalMicroLabel>
               <Input
                 value={nombreCompleto}
-                onChange={(e) => setNombreCompleto(e.target.value)}
+                onChange={(e) =>
+                  setNombreCompleto(e.target.value.toLocaleUpperCase("es-AR"))
+                }
                 autoComplete="off"
               />
             </label>
@@ -233,7 +311,7 @@ export default function CrearEditarClienteModal({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className={cn(CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS, "self-end")}
+                    className={cn(CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS, "self-center")}
                     title="Nuevo"
                     aria-label="Asociar pintor"
                     disabled={saving}
@@ -242,6 +320,72 @@ export default function CrearEditarClienteModal({
                     <Plus className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                   </Button>
                 )}
+              </div>
+            ) : null}
+            {muestraDirecciones ? (
+              <div className="flex flex-col gap-2">
+                <ModalMicroLabel>DIRECCIONES</ModalMicroLabel>
+                {direccionesLocal.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {direccionesLocal.map((dir) => (
+                      <div
+                        key={dir.id}
+                        className={cn(
+                          "flex min-h-9 items-center gap-2 rounded-md border border-input px-3 py-1"
+                        )}
+                      >
+                        <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                          {etiquetaDireccionEnvio(dir)}
+                        </span>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS}
+                            title="Editar"
+                            aria-label={`Editar ${etiquetaDireccionEnvio(dir)}`}
+                            disabled={saving}
+                            onClick={() =>
+                              setModalDireccion({
+                                open: true,
+                                modo: "editar",
+                                personaId: dir.personaId,
+                                item: dir,
+                              })
+                            }
+                          >
+                            <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className={CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS}
+                            title="Borrar"
+                            aria-label={`Eliminar ${etiquetaDireccionEnvio(dir)}`}
+                            disabled={saving}
+                            onClick={() => setModalEliminarDireccion({ open: true, item: dir })}
+                          >
+                            <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={cn(CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS, "self-center")}
+                  title="Nuevo"
+                  aria-label="Asociar dirección"
+                  disabled={saving}
+                  onClick={() => void handleNuevaDireccion()}
+                >
+                  <Plus className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                </Button>
               </div>
             ) : null}
           </div>
@@ -273,6 +417,61 @@ export default function CrearEditarClienteModal({
               onCatalogoChanged?.();
             }}
           />
+        </>
+      ) : null}
+      {muestraDirecciones ? (
+        <>
+          <CrearEditarEnviosDireccionModal
+            open={modalDireccion.open}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) setModalDireccion({ open: false });
+            }}
+            modo={modalDireccion.open ? modalDireccion.modo : "crear"}
+            personaId={modalDireccion.open ? modalDireccion.personaId : ""}
+            item={modalDireccion.open ? modalDireccion.item : null}
+            onSuccess={(dir) => {
+              setDireccionesLocal((prev) => {
+                const idx = prev.findIndex((d) => d.id === dir.id);
+                if (idx === -1) return [...prev, dir];
+                return prev.map((d) => (d.id === dir.id ? dir : d));
+              });
+              onCatalogoChanged?.();
+            }}
+          />
+          <Dialog
+            open={modalEliminarDireccion.open}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen && !deletingDireccion) setModalEliminarDireccion({ open: false });
+            }}
+          >
+            <AppModal
+              title="Eliminar Dirección"
+              size="sm"
+              actions={
+                <div className="flex w-full justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={deletingDireccion}
+                    onClick={() => setModalEliminarDireccion({ open: false })}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={deletingDireccion}
+                    onClick={() => void handleEliminarDireccion()}
+                  >
+                    Eliminar
+                  </Button>
+                </div>
+              }
+            >
+              <p className="text-sm text-foreground">
+                ¿Eliminar {modalEliminarDireccion.open ? etiquetaDireccionEnvio(modalEliminarDireccion.item) : ""}?
+              </p>
+            </AppModal>
+          </Dialog>
         </>
       ) : null}
     </>

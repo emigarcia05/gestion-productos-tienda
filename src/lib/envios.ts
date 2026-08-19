@@ -31,10 +31,15 @@ export function etiquetaFormaPagadoEnvio(forma: EnviosFormaPagado): string {
   return ENVIOS_FORMA_PAGADO_LABELS[forma];
 }
 
+/** `clientes.nombre_completo` se persiste y muestra en mayúsculas. */
+export function normalizarNombreCliente(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLocaleUpperCase("es-AR");
+}
+
 export function nombreCompletoCliente(cliente: {
   nombreCompleto: string;
 }): string {
-  return cliente.nombreCompleto.trim();
+  return normalizarNombreCliente(cliente.nombreCompleto);
 }
 
 export interface ClienteResumen {
