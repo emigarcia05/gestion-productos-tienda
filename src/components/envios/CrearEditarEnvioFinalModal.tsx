@@ -22,12 +22,14 @@ import {
   ENVIOS_FORMA_PAGADO_VALUES,
   esHoraEnvioValida,
   etiquetaDireccionEnvio,
+  etiquetaSucursalEnvio,
   nombreCompletoCliente,
   type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
   type EnviosFormaPagadoValue,
   type EnviosHoraValue,
+  type EnviosSucursalOption,
 } from "@/lib/envios";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
@@ -41,6 +43,7 @@ interface Props {
   item?: EnviosFinalListItem | null;
   clientes: ClienteItem[];
   direcciones: EnviosDireccionItem[];
+  sucursales: EnviosSucursalOption[];
   onSuccess?: () => void;
 }
 
@@ -51,8 +54,10 @@ export default function CrearEditarEnvioFinalModal({
   item = null,
   clientes,
   direcciones,
+  sucursales,
   onSuccess,
 }: Props) {
+  const [sucursalId, setSucursalId] = useState("");
   const [clienteFinalId, setClienteFinalId] = useState(SENTINEL_NONE);
   const [pintorId, setPintorId] = useState(SENTINEL_NONE);
   const [direccionId, setDireccionId] = useState("");
@@ -85,6 +90,7 @@ export default function CrearEditarEnvioFinalModal({
   useEffect(() => {
     if (!open) return;
     if (modo === "editar" && item) {
+      setSucursalId(item.sucursal.id);
       setClienteFinalId(item.clienteFinal?.id ?? SENTINEL_NONE);
       setPintorId(item.pintor?.id ?? SENTINEL_NONE);
       setDireccionId(item.direccion.id);
@@ -98,6 +104,7 @@ export default function CrearEditarEnvioFinalModal({
       setQuitarPdf(false);
       return;
     }
+    setSucursalId("");
     setClienteFinalId(SENTINEL_NONE);
     setPintorId(SENTINEL_NONE);
     setDireccionId("");
@@ -115,7 +122,12 @@ export default function CrearEditarEnvioFinalModal({
   const horarioValido =
     esHoraEnvioValida(horaDesde) && esHoraEnvioValida(horaHasta) && horaDesde < horaHasta;
   const puedeGuardar =
-    tienePersona && direccionId !== "" && fechaIso !== "" && horarioValido && formaPagado !== "";
+    sucursalId !== "" &&
+    tienePersona &&
+    direccionId !== "" &&
+    fechaIso !== "" &&
+    horarioValido &&
+    formaPagado !== "";
   const pdfActualNombre =
     modo === "editar" && item?.tienePdf && !quitarPdf && !pdfAdjunto ? item.pdfComprobanteNombre : null;
 
@@ -129,7 +141,7 @@ export default function CrearEditarEnvioFinalModal({
   }
 
   async function handleSubmit() {
-    if (!puedeGuardar || saving) return;
+    if (!puedeGuardar || saving || !sucursalId) return;
     if (
       formaPagado !== "EFECTIVO" &&
       formaPagado !== "TRANSFERENCIA" &&
@@ -144,6 +156,7 @@ export default function CrearEditarEnvioFinalModal({
     setSaving(true);
     try {
       const payload = {
+        sucursalId,
         clienteFinalId: clienteFinalId === SENTINEL_NONE ? null : clienteFinalId,
         pintorId: pintorId === SENTINEL_NONE ? null : pintorId,
         direccionId,
@@ -198,6 +211,21 @@ export default function CrearEditarEnvioFinalModal({
         }
       >
         <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <ModalMicroLabel>SUCURSAL QUE ENVÍA</ModalMicroLabel>
+            <Select value={sucursalId} onValueChange={setSucursalId} disabled={saving || sucursales.length === 0}>
+              <SelectTrigger>
+                <SelectValue placeholder="ELEGIR SUCURSAL..." />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                {sucursales.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {etiquetaSucursalEnvio(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex flex-col gap-1">
             <ModalMicroLabel>CLIENTE FINAL</ModalMicroLabel>
             <Select value={clienteFinalId} onValueChange={setClienteFinalId}>

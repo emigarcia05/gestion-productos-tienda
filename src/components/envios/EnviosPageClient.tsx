@@ -44,10 +44,12 @@ import {
   etiquetaDireccionEnvio,
   etiquetaFormaPagadoEnvio,
   etiquetaHorarioEnvio,
+  etiquetaSucursalEnvio,
   nombreCompletoCliente,
   type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
+  type EnviosSucursalOption,
 } from "@/lib/envios";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import { fmtCelda } from "@/lib/format";
@@ -65,10 +67,12 @@ interface Props {
   envios: EnviosFinalListItem[];
   clientes: ClienteItem[];
   direcciones: EnviosDireccionItem[];
+  sucursales: EnviosSucursalOption[];
 }
 
-export default function EnviosPageClient({ envios, clientes, direcciones }: Props) {
+export default function EnviosPageClient({ envios, clientes, direcciones, sucursales }: Props) {
   const router = useRouter();
+  const [filtroSucursal, setFiltroSucursal] = useState(FILTRO_TODOS);
   const [filtroPagado, setFiltroPagado] = useState(FILTRO_TODOS);
   const [filtroForma, setFiltroForma] = useState(FILTRO_TODOS);
   const [qDebounced, setQDebounced] = useState("");
@@ -87,6 +91,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
 
   const itemsFiltrados = useMemo(() => {
     return envios.filter((item) => {
+      if (filtroSucursal !== FILTRO_TODOS && item.sucursal.id !== filtroSucursal) return false;
       if (filtroPagado === "si" && !item.pagado) return false;
       if (filtroPagado === "no" && item.pagado) return false;
       if (filtroForma !== FILTRO_TODOS && item.formaPagado !== filtroForma) return false;
@@ -94,6 +99,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
         qDebounced.trim() &&
         !matchByMultiTerm(
           [
+            etiquetaSucursalEnvio(item.sucursal),
             item.clienteFinal ? nombreCompletoCliente(item.clienteFinal) : "",
             item.clienteFinal?.cel ?? "",
             item.pintor ? nombreCompletoCliente(item.pintor) : "",
@@ -114,9 +120,10 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
       }
       return true;
     });
-  }, [envios, filtroPagado, filtroForma, qDebounced]);
+  }, [envios, filtroSucursal, filtroPagado, filtroForma, qDebounced]);
 
   function limpiarFiltros() {
+    setFiltroSucursal(FILTRO_TODOS);
     setFiltroPagado(FILTRO_TODOS);
     setFiltroForma(FILTRO_TODOS);
     setQ("");
@@ -153,6 +160,27 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
         filters={
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilaFiltrosDesplegables columnas={4}>
+              <FiltroIndividualContainer
+                activo={filtroSucursal !== FILTRO_TODOS}
+                onLimpiar={() => setFiltroSucursal(FILTRO_TODOS)}
+                className={FILTER_SELECT_WRAPPER_CLASS}
+              >
+                <Select
+                  value={filtroSucursal === FILTRO_TODOS ? "" : filtroSucursal}
+                  onValueChange={setFiltroSucursal}
+                >
+                  <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                    <SelectValue placeholder="SUCURSAL" />
+                  </SelectTrigger>
+                  <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                    {sucursales.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {etiquetaSucursalEnvio(s)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FiltroIndividualContainer>
               <FiltroIndividualContainer
                 activo={filtroPagado !== FILTRO_TODOS}
                 onLimpiar={() => setFiltroPagado(FILTRO_TODOS)}
@@ -197,7 +225,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
               <FilterRowSearch className="flex-1">
                 <FiltroBusquedaInput
                   id="filtro-envios-busqueda"
-                  placeholder="BUSCAR POR PERSONA, DIRECCIÓN U OBSERVACIÓN..."
+                  placeholder="BUSCAR POR SUCURSAL, PERSONA, DIRECCIÓN U OBSERVACIÓN..."
                   value={q}
                   onChange={handleQChange}
                   isDebouncing={isDebouncing}
@@ -216,19 +244,21 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
         <div className="contenedor-tabla-gestion min-h-0 flex-1">
           <Table variant="compact" className="tabla-gestion-compacta w-full">
             <colgroup>
-              <col className="w-[14%]" />
+              <col className="w-[10%]" />
               <col className="w-[12%]" />
+              <col className="w-[11%]" />
               <col className="w-[8%]" />
-              <col className="w-[10%]" />
-              <col className="w-[14%]" />
+              <col className="w-[9%]" />
               <col className="w-[12%]" />
-              <col className="w-[5%]" />
               <col className="w-[10%]" />
               <col className="w-[5%]" />
-              <col className="w-[10%]" />
+              <col className="w-[9%]" />
+              <col className="w-[5%]" />
+              <col className="w-[9%]" />
             </colgroup>
             <TableHeader>
               <TableRow>
+                <TableHead>SUCURSAL</TableHead>
                 <TableHead>CLIENTE FINAL</TableHead>
                 <TableHead>PINTOR</TableHead>
                 <TableHead>FECHA</TableHead>
@@ -246,7 +276,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
             <TableBody>
               {itemsFiltrados.length === 0 ? (
                 <EmptyTableRow
-                  colSpan={10}
+                  colSpan={11}
                   message={
                     envios.length === 0
                       ? "NO HAY ENVÍOS."
@@ -256,6 +286,9 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
               ) : (
                 itemsFiltrados.map((item) => (
                   <TableRow key={item.id}>
+                    <TableCell className="celda-datos">
+                      {etiquetaSucursalEnvio(item.sucursal)}
+                    </TableCell>
                     <TableCell className="celda-datos">
                       {item.clienteFinal
                         ? nombreCompletoCliente(item.clienteFinal)
@@ -361,6 +394,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
         item={modalForm.open ? modalForm.item : null}
         clientes={clientes}
         direcciones={direcciones}
+        sucursales={sucursales}
         onSuccess={refresh}
       />
       <Dialog

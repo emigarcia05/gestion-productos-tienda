@@ -20,6 +20,7 @@ import CatalogoFinderRow from "@/components/shared/catalogo-finder/CatalogoFinde
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import AppModal from "@/components/shared/AppModal";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
+import ModalSiNoChoice from "@/components/shared/ModalSiNoChoice";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ import {
   esHoraEnvioValida,
   etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
+  etiquetaSucursalEnvio,
   metaDireccionEnvio,
   nombreCompletoCliente,
   nombrePintorAsociadoCliente,
@@ -45,6 +47,7 @@ import {
   type EnviosDireccionItem,
   type EnviosFormaPagadoValue,
   type EnviosHoraValue,
+  type EnviosSucursalOption,
 } from "@/lib/envios";
 import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
@@ -54,6 +57,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   clientesCatalogo: ClienteItem[];
   direcciones: EnviosDireccionItem[];
+  sucursales: EnviosSucursalOption[];
   onCatalogoChanged: () => void;
   onSuccess: () => void;
 }
@@ -63,15 +67,18 @@ export default function CrearEnvioWizardModal({
   onOpenChange,
   clientesCatalogo,
   direcciones,
+  sucursales,
   onCatalogoChanged,
   onSuccess,
 }: Props) {
   const [paso, setPaso] = useState<EnvioWizardPaso>(1);
+  const [sucursalId, setSucursalId] = useState<string | null>(null);
   const [clienteId, setClienteId] = useState<string | null>(null);
   const [direccionId, setDireccionId] = useState<string | null>(null);
   const [fechaIso, setFechaIso] = useState(() => dateToIsoYmdArgentina(new Date()));
   const [horaDesde, setHoraDesde] = useState<EnviosHoraValue | "">("");
   const [horaHasta, setHoraHasta] = useState<EnviosHoraValue | "">("");
+  const [pagado, setPagado] = useState(false);
   const [formaPagado, setFormaPagado] = useState<EnviosFormaPagadoValue | "">("");
   const [pdfAdjunto, setPdfAdjunto] = useState<{ nombre: string; base64: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -102,11 +109,13 @@ export default function CrearEnvioWizardModal({
   useEffect(() => {
     if (!open) return;
     setPaso(1);
+    setSucursalId(null);
     setClienteId(null);
     setDireccionId(null);
     setFechaIso(dateToIsoYmdArgentina(new Date()));
     setHoraDesde("");
     setHoraHasta("");
+    setPagado(false);
     setFormaPagado("");
     setPdfAdjunto(null);
     setQClienteDebounced("");
@@ -173,29 +182,38 @@ export default function CrearEnvioWizardModal({
     esHoraEnvioValida(horaDesde) &&
     esHoraEnvioValida(horaHasta) &&
     horaDesde < horaHasta;
+  const pasoSucursalOk = Boolean(sucursalId);
   const pasoClienteOk = Boolean(clienteId);
   const pasoDireccionOk = Boolean(direccionId);
-  const puedeCrear = pasoClienteOk && pasoDireccionOk && horarioValido && formaPagado !== "";
+  const puedeCrear =
+    pasoSucursalOk && pasoClienteOk && pasoDireccionOk && horarioValido && formaPagado !== "";
 
   const pasoMaximoAlcanzable: EnvioWizardPaso = horarioValido && pasoDireccionOk
-    ? 4
+    ? 5
     : pasoDireccionOk
-      ? 3
+      ? 4
       : pasoClienteOk
-        ? 2
-        : 1;
+        ? 3
+        : pasoSucursalOk
+          ? 2
+          : 1;
+
+  function handleSelectSucursal(id: string) {
+    setSucursalId(id);
+    setPaso(2);
+  }
 
   function handleSelectCliente(id: string) {
     setClienteId(id);
     setDireccionId(null);
     busquedaDireccion.setQ("");
     setQDireccionDebounced("");
-    setPaso(2);
+    setPaso(3);
   }
 
   function handleSelectDireccion(id: string) {
     setDireccionId(id);
-    setPaso(3);
+    setPaso(4);
   }
 
   function handleCerrar() {
@@ -204,9 +222,10 @@ export default function CrearEnvioWizardModal({
   }
 
   function handleSiguiente() {
-    if (paso === 1 && pasoClienteOk) setPaso(2);
-    else if (paso === 2 && pasoDireccionOk) setPaso(3);
-    else if (paso === 3 && horarioValido) setPaso(4);
+    if (paso === 1 && pasoSucursalOk) setPaso(2);
+    else if (paso === 2 && pasoClienteOk) setPaso(3);
+    else if (paso === 3 && pasoDireccionOk) setPaso(4);
+    else if (paso === 4 && horarioValido) setPaso(5);
   }
 
   function handleAtras() {
@@ -238,7 +257,7 @@ export default function CrearEnvioWizardModal({
       if (modalEliminar.kind === "cliente" && clienteId === modalEliminar.id) {
         setClienteId(null);
         setDireccionId(null);
-        setPaso(1);
+        setPaso(2);
       }
       if (modalEliminar.kind === "direccion" && direccionId === modalEliminar.id) {
         setDireccionId(null);
@@ -251,7 +270,7 @@ export default function CrearEnvioWizardModal({
   }
 
   async function handleCrearEnvio() {
-    if (!puedeCrear || saving || !clienteId || !direccionId) return;
+    if (!puedeCrear || saving || !sucursalId || !clienteId || !direccionId) return;
     if (
       !esHoraEnvioValida(horaDesde) ||
       !esHoraEnvioValida(horaHasta) ||
@@ -266,6 +285,7 @@ export default function CrearEnvioWizardModal({
     try {
       const esPintor = clienteSeleccionado?.tipo === "PINTOR";
       const res = await crearEnviosFinalAction({
+        sucursalId,
         clienteFinalId: esPintor ? null : clienteId,
         pintorId: esPintor ? clienteId : (clienteSeleccionado?.pintorAsociadoId ?? null),
         direccionId,
@@ -273,7 +293,7 @@ export default function CrearEnvioWizardModal({
         horaDesde,
         horaHasta,
         observacionEnvio: "",
-        pagado: false,
+        pagado,
         formaPagado,
         ...(pdfAdjunto ? { pdfComprobante: pdfAdjunto } : {}),
       });
@@ -290,9 +310,10 @@ export default function CrearEnvioWizardModal({
   }
 
   const puedeSiguiente =
-    (paso === 1 && pasoClienteOk) ||
-    (paso === 2 && pasoDireccionOk) ||
-    (paso === 3 && horarioValido);
+    (paso === 1 && pasoSucursalOk) ||
+    (paso === 2 && pasoClienteOk) ||
+    (paso === 3 && pasoDireccionOk) ||
+    (paso === 4 && horarioValido);
 
   return (
     <>
@@ -307,7 +328,7 @@ export default function CrearEnvioWizardModal({
           size="xl"
           scrollBody={false}
           padding="sm"
-          className="h-[60vh] max-h-[60vh]"
+          className="h-[85vh] max-h-[85vh]"
           bodyShellClassName="h-full min-h-0"
           bodyClassName="flex h-full min-h-0 flex-col overflow-hidden p-0"
           actions={
@@ -321,7 +342,7 @@ export default function CrearEnvioWizardModal({
                     Atrás
                   </Button>
                 ) : null}
-                {paso < 4 ? (
+                {paso < 5 ? (
                   <Button type="button" disabled={saving || !puedeSiguiente} onClick={handleSiguiente}>
                     Siguiente
                   </Button>
@@ -344,6 +365,32 @@ export default function CrearEnvioWizardModal({
             </div>
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               {paso === 1 ? (
+                <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4">
+                  <div className="flex w-full flex-col items-center gap-4">
+                    <ModalMicroLabel align="center">SUCURSAL QUE ENVÍA</ModalMicroLabel>
+                    {sucursales.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No hay sucursales habilitadas para envíos.
+                      </p>
+                    ) : (
+                      <div className="flex w-full flex-col gap-2">
+                        {sucursales.map((item) => (
+                          <Button
+                            key={item.id}
+                            type="button"
+                            variant={sucursalId === item.id ? "default" : "outline"}
+                            className="h-10 w-full"
+                            disabled={saving}
+                            onClick={() => handleSelectSucursal(item.id)}
+                          >
+                            {etiquetaSucursalEnvio(item)}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : paso === 2 ? (
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-4">
                     <CatalogoFinderColumn
@@ -418,7 +465,7 @@ export default function CrearEnvioWizardModal({
                 </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4">
-              {paso === 2 ? (
+              {paso === 3 ? (
                 <CatalogoFinderColumn
                   titulo="DIRECCIONES"
                   subtitulo={
@@ -482,7 +529,7 @@ export default function CrearEnvioWizardModal({
                 </CatalogoFinderColumn>
               ) : null}
 
-              {paso === 3 ? (
+              {paso === 4 ? (
                 <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4">
                   <EnviosFechaHorarioCampos
                     fechaIso={fechaIso}
@@ -492,12 +539,12 @@ export default function CrearEnvioWizardModal({
                     onFechaChange={setFechaIso}
                     onHoraDesdeChange={setHoraDesde}
                     onHoraHastaChange={setHoraHasta}
-                    onCompleto={() => setPaso(4)}
+                    onCompleto={() => setPaso(5)}
                   />
                 </div>
               ) : null}
 
-              {paso === 4 ? (
+              {paso === 5 ? (
                 <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
                   <div className="flex flex-col gap-2">
                     <ModalMicroLabel>PDF MERCADERÍA</ModalMicroLabel>
@@ -512,13 +559,17 @@ export default function CrearEnvioWizardModal({
                     />
                   </div>
                   <div className="flex flex-col gap-1">
+                    <ModalMicroLabel>PAGADO</ModalMicroLabel>
+                    <ModalSiNoChoice value={pagado} onChange={setPagado} disabled={saving} />
+                  </div>
+                  <div className="flex flex-col gap-1">
                     <ModalMicroLabel>FORMA DE PAGO</ModalMicroLabel>
                     <Select
                       value={formaPagado || undefined}
                       disabled={saving}
                       onValueChange={(v) => setFormaPagado(v as EnviosFormaPagadoValue)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="ELEGIR FORMA..." />
                       </SelectTrigger>
                       <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">

@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const ENVIOS_WIZARD_PASOS = [
-  { numero: 1, label: "CLIENTE" },
-  { numero: 2, label: "DIRECCIÓN" },
-  { numero: 3, label: "FECHA" },
-  { numero: 4, label: "MERCADERÍA" },
+  { numero: 1, label: "SUCURSAL" },
+  { numero: 2, label: "CLIENTE" },
+  { numero: 3, label: "DIRECCIÓN" },
+  { numero: 4, label: "FECHA" },
+  { numero: 5, label: "MERCADERÍA" },
 ] as const;
 
 export type EnvioWizardPaso = (typeof ENVIOS_WIZARD_PASOS)[number]["numero"];

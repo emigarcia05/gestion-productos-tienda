@@ -182,8 +182,19 @@ export interface EnviosDireccionItem {
   referencia: string;
 }
 
+export interface EnviosSucursalOption {
+  id: string;
+  codigo: string;
+  nombre: string;
+}
+
+export function etiquetaSucursalEnvio(sucursal: { nombre: string }): string {
+  return sucursal.nombre.trim().toLocaleUpperCase("es-AR");
+}
+
 export interface EnviosFinalListItem {
   id: string;
+  sucursal: EnviosSucursalOption;
   clienteFinal: ClienteItem | null;
   pintor: ClienteItem | null;
   direccion: EnviosDireccionItem;

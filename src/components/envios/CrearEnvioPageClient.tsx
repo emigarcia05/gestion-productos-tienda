@@ -7,14 +7,19 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import CrearEnvioWizardModal from "@/components/envios/CrearEnvioWizardModal";
 import { Button } from "@/components/ui/button";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
-import type { ClienteItem, EnviosDireccionItem } from "@/lib/envios";
+import type { ClienteItem, EnviosDireccionItem, EnviosSucursalOption } from "@/lib/envios";
 
 interface Props {
   clientesCatalogo: ClienteItem[];
   direcciones: EnviosDireccionItem[];
+  sucursales: EnviosSucursalOption[];
 }
 
-export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: Props) {
+export default function CrearEnvioPageClient({
+  clientesCatalogo,
+  direcciones,
+  sucursales,
+}: Props) {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(true);
 
@@ -42,6 +47,7 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
         onOpenChange={setModalOpen}
         clientesCatalogo={clientesCatalogo}
         direcciones={direcciones}
+        sucursales={sucursales}
         onCatalogoChanged={refresh}
         onSuccess={() => {
           router.push(GP_ROUTES.envios.programados);

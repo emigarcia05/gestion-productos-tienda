@@ -13,6 +13,7 @@ import {
 import {
   prismaCuidSchema,
   prismaIdOptionalNullableSchema,
+  globalSucursalIdSchema,
 } from "@/lib/validations/common";
 
 const textoCortoSchema = (campo: string, max = 200) =>
@@ -203,6 +204,7 @@ function refineHorarioEnvio(
 
 const envioFinalCamposBase = {
   ...envioPersonasCampos,
+  sucursalId: globalSucursalIdSchema,
   direccionId: prismaCuidSchema,
   fechaEnvioIso: isoYmdSchema,
   horaDesde: horaEnvioSchema,

@@ -254,6 +254,7 @@ model Sucursal {
   finBalVtas          FinBalVtas[]
   estPorProd          EstPorProd[]
   personalSucursalPorDefecto GlobalPersonal[] @relation("PersonalSucursalPorDefecto")
+  enviosFinal                EnviosFinal[]
 
   @@map("global_sucursales")
 }
@@ -1570,11 +1571,13 @@ model EnviosDireccion {
 
 /**
  * Envío concreto. Hasta dos clientes: uno `CONSUMIDOR_FINAL` y/o uno `PINTOR`.
- * Dirección obligatoria. Fecha calendario AR + rango horario 09:00–19:00 (saltos 30 min).
+ * Sucursal que envía (`pedido = true`). Dirección obligatoria.
+ * Fecha calendario AR + rango horario 09:00–19:00 (saltos 30 min).
  * PDF de comprobante opcional (bytes + nombre).
  */
 model EnviosFinal {
   id                   String             @id @default(cuid())
+  sucursalId           String             @map("sucursal_id")
   clienteFinalId       String?            @map("cliente_final_id")
   pintorId             String?            @map("pintor_id")
   direccionId          String             @map("direccion_id")
@@ -1589,10 +1592,12 @@ model EnviosFinal {
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
+  sucursal     Sucursal         @relation(fields: [sucursalId], references: [id], onDelete: Restrict)
   clienteFinal Cliente?         @relation("EnviosFinalClienteFinal", fields: [clienteFinalId], references: [id], onDelete: Restrict)
   pintor       Cliente?         @relation("EnviosFinalPintor", fields: [pintorId], references: [id], onDelete: Restrict)
   direccion    EnviosDireccion  @relation(fields: [direccionId], references: [id], onDelete: Restrict)
 
+  @@index([sucursalId], map: "envios_final_sucursal_id_idx")
   @@index([clienteFinalId], map: "envios_final_cliente_final_id_idx")
   @@index([pintorId], map: "envios_final_pintor_id_idx")
   @@index([direccionId], map: "envios_final_direccion_id_idx")

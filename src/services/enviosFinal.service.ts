@@ -8,6 +8,7 @@ import {
   type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
+  type EnviosSucursalOption,
 } from "@/lib/envios";
 import type {
   CrearEnviosFinalInput,
@@ -43,6 +44,12 @@ const direccionSelect = {
   referencia: true,
 } as const;
 
+const sucursalSelect = {
+  id: true,
+  codigo: true,
+  nombre: true,
+} as const;
+
 const listSelect = {
   id: true,
   fechaEnvio: true,
@@ -52,6 +59,7 @@ const listSelect = {
   pagado: true,
   formaPagado: true,
   pdfComprobanteNombre: true,
+  sucursal: { select: sucursalSelect },
   clienteFinal: { select: clienteSelect },
   pintor: { select: clienteSelect },
   direccion: { select: direccionSelect },
@@ -110,6 +118,18 @@ function mapDireccion(row: {
   };
 }
 
+function mapSucursal(row: {
+  id: string;
+  codigo: string;
+  nombre: string;
+}): EnviosSucursalOption {
+  return {
+    id: row.id,
+    codigo: row.codigo,
+    nombre: row.nombre.trim(),
+  };
+}
+
 function mapListRow(row: {
   id: string;
   fechaEnvio: Date;
@@ -119,6 +139,7 @@ function mapListRow(row: {
   pagado: boolean;
   formaPagado: EnviosFinalListItem["formaPagado"];
   pdfComprobanteNombre: string | null;
+  sucursal: { id: string; codigo: string; nombre: string };
   clienteFinal: Parameters<typeof mapCliente>[0];
   pintor: Parameters<typeof mapCliente>[0];
   direccion: {
@@ -135,6 +156,7 @@ function mapListRow(row: {
   const nombrePdf = row.pdfComprobanteNombre?.trim() || null;
   return {
     id: row.id,
+    sucursal: mapSucursal(row.sucursal),
     clienteFinal: mapCliente(row.clienteFinal),
     pintor: mapCliente(row.pintor),
     direccion: mapDireccion(row.direccion),
@@ -153,7 +175,7 @@ function prismaErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === "object" && "code" in error) {
     const code = (error as { code?: string }).code;
     if (code === "P2025") return "El envío no existe.";
-    if (code === "P2003") return "Cliente o dirección inválida.";
+    if (code === "P2003") return "Cliente, dirección o sucursal inválida.";
   }
   return error instanceof Error ? error.message : fallback;
 }
@@ -245,6 +267,32 @@ async function validarPersonasYDireccion(input: {
   return { success: true, data: undefined };
 }
 
+export async function listarSucursalesParaEnvios(): Promise<EnviosSucursalOption[]> {
+  try {
+    const rows = await prisma.sucursal.findMany({
+      where: { pedido: true },
+      select: sucursalSelect,
+      orderBy: { nombre: "asc" },
+    });
+    return rows.map(mapSucursal);
+  } catch (e) {
+    console.error("[enviosFinal][listarSucursales]", e);
+    return [];
+  }
+}
+
+async function validarSucursalParaEnvio(sucursalId: string): Promise<ServiceResult<void>> {
+  const sucursal = await prisma.sucursal.findUnique({
+    where: { id: sucursalId },
+    select: { id: true, pedido: true },
+  });
+  if (!sucursal) return { success: false, error: "La sucursal no existe." };
+  if (!sucursal.pedido) {
+    return { success: false, error: "Esa sucursal no puede enviar mercadería." };
+  }
+  return { success: true, data: undefined };
+}
+
 export async function listarEnviosFinal(): Promise<EnviosFinalListItem[]> {
   try {
     const rows = await prisma.enviosFinal.findMany({
@@ -271,6 +319,9 @@ export async function crearEnviosFinal(
       pintorId = cliente?.pintorAsociadoId ?? null;
     }
 
+    const sucursalOk = await validarSucursalParaEnvio(input.sucursalId);
+    if (!sucursalOk.success) return sucursalOk;
+
     const valid = await validarPersonasYDireccion({
       clienteFinalId: input.clienteFinalId ?? null,
       pintorId,
@@ -289,6 +340,7 @@ export async function crearEnviosFinal(
 
     const row = await prisma.enviosFinal.create({
       data: {
+        sucursalId: input.sucursalId,
         clienteFinalId: input.clienteFinalId ?? null,
         pintorId,
         direccionId: input.direccionId,
@@ -314,10 +366,14 @@ export async function editarEnviosFinal(
   input: EditarEnviosFinalInput
 ): Promise<ServiceResult<EnviosFinalListItem>> {
   try {
+    const sucursalOk = await validarSucursalParaEnvio(input.sucursalId);
+    if (!sucursalOk.success) return sucursalOk;
+
     const valid = await validarPersonasYDireccion(input);
     if (!valid.success) return valid;
 
     const data: {
+      sucursalId: string;
       clienteFinalId: string | null;
       pintorId: string | null;
       direccionId: string;
@@ -330,6 +386,7 @@ export async function editarEnviosFinal(
       pdfComprobanteNombre?: string | null;
       pdfComprobante?: Uint8Array<ArrayBuffer> | null;
     } = {
+      sucursalId: input.sucursalId,
       clienteFinalId: input.clienteFinalId ?? null,
       pintorId: input.pintorId ?? null,
       direccionId: input.direccionId,
