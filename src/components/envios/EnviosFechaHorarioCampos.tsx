@@ -35,6 +35,8 @@ interface Props {
   onHoraHastaChange: (hora: EnviosHoraValue | "") => void;
   /** Tras fecha + rango válidos (p. ej. wizard: pasar al paso siguiente). */
   onCompleto?: () => void;
+  /** Oculta el label FECHA (el wizard ya lo muestra como título de paso). */
+  ocultarTituloFecha?: boolean;
 }
 
 export default function EnviosFechaHorarioCampos({
@@ -46,6 +48,7 @@ export default function EnviosFechaHorarioCampos({
   onHoraDesdeChange,
   onHoraHastaChange,
   onCompleto,
+  ocultarTituloFecha = false,
 }: Props) {
   const hiddenFechaRef = useRef<HTMLInputElement>(null);
   const [horaPendiente, setHoraPendiente] = useState<EnviosHoraValue | "">("");
@@ -83,7 +86,7 @@ export default function EnviosFechaHorarioCampos({
   return (
     <div className="flex w-full flex-col items-center gap-6">
       <div className="flex w-full flex-col items-center gap-2">
-        <ModalMicroLabel align="center">FECHA</ModalMicroLabel>
+        {ocultarTituloFecha ? null : <ModalMicroLabel align="center">FECHA</ModalMicroLabel>}
         <div className="flex items-center justify-center gap-2">
           <Button
             type="button"
@@ -127,7 +130,7 @@ export default function EnviosFechaHorarioCampos({
             }}
           />
         </div>
-        {fechaIso ? (
+        {fechaIso && !ocultarTituloFecha ? (
           <p className="text-sm tabular-nums text-foreground">
             {formatIsoYmdDdMmYyyyArgentina(fechaIso)}
           </p>

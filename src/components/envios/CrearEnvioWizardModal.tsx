@@ -49,8 +49,9 @@ import {
   type EnviosHoraValue,
   type EnviosSucursalOption,
 } from "@/lib/envios";
-import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import { dateToIsoYmdArgentina, formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -197,6 +198,37 @@ export default function CrearEnvioWizardModal({
         : pasoSucursalOk
           ? 2
           : 1;
+
+  const sucursalSeleccionada = useMemo(
+    () => sucursales.find((s) => s.id === sucursalId) ?? null,
+    [sucursales, sucursalId]
+  );
+  const tituloPaso =
+    paso === 1
+      ? "SUCURSAL"
+      : paso === 2
+        ? "CLIENTES"
+        : paso === 3
+          ? "DIRECCIONES"
+          : paso === 4
+            ? "FECHA"
+            : "MERCADERÍA";
+  const subtituloPaso =
+    paso === 1
+      ? sucursalSeleccionada
+        ? etiquetaSucursalEnvio(sucursalSeleccionada)
+        : undefined
+      : paso === 2
+        ? `${clientesFiltrados.length} cliente(s)`
+        : paso === 3
+          ? clienteSeleccionado
+            ? nombreCompletoCliente(clienteSeleccionado)
+            : "Seleccioná un cliente"
+          : paso === 4
+            ? fechaIso
+              ? formatIsoYmdDdMmYyyyArgentina(fechaIso)
+              : undefined
+            : undefined;
 
   function handleSelectSucursal(id: string) {
     setSucursalId(id);
@@ -364,17 +396,32 @@ export default function CrearEnvioWizardModal({
               />
             </div>
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              {paso === 1 ? (
-                <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4">
-                  <div className="flex w-full flex-col items-center gap-4">
-                    <ModalMicroLabel align="center">SUCURSAL QUE ENVÍA</ModalMicroLabel>
-                    {sucursales.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No hay sucursales habilitadas para envíos.
-                      </p>
-                    ) : (
-                      <div className="flex w-full flex-col gap-2">
-                        {sucursales.map((item) => (
+              <div
+                className={cn(
+                  "flex min-h-0 flex-1 flex-col overflow-hidden px-4",
+                  paso !== 2 && "pb-4"
+                )}
+              >
+                <CatalogoFinderColumn
+                  titulo={tituloPaso}
+                  subtitulo={subtituloPaso}
+                  mostrarNuevo={paso === 3 && Boolean(clienteSeleccionado)}
+                  deshabilitada={paso === 3 && !clienteSeleccionado}
+                  headerVariant="titulo"
+                  className="h-full min-h-0 flex-1"
+                  onNuevo={() => {
+                    if (paso !== 3 || !clienteSeleccionado) return;
+                    setModalDireccion({ open: true, modo: "crear" });
+                  }}
+                >
+                  {paso === 1 ? (
+                    <div className="flex flex-col gap-2 p-2">
+                      {sucursales.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No hay sucursales habilitadas para envíos.
+                        </p>
+                      ) : (
+                        sucursales.map((item) => (
                           <Button
                             key={item.id}
                             type="button"
@@ -385,21 +432,13 @@ export default function CrearEnvioWizardModal({
                           >
                             {etiquetaSucursalEnvio(item)}
                           </Button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : paso === 2 ? (
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                  <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-4">
-                    <CatalogoFinderColumn
-                      titulo="CLIENTES"
-                      subtitulo={`${clientesFiltrados.length} cliente(s)`}
-                      mostrarNuevo={false}
-                      headerVariant="titulo"
-                      className="h-full min-h-0 flex-1"
-                    >
+                        ))
+                      )}
+                    </div>
+                  ) : null}
+
+                  {paso === 2 ? (
+                    <>
                       <div className="sticky top-0 z-10 border-b border-border bg-card p-2">
                         <FiltroBusquedaInput
                           id="filtro-envios-wizard-clientes"
@@ -450,11 +489,118 @@ export default function CrearEnvioWizardModal({
                           />
                         ))
                       )}
-                    </CatalogoFinderColumn>
-                  </div>
+                    </>
+                  ) : null}
+
+                  {paso === 3 ? (
+                    !clienteSeleccionado ? (
+                      <CatalogoFinderEmpty mensaje="Seleccioná un cliente para ver sus direcciones." />
+                    ) : (
+                      <>
+                        <div className="sticky top-0 z-10 border-b border-border bg-card p-2">
+                          <FiltroBusquedaInput
+                            id="filtro-envios-wizard-direcciones"
+                            placeholder="BUSCAR DIRECCIÓN..."
+                            value={busquedaDireccion.q}
+                            onChange={busquedaDireccion.handleQChange}
+                            isDebouncing={busquedaDireccion.isDebouncing}
+                            inputRef={busquedaDireccion.ref}
+                          />
+                        </div>
+                        {direccionesDelCliente.length === 0 ? (
+                          <CatalogoFinderEmpty mensaje="No hay direcciones. Usá + para crear la primera." />
+                        ) : direccionesFiltradas.length === 0 ? (
+                          <CatalogoFinderEmpty mensaje="Ninguna dirección coincide con la búsqueda." />
+                        ) : (
+                          direccionesFiltradas.map((item) => (
+                            <CatalogoFinderRow
+                              key={item.id}
+                              nombre={etiquetaDireccionEnvio(item)}
+                              meta={metaDireccionEnvio(item) || undefined}
+                              nombreAccion={
+                                item.urlMaps ? <EnviosMapsLink url={item.urlMaps} /> : undefined
+                              }
+                              selected={item.id === direccionId}
+                              onClick={() => handleSelectDireccion(item.id)}
+                              mostrarAcciones
+                              onEditar={() => setModalDireccion({ open: true, modo: "editar", item })}
+                              onEliminar={() =>
+                                setModalEliminar({
+                                  open: true,
+                                  kind: "direccion",
+                                  id: item.id,
+                                  label: etiquetaDireccionEnvio(item),
+                                })
+                              }
+                            />
+                          ))
+                        )}
+                      </>
+                    )
+                  ) : null}
+
+                  {paso === 4 ? (
+                    <div className="flex min-h-full items-center justify-center p-4">
+                      <EnviosFechaHorarioCampos
+                        fechaIso={fechaIso}
+                        horaDesde={horaDesde}
+                        horaHasta={horaHasta}
+                        disabled={saving}
+                        ocultarTituloFecha
+                        onFechaChange={setFechaIso}
+                        onHoraDesdeChange={setHoraDesde}
+                        onHoraHastaChange={setHoraHasta}
+                        onCompleto={() => setPaso(5)}
+                      />
+                    </div>
+                  ) : null}
+
+                  {paso === 5 ? (
+                    <div className="flex flex-col gap-4 p-4">
+                      <div className="flex flex-col gap-2">
+                        <ModalMicroLabel>PDF MERCADERÍA</ModalMicroLabel>
+                        {pdfAdjunto ? (
+                          <p className="text-sm text-foreground">{pdfAdjunto.nombre}</p>
+                        ) : null}
+                        <Input
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          disabled={saving}
+                          onChange={(e) => void handlePdfChange(e.target.files)}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <ModalMicroLabel>PAGADO</ModalMicroLabel>
+                        <ModalSiNoChoice value={pagado} onChange={setPagado} disabled={saving} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <ModalMicroLabel>FORMA DE PAGO</ModalMicroLabel>
+                        <Select
+                          value={formaPagado || undefined}
+                          disabled={saving}
+                          onValueChange={(v) => setFormaPagado(v as EnviosFormaPagadoValue)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="ELEGIR FORMA..." />
+                          </SelectTrigger>
+                          <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                            {ENVIOS_FORMA_PAGADO_VALUES.map((value) => (
+                              <SelectItem key={value} value={value}>
+                                {ENVIOS_FORMA_PAGADO_LABELS[value]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ) : null}
+                </CatalogoFinderColumn>
+              </div>
+              {paso === 2 ? (
+                <div className="shrink-0 p-4">
                   <Button
                     type="button"
-                    className="h-10 w-full shrink-0 rounded-none"
+                    className="h-10 w-full"
                     title="Nuevo"
                     aria-label="Nuevo Cliente"
                     onClick={() => setModalCliente({ open: true, modo: "crear" })}
@@ -463,128 +609,7 @@ export default function CrearEnvioWizardModal({
                     Nuevo Cliente
                   </Button>
                 </div>
-              ) : (
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4">
-              {paso === 3 ? (
-                <CatalogoFinderColumn
-                  titulo="DIRECCIONES"
-                  subtitulo={
-                    clienteSeleccionado
-                      ? nombreCompletoCliente(clienteSeleccionado)
-                      : "Seleccioná un cliente"
-                  }
-                  mostrarNuevo={Boolean(clienteSeleccionado)}
-                  deshabilitada={!clienteSeleccionado}
-                  headerVariant="titulo"
-                  className="h-full min-h-0 flex-1"
-                  onNuevo={() => {
-                    if (!clienteSeleccionado) return;
-                    setModalDireccion({ open: true, modo: "crear" });
-                  }}
-                >
-                  {!clienteSeleccionado ? (
-                    <CatalogoFinderEmpty mensaje="Seleccioná un cliente para ver sus direcciones." />
-                  ) : (
-                    <>
-                      <div className="sticky top-0 z-10 border-b border-border bg-card p-2">
-                        <FiltroBusquedaInput
-                          id="filtro-envios-wizard-direcciones"
-                          placeholder="BUSCAR DIRECCIÓN..."
-                          value={busquedaDireccion.q}
-                          onChange={busquedaDireccion.handleQChange}
-                          isDebouncing={busquedaDireccion.isDebouncing}
-                          inputRef={busquedaDireccion.ref}
-                        />
-                      </div>
-                      {direccionesDelCliente.length === 0 ? (
-                        <CatalogoFinderEmpty mensaje="No hay direcciones. Usá + para crear la primera." />
-                      ) : direccionesFiltradas.length === 0 ? (
-                        <CatalogoFinderEmpty mensaje="Ninguna dirección coincide con la búsqueda." />
-                      ) : (
-                        direccionesFiltradas.map((item) => (
-                          <CatalogoFinderRow
-                            key={item.id}
-                            nombre={etiquetaDireccionEnvio(item)}
-                            meta={metaDireccionEnvio(item) || undefined}
-                            nombreAccion={
-                              item.urlMaps ? <EnviosMapsLink url={item.urlMaps} /> : undefined
-                            }
-                            selected={item.id === direccionId}
-                            onClick={() => handleSelectDireccion(item.id)}
-                            mostrarAcciones
-                            onEditar={() => setModalDireccion({ open: true, modo: "editar", item })}
-                            onEliminar={() =>
-                              setModalEliminar({
-                                open: true,
-                                kind: "direccion",
-                                id: item.id,
-                                label: etiquetaDireccionEnvio(item),
-                              })
-                            }
-                          />
-                        ))
-                      )}
-                    </>
-                  )}
-                </CatalogoFinderColumn>
               ) : null}
-
-              {paso === 4 ? (
-                <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4">
-                  <EnviosFechaHorarioCampos
-                    fechaIso={fechaIso}
-                    horaDesde={horaDesde}
-                    horaHasta={horaHasta}
-                    disabled={saving}
-                    onFechaChange={setFechaIso}
-                    onHoraDesdeChange={setHoraDesde}
-                    onHoraHastaChange={setHoraHasta}
-                    onCompleto={() => setPaso(5)}
-                  />
-                </div>
-              ) : null}
-
-              {paso === 5 ? (
-                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
-                  <div className="flex flex-col gap-2">
-                    <ModalMicroLabel>PDF MERCADERÍA</ModalMicroLabel>
-                    {pdfAdjunto ? (
-                      <p className="text-sm text-foreground">{pdfAdjunto.nombre}</p>
-                    ) : null}
-                    <Input
-                      type="file"
-                      accept="application/pdf,.pdf"
-                      disabled={saving}
-                      onChange={(e) => void handlePdfChange(e.target.files)}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <ModalMicroLabel>PAGADO</ModalMicroLabel>
-                    <ModalSiNoChoice value={pagado} onChange={setPagado} disabled={saving} />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <ModalMicroLabel>FORMA DE PAGO</ModalMicroLabel>
-                    <Select
-                      value={formaPagado || undefined}
-                      disabled={saving}
-                      onValueChange={(v) => setFormaPagado(v as EnviosFormaPagadoValue)}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="ELEGIR FORMA..." />
-                      </SelectTrigger>
-                      <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                        {ENVIOS_FORMA_PAGADO_VALUES.map((value) => (
-                          <SelectItem key={value} value={value}>
-                            {ENVIOS_FORMA_PAGADO_LABELS[value]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              ) : null}
-                </div>
-              )}
             </div>
           </div>
         </AppModal>
