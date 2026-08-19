@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import { isoYmdFromPrismaDateOnly } from "@/lib/fechaArgentina";
 import {
+  ENVIOS_PDF_MAX_BYTES,
   capitalizarTextoEnvio,
   normalizarNombreCliente,
+  properTextoEnvio,
   type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
@@ -12,7 +15,9 @@ import type {
 } from "@/lib/validations/envios";
 import type { ServiceResult } from "@/types/service.types";
 
-const PDF_MAX_BYTES = 5 * 1024 * 1024;
+function dateFromIsoYmd(isoYmd: string): Date {
+  return new Date(`${isoYmd}T12:00:00.000Z`);
+}
 
 const clienteResumenSelect = {
   id: true,
@@ -40,6 +45,9 @@ const direccionSelect = {
 
 const listSelect = {
   id: true,
+  fechaEnvio: true,
+  horaDesde: true,
+  horaHasta: true,
   observacionEnvio: true,
   pagado: true,
   formaPagado: true,
@@ -93,9 +101,9 @@ function mapDireccion(row: {
   return {
     id: row.id,
     personaId: row.personaId,
-    calleNombre: capitalizarTextoEnvio(row.calleNombre),
+    calleNombre: properTextoEnvio(row.calleNombre),
     numeracion: capitalizarTextoEnvio(row.numeracion),
-    distrito: capitalizarTextoEnvio(row.distrito),
+    distrito: properTextoEnvio(row.distrito),
     departamento: row.departamento,
     urlMaps: (row.urlMaps ?? "").trim(),
     referencia: row.referencia ? capitalizarTextoEnvio(row.referencia) : "",
@@ -104,6 +112,9 @@ function mapDireccion(row: {
 
 function mapListRow(row: {
   id: string;
+  fechaEnvio: Date;
+  horaDesde: string;
+  horaHasta: string;
   observacionEnvio: string;
   pagado: boolean;
   formaPagado: EnviosFinalListItem["formaPagado"];
@@ -127,6 +138,9 @@ function mapListRow(row: {
     clienteFinal: mapCliente(row.clienteFinal),
     pintor: mapCliente(row.pintor),
     direccion: mapDireccion(row.direccion),
+    fechaEnvioIso: isoYmdFromPrismaDateOnly(row.fechaEnvio),
+    horaDesde: row.horaDesde,
+    horaHasta: row.horaHasta,
     observacionEnvio: row.observacionEnvio.trim(),
     pagado: row.pagado,
     formaPagado: row.formaPagado,
@@ -167,7 +181,7 @@ function decodePdfBase64(
     return { success: false, error: "El PDF no se pudo leer." };
   }
   if (decoded.length === 0) return { success: false, error: "El PDF está vacío." };
-  if (decoded.length > PDF_MAX_BYTES) {
+  if (decoded.length > ENVIOS_PDF_MAX_BYTES) {
     return { success: false, error: "El PDF supera el tamaño máximo (5 MB)." };
   }
   if (
@@ -234,7 +248,7 @@ async function validarPersonasYDireccion(input: {
 export async function listarEnviosFinal(): Promise<EnviosFinalListItem[]> {
   try {
     const rows = await prisma.enviosFinal.findMany({
-      orderBy: [{ createdAt: "desc" }],
+      orderBy: [{ fechaEnvio: "desc" }, { horaDesde: "asc" }, { createdAt: "desc" }],
       select: listSelect,
     });
     return rows.map(mapListRow);
@@ -248,7 +262,20 @@ export async function crearEnviosFinal(
   input: CrearEnviosFinalInput
 ): Promise<ServiceResult<EnviosFinalListItem>> {
   try {
-    const valid = await validarPersonasYDireccion(input);
+    let pintorId = input.pintorId ?? null;
+    if (!pintorId && input.clienteFinalId) {
+      const cliente = await prisma.cliente.findUnique({
+        where: { id: input.clienteFinalId },
+        select: { pintorAsociadoId: true },
+      });
+      pintorId = cliente?.pintorAsociadoId ?? null;
+    }
+
+    const valid = await validarPersonasYDireccion({
+      clienteFinalId: input.clienteFinalId ?? null,
+      pintorId,
+      direccionId: input.direccionId,
+    });
     if (!valid.success) return valid;
 
     let pdfNombre: string | null = null;
@@ -263,8 +290,11 @@ export async function crearEnviosFinal(
     const row = await prisma.enviosFinal.create({
       data: {
         clienteFinalId: input.clienteFinalId ?? null,
-        pintorId: input.pintorId ?? null,
+        pintorId,
         direccionId: input.direccionId,
+        fechaEnvio: dateFromIsoYmd(input.fechaEnvioIso),
+        horaDesde: input.horaDesde,
+        horaHasta: input.horaHasta,
         observacionEnvio: input.observacionEnvio.trim(),
         pagado: input.pagado,
         formaPagado: input.formaPagado,
@@ -291,6 +321,9 @@ export async function editarEnviosFinal(
       clienteFinalId: string | null;
       pintorId: string | null;
       direccionId: string;
+      fechaEnvio: Date;
+      horaDesde: string;
+      horaHasta: string;
       observacionEnvio: string;
       pagado: boolean;
       formaPagado: CrearEnviosFinalInput["formaPagado"];
@@ -300,6 +333,9 @@ export async function editarEnviosFinal(
       clienteFinalId: input.clienteFinalId ?? null,
       pintorId: input.pintorId ?? null,
       direccionId: input.direccionId,
+      fechaEnvio: dateFromIsoYmd(input.fechaEnvioIso),
+      horaDesde: input.horaDesde,
+      horaHasta: input.horaHasta,
       observacionEnvio: input.observacionEnvio.trim(),
       pagado: input.pagado,
       formaPagado: input.formaPagado,

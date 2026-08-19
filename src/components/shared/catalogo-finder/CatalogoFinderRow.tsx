@@ -1,4 +1,5 @@
 import { ChevronRight, Eye, Pencil, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import {
   CATALOGO_FINDER_ROW_INTERACTIVE_CLASS,
@@ -33,6 +34,7 @@ export default function CatalogoFinderRow({
   onVer,
   onEditar,
   onEliminar,
+  nombreAccion,
 }: {
   nombre: string;
   meta?: string;
@@ -47,6 +49,8 @@ export default function CatalogoFinderRow({
   onVer?: () => void;
   onEditar: () => void;
   onEliminar: () => void;
+  /** Adornment a la derecha del nombre (p. ej. ícono Maps). */
+  nombreAccion?: ReactNode;
 }) {
   const isClickable = typeof onClick === "function";
   const gastoFinalComentarios = gastoFinalDetalle?.comentarios?.trim() ?? "";
@@ -119,7 +123,16 @@ export default function CatalogoFinderRow({
           </>
         ) : (
           <>
-            <div className="truncate font-medium">{nombre}</div>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <div className="min-w-0 flex-1 truncate font-medium" title={nombre}>
+                {nombre}
+              </div>
+              {nombreAccion ? (
+                <div className="shrink-0" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  {nombreAccion}
+                </div>
+              ) : null}
+            </div>
             {meta && <div className="truncate text-[11px] text-muted-foreground">{meta}</div>}
             {terceraLinea && (
               <div

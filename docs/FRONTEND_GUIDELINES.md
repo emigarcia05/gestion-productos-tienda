@@ -97,7 +97,7 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 
 ### 1.5 Finder
 
-`@/components/shared/catalogo-finder/` + `CATALOGO_FINDER_*` en `ui-classes`. Columnas con header `bg-primary`, `+` (`nuevoLado`: `end` default, `start` en Ideas). Filas: hover editar/eliminar; selección `CATALOGO_FINDER_ROW_SELECTED_CLASS`. Usos: Catálogo Gastos (5 cols), Comp. Categorías (4), Ideas (2), Envios · Crear Envío (2: clientes / direcciones del cliente).
+`@/components/shared/catalogo-finder/` + `CATALOGO_FINDER_*` en `ui-classes`. Columnas con header `bg-primary`, `+` (`nuevoLado`: `end` default, `start` en Ideas). Filas: hover editar/eliminar; selección `CATALOGO_FINDER_ROW_SELECTED_CLASS`. `nombreAccion` opcional a la derecha del nombre. Usos: Catálogo Gastos (5 cols), Comp. Categorías (4), Ideas (2), Envios · Crear Envío (2: clientes / direcciones del cliente).
 
 ### 1.6 Sidebar y áreas
 
@@ -193,6 +193,7 @@ Nuevo shared: CVA + tokens + `"use client"` solo si hay estado/hooks. Documentar
 | `CeldaDifPct` / `CeldaCxProdTienda` | Celdas de variación / Cx |
 | `EnteroStepperInput` | Entero − / número / + (mismo patrón que Control Stock). Vacío permitido; el padre persiste en `onCommit`. `endAction?` a la derecha del + |
 | `catalogo-finder/*` | Finder |
+| `ProcesoPaso` | Card de paso secuencial (`numero`, `titulo`, `activo`). Crear Envío y Asistente IA (`AsistenteIaProcesoPaso` es alias) |
 | `SidebarAreaSwitcher` / `SidebarMainAppArea` | Dock sesión / Pendientes (Pedido → proveedor → tipos) |
 | `ReposicionProveedorPrioritarioModal` / `SobreStockReposicionAdvertenciaModal` | Confirmaciones al generar pedido |
 | `ExportarMktSeccionesGoogleSheetsButton` | Export Marketing |
@@ -227,7 +228,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Trans. Depósitos:** origen ≠ destino; origen default = sucursal preferida. **Generar Transf.** → `TransfPendienteRegistroModal`.
 - **Px Tintométrico / Calc. Litros:** CFTL `contentWidth="full"` sin FilterBar; card de cálculo. Coeficientes / rendimientos solo `editor`, en `actions` del header (**Editar Coeficientes** / **Editar Rendimientos**).
 - **Cargar Gasto:** CFTL; al entrar abre `GastoUnicoBalanceModal` (gasto eventual, mes/año AR). Header **Nuevo Gasto Eventual**.
-- **Envios:** sidenav **Programados** / **Crear Envío**. Programados = CFTL `contentWidth="full"` con tabla de `envios_final` (PAGADO = ícono `Check`; PDF vía `GET /api/envios/[id]/comprobante`). **Crear Envío:** paso 1 en card `1. SELECCIONAR CLIENTE` con Finder 2 columnas (CLIENTES `tipo=CONSUMIDOR_FINAL` + DIRECCIONES). Click en cliente lista solo sus direcciones (`envios_direcciones.persona_id`). Cada columna tiene `FiltroBusquedaInput`. `+` abre modal **Nuevo Cliente** con **NOMBRE COMPLETO** (el input y el guardado van en mayúsculas), CEL, Select **TIPO** (default **CONSUMIDOR FINAL** | `PINTOR`, trigger `w-full`), **PINTOR ASOCIADO** y **DIRECCIONES**. Si el tipo es `CONSUMIDOR_FINAL`, **PINTOR ASOCIADO**: sin pintor = botón `+` centrado (abre modal listado de pintores); con pintor = nombre + editar / borrar (borrar desasocia). Un `PINTOR` no tiene pintor asociado. **DIRECCIONES**: lista las de ese cliente (editar / borrar) y `+` centrado abre **Nueva Dirección** (si el cliente aún no está persistido, se guarda antes). Modal dirección: **CALLE NOMBRE**, **NUMERACIÓN**, **DISTRITO**, Select **DEPARTAMENTO** (`LAS HERAS` | `GODOY CRUZ` | `GUAYMALLEN` | `MAIPU` | `LUJAN`), URL MAPS, REFERENCIA. Textos libres en primera mayúscula y resto minúsculas. Guardar exige **al menos un dato**. La columna CLIENTES lista solo `CONSUMIDOR_FINAL`.
+- **Envios:** sidenav **Programados** / **Crear Envío**. Programados = CFTL `contentWidth="full"` con tabla de `envios_final` (FECHA `dd/mm/aaaa` AR; HORARIO `hora_desde – hora_hasta`; PAGADO = ícono `Check`; PDF vía `GET /api/envios/[id]/comprobante`). **Crear Envío:** wizard de 3 `ProcesoPaso`. **1. SELECCIONAR CLIENTE:** Finder 2 columnas (CLIENTES `tipo=CONSUMIDOR_FINAL` + DIRECCIONES). Click en cliente lista solo sus direcciones (`envios_direcciones.persona_id`). La fila de dirección muestra `calle_nombre numeracion, distrito. departamento` y, si hay `url_maps`, ícono `MapPin` (abre Maps). Cada columna tiene `FiltroBusquedaInput`. `+` abre modal **Nuevo Cliente** con **NOMBRE COMPLETO** (el input y el guardado van en mayúsculas), CEL, Select **TIPO** (default **CONSUMIDOR FINAL** | `PINTOR`, trigger `w-full`), **PINTOR ASOCIADO** y **DIRECCIONES**. Si el tipo es `CONSUMIDOR_FINAL`, **PINTOR ASOCIADO**: sin pintor = botón `+` centrado (abre modal listado de pintores); con pintor = nombre + editar / borrar (borrar desasocia). Un `PINTOR` no tiene pintor asociado. **DIRECCIONES**: lista las de ese cliente (editar / borrar) y `+` centrado abre **Nueva Dirección** (si el cliente aún no está persistido, se guarda antes). Modal dirección: **CALLE NOMBRE**, **NUMERACIÓN**, **DISTRITO**, Select **DEPARTAMENTO** (`LAS HERAS` | `GODOY CRUZ` | `GUAYMALLEN` | `MAIPU` | `LUJAN`), URL MAPS, REFERENCIA. Textos: **CALLE NOMBRE** y **DISTRITO** en proper case; numeración/referencia con primera mayúscula de la oración. Guardar exige **al menos un dato**. La columna CLIENTES lista solo `CONSUMIDOR_FINAL`. **2. FECHA Y HORARIO** (se habilita al elegir cliente + dirección): atajos **HOY** / **MAÑANA** + ícono `CalendarDays` (`input type="date"` oculto, mismo patrón que cheques tesorería); rango **HORA DESDE** / **HORA HASTA** 09:00–19:00 en saltos de 30 min (`Select` shadcn; desde &lt; hasta). **3. MERCADERÍA Y FORMA DE PAGO** (se habilita al completar el paso 2): input PDF opcional (máx. 5 MB) + forma `EFECTIVO` | `TRANSFERENCIA` | `POSNET` | `CUENTA CORRIENTE`. **Crear Envío** llama `crearEnviosFinalAction` (pintor = `pintor_asociado` del cliente si hay) y redirige a Programados. Edición de fecha/horario/PDF/pago también desde el modal de Programados.
 
 ### Finanzas
 
@@ -255,7 +256,7 @@ SSOT `MARKETING_ROUTES`. Calendario: grilla mes + Cuadro De Mando; ícono red `M
 
 ### Asistente IA
 
-UI en `src/components/asistente-ia/`. Contratos, prompts y scraper: **`docs/AGENTEIA_GUIDELINES.md`**.
+UI en `src/components/asistente-ia/`. Pasos secuenciales: `ProcesoPaso` (alias `AsistenteIaProcesoPaso`). Contratos, prompts y scraper: **`docs/AGENTEIA_GUIDELINES.md`**.
 
 ---
 

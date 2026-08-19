@@ -44,6 +44,51 @@ export const ENVIOS_FORMA_PAGADO_LABELS: Record<EnviosFormaPagado, string> = {
   CUENTA_CORRIENTE: "CUENTA CORRIENTE",
 };
 
+/** Rango horario de envío: 09:00 a 19:00, saltos de 30 minutos. */
+export const ENVIOS_HORA_VALUES = [
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "12:00",
+  "12:30",
+  "13:00",
+  "13:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
+  "17:30",
+  "18:00",
+  "18:30",
+  "19:00",
+] as const;
+export type EnviosHoraValue = (typeof ENVIOS_HORA_VALUES)[number];
+
+export const ENVIOS_PDF_MAX_BYTES = 5 * 1024 * 1024;
+
+export function esHoraEnvioValida(value: string): value is EnviosHoraValue {
+  return (ENVIOS_HORA_VALUES as readonly string[]).includes(value);
+}
+
+/** `desde` no puede ser 19:00: hace falta un `hasta` posterior. */
+export function horasDesdeDisponibles(): EnviosHoraValue[] {
+  return ENVIOS_HORA_VALUES.filter((h) => h !== "19:00");
+}
+
+export function horasHastaDisponibles(horaDesde: string): EnviosHoraValue[] {
+  return ENVIOS_HORA_VALUES.filter((h) => h > horaDesde);
+}
+
+export function etiquetaHorarioEnvio(horaDesde: string, horaHasta: string): string {
+  return `${horaDesde} – ${horaHasta}`;
+}
+
 export function etiquetaTipoCliente(tipo: ClienteTipo): string {
   return CLIENTE_TIPO_LABELS[tipo];
 }
@@ -63,7 +108,7 @@ export function nombreCompletoCliente(cliente: {
   return normalizarNombreCliente(cliente.nombreCompleto);
 }
 
-/** Textos de `envios_direcciones`: primera letra mayúscula, resto minúsculas. */
+/** Textos de `envios_direcciones`: primera letra mayúscula, resto minúsculas (oración). */
 export function capitalizarTextoEnvio(value: string): string {
   const t = value.trim().replace(/\s+/g, " ");
   if (t === "") return t;
@@ -77,6 +122,24 @@ export function capitalizarTextoEnvioInput(value: string): string {
   const first = value.charAt(0).toLocaleUpperCase("es-AR");
   const rest = value.slice(1).toLocaleLowerCase("es-AR");
   return first + rest;
+}
+
+function properPalabraEnvio(word: string): string {
+  if (word === "") return word;
+  const lower = word.toLocaleLowerCase("es-AR");
+  return lower.charAt(0).toLocaleUpperCase("es-AR") + lower.slice(1);
+}
+
+/** `calle_nombre` y `distrito`: proper case (primera letra de cada palabra). */
+export function properTextoEnvio(value: string): string {
+  const t = value.trim().replace(/\s+/g, " ");
+  if (t === "") return t;
+  return t.split(" ").map(properPalabraEnvio).join(" ");
+}
+
+/** Proper case mientras se escribe (conserva espacios al final). */
+export function properTextoEnvioInput(value: string): string {
+  return value.replace(/[^ ]+/g, properPalabraEnvio);
 }
 
 export interface ClienteResumen {
@@ -107,6 +170,9 @@ export interface EnviosFinalListItem {
   clienteFinal: ClienteItem | null;
   pintor: ClienteItem | null;
   direccion: EnviosDireccionItem;
+  fechaEnvioIso: string;
+  horaDesde: string;
+  horaHasta: string;
   observacionEnvio: string;
   pagado: boolean;
   formaPagado: EnviosFormaPagado;
@@ -115,16 +181,21 @@ export interface EnviosFinalListItem {
 }
 
 export function etiquetaDireccionEnvio(dir: EnviosDireccionItem): string {
-  const calle = `${dir.calleNombre} ${dir.numeracion}`.trim();
-  if (calle !== "") return calle;
-  return metaDireccionEnvio(dir) || "Dirección";
+  const calleNum = [dir.calleNombre.trim(), dir.numeracion.trim()].filter((s) => s !== "").join(" ");
+  const distrito = dir.distrito.trim();
+  const depto = etiquetaDepartamentoEnvio(dir.departamento);
+  let texto = calleNum;
+  if (distrito) {
+    texto = texto ? `${texto}, ${distrito}` : distrito;
+  }
+  if (depto) {
+    texto = texto ? `${texto}. ${depto}` : depto;
+  }
+  return texto || "Dirección";
 }
 
 export function metaDireccionEnvio(dir: EnviosDireccionItem): string {
-  return [dir.distrito, etiquetaDepartamentoEnvio(dir.departamento), dir.referencia]
-    .map((s) => s.trim())
-    .filter((s) => s !== "")
-    .join(" · ");
+  return dir.referencia.trim();
 }
 
 export function direccionEnvioTieneDato(data: {

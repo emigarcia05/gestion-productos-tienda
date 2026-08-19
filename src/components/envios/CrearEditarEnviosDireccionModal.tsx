@@ -24,6 +24,8 @@ import {
   capitalizarTextoEnvio,
   capitalizarTextoEnvioInput,
   direccionEnvioTieneDato,
+  properTextoEnvio,
+  properTextoEnvioInput,
   type EnviosDepartamentoValue,
   type EnviosDireccionItem,
 } from "@/lib/envios";
@@ -57,9 +59,9 @@ export default function CrearEditarEnviosDireccionModal({
   useEffect(() => {
     if (!open) return;
     if (modo === "editar" && item) {
-      setCalleNombre(capitalizarTextoEnvio(item.calleNombre));
+      setCalleNombre(properTextoEnvio(item.calleNombre));
       setNumeracion(capitalizarTextoEnvio(item.numeracion));
-      setDistrito(capitalizarTextoEnvio(item.distrito));
+      setDistrito(properTextoEnvio(item.distrito));
       setDepartamento(item.departamento ?? "");
       setUrlMaps(item.urlMaps);
       setReferencia(item.referencia ? capitalizarTextoEnvio(item.referencia) : "");
@@ -134,7 +136,7 @@ export default function CrearEditarEnviosDireccionModal({
             <ModalMicroLabel>CALLE NOMBRE</ModalMicroLabel>
             <Input
               value={calleNombre}
-              onChange={(e) => setCalleNombre(capitalizarTextoEnvioInput(e.target.value))}
+              onChange={(e) => setCalleNombre(properTextoEnvioInput(e.target.value))}
               autoComplete="off"
             />
           </label>
@@ -150,7 +152,7 @@ export default function CrearEditarEnviosDireccionModal({
             <ModalMicroLabel>DISTRITO</ModalMicroLabel>
             <Input
               value={distrito}
-              onChange={(e) => setDistrito(capitalizarTextoEnvioInput(e.target.value))}
+              onChange={(e) => setDistrito(properTextoEnvioInput(e.target.value))}
               autoComplete="off"
             />
           </label>

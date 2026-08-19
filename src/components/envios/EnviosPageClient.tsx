@@ -43,11 +43,13 @@ import {
   etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
   etiquetaFormaPagadoEnvio,
+  etiquetaHorarioEnvio,
   nombreCompletoCliente,
   type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
 } from "@/lib/envios";
+import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import { fmtCelda } from "@/lib/format";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import {
@@ -102,6 +104,8 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
             item.direccion.referencia,
             item.observacionEnvio,
             etiquetaFormaPagadoEnvio(item.formaPagado),
+            formatIsoYmdDdMmYyyyArgentina(item.fechaEnvioIso),
+            etiquetaHorarioEnvio(item.horaDesde, item.horaHasta),
           ],
           qDebounced
         )
@@ -212,19 +216,23 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
         <div className="contenedor-tabla-gestion min-h-0 flex-1">
           <Table variant="compact" className="tabla-gestion-compacta w-full">
             <colgroup>
-              <col className="w-[16%]" />
-              <col className="w-[16%]" />
-              <col className="w-[18%]" />
-              <col className="w-[16%]" />
-              <col className="w-[6%]" />
+              <col className="w-[14%]" />
               <col className="w-[12%]" />
-              <col className="w-[6%]" />
+              <col className="w-[8%]" />
+              <col className="w-[10%]" />
+              <col className="w-[14%]" />
+              <col className="w-[12%]" />
+              <col className="w-[5%]" />
+              <col className="w-[10%]" />
+              <col className="w-[5%]" />
               <col className="w-[10%]" />
             </colgroup>
             <TableHeader>
               <TableRow>
                 <TableHead>CLIENTE FINAL</TableHead>
                 <TableHead>PINTOR</TableHead>
+                <TableHead>FECHA</TableHead>
+                <TableHead>HORARIO</TableHead>
                 <TableHead>DIRECCIÓN</TableHead>
                 <TableHead>OBSERVACIÓN</TableHead>
                 <TableHead className="text-center">
@@ -238,7 +246,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
             <TableBody>
               {itemsFiltrados.length === 0 ? (
                 <EmptyTableRow
-                  colSpan={8}
+                  colSpan={10}
                   message={
                     envios.length === 0
                       ? "NO HAY ENVÍOS."
@@ -255,6 +263,12 @@ export default function EnviosPageClient({ envios, clientes, direcciones }: Prop
                     </TableCell>
                     <TableCell className="celda-datos">
                       {item.pintor ? nombreCompletoCliente(item.pintor) : fmtCelda("")}
+                    </TableCell>
+                    <TableCell className="celda-datos tabular-nums">
+                      {formatIsoYmdDdMmYyyyArgentina(item.fechaEnvioIso)}
+                    </TableCell>
+                    <TableCell className="celda-datos tabular-nums">
+                      {etiquetaHorarioEnvio(item.horaDesde, item.horaHasta)}
                     </TableCell>
                     <TableCell className="celda-datos">
                       {etiquetaDireccionEnvio(item.direccion)}

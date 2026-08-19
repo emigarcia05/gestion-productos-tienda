@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import {
   capitalizarTextoEnvio,
   direccionEnvioTieneDato,
+  properTextoEnvio,
   type EnviosDireccionItem,
 } from "@/lib/envios";
 import type {
@@ -34,9 +35,9 @@ function mapRow(row: {
   return {
     id: row.id,
     personaId: row.personaId,
-    calleNombre: capitalizarTextoEnvio(row.calleNombre),
+    calleNombre: properTextoEnvio(row.calleNombre),
     numeracion: capitalizarTextoEnvio(row.numeracion),
-    distrito: capitalizarTextoEnvio(row.distrito),
+    distrito: properTextoEnvio(row.distrito),
     departamento: row.departamento,
     urlMaps: (row.urlMaps ?? "").trim(),
     referencia: row.referencia ? capitalizarTextoEnvio(row.referencia) : "",
@@ -87,9 +88,9 @@ export async function crearEnviosDireccion(
     const row = await prisma.enviosDireccion.create({
       data: {
         personaId: input.personaId,
-        calleNombre: capitalizarTextoEnvio(input.calleNombre),
+        calleNombre: properTextoEnvio(input.calleNombre),
         numeracion: capitalizarTextoEnvio(input.numeracion),
-        distrito: capitalizarTextoEnvio(input.distrito),
+        distrito: properTextoEnvio(input.distrito),
         departamento: input.departamento,
         urlMaps: input.urlMaps.trim() === "" ? null : input.urlMaps.trim(),
         referencia:
@@ -115,9 +116,9 @@ export async function editarEnviosDireccion(
       where: { id: input.id },
       data: {
         personaId: input.personaId,
-        calleNombre: capitalizarTextoEnvio(input.calleNombre),
+        calleNombre: properTextoEnvio(input.calleNombre),
         numeracion: capitalizarTextoEnvio(input.numeracion),
-        distrito: capitalizarTextoEnvio(input.distrito),
+        distrito: properTextoEnvio(input.distrito),
         departamento: input.departamento,
         urlMaps: input.urlMaps.trim() === "" ? null : input.urlMaps.trim(),
         referencia:

@@ -3,9 +3,11 @@ import {
   CLIENTE_TIPO_VALUES,
   ENVIOS_DEPARTAMENTO_VALUES,
   ENVIOS_FORMA_PAGADO_VALUES,
+  ENVIOS_HORA_VALUES,
   capitalizarTextoEnvio,
   direccionEnvioTieneDato,
   normalizarNombreCliente,
+  properTextoEnvio,
   type ClienteTipoValue,
 } from "@/lib/envios";
 import {
@@ -102,6 +104,9 @@ export const eliminarClienteSchema = z.object({
 const textoEnvioOpcionalSchema = (max: number) =>
   textoOpcionalSchema(max).transform((v) => (v === "" ? "" : capitalizarTextoEnvio(v)));
 
+const textoEnvioProperOpcionalSchema = (max: number) =>
+  textoOpcionalSchema(max).transform((v) => (v === "" ? "" : properTextoEnvio(v)));
+
 const departamentoOpcionalSchema = z.preprocess(
   (value) => (value === "" || value === undefined ? null : value),
   z.enum(ENVIOS_DEPARTAMENTO_VALUES).nullable()
@@ -130,9 +135,9 @@ function refineDireccionAlMenosUnDato(
 export const crearEnviosDireccionSchema = z
   .object({
     personaId: prismaCuidSchema,
-    calleNombre: textoEnvioOpcionalSchema(400),
+    calleNombre: textoEnvioProperOpcionalSchema(400),
     numeracion: textoEnvioOpcionalSchema(40),
-    distrito: textoEnvioOpcionalSchema(200),
+    distrito: textoEnvioProperOpcionalSchema(200),
     departamento: departamentoOpcionalSchema,
     urlMaps: urlMapsSchema,
     referencia: textoEnvioOpcionalSchema(2000),
@@ -172,9 +177,36 @@ function refinePersonasEnvio(
   }
 }
 
+const isoYmdSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida (use YYYY-MM-DD).")
+  .refine((s) => {
+    const [y, m, d] = s.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+  }, "Fecha de calendario inválida.");
+
+const horaEnvioSchema = z.enum(ENVIOS_HORA_VALUES, "Seleccioná un horario válido.");
+
+function refineHorarioEnvio(
+  data: { horaDesde: string; horaHasta: string },
+  ctx: z.RefinementCtx
+): void {
+  if (data.horaDesde >= data.horaHasta) {
+    ctx.addIssue({
+      code: "custom",
+      message: "La hora hasta debe ser posterior a la hora desde.",
+      path: ["horaHasta"],
+    });
+  }
+}
+
 const envioFinalCamposBase = {
   ...envioPersonasCampos,
   direccionId: prismaCuidSchema,
+  fechaEnvioIso: isoYmdSchema,
+  horaDesde: horaEnvioSchema,
+  horaHasta: horaEnvioSchema,
   observacionEnvio: textoOpcionalSchema(5000),
   pagado: z.boolean(),
   formaPagado: z.enum(ENVIOS_FORMA_PAGADO_VALUES),
@@ -185,7 +217,10 @@ export const crearEnviosFinalSchema = z
     ...envioFinalCamposBase,
     pdfComprobante: enviosPdfComprobanteSchema.optional(),
   })
-  .superRefine(refinePersonasEnvio);
+  .superRefine((data, ctx) => {
+    refinePersonasEnvio(data, ctx);
+    refineHorarioEnvio(data, ctx);
+  });
 
 export const editarEnviosFinalSchema = z
   .object({
@@ -196,6 +231,7 @@ export const editarEnviosFinalSchema = z
   })
   .superRefine((data, ctx) => {
     refinePersonasEnvio(data, ctx);
+    refineHorarioEnvio(data, ctx);
     if (data.pdfComprobante && data.quitarPdf) {
       ctx.addIssue({
         code: "custom",

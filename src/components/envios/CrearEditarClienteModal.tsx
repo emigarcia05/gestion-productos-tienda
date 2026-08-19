@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import CrearEditarEnviosDireccionModal from "@/components/envios/CrearEditarEnviosDireccionModal";
+import EnviosMapsLink from "@/components/envios/EnviosMapsLink";
 import SeleccionarPintorModal from "@/components/envios/SeleccionarPintorModal";
 import {
   crearClienteAction,
@@ -334,10 +335,11 @@ export default function CrearEditarClienteModal({
                           "flex min-h-9 items-center gap-2 rounded-md border border-input px-3 py-1"
                         )}
                       >
-                        <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                        <span className="min-w-0 flex-1 truncate text-sm text-foreground" title={etiquetaDireccionEnvio(dir)}>
                           {etiquetaDireccionEnvio(dir)}
                         </span>
                         <div className="flex shrink-0 items-center gap-1">
+                          {dir.urlMaps ? <EnviosMapsLink url={dir.urlMaps} /> : null}
                           <Button
                             type="button"
                             variant="ghost"

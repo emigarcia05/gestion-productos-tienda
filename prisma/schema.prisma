@@ -1543,7 +1543,7 @@ enum EnviosDepartamento {
 }
 
 /** Dirección de envío asociada a un cliente (en el alta, al `CONSUMIDOR_FINAL` seleccionado).
- * Textos libres (`calle_nombre`, `distrito`, `numeracion`, `referencia`): primera mayúscula, resto minúsculas.
+ * Textos: `calle_nombre` y `distrito` en proper case; `numeracion` y `referencia` con primera mayúscula de la oración.
  * Al persistir hace falta al menos un dato (CHECK SQL + Zod + servicio).
  */
 model EnviosDireccion {
@@ -1569,13 +1569,17 @@ model EnviosDireccion {
 
 /**
  * Envío concreto. Hasta dos clientes: uno `CONSUMIDOR_FINAL` y/o uno `PINTOR`.
- * Dirección obligatoria. PDF de comprobante opcional (bytes + nombre).
+ * Dirección obligatoria. Fecha calendario AR + rango horario 09:00–19:00 (saltos 30 min).
+ * PDF de comprobante opcional (bytes + nombre).
  */
 model EnviosFinal {
   id                   String             @id @default(cuid())
   clienteFinalId       String?            @map("cliente_final_id")
   pintorId             String?            @map("pintor_id")
   direccionId          String             @map("direccion_id")
+  fechaEnvio           DateTime           @map("fecha_envio") @db.Date
+  horaDesde            String             @map("hora_desde") @db.VarChar(5)
+  horaHasta            String             @map("hora_hasta") @db.VarChar(5)
   observacionEnvio     String             @default("") @map("observacion_envio") @db.Text
   pdfComprobanteNombre String?            @map("pdf_comprobante_nombre")
   pdfComprobante       Bytes?             @map("pdf_comprobante")
@@ -1591,6 +1595,7 @@ model EnviosFinal {
   @@index([clienteFinalId], map: "envios_final_cliente_final_id_idx")
   @@index([pintorId], map: "envios_final_pintor_id_idx")
   @@index([direccionId], map: "envios_final_direccion_id_idx")
+  @@index([fechaEnvio], map: "envios_final_fecha_envio_idx")
   @@index([pagado], map: "envios_final_pagado_idx")
   @@map("envios_final")
 }

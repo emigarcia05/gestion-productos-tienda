@@ -7,22 +7,42 @@ import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTable
 import CatalogoFinderColumn from "@/components/shared/catalogo-finder/CatalogoFinderColumn";
 import CatalogoFinderEmpty from "@/components/shared/catalogo-finder/CatalogoFinderEmpty";
 import CatalogoFinderRow from "@/components/shared/catalogo-finder/CatalogoFinderRow";
+import EnviosMapsLink from "@/components/envios/EnviosMapsLink";
+import EnviosFechaHorarioCampos from "@/components/envios/EnviosFechaHorarioCampos";
 import CrearEditarEnviosDireccionModal from "@/components/envios/CrearEditarEnviosDireccionModal";
 import CrearEditarClienteModal from "@/components/envios/CrearEditarClienteModal";
+import { leerPdfComprobante } from "@/components/envios/leerPdfComprobante";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import AppModal from "@/components/shared/AppModal";
+import ProcesoPaso from "@/components/shared/ProcesoPaso";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { eliminarClienteAction, eliminarEnviosDireccionAction } from "@/actions/envios";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { crearEnviosFinalAction, eliminarClienteAction, eliminarEnviosDireccionAction } from "@/actions/envios";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
+  ENVIOS_FORMA_PAGADO_LABELS,
+  ENVIOS_FORMA_PAGADO_VALUES,
+  esHoraEnvioValida,
   etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
   metaDireccionEnvio,
   nombreCompletoCliente,
   type ClienteItem,
   type EnviosDireccionItem,
+  type EnviosFormaPagadoValue,
+  type EnviosHoraValue,
 } from "@/lib/envios";
+import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 
 interface Props {
@@ -34,6 +54,12 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
   const router = useRouter();
   const [clienteId, setClienteId] = useState<string | null>(null);
   const [direccionId, setDireccionId] = useState<string | null>(null);
+  const [fechaIso, setFechaIso] = useState(() => dateToIsoYmdArgentina(new Date()));
+  const [horaDesde, setHoraDesde] = useState<EnviosHoraValue | "">("");
+  const [horaHasta, setHoraHasta] = useState<EnviosHoraValue | "">("");
+  const [formaPagado, setFormaPagado] = useState<EnviosFormaPagadoValue | "">("");
+  const [pdfAdjunto, setPdfAdjunto] = useState<{ nombre: string; base64: string } | null>(null);
+  const [saving, setSaving] = useState(false);
   const [qClienteDebounced, setQClienteDebounced] = useState("");
   const [qDireccionDebounced, setQDireccionDebounced] = useState("");
   const busquedaCliente = useFiltrosConBusqueda({
@@ -100,6 +126,15 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
     );
   }, [direccionesDelCliente, qDireccionDebounced]);
 
+  const paso1Completo = Boolean(clienteId && direccionId);
+  const paso2Completo =
+    paso1Completo &&
+    fechaIso !== "" &&
+    esHoraEnvioValida(horaDesde) &&
+    esHoraEnvioValida(horaHasta) &&
+    horaDesde < horaHasta;
+  const puedeCrear = paso2Completo && formaPagado !== "";
+
   function refresh() {
     router.refresh();
   }
@@ -109,6 +144,14 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
     setDireccionId(null);
     busquedaDireccion.setQ("");
     setQDireccionDebounced("");
+  }
+
+  async function handlePdfChange(fileList: FileList | null) {
+    const file = fileList?.[0];
+    if (!file) return;
+    const parsed = await leerPdfComprobante(file);
+    if (!parsed) return;
+    setPdfAdjunto(parsed);
   }
 
   async function handleEliminar() {
@@ -138,14 +181,48 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
     }
   }
 
+  async function handleCrearEnvio() {
+    if (!puedeCrear || saving || !clienteId || !direccionId) return;
+    if (
+      !esHoraEnvioValida(horaDesde) ||
+      !esHoraEnvioValida(horaHasta) ||
+      (formaPagado !== "EFECTIVO" &&
+        formaPagado !== "TRANSFERENCIA" &&
+        formaPagado !== "POSNET" &&
+        formaPagado !== "CUENTA_CORRIENTE")
+    ) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await crearEnviosFinalAction({
+        clienteFinalId: clienteId,
+        pintorId: clienteSeleccionado?.pintorAsociadoId ?? null,
+        direccionId,
+        fechaEnvioIso: fechaIso,
+        horaDesde,
+        horaHasta,
+        observacionEnvio: "",
+        pagado: false,
+        formaPagado,
+        ...(pdfAdjunto ? { pdfComprobante: pdfAdjunto } : {}),
+      });
+      if (!res.ok) {
+        toast.error(res.error ?? "No se pudo crear el envío.");
+        return;
+      }
+      toast.success("Envío creado.");
+      router.push(GP_ROUTES.envios.programados);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <>
       <ClassicFilteredTableLayout title="Envios" subtitle="Crear Envío" contentWidth="full">
-        <div className="flex min-h-0 flex-1 flex-col pb-4">
-          <div className="flex min-h-0 flex-1 flex-col gap-3 rounded-lg border border-border bg-card p-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
-              1. Seleccionar Cliente
-            </p>
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-4">
+          <ProcesoPaso numero={1} titulo="Seleccionar Cliente" activo className="h-[28rem]">
             <div className="grid min-h-0 flex-1 grid-cols-2 gap-3">
               <CatalogoFinderColumn
                 titulo="CLIENTES"
@@ -232,6 +309,9 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
                           key={item.id}
                           nombre={etiquetaDireccionEnvio(item)}
                           meta={metaDireccionEnvio(item) || undefined}
+                          nombreAccion={
+                            item.urlMaps ? <EnviosMapsLink url={item.urlMaps} /> : undefined
+                          }
                           selected={item.id === direccionId}
                           onClick={() => setDireccionId(item.id)}
                           mostrarAcciones
@@ -251,7 +331,64 @@ export default function CrearEnvioPageClient({ clientesCatalogo, direcciones }: 
                 )}
               </CatalogoFinderColumn>
             </div>
-          </div>
+          </ProcesoPaso>
+
+          <ProcesoPaso numero={2} titulo="Fecha Y Horario" activo={paso1Completo}>
+            <EnviosFechaHorarioCampos
+              fechaIso={fechaIso}
+              horaDesde={horaDesde}
+              horaHasta={horaHasta}
+              disabled={!paso1Completo}
+              onFechaChange={setFechaIso}
+              onHoraDesdeChange={setHoraDesde}
+              onHoraHastaChange={setHoraHasta}
+            />
+          </ProcesoPaso>
+
+          <ProcesoPaso numero={3} titulo="Mercadería Y Forma De Pago" activo={paso2Completo}>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <ModalMicroLabel>PDF MERCADERÍA</ModalMicroLabel>
+                {pdfAdjunto ? (
+                  <p className="text-sm text-foreground">{pdfAdjunto.nombre}</p>
+                ) : null}
+                <Input
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  disabled={!paso2Completo || saving}
+                  onChange={(e) => void handlePdfChange(e.target.files)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <ModalMicroLabel>FORMA DE PAGO</ModalMicroLabel>
+                <Select
+                  value={formaPagado || undefined}
+                  disabled={!paso2Completo || saving}
+                  onValueChange={(v) => setFormaPagado(v as EnviosFormaPagadoValue)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="ELEGIR FORMA..." />
+                  </SelectTrigger>
+                  <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                    {ENVIOS_FORMA_PAGADO_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {ENVIOS_FORMA_PAGADO_LABELS[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  disabled={!puedeCrear || saving}
+                  onClick={() => void handleCrearEnvio()}
+                >
+                  {saving ? "Creando Envío..." : "Crear Envío"}
+                </Button>
+              </div>
+            </div>
+          </ProcesoPaso>
         </div>
       </ClassicFilteredTableLayout>
 

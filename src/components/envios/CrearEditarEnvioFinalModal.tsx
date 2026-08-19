@@ -15,20 +15,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { crearEnviosFinalAction, editarEnviosFinalAction } from "@/actions/envios";
+import EnviosFechaHorarioCampos from "@/components/envios/EnviosFechaHorarioCampos";
+import { leerPdfComprobante } from "@/components/envios/leerPdfComprobante";
 import {
   ENVIOS_FORMA_PAGADO_LABELS,
   ENVIOS_FORMA_PAGADO_VALUES,
+  esHoraEnvioValida,
   etiquetaDireccionEnvio,
   nombreCompletoCliente,
   type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
   type EnviosFormaPagadoValue,
+  type EnviosHoraValue,
 } from "@/lib/envios";
+import { dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
 
 const SENTINEL_NONE = "none";
-const PDF_MAX_BYTES = 5 * 1024 * 1024;
 
 interface Props {
   open: boolean;
@@ -38,25 +42,6 @@ interface Props {
   clientes: ClienteItem[];
   direcciones: EnviosDireccionItem[];
   onSuccess?: () => void;
-}
-
-async function leerPdf(file: File): Promise<{ nombre: string; base64: string } | null> {
-  if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
-    toast.error("El archivo debe ser un PDF.");
-    return null;
-  }
-  if (file.size > PDF_MAX_BYTES) {
-    toast.error("El PDF supera el tamaño máximo (5 MB).");
-    return null;
-  }
-  const buffer = await file.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return { nombre: file.name, base64: btoa(binary) };
 }
 
 export default function CrearEditarEnvioFinalModal({
@@ -71,6 +56,9 @@ export default function CrearEditarEnvioFinalModal({
   const [clienteFinalId, setClienteFinalId] = useState(SENTINEL_NONE);
   const [pintorId, setPintorId] = useState(SENTINEL_NONE);
   const [direccionId, setDireccionId] = useState("");
+  const [fechaIso, setFechaIso] = useState("");
+  const [horaDesde, setHoraDesde] = useState<EnviosHoraValue | "">("");
+  const [horaHasta, setHoraHasta] = useState<EnviosHoraValue | "">("");
   const [observacionEnvio, setObservacionEnvio] = useState("");
   const [pagado, setPagado] = useState<"si" | "no">("no");
   const [formaPagado, setFormaPagado] = useState<EnviosFormaPagadoValue | "">("");
@@ -100,6 +88,9 @@ export default function CrearEditarEnvioFinalModal({
       setClienteFinalId(item.clienteFinal?.id ?? SENTINEL_NONE);
       setPintorId(item.pintor?.id ?? SENTINEL_NONE);
       setDireccionId(item.direccion.id);
+      setFechaIso(item.fechaEnvioIso);
+      setHoraDesde(esHoraEnvioValida(item.horaDesde) ? item.horaDesde : "");
+      setHoraHasta(esHoraEnvioValida(item.horaHasta) ? item.horaHasta : "");
       setObservacionEnvio(item.observacionEnvio);
       setPagado(item.pagado ? "si" : "no");
       setFormaPagado(item.formaPagado);
@@ -110,6 +101,9 @@ export default function CrearEditarEnvioFinalModal({
     setClienteFinalId(SENTINEL_NONE);
     setPintorId(SENTINEL_NONE);
     setDireccionId("");
+    setFechaIso(dateToIsoYmdArgentina(new Date()));
+    setHoraDesde("");
+    setHoraHasta("");
     setObservacionEnvio("");
     setPagado("no");
     setFormaPagado("");
@@ -118,14 +112,17 @@ export default function CrearEditarEnvioFinalModal({
   }, [open, modo, item]);
 
   const tienePersona = clienteFinalId !== SENTINEL_NONE || pintorId !== SENTINEL_NONE;
-  const puedeGuardar = tienePersona && direccionId !== "" && formaPagado !== "";
+  const horarioValido =
+    esHoraEnvioValida(horaDesde) && esHoraEnvioValida(horaHasta) && horaDesde < horaHasta;
+  const puedeGuardar =
+    tienePersona && direccionId !== "" && fechaIso !== "" && horarioValido && formaPagado !== "";
   const pdfActualNombre =
     modo === "editar" && item?.tienePdf && !quitarPdf && !pdfAdjunto ? item.pdfComprobanteNombre : null;
 
   async function handlePdfChange(fileList: FileList | null) {
     const file = fileList?.[0];
     if (!file) return;
-    const parsed = await leerPdf(file);
+    const parsed = await leerPdfComprobante(file);
     if (!parsed) return;
     setPdfAdjunto(parsed);
     setQuitarPdf(false);
@@ -133,7 +130,15 @@ export default function CrearEditarEnvioFinalModal({
 
   async function handleSubmit() {
     if (!puedeGuardar || saving) return;
-    if (formaPagado !== "EFECTIVO" && formaPagado !== "TRANSFERENCIA" && formaPagado !== "POSNET" && formaPagado !== "CUENTA_CORRIENTE") {
+    if (
+      formaPagado !== "EFECTIVO" &&
+      formaPagado !== "TRANSFERENCIA" &&
+      formaPagado !== "POSNET" &&
+      formaPagado !== "CUENTA_CORRIENTE"
+    ) {
+      return;
+    }
+    if (!esHoraEnvioValida(horaDesde) || !esHoraEnvioValida(horaHasta)) {
       return;
     }
     setSaving(true);
@@ -142,6 +147,9 @@ export default function CrearEditarEnvioFinalModal({
         clienteFinalId: clienteFinalId === SENTINEL_NONE ? null : clienteFinalId,
         pintorId: pintorId === SENTINEL_NONE ? null : pintorId,
         direccionId,
+        fechaEnvioIso: fechaIso,
+        horaDesde,
+        horaHasta,
         observacionEnvio,
         pagado: pagado === "si",
         formaPagado,
@@ -237,6 +245,15 @@ export default function CrearEditarEnvioFinalModal({
               </SelectContent>
             </Select>
           </div>
+          <EnviosFechaHorarioCampos
+            fechaIso={fechaIso}
+            horaDesde={horaDesde}
+            horaHasta={horaHasta}
+            disabled={saving}
+            onFechaChange={setFechaIso}
+            onHoraDesdeChange={setHoraDesde}
+            onHoraHastaChange={setHoraHasta}
+          />
           <label className="flex flex-col gap-1">
             <ModalMicroLabel>OBSERVACIÓN ENVÍO</ModalMicroLabel>
             <textarea
