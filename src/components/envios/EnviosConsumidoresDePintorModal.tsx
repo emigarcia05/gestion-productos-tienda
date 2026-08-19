@@ -6,9 +6,9 @@ import AppModal from "@/components/shared/AppModal";
 import CatalogoFinderEmpty from "@/components/shared/catalogo-finder/CatalogoFinderEmpty";
 import CatalogoFinderRow from "@/components/shared/catalogo-finder/CatalogoFinderRow";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import EnviosTelLink from "@/components/envios/EnviosTelLink";
 import { Button } from "@/components/ui/button";
 import { matchByMultiTerm } from "@/lib/busqueda";
-import EnviosTelLink from "@/components/envios/EnviosTelLink";
 import { nombreCompletoCliente, type ClienteItem } from "@/lib/envios";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
@@ -16,16 +16,16 @@ import { cn } from "@/lib/utils";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  pintores: ClienteItem[];
-  seleccionadoId?: string | null;
-  onSelect: (pintor: ClienteItem) => void;
+  pintor: ClienteItem | null;
+  consumidores: ClienteItem[];
+  onSelect: (cliente: ClienteItem) => void;
 }
 
-export default function SeleccionarPintorModal({
+export default function EnviosConsumidoresDePintorModal({
   open,
   onOpenChange,
-  pintores,
-  seleccionadoId = null,
+  pintor,
+  consumidores,
   onSelect,
 }: Props) {
   const [qDebounced, setQDebounced] = useState("");
@@ -35,12 +35,12 @@ export default function SeleccionarPintorModal({
     onDebouncedSearch: setQDebounced,
   });
 
-  const pintoresFiltrados = useMemo(() => {
-    if (!qDebounced.trim()) return pintores;
-    return pintores.filter((item) =>
+  const filtrados = useMemo(() => {
+    if (!qDebounced.trim()) return consumidores;
+    return consumidores.filter((item) =>
       matchByMultiTerm([item.nombreCompleto, item.cel], qDebounced)
     );
-  }, [pintores, qDebounced]);
+  }, [consumidores, qDebounced]);
 
   function handleOpenChange(next: boolean) {
     if (!next) {
@@ -50,42 +50,46 @@ export default function SeleccionarPintorModal({
     onOpenChange(next);
   }
 
+  const titulo = pintor
+    ? `CONSUMIDORES DE ${nombreCompletoCliente(pintor)}`
+    : "CONSUMIDORES FINALES";
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <AppModal
-        title="Pintores"
+        title={titulo}
         size="md"
         actions={
           <div className="flex w-full justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              Cerrar
             </Button>
           </div>
         }
       >
         <div className={cn("flex min-h-0 flex-col gap-3")}>
           <FiltroBusquedaInput
-            id="filtro-seleccionar-pintor"
-            placeholder="BUSCAR PINTOR..."
+            id="filtro-consumidores-pintor"
+            placeholder="BUSCAR CONSUMIDOR..."
             value={q}
             onChange={handleQChange}
             isDebouncing={isDebouncing}
             inputRef={searchRef}
           />
           <div className={cn("max-h-72 overflow-y-auto rounded-md border border-border")}>
-            {pintores.length === 0 ? (
-              <CatalogoFinderEmpty mensaje="No hay pintores." />
-            ) : pintoresFiltrados.length === 0 ? (
-              <CatalogoFinderEmpty mensaje="Ningún pintor coincide con la búsqueda." />
+            {consumidores.length === 0 ? (
+              <CatalogoFinderEmpty mensaje="Este pintor no tiene consumidores finales asociados." />
+            ) : filtrados.length === 0 ? (
+              <CatalogoFinderEmpty mensaje="Ningún consumidor coincide con la búsqueda." />
             ) : (
-              pintoresFiltrados.map((item) => (
+              filtrados.map((item) => (
                 <CatalogoFinderRow
                   key={item.id}
                   nombre={nombreCompletoCliente(item)}
                   nombreAccion={
                     item.cel.trim() ? <EnviosTelLink cel={item.cel} /> : undefined
                   }
-                  selected={item.id === seleccionadoId}
+                  selected={false}
                   onClick={() => onSelect(item)}
                   mostrarAcciones={false}
                   onEditar={() => undefined}

@@ -6,6 +6,9 @@ import {
   CATALOGO_FINDER_COLUMN_HEADER_COMPACT_CLASS,
   CATALOGO_FINDER_COLUMN_HEADER_SUBTITLE_CLASS,
   CATALOGO_FINDER_COLUMN_HEADER_TITLE_CLASS,
+  CATALOGO_FINDER_COLUMN_HEADER_TITULO_CLASS,
+  CATALOGO_FINDER_COLUMN_HEADER_TITULO_SUBTITLE_CLASS,
+  CATALOGO_FINDER_COLUMN_HEADER_TITULO_TITLE_CLASS,
   CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS,
   CATALOGO_FINDER_COLUMN_NOVO_BUTTON_COMPACT_CLASS,
   TABLE_ROW_ACTION_ICON_CLASS,
@@ -19,6 +22,11 @@ export default function CatalogoFinderColumn({
   deshabilitada = false,
   /** Alineación del botón `+` respecto al título (default: derecha, como Catálogo Gastos). */
   nuevoLado = "end",
+  /**
+   * `finder`: barra `bg-primary` (catálogos).
+   * `titulo`: mismo layout, tipografía de título de paso (wizard Envios).
+   */
+  headerVariant = "finder",
   children,
   className,
 }: {
@@ -28,10 +36,12 @@ export default function CatalogoFinderColumn({
   onNuevo?: () => void;
   deshabilitada?: boolean;
   nuevoLado?: "start" | "end";
+  headerVariant?: "finder" | "titulo";
   children: React.ReactNode;
   className?: string;
 }) {
-  const headerCompacto = !subtitulo;
+  const esTitulo = headerVariant === "titulo";
+  const headerCompacto = !subtitulo && !esTitulo;
   const novoClass = headerCompacto
     ? CATALOGO_FINDER_COLUMN_NOVO_BUTTON_COMPACT_CLASS
     : CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS;
@@ -55,28 +65,45 @@ export default function CatalogoFinderColumn({
 
   const tituloBlock = (
     <div className="min-w-0 max-w-full text-center">
-      <h2 className={CATALOGO_FINDER_COLUMN_HEADER_TITLE_CLASS}>{titulo}</h2>
-      {subtitulo && (
-        <p className={CATALOGO_FINDER_COLUMN_HEADER_SUBTITLE_CLASS}>{subtitulo}</p>
-      )}
+      <h2
+        className={
+          esTitulo
+            ? CATALOGO_FINDER_COLUMN_HEADER_TITULO_TITLE_CLASS
+            : CATALOGO_FINDER_COLUMN_HEADER_TITLE_CLASS
+        }
+      >
+        {titulo}
+      </h2>
+      {subtitulo ? (
+        <p
+          className={
+            esTitulo
+              ? CATALOGO_FINDER_COLUMN_HEADER_TITULO_SUBTITLE_CLASS
+              : CATALOGO_FINDER_COLUMN_HEADER_SUBTITLE_CLASS
+          }
+        >
+          {subtitulo}
+        </p>
+      ) : null}
     </div>
   );
+
+  const headerClass = esTitulo
+    ? CATALOGO_FINDER_COLUMN_HEADER_TITULO_CLASS
+    : headerCompacto
+      ? CATALOGO_FINDER_COLUMN_HEADER_COMPACT_CLASS
+      : CATALOGO_FINDER_COLUMN_HEADER_CLASS;
 
   return (
     <section
       className={cn(
         "flex min-h-0 flex-col overflow-hidden rounded-lg border bg-card shadow-sm",
+        esTitulo && "rounded-none border-0 bg-transparent shadow-none",
         deshabilitada && "opacity-95",
         className
       )}
     >
-      <header
-        className={
-          headerCompacto
-            ? CATALOGO_FINDER_COLUMN_HEADER_COMPACT_CLASS
-            : CATALOGO_FINDER_COLUMN_HEADER_CLASS
-        }
-      >
+      <header className={headerClass}>
         {nuevoLado === "start" ? (
           <>
             <div className="flex min-w-0 items-center justify-start">{botonNuevo}</div>

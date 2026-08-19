@@ -31,6 +31,19 @@ export const CATALOGO_FINDER_COLUMN_HEADER_TITLE_CLASS =
 export const CATALOGO_FINDER_COLUMN_HEADER_SUBTITLE_CLASS =
   "truncate text-center text-[11px] text-primary-foreground/75";
 
+/**
+ * Header Finder como título de paso (mismo grid: título centro, `+` a un lado).
+ * Sin barra `bg-primary` (no se lee como botón).
+ */
+export const CATALOGO_FINDER_COLUMN_HEADER_TITULO_CLASS =
+  "grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 px-1 py-1";
+
+export const CATALOGO_FINDER_COLUMN_HEADER_TITULO_TITLE_CLASS =
+  "truncate text-center text-sm font-semibold uppercase tracking-wide text-foreground";
+
+export const CATALOGO_FINDER_COLUMN_HEADER_TITULO_SUBTITLE_CLASS =
+  "truncate text-center text-[11px] text-muted-foreground";
+
 /** Texto de mensaje de éxito con ícono (lista, modal). */
 export const TEXT_SUCCESS_CLASS = "text-primary";
 
