@@ -84,10 +84,7 @@ function CeldaTilte({
     <TableCell className="celda-datos text-center">
       <div className="flex w-full items-center justify-center">
         <span
-          className={cn(
-            "tabla-check-toggle",
-            activo && "border-primary !bg-primary !text-primary-foreground"
-          )}
+          className="tabla-check-toggle"
           aria-label={activo ? ariaLabelSi : ariaLabelNo}
           role="img"
         >

@@ -1255,26 +1255,28 @@
   aspect-ratio: 1 / 1;
 }
 
-/* Toggle de tilde compacto en tablas (global y reutilizable). */
+/* Toggle de tilde compacto en tablas (global y reutilizable).
+   Rectángulo: borde primary, fondo card; tilde primary si es verdadero. */
 .tabla-gestion-compacta tbody td .tabla-check-toggle {
   --tabla-check-size: calc(var(--tabla-body-row-min-height) - 0.75rem);
-  width: var(--tabla-check-size) !important;
+  --tabla-check-width: calc(var(--tabla-check-size) * 1.4);
+  width: var(--tabla-check-width) !important;
   height: var(--tabla-check-size) !important;
-  min-width: var(--tabla-check-size) !important;
-  max-width: var(--tabla-check-size) !important;
+  min-width: var(--tabla-check-width) !important;
+  max-width: var(--tabla-check-width) !important;
   min-height: var(--tabla-check-size) !important;
   max-height: var(--tabla-check-size) !important;
   border: 1px solid #0072bb !important;
-  background-color: transparent !important;
+  background-color: var(--card) !important;
   color: #0072bb !important;
-  border-radius: 2px !important;
+  border-radius: 0 !important;
   padding: 0 !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 .tabla-gestion-compacta tbody td .tabla-check-toggle:hover {
-  background-color: transparent !important;
+  background-color: var(--card) !important;
 }
 .tabla-gestion-compacta tbody td .tabla-check-toggle svg {
   width: calc(var(--tabla-check-size) - 0.25rem) !important;
