@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { FileText, MapPin, Phone } from "lucide-react";
+import EnviosConductorDireccionesModal from "@/components/envios/EnviosConductorDireccionesModal";
 import { Button } from "@/components/ui/button";
 import {
   etiquetaDireccionEnvio,
   etiquetaHorarioEnvio,
   nombreDestinatarioEnvio,
   telefonoEnvio,
+  type ClienteItem,
+  type EnviosDireccionItem,
   type EnviosFinalListItem,
 } from "@/lib/envios";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
@@ -15,10 +18,17 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   envios: EnviosFinalListItem[];
+  clientes: ClienteItem[];
+  direcciones: EnviosDireccionItem[];
 }
 
-export default function EnviosConductorPageClient({ envios }: Props) {
+export default function EnviosConductorPageClient({
+  envios,
+  clientes,
+  direcciones,
+}: Props) {
   const [abiertoId, setAbiertoId] = useState<string | null>(null);
+  const [modalDireccionesOpen, setModalDireccionesOpen] = useState(false);
 
   return (
     <div className="flex h-full min-h-0 justify-center">
@@ -26,6 +36,19 @@ export default function EnviosConductorPageClient({ envios }: Props) {
         <h1 className="text-center text-sm font-semibold uppercase tracking-wide text-foreground">
           CONDUCTOR
         </h1>
+        <Button
+          type="button"
+          className="h-12 w-full"
+          onClick={() => setModalDireccionesOpen(true)}
+        >
+          Direcciones
+        </Button>
+        <EnviosConductorDireccionesModal
+          open={modalDireccionesOpen}
+          onOpenChange={setModalDireccionesOpen}
+          clientes={clientes}
+          direcciones={direcciones}
+        />
         <div className="min-h-0 flex-1 overflow-y-auto">
           {envios.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">

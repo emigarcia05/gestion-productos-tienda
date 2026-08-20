@@ -417,25 +417,27 @@ export default function CrearEnvioWizardModal({
                   className="h-full min-h-0 flex-1"
                 >
                   {paso === 1 ? (
-                    <div className="flex flex-col gap-2 p-2">
-                      {sucursales.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          No hay sucursales habilitadas para envíos.
-                        </p>
-                      ) : (
-                        sucursales.map((item) => (
-                          <Button
-                            key={item.id}
-                            type="button"
-                            variant={sucursalId === item.id ? "default" : "outline"}
-                            className="h-10 w-full"
-                            disabled={saving}
-                            onClick={() => handleSelectSucursal(item.id)}
-                          >
-                            {etiquetaSucursalEnvio(item)}
-                          </Button>
-                        ))
-                      )}
+                    <div className="flex min-h-full items-center justify-center p-4">
+                      <div className="flex w-full flex-col gap-2">
+                        {sucursales.length === 0 ? (
+                          <p className="text-center text-sm text-muted-foreground">
+                            No hay sucursales habilitadas para envíos.
+                          </p>
+                        ) : (
+                          sucursales.map((item) => (
+                            <Button
+                              key={item.id}
+                              type="button"
+                              variant={sucursalId === item.id ? "default" : "outline"}
+                              className="h-10 w-full"
+                              disabled={saving}
+                              onClick={() => handleSelectSucursal(item.id)}
+                            >
+                              {etiquetaSucursalEnvio(item)}
+                            </Button>
+                          ))
+                        )}
+                      </div>
                     </div>
                   ) : null}
 
@@ -573,7 +575,8 @@ export default function CrearEnvioWizardModal({
                   ) : null}
 
                   {paso === 5 ? (
-                    <div className="flex flex-col gap-4 p-4">
+                    <div className="flex min-h-full items-center justify-center p-4">
+                      <div className="flex w-full flex-col gap-4">
                       <div className="flex flex-col gap-2">
                         <ModalMicroLabel align="center">PDF MERCADERÍA</ModalMicroLabel>
                         {pdfAdjunto ? (
@@ -604,6 +607,7 @@ export default function CrearEnvioWizardModal({
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
                       </div>
                     </div>
                   ) : null}

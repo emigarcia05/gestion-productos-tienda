@@ -3,6 +3,8 @@ import EnviosConductorPageClient from "@/components/envios/EnviosConductorPageCl
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
+import { listarClientes } from "@/services/clientes.service";
+import { listarEnviosDirecciones } from "@/services/enviosDirecciones.service";
 import { listarEnviosPendientesConductor } from "@/services/enviosFinal.service";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +15,19 @@ export default async function EnviosConductorPage() {
     redirect(GP_ROUTES.defaultEntry);
   }
 
-  const envios = await listarEnviosPendientesConductor();
+  const [envios, clientes, direcciones] = await Promise.all([
+    listarEnviosPendientesConductor(),
+    listarClientes(),
+    listarEnviosDirecciones(),
+  ]);
 
   return (
     <div className="area-page-shell">
-      <EnviosConductorPageClient envios={envios} />
+      <EnviosConductorPageClient
+        envios={envios}
+        clientes={clientes}
+        direcciones={direcciones}
+      />
     </div>
   );
 }
