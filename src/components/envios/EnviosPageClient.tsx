@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, FileText, Pencil, Trash2 } from "lucide-react";
+import { Check, FileText, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEditarEnvioFinalModal from "@/components/envios/CrearEditarEnvioFinalModal";
+import CrearEnvioWizardModal from "@/components/envios/CrearEnvioWizardModal";
 import FilterBar, {
   FILTER_COUNT_CLASS,
   FILTER_SELECT_WRAPPER_CLASS,
@@ -87,6 +88,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
   const [modalEliminar, setModalEliminar] = useState<
     { open: false } | { open: true; id: string; label: string }
   >({ open: false });
+  const [modalCrear, setModalCrear] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const itemsFiltrados = useMemo(() => {
@@ -157,6 +159,16 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
         title="Envios"
         subtitle="Programados"
         contentWidth="full"
+        actions={
+          <Button
+            type="button"
+            className="h-10 gap-2 px-4"
+            onClick={() => setModalCrear(true)}
+          >
+            <Plus className="h-4 w-4 shrink-0" aria-hidden />
+            Crear Envío
+          </Button>
+        }
         filters={
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilaFiltrosDesplegables columnas={4}>
@@ -427,6 +439,18 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
           </p>
         </AppModal>
       </Dialog>
+      <CrearEnvioWizardModal
+        open={modalCrear}
+        onOpenChange={setModalCrear}
+        clientesCatalogo={clientes}
+        direcciones={direcciones}
+        sucursales={sucursales}
+        onCatalogoChanged={refresh}
+        onSuccess={() => {
+          setModalCrear(false);
+          refresh();
+        }}
+      />
     </>
   );
 }

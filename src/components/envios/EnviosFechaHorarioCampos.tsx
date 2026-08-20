@@ -22,6 +22,7 @@ import {
   horasHastaDisponibles,
   type EnviosHoraValue,
 } from "@/lib/envios";
+import { cn } from "@/lib/utils";
 
 function abrirSelectorFechaNativo(el: HTMLInputElement | null) {
   if (!el) return;
@@ -144,9 +145,9 @@ export default function EnviosFechaHorarioCampos({
 
       <div className="flex w-full flex-col items-center gap-2">
         <ModalMicroLabel align="center">RANGO HORARIO</ModalMicroLabel>
-        <div className="flex items-end justify-center gap-3">
-          <div className="flex flex-col items-center gap-1">
-            <ModalMicroLabel align="center">DESDE</ModalMicroLabel>
+        <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center gap-2">
+            <ModalMicroLabel className="w-auto shrink-0">DESDE</ModalMicroLabel>
             <Select value={horaDesde || undefined} disabled={disabled} onValueChange={handleDesde}>
               <SelectTrigger className="min-w-28 tabular-nums" aria-label="Hora desde">
                 <SelectValue placeholder="DESDE..." />
@@ -160,32 +161,28 @@ export default function EnviosFechaHorarioCampos({
               </SelectContent>
             </Select>
           </div>
-          {horaDesde !== "" ? (
-            <>
-              <span className="pb-2 text-sm text-foreground" aria-hidden>
-                -
-              </span>
-              <div className="flex flex-col items-center gap-1">
-                <ModalMicroLabel align="center">HASTA</ModalMicroLabel>
-                <Select
-                  value={horaHasta || undefined}
-                  disabled={disabled}
-                  onValueChange={handleHasta}
-                >
-                  <SelectTrigger className="min-w-28 tabular-nums" aria-label="Hora hasta">
-                    <SelectValue placeholder="HASTA..." />
-                  </SelectTrigger>
-                  <SelectContent className="select-content-filtro" position="popper" side="bottom" align="center">
-                    {horasHasta.map((hora) => (
-                      <SelectItem key={hora} value={hora} className="tabular-nums">
-                        {hora}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          ) : null}
+          <span className="text-sm text-foreground" aria-hidden>
+            -
+          </span>
+          <div className={cn("flex items-center gap-2", horaDesde === "" && "invisible")}>
+            <ModalMicroLabel className="w-auto shrink-0">HASTA</ModalMicroLabel>
+            <Select
+              value={horaHasta || undefined}
+              disabled={disabled || horaDesde === ""}
+              onValueChange={handleHasta}
+            >
+              <SelectTrigger className="min-w-28 tabular-nums" aria-label="Hora hasta">
+                <SelectValue placeholder="HASTA..." />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="center">
+                {horasHasta.map((hora) => (
+                  <SelectItem key={hora} value={hora} className="tabular-nums">
+                    {hora}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>

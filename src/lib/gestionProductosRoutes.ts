@@ -50,7 +50,7 @@ export const GP_ROUTES = {
   },
   envios: {
     programados: `${GP}/envios/programados`,
-    crear: `${GP}/envios/crear`,
+    conductor: `${GP}/envios/conductor`,
   },
   asistenteIa: {
     buscarColorImagen: `${GP}/asistente-ia/buscar-color-imagen`,
@@ -97,7 +97,7 @@ export const GP_INTERNAL = {
   },
   envios: {
     programados: "/envios/programados",
-    crear: "/envios/crear",
+    conductor: "/envios/conductor",
   },
   asistenteIa: {
     buscarColorImagen: "/asistente-ia/buscar-color-imagen",
@@ -184,7 +184,7 @@ const GP_ROUTE_ALIASES: Record<string, readonly string[]> = {
     "/proveedores/comparacion-categorias/categorias",
   ],
   [GP_ROUTES.envios.programados]: ["/envios/programados", "/envios", `${GP}/envios`],
-  [GP_ROUTES.envios.crear]: ["/envios/crear"],
+  [GP_ROUTES.envios.conductor]: ["/envios/conductor", "/envios/crear"],
   [GP_ROUTES.asistenteIa.buscarColorImagen]: [
     "/asistente-ia/buscar-color-imagen",
   ],
@@ -257,7 +257,7 @@ const ANALISIS_PRECIOS_PREFIXES = [
 
 const ENVIOS_PREFIXES = [
   GP_ROUTES.envios.programados,
-  GP_ROUTES.envios.crear,
+  GP_ROUTES.envios.conductor,
   `${GP}/envios`,
   "/envios",
 ] as const;
@@ -290,8 +290,13 @@ export function isGpRouteActive(pathname: string, canonicalHref: string): boolea
       pathname === `${GP}/envios`
     );
   }
-  if (canonicalHref === GP_ROUTES.envios.crear) {
-    return pathname === canonicalHref || pathname === "/envios/crear";
+  if (canonicalHref === GP_ROUTES.envios.conductor) {
+    return (
+      pathname === canonicalHref ||
+      pathname === "/envios/conductor" ||
+      pathname === "/envios/crear" ||
+      pathname === `${GP}/envios/crear`
+    );
   }
 
   if (canonicalHref === GP_ROUTES.ayudaVendedor.transfDepositos) {
@@ -413,5 +418,5 @@ export const REVALIDATE_AYUDA_VENDEDOR_CALC = gpRevalidatePaths([
 
 export const REVALIDATE_ENVIOS = gpRevalidatePaths([
   GP_ROUTES.envios.programados,
-  GP_ROUTES.envios.crear,
+  GP_ROUTES.envios.conductor,
 ]);

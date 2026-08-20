@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { isoYmdFromPrismaDateOnly } from "@/lib/fechaArgentina";
+import { isoYmdFromPrismaDateOnly, dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
 import {
   ENVIOS_PDF_MAX_BYTES,
   capitalizarTextoEnvio,
@@ -303,6 +303,22 @@ export async function listarEnviosFinal(): Promise<EnviosFinalListItem[]> {
     return rows.map(mapListRow);
   } catch (e) {
     console.error("[enviosFinal][listar]", e);
+    return [];
+  }
+}
+
+/** Envíos con `fecha_envio` ≥ hoy (AR), para el módulo Conductor. */
+export async function listarEnviosPendientesConductor(): Promise<EnviosFinalListItem[]> {
+  try {
+    const hoyIso = dateToIsoYmdArgentina(new Date());
+    const rows = await prisma.enviosFinal.findMany({
+      where: { fechaEnvio: { gte: dateFromIsoYmd(hoyIso) } },
+      orderBy: [{ fechaEnvio: "asc" }, { horaDesde: "asc" }, { createdAt: "asc" }],
+      select: listSelect,
+    });
+    return rows.map(mapListRow);
+  } catch (e) {
+    console.error("[enviosFinal][listarPendientesConductor]", e);
     return [];
   }
 }

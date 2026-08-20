@@ -211,6 +211,18 @@ export interface EnviosFinalListItem {
   tienePdf: boolean;
 }
 
+export function nombreDestinatarioEnvio(item: EnviosFinalListItem): string {
+  if (item.clienteFinal) return nombreCompletoCliente(item.clienteFinal);
+  if (item.pintor) return nombreCompletoCliente(item.pintor);
+  return "";
+}
+
+export function telefonoEnvio(item: EnviosFinalListItem): string {
+  const celCliente = item.clienteFinal?.cel.trim() ?? "";
+  if (celCliente !== "") return celCliente;
+  return item.pintor?.cel.trim() ?? "";
+}
+
 export function etiquetaDireccionEnvio(dir: EnviosDireccionItem): string {
   const calleNum = [dir.calleNombre.trim(), dir.numeracion.trim()].filter((s) => s !== "").join(" ");
   const distrito = dir.distrito.trim();

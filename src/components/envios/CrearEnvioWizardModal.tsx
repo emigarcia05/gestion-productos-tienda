@@ -394,7 +394,7 @@ export default function CrearEnvioWizardModal({
           }
         >
           <div className="flex h-full min-h-0 flex-col">
-            <div className="h-[15%] shrink-0 border-b border-border p-3">
+            <div className="h-[15%] shrink-0 border-b border-primary p-3">
               <EnviosWizardPasos
                 pasoActual={paso}
                 pasoMaximoAlcanzable={pasoMaximoAlcanzable}
@@ -575,7 +575,7 @@ export default function CrearEnvioWizardModal({
                   {paso === 5 ? (
                     <div className="flex flex-col gap-4 p-4">
                       <div className="flex flex-col gap-2">
-                        <ModalMicroLabel>PDF MERCADERÍA</ModalMicroLabel>
+                        <ModalMicroLabel align="center">PDF MERCADERÍA</ModalMicroLabel>
                         {pdfAdjunto ? (
                           <p className="text-sm text-foreground">{pdfAdjunto.nombre}</p>
                         ) : null}
@@ -587,7 +587,7 @@ export default function CrearEnvioWizardModal({
                         />
                       </div>
                       <div className="flex flex-col gap-1">
-                        <ModalMicroLabel>FORMA DE PAGO</ModalMicroLabel>
+                        <ModalMicroLabel align="center">FORMA DE PAGO</ModalMicroLabel>
                         <Select
                           value={formaPagado || undefined}
                           disabled={saving}

@@ -351,7 +351,7 @@ Los ~71 modelos de `schema.prisma` están en uso (directo, `tx.` o include). Scr
 
 ### 3.15 Envios (Vendedor)
 
-URL canónica: `/gestion-productos/envios/programados` y `/gestion-productos/envios/crear` → `src/app/envios/...`. Permiso `PERMISOS.envios.acceso` (`requireEnvios`): `simple` y `editor` leen y mutan (excepción **§1.2.3**).
+URL canónica: `/gestion-productos/envios/programados` y `/gestion-productos/envios/conductor` → `src/app/envios/...`. Alias `/envios/crear` redirige a Conductor. Permiso `PERMISOS.envios.acceso` (`requireEnvios`): `simple` y `editor` leen y mutan (excepción **§1.2.3**). Conductor lista `listarEnviosPendientesConductor` (`fecha_envio` ≥ hoy AR, orden fecha/hora asc). El alta wizard se abre desde Programados.
 
 Tablas: `clientes` (catálogo; `nombre_completo` **en mayúsculas** `es-AR` al persistir; **`cel` opcional** (string vacío permitido); `tipo` = `CONSUMIDOR_FINAL` | `PINTOR`; **`pintor_asociado`** FK opcional a otro `clientes`), `envios_direcciones` (**`persona_id`** FK a cliente; en el alta, al `CONSUMIDOR_FINAL`; **`calle_nombre`** (ex `direccion`), **`distrito`**, **`departamento`** opcional = `LAS_HERAS` | `GODOY_CRUZ` | `GUAYMALLEN` | `MAIPU` | `LUJAN`; **`calle_nombre`** y **`distrito`** en **proper case** (primera letra de cada palabra); `numeracion`/`referencia` primera mayúscula de la oración; no aplica a `url_maps`; **al persistir, al menos un dato** CHECK + Zod + servicio), `envios_final` (envío; **`sucursal_id`** FK obligatoria a `global_sucursales`). IDs CUID.
 
