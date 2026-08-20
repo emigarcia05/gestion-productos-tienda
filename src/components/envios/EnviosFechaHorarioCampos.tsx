@@ -1,20 +1,27 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { CalendarDays } from "lucide-react";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   addDaysToIsoYmdArgentina,
   dateToIsoYmdArgentina,
   formatIsoYmdDdMmYyyyArgentina,
 } from "@/lib/fechaArgentina";
 import {
-  ENVIOS_HORA_VALUES,
-  rangoHorarioDesdeClicks,
+  esHoraEnvioValida,
+  horasDesdeDisponibles,
+  horasHastaDisponibles,
   type EnviosHoraValue,
 } from "@/lib/envios";
-import { cn } from "@/lib/utils";
 
 function abrirSelectorFechaNativo(el: HTMLInputElement | null) {
   if (!el) return;
@@ -48,16 +55,10 @@ export default function EnviosFechaHorarioCampos({
   onCompleto,
 }: Props) {
   const hiddenFechaRef = useRef<HTMLInputElement>(null);
-  const [horaPendiente, setHoraPendiente] = useState<EnviosHoraValue | "">("");
-  const [horaHover, setHoraHover] = useState<EnviosHoraValue | "">("");
   const hoyIso = dateToIsoYmdArgentina(new Date());
   const mananaIso = addDaysToIsoYmdArgentina(hoyIso, 1);
   const fechaOtra = fechaIso !== "" && fechaIso !== hoyIso && fechaIso !== mananaIso;
-  const rangoListo = horaDesde !== "" && horaHasta !== "" && horaDesde < horaHasta;
-  const rangoPreview =
-    horaPendiente !== "" && horaHover !== ""
-      ? rangoHorarioDesdeClicks(horaPendiente, horaHover)
-      : null;
+  const horasHasta = horaDesde !== "" ? horasHastaDisponibles(horaDesde) : [];
 
   function intentarCompletar(nextFecha: string, nextDesde: string, nextHasta: string) {
     if (nextFecha !== "" && nextDesde !== "" && nextHasta !== "" && nextDesde < nextHasta) {
@@ -70,21 +71,21 @@ export default function EnviosFechaHorarioCampos({
     intentarCompletar(iso, horaDesde, horaHasta);
   }
 
-  function handleHoraClick(hora: EnviosHoraValue) {
-    if (horaPendiente === "") {
-      setHoraPendiente(hora);
-      setHoraHover("");
-      onHoraDesdeChange("");
+  function handleDesde(value: string) {
+    if (!esHoraEnvioValida(value)) return;
+    onHoraDesdeChange(value);
+    const hastaSigueValido = horaHasta !== "" && horaHasta > value;
+    if (!hastaSigueValido) {
       onHoraHastaChange("");
       return;
     }
-    const rango = rangoHorarioDesdeClicks(horaPendiente, hora);
-    if (!rango) return;
-    setHoraPendiente("");
-    setHoraHover("");
-    onHoraDesdeChange(rango.horaDesde);
-    onHoraHastaChange(rango.horaHasta);
-    intentarCompletar(fechaIso, rango.horaDesde, rango.horaHasta);
+    intentarCompletar(fechaIso, value, horaHasta);
+  }
+
+  function handleHasta(value: string) {
+    if (!esHoraEnvioValida(value) || horaDesde === "" || value <= horaDesde) return;
+    onHoraHastaChange(value);
+    intentarCompletar(fechaIso, horaDesde, value);
   }
 
   return (
@@ -143,52 +144,48 @@ export default function EnviosFechaHorarioCampos({
 
       <div className="flex w-full flex-col items-center gap-2">
         <ModalMicroLabel align="center">RANGO HORARIO</ModalMicroLabel>
-        {rangoPreview ? (
-          <p className="text-sm tabular-nums text-foreground">
-            {rangoPreview.horaDesde} / {rangoPreview.horaHasta}
-          </p>
-        ) : rangoListo ? (
-          <p className="text-sm tabular-nums text-foreground">
-            {horaDesde} / {horaHasta}
-          </p>
-        ) : null}
-        <div
-          className="flex max-w-full flex-wrap items-center justify-center gap-1"
-          role="group"
-          aria-label="Rango horario"
-          onMouseLeave={() => setHoraHover("")}
-        >
-          {ENVIOS_HORA_VALUES.map((hora) => {
-            const esPendiente = horaPendiente === hora;
-            const esExtremo = rangoPreview
-              ? hora === rangoPreview.horaDesde || hora === rangoPreview.horaHasta
-              : hora === horaDesde || hora === horaHasta;
-            const enMedio = rangoPreview
-              ? hora > rangoPreview.horaDesde && hora < rangoPreview.horaHasta
-              : rangoListo && hora > horaDesde && hora < horaHasta;
-            return (
-              <Button
-                key={hora}
-                type="button"
-                variant={esPendiente || esExtremo ? "default" : "outline"}
-                disabled={disabled}
-                aria-pressed={esPendiente || esExtremo || Boolean(enMedio)}
-                className={cn(
-                  "h-8 min-w-12 px-2 text-xs font-medium tabular-nums",
-                  enMedio && "border-primary/40 bg-primary/20 text-foreground"
-                )}
-                onMouseEnter={() => {
-                  if (!disabled && horaPendiente !== "") setHoraHover(hora);
-                }}
-                onFocus={() => {
-                  if (!disabled && horaPendiente !== "") setHoraHover(hora);
-                }}
-                onClick={() => handleHoraClick(hora)}
-              >
-                {hora}
-              </Button>
-            );
-          })}
+        <div className="flex items-end justify-center gap-3">
+          <div className="flex flex-col items-center gap-1">
+            <ModalMicroLabel align="center">DESDE</ModalMicroLabel>
+            <Select value={horaDesde || undefined} disabled={disabled} onValueChange={handleDesde}>
+              <SelectTrigger className="min-w-28 tabular-nums" aria-label="Hora desde">
+                <SelectValue placeholder="DESDE..." />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="center">
+                {horasDesdeDisponibles().map((hora) => (
+                  <SelectItem key={hora} value={hora} className="tabular-nums">
+                    {hora}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {horaDesde !== "" ? (
+            <>
+              <span className="pb-2 text-sm text-foreground" aria-hidden>
+                -
+              </span>
+              <div className="flex flex-col items-center gap-1">
+                <ModalMicroLabel align="center">HASTA</ModalMicroLabel>
+                <Select
+                  value={horaHasta || undefined}
+                  disabled={disabled}
+                  onValueChange={handleHasta}
+                >
+                  <SelectTrigger className="min-w-28 tabular-nums" aria-label="Hora hasta">
+                    <SelectValue placeholder="HASTA..." />
+                  </SelectTrigger>
+                  <SelectContent className="select-content-filtro" position="popper" side="bottom" align="center">
+                    {horasHasta.map((hora) => (
+                      <SelectItem key={hora} value={hora} className="tabular-nums">
+                        {hora}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </div>

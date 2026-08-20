@@ -103,17 +103,6 @@ export function etiquetaHorarioEnvio(horaDesde: string, horaHasta: string): stri
   return `${horaDesde} – ${horaHasta}`;
 }
 
-/** Ordena dos clics de la grilla (09:00–19:00). `null` si son el mismo valor. */
-export function rangoHorarioDesdeClicks(
-  a: EnviosHoraValue,
-  b: EnviosHoraValue
-): { horaDesde: EnviosHoraValue; horaHasta: EnviosHoraValue } | null {
-  if (a === b) return null;
-  return a < b
-    ? { horaDesde: a, horaHasta: b }
-    : { horaDesde: b, horaHasta: a };
-}
-
 export function etiquetaTipoCliente(tipo: ClienteTipo): string {
   return CLIENTE_TIPO_LABELS[tipo];
 }

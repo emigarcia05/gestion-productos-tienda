@@ -40,6 +40,7 @@ export default function CatalogoFinderRow({
   nombreCentrado = false,
   etiquetaIzquierda,
   iconoIzquierda,
+  reservarEspacioIconoIzquierda = false,
   eliminarSiempreVisible = false,
 }: {
   nombre: string;
@@ -65,6 +66,8 @@ export default function CatalogoFinderRow({
   etiquetaIzquierda?: string;
   /** Ícono a la izquierda del nombre (p. ej. Envios · PINTOR). */
   iconoIzquierda?: ReactNode;
+  /** Reserva el hueco de `iconoIzquierda` (size-7) aunque no haya ícono, para alinear nombres. */
+  reservarEspacioIconoIzquierda?: boolean;
   /** Si true, el eliminar no va en el hover: queda fijo a la derecha de la fila. */
   eliminarSiempreVisible?: boolean;
 }) {
@@ -151,11 +154,11 @@ export default function CatalogoFinderRow({
                   {etiquetaIzquierda}
                 </span>
               ) : null}
-              {iconoIzquierda ? (
+              {iconoIzquierda || reservarEspacioIconoIzquierda ? (
                 <div
-                  className="shrink-0"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
+                  className="flex size-7 shrink-0 items-center justify-center"
+                  onClick={iconoIzquierda ? (e) => e.stopPropagation() : undefined}
+                  onKeyDown={iconoIzquierda ? (e) => e.stopPropagation() : undefined}
                 >
                   {iconoIzquierda}
                 </div>

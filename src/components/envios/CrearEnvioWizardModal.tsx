@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import EnviosMapsLink from "@/components/envios/EnviosMapsLink";
-import EnviosTelLink from "@/components/envios/EnviosTelLink";
 import EnviosPintorConsumidoresButton from "@/components/envios/EnviosPintorConsumidoresButton";
 import EnviosFechaHorarioCampos from "@/components/envios/EnviosFechaHorarioCampos";
 import EnviosWizardPasos, {
@@ -133,18 +132,27 @@ export default function CrearEnvioWizardModal({
   );
 
   const clientesFiltrados = useMemo(() => {
-    const asociados = filtroPintorId
-      ? clientesCatalogo.filter(
-          (item) => item.id === filtroPintorId || item.pintorAsociadoId === filtroPintorId
-        )
-      : clientesCatalogo;
-    if (!qClienteDebounced.trim()) return asociados;
-    return asociados.filter((item) =>
+    const q = qClienteDebounced.trim();
+    const coincide = (item: ClienteItem) =>
+      !q ||
       matchByMultiTerm(
         [item.nombreCompleto, item.cel, item.pintorAsociado?.nombreCompleto ?? ""],
         qClienteDebounced
+      );
+
+    if (!filtroPintorId) {
+      return clientesCatalogo.filter(coincide);
+    }
+
+    const pintor = clientesCatalogo.find((item) => item.id === filtroPintorId);
+    const clientesDelPintor = clientesCatalogo
+      .filter((item) => item.pintorAsociadoId === filtroPintorId)
+      .sort((a, b) =>
+        nombreCompletoCliente(a).localeCompare(nombreCompletoCliente(b), "es", { sensitivity: "base" })
       )
-    );
+      .filter(coincide);
+
+    return pintor ? [pintor, ...clientesDelPintor] : clientesDelPintor;
   }, [clientesCatalogo, qClienteDebounced, filtroPintorId]);
 
   const pintorFiltro = useMemo(
@@ -478,11 +486,9 @@ export default function CrearEnvioWizardModal({
                                 />
                               ) : undefined
                             }
+                            reservarEspacioIconoIzquierda
                             nombre={nombreCompletoCliente(item)}
                             nombreSufijo={nombrePintorAsociadoCliente(item) ?? undefined}
-                            nombreAccion={
-                              item.cel.trim() ? <EnviosTelLink cel={item.cel} /> : undefined
-                            }
                             selected={item.id === clienteId}
                             onClick={() => handleSelectCliente(item.id)}
                             mostrarAcciones
