@@ -329,6 +329,11 @@ export function isGpRouteActive(pathname: string, canonicalHref: string): boolea
   return aliases.some((alias) => pathname === alias || pathname.startsWith(`${alias}/`));
 }
 
+/** Conductor: lienzo mobile sin slidenav (canónica, interna y alias `/envios/crear`). */
+export function esRutaEnviosConductor(pathname: string): boolean {
+  return isGpRouteActive(pathname, GP_ROUTES.envios.conductor);
+}
+
 export type GpSidebarModuleId =
   | "pedidos"
   | "asistencia-precios"

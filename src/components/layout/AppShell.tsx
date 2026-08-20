@@ -1,6 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
+import { esRutaEnviosConductor } from "@/lib/gestionProductosRoutes";
 import type { Rol } from "@/lib/permisos";
 
 interface Props {
@@ -9,9 +11,12 @@ interface Props {
 }
 
 export default function AppShell({ children, rol }: Props) {
+  const pathname = usePathname();
+  const sinSidebar = esRutaEnviosConductor(pathname);
+
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar rol={rol} />
+      {sinSidebar ? null : <Sidebar rol={rol} />}
       <main className="flex-1 overflow-hidden bg-gris">{children}</main>
     </div>
   );

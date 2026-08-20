@@ -60,7 +60,7 @@ Stack: **Next.js 16 App Router**, **Prisma 7**, **Zod v4**, **iron-session**. Zo
 
 - **iron-session** vía `getSesion()`, `getRol()`, `esEditor()`.
 - Roles: `"simple"` | `"editor"`. El editor se activa con `activarModoEditor` (`clave` Zod `z.string().min(1).max(500)` vs `EDITOR_PASSWORD`). Única Action de sesión. No hay “volver a simple”: cookie de arranque `tienda-app-arranque` (sin `maxAge`) + middleware fuerzan `simple` al reabrir el navegador. Rutas `/api/*` fuera del matcher del middleware.
-- Usuario de pestaña: `sessionStorage` (`main-app-usuario-sesion`); **no** se persiste en iron-session ni BD. Sucursal preferida se copia de `global_personal.sucursal_por_defecto`.
+- Usuario de pestaña: `sessionStorage` (`main-app-usuario-sesion`); **no** se persiste en iron-session ni BD. Sucursal preferida se copia de `global_personal.sucursal_por_defecto`. **Excepción:** Envios · Conductor no monta el slidenav; no exige usuario de pestaña (solo `PERMISOS.envios.acceso` + rol iron-session).
 - `getRol()` ante cookie inválida: `"simple"` + log `[sesion][getRol]` (no tumbar el layout).
 
 #### 1.2.2 Checklist por Action (obligatorio, en este orden)
@@ -351,7 +351,7 @@ Los ~71 modelos de `schema.prisma` están en uso (directo, `tx.` o include). Scr
 
 ### 3.15 Envios (Vendedor)
 
-URL canónica: `/gestion-productos/envios/programados` y `/gestion-productos/envios/conductor` → `src/app/envios/...`. Alias `/envios/crear` redirige a Conductor. Permiso `PERMISOS.envios.acceso` (`requireEnvios`): `simple` y `editor` leen y mutan (excepción **§1.2.3**). Conductor lista `listarEnviosPendientesConductor` (`fecha_envio` ≥ hoy AR, orden fecha/hora asc) y, para el lookup **Direcciones**, reutiliza `listarClientes` + `listarEnviosDirecciones` (solo lectura; sin Action nueva). El alta wizard se abre desde Programados.
+URL canónica: `/gestion-productos/envios/programados` y `/gestion-productos/envios/conductor` → `src/app/envios/...`. Alias `/envios/crear` redirige a Conductor. Permiso `PERMISOS.envios.acceso` (`requireEnvios`): `simple` y `editor` leen y mutan (excepción **§1.2.3**). Conductor lista `listarEnviosPendientesConductor` (`fecha_envio` ≥ hoy AR, orden fecha/hora asc) y, para el lookup **Direcciones**, reutiliza `listarClientes` + `listarEnviosDirecciones` (solo lectura; sin Action nueva). Pantalla sin slidenav: no exige usuario de pestaña. El alta wizard se abre desde Programados.
 
 Tablas: `clientes` (catálogo; `nombre_completo` **en mayúsculas** `es-AR` al persistir; **`cel` opcional** (string vacío permitido); `tipo` = `CONSUMIDOR_FINAL` | `PINTOR`; **`pintor_asociado`** FK opcional a otro `clientes`), `envios_direcciones` (**`persona_id`** FK a cliente; en el alta, al `CONSUMIDOR_FINAL`; **`calle_nombre`** (ex `direccion`), **`distrito`**, **`departamento`** opcional = `LAS_HERAS` | `GODOY_CRUZ` | `GUAYMALLEN` | `MAIPU` | `LUJAN`; **`calle_nombre`** y **`distrito`** en **proper case** (primera letra de cada palabra); `numeracion`/`referencia` primera mayúscula de la oración; no aplica a `url_maps`; **al persistir, al menos un dato** CHECK + Zod + servicio), `envios_final` (envío; **`sucursal_id`** FK obligatoria a `global_sucursales`). IDs CUID.
 
