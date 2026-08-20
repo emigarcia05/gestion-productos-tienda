@@ -1575,6 +1575,7 @@ model EnviosDireccion {
  * Sucursal que envía (`pedido = true`). Dirección obligatoria.
  * Fecha calendario AR + rango horario 09:00–19:00 (saltos 30 min).
  * PDF de comprobante opcional (bytes + nombre).
+ * `entregado`: el conductor confirma la entrega (sale del listado Conductor).
  */
 model EnviosFinal {
   id                   String             @id @default(cuid())
@@ -1590,6 +1591,7 @@ model EnviosFinal {
   pdfComprobante       Bytes?             @map("pdf_comprobante")
   pagado               Boolean            @default(false) @map("pagado")
   formaPagado          EnviosFormaPagado  @map("forma_pagado")
+  entregado            Boolean            @default(false) @map("entregado")
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
@@ -1604,6 +1606,7 @@ model EnviosFinal {
   @@index([direccionId], map: "envios_final_direccion_id_idx")
   @@index([fechaEnvio], map: "envios_final_fecha_envio_idx")
   @@index([pagado], map: "envios_final_pagado_idx")
+  @@index([entregado], map: "envios_final_entregado_idx")
   @@map("envios_final")
 }
 

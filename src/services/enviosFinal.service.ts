@@ -59,6 +59,7 @@ const listSelect = {
   observacionEnvio: true,
   pagado: true,
   formaPagado: true,
+  entregado: true,
   pdfComprobanteNombre: true,
   sucursal: { select: sucursalSelect },
   clienteFinal: { select: clienteSelect },
@@ -139,6 +140,7 @@ function mapListRow(row: {
   observacionEnvio: string;
   pagado: boolean;
   formaPagado: EnviosFinalListItem["formaPagado"];
+  entregado: boolean;
   pdfComprobanteNombre: string | null;
   sucursal: { id: string; codigo: string; nombre: string };
   clienteFinal: Parameters<typeof mapCliente>[0];
@@ -167,6 +169,7 @@ function mapListRow(row: {
     observacionEnvio: row.observacionEnvio.trim(),
     pagado: row.pagado,
     formaPagado: row.formaPagado,
+    entregado: row.entregado,
     pdfComprobanteNombre: nombrePdf,
     tienePdf: nombrePdf != null,
   };
@@ -307,12 +310,12 @@ export async function listarEnviosFinal(): Promise<EnviosFinalListItem[]> {
   }
 }
 
-/** Envíos con `fecha_envio` ≥ hoy (AR), para el módulo Conductor. */
+/** Envíos no entregados con `fecha_envio` ≥ hoy (AR), para el módulo Conductor. */
 export async function listarEnviosPendientesConductor(): Promise<EnviosFinalListItem[]> {
   try {
     const hoyIso = dateToIsoYmdArgentina(new Date());
     const rows = await prisma.enviosFinal.findMany({
-      where: { fechaEnvio: { gte: dateFromIsoYmd(hoyIso) } },
+      where: { fechaEnvio: { gte: dateFromIsoYmd(hoyIso) }, entregado: false },
       orderBy: [{ fechaEnvio: "asc" }, { horaDesde: "asc" }, { createdAt: "asc" }],
       select: listSelect,
     });
@@ -434,6 +437,25 @@ export async function editarEnviosFinal(
   } catch (error) {
     console.error("[enviosFinal][editar]", error);
     return { success: false, error: prismaErrorMessage(error, "No se pudo actualizar el envío.") };
+  }
+}
+
+export async function marcarEnviosFinalEntregado(
+  id: string
+): Promise<ServiceResult<EnviosFinalListItem>> {
+  try {
+    const row = await prisma.enviosFinal.update({
+      where: { id },
+      data: { entregado: true },
+      select: listSelect,
+    });
+    return { success: true, data: mapListRow(row) };
+  } catch (error) {
+    console.error("[enviosFinal][marcarEntregado]", error);
+    return {
+      success: false,
+      error: prismaErrorMessage(error, "No se pudo marcar el envío como entregado."),
+    };
   }
 }
 

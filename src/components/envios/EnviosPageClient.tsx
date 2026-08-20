@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, FileText, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEditarEnvioFinalModal from "@/components/envios/CrearEditarEnvioFinalModal";
@@ -39,20 +39,24 @@ import AppModal from "@/components/shared/AppModal";
 import { eliminarEnviosFinalAction } from "@/actions/envios";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
-  ENVIOS_FORMA_PAGADO_LABELS,
-  ENVIOS_FORMA_PAGADO_VALUES,
+  direccionEnvioTieneDato,
   etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
   etiquetaFormaPagadoEnvio,
   etiquetaHorarioEnvio,
   etiquetaSucursalEnvio,
   nombreCompletoCliente,
+  telefonoEnvio,
   type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
   type EnviosSucursalOption,
 } from "@/lib/envios";
-import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
+import {
+  addDaysToIsoYmdArgentina,
+  dateToIsoYmdArgentina,
+  formatIsoYmdDdMmYyyyArgentina,
+} from "@/lib/fechaArgentina";
 import { fmtCelda } from "@/lib/format";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import {
@@ -63,6 +67,36 @@ import {
 import { cn } from "@/lib/utils";
 
 const FILTRO_TODOS = "__todos__";
+const FILTRO_FECHA_HOY = "hoy";
+const FILTRO_FECHA_MANANA = "manana";
+const COLSPAN_ENVIOS_PROGRAMADOS = 11;
+
+function CeldaTilte({
+  activo,
+  ariaLabelSi,
+  ariaLabelNo,
+}: {
+  activo: boolean;
+  ariaLabelSi: string;
+  ariaLabelNo: string;
+}) {
+  return (
+    <TableCell className="celda-datos text-center">
+      <div className="flex w-full items-center justify-center">
+        <span
+          className={cn(
+            "tabla-check-toggle",
+            activo && "border-primary !bg-primary !text-primary-foreground"
+          )}
+          aria-label={activo ? ariaLabelSi : ariaLabelNo}
+          role="img"
+        >
+          {activo ? <Check aria-hidden="true" /> : null}
+        </span>
+      </div>
+    </TableCell>
+  );
+}
 
 interface Props {
   envios: EnviosFinalListItem[];
@@ -74,8 +108,8 @@ interface Props {
 export default function EnviosPageClient({ envios, clientes, direcciones, sucursales }: Props) {
   const router = useRouter();
   const [filtroSucursal, setFiltroSucursal] = useState(FILTRO_TODOS);
-  const [filtroPagado, setFiltroPagado] = useState(FILTRO_TODOS);
-  const [filtroForma, setFiltroForma] = useState(FILTRO_TODOS);
+  const [filtroFecha, setFiltroFecha] = useState(FILTRO_TODOS);
+  const [filtroEntregado, setFiltroEntregado] = useState(FILTRO_TODOS);
   const [qDebounced, setQDebounced] = useState("");
   const { q, setQ, handleQChange, isDebouncing, ref: searchRef } = useFiltrosConBusqueda({
     qActual: qDebounced,
@@ -94,9 +128,18 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
   const itemsFiltrados = useMemo(() => {
     return envios.filter((item) => {
       if (filtroSucursal !== FILTRO_TODOS && item.sucursal.id !== filtroSucursal) return false;
-      if (filtroPagado === "si" && !item.pagado) return false;
-      if (filtroPagado === "no" && item.pagado) return false;
-      if (filtroForma !== FILTRO_TODOS && item.formaPagado !== filtroForma) return false;
+      if (filtroFecha !== FILTRO_TODOS) {
+        const hoyIso = dateToIsoYmdArgentina(new Date());
+        if (filtroFecha === FILTRO_FECHA_HOY && item.fechaEnvioIso !== hoyIso) return false;
+        if (
+          filtroFecha === FILTRO_FECHA_MANANA &&
+          item.fechaEnvioIso !== addDaysToIsoYmdArgentina(hoyIso, 1)
+        ) {
+          return false;
+        }
+      }
+      if (filtroEntregado === "si" && !item.entregado) return false;
+      if (filtroEntregado === "no" && item.entregado) return false;
       if (
         qDebounced.trim() &&
         !matchByMultiTerm(
@@ -106,10 +149,12 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
             item.clienteFinal?.cel ?? "",
             item.pintor ? nombreCompletoCliente(item.pintor) : "",
             item.pintor?.cel ?? "",
+            telefonoEnvio(item),
             etiquetaDireccionEnvio(item.direccion),
             item.direccion.distrito,
             etiquetaDepartamentoEnvio(item.direccion.departamento),
             item.direccion.referencia,
+            item.direccion.urlMaps,
             item.observacionEnvio,
             etiquetaFormaPagadoEnvio(item.formaPagado),
             formatIsoYmdDdMmYyyyArgentina(item.fechaEnvioIso),
@@ -122,12 +167,12 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
       }
       return true;
     });
-  }, [envios, filtroSucursal, filtroPagado, filtroForma, qDebounced]);
+  }, [envios, filtroSucursal, filtroFecha, filtroEntregado, qDebounced]);
 
   function limpiarFiltros() {
     setFiltroSucursal(FILTRO_TODOS);
-    setFiltroPagado(FILTRO_TODOS);
-    setFiltroForma(FILTRO_TODOS);
+    setFiltroFecha(FILTRO_TODOS);
+    setFiltroEntregado(FILTRO_TODOS);
     setQ("");
     setQDebounced("");
   }
@@ -171,7 +216,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
         }
         filters={
           <FilterBar className="filtros-contenedor-tienda bg-card">
-            <FilaFiltrosDesplegables columnas={4}>
+            <FilaFiltrosDesplegables>
               <FiltroIndividualContainer
                 activo={filtroSucursal !== FILTRO_TODOS}
                 onLimpiar={() => setFiltroSucursal(FILTRO_TODOS)}
@@ -194,41 +239,38 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
                 </Select>
               </FiltroIndividualContainer>
               <FiltroIndividualContainer
-                activo={filtroPagado !== FILTRO_TODOS}
-                onLimpiar={() => setFiltroPagado(FILTRO_TODOS)}
+                activo={filtroFecha !== FILTRO_TODOS}
+                onLimpiar={() => setFiltroFecha(FILTRO_TODOS)}
                 className={FILTER_SELECT_WRAPPER_CLASS}
               >
                 <Select
-                  value={filtroPagado === FILTRO_TODOS ? "" : filtroPagado}
-                  onValueChange={setFiltroPagado}
+                  value={filtroFecha === FILTRO_TODOS ? "" : filtroFecha}
+                  onValueChange={setFiltroFecha}
                 >
                   <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                    <SelectValue placeholder="PAGADO" />
+                    <SelectValue placeholder="FECHA" />
                   </SelectTrigger>
                   <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                    <SelectItem value="si">SÍ</SelectItem>
-                    <SelectItem value="no">NO</SelectItem>
+                    <SelectItem value={FILTRO_FECHA_HOY}>HOY</SelectItem>
+                    <SelectItem value={FILTRO_FECHA_MANANA}>MAÑANA</SelectItem>
                   </SelectContent>
                 </Select>
               </FiltroIndividualContainer>
               <FiltroIndividualContainer
-                activo={filtroForma !== FILTRO_TODOS}
-                onLimpiar={() => setFiltroForma(FILTRO_TODOS)}
+                activo={filtroEntregado !== FILTRO_TODOS}
+                onLimpiar={() => setFiltroEntregado(FILTRO_TODOS)}
                 className={FILTER_SELECT_WRAPPER_CLASS}
               >
                 <Select
-                  value={filtroForma === FILTRO_TODOS ? "" : filtroForma}
-                  onValueChange={setFiltroForma}
+                  value={filtroEntregado === FILTRO_TODOS ? "" : filtroEntregado}
+                  onValueChange={setFiltroEntregado}
                 >
                   <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
-                    <SelectValue placeholder="FORMA PAGADO" />
+                    <SelectValue placeholder="ENTREGADO" />
                   </SelectTrigger>
                   <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
-                    {ENVIOS_FORMA_PAGADO_VALUES.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {ENVIOS_FORMA_PAGADO_LABELS[value]}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="si">SÍ</SelectItem>
+                    <SelectItem value="no">NO</SelectItem>
                   </SelectContent>
                 </Select>
               </FiltroIndividualContainer>
@@ -237,7 +279,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
               <FilterRowSearch className="flex-1">
                 <FiltroBusquedaInput
                   id="filtro-envios-busqueda"
-                  placeholder="BUSCAR POR SUCURSAL, PERSONA, DIRECCIÓN U OBSERVACIÓN..."
+                  placeholder="BUSCAR POR SUCURSAL, PERSONA O DIRECCIÓN..."
                   value={q}
                   onChange={handleQChange}
                   isDebouncing={isDebouncing}
@@ -256,17 +298,17 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
         <div className="contenedor-tabla-gestion min-h-0 flex-1">
           <Table variant="compact" className="tabla-gestion-compacta w-full">
             <colgroup>
-              <col className="w-[10%]" />
-              <col className="w-[12%]" />
-              <col className="w-[11%]" />
+              <col className="w-[14%]" />
+              <col className="w-[16%]" />
+              <col className="w-[14%]" />
+              <col className="w-[9%]" />
+              <col className="w-[9%]" />
+              <col className="w-[6%]" />
+              <col className="w-[6%]" />
+              <col className="w-[6%]" />
+              <col className="w-[6%]" />
+              <col className="w-[6%]" />
               <col className="w-[8%]" />
-              <col className="w-[9%]" />
-              <col className="w-[12%]" />
-              <col className="w-[10%]" />
-              <col className="w-[5%]" />
-              <col className="w-[9%]" />
-              <col className="w-[5%]" />
-              <col className="w-[9%]" />
             </colgroup>
             <TableHeader>
               <TableRow>
@@ -275,20 +317,18 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
                 <TableHead>PINTOR</TableHead>
                 <TableHead>FECHA</TableHead>
                 <TableHead>HORARIO</TableHead>
-                <TableHead>DIRECCIÓN</TableHead>
-                <TableHead>OBSERVACIÓN</TableHead>
-                <TableHead className="text-center">
-                  <Check className={TABLE_ROW_ACTION_ICON_CLASS} aria-label="PAGADO" />
-                </TableHead>
-                <TableHead>FORMA PAGADO</TableHead>
+                <TableHead className="text-center">DIRECCIÓN</TableHead>
+                <TableHead className="text-center">TELEFONO</TableHead>
+                <TableHead className="text-center">UBI</TableHead>
                 <TableHead className="text-center">PDF</TableHead>
+                <TableHead className="text-center">ENTREGADO</TableHead>
                 <TableHead className="tabla-bloque-secundario-head-divider text-center">ACCIONES</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {itemsFiltrados.length === 0 ? (
                 <EmptyTableRow
-                  colSpan={11}
+                  colSpan={COLSPAN_ENVIOS_PROGRAMADOS}
                   message={
                     envios.length === 0
                       ? "NO HAY ENVÍOS."
@@ -315,48 +355,31 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
                     <TableCell className="celda-datos tabular-nums">
                       {etiquetaHorarioEnvio(item.horaDesde, item.horaHasta)}
                     </TableCell>
-                    <TableCell className="celda-datos">
-                      {etiquetaDireccionEnvio(item.direccion)}
-                    </TableCell>
-                    <TableCell className="celda-datos">{fmtCelda(item.observacionEnvio)}</TableCell>
-                    <TableCell className="celda-datos text-center">
-                      <div className="flex w-full items-center justify-center">
-                        <span
-                          className={cn(
-                            "tabla-check-toggle",
-                            item.pagado && "border-primary !bg-primary !text-primary-foreground"
-                          )}
-                          aria-label={item.pagado ? "Pagado" : "No pagado"}
-                          role="img"
-                        >
-                          {item.pagado ? <Check aria-hidden="true" /> : null}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="celda-datos">
-                      {etiquetaFormaPagadoEnvio(item.formaPagado)}
-                    </TableCell>
-                    <TableCell className="celda-datos text-center">
-                      {item.tienePdf ? (
-                        <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                            title="Ver Pdf"
-                            aria-label="Ver comprobante PDF"
-                            onClick={() => {
-                              window.open(`/api/envios/${item.id}/comprobante`, "_blank", "noopener,noreferrer");
-                            }}
-                          >
-                            <FileText className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                          </Button>
-                        </div>
-                      ) : (
-                        fmtCelda("")
-                      )}
-                    </TableCell>
+                    <CeldaTilte
+                      activo={direccionEnvioTieneDato(item.direccion)}
+                      ariaLabelSi="Tiene dirección"
+                      ariaLabelNo="Sin dirección"
+                    />
+                    <CeldaTilte
+                      activo={telefonoEnvio(item) !== ""}
+                      ariaLabelSi="Tiene teléfono"
+                      ariaLabelNo="Sin teléfono"
+                    />
+                    <CeldaTilte
+                      activo={item.direccion.urlMaps.trim() !== ""}
+                      ariaLabelSi="Tiene ubicación"
+                      ariaLabelNo="Sin ubicación"
+                    />
+                    <CeldaTilte
+                      activo={item.tienePdf}
+                      ariaLabelSi="Tiene PDF"
+                      ariaLabelNo="Sin PDF"
+                    />
+                    <CeldaTilte
+                      activo={item.entregado}
+                      ariaLabelSi="Entregado"
+                      ariaLabelNo="No entregado"
+                    />
                     <TableCell className="celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider">
                       <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                         <Button

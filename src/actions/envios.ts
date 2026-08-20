@@ -19,6 +19,7 @@ import {
   eliminarClienteSchema,
   eliminarEnviosDireccionSchema,
   eliminarEnviosFinalSchema,
+  enviosFinalIdSchema,
 } from "@/lib/validations/envios";
 import { crearCliente, editarCliente, eliminarCliente } from "@/services/clientes.service";
 import {
@@ -30,6 +31,7 @@ import {
   crearEnviosFinal,
   editarEnviosFinal,
   eliminarEnviosFinal,
+  marcarEnviosFinalEntregado,
 } from "@/services/enviosFinal.service";
 
 function firstZodErrorMessage(error: {
@@ -183,6 +185,24 @@ export async function editarEnviosFinalAction(
   } catch (e) {
     console.error("[editarEnviosFinalAction]", e);
     return { ok: false, error: "No se pudo actualizar el envío." };
+  }
+}
+
+export async function marcarEnviosFinalEntregadoAction(
+  raw: unknown
+): Promise<ActionResult<EnviosFinalListItem>> {
+  const gate = await requireEnvios();
+  if (gate) return gate;
+  const parsed = enviosFinalIdSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  try {
+    const res = await marcarEnviosFinalEntregado(parsed.data.id);
+    if (!res.success) return { ok: false, error: res.error };
+    revalidateEnvios();
+    return { ok: true, data: res.data };
+  } catch (e) {
+    console.error("[marcarEnviosFinalEntregadoAction]", e);
+    return { ok: false, error: "No se pudo marcar el envío como entregado." };
   }
 }
 

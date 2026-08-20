@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { FileText, MapPin, Phone } from "lucide-react";
+import { toast } from "sonner";
+import { marcarEnviosFinalEntregadoAction } from "@/actions/envios";
 import EnviosConductorDireccionesModal from "@/components/envios/EnviosConductorDireccionesModal";
+import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import {
   etiquetaDireccionEnvio,
   etiquetaHorarioEnvio,
@@ -29,6 +34,29 @@ export default function EnviosConductorPageClient({
 }: Props) {
   const [abiertoId, setAbiertoId] = useState<string | null>(null);
   const [modalDireccionesOpen, setModalDireccionesOpen] = useState(false);
+  const [modalEntregar, setModalEntregar] = useState<
+    { open: false } | { open: true; id: string; label: string }
+  >({ open: false });
+  const [entregando, setEntregando] = useState(false);
+  const router = useRouter();
+
+  async function handleConfirmarEntrega() {
+    if (!modalEntregar.open || entregando) return;
+    setEntregando(true);
+    try {
+      const res = await marcarEnviosFinalEntregadoAction({ id: modalEntregar.id });
+      if (!res.ok) {
+        toast.error(res.error ?? "No se pudo marcar como entregado.");
+        return;
+      }
+      toast.success("Envío marcado como entregado.");
+      setModalEntregar({ open: false });
+      setAbiertoId(null);
+      router.refresh();
+    } finally {
+      setEntregando(false);
+    }
+  }
 
   return (
     <div className="flex h-full min-h-0 justify-center">
@@ -41,7 +69,7 @@ export default function EnviosConductorPageClient({
           className="h-12 w-full"
           onClick={() => setModalDireccionesOpen(true)}
         >
-          Direcciones
+          DIRECCIONES
         </Button>
         <EnviosConductorDireccionesModal
           open={modalDireccionesOpen}
@@ -49,6 +77,44 @@ export default function EnviosConductorPageClient({
           clientes={clientes}
           direcciones={direcciones}
         />
+        <Dialog
+          open={modalEntregar.open}
+          onOpenChange={(open) => {
+            if (!open && !entregando) setModalEntregar({ open: false });
+          }}
+        >
+          <AppModal
+            title="Entregado"
+            size="sm"
+            actions={
+              <div className={cn("flex w-full justify-end gap-2")}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={entregando}
+                  onClick={() => setModalEntregar({ open: false })}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  disabled={entregando}
+                  onClick={() => void handleConfirmarEntrega()}
+                >
+                  Entregar
+                </Button>
+              </div>
+            }
+          >
+            <p className="text-sm text-foreground">
+              ¿Confirmás la entrega
+              {modalEntregar.open && modalEntregar.label !== ""
+                ? ` a ${modalEntregar.label}`
+                : ""}
+              ?
+            </p>
+          </AppModal>
+        </Dialog>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {envios.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
@@ -139,6 +205,19 @@ export default function EnviosConductorPageClient({
                             Pdf
                           </Button>
                         )}
+                        <Button
+                          type="button"
+                          className="h-12 w-full"
+                          onClick={() =>
+                            setModalEntregar({
+                              open: true,
+                              id: item.id,
+                              label: nombreDestinatarioEnvio(item),
+                            })
+                          }
+                        >
+                          ENTREGADO
+                        </Button>
                       </div>
                     ) : null}
                   </article>

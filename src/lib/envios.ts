@@ -207,6 +207,7 @@ export interface EnviosFinalListItem {
   observacionEnvio: string;
   pagado: boolean;
   formaPagado: EnviosFormaPagado;
+  entregado: boolean;
   pdfComprobanteNombre: string | null;
   tienePdf: boolean;
 }
