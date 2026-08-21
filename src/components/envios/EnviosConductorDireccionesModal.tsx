@@ -177,10 +177,10 @@ export default function EnviosConductorDireccionesModal({
                 {direccionesCliente.length === 0 ? (
                   <CatalogoFinderEmpty mensaje="No hay direcciones." />
                 ) : (
-                  direccionesCliente.map((item, index) => (
+                  direccionesCliente.map((item) => (
                     <CatalogoFinderRow
                       key={item.id}
-                      nombre={etiquetaDireccionEnvioFilaListado(item, index + 1)}
+                      nombre={etiquetaDireccionEnvioFilaListado(item)}
                       nombreLineas={2}
                       selected={item.id === direccionId}
                       onClick={() => handleSelectDireccion(item)}

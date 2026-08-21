@@ -329,7 +329,7 @@ export default function CrearEditarClienteModal({
                 <ModalMicroLabel>DIRECCIONES</ModalMicroLabel>
                 {direccionesLocal.length > 0 ? (
                   <div className="flex flex-col gap-2">
-                    {direccionesLocal.map((dir, index) => (
+                    {direccionesLocal.map((dir) => (
                       <div
                         key={dir.id}
                         className={cn(
@@ -338,9 +338,9 @@ export default function CrearEditarClienteModal({
                       >
                         <span
                           className="min-w-0 flex-1 line-clamp-2 break-words text-sm text-foreground"
-                          title={etiquetaDireccionEnvioFilaListado(dir, index + 1)}
+                          title={etiquetaDireccionEnvioFilaListado(dir)}
                         >
-                          {etiquetaDireccionEnvioFilaListado(dir, index + 1)}
+                          {etiquetaDireccionEnvioFilaListado(dir)}
                         </span>
                         <div className="flex shrink-0 items-center gap-1">
                           <EnviosMapsLink url={dir.urlMaps} />

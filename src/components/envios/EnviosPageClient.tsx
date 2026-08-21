@@ -205,7 +205,6 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
           <div className="flex items-center gap-2">
             <Button
               type="button"
-              variant="outline"
               className="h-10 gap-2 px-4"
               onClick={() => setModalDirecciones(true)}
             >

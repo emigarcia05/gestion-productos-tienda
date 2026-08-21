@@ -531,6 +531,7 @@ export default function CrearEnvioWizardModal({
                             onClick={() => handleSelectCliente(item.id)}
                             mostrarAcciones
                             eliminarSiempreVisible
+                            accionesSiempreVisibles
                             onEditar={() => setModalCliente({ open: true, modo: "editar", item })}
                             onEliminar={() =>
                               setModalEliminar({
@@ -566,10 +567,10 @@ export default function CrearEnvioWizardModal({
                         ) : direccionesFiltradas.length === 0 ? (
                           <CatalogoFinderEmpty mensaje="Ninguna dirección coincide con la búsqueda." />
                         ) : (
-                          direccionesFiltradas.map((item, index) => (
+                          direccionesFiltradas.map((item) => (
                             <CatalogoFinderRow
                               key={item.id}
-                              nombre={etiquetaDireccionEnvioFilaListado(item, index + 1)}
+                              nombre={etiquetaDireccionEnvioFilaListado(item)}
                               nombreLineas={2}
                               nombreAccion={<EnviosMapsLink url={item.urlMaps} />}
                               selected={item.id === direccionId}
@@ -614,9 +615,9 @@ export default function CrearEnvioWizardModal({
                       <div className="flex flex-col gap-2">
                         <ModalMicroLabel align="center">PDF MERCADERÍA</ModalMicroLabel>
                         {pdfAdjunto ? (
-                          <p className="text-sm text-foreground">{pdfAdjunto.nombre}</p>
+                          <p className="text-center text-sm text-foreground">{pdfAdjunto.nombre}</p>
                         ) : item?.tienePdf && !quitarPdf ? (
-                          <p className="text-sm text-foreground">
+                          <p className="text-center text-sm text-foreground">
                             {item.pdfComprobanteNombre ?? "comprobante.pdf"}
                           </p>
                         ) : null}
@@ -624,6 +625,7 @@ export default function CrearEnvioWizardModal({
                           type="file"
                           accept="application/pdf,.pdf"
                           disabled={saving}
+                          className="text-center file:w-full file:justify-center"
                           onChange={(e) => void handlePdfChange(e.target.files)}
                         />
                         {item?.tienePdf && !quitarPdf && !pdfAdjunto ? (
@@ -648,7 +650,7 @@ export default function CrearEnvioWizardModal({
                           disabled={saving}
                           onValueChange={(v) => setFormaPagado(v as EnviosFormaPagadoValue)}
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger className="relative w-full justify-center [&_svg]:absolute [&_svg]:right-3">
                             <SelectValue placeholder="ELEGIR FORMA..." />
                           </SelectTrigger>
                           <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">

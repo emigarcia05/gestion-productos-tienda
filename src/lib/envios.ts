@@ -269,19 +269,12 @@ export function etiquetaDireccionEnvioListado(dir: EnviosDireccionItem): string 
   return texto.endsWith(".") ? texto : `${texto}.`;
 }
 
-export function etiquetaOrdinalDireccionEnvio(orden: number): string {
-  return `DIR${orden}:`;
-}
-
-/** Listado: `DIR1: Dirección (Referencia).` */
-export function etiquetaDireccionEnvioFilaListado(
-  dir: EnviosDireccionItem,
-  orden: number
-): string {
+/** Listado: `- Dirección (Referencia).` */
+export function etiquetaDireccionEnvioFilaListado(dir: EnviosDireccionItem): string {
   const direccion = etiquetaDireccionEnvioListado(dir).replace(/\.+$/, "");
   const referencia = dir.referencia.trim();
   const cuerpo = referencia !== "" ? `${direccion} (${referencia}).` : `${direccion}.`;
-  return `${etiquetaOrdinalDireccionEnvio(orden)} ${cuerpo}`;
+  return `- ${cuerpo}`;
 }
 
 export function metaDireccionEnvio(dir: EnviosDireccionItem): string {

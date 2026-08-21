@@ -267,6 +267,7 @@ export default function EnviosGestionarDireccionesModal({
                       onClick={() => handleSelectCliente(item.id)}
                       mostrarAcciones
                       eliminarSiempreVisible
+                      accionesSiempreVisibles
                       onEditar={() => setModalCliente({ open: true, modo: "editar", item })}
                       onEliminar={() =>
                         setModalEliminar({
@@ -326,10 +327,10 @@ export default function EnviosGestionarDireccionesModal({
                     ) : direccionesFiltradas.length === 0 ? (
                       <CatalogoFinderEmpty mensaje="Ninguna dirección coincide con la búsqueda." />
                     ) : (
-                      direccionesFiltradas.map((item, index) => (
+                      direccionesFiltradas.map((item) => (
                         <CatalogoFinderRow
                           key={item.id}
-                          nombre={etiquetaDireccionEnvioFilaListado(item, index + 1)}
+                          nombre={etiquetaDireccionEnvioFilaListado(item)}
                           nombreLineas={2}
                           nombreAccion={<EnviosMapsLink url={item.urlMaps} />}
                           selected={item.id === direccionId}
