@@ -212,6 +212,23 @@ export interface EnviosFinalListItem {
   tienePdf: boolean;
 }
 
+/** Orden Conductor: fecha y rango horario más cercanos a ahora (ascendente). */
+export function compararEnvioPorProximidad(
+  a: Pick<EnviosFinalListItem, "fechaEnvioIso" | "horaDesde" | "horaHasta">,
+  b: Pick<EnviosFinalListItem, "fechaEnvioIso" | "horaDesde" | "horaHasta">
+): number {
+  if (a.fechaEnvioIso !== b.fechaEnvioIso) {
+    return a.fechaEnvioIso < b.fechaEnvioIso ? -1 : 1;
+  }
+  if (a.horaDesde !== b.horaDesde) {
+    return a.horaDesde < b.horaDesde ? -1 : 1;
+  }
+  if (a.horaHasta !== b.horaHasta) {
+    return a.horaHasta < b.horaHasta ? -1 : 1;
+  }
+  return 0;
+}
+
 export function nombreDestinatarioEnvio(item: EnviosFinalListItem): string {
   if (item.clienteFinal) return nombreCompletoCliente(item.clienteFinal);
   if (item.pintor) return nombreCompletoCliente(item.pintor);

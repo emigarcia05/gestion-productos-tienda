@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
-import CrearEditarEnvioFinalModal from "@/components/envios/CrearEditarEnvioFinalModal";
 import CrearEnvioWizardModal from "@/components/envios/CrearEnvioWizardModal";
 import FilterBar, {
   FILTER_COUNT_CLASS,
@@ -113,13 +112,12 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
     debounceMs: 300,
     onDebouncedSearch: setQDebounced,
   });
-  const [modalForm, setModalForm] = useState<
-    { open: false } | { open: true; item: EnviosFinalListItem }
+  const [modalWizard, setModalWizard] = useState<
+    { open: false } | { open: true; item: EnviosFinalListItem | null }
   >({ open: false });
   const [modalEliminar, setModalEliminar] = useState<
     { open: false } | { open: true; id: string; label: string }
   >({ open: false });
-  const [modalCrear, setModalCrear] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const itemsFiltrados = useMemo(() => {
@@ -205,7 +203,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
           <Button
             type="button"
             className="h-10 gap-2 px-4"
-            onClick={() => setModalCrear(true)}
+            onClick={() => setModalWizard({ open: true, item: null })}
           >
             <Plus className="h-4 w-4 shrink-0" aria-hidden />
             Crear Envío
@@ -386,7 +384,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
                           className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
                           title="Editar"
                           aria-label="Editar envío"
-                          onClick={() => setModalForm({ open: true, item })}
+                          onClick={() => setModalWizard({ open: true, item })}
                         >
                           <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                         </Button>
@@ -417,17 +415,20 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
         </div>
       </ClassicFilteredTableLayout>
 
-      <CrearEditarEnvioFinalModal
-        open={modalForm.open}
+      <CrearEnvioWizardModal
+        open={modalWizard.open}
         onOpenChange={(open) => {
-          if (!open) setModalForm({ open: false });
+          if (!open) setModalWizard({ open: false });
         }}
-        modo="editar"
-        item={modalForm.open ? modalForm.item : null}
-        clientes={clientes}
+        item={modalWizard.open ? modalWizard.item : null}
+        clientesCatalogo={clientes}
         direcciones={direcciones}
         sucursales={sucursales}
-        onSuccess={refresh}
+        onCatalogoChanged={refresh}
+        onSuccess={() => {
+          setModalWizard({ open: false });
+          refresh();
+        }}
       />
       <Dialog
         open={modalEliminar.open}
@@ -459,18 +460,6 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
           </p>
         </AppModal>
       </Dialog>
-      <CrearEnvioWizardModal
-        open={modalCrear}
-        onOpenChange={setModalCrear}
-        clientesCatalogo={clientes}
-        direcciones={direcciones}
-        sucursales={sucursales}
-        onCatalogoChanged={refresh}
-        onSuccess={() => {
-          setModalCrear(false);
-          refresh();
-        }}
-      />
     </>
   );
 }

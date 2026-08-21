@@ -1,15 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, MapPin, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { marcarEnviosFinalEntregadoAction } from "@/actions/envios";
 import EnviosConductorDireccionesModal from "@/components/envios/EnviosConductorDireccionesModal";
+import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import AppModal from "@/components/shared/AppModal";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  compararEnvioPorProximidad,
+  etiquetaSucursalEnvio,
   etiquetaDireccionEnvio,
   etiquetaHorarioEnvio,
   nombreDestinatarioEnvio,
@@ -17,28 +28,55 @@ import {
   type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
+  type EnviosSucursalOption,
 } from "@/lib/envios";
-import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
+import {
+  addDaysToIsoYmdArgentina,
+  dateToIsoYmdArgentina,
+  formatIsoYmdDdMmYyyyArgentina,
+} from "@/lib/fechaArgentina";
 import { cn } from "@/lib/utils";
+
+const FILTRO_SUCURSAL_TODAS = "__todos__";
+const FILTRO_DIA_HOY = "hoy";
+const FILTRO_DIA_MANANA = "manana";
 
 interface Props {
   envios: EnviosFinalListItem[];
   clientes: ClienteItem[];
   direcciones: EnviosDireccionItem[];
+  sucursales: EnviosSucursalOption[];
 }
 
 export default function EnviosConductorPageClient({
   envios,
   clientes,
   direcciones,
+  sucursales,
 }: Props) {
   const [abiertoId, setAbiertoId] = useState<string | null>(null);
   const [modalDireccionesOpen, setModalDireccionesOpen] = useState(false);
+  const [filtroSucursal, setFiltroSucursal] = useState(FILTRO_SUCURSAL_TODAS);
+  const [filtroDia, setFiltroDia] = useState(FILTRO_DIA_HOY);
   const [modalEntregar, setModalEntregar] = useState<
     { open: false } | { open: true; id: string; label: string }
   >({ open: false });
   const [entregando, setEntregando] = useState(false);
   const router = useRouter();
+
+  const enviosVisibles = useMemo(() => {
+    const hoyIso = dateToIsoYmdArgentina(new Date());
+    const diaIso =
+      filtroDia === FILTRO_DIA_MANANA ? addDaysToIsoYmdArgentina(hoyIso, 1) : hoyIso;
+    return envios
+      .filter((item) => {
+        if (filtroSucursal !== FILTRO_SUCURSAL_TODAS && item.sucursal.id !== filtroSucursal) {
+          return false;
+        }
+        return item.fechaEnvioIso === diaIso;
+      })
+      .sort(compararEnvioPorProximidad);
+  }, [envios, filtroSucursal, filtroDia]);
 
   async function handleConfirmarEntrega() {
     if (!modalEntregar.open || entregando) return;
@@ -71,6 +109,36 @@ export default function EnviosConductorPageClient({
         >
           DIRECCIONES
         </Button>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <ModalMicroLabel>SUCURSAL</ModalMicroLabel>
+            <Select value={filtroSucursal} onValueChange={setFiltroSucursal}>
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="SUCURSAL" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                <SelectItem value={FILTRO_SUCURSAL_TODAS}>TODAS</SelectItem>
+                {sucursales.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {etiquetaSucursalEnvio(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex min-w-0 flex-col gap-1">
+            <ModalMicroLabel>DÍA</ModalMicroLabel>
+            <Select value={filtroDia} onValueChange={setFiltroDia}>
+              <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
+                <SelectValue placeholder="DÍA" />
+              </SelectTrigger>
+              <SelectContent className="select-content-filtro" position="popper" side="bottom" align="start">
+                <SelectItem value={FILTRO_DIA_HOY}>HOY</SelectItem>
+                <SelectItem value={FILTRO_DIA_MANANA}>MAÑANA</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <EnviosConductorDireccionesModal
           open={modalDireccionesOpen}
           onOpenChange={setModalDireccionesOpen}
@@ -116,13 +184,13 @@ export default function EnviosConductorPageClient({
           </AppModal>
         </Dialog>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {envios.length === 0 ? (
+          {enviosVisibles.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               NO HAY ENVÍOS PENDIENTES.
             </p>
           ) : (
             <div className="flex flex-col gap-3">
-              {envios.map((item) => {
+              {enviosVisibles.map((item) => {
                 const abierto = abiertoId === item.id;
                 const maps = item.direccion.urlMaps.trim();
                 const tel = telefonoEnvio(item);

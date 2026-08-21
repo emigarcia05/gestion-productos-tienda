@@ -316,7 +316,12 @@ export async function listarEnviosPendientesConductor(): Promise<EnviosFinalList
     const hoyIso = dateToIsoYmdArgentina(new Date());
     const rows = await prisma.enviosFinal.findMany({
       where: { fechaEnvio: { gte: dateFromIsoYmd(hoyIso) }, entregado: false },
-      orderBy: [{ fechaEnvio: "asc" }, { horaDesde: "asc" }, { createdAt: "asc" }],
+      orderBy: [
+        { fechaEnvio: "asc" },
+        { horaDesde: "asc" },
+        { horaHasta: "asc" },
+        { createdAt: "asc" },
+      ],
       select: listSelect,
     });
     return rows.map(mapListRow);

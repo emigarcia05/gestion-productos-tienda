@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { crearEnviosFinalAction, eliminarClienteAction, eliminarEnviosDireccionAction } from "@/actions/envios";
+import { crearEnviosFinalAction, editarEnviosFinalAction, eliminarClienteAction, eliminarEnviosDireccionAction } from "@/actions/envios";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   ENVIOS_FORMA_PAGADO_LABELS,
@@ -46,6 +46,7 @@ import {
   nombrePintorAsociadoCliente,
   type ClienteItem,
   type EnviosDireccionItem,
+  type EnviosFinalListItem,
   type EnviosFormaPagadoValue,
   type EnviosHoraValue,
   type EnviosSucursalOption,
@@ -60,6 +61,8 @@ interface Props {
   clientesCatalogo: ClienteItem[];
   direcciones: EnviosDireccionItem[];
   sucursales: EnviosSucursalOption[];
+  /** Si hay ítem, el wizard abre en modo edición con los datos cargados. */
+  item?: EnviosFinalListItem | null;
   onCatalogoChanged: () => void;
   onSuccess: () => void;
 }
@@ -70,6 +73,7 @@ export default function CrearEnvioWizardModal({
   clientesCatalogo,
   direcciones,
   sucursales,
+  item = null,
   onCatalogoChanged,
   onSuccess,
 }: Props) {
@@ -106,10 +110,30 @@ export default function CrearEnvioWizardModal({
   >({ open: false });
   const [filtroPintorId, setFiltroPintorId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [quitarPdf, setQuitarPdf] = useState(false);
+  const esEdicion = item != null;
 
   useEffect(() => {
     if (!open) return;
     setPaso(1);
+    setQClienteDebounced("");
+    setQDireccionDebounced("");
+    setModalCliente({ open: false });
+    setModalDireccion({ open: false });
+    setModalEliminar({ open: false });
+    setFiltroPintorId(null);
+    setPdfAdjunto(null);
+    setQuitarPdf(false);
+    if (item) {
+      setSucursalId(item.sucursal.id);
+      setClienteId(item.clienteFinal?.id ?? item.pintor?.id ?? null);
+      setDireccionId(item.direccion.id);
+      setFechaIso(item.fechaEnvioIso);
+      setHoraDesde(esHoraEnvioValida(item.horaDesde) ? item.horaDesde : "");
+      setHoraHasta(esHoraEnvioValida(item.horaHasta) ? item.horaHasta : "");
+      setFormaPagado(item.formaPagado);
+      return;
+    }
     setSucursalId(null);
     setClienteId(null);
     setDireccionId(null);
@@ -117,14 +141,7 @@ export default function CrearEnvioWizardModal({
     setHoraDesde("");
     setHoraHasta("");
     setFormaPagado("");
-    setPdfAdjunto(null);
-    setQClienteDebounced("");
-    setQDireccionDebounced("");
-    setModalCliente({ open: false });
-    setModalDireccion({ open: false });
-    setModalEliminar({ open: false });
-    setFiltroPintorId(null);
-  }, [open]);
+  }, [open, item]);
 
   const pintores = useMemo(
     () => clientesCatalogo.filter((c) => c.tipo === "PINTOR"),
@@ -195,7 +212,7 @@ export default function CrearEnvioWizardModal({
   const pasoSucursalOk = Boolean(sucursalId);
   const pasoClienteOk = Boolean(clienteId);
   const pasoDireccionOk = Boolean(direccionId);
-  const puedeCrear =
+  const puedeGuardar =
     pasoSucursalOk && pasoClienteOk && pasoDireccionOk && horarioValido && formaPagado !== "";
 
   const pasoMaximoAlcanzable: EnvioWizardPaso = horarioValido && pasoDireccionOk
@@ -245,10 +262,12 @@ export default function CrearEnvioWizardModal({
   }
 
   function handleSelectCliente(id: string) {
+    if (id !== clienteId) {
+      setDireccionId(null);
+      busquedaDireccion.setQ("");
+      setQDireccionDebounced("");
+    }
     setClienteId(id);
-    setDireccionId(null);
-    busquedaDireccion.setQ("");
-    setQDireccionDebounced("");
     setPaso(3);
   }
 
@@ -280,6 +299,7 @@ export default function CrearEnvioWizardModal({
     const parsed = await leerPdfComprobante(file);
     if (!parsed) return;
     setPdfAdjunto(parsed);
+    setQuitarPdf(false);
   }
 
   async function handleEliminar() {
@@ -310,8 +330,8 @@ export default function CrearEnvioWizardModal({
     }
   }
 
-  async function handleCrearEnvio() {
-    if (!puedeCrear || saving || !sucursalId || !clienteId || !direccionId) return;
+  async function handleGuardarEnvio() {
+    if (!puedeGuardar || saving || !sucursalId || !clienteId || !direccionId) return;
     if (
       !esHoraEnvioValida(horaDesde) ||
       !esHoraEnvioValida(horaHasta) ||
@@ -322,7 +342,7 @@ export default function CrearEnvioWizardModal({
     setSaving(true);
     try {
       const esPintor = clienteSeleccionado?.tipo === "PINTOR";
-      const res = await crearEnviosFinalAction({
+      const payload = {
         sucursalId,
         clienteFinalId: esPintor ? null : clienteId,
         pintorId: esPintor ? clienteId : (clienteSeleccionado?.pintorAsociadoId ?? null),
@@ -330,16 +350,25 @@ export default function CrearEnvioWizardModal({
         fechaEnvioIso: fechaIso,
         horaDesde,
         horaHasta,
-        observacionEnvio: "",
-        pagado: pagadoDesdeFormaPagado(formaPagado, false),
+        observacionEnvio: item?.observacionEnvio ?? "",
+        pagado: pagadoDesdeFormaPagado(formaPagado, item?.pagado ?? false),
         formaPagado,
         ...(pdfAdjunto ? { pdfComprobante: pdfAdjunto } : {}),
-      });
+      };
+      const res = item
+        ? await editarEnviosFinalAction({
+            id: item.id,
+            ...payload,
+            quitarPdf: quitarPdf && !pdfAdjunto,
+          })
+        : await crearEnviosFinalAction(payload);
       if (!res.ok) {
-        toast.error(res.error ?? "No se pudo crear el envío.");
+        toast.error(
+          res.error ?? (item ? "No se pudo guardar el envío." : "No se pudo crear el envío.")
+        );
         return;
       }
-      toast.success("Envío creado.");
+      toast.success(item ? "Envío actualizado." : "Envío creado.");
       onOpenChange(false);
       onSuccess();
     } finally {
@@ -362,7 +391,7 @@ export default function CrearEnvioWizardModal({
         }}
       >
         <AppModal
-          title="Nuevo Envío"
+          title={esEdicion ? "Editar Envío" : "Nuevo Envío"}
           size="xl"
           scrollBody={false}
           padding="sm"
@@ -385,8 +414,14 @@ export default function CrearEnvioWizardModal({
                     Siguiente
                   </Button>
                 ) : (
-                  <Button type="button" disabled={saving || !puedeCrear} onClick={() => void handleCrearEnvio()}>
-                    {saving ? "Creando Envío..." : "Crear Envío"}
+                  <Button type="button" disabled={saving || !puedeGuardar} onClick={() => void handleGuardarEnvio()}>
+                    {saving
+                      ? esEdicion
+                        ? "Guardando..."
+                        : "Creando Envío..."
+                      : esEdicion
+                        ? "Guardar"
+                        : "Crear Envío"}
                   </Button>
                 )}
               </div>
@@ -581,6 +616,10 @@ export default function CrearEnvioWizardModal({
                         <ModalMicroLabel align="center">PDF MERCADERÍA</ModalMicroLabel>
                         {pdfAdjunto ? (
                           <p className="text-sm text-foreground">{pdfAdjunto.nombre}</p>
+                        ) : item?.tienePdf && !quitarPdf ? (
+                          <p className="text-sm text-foreground">
+                            {item.pdfComprobanteNombre ?? "comprobante.pdf"}
+                          </p>
                         ) : null}
                         <Input
                           type="file"
@@ -588,6 +627,20 @@ export default function CrearEnvioWizardModal({
                           disabled={saving}
                           onChange={(e) => void handlePdfChange(e.target.files)}
                         />
+                        {item?.tienePdf && !quitarPdf && !pdfAdjunto ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            disabled={saving}
+                            onClick={() => {
+                              setQuitarPdf(true);
+                              setPdfAdjunto(null);
+                            }}
+                          >
+                            Quitar Pdf
+                          </Button>
+                        ) : null}
                       </div>
                       <div className="flex flex-col gap-1">
                         <ModalMicroLabel align="center">FORMA DE PAGO</ModalMicroLabel>

@@ -5,7 +5,10 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarClientes } from "@/services/clientes.service";
 import { listarEnviosDirecciones } from "@/services/enviosDirecciones.service";
-import { listarEnviosPendientesConductor } from "@/services/enviosFinal.service";
+import {
+  listarEnviosPendientesConductor,
+  listarSucursalesParaEnvios,
+} from "@/services/enviosFinal.service";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +18,11 @@ export default async function EnviosConductorPage() {
     redirect(GP_ROUTES.defaultEntry);
   }
 
-  const [envios, clientes, direcciones] = await Promise.all([
+  const [envios, clientes, direcciones, sucursales] = await Promise.all([
     listarEnviosPendientesConductor(),
     listarClientes(),
     listarEnviosDirecciones(),
+    listarSucursalesParaEnvios(),
   ]);
 
   return (
@@ -27,6 +31,7 @@ export default async function EnviosConductorPage() {
         envios={envios}
         clientes={clientes}
         direcciones={direcciones}
+        sucursales={sucursales}
       />
     </div>
   );
