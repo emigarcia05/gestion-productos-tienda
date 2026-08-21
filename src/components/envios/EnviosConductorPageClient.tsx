@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, MapPin, Phone } from "lucide-react";
 import { toast } from "sonner";
@@ -62,7 +62,18 @@ export default function EnviosConductorPageClient({
     { open: false } | { open: true; id: string; label: string }
   >({ open: false });
   const [entregando, setEntregando] = useState(false);
+  const tarjetasRef = useRef<Map<string, HTMLElement>>(new Map());
   const router = useRouter();
+
+  useLayoutEffect(() => {
+    if (!abiertoId) return;
+    const el = tarjetasRef.current.get(abiertoId);
+    if (!el) return;
+    const frame = requestAnimationFrame(() => {
+      el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [abiertoId]);
 
   const enviosVisibles = useMemo(() => {
     const hoyIso = dateToIsoYmdArgentina(new Date());
@@ -111,7 +122,7 @@ export default function EnviosConductorPageClient({
         </Button>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <ModalMicroLabel>SUCURSAL</ModalMicroLabel>
+            <ModalMicroLabel align="center">SUCURSAL</ModalMicroLabel>
             <Select value={filtroSucursal} onValueChange={setFiltroSucursal}>
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="SUCURSAL" />
@@ -127,7 +138,7 @@ export default function EnviosConductorPageClient({
             </Select>
           </div>
           <div className="flex min-w-0 flex-col gap-1">
-            <ModalMicroLabel>DÍA</ModalMicroLabel>
+            <ModalMicroLabel align="center">DÍA</ModalMicroLabel>
             <Select value={filtroDia} onValueChange={setFiltroDia}>
               <SelectTrigger className={SELECT_TRIGGER_FILTER_CLASS}>
                 <SelectValue placeholder="DÍA" />
@@ -198,6 +209,10 @@ export default function EnviosConductorPageClient({
                 return (
                   <article
                     key={item.id}
+                    ref={(node) => {
+                      if (node) tarjetasRef.current.set(item.id, node);
+                      else tarjetasRef.current.delete(item.id);
+                    }}
                     className={cn(
                       "flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-sm"
                     )}
@@ -224,7 +239,15 @@ export default function EnviosConductorPageClient({
                     {abierto ? (
                       <div className="flex flex-col gap-3">
                         <p className="text-sm text-foreground">
-                          {etiquetaDireccionEnvio(item.direccion)}
+                          <span className="font-semibold">
+                            {etiquetaDireccionEnvio(item.direccion)}
+                          </span>
+                          {item.direccion.referencia.trim() !== "" ? (
+                            <span className="font-normal">
+                              {" "}
+                              ({item.direccion.referencia.trim()})
+                            </span>
+                          ) : null}
                         </p>
                         {item.observacionEnvio.trim() !== "" ? (
                           <p className="whitespace-pre-wrap text-sm text-foreground">
