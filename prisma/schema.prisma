@@ -1538,6 +1538,7 @@ model Cliente {
 
 /** Departamento (Mendoza) de la dirección de envío. */
 enum EnviosDepartamento {
+  CIUDAD
   LAS_HERAS
   GODOY_CRUZ
   GUAYMALLEN

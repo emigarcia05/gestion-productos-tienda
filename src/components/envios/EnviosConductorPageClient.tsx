@@ -292,13 +292,13 @@ export default function EnviosConductorPageClient({
                               rel="noopener noreferrer"
                             >
                               <FileText className="h-4 w-4 shrink-0" aria-hidden />
-                              Pdf
+                              PDF
                             </a>
                           </Button>
                         ) : (
                           <Button type="button" className="h-12 w-full" disabled>
                             <FileText className="h-4 w-4 shrink-0" aria-hidden />
-                            Pdf
+                            PDF
                           </Button>
                         )}
                         <Button

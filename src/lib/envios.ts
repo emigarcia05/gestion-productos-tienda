@@ -18,6 +18,7 @@ export const CLIENTE_TIPO_LABELS: Record<ClienteTipo, string> = {
 };
 
 export const ENVIOS_DEPARTAMENTO_VALUES = [
+  "CIUDAD",
   "LAS_HERAS",
   "GODOY_CRUZ",
   "GUAYMALLEN",
@@ -27,6 +28,7 @@ export const ENVIOS_DEPARTAMENTO_VALUES = [
 export type EnviosDepartamentoValue = (typeof ENVIOS_DEPARTAMENTO_VALUES)[number];
 
 export const ENVIOS_DEPARTAMENTO_LABELS: Record<EnviosDepartamento, string> = {
+  CIUDAD: "CIUDAD",
   LAS_HERAS: "LAS HERAS",
   GODOY_CRUZ: "GODOY CRUZ",
   GUAYMALLEN: "GUAYMALLEN",

@@ -639,7 +639,7 @@ export default function CrearEnvioWizardModal({
                               setPdfAdjunto(null);
                             }}
                           >
-                            Quitar Pdf
+                            Quitar PDF
                           </Button>
                         ) : null}
                       </div>
