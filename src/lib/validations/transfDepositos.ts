@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
+import {
+  globalSucursalIdSchema,
+  listaPreciosCodTiendaSchema,
+} from "@/lib/validations/common";
 
 const sucursalCodigoSchema = z.enum(["guaymallen", "maipu"]);
 
@@ -7,7 +10,7 @@ export const listarHistorialTransfDepositosProductoSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
 });
 
-export const encolarTransferenciasPendientesSchema = z
+export const registrarTransferenciasDepositosSchema = z
   .object({
     origen: sucursalCodigoSchema,
     destino: sucursalCodigoSchema,
@@ -26,17 +29,16 @@ export const encolarTransferenciasPendientesSchema = z
     path: ["destino"],
   });
 
-export const exportarPendientesTransfDepositosSchema = z
-  .object({
-    tipo: z.enum(["transferir", "recibir"]),
-    origen: sucursalCodigoSchema,
-    destino: sucursalCodigoSchema,
-  })
-  .refine((v) => v.origen !== v.destino, {
-    message: "Origen y destino deben ser distintos.",
-    path: ["destino"],
-  });
-
 export const conteosIndicadorSlidenavSchema = z.object({
   sucursal: sucursalCodigoSchema,
 });
+
+export const parSucursalesTransfDepositosSchema = z
+  .object({
+    sucOrigenId: globalSucursalIdSchema,
+    sucDestinoId: globalSucursalIdSchema,
+  })
+  .refine((v) => v.sucOrigenId !== v.sucDestinoId, {
+    message: "Origen y destino deben ser distintos.",
+    path: ["sucDestinoId"],
+  });

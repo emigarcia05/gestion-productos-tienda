@@ -81,7 +81,7 @@ Convención: `puede(rol, PERMISOS.<modulo>…)` **antes** de `esEditor()`. El pr
 |------|-----|
 | Historial de pedidos | Recepción, marcar registrado, eliminar cabecera, PDF (`pedidosHistoria.ts`). Lectura: RSC o `GET /api/pedidos-historia/[id]/detalle`. |
 | Pedido urgente / tintométrico / enviar / reposición / a fábrica | Upserts de cantidades, PDF generar pedido, reglas reposición. Flujo vendedor. |
-| Stock / Trans. Depósitos | Encolar, exportar Excel, marcar exportado. Flujo vendedor. |
+| Stock / Trans. Depósitos | Registrar y marcar transferido (`stock_trasn_depositos`). Flujo vendedor. |
 | Sync DUX lista tienda | `PERMISOS.tienda.acciones.sincronizar` (`simple` y `editor`). Solo API, no Action. |
 | Ayuda vendedor · gasto eventual | `PERMISOS.ayudaVendedor.cargarGasto` (`requireCargarGastoEventual`). |
 | Envios | CRUD clientes / direcciones / envío final + PDF (`requireEnvios`). Flujo vendedor. |
@@ -267,7 +267,7 @@ URL: `/gestion-productos/tienda/comp-proveedores`. Permiso lectura/edición CX: 
 
 - Stock por depósito: `prod_tienda_stock` PK `(cod_tienda, id_deposito)`. Catálogo `prod_depositos_dux`. Lecturas: `prodTiendaStock.service.ts`.
 - Control stock / transf.: Actions en `stock.ts` (Prisma legacy en lecturas). Permiso `stock.acceso` (simple+editor).
-- **`prod_stock_transf_dep`:** no mueve stock DUX; Excel luego se importa en DUX. Ventana historial/duplicado **14 días**. Encolar + export EGRESO/INGRESO (`transfDepositos.service.ts`). Indicador slidenav: `getIndicadorSlidenavAction` (pedido agrupado por proveedor + transferencias).
+- **`stock_trasn_depositos`:** ledger de la transferencia (`cod_tienda` → `prod_tienda`; `cant`; `suc_origen` / `suc_destino` → `global_sucursales.id`). **Generar Transf.** persiste cantidades de la grilla (`registrarTransferenciasDepositos`) y abre el modal: origen = sucursal del usuario, destino = selector de `global_sucursales`, tabla COD. TIENDA / DESCRIPCIÓN TIENDA / CANTIDAD A TRANSFERIR. **Transferido** borra el lote origen→destino (`marcarTransferidoTransfDepositos`). CHECK `cant > 0` y sucursales distintas. Borrar producto cascada; borrar sucursal restringido. Ventana historial/duplicado **14 días**. No mueve stock DUX. **No** hay Excel de transferencia. Indicador slidenav: solo pedidos (`getIndicadorSlidenavAction`).
 
 ### 3.5 Px Listas DUX y Px Competencia
 
@@ -290,7 +290,7 @@ Jerarquía `CategoriaComparacion` → sub → presentación. Membresía en `prod
 Permiso módulo: `PERMISOS.pedidos.acceso` (simple+editor). Ítems vivos: `prod_ped_merc` (`ProdPedMerc2`, UUID).
 
 - Urgente / enviar / tintométrico: `pedidos.ts` + `pedidosEnvio.service.ts`. `comprobarItemsParaGenerarPedidoAction` usa el **servicio** `getItemsTablaEnviarPedido` (no la Action vecina).
-- Indicador slidenav: `contarItemsPedidoPorTipoParaSlidenav` (mismos ítems que Generar Pedido, sucursal preferida) agrupa por proveedor; solo proveedores con cant. pedir > 0 y `global_proveedores.es_fabrica = false`. `getIndicadorSlidenavAction` expone `proveedoresPedido` + totales por tipo + transferencias. Permiso `pedidos.acceso` / `stock.acceso` por bloque; sin permiso el bloque va en 0 / lista vacía.
+- Indicador slidenav: `contarItemsPedidoPorTipoParaSlidenav` (mismos ítems que Generar Pedido, sucursal preferida) agrupa por proveedor; solo proveedores con cant. pedir > 0 y `global_proveedores.es_fabrica = false`. `getIndicadorSlidenavAction` expone `proveedoresPedido` + totales por tipo. Permiso `pedidos.acceso`; sin permiso el bloque va en 0 / lista vacía.
 - Reposición: `reposicion.ts` (Prisma parcial en Action). `reposicion_forma_pedido`: `UNIDADES_MAX` | `POR_BULTO` | `UNIDADES_FIJAS`. Vendedor (upsert regla): solo `UNIDADES_MAX` + `POR_BULTO`; `POR_BULTO` exige fila en `prod_tienda_bultos`. Solo se permiten productos con vínculo habilitado a proveedor no fábrica (`global_proveedores.es_fabrica = false`) tanto en grilla de Reposición como en selector de productos adicionales por bulto; `existeListaPrecioParaReposicionCodTienda` debe respetar esa misma condición. Listados de proveedor en Reposición (filtro de página y modal Generar Pedido origen reposición): solo proveedores de mercadería con `global_proveedores.es_fabrica = false`. Pedido A Fáb. (filas `A FÁBRICA`): solo `POR_BULTO` + `UNIDADES_FIJAS`. Cálculo `cantPedirReposicionMerc2`: UNIDADES_MAX → `cantConf - stock`; CANT_FIJA_* → `cantConf`. No reintroducir `CANT_MAX` / `CANT_FIJA_POR_BULTO` como valores persistidos.
 - **Historial:** cabecera `prod_ped_historial`; ítems `prod_ped_historial_merc` (writes vía `tx.pedidoHistoriaItem`). Estados `PENDIENTE` | `RECEPCIONADO`. Retención: fábrica 60 días / resto 14 (`purgarPedidosHistoriaExpirados` al inicio de cada mutación, no en lecturas). Listado: RSC. Detalle: API. Mutaciones: Actions.
 - **Recepción DUX:** `registrarRecepcionCompraDuxAction`. `iva` proveedor → `tipo_comprobante` (`resolverTipoComprobantePorIva` en `exportRecepcionPedidoExcel.service.ts`). `PREGUNTA` sin decisión → `REQUIERE_DECISION_FISCAL`. Nro comprobante: `prod_ped_ult_comp`. Personal: `idPersonal` de `global_personal`. Precios netos 4 decimales.
@@ -388,7 +388,7 @@ Servicios: `clientes.service.ts`, `enviosDirecciones.service.ts`, `enviosFinal.s
 | `src/lib/validations/proveedores.ts`, `pxListas.ts` (legado) | `proveedor.ts`, `pxListasPrecios.ts` |
 | `importarListaPreciosProveedor` (Action) | `POST /api/import-lista-precios` |
 | Action paralela de sync DUX lista tienda / `syncListaPrecioTiendaFromDux` (wrapper monolítico) | `syncListaPrecioTiendaRunStep` + API |
-| `registrarControlTransfDepositosAction` | Encolar/export pendientes (`transfDepositos.service.ts`) |
+| `registrarControlTransfDepositosAction` / Excel de transferencia / `prod_stock_transf_dep` | `registrarTransferenciasDepositos` → `stock_trasn_depositos` |
 | `volverModoSimple` | Cookie `tienda-app-arranque` + middleware |
 | `prod_tienda.cod_ext`, `stockeable` columna, `px_lista_tienda`, `prod_listas_dux`, `prod_tienda_margen_edicion` | Vínculo manual, stock por depósito, `prod_tienda_precios` / `_edicion` |
 | Pool `pg` suelto (`src/lib/db.ts`), WhatsApp API | Prisma; sin WhatsApp |

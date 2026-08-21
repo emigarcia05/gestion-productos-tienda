@@ -1,17 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { FileDown } from "lucide-react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowRightLeft } from "lucide-react";
+import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import FiltrosTransfDepositos from "@/components/stock/FiltrosTransfDepositos";
 import TablaTransfDepositos, {
   type TablaTransfDepositosHandle,
 } from "@/components/stock/TablaTransfDepositos";
-import TransfPendienteRegistroModal, {
-  type ItemCantidadTransf,
-} from "@/components/stock/TransfPendienteRegistroModal";
+import GenerarTransfDepositosModal from "@/components/stock/GenerarTransfDepositosModal";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { Button } from "@/components/ui/button";
+import { registrarTransferenciasDepositosAction } from "@/actions/stock";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { Sucursal, TransfDepositosData } from "@/actions/stock";
@@ -30,7 +31,8 @@ interface Props {
 /**
  * Pantalla **Stock · Trans. Depósitos**: origen/destino → marca/rubro/búsqueda;
  * grilla DESCRIPCIÓN / {origen} / → / {destino} / ACCIONES;
- * header **Generar Transf.** → modal **Transf. Pendiente Registro**.
+ * header **Generar Transf.** persiste cantidades de la grilla (si hay) y abre
+ * el modal de pendientes origen→destino.
  */
 export default function TransfDepositosPageClient({
   data,
@@ -42,10 +44,11 @@ export default function TransfDepositosPageClient({
   paginaNum,
   paramsPagina,
 }: Props) {
+  const router = useRouter();
   const tieneOrigen = origen !== null;
   const tablaRef = useRef<TablaTransfDepositosHandle>(null);
-  const [pendienteOpen, setPendienteOpen] = useState(false);
-  const [itemsGrilla, setItemsGrilla] = useState<ItemCantidadTransf[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const filters = (
     <FiltrosTransfDepositos
@@ -59,9 +62,33 @@ export default function TransfDepositosPageClient({
     />
   );
 
-  function abrirGenerarTransf() {
-    setItemsGrilla(tablaRef.current?.getItemsConCantidad() ?? []);
-    setPendienteOpen(true);
+  function generarTransf() {
+    if (!origen) {
+      toast.error("Elegí sucursal origen.");
+      return;
+    }
+    const items = tablaRef.current?.getItemsConCantidad() ?? [];
+    if (items.length === 0) {
+      setModalOpen(true);
+      return;
+    }
+    if (!destino) {
+      toast.error("Elegí origen y destino distintos.");
+      return;
+    }
+    startTransition(async () => {
+      const res = await registrarTransferenciasDepositosAction({
+        origen,
+        destino,
+        items,
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      tablaRef.current?.clearCantidades();
+      setModalOpen(true);
+    });
   }
 
   return (
@@ -70,8 +97,13 @@ export default function TransfDepositosPageClient({
       subtitle="Trans. Depósitos"
       filters={filters}
       actions={
-        <Button type="button" className="h-10 px-4" onClick={abrirGenerarTransf}>
-          <FileDown className="h-4 w-4 shrink-0" aria-hidden />
+        <Button
+          type="button"
+          className="h-10 px-4"
+          onClick={generarTransf}
+          disabled={isPending}
+        >
+          <ArrowRightLeft className="h-4 w-4 shrink-0" aria-hidden />
           Generar Transf.
         </Button>
       }
@@ -99,16 +131,12 @@ export default function TransfDepositosPageClient({
         )}
       </div>
 
-      <TransfPendienteRegistroModal
-        open={pendienteOpen}
-        onOpenChange={setPendienteOpen}
-        origen={origen}
-        destino={destino}
-        itemsGrilla={itemsGrilla}
-        onEncolado={() => {
-          tablaRef.current?.clearCantidades();
-          setItemsGrilla([]);
-        }}
+      <GenerarTransfDepositosModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        origenCodigo={origen}
+        destinoCodigo={destino}
+        onTransferido={() => router.refresh()}
       />
     </ClassicFilteredTableLayout>
   );

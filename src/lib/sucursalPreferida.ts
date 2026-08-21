@@ -1,6 +1,6 @@
 /**
  * Sucursal preferida de la sesión de navegador (slidenav).
- * Default de filtros / Excel (p. ej. Trans. Depósitos); el usuario puede cambiarla después.
+ * Default de filtros (p. ej. Trans. Depósitos); el usuario puede cambiarla después.
  */
 
 export type SucursalPreferida = "guaymallen" | "maipu";

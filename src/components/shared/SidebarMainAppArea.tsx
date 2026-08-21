@@ -31,8 +31,6 @@ const VACIO: IndicadorSlidenavDto = {
   tintometrico: 0,
   reposicion: 0,
   proveedoresPedido: [],
-  emision: 0,
-  recepcion: 0,
 };
 
 function FilaDetalle({
@@ -95,12 +93,6 @@ function FilaProveedorPedido({
   );
 }
 
-function hrefTransfDepositosConOrigen(): string {
-  const sucursal = leerSucursalPreferida();
-  if (!sucursal) return GP_ROUTES.ayudaVendedor.transfDepositos;
-  return `${GP_ROUTES.ayudaVendedor.transfDepositos}?origen=${encodeURIComponent(sucursal)}`;
-}
-
 function BotonCategoriaPendiente({
   label,
   className,
@@ -133,10 +125,9 @@ function BotonCategoriaPendiente({
 
 /**
  * Fila **Pendientes** del dock de sesión (slidenav).
- * Label **PENDIENTES** centrado; badge = categorías con pendientes (Pedido y/o
- * Transferencia; máx. 2). Hover o click: detalle lateral. Pedido lista proveedores
- * con pendientes; hover/foco en el nombre muestra Urgente / Tintométrico /
- * Reposición. Transferencia: Emisión / Recepción.
+ * Label **PENDIENTES** centrado; badge = 1 si hay pedido pendiente (máx. 1).
+ * Hover o click: detalle lateral. Pedido lista proveedores con pendientes;
+ * hover/foco en el nombre muestra Urgente / Tintométrico / Reposición.
  */
 export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProps) {
   const pathname = usePathname();
@@ -186,19 +177,11 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
   }, [pathname]);
 
   const hayPedidoPendiente = conteos.proveedoresPedido.length > 0;
-  const hayTransfPendiente = conteos.emision > 0 || conteos.recepcion > 0;
-  /** Categorías con pendientes (Pedido y/o Transferencia); máximo 2. */
-  const categoriasPendientes =
-    (hayPedidoPendiente ? 1 : 0) + (hayTransfPendiente ? 1 : 0);
+  const categoriasPendientes = hayPedidoPendiente ? 1 : 0;
 
   function irAGenerarPedido() {
     setDetalleOpen(false);
     router.push(GP_ROUTES.pedidoMercaderia.generarPedido);
-  }
-
-  function irATransfDepositos() {
-    setDetalleOpen(false);
-    router.push(hrefTransfDepositosConOrigen());
   }
 
   return (
@@ -232,7 +215,7 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
             className={cn(
               "inline-flex min-w-5 shrink-0 items-center justify-center rounded px-1",
               "text-[10px] font-bold tabular-nums leading-none",
-              hayTransfPendiente
+              hayPedidoPendiente
                 ? "bg-accent2 text-foreground"
                 : "bg-sidebar-accent text-sidebar-foreground"
             )}
@@ -257,17 +240,6 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
             {conteos.proveedoresPedido.map((p) => (
               <FilaProveedorPedido key={p.proveedorId} {...p} />
             ))}
-          </div>
-
-          <span className="col-span-2 my-1 h-px bg-primary" aria-hidden />
-
-          <BotonCategoriaPendiente
-            label="Transferencia"
-            onNavigate={irATransfDepositos}
-          />
-          <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
-            <FilaDetalle label="Emisión" valor={conteos.emision} />
-            <FilaDetalle label="Recepción" valor={conteos.recepcion} />
           </div>
         </div>
       </TooltipContent>

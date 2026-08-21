@@ -255,6 +255,8 @@ model Sucursal {
   estPorProd          EstPorProd[]
   personalSucursalPorDefecto GlobalPersonal[] @relation("PersonalSucursalPorDefecto")
   enviosFinal                EnviosFinal[]
+  stockTrasnDepositosOrigen  StockTrasnDeposito[] @relation("StockTrasnDepositoOrigen")
+  stockTrasnDepositosDestino StockTrasnDeposito[] @relation("StockTrasnDepositoDestino")
 
   @@map("global_sucursales")
 }
@@ -935,7 +937,7 @@ model ProdTienda {
   stocks                  ProdTiendaStock[]
   bulto                   ProdTiendaBulto?
   estPorProd              EstPorProd[]
-  transfDepositosControles ProdStockTransfDep[]
+  stockTrasnDepositos      StockTrasnDeposito[]
 
   @@index([competenciaIdPxListaGeneral], map: "prod_tienda_competencia_id_px_lista_general_idx")
   @@map("prod_tienda")
@@ -955,36 +957,26 @@ model ProdTiendaBulto {
 }
 
 /**
- * Control de transferencias entre depósitos (Trans. Depósitos).
- * Persiste cada marca del usuario para detectar duplicados recientes
- * (mismo `cod_tienda` + origen + destino + cantidad dentro de la ventana).
+ * Transferencias entre depósitos (Trans. Depósitos).
+ * Nombre de tabla pedido: `stock_trasn_depositos`.
+ * `cod_tienda` → `prod_tienda`; `suc_origen` / `suc_destino` → `global_sucursales.id`.
+ * No mueve stock DUX. Historial / anti-duplicado: 14 días.
  */
-model ProdStockTransfDep {
-  id            String   @id @default(cuid())
-  codTienda     String   @map("cod_tienda")
-  /** Código estable `global_sucursales.codigo` (guaymallen | maipu). */
-  origenCodigo  String   @map("origen_codigo")
-  destinoCodigo String   @map("destino_codigo")
-  cantidad      Int
-  createdAt     DateTime @default(now()) @map("created_at")
-  /**
-   * Cuando se descargó el Excel de la sucursal origen (movimientos EGRESO).
-   * `null` = pendiente de exportar para origen.
-   */
-  exportadoOrigenAt  DateTime? @map("exportado_origen_at")
-  /**
-   * Cuando se descargó el Excel de la sucursal destino (movimientos INGRESO).
-   * `null` = pendiente de exportar para destino.
-   */
-  exportadoDestinoAt DateTime? @map("exportado_destino_at")
+model StockTrasnDeposito {
+  id         String   @id @default(cuid())
+  codTienda  String   @map("cod_tienda")
+  cant       Int
+  sucOrigen  String   @map("suc_origen")
+  sucDestino String   @map("suc_destino")
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  prodTienda ProdTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+  prodTienda      ProdTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
+  sucursalOrigen  Sucursal   @relation("StockTrasnDepositoOrigen", fields: [sucOrigen], references: [id], onDelete: Restrict)
+  sucursalDestino Sucursal   @relation("StockTrasnDepositoDestino", fields: [sucDestino], references: [id], onDelete: Restrict)
 
-  @@index([codTienda, origenCodigo, destinoCodigo, cantidad, createdAt], map: "prod_stock_transf_dep_dup_idx")
-  @@index([origenCodigo, destinoCodigo, createdAt], map: "prod_stock_transf_dep_par_fecha_idx")
-  @@index([origenCodigo, exportadoOrigenAt], map: "prod_stock_transf_dep_origen_export_idx")
-  @@index([destinoCodigo, exportadoDestinoAt], map: "prod_stock_transf_dep_destino_export_idx")
-  @@map("prod_stock_transf_dep")
+  @@index([codTienda, createdAt], map: "stock_trasn_depositos_tienda_fecha_idx")
+  @@index([sucOrigen, sucDestino, createdAt], map: "stock_trasn_depositos_par_fecha_idx")
+  @@map("stock_trasn_depositos")
 }
 
 /// Competidores externos (nombre + URLs del sitio para búsqueda de precios).

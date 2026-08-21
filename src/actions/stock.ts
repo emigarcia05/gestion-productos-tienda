@@ -13,9 +13,9 @@ import { getControlStockParamsSchema } from "@/lib/validations/stock";
 import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import {
   conteosIndicadorSlidenavSchema,
-  encolarTransferenciasPendientesSchema,
-  exportarPendientesTransfDepositosSchema,
   listarHistorialTransfDepositosProductoSchema,
+  parSucursalesTransfDepositosSchema,
+  registrarTransferenciasDepositosSchema,
 } from "@/lib/validations/transfDepositos";
 import { GP_INTERNAL, GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import {
@@ -220,26 +220,6 @@ export type HistorialTransfDepositosSeccionDto = {
   items: HistorialTransfDepositosItemDto[];
 };
 
-export type PendienteExportTransfDepositosDto = {
-  id: string;
-  tipo: "transferir" | "recibir";
-  tipoLabel: "TRANSFERIR" | "RECIBIR";
-  origenCodigo: Sucursal;
-  destinoCodigo: Sucursal;
-  origenLabel: string;
-  destinoLabel: string;
-  sucursalExcel: Sucursal;
-  sucursalExcelLabel: string;
-  cantidadRegistros: number;
-  fechaIso: string;
-};
-
-export type FilaExcelTransfDepositosDto = {
-  cod: string;
-  tipoMovimiento: "EGRESO" | "INGRESO";
-  cantidad: number;
-};
-
 export interface TransfDepositosData {
   items: ItemTransfDepositos[];
   total: number;
@@ -422,24 +402,23 @@ export async function listarHistorialTransfDepositosProductoAction(
 }
 
 /**
- * Persiste cantidades de la grilla como transferencias pendientes de Excel
- * (EGRESO origen / INGRESO destino aún no exportados).
+ * Persiste cantidades de la grilla en `stock_trasn_depositos`.
  */
-export async function encolarTransferenciasPendientesAction(
+export async function registrarTransferenciasDepositosAction(
   raw: unknown
 ): Promise<ActionResult<{ creados: number }>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.stock.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
-  const parsed = encolarTransferenciasPendientesSchema.safeParse(raw);
+  const parsed = registrarTransferenciasDepositosSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: "Datos inválidos." };
   }
-  const { encolarTransferenciasPendientes } = await import(
+  const { registrarTransferenciasDepositos } = await import(
     "@/services/transfDepositos.service"
   );
-  const result = await encolarTransferenciasPendientes(parsed.data);
+  const result = await registrarTransferenciasDepositos(parsed.data);
   if (!result.success) {
     return { ok: false, error: result.error };
   }
@@ -448,51 +427,78 @@ export async function encolarTransferenciasPendientesAction(
   return { ok: true, data: result.data };
 }
 
-/** Listado de pendientes Excel: Transferir/Recibir por par origen→destino. */
-export async function listarPendientesExportTransfDepositosAction(): Promise<
-  ActionResult<PendienteExportTransfDepositosDto[]>
+export type SucursalTransfDepositoOptionDto = {
+  id: string;
+  codigo: string;
+  nombre: string;
+};
+
+export type PendienteTransfDepositoItemDto = {
+  codTienda: string;
+  descripcionTienda: string;
+  cantidad: number;
+};
+
+export async function listarSucursalesTransfDepositosAction(): Promise<
+  ActionResult<SucursalTransfDepositoOptionDto[]>
 > {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.stock.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
   try {
-    const { listarPendientesExportTransfDepositos } = await import(
+    const { listarSucursalesTransfDepositos } = await import(
       "@/services/transfDepositos.service"
     );
-    const data = await listarPendientesExportTransfDepositos();
+    const data = await listarSucursalesTransfDepositos();
     return { ok: true, data };
   } catch (e) {
-    console.error("[listarPendientesExportTransfDepositosAction]", e);
-    return { ok: false, error: "Error al listar pendientes." };
+    console.error("[listarSucursalesTransfDepositosAction]", e);
+    return { ok: false, error: "Error al cargar sucursales." };
   }
 }
 
-/**
- * Excel de un pendiente (Transferir/Recibir + par) y marca ese lado exportado
- * (desaparece de pendientes).
- */
-export async function exportarPendientesTransfDepositosAction(
+export async function listarPendientesTransfDepositosAction(
   raw: unknown
-): Promise<
-  ActionResult<{
-    filas: FilaExcelTransfDepositosDto[];
-    marcados: number;
-    sucursalExcelLabel: string;
-  }>
-> {
+): Promise<ActionResult<PendienteTransfDepositoItemDto[]>> {
   const rol = await getRol();
   if (!puede(rol, PERMISOS.stock.acceso)) {
     return { ok: false, error: "Sin acceso." };
   }
-  const parsed = exportarPendientesTransfDepositosSchema.safeParse(raw);
+  const parsed = parSucursalesTransfDepositosSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: "Datos inválidos." };
   }
-  const { exportarPendientesTransfDepositos } = await import(
+  try {
+    const { listarPendientesTransfDepositos } = await import(
+      "@/services/transfDepositos.service"
+    );
+    const data = await listarPendientesTransfDepositos(parsed.data);
+    return { ok: true, data };
+  } catch (e) {
+    console.error("[listarPendientesTransfDepositosAction]", e);
+    return { ok: false, error: "Error al cargar transferencias." };
+  }
+}
+
+/**
+ * Borra el lote origen→destino de `stock_trasn_depositos` (marcado Transferido).
+ */
+export async function marcarTransferidoTransfDepositosAction(
+  raw: unknown
+): Promise<ActionResult<{ borrados: number }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.stock.acceso)) {
+    return { ok: false, error: "Sin acceso." };
+  }
+  const parsed = parSucursalesTransfDepositosSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  const { marcarTransferidoTransfDepositos } = await import(
     "@/services/transfDepositos.service"
   );
-  const result = await exportarPendientesTransfDepositos(parsed.data);
+  const result = await marcarTransferidoTransfDepositos(parsed.data);
   if (!result.success) {
     return { ok: false, error: result.error };
   }
@@ -514,8 +520,6 @@ export type IndicadorSlidenavDto = {
   tintometrico: number;
   reposicion: number;
   proveedoresPedido: IndicadorSlidenavProveedorPedidoDto[];
-  emision: number;
-  recepcion: number;
 };
 
 const PEDIDOS_SLIDENAV_VACIO: {
@@ -531,8 +535,7 @@ const PEDIDOS_SLIDENAV_VACIO: {
 };
 
 /**
- * Conteos del indicador de slidenav: pedidos (Generar Pedido, por proveedor) +
- * transferencias pendientes.
+ * Conteos del indicador de slidenav: pedidos (Generar Pedido, por proveedor).
  */
 export async function getIndicadorSlidenavAction(
   raw: unknown
@@ -544,18 +547,11 @@ export async function getIndicadorSlidenavAction(
   }
   const sucursal = parsed.data.sucursal;
   try {
-    const [pedidos, transf] = await Promise.all([
-      puede(rol, PERMISOS.pedidos.acceso)
-        ? import("@/services/pedidosEnvio.service").then((m) =>
-            m.contarItemsPedidoPorTipoParaSlidenav(sucursal)
-          )
-        : Promise.resolve(PEDIDOS_SLIDENAV_VACIO),
-      puede(rol, PERMISOS.stock.acceso)
-        ? import("@/services/transfDepositos.service").then((m) =>
-            m.contarPendientesTransfPorSucursal(sucursal)
-          )
-        : Promise.resolve({ emision: 0, recepcion: 0 }),
-    ]);
+    const pedidos = puede(rol, PERMISOS.pedidos.acceso)
+      ? await import("@/services/pedidosEnvio.service").then((m) =>
+          m.contarItemsPedidoPorTipoParaSlidenav(sucursal)
+        )
+      : PEDIDOS_SLIDENAV_VACIO;
     return {
       ok: true,
       data: {
@@ -563,8 +559,6 @@ export async function getIndicadorSlidenavAction(
         tintometrico: pedidos.tintometrico,
         reposicion: pedidos.reposicion,
         proveedoresPedido: pedidos.proveedores,
-        emision: transf.emision,
-        recepcion: transf.recepcion,
       },
     };
   } catch (e) {
