@@ -42,6 +42,8 @@ export default function CatalogoFinderRow({
   iconoIzquierda,
   reservarEspacioIconoIzquierda = false,
   eliminarSiempreVisible = false,
+  accionesSiempreVisibles = false,
+  nombreLineas = 1,
 }: {
   nombre: string;
   meta?: string;
@@ -70,10 +72,15 @@ export default function CatalogoFinderRow({
   reservarEspacioIconoIzquierda?: boolean;
   /** Si true, el eliminar no va en el hover: queda fijo a la derecha de la fila. */
   eliminarSiempreVisible?: boolean;
+  /** Si true, Maps / editar / borrar quedan fijos (sin hover). Envios · DIRECCIÓN. */
+  accionesSiempreVisibles?: boolean;
+  /** `2` permite hasta dos renglones (Envios · DIRECCIÓN). Default: una línea con ellipsis. */
+  nombreLineas?: 1 | 2;
 }) {
   const isClickable = typeof onClick === "function";
   const gastoFinalComentarios = gastoFinalDetalle?.comentarios?.trim() ?? "";
-  const accionJuntoAEliminar = Boolean(eliminarSiempreVisible && !nombreCentrado && nombreAccion);
+  const accionesFijas = eliminarSiempreVisible || accionesSiempreVisibles;
+  const accionJuntoAEliminar = Boolean(accionesFijas && !nombreCentrado && nombreAccion);
   return (
     <div
       className={cn(
@@ -165,7 +172,8 @@ export default function CatalogoFinderRow({
               ) : null}
               <div
                 className={cn(
-                  "min-w-0 truncate font-medium",
+                  "min-w-0 font-medium",
+                  nombreLineas === 2 ? "line-clamp-2 break-words leading-snug" : "truncate",
                   nombreCentrado && !etiquetaIzquierda ? "w-full text-center" : "flex-1",
                   nombreCentrado && nombreAccion && !etiquetaIzquierda ? "px-16" : null
                 )}
@@ -206,56 +214,83 @@ export default function CatalogoFinderRow({
         )}
       </div>
 
-      {mostrarAcciones && eliminarSiempreVisible ? (
+      {mostrarAcciones && accionesFijas ? (
         <div
           className="flex shrink-0 items-center gap-1"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
           {accionJuntoAEliminar ? <div className="shrink-0">{nombreAccion}</div> : null}
-          <div className="relative flex shrink-0 items-center">
-            {accionJuntoAEliminar ? (
-              <div className="pointer-events-none mr-1 flex w-7 shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
-                  title="Editar"
-                  aria-label={`Editar ${nombre}`}
-                  onClick={() => onEditar()}
-                >
-                  <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                </Button>
-              </div>
-            ) : (
-              <div className="pointer-events-none absolute right-full mr-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
-                {onVer ? (
+          {accionesSiempreVisibles ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS}
+              title="Editar"
+              aria-label={`Editar ${nombre}`}
+              onClick={() => onEditar()}
+            >
+              <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+            </Button>
+          ) : (
+            <div className="relative flex shrink-0 items-center">
+              {accionJuntoAEliminar ? (
+                <div className="pointer-events-none mr-1 flex w-7 shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
-                    title="Ver"
-                    aria-label={`Ver ${nombre}`}
-                    onClick={() => onVer()}
+                    title="Editar"
+                    aria-label={`Editar ${nombre}`}
+                    onClick={() => onEditar()}
                   >
-                    <Eye className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                    <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                   </Button>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
-                  title="Editar"
-                  aria-label={`Editar ${nombre}`}
-                  onClick={() => onEditar()}
-                >
-                  <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
-                </Button>
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="pointer-events-none absolute right-full mr-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                  {onVer ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
+                      title="Ver"
+                      aria-label={`Ver ${nombre}`}
+                      onClick={() => onVer()}
+                    >
+                      <Eye className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn(TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS, "!h-7 !w-7 !p-1")}
+                    title="Editar"
+                    aria-label={`Editar ${nombre}`}
+                    onClick={() => onEditar()}
+                  >
+                    <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                  </Button>
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={CATALOGO_FINDER_COLUMN_NOVO_BUTTON_CLASS}
+                title="Eliminar"
+                aria-label={`Eliminar ${nombre}`}
+                onClick={() => onEliminar()}
+              >
+                <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+              </Button>
+            </div>
+          )}
+          {accionesSiempreVisibles ? (
             <Button
               type="button"
               variant="ghost"
@@ -267,11 +302,11 @@ export default function CatalogoFinderRow({
             >
               <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
             </Button>
-          </div>
+          ) : null}
         </div>
       ) : null}
 
-      {mostrarAcciones && !eliminarSiempreVisible ? (
+      {mostrarAcciones && !accionesFijas ? (
         <div className="pointer-events-none absolute right-2 bottom-2 flex items-center justify-end gap-1 bg-card/75 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           {onVer ? (
             <Button
@@ -320,7 +355,7 @@ export default function CatalogoFinderRow({
         </div>
       ) : null}
 
-      {isClickable && !eliminarSiempreVisible ? (
+      {isClickable && !accionesFijas ? (
         <ChevronRight
           className={cn(
             "h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:opacity-0",

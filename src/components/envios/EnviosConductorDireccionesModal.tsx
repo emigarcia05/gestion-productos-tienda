@@ -12,8 +12,7 @@ import { Button } from "@/components/ui/button";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   etiquetaDireccionEnvio,
-  etiquetaDireccionEnvioListado,
-  etiquetaOrdinalDireccionEnvio,
+  etiquetaDireccionEnvioFilaListado,
   nombreCompletoCliente,
   nombrePintorAsociadoCliente,
   type ClienteItem,
@@ -181,9 +180,8 @@ export default function EnviosConductorDireccionesModal({
                   direccionesCliente.map((item, index) => (
                     <CatalogoFinderRow
                       key={item.id}
-                      etiquetaIzquierda={etiquetaOrdinalDireccionEnvio(index + 1)}
-                      nombre={etiquetaDireccionEnvioListado(item)}
-                      nombreSufijo={item.referencia.trim() || undefined}
+                      nombre={etiquetaDireccionEnvioFilaListado(item, index + 1)}
+                      nombreLineas={2}
                       selected={item.id === direccionId}
                       onClick={() => handleSelectDireccion(item)}
                       mostrarAcciones={false}

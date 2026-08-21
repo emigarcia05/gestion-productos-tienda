@@ -19,9 +19,7 @@ import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
-  etiquetaDireccionEnvioListado,
-  etiquetaOrdinalDireccionEnvio,
-  metaDireccionEnvio,
+  etiquetaDireccionEnvioFilaListado,
   nombreCompletoCliente,
   nombrePintorAsociadoCliente,
   type ClienteItem,
@@ -331,16 +329,14 @@ export default function EnviosGestionarDireccionesModal({
                       direccionesFiltradas.map((item, index) => (
                         <CatalogoFinderRow
                           key={item.id}
-                          etiquetaIzquierda={etiquetaOrdinalDireccionEnvio(index + 1)}
-                          nombre={etiquetaDireccionEnvioListado(item)}
-                          nombreSufijo={metaDireccionEnvio(item) || undefined}
-                          nombreAccion={
-                            item.urlMaps ? <EnviosMapsLink url={item.urlMaps} /> : undefined
-                          }
+                          nombre={etiquetaDireccionEnvioFilaListado(item, index + 1)}
+                          nombreLineas={2}
+                          nombreAccion={<EnviosMapsLink url={item.urlMaps} />}
                           selected={item.id === direccionId}
                           onClick={() => setDireccionId(item.id)}
                           mostrarAcciones
                           eliminarSiempreVisible
+                          accionesSiempreVisibles
                           onEditar={() => setModalDireccion({ open: true, modo: "editar", item })}
                           onEliminar={() =>
                             setModalEliminar({

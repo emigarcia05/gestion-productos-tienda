@@ -27,6 +27,7 @@ import {
   CLIENTE_TIPO_LABELS,
   CLIENTE_TIPO_VALUES,
   etiquetaDireccionEnvio,
+  etiquetaDireccionEnvioFilaListado,
   nombreCompletoCliente,
   normalizarNombreCliente,
   type ClienteItem,
@@ -328,18 +329,21 @@ export default function CrearEditarClienteModal({
                 <ModalMicroLabel>DIRECCIONES</ModalMicroLabel>
                 {direccionesLocal.length > 0 ? (
                   <div className="flex flex-col gap-2">
-                    {direccionesLocal.map((dir) => (
+                    {direccionesLocal.map((dir, index) => (
                       <div
                         key={dir.id}
                         className={cn(
-                          "flex min-h-9 items-center gap-2 rounded-md border border-input px-3 py-1"
+                          "flex items-center gap-2 rounded-md border border-input px-3 py-1"
                         )}
                       >
-                        <span className="min-w-0 flex-1 truncate text-sm text-foreground" title={etiquetaDireccionEnvio(dir)}>
-                          {etiquetaDireccionEnvio(dir)}
+                        <span
+                          className="min-w-0 flex-1 line-clamp-2 break-words text-sm text-foreground"
+                          title={etiquetaDireccionEnvioFilaListado(dir, index + 1)}
+                        >
+                          {etiquetaDireccionEnvioFilaListado(dir, index + 1)}
                         </span>
                         <div className="flex shrink-0 items-center gap-1">
-                          {dir.urlMaps ? <EnviosMapsLink url={dir.urlMaps} /> : null}
+                          <EnviosMapsLink url={dir.urlMaps} />
                           <Button
                             type="button"
                             variant="ghost"

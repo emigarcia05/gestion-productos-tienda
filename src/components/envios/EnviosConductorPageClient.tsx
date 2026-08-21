@@ -226,6 +226,11 @@ export default function EnviosConductorPageClient({
                         <p className="text-sm text-foreground">
                           {etiquetaDireccionEnvio(item.direccion)}
                         </p>
+                        {item.observacionEnvio.trim() !== "" ? (
+                          <p className="whitespace-pre-wrap text-sm text-foreground">
+                            {item.observacionEnvio.trim()}
+                          </p>
+                        ) : null}
                         {maps !== "" ? (
                           <Button asChild className="h-12 w-full">
                             <a

@@ -38,10 +38,8 @@ import {
   pagadoDesdeFormaPagado,
   etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
-  etiquetaDireccionEnvioListado,
-  etiquetaOrdinalDireccionEnvio,
+  etiquetaDireccionEnvioFilaListado,
   etiquetaSucursalEnvio,
-  metaDireccionEnvio,
   nombreCompletoCliente,
   nombrePintorAsociadoCliente,
   type ClienteItem,
@@ -85,6 +83,7 @@ export default function CrearEnvioWizardModal({
   const [horaDesde, setHoraDesde] = useState<EnviosHoraValue | "">("");
   const [horaHasta, setHoraHasta] = useState<EnviosHoraValue | "">("");
   const [formaPagado, setFormaPagado] = useState<EnviosFormaPagadoValue | "">("");
+  const [observacionEnvio, setObservacionEnvio] = useState("");
   const [pdfAdjunto, setPdfAdjunto] = useState<{ nombre: string; base64: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [qClienteDebounced, setQClienteDebounced] = useState("");
@@ -132,6 +131,7 @@ export default function CrearEnvioWizardModal({
       setHoraDesde(esHoraEnvioValida(item.horaDesde) ? item.horaDesde : "");
       setHoraHasta(esHoraEnvioValida(item.horaHasta) ? item.horaHasta : "");
       setFormaPagado(item.formaPagado);
+      setObservacionEnvio(item.observacionEnvio);
       return;
     }
     setSucursalId(null);
@@ -141,6 +141,7 @@ export default function CrearEnvioWizardModal({
     setHoraDesde("");
     setHoraHasta("");
     setFormaPagado("");
+    setObservacionEnvio("");
   }, [open, item]);
 
   const pintores = useMemo(
@@ -350,7 +351,7 @@ export default function CrearEnvioWizardModal({
         fechaEnvioIso: fechaIso,
         horaDesde,
         horaHasta,
-        observacionEnvio: item?.observacionEnvio ?? "",
+        observacionEnvio,
         pagado: pagadoDesdeFormaPagado(formaPagado, item?.pagado ?? false),
         formaPagado,
         ...(pdfAdjunto ? { pdfComprobante: pdfAdjunto } : {}),
@@ -568,16 +569,14 @@ export default function CrearEnvioWizardModal({
                           direccionesFiltradas.map((item, index) => (
                             <CatalogoFinderRow
                               key={item.id}
-                              etiquetaIzquierda={etiquetaOrdinalDireccionEnvio(index + 1)}
-                              nombre={etiquetaDireccionEnvioListado(item)}
-                              nombreSufijo={metaDireccionEnvio(item) || undefined}
-                              nombreAccion={
-                                item.urlMaps ? <EnviosMapsLink url={item.urlMaps} /> : undefined
-                              }
+                              nombre={etiquetaDireccionEnvioFilaListado(item, index + 1)}
+                              nombreLineas={2}
+                              nombreAccion={<EnviosMapsLink url={item.urlMaps} />}
                               selected={item.id === direccionId}
                               onClick={() => handleSelectDireccion(item.id)}
                               mostrarAcciones
                               eliminarSiempreVisible
+                              accionesSiempreVisibles
                               onEditar={() => setModalDireccion({ open: true, modo: "editar", item })}
                               onEliminar={() =>
                                 setModalEliminar({
@@ -610,7 +609,7 @@ export default function CrearEnvioWizardModal({
                   ) : null}
 
                   {paso === 5 ? (
-                    <div className="flex min-h-full items-center justify-center p-4">
+                    <div className="flex min-h-full items-center justify-center overflow-y-auto p-4">
                       <div className="flex w-full flex-col gap-4">
                       <div className="flex flex-col gap-2">
                         <ModalMicroLabel align="center">PDF MERCADERÍA</ModalMicroLabel>
@@ -661,6 +660,22 @@ export default function CrearEnvioWizardModal({
                           </SelectContent>
                         </Select>
                       </div>
+                      <label className="flex flex-col gap-1">
+                        <ModalMicroLabel align="center">OBSERVACIÓN ENVÍO</ModalMicroLabel>
+                        <textarea
+                          value={observacionEnvio}
+                          onChange={(e) => setObservacionEnvio(e.target.value)}
+                          disabled={saving}
+                          rows={3}
+                          maxLength={5000}
+                          aria-label="Observación envío"
+                          className={cn(
+                            "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50",
+                            "flex min-h-20 w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none",
+                            "text-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+                          )}
+                        />
+                      </label>
                       </div>
                     </div>
                   ) : null}
