@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, CheckCheck, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import CrearEnvioWizardModal from "@/components/envios/CrearEnvioWizardModal";
@@ -36,10 +36,11 @@ import {
 } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
-import { eliminarEnviosFinalAction } from "@/actions/envios";
+import { eliminarEnviosFinalAction, marcarEnviosFinalEntregadoAction } from "@/actions/envios";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   direccionEnvioTieneDato,
+  etiquetaClienteListado,
   etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
   etiquetaFormaPagadoEnvio,
@@ -121,6 +122,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
     { open: false } | { open: true; id: string; label: string }
   >({ open: false });
   const [deleting, setDeleting] = useState(false);
+  const [entregandoId, setEntregandoId] = useState<string | null>(null);
 
   const itemsFiltrados = useMemo(() => {
     return envios.filter((item) => {
@@ -142,7 +144,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
         !matchByMultiTerm(
           [
             etiquetaSucursalEnvio(item.sucursal),
-            item.clienteFinal ? nombreCompletoCliente(item.clienteFinal) : "",
+            item.clienteFinal ? etiquetaClienteListado(item.clienteFinal) : "",
             item.clienteFinal?.cel ?? "",
             item.pintor ? nombreCompletoCliente(item.pintor) : "",
             item.pintor?.cel ?? "",
@@ -192,6 +194,22 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
       refresh();
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleMarcarEntregado(id: string) {
+    if (entregandoId) return;
+    setEntregandoId(id);
+    try {
+      const res = await marcarEnviosFinalEntregadoAction({ id });
+      if (!res.ok) {
+        toast.error(res.error ?? "No se pudo marcar como entregado.");
+        return;
+      }
+      toast.success("Envío marcado como entregado.");
+      refresh();
+    } finally {
+      setEntregandoId(null);
     }
   }
 
@@ -350,7 +368,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
                     </TableCell>
                     <TableCell className="celda-datos">
                       {item.clienteFinal
-                        ? nombreCompletoCliente(item.clienteFinal)
+                        ? etiquetaClienteListado(item.clienteFinal)
                         : fmtCelda("")}
                     </TableCell>
                     <TableCell className="celda-datos">
@@ -389,6 +407,21 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
                     />
                     <TableCell className="celda-datos celda-datos--accion-relleno-fila tabla-bloque-secundario-cell-divider">
                       <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                            item.entregado && "bg-emerald-600 text-white hover:bg-emerald-700"
+                          )}
+                          title={item.entregado ? "Entregado" : "Marcar Entregado"}
+                          aria-label={item.entregado ? "Entregado" : "Marcar envío como entregado"}
+                          disabled={item.entregado || entregandoId === item.id}
+                          onClick={() => void handleMarcarEntregado(item.id)}
+                        >
+                          <CheckCheck className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                        </Button>
                         <Button
                           type="button"
                           variant="ghost"

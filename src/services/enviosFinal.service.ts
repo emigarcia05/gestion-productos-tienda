@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { isoYmdFromPrismaDateOnly, dateToIsoYmdArgentina } from "@/lib/fechaArgentina";
+import {
+  addDaysToIsoYmdArgentina,
+  isoYmdFromPrismaDateOnly,
+  dateToIsoYmdArgentina,
+} from "@/lib/fechaArgentina";
 import {
   ENVIOS_PDF_MAX_BYTES,
   capitalizarTextoEnvio,
@@ -307,6 +311,25 @@ export async function listarEnviosFinal(): Promise<EnviosFinalListItem[]> {
   } catch (e) {
     console.error("[enviosFinal][listar]", e);
     return [];
+  }
+}
+
+/**
+ * Purga automática al abrir Programados:
+ * borra envíos con antigüedad >= 7 días (por `fecha_envio` calendario AR),
+ * independientemente del estado `entregado`.
+ */
+export async function purgarEnviosFinalAntiguosProgramados(): Promise<number> {
+  try {
+    const hoyIso = dateToIsoYmdArgentina(new Date());
+    const fechaCorteIso = addDaysToIsoYmdArgentina(hoyIso, -7);
+    const res = await prisma.enviosFinal.deleteMany({
+      where: { fechaEnvio: { lte: dateFromIsoYmd(fechaCorteIso) } },
+    });
+    return res.count;
+  } catch (e) {
+    console.error("[enviosFinal][purgarAntiguosProgramados]", e);
+    return 0;
   }
 }
 

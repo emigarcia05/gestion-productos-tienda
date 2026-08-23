@@ -124,6 +124,68 @@ export function nombreCompletoCliente(cliente: {
   return normalizarNombreCliente(cliente.nombreCompleto);
 }
 
+export function esConsumidorFinalSinNombre(cliente: {
+  tipo: ClienteTipo;
+  nombreCompleto: string;
+}): boolean {
+  return cliente.tipo === "CONSUMIDOR_FINAL" && normalizarNombreCliente(cliente.nombreCompleto) === "";
+}
+
+export function etiquetaClienteListado(cliente: {
+  tipo: ClienteTipo;
+  nombreCompleto: string;
+  cel: string;
+}): string {
+  if (esConsumidorFinalSinNombre(cliente)) {
+    const cel = cliente.cel.trim();
+    return cel ? `CONS. FINAL - ${cel}` : "CONS. FINAL";
+  }
+  return nombreCompletoCliente(cliente);
+}
+
+export function partesNombreClienteListado(cliente: {
+  tipo: ClienteTipo;
+  nombreCompleto: string;
+  cel: string;
+}): { principal: string; sufijo?: string } {
+  if (!esConsumidorFinalSinNombre(cliente)) {
+    return { principal: nombreCompletoCliente(cliente) };
+  }
+  const cel = cliente.cel.trim();
+  return cel ? { principal: "CONS. FINAL", sufijo: cel } : { principal: "CONS. FINAL" };
+}
+
+/**
+ * Listados de clientes:
+ * 1) con nombre (A-Z)
+ * 2) sin nombre (CONS. FINAL), ordenados por cel.
+ */
+export function compararClientesParaListado(
+  a: Pick<ClienteResumen, "nombreCompleto" | "cel" | "tipo">,
+  b: Pick<ClienteResumen, "nombreCompleto" | "cel" | "tipo">
+): number {
+  const nombreA = normalizarNombreCliente(a.nombreCompleto);
+  const nombreB = normalizarNombreCliente(b.nombreCompleto);
+  const aTieneNombre = nombreA !== "";
+  const bTieneNombre = nombreB !== "";
+
+  if (aTieneNombre !== bTieneNombre) {
+    return aTieneNombre ? -1 : 1;
+  }
+
+  if (aTieneNombre && bTieneNombre) {
+    const byNombre = nombreA.localeCompare(nombreB, "es", { sensitivity: "base" });
+    if (byNombre !== 0) return byNombre;
+  }
+
+  const celA = a.cel.trim();
+  const celB = b.cel.trim();
+  const byCel = celA.localeCompare(celB, "es", { sensitivity: "base" });
+  if (byCel !== 0) return byCel;
+
+  return 0;
+}
+
 /** Textos de `envios_direcciones`: primera letra mayúscula, resto minúsculas (oración). */
 export function capitalizarTextoEnvio(value: string): string {
   const t = value.trim().replace(/\s+/g, " ");

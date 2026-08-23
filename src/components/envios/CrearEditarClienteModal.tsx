@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -66,6 +66,7 @@ export default function CrearEditarClienteModal({
 }: Props) {
   const [nombreCompleto, setNombreCompleto] = useState("");
   const [cel, setCel] = useState("");
+  const [cargarComoConsFinal, setCargarComoConsFinal] = useState(false);
   const [tipo, setTipo] = useState<ClienteTipoValue>(tipoFijo ?? "CONSUMIDOR_FINAL");
   const [pintorAsociadoId, setPintorAsociadoId] = useState<string | null>(null);
   const [clienteId, setClienteId] = useState<string | null>(null);
@@ -107,6 +108,10 @@ export default function CrearEditarClienteModal({
       setNombreCompleto(normalizarNombreCliente(item.nombreCompleto));
       setCel(item.cel);
       setTipo(tipoFijo ?? item.tipo);
+      setCargarComoConsFinal(
+        (tipoFijo ?? item.tipo) === "CONSUMIDOR_FINAL" &&
+          normalizarNombreCliente(item.nombreCompleto) === ""
+      );
       setPintorAsociadoId(item.pintorAsociadoId);
       setClienteId(item.id);
       setDireccionesLocal(direcciones.filter((d) => d.personaId === item.id));
@@ -114,6 +119,7 @@ export default function CrearEditarClienteModal({
     }
     setNombreCompleto("");
     setCel("");
+    setCargarComoConsFinal(false);
     setTipo(tipoFijo ?? "CONSUMIDOR_FINAL");
     setPintorAsociadoId(null);
     setClienteId(null);
@@ -122,14 +128,18 @@ export default function CrearEditarClienteModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- direcciones solo al abrir
   }, [open, modo, item, tipoFijo]);
 
-  const puedeGuardar = nombreCompleto.trim() !== "";
   const tituloBase = tipoFijo === "PINTOR" || tipoEfectivo === "PINTOR" ? "Pintor" : "Cliente";
   const yaPersistido = Boolean(clienteId);
+  const esConsFinalCargado = tipoEfectivo === "CONSUMIDOR_FINAL" && cargarComoConsFinal;
+  const nombreRequerido = tipoEfectivo === "PINTOR" || !esConsFinalCargado;
+  const nombreValido = nombreRequerido ? normalizarNombreCliente(nombreCompleto) !== "" : true;
+  const celValido = esConsFinalCargado ? cel.trim() !== "" : true;
+  const puedeGuardar = nombreValido && celValido;
 
   async function persistirCliente(): Promise<ClienteItem | null> {
     const tipoGuardar = tipoFijo ?? tipo;
     const payload = {
-      nombreCompleto,
+      nombreCompleto: tipoGuardar === "CONSUMIDOR_FINAL" && cargarComoConsFinal ? "" : nombreCompleto,
       cel,
       tipo: tipoGuardar,
       pintorAsociadoId: tipoGuardar === "CONSUMIDOR_FINAL" ? pintorAsociadoId : null,
@@ -162,7 +172,11 @@ export default function CrearEditarClienteModal({
   async function handleNuevaDireccion() {
     if (saving) return;
     if (!puedeGuardar) {
-      toast.error("Completá el nombre para asociar una dirección.");
+      toast.error(
+        esConsFinalCargado
+          ? "Completá el CEL para asociar una dirección."
+          : "Completá el nombre para asociar una dirección."
+      );
       return;
     }
     let personaId = clienteId;
@@ -222,15 +236,38 @@ export default function CrearEditarClienteModal({
             <label className="flex flex-col gap-1">
               <ModalMicroLabel>NOMBRE COMPLETO</ModalMicroLabel>
               <Input
-                value={nombreCompleto}
+                value={esConsFinalCargado ? "CONS. FINAL" : nombreCompleto}
                 onChange={(e) =>
                   setNombreCompleto(e.target.value.toLocaleUpperCase("es-AR"))
                 }
                 autoComplete="off"
+                disabled={esConsFinalCargado}
               />
             </label>
+            {tipoEfectivo === "CONSUMIDOR_FINAL" ? (
+              <label className="inline-flex cursor-pointer items-center gap-2 self-start text-sm font-medium text-foreground select-none">
+                <input
+                  type="checkbox"
+                  checked={cargarComoConsFinal}
+                  onChange={(e) => {
+                    const activo = e.target.checked;
+                    setCargarComoConsFinal(activo);
+                    if (activo) {
+                      setNombreCompleto("CONS. FINAL");
+                    } else if (normalizarNombreCliente(nombreCompleto) === "CONS. FINAL") {
+                      setNombreCompleto("");
+                    }
+                  }}
+                  className="sr-only"
+                />
+                <span className="flex h-5 w-5 items-center justify-center rounded-sm border-2 border-primary bg-white">
+                  {cargarComoConsFinal ? <Check className="h-3.5 w-3.5 text-primary" aria-hidden /> : null}
+                </span>
+                <span>Cargar como CONS. FINAL</span>
+              </label>
+            ) : null}
             <label className="flex flex-col gap-1">
-              <ModalMicroLabel>CEL</ModalMicroLabel>
+              <ModalMicroLabel>{esConsFinalCargado ? "CEL (OBLIGATORIO)" : "CEL"}</ModalMicroLabel>
               <Input value={cel} onChange={(e) => setCel(e.target.value)} autoComplete="off" />
             </label>
             {tipoFijo ? null : (
@@ -241,7 +278,10 @@ export default function CrearEditarClienteModal({
                   onValueChange={(v) => {
                     const next = v as ClienteTipoValue;
                     setTipo(next);
-                    if (next === "PINTOR") setPintorAsociadoId(null);
+                    if (next === "PINTOR") {
+                      setPintorAsociadoId(null);
+                      setCargarComoConsFinal(false);
+                    }
                   }}
                 >
                   <SelectTrigger className={cn("w-full")}>

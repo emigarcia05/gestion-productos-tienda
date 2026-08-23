@@ -33,6 +33,7 @@ import { matchByMultiTerm } from "@/lib/busqueda";
 import {
   ENVIOS_FORMA_PAGADO_LABELS,
   ENVIOS_FORMA_PAGADO_VALUES,
+  etiquetaClienteListado,
   esFormaPagadoEnvioValida,
   esHoraEnvioValida,
   pagadoDesdeFormaPagado,
@@ -42,6 +43,7 @@ import {
   etiquetaSucursalEnvio,
   nombreCompletoCliente,
   nombrePintorAsociadoCliente,
+  partesNombreClienteListado,
   type ClienteItem,
   type EnviosDireccionItem,
   type EnviosFinalListItem,
@@ -249,7 +251,7 @@ export default function CrearEnvioWizardModal({
         ? `${clientesFiltrados.length} cliente(s)`
         : paso === 3
           ? clienteSeleccionado
-            ? nombreCompletoCliente(clienteSeleccionado)
+            ? etiquetaClienteListado(clienteSeleccionado)
             : "Seleccioná un cliente"
           : paso === 4
             ? fechaIso
@@ -525,8 +527,12 @@ export default function CrearEnvioWizardModal({
                               ) : undefined
                             }
                             reservarEspacioIconoIzquierda
-                            nombre={nombreCompletoCliente(item)}
-                            nombreSufijo={nombrePintorAsociadoCliente(item) ?? undefined}
+                            nombre={partesNombreClienteListado(item).principal}
+                            nombreSufijo={
+                              partesNombreClienteListado(item).sufijo ??
+                              nombrePintorAsociadoCliente(item) ??
+                              undefined
+                            }
                             selected={item.id === clienteId}
                             onClick={() => handleSelectCliente(item.id)}
                             mostrarAcciones
@@ -538,7 +544,7 @@ export default function CrearEnvioWizardModal({
                                 open: true,
                                 kind: "cliente",
                                 id: item.id,
-                                label: nombreCompletoCliente(item),
+                                label: etiquetaClienteListado(item),
                               })
                             }
                           />

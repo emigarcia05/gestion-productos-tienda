@@ -11,10 +11,11 @@ import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
+  etiquetaClienteListado,
   etiquetaDireccionEnvio,
   etiquetaDireccionEnvioFilaListado,
-  nombreCompletoCliente,
   nombrePintorAsociadoCliente,
+  partesNombreClienteListado,
   type ClienteItem,
   type EnviosDireccionItem,
 } from "@/lib/envios";
@@ -112,7 +113,7 @@ export default function EnviosConductorDireccionesModal({
   const maps = direccionSeleccionada?.urlMaps.trim() ?? "";
   const referencia = direccionSeleccionada?.referencia.trim() ?? "";
   const nombreCliente = clienteSeleccionado
-    ? nombreCompletoCliente(clienteSeleccionado)
+    ? etiquetaClienteListado(clienteSeleccionado)
     : "";
 
   return (
@@ -156,8 +157,12 @@ export default function EnviosConductorDireccionesModal({
                   clientesFiltrados.map((item) => (
                     <CatalogoFinderRow
                       key={item.id}
-                      nombre={nombreCompletoCliente(item)}
-                      nombreSufijo={nombrePintorAsociadoCliente(item) ?? undefined}
+                      nombre={partesNombreClienteListado(item).principal}
+                      nombreSufijo={
+                        partesNombreClienteListado(item).sufijo ??
+                        nombrePintorAsociadoCliente(item) ??
+                        undefined
+                      }
                       selected={item.id === clienteId}
                       onClick={() => handleSelectCliente(item)}
                       mostrarAcciones={false}

@@ -9,7 +9,12 @@ import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
 import EnviosTelLink from "@/components/envios/EnviosTelLink";
 import { Button } from "@/components/ui/button";
 import { matchByMultiTerm } from "@/lib/busqueda";
-import { nombreCompletoCliente, nombrePintorAsociadoCliente, type ClienteItem } from "@/lib/envios";
+import {
+  nombreCompletoCliente,
+  nombrePintorAsociadoCliente,
+  partesNombreClienteListado,
+  type ClienteItem,
+} from "@/lib/envios";
 import { useFiltrosConBusqueda } from "@/lib/hooks/useFiltrosConBusqueda";
 import { cn } from "@/lib/utils";
 
@@ -85,8 +90,12 @@ export default function EnviosConsumidoresDePintorModal({
               filtrados.map((item) => (
                 <CatalogoFinderRow
                   key={item.id}
-                  nombre={nombreCompletoCliente(item)}
-                  nombreSufijo={nombrePintorAsociadoCliente(item) ?? undefined}
+                  nombre={partesNombreClienteListado(item).principal}
+                  nombreSufijo={
+                    partesNombreClienteListado(item).sufijo ??
+                    nombrePintorAsociadoCliente(item) ??
+                    undefined
+                  }
                   nombreCentrado
                   nombreAccion={
                     item.cel.trim() ? <EnviosTelLink cel={item.cel} /> : undefined

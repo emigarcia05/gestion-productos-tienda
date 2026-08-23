@@ -17,11 +17,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { matchByMultiTerm } from "@/lib/busqueda";
 import {
+  etiquetaClienteListado,
   etiquetaDepartamentoEnvio,
   etiquetaDireccionEnvio,
   etiquetaDireccionEnvioFilaListado,
   nombreCompletoCliente,
   nombrePintorAsociadoCliente,
+  partesNombreClienteListado,
   type ClienteItem,
   type EnviosDireccionItem,
 } from "@/lib/envios";
@@ -261,8 +263,12 @@ export default function EnviosGestionarDireccionesModal({
                         ) : undefined
                       }
                       reservarEspacioIconoIzquierda
-                      nombre={nombreCompletoCliente(item)}
-                      nombreSufijo={nombrePintorAsociadoCliente(item) ?? undefined}
+                      nombre={partesNombreClienteListado(item).principal}
+                      nombreSufijo={
+                        partesNombreClienteListado(item).sufijo ??
+                        nombrePintorAsociadoCliente(item) ??
+                        undefined
+                      }
                       selected={item.id === clienteId}
                       onClick={() => handleSelectCliente(item.id)}
                       mostrarAcciones
@@ -274,7 +280,7 @@ export default function EnviosGestionarDireccionesModal({
                           open: true,
                           kind: "cliente",
                           id: item.id,
-                          label: nombreCompletoCliente(item),
+                          label: etiquetaClienteListado(item),
                         })
                       }
                     />
@@ -300,7 +306,7 @@ export default function EnviosGestionarDireccionesModal({
                 titulo="DIRECCIONES"
                 subtitulo={
                   clienteSeleccionado
-                    ? nombreCompletoCliente(clienteSeleccionado)
+                    ? etiquetaClienteListado(clienteSeleccionado)
                     : "Seleccioná un cliente"
                 }
                 mostrarNuevo={false}

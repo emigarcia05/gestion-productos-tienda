@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { normalizarNombreCliente, type ClienteItem, type ClienteResumen } from "@/lib/envios";
+import {
+  compararClientesParaListado,
+  normalizarNombreCliente,
+  type ClienteItem,
+  type ClienteResumen,
+} from "@/lib/envios";
 import type { CrearClienteInput, EditarClienteInput } from "@/lib/validations/envios";
 import type { ServiceResult } from "@/types/service.types";
 
@@ -85,7 +90,7 @@ export async function listarClientes(): Promise<ClienteItem[]> {
       orderBy: [{ nombreCompleto: "asc" }, { createdAt: "asc" }],
       select,
     });
-    return rows.map(mapRow);
+    return rows.map(mapRow).sort(compararClientesParaListado);
   } catch (e) {
     console.error("[clientes][listar]", e);
     return [];

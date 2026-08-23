@@ -36,7 +36,6 @@ import {
   puedeCambiarModulo,
   primerModuloPermitido,
   etiquetaSucursalPorDefecto,
-  usuarioTieneAdministracion,
 } from "@/lib/usuarios";
 import type { Rol } from "@/lib/permisos";
 import { cn } from "@/lib/utils";
@@ -59,7 +58,8 @@ function nombreUsuarioLabel(nombre: string): string {
 /**
  * Pie de slidenav: fila de usuario (ícono módulo si puede cambiar + nombre).
  * Vive dentro del dock de sesión (`sidebar-user-switcher-surface` en `Sidebar`).
- * Primera visita: modal **Elegir Usuario**; si el usuario tiene Administración, pide clave.
+ * Primera visita: modal **Elegir Usuario**.
+ * La clave se solicita solo al entrar a un área que la requiere (Administración).
  */
 export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const pathname = usePathname();
@@ -148,7 +148,8 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     if (!usuario) return;
     const destino = primerModuloPermitido(usuario.modulosPermitidos);
     if (!destino) return;
-    if (usuarioTieneAdministracion(usuario.modulosPermitidos) && rolActual !== "editor") {
+    const areaDestino = getMainAppAreaById(destino);
+    if (areaDestino.requierePassword && rolActual !== "editor") {
       pedirClave(usuario, destino);
       return;
     }

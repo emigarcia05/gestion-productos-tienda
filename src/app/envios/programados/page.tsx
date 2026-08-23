@@ -4,7 +4,11 @@ import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarEnviosDirecciones } from "@/services/enviosDirecciones.service";
-import { listarEnviosFinal, listarSucursalesParaEnvios } from "@/services/enviosFinal.service";
+import {
+  listarEnviosFinal,
+  listarSucursalesParaEnvios,
+  purgarEnviosFinalAntiguosProgramados,
+} from "@/services/enviosFinal.service";
 import { listarClientes } from "@/services/clientes.service";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +18,8 @@ export default async function EnviosProgramadosPage() {
   if (!puede(rol, PERMISOS.envios.acceso)) {
     redirect(GP_ROUTES.defaultEntry);
   }
+
+  await purgarEnviosFinalAntiguosProgramados();
 
   const [envios, clientes, direcciones, sucursales] = await Promise.all([
     listarEnviosFinal(),

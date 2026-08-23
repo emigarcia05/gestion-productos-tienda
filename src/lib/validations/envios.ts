@@ -16,13 +16,6 @@ import {
   globalSucursalIdSchema,
 } from "@/lib/validations/common";
 
-const textoCortoSchema = (campo: string, max = 200) =>
-  z
-    .string()
-    .trim()
-    .min(1, `Ingresá ${campo}.`)
-    .max(max, `${campo.charAt(0).toUpperCase()}${campo.slice(1)} es demasiado largo.`);
-
 const textoOpcionalSchema = (max: number) =>
   z
     .string()
@@ -61,18 +54,42 @@ export const enviosPdfComprobanteSchema = z.object({
 });
 
 const clienteCampos = {
-  nombreCompleto: textoCortoSchema("el nombre completo", 400).transform(
-    normalizarNombreCliente
-  ),
+  nombreCompleto: z
+    .string()
+    .trim()
+    .max(400, "El nombre completo es demasiado largo.")
+    .transform(normalizarNombreCliente),
   cel: textoOpcionalSchema(40),
   tipo: z.enum(CLIENTE_TIPO_VALUES),
   pintorAsociadoId: prismaIdOptionalNullableSchema,
 };
 
 function refineClientePintorAsociado(
-  data: { id?: string; tipo: ClienteTipoValue; pintorAsociadoId?: string | null },
+  data: {
+    id?: string;
+    tipo: ClienteTipoValue;
+    nombreCompleto: string;
+    cel: string;
+    pintorAsociadoId?: string | null;
+  },
   ctx: z.RefinementCtx
 ): void {
+  if (data.tipo === "PINTOR" && data.nombreCompleto === "") {
+    ctx.addIssue({
+      code: "custom",
+      message: "Ingresá el nombre completo.",
+      path: ["nombreCompleto"],
+    });
+  }
+
+  if (data.nombreCompleto === "" && data.cel.trim() === "") {
+    ctx.addIssue({
+      code: "custom",
+      message: "Si el nombre está vacío, ingresá un CEL.",
+      path: ["cel"],
+    });
+  }
+
   if (data.tipo === "PINTOR" && data.pintorAsociadoId) {
     ctx.addIssue({
       code: "custom",
