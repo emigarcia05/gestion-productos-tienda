@@ -20,8 +20,9 @@ import {
 } from "@/components/ui/select";
 import {
   compararEnvioPorProximidad,
+  esConsumidorFinalSinNombre,
+  etiquetaDepartamentoEnvio,
   etiquetaSucursalEnvio,
-  etiquetaDireccionEnvio,
   etiquetaHorarioEnvio,
   nombreDestinatarioEnvio,
   telefonoEnvio,
@@ -93,7 +94,10 @@ export default function EnviosConductorPageClient({
     if (!modalEntregar.open || entregando) return;
     setEntregando(true);
     try {
-      const res = await marcarEnviosFinalEntregadoAction({ id: modalEntregar.id });
+      const res = await marcarEnviosFinalEntregadoAction({
+        id: modalEntregar.id,
+        entregado: true,
+      });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo marcar como entregado.");
         return;
@@ -206,6 +210,17 @@ export default function EnviosConductorPageClient({
                 const maps = item.direccion.urlMaps.trim();
                 const tel = telefonoEnvio(item);
                 const telHref = tel !== "" ? `tel:${tel.replace(/\s+/g, "")}` : "";
+                const calle = item.direccion.calleNombre.trim();
+                const numeracion = item.direccion.numeracion.trim();
+                const distrito = item.direccion.distrito.trim();
+                const departamento = etiquetaDepartamentoEnvio(item.direccion.departamento).trim();
+                const referencia = item.direccion.referencia.trim();
+                const lineaCalle = [calle, numeracion].filter(Boolean).join(", ");
+                const lineaDistrito = [distrito, departamento].filter(Boolean).join(", ");
+                const nombreDestinatario =
+                  item.clienteFinal && esConsumidorFinalSinNombre(item.clienteFinal)
+                    ? "CONS. FINAL"
+                    : nombreDestinatarioEnvio(item);
                 return (
                   <article
                     key={item.id}
@@ -219,13 +234,18 @@ export default function EnviosConductorPageClient({
                   >
                     <div className="flex flex-col gap-1">
                       <p className="font-semibold text-foreground">
-                        {nombreDestinatarioEnvio(item)}
+                        {nombreDestinatario}
                       </p>
                       <p className="text-sm tabular-nums text-muted-foreground">
                         {formatIsoYmdDdMmYyyyArgentina(item.fechaEnvioIso)}
                         {" · "}
                         {etiquetaHorarioEnvio(item.horaDesde, item.horaHasta)}
                       </p>
+                      {item.observacionEnvio.trim() !== "" ? (
+                        <p className="whitespace-pre-wrap text-sm text-foreground">
+                          {item.observacionEnvio.trim()}
+                        </p>
+                      ) : null}
                     </div>
                     <Button
                       type="button"
@@ -238,22 +258,17 @@ export default function EnviosConductorPageClient({
                     </Button>
                     {abierto ? (
                       <div className="flex flex-col gap-3">
-                        <p className="text-sm text-foreground">
-                          <span className="font-semibold">
-                            {etiquetaDireccionEnvio(item.direccion)}
-                          </span>
-                          {item.direccion.referencia.trim() !== "" ? (
-                            <span className="font-normal">
-                              {" "}
-                              ({item.direccion.referencia.trim()})
-                            </span>
+                        <div className="text-sm text-foreground">
+                          {lineaCalle !== "" ? (
+                            <p className="font-semibold">{lineaCalle}.</p>
                           ) : null}
-                        </p>
-                        {item.observacionEnvio.trim() !== "" ? (
-                          <p className="whitespace-pre-wrap text-sm text-foreground">
-                            {item.observacionEnvio.trim()}
-                          </p>
-                        ) : null}
+                          {lineaDistrito !== "" ? (
+                            <p className="font-semibold">{lineaDistrito}.</p>
+                          ) : null}
+                          {referencia !== "" ? (
+                            <p className="font-normal">({referencia})</p>
+                          ) : null}
+                        </div>
                         {maps !== "" ? (
                           <Button asChild className="h-12 w-full">
                             <a
@@ -308,7 +323,7 @@ export default function EnviosConductorPageClient({
                             setModalEntregar({
                               open: true,
                               id: item.id,
-                              label: nombreDestinatarioEnvio(item),
+                              label: nombreDestinatario,
                             })
                           }
                         >

@@ -627,13 +627,23 @@ export default function CrearEnvioWizardModal({
                             {item.pdfComprobanteNombre ?? "comprobante.pdf"}
                           </p>
                         ) : null}
-                        <Input
-                          type="file"
-                          accept="application/pdf,.pdf"
-                          disabled={saving}
-                          className="text-center file:w-full file:justify-center"
-                          onChange={(e) => void handlePdfChange(e.target.files)}
-                        />
+                        <label
+                          className={cn(
+                            "border-input bg-transparent text-foreground shadow-xs",
+                            "hover:bg-muted/40 flex h-9 w-full min-w-0 cursor-pointer items-center justify-center rounded-md border px-3 py-1 text-sm font-medium transition-[color,box-shadow]",
+                            "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
+                            saving && "pointer-events-none cursor-not-allowed opacity-50"
+                          )}
+                        >
+                          <Input
+                            type="file"
+                            accept="application/pdf,.pdf"
+                            disabled={saving}
+                            className="sr-only"
+                            onChange={(e) => void handlePdfChange(e.target.files)}
+                          />
+                          Subir PDF
+                        </label>
                         {item?.tienePdf && !quitarPdf && !pdfAdjunto ? (
                           <Button
                             type="button"
@@ -679,7 +689,7 @@ export default function CrearEnvioWizardModal({
                           aria-label="Observación envío"
                           className={cn(
                             "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50",
-                            "flex min-h-20 w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none",
+                            "block min-h-20 w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-left text-sm shadow-xs outline-none",
                             "text-foreground focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
                           )}
                         />

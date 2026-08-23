@@ -268,6 +268,11 @@ export const enviosFinalIdSchema = z.object({
   id: prismaCuidSchema,
 });
 
+export const enviosFinalEntregadoSchema = z.object({
+  id: prismaCuidSchema,
+  entregado: z.boolean(),
+});
+
 export type CrearClienteInput = z.infer<typeof crearClienteSchema>;
 export type EditarClienteInput = z.infer<typeof editarClienteSchema>;
 export type CrearEnviosDireccionInput = z.infer<typeof crearEnviosDireccionSchema>;

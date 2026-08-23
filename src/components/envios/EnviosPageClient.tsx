@@ -197,16 +197,19 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
     }
   }
 
-  async function handleMarcarEntregado(id: string) {
+  async function handleMarcarEntregado(id: string, entregadoActual: boolean) {
     if (entregandoId) return;
     setEntregandoId(id);
     try {
-      const res = await marcarEnviosFinalEntregadoAction({ id });
+      const proximoEstadoEntregado = !entregadoActual;
+      const res = await marcarEnviosFinalEntregadoAction({ id, entregado: proximoEstadoEntregado });
       if (!res.ok) {
         toast.error(res.error ?? "No se pudo marcar como entregado.");
         return;
       }
-      toast.success("Envío marcado como entregado.");
+      toast.success(
+        proximoEstadoEntregado ? "Envío marcado como entregado." : "Envío marcado como no entregado."
+      );
       refresh();
     } finally {
       setEntregandoId(null);
@@ -338,7 +341,7 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
             <TableHeader>
               <TableRow>
                 <TableHead>SUCURSAL</TableHead>
-                <TableHead>CLIENTE FINAL</TableHead>
+                <TableHead>CLIENTE</TableHead>
                 <TableHead>PINTOR</TableHead>
                 <TableHead>FECHA</TableHead>
                 <TableHead>HORARIO</TableHead>
@@ -418,10 +421,14 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
                             TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
                             item.entregado && "bg-emerald-600 text-white hover:bg-emerald-700"
                           )}
-                          title={item.entregado ? "Entregado" : "Marcar Entregado"}
-                          aria-label={item.entregado ? "Entregado" : "Marcar envío como entregado"}
-                          disabled={item.entregado || entregandoId === item.id}
-                          onClick={() => void handleMarcarEntregado(item.id)}
+                          title={item.entregado ? "Marcar como no entregado" : "Marcar entregado"}
+                          aria-label={
+                            item.entregado
+                              ? "Marcar envío como no entregado"
+                              : "Marcar envío como entregado"
+                          }
+                          disabled={entregandoId === item.id}
+                          onClick={() => void handleMarcarEntregado(item.id, item.entregado)}
                         >
                           <CheckCheck className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                         </Button>

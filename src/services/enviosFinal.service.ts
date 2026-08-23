@@ -469,12 +469,13 @@ export async function editarEnviosFinal(
 }
 
 export async function marcarEnviosFinalEntregado(
-  id: string
+  id: string,
+  entregado = true
 ): Promise<ServiceResult<EnviosFinalListItem>> {
   try {
     const row = await prisma.enviosFinal.update({
       where: { id },
-      data: { entregado: true },
+      data: { entregado },
       select: listSelect,
     });
     return { success: true, data: mapListRow(row) };

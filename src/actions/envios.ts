@@ -16,10 +16,10 @@ import {
   editarClienteSchema,
   editarEnviosDireccionSchema,
   editarEnviosFinalSchema,
+  enviosFinalEntregadoSchema,
   eliminarClienteSchema,
   eliminarEnviosDireccionSchema,
   eliminarEnviosFinalSchema,
-  enviosFinalIdSchema,
 } from "@/lib/validations/envios";
 import { crearCliente, editarCliente, eliminarCliente } from "@/services/clientes.service";
 import {
@@ -193,10 +193,10 @@ export async function marcarEnviosFinalEntregadoAction(
 ): Promise<ActionResult<EnviosFinalListItem>> {
   const gate = await requireEnvios();
   if (gate) return gate;
-  const parsed = enviosFinalIdSchema.safeParse(raw);
+  const parsed = enviosFinalEntregadoSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: firstZodErrorMessage(parsed.error) };
   try {
-    const res = await marcarEnviosFinalEntregado(parsed.data.id);
+    const res = await marcarEnviosFinalEntregado(parsed.data.id, parsed.data.entregado);
     if (!res.success) return { ok: false, error: res.error };
     revalidateEnvios();
     return { ok: true, data: res.data };

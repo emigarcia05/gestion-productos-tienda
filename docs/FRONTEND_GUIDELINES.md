@@ -230,9 +230,11 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Trans. Depósitos:** origen ≠ destino; origen default = sucursal preferida. **Generar Transf.** persiste cantidades de la grilla (si hay) y abre `GenerarTransfDepositosModal`: origen = sucursal del usuario; selector **SUCURSAL DESTINO** (`global_sucursales`); tabla COD. TIENDA / DESCRIPCIÓN TIENDA / CANTIDAD A TRANSFERIR; pie **Transferido** borra el lote.
 - **Px Tintométrico / Calc. Litros:** CFTL `contentWidth="full"` sin FilterBar; card de cálculo. Coeficientes / rendimientos solo `editor`, en `actions` del header (**Editar Coeficientes** / **Editar Rendimientos**).
 - **Cargar Gasto:** CFTL; al entrar abre `GastoUnicoBalanceModal` (gasto eventual, mes/año AR). Header **Nuevo Gasto Eventual**.
-- **Envios · Programados:** en la tabla, la columna **ACCIONES** incluye botón para marcar el envío como **ENTREGADO** (queda deshabilitado si ya fue marcado).
+- **Envios · Programados:** en la tabla, la columna **ACCIONES** incluye botón toggle de entrega: si está pendiente marca **ENTREGADO** y si ya está entregado permite volver a **NO ENTREGADO**.
 - **Envios · Programados (bloqueado visual):** filas con `entregado=true` se muestran atenuadas (opacidad/saturación reducida) para señalar visualmente que ya fueron entregadas, además de la tilde en la columna **ENTREGADO**.
 - **Envios · Purga automática:** al abrir Programados se eliminan envíos con `fecha_envio` de 7 días o más de antigüedad, sin importar estado de entrega.
+- **Envios · Conductor (destinatario):** cuando el cliente es `CONSUMIDOR_FINAL` sin nombre (`nombre_completo=""`), la tarjeta muestra `CONS. FINAL` como destinatario (sin `- CEL`).
+- **Envios · Conductor (dirección expandida):** en el detalle de la tarjeta, la dirección se presenta en 3 líneas: `calle_nombre, numeracion.`, `distrito, departamento.` y `(referencia)` cuando existe.
 
 ### Finanzas
 
