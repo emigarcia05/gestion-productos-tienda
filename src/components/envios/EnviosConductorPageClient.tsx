@@ -25,6 +25,7 @@ import {
   etiquetaSucursalEnvio,
   etiquetaHorarioEnvio,
   nombreDestinatarioEnvio,
+  nombrePintorAsociadoCliente,
   telefonoEnvio,
   type ClienteItem,
   type EnviosDireccionItem,
@@ -221,6 +222,9 @@ export default function EnviosConductorPageClient({
                   item.clienteFinal && esConsumidorFinalSinNombre(item.clienteFinal)
                     ? "CONS. FINAL"
                     : nombreDestinatarioEnvio(item);
+                const nombrePintorAsociado = item.clienteFinal
+                  ? nombrePintorAsociadoCliente(item.clienteFinal)
+                  : null;
                 return (
                   <article
                     key={item.id}
@@ -234,7 +238,10 @@ export default function EnviosConductorPageClient({
                   >
                     <div className="flex flex-col gap-1">
                       <p className="font-semibold text-foreground">
-                        {nombreDestinatario}
+                        <span>{nombreDestinatario}</span>
+                        {nombrePintorAsociado ? (
+                          <span className="font-normal">{` - Cliente de ${nombrePintorAsociado}`}</span>
+                        ) : null}
                       </p>
                       <p className="text-sm tabular-nums text-muted-foreground">
                         {formatIsoYmdDdMmYyyyArgentina(item.fechaEnvioIso)}

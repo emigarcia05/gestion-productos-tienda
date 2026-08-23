@@ -109,7 +109,7 @@ SSOT: `src/lib/main-app-areas.ts`, `administracionNav.ts`, `marketingRoutes.ts`,
 | Administración | `finanzas` (pide clave) | `/finanzas` |
 | Marketing | `marketing` | `/marketing` |
 
-**Vendedor** (acordeón, módulos cerrados al inicio): **MERCADERÍA** (Cant. Pedida → Urgente / Tintométrico / Reposición → Generar Pedido → Recepción) → **PRECIOS** (Px Sugeridos, Px Tintométricos) → **CALCULAR LTS** → **STOCK** (Control Stock, Trans. Depósitos) → **CARGAR GASTOS** → **ENVIOS** (Programados / Conductor) → **ASISTENTE IA**. Rol `simple` ve estos módulos; CRUD de prompts IA solo `editor`.
+**Vendedor** (acordeón, módulos cerrados al inicio): **ENVIOS** (Programados / Conductor) → **MERCADERÍA** (Cant. Pedida → Urgente / Tintométrico / Reposición → Generar Pedido → Recepción) → **PRECIOS** (Px Sugeridos, Px Tintométricos) → **CALCULAR LTS** → **STOCK** (Control Stock, Trans. Depósitos) → **CARGAR GASTOS** → **ASISTENTE IA**. Rol `simple` ve estos módulos; CRUD de prompts IA solo `editor`.
 
 **Administración** (`AdministracionAccordionNav`): **FINANZAS** (BALANCE / OPERACIONES) → **LISTA PRECIOS** (PX TIENDA / PROVEEDORES / ANÁLISIS M.C.) → **PEDIDO A FÁB.** → **ESTADÍSTICAS** → **USUARIOS**. Un solo destino → click navega (sin chevron).
 
@@ -233,7 +233,9 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Envios · Programados:** en la tabla, la columna **ACCIONES** incluye botón toggle de entrega: si está pendiente marca **ENTREGADO** y si ya está entregado permite volver a **NO ENTREGADO**.
 - **Envios · Programados (bloqueado visual):** filas con `entregado=true` se muestran atenuadas (opacidad/saturación reducida) para señalar visualmente que ya fueron entregadas, además de la tilde en la columna **ENTREGADO**.
 - **Envios · Purga automática:** al abrir Programados se eliminan envíos con `fecha_envio` de 7 días o más de antigüedad, sin importar estado de entrega.
+- **Envios · Wizard / buscar cliente:** el input `filtro-envios-wizard-clientes` filtra por `nombre_completo` y `cel` con coincidencia parcial (ej. `54` matchea cualquier `cel` que contenga `54`).
 - **Envios · Conductor (destinatario):** cuando el cliente es `CONSUMIDOR_FINAL` sin nombre (`nombre_completo=""`), la tarjeta muestra `CONS. FINAL` como destinatario (sin `- CEL`).
+- **Envios · Conductor (destinatario con pintor):** si el cliente tiene pintor asociado, se muestra `NOMBRE_CLIENTE - Cliente de NOMBRE_PINTOR` con el nombre principal en negrita y el sufijo en peso normal.
 - **Envios · Conductor (dirección expandida):** en el detalle de la tarjeta, la dirección se presenta en 3 líneas: `calle_nombre, numeracion.`, `distrito, departamento.` y `(referencia)` cuando existe.
 
 ### Finanzas

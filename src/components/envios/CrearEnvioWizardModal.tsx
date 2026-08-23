@@ -67,6 +67,29 @@ interface Props {
   onSuccess: () => void;
 }
 
+function normalizarTextoBusqueda(value: string): string {
+  return value
+    .toLocaleLowerCase("es-AR")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
+
+function clienteCoincideBusqueda(cliente: ClienteItem, query: string): boolean {
+  const terminos = query
+    .trim()
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map(normalizarTextoBusqueda);
+
+  if (terminos.length === 0) return true;
+
+  const nombreNorm = normalizarTextoBusqueda(cliente.nombreCompleto);
+  const celNorm = normalizarTextoBusqueda(cliente.cel);
+
+  return terminos.every((termino) => nombreNorm.includes(termino) || celNorm.includes(termino));
+}
+
 export default function CrearEnvioWizardModal({
   open,
   onOpenChange,
@@ -152,13 +175,7 @@ export default function CrearEnvioWizardModal({
   );
 
   const clientesFiltrados = useMemo(() => {
-    const q = qClienteDebounced.trim();
-    const coincide = (item: ClienteItem) =>
-      !q ||
-      matchByMultiTerm(
-        [item.nombreCompleto, item.cel, item.pintorAsociado?.nombreCompleto ?? ""],
-        qClienteDebounced
-      );
+    const coincide = (item: ClienteItem) => clienteCoincideBusqueda(item, qClienteDebounced);
 
     if (!filtroPintorId) {
       return clientesCatalogo.filter(coincide);
