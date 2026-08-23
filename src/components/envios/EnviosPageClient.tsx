@@ -362,7 +362,10 @@ export default function EnviosPageClient({ envios, clientes, direcciones, sucurs
                 />
               ) : (
                 itemsFiltrados.map((item) => (
-                  <TableRow key={item.id}>
+                  <TableRow
+                    key={item.id}
+                    className={cn(item.entregado && "opacity-60 saturate-50")}
+                  >
                     <TableCell className="celda-datos">
                       {etiquetaSucursalEnvio(item.sucursal)}
                     </TableCell>
