@@ -1,6 +1,8 @@
 # Contrato común — Auditor Front+Back (lotes 1–11)
 
-Este texto va **incluido** en cada prompt numerado. Si actualizás reglas de la campaña, actualizá este archivo y los lotes 1–11.
+**No ejecutes este archivo solo.** No es un prompt de chat. Cada lote `1.` … `11.` lo lee y aplica las 4 tareas **en su módulo**. El lote `12.` es otra misión (solo docs).
+
+Si actualizás reglas de la campaña, actualizá este archivo; los lotes 1–11 ya mandan a leerlo.
 
 ---
 

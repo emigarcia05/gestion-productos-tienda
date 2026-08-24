@@ -201,6 +201,33 @@ Informe claro de hallazgos + correcciones aplicadas (si se pidió) + guías y RE
 
 ---
 
+## Campaña de auditoría Front+Back (ejecutar en orden)
+
+**No son 2 prompts.** `_CONTRATO.md` no se pega ni se corre: es el reglamento que leen los lotes **1–11**.
+
+**Cómo:** un chat nuevo (Agent) por archivo. Ctrl+A → Ctrl+C → pegar. Cuando ese lote cierra (informe A–D + lint), abrís el **siguiente número**. No juntes dos lotes en el mismo chat.
+
+| # | Archivo | Qué cubre |
+|---|---------|-----------|
+| 1 | [`auditoria/1. Auditor Front-Back — Proveedores y lista de precios.md`](./auditoria/1.%20Auditor%20Front-Back%20—%20Proveedores%20y%20lista%20de%20precios.md) | Proveedores, lista px, Cx Compra, vínculos |
+| 2 | [`auditoria/2. Auditor Front-Back — Tienda stock y tipos de pintura.md`](./auditoria/2.%20Auditor%20Front-Back%20—%20Tienda%20stock%20y%20tipos%20de%20pintura.md) | Stock, tienda, tintométrico, litros, cargar gasto |
+| 3 | [`auditoria/3. Auditor Front-Back — Px Listas competencia y categorias.md`](./auditoria/3.%20Auditor%20Front-Back%20—%20Px%20Listas%20competencia%20y%20categorias.md) | Px Listas, competencia, comp. categorías |
+| 4 | [`auditoria/4. Auditor Front-Back — Pedidos.md`](./auditoria/4.%20Auditor%20Front-Back%20—%20Pedidos.md) | Pedidos vendedor (no a fábrica) |
+| 5 | [`auditoria/5. Auditor Front-Back — Finanzas tesoreria y vencimientos.md`](./auditoria/5.%20Auditor%20Front-Back%20—%20Finanzas%20tesoreria%20y%20vencimientos.md) | Tesorería, flujo, deuda, comprobantes |
+| 6 | [`auditoria/6. Auditor Front-Back — Finanzas balance IVA y MC.md`](./auditoria/6.%20Auditor%20Front-Back%20—%20Finanzas%20balance%20IVA%20y%20MC.md) | Balance, IVA, gastos, M.C. |
+| 7 | [`auditoria/7. Auditor Front-Back — Estadisticas y pedido a fabrica.md`](./auditoria/7.%20Auditor%20Front-Back%20—%20Estadisticas%20y%20pedido%20a%20fabrica.md) | Estadísticas + pedido a fábrica |
+| 8 | [`auditoria/8. Auditor Front-Back — Marketing.md`](./auditoria/8.%20Auditor%20Front-Back%20—%20Marketing.md) | Marketing |
+| 9 | [`auditoria/9. Auditor Front-Back — Envios.md`](./auditoria/9.%20Auditor%20Front-Back%20—%20Envios.md) | Envios |
+| 10 | [`auditoria/10. Auditor Front-Back — Asistente IA.md`](./auditoria/10.%20Auditor%20Front-Back%20—%20Asistente%20IA.md) | Asistente IA |
+| 11 | [`auditoria/11. Auditor Front-Back — Transversal shared layout y lib.md`](./auditoria/11.%20Auditor%20Front-Back%20—%20Transversal%20shared%20layout%20y%20lib.md) | Layout, shared, sesión, usuarios |
+| 12 | [`auditoria/12. Auditor Documentacion — compactar a version vigente.md`](./auditoria/12.%20Auditor%20Documentacion%20—%20compactar%20a%20version%20vigente.md) | Solo docs, versión corta vigente |
+
+En **cada** lote 1–11 el agente hace las 4 tareas (muerto, modularizar, eficientizar, docs **de ese módulo**). El 12 no re-audita código: compacta las guías.
+
+Reglamento: [`auditoria/_CONTRATO.md`](./auditoria/_CONTRATO.md).
+
+---
+
 ## 5 — Auditor BackEnd (código muerto + modularización)
 
 Uso: pegar el bloque (o el archivo [`auditoria_back_promp.md`](./auditoria_back_promp.md)) en un chat nuevo (Agent). Completar `Alcance` y `Objetivo`.
@@ -280,5 +307,6 @@ Abrí el archivo del agente → **Ctrl+A** → **Ctrl+C** → pegá en un chat n
 | FullStack | [`fullstack_promp.md`](./fullstack_promp.md) | Feature E2E + docs FE y BE |
 | Front | [`front_promp.md`](./front_promp.md) | UI/patrones + `FRONTEND_GUIDELINES` |
 | Back | [`back_promp.md`](./back_promp.md) | Actions/servicios/Prisma + `BACKEND_GUIDELINES` |
-| Auditoría | [`auditoria_promp.md`](./auditoria_promp.md) | Revisión contra guías + cierre documental |
-| Auditor BackEnd | [`auditoria_back_promp.md`](./auditoria_back_promp.md) | Borrar código muerto + modularizar/eficientizar/escalar |
+| Auditoría (campaña) | [`auditoria/`](./auditoria/) **1. → 12.** en orden | Front+Back por módulo; el 12 solo docs |
+| Auditoría puntual | [`auditoria_promp.md`](./auditoria_promp.md) | Un PR/carpeta contra guías |
+| Auditor BackEnd (legado) | [`auditoria_back_promp.md`](./auditoria_back_promp.md) | Preferir lotes 1–11 de la campaña |
