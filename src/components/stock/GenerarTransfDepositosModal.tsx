@@ -57,9 +57,9 @@ interface Props {
 /**
  * Modal **Generar Transf.**: dos selectores **SUC. ORIGEN** (sucursal del usuario)
  * y **SUC. DESTINO** (`global_sucursales` distintas, con `deposito` no vacío);
- * tabla Control de ítem / COD. TIENDA / DESCRIPCIÓN TIENDA / CANTIDAD A TRANSFERIR / ACCIONES (OK copia Cod. Tienda);
- * checklist local hasta **Transferido**, que borra el lote. **Comenzar Transferencia** abre DUX en pestaña nueva.
- * Cabecera del modal (botón + selectores) y `thead` fijos; scroll solo en `.contenedor-tabla-gestion`.
+ * tabla Control de ítem / COD. TIENDA / DESCRIPCIÓN / CANTIDAD A TRANSFERIR / ACCIONES (OK copia Cod. Tienda);
+ * checklist local hasta **Transferido**, que borra el lote. **Comenzar Transferencia** (debajo de los selectores, solo con origen y destino) abre DUX en pestaña nueva.
+ * Cabecera del modal (selectores + botón) y `thead` fijos; scroll solo en `.contenedor-tabla-gestion`.
  */
 export default function GenerarTransfDepositosModal({
   open,
@@ -232,8 +232,8 @@ export default function GenerarTransfDepositosModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
-        size="lg"
-        className="h-[85vh] max-h-[85vh]"
+        size="xl"
+        className="h-[85vh] max-h-[85vh] max-w-[54rem]"
         title="Generar Transf."
         scrollBody={false}
         bodyClassName="flex min-h-0 flex-1 flex-col gap-4"
@@ -258,15 +258,6 @@ export default function GenerarTransfDepositosModal({
         }
       >
         <div className="flex shrink-0 flex-col gap-4">
-          <Button asChild className="w-full">
-            <a
-              href={DUX_TRANSFERENCIA_DEPOSITOS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Comenzar Transferencia
-            </a>
-          </Button>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex min-w-0 flex-col gap-1">
               <ModalMicroLabel align="center">SUC. ORIGEN</ModalMicroLabel>
@@ -327,6 +318,17 @@ export default function GenerarTransfDepositosModal({
               </Select>
             </div>
           </div>
+          {sucOrigenId !== null && sucDestinoId !== null ? (
+            <Button asChild className="w-full">
+              <a
+                href={DUX_TRANSFERENCIA_DEPOSITOS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Comenzar Transferencia
+              </a>
+            </Button>
+          ) : null}
         </div>
 
         <div
@@ -364,13 +366,13 @@ export default function GenerarTransfDepositosModal({
             >
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TablaControlItemHead />
-                  <TableHead className="w-[18%]">COD. TIENDA</TableHead>
-                  <TableHead className="w-[45%]">DESCRIPCIÓN TIENDA</TableHead>
-                  <TableHead className="w-[18%] text-center">
+                  <TablaControlItemHead className="w-[8%] min-w-12" />
+                  <TableHead className="w-[16%]">COD. TIENDA</TableHead>
+                  <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
+                  <TableHead className="w-[16%] text-center">
                     CANTIDAD A TRANSFERIR
                   </TableHead>
-                  <TableHead className="w-[14%] text-center">
+                  <TableHead className="w-[10%] text-center">
                     ACCIONES
                   </TableHead>
                 </TableRow>
@@ -391,15 +393,21 @@ export default function GenerarTransfDepositosModal({
                       <TablaControlItemCelda
                         verificado={ok}
                         placeholderTitle="Verificá con OK: copia el Cod. Tienda y marca el ítem."
+                        className="w-[8%] min-w-12"
                       />
-                      <TableCell className="celda-datos">{item.codTienda}</TableCell>
-                      <TableCell className="celda-datos">
+                      <TableCell className="celda-datos w-[16%]">
+                        {item.codTienda}
+                      </TableCell>
+                      <TableCell
+                        className="celda-datos min-w-0 w-[50%] truncate"
+                        title={item.descripcionTienda}
+                      >
                         {item.descripcionTienda}
                       </TableCell>
-                      <TableCell className="celda-datos text-center tabular-nums">
+                      <TableCell className="celda-datos w-[16%] text-center tabular-nums">
                         {fmtNumero(item.cantidad)}
                       </TableCell>
-                      <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                      <TableCell className="celda-datos w-[10%] celda-datos--accion-relleno-fila">
                         <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                           <Button
                             type="button"
