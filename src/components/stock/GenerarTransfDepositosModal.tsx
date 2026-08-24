@@ -34,6 +34,10 @@ import {
 import { fmtNumero } from "@/lib/format";
 import { DUX_TRANSFERENCIA_DEPOSITOS_URL } from "@/lib/transfDepositosControl";
 import {
+  TablaControlItemCelda,
+  TablaControlItemHead,
+} from "@/components/shared/TablaControlItem";
+import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
@@ -53,8 +57,9 @@ interface Props {
 /**
  * Modal **Generar Transf.**: dos selectores **SUC. ORIGEN** (sucursal del usuario)
  * y **SUC. DESTINO** (`global_sucursales` distintas, con `deposito` no vacío);
- * tabla COD. TIENDA / DESCRIPCIÓN TIENDA / CANTIDAD A TRANSFERIR / ACCIONES (OK);
+ * tabla Control de ítem / COD. TIENDA / DESCRIPCIÓN TIENDA / CANTIDAD A TRANSFERIR / ACCIONES (OK copia Cod. Tienda);
  * checklist local hasta **Transferido**, que borra el lote. **Comenzar Transferencia** abre DUX en pestaña nueva.
+ * Cabecera del modal (botón + selectores) y `thead` fijos; scroll solo en `.contenedor-tabla-gestion`.
  */
 export default function GenerarTransfDepositosModal({
   open,
@@ -184,8 +189,15 @@ export default function GenerarTransfDepositosModal({
     });
   }
 
-  function handleOkItem(codTienda: string) {
+  async function handleOkItem(codTienda: string) {
+    try {
+      await navigator.clipboard.writeText(codTienda);
+    } catch {
+      toast.error("No se pudo copiar el código de tienda.");
+      return;
+    }
     setOkPorCodTienda((prev) => ({ ...prev, [codTienda]: true }));
+    toast.success("Cod. Tienda Copiado", { description: codTienda });
   }
 
   function handleTransferido() {
@@ -221,8 +233,10 @@ export default function GenerarTransfDepositosModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <AppModal
         size="lg"
+        className="h-[85vh] max-h-[85vh]"
         title="Generar Transf."
-        bodyClassName="space-y-4"
+        scrollBody={false}
+        bodyClassName="flex min-h-0 flex-1 flex-col gap-4"
         actions={
           <>
             <Button
@@ -243,159 +257,174 @@ export default function GenerarTransfDepositosModal({
           </>
         }
       >
-        <Button asChild className="w-full">
-          <a
-            href={DUX_TRANSFERENCIA_DEPOSITOS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Comenzar Transferencia
-          </a>
-        </Button>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex min-w-0 flex-col gap-1">
-            <ModalMicroLabel align="center">SUC. ORIGEN</ModalMicroLabel>
-            <Select
-              value={sucOrigenId ?? "none"}
-              onValueChange={handleOrigenChange}
-              disabled={isPending}
+        <div className="flex shrink-0 flex-col gap-4">
+          <Button asChild className="w-full">
+            <a
+              href={DUX_TRANSFERENCIA_DEPOSITOS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <SelectTrigger
-                id="filtro-transf-origen-modal"
-                className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
-                aria-label="Sucursal origen"
+              Comenzar Transferencia
+            </a>
+          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex min-w-0 flex-col gap-1">
+              <ModalMicroLabel align="center">SUC. ORIGEN</ModalMicroLabel>
+              <Select
+                value={sucOrigenId ?? "none"}
+                onValueChange={handleOrigenChange}
+                disabled={isPending}
               >
-                <SelectValue placeholder="SUC. ORIGEN" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
+                <SelectTrigger
+                  id="filtro-transf-origen-modal"
+                  className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
+                  aria-label="Sucursal origen"
+                >
+                  <SelectValue placeholder="SUC. ORIGEN" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value="none">SUC. ORIGEN</SelectItem>
+                  {origenes.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.nombre.toUpperCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-1">
+              <ModalMicroLabel align="center">SUC. DESTINO</ModalMicroLabel>
+              <Select
+                value={sucDestinoId ?? "none"}
+                onValueChange={handleDestinoChange}
+                disabled={!sucOrigenId || isPending}
               >
-                <SelectItem value="none">SUC. ORIGEN</SelectItem>
-                {origenes.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.nombre.toUpperCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex min-w-0 flex-col gap-1">
-            <ModalMicroLabel align="center">SUC. DESTINO</ModalMicroLabel>
-            <Select
-              value={sucDestinoId ?? "none"}
-              onValueChange={handleDestinoChange}
-              disabled={!sucOrigenId || isPending}
-            >
-              <SelectTrigger
-                id="filtro-transf-destino"
-                className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
-                aria-label="Sucursal destino"
-              >
-                <SelectValue placeholder="SUC. DESTINO" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                side="bottom"
-                align="start"
-                className="select-content-filtro"
-              >
-                <SelectItem value="none">SUC. DESTINO</SelectItem>
-                {destinos.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.nombre.toUpperCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <SelectTrigger
+                  id="filtro-transf-destino"
+                  className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
+                  aria-label="Sucursal destino"
+                >
+                  <SelectValue placeholder="SUC. DESTINO" />
+                </SelectTrigger>
+                <SelectContent
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  className="select-content-filtro"
+                >
+                  <SelectItem value="none">SUC. DESTINO</SelectItem>
+                  {destinos.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.nombre.toUpperCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
-        {loading ? (
-          <p className="text-sm text-foreground py-6 text-center">Cargando…</p>
-        ) : null}
+        <div
+          className="contenedor-tabla-gestion no-scroll-x min-h-0 flex-1"
+          style={{ height: "auto" }}
+        >
+          {loading ? (
+            <p className="text-sm text-foreground py-6 text-center">Cargando…</p>
+          ) : null}
 
-        {!loading && error ? (
-          <p className="text-sm text-destructive py-6 text-center">{error}</p>
-        ) : null}
+          {!loading && error ? (
+            <p className="text-sm text-destructive py-6 text-center">{error}</p>
+          ) : null}
 
-        {!loading && !error && sucDestinoId === null ? (
-          <p className="text-sm text-foreground py-6 text-center">
-            Seleccioná una sucursal destino.
-          </p>
-        ) : null}
+          {!loading && !error && sucDestinoId === null ? (
+            <p className="text-sm text-foreground py-6 text-center">
+              Seleccioná una sucursal destino.
+            </p>
+          ) : null}
 
-        {!loading &&
-        !error &&
-        sucDestinoId !== null &&
-        items.length === 0 ? (
-          <p className="text-sm text-foreground py-6 text-center">
-            No hay transferencias pendientes hacia esta sucursal.
-          </p>
-        ) : null}
+          {!loading &&
+          !error &&
+          sucDestinoId !== null &&
+          items.length === 0 ? (
+            <p className="text-sm text-foreground py-6 text-center">
+              No hay transferencias pendientes hacia esta sucursal.
+            </p>
+          ) : null}
 
-        {!loading && !error && items.length > 0 ? (
-          <Table variant="compact" className="tabla-recepcion-pedido">
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[20%]">COD. TIENDA</TableHead>
-                <TableHead className="w-[48%]">DESCRIPCIÓN TIENDA</TableHead>
-                <TableHead className="w-[18%] text-center">
-                  CANTIDAD A TRANSFERIR
-                </TableHead>
-                <TableHead className="w-[14%] text-center">
-                  <Check className="mx-auto h-4 w-4" aria-hidden />
-                  <span className="sr-only">OK</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => {
-                const ok = okPorCodTienda[item.codTienda] === true;
-                return (
-                  <TableRow
-                    key={item.codTienda}
-                    className={cn(
-                      "transition-colors duration-100",
-                      ok
-                        ? "recepcion-fila-verificada cursor-not-allowed"
-                        : "recepcion-fila-pendiente"
-                    )}
-                  >
-                    <TableCell className="celda-datos">{item.codTienda}</TableCell>
-                    <TableCell className="celda-datos">
-                      {item.descripcionTienda}
-                    </TableCell>
-                    <TableCell className="celda-datos text-center tabular-nums">
-                      {fmtNumero(item.cantidad)}
-                    </TableCell>
-                    <TableCell className="celda-datos celda-datos--accion-relleno-fila">
-                      <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOkItem(item.codTienda)}
-                          disabled={ok || isPending}
-                          className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                          aria-label="OK"
-                          title="OK"
-                        >
-                          <Check
-                            className={TABLE_ROW_ACTION_ICON_CLASS}
-                            aria-hidden
-                          />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        ) : null}
+          {!loading && !error && items.length > 0 ? (
+            <Table
+              variant="compact"
+              className="tabla-recepcion-pedido"
+              scrollX={false}
+            >
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TablaControlItemHead />
+                  <TableHead className="w-[18%]">COD. TIENDA</TableHead>
+                  <TableHead className="w-[45%]">DESCRIPCIÓN TIENDA</TableHead>
+                  <TableHead className="w-[18%] text-center">
+                    CANTIDAD A TRANSFERIR
+                  </TableHead>
+                  <TableHead className="w-[14%] text-center">
+                    ACCIONES
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => {
+                  const ok = okPorCodTienda[item.codTienda] === true;
+                  return (
+                    <TableRow
+                      key={item.codTienda}
+                      className={cn(
+                        "transition-colors duration-100",
+                        ok
+                          ? "recepcion-fila-verificada cursor-not-allowed"
+                          : "recepcion-fila-pendiente"
+                      )}
+                    >
+                      <TablaControlItemCelda
+                        verificado={ok}
+                        placeholderTitle="Verificá con OK: copia el Cod. Tienda y marca el ítem."
+                      />
+                      <TableCell className="celda-datos">{item.codTienda}</TableCell>
+                      <TableCell className="celda-datos">
+                        {item.descripcionTienda}
+                      </TableCell>
+                      <TableCell className="celda-datos text-center tabular-nums">
+                        {fmtNumero(item.cantidad)}
+                      </TableCell>
+                      <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                        <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOkItem(item.codTienda)}
+                            disabled={ok || isPending}
+                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            aria-label="OK, copiar código de tienda"
+                            title="OK — copiar Cod. Tienda"
+                          >
+                            <Check
+                              className={TABLE_ROW_ACTION_ICON_CLASS}
+                              aria-hidden
+                            />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          ) : null}
+        </div>
       </AppModal>
     </Dialog>
   );

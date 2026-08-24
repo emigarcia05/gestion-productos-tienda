@@ -87,6 +87,21 @@ export const TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS =
 /** Tamaño uniforme del ícono dentro de botones de acción en tabla. */
 export const TABLE_ROW_ACTION_ICON_CLASS = "h-4 w-4 shrink-0";
 
+/**
+ * Columna **Control de ítem** (`TablaControlItemHead` / `TablaControlItemCelda`):
+ * checklist local en tablas tipo Recepción / Trans. Depósitos.
+ */
+export const TABLA_CONTROL_ITEM_HEAD_ICON_CLASS =
+  "mx-auto my-0 block h-4 w-4 shrink-0 leading-none text-primary-foreground";
+
+export const TABLA_CONTROL_ITEM_BADGE_CLASS =
+  "mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-primary/20";
+
+export const TABLA_CONTROL_ITEM_BADGE_ICON_CLASS =
+  "h-3.5 w-3.5 shrink-0 text-primary";
+
+export const TABLA_CONTROL_ITEM_PLACEHOLDER_CLASS = "inline-block h-7 w-full";
+
 /** Botón + header Finder compacto (`h-8`): {@link TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS} adaptado al alto del encabezado. */
 export const CATALOGO_FINDER_COLUMN_NOVO_BUTTON_COMPACT_CLASS =
   `${TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS} !size-6 max-h-6 min-h-6 min-w-6 shrink-0 !p-0`;

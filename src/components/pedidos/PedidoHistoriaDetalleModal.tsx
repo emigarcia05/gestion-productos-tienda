@@ -16,6 +16,10 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { Check, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  TablaControlItemCelda,
+  TablaControlItemHead,
+} from "@/components/shared/TablaControlItem";
 import { toast } from "sonner";
 import type { PedidoHistoriaEstado } from "@/services/pedidosHistoria.service";
 import type { PedidoHistoriaDetalle } from "@/services/pedidosHistoria.service";
@@ -779,13 +783,7 @@ export default function PedidoHistoriaDetalleModal({
                     <Table variant="compact" className="tabla-recepcion-pedido" scrollX={false}>
                 <TableHeader inert={editingItemId ? true : undefined}>
                   <TableRow>
-                    <TableHead className="w-[5%] text-center">
-                      <span className="sr-only">LISTA DE VERIFICACIÓN</span>
-                      <Check
-                        className="mx-auto my-0 block h-4 w-4 shrink-0 leading-none text-primary-foreground"
-                        aria-hidden
-                      />
-                    </TableHead>
+                    <TablaControlItemHead />
                     <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
                     <TableHead className="w-[10%]">CANT. PED.</TableHead>
                     <TableHead className="w-[20%]">CANT. REC.</TableHead>
@@ -844,24 +842,11 @@ export default function PedidoHistoriaDetalleModal({
                               : "recepcion-fila-pendiente"
                           )}
                         >
-                          <TableCell
-                            className={cn("celda-datos w-[5%] text-center align-middle")}
-                          >
-                            {checkListConfirmed ? (
-                              <span
-                                className="mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-primary/20"
-                                aria-label="Ítem verificado"
-                              >
-                                <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-                              </span>
-                            ) : locked ? null : (
-                              <span
-                                aria-label="Lista de verificación"
-                                title="Verificá con OK, Editar o Cesto en la columna ACCIONES."
-                                className="inline-block h-7 w-full"
-                              />
-                            )}
-                          </TableCell>
+                          <TablaControlItemCelda
+                            verificado={checkListConfirmed}
+                            ocultarPendiente={locked}
+                            placeholderTitle="Verificá con OK, Editar o Cesto en la columna ACCIONES."
+                          />
                           <TableCell
                             className={cn(
                               "celda-datos min-w-0 truncate w-[50%]",

@@ -9,6 +9,7 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 | Cualquier UI nueva o cambio visual | **Guía para IA** + **§4 Checklist** |
 | Página con tabla/filtros | **§1.1–1.3** |
 | Modal | **§1.4** + `AppModal` / `ModalTablaConFiltros` en **§2.3** |
+| Checklist de ítem en tabla | **§1.3** Control de ítem |
 | Finder (columnas de catálogo) | **§1.5** |
 | Sidebar / áreas / URLs | **§1.6–1.7** |
 | Clase CSS o constante de estilo | **§2** |
@@ -28,7 +29,7 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 5. **Página con tabla.** `ClassicFilteredTableLayout` → `filters` = `FilterBar` `filtros-contenedor-tienda bg-card` → `children` = `.contenedor-tabla-gestion` + `Table` de `@/components/ui/table`. Padding horizontal lo pone el layout (`density` default `px-8`, `compact` `px-6`); no repetir `px-*` en filtros/tabla.
 6. **Búsqueda.** `useFiltrosConBusqueda` + `FiltroBusquedaInput`. No reimplementar debounce ni foco.
 7. **Selects.** Prohibido `<select>` nativo. `Select` shadcn; `SelectContent` incluye buscador **BUSCAR...**. Valor vacío: sentinel `"none"` / `"todos"` (Radix no admite `""`). Triggers de filtro: `SELECT_TRIGGER_FILTER_CLASS` + `className="select-content-filtro"` `position="popper" side="bottom" align="start"`.
-8. **Tablas.** Un solo look: `.tabla-gestion-compacta`. Encabezados **MAYÚSCULAS + negrita**. Celdas `.celda-datos`. Vacío = `""` (no `"-"`/`"—"`; `fmtCelda` / `fmtNumero` de `@/lib/format`). Scroll **solo** en `.contenedor-tabla-gestion` (el wrapper `data-slot="table-container"` **no** lleva `overflow-y-auto`). Sticky: `thead th`. 100 ítems/página (`PAGE_SIZE`). Botón solo ícono en fila: `variant="ghost"` `size="icon"` + `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS` (no `outline` + `icon-xs`). Columna tilde: encabezado = ícono `Check`. Caja `.tabla-check-toggle`: rectángulo borde `#0072bb`, fondo `card`; tilde `#0072bb` si es verdadero (no rellenar con `bg-primary`).
+8. **Tablas.** Un solo look: `.tabla-gestion-compacta`. Encabezados **MAYÚSCULAS + negrita**. Celdas `.celda-datos`. Vacío = `""` (no `"-"`/`"—"`; `fmtCelda` / `fmtNumero` de `@/lib/format`). Scroll **solo** en `.contenedor-tabla-gestion` (el wrapper `data-slot="table-container"` **no** lleva `overflow-y-auto`). Sticky: `thead th`. 100 ítems/página (`PAGE_SIZE`). Botón solo ícono en fila: `variant="ghost"` `size="icon"` + `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS` (no `outline` + `icon-xs`). Columna tilde: encabezado = ícono `Check`. **Control de ítem** (checklist local): `TablaControlItemHead` + `TablaControlItemCelda`; no duplicar el badge. Caja `.tabla-check-toggle`: rectángulo borde `#0072bb`, fondo `card`; tilde `#0072bb` si es verdadero (no rellenar con `bg-primary`).
 9. **Modales.** `AppModal` (o `ModalTablaConFiltros` si hay tabla seleccionable). Botones: `Button` shadcn (`default` / `outline`). Pares SÍ/NO: `ModalSiNoChoice`. Labels de campo: `text-foreground` (`ModalMicroLabel`). No `max-w-*` extra si coincide con `size`.
 10. **Texto.** Títulos de modal: MAYÚSCULAS. Botones: Title Case. Sidebar: módulo MAYÚSCULAS, submódulo Title Case. Filtros, placeholders y `TableHead`: MAYÚSCULAS. Abreviaturas con punto (Px., Cx., Dto., Cant., Cod.).
 11. **Fechas de negocio.** `@/lib/fechaArgentina`. `@db.Date` → `isoYmdFromPrismaDateOnly` (no `dateToIsoYmdArgentina` sobre ese `Date`).
@@ -80,6 +81,7 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 - Altura fila datos: `--tabla-body-row-min-height` (**2rem**). Encabezado: `--tabla-thead-height` (mín. 2 líneas).
 - Bloque secundario: `tabla-bloque-secundario-head*` / `*-cell*` (`*-divider` = inicio de sub-bloque).
 - Subencabezado en `tbody`: `TablaSubencabezadoSeccionRow`.
+- **Control de ítem:** primera columna de checklist local (`TablaControlItemHead` + `TablaControlItemCelda`). Encabezado = ícono `Check` (`sr-only` LISTA DE VERIFICACIÓN). Celda: badge circular `bg-primary/20` si está marcado; hueco `h-7` si no. Las acciones (OK, etc.) van en **ACCIONES**. Fila: `recepcion-fila-verificada` / `recepcion-fila-pendiente` (`.tabla-recepcion-pedido`). Usos: Recepción Pedido, Generar Transf.
 - Pie de totales: o `TableFooter` en la misma tabla, o `.finanzas-resumen-tarjeta` bajo scroll (`contenedor-tabla-gestion--pie-fijo`). No segunda `<table>` de pie.
 - Paginación URL: `PaginacionTabla`. Cliente: `PaginacionClient`. Backend: `skip`/`take` + `total` / `totalPaginas`.
 - `<table>` nativo: solo `TablaGastos`, `PrintStock` (impresión) y leyenda de `GraficoMcVsPorcUtilidad`.
@@ -169,7 +171,7 @@ Variantes de tabla (misma familia compacta): `tabla-flujo-de-fondo`, `tabla-deud
 
 ### 2.2 `@/lib/ui-classes`
 
-Éxito/aviso: `BADGE_SUCCESS_TINT_CLASS`, `TEXT_SUCCESS_CLASS`, `TEXT_WARNING_CLASS`, `ICON_WARNING_INTERACTIVE_CLASS`, `CALLOUT_WARNING_CLASS`, `IMPORT_STAT_BADGE_CLASSES`. Finder: `CATALOGO_FINDER_*`. Tabla: `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`, `TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS`, `TABLE_ROW_ACTION_ICON_CLASS`. Balance modales: `BALANCE_MODAL_*`. Labels: `MODAL_MICRO_LABEL_CLASS`.
+Éxito/aviso: `BADGE_SUCCESS_TINT_CLASS`, `TEXT_SUCCESS_CLASS`, `TEXT_WARNING_CLASS`, `ICON_WARNING_INTERACTIVE_CLASS`, `CALLOUT_WARNING_CLASS`, `IMPORT_STAT_BADGE_CLASSES`. Finder: `CATALOGO_FINDER_*`. Tabla: `TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`, `TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS`, `TABLE_ROW_ACTION_ICON_CLASS`, `TABLA_CONTROL_ITEM_*`. Balance modales: `BALANCE_MODAL_*`. Labels: `MODAL_MICRO_LABEL_CLASS`.
 
 ### 2.3 Shared (`src/components/shared/`)
 
@@ -192,6 +194,7 @@ Nuevo shared: CVA + tokens + `"use client"` solo si hay estado/hooks. Documentar
 | `SelectSearchInput` | Buscador de desplegables |
 | `FiltroRangoFechasCalendarioModal` | Rango de fechas |
 | `TablaSubencabezadoSeccionRow` | Subencabezado en tbody |
+| `TablaControlItemHead` / `TablaControlItemCelda` | Columna **Control de ítem** (checklist local) |
 | `CeldaDifPct` / `CeldaCxProdTienda` | Celdas de variación / Cx |
 | `EnteroStepperInput` | Entero − / número / + (mismo patrón que Control Stock). Vacío permitido; el padre persiste en `onCommit`. `endAction?` a la derecha del + |
 | `catalogo-finder/*` | Finder |
@@ -214,7 +217,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Tintométrico:** `cod_ext` = `buildCodExtTintometrico`. Alta: sucursal → proveedor → COD. TINTOMÉTRICO.
 - **Reposición:** desplegables SUCURSAL → PROVEEDOR → MARCA → RUBRO → CONFIGURADO. Bloque secundario STOCK / CANT. A PEDIR. En este módulo, PROVEEDOR solo muestra proveedores de mercadería con `global_proveedores.es_fabrica = false` (también en el modal **Generar Pedido** cuando el origen es Reposición), y la grilla solo muestra productos que tengan al menos un vínculo habilitado con proveedor no fábrica. `ConfigurarReposicionModal`: punto/cant vacíos (no `0`) si no hay regla. FORMA PEDIR (vendedor): **UN. MÁXIMAS** (`UNIDADES_MAX`) / **BULTO** (`POR_BULTO`; solo si hay fila en `prod_tienda_bultos`). Layout de campos: con **UN. MÁXIMAS** mostrar `FORMA PEDIR | PUNTO REPOSICIÓN | UN. MÁXIMAS`; con **BULTO** mostrar `FORMA PEDIR | PUNTO REPOSICIÓN (EN UN.) | BULTO`, y mostrar `TOTAL EN UN.` (solo lectura, `bulto ingresado × prod_tienda_bultos`) únicamente cuando `PUNTO REPOSICIÓN` esté completo. En ambos casos, las etiquetas del bloque usan altura uniforme para mantener una fila horizontal de labels y otra de inputs. Encima de la tabla del modal va el botón ícono `+` centrado y con estilo `default` (fondo `primary`, ícono `primary-foreground`) para abrir el selector de productos adicionales. No CANT. FIJA POR UNID.
 - **Generar Pedido** (`/pedidos/enviar` + botón en urgentes): modal SUCURSAL → TIPO (multi checkbox) → PROVEEDOR. Footer solo con tres filtros y `hayItems`. Tras PDF/WhatsApp: `router.refresh()`. Confirmaciones: `ReposicionProveedorPrioritarioModal` luego `SobreStockReposicionAdvertenciaModal`.
-- **Recepción** (`PedidoHistoriaDetalleModal`): `AppModal` `size="xl"` + `max-w-[66rem] h-[95vh]`. Scroll solo en tabla; pie TOTAL PEDIDO fuera. Checklist local hasta **Registrar En Dux** (fiscal → personal → POST). Corrección: **Corregir Recepcion** / **Guardar Corrección**. Tabla `tabla-recepcion-pedido`. Listado: `FiltrosHistorialPedidos` default PENDIENTE; acciones Recepción / Ver (`PedidoHistoriaLecturaModal`) / Borrar.
+- **Recepción** (`PedidoHistoriaDetalleModal`): `AppModal` `size="xl"` + `max-w-[66rem] h-[95vh]`. Scroll solo en tabla; pie TOTAL PEDIDO fuera. Checklist local (**Control de ítem** + OK) hasta **Registrar En Dux** (fiscal → personal → POST). Corrección: **Corregir Recepcion** / **Guardar Corrección**. Tabla `tabla-recepcion-pedido`. Listado: `FiltrosHistorialPedidos` default PENDIENTE; acciones Recepción / Ver (`PedidoHistoriaLecturaModal`) / Borrar.
 
 ### Tienda / precios
 
@@ -227,7 +230,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 ### Stock / ayuda vendedor
 
 - **Control Stock:** header Exportar / Imprimir. Sin modal de sync al entrar. Excel: ítems con variación; Check confirma sin variación.
-- **Trans. Depósitos:** origen ≠ destino; origen default = sucursal preferida. **Generar Transf.** persiste cantidades de la grilla (si hay) y abre `GenerarTransfDepositosModal`: **Comenzar Transferencia** (`w-full`) abre DUX `transferenciaDep.faces` en pestaña nueva; debajo `grid grid-cols-2` **SUC. ORIGEN** (sucursal del usuario) | **SUC. DESTINO** (`global_sucursales` distintas y `deposito` no vacío); tabla COD. TIENDA / DESCRIPCIÓN TIENDA / CANTIDAD A TRANSFERIR / tilde **OK** (`TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS`, checklist local como Recepción · `tabla-recepcion-pedido`); pie **Transferido** borra el lote cuando todos los ítems tienen OK.
+- **Trans. Depósitos:** origen ≠ destino; origen default = sucursal preferida. **Generar Transf.** persiste cantidades de la grilla (si hay) y abre `GenerarTransfDepositosModal` (`scrollBody={false}` `h-[85vh]`): bloque fijo **Comenzar Transferencia** + `grid grid-cols-2` **SUC. ORIGEN** | **SUC. DESTINO**; debajo `.contenedor-tabla-gestion` (scroll solo de filas, `thead` sticky) **Control de ítem** / COD. TIENDA / DESCRIPCIÓN TIENDA / CANTIDAD A TRANSFERIR / **ACCIONES**. **OK** copia `cod_tienda` al portapapeles y recién entonces marca el ítem; si falla la copia, no se verifica (se puede reintentar). Pie **Transferido** borra el lote cuando todos los ítems tienen OK.
 - **Px Tintométrico / Calc. Litros:** CFTL `contentWidth="full"` sin FilterBar; card de cálculo. Coeficientes / rendimientos solo `editor`, en `actions` del header (**Editar Coeficientes** / **Editar Rendimientos**).
 - **Cargar Gasto:** CFTL; al entrar abre `GastoUnicoBalanceModal` (gasto eventual, mes/año AR). Header **Nuevo Gasto Eventual**.
 - **Envios · Programados:** en la tabla, la columna **ACCIONES** incluye botón toggle de entrega: si está pendiente marca **ENTREGADO** y si ya está entregado permite volver a **NO ENTREGADO**.
