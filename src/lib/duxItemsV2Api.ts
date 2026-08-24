@@ -41,36 +41,48 @@ export type DuxV2ItemFicha = {
   stock: DuxV2ItemStock[];
 };
 
+/** Body PUT WSERP: camelCase (Jackson). Snake_case llega todo null. */
 export type DuxV2GuardarItemRequest = {
-  id_personal: number;
-  tipo_producto: string;
-  cod_item: string;
+  idPersonal: number;
+  tipoProducto: string;
+  codItem: string;
   item: string;
-  id_moneda: number;
-  porc_iva: number;
-  costo_compra: number;
-  id_unidad_medida: number;
-  sucursales_habilitadas: { id_sucursal: number }[];
-  id_rubro?: number;
-  id_sub_rubro?: number;
-  cod_marca?: string;
-  id_proveedor?: number;
-  codigo_externo?: string;
-  ctd_unidades_por_bulto?: number;
-  item_cod_barra?: { cod_barra: string }[];
+  idMoneda: number;
+  porcIva: number;
+  costoCompra: number;
+  idUnidadMedida: number;
+  sucursalesHabilitadas: { idSucursal: number }[];
+  idRubro?: number;
+  idSubRubro?: number;
+  codMarca?: string;
+  idProveedor?: number;
+  codigoExterno?: string;
+  ctdUnidadesPorBulto?: number;
+  itemCodBarra?: { codBarra: string }[];
   precios?: {
-    id_lista_precio: number;
-    id_moneda: number;
+    idListaPrecio: number;
+    idMoneda: number;
     valor: number;
   }[];
   stock: {
-    id_deposito: number;
-    ctd_disponible: number;
+    idDeposito: number;
+    ctdDisponible: number;
   }[];
 };
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
+}
+
+function pick(
+  obj: Record<string, unknown>,
+  keys: string[]
+): unknown {
+  for (const key of keys) {
+    const v = obj[key];
+    if (v !== undefined && v !== null) return v;
+  }
+  return undefined;
 }
 
 function asFiniteNumber(v: unknown): number | null {
@@ -90,15 +102,30 @@ function asString(v: unknown): string | null {
 
 function nestedId(v: unknown): number | null {
   if (!isRecord(v)) return null;
-  return asFiniteNumber(v.id);
+  return asFiniteNumber(pick(v, ["id", "idRubro", "idSubRubro"]));
 }
 
 function formatDuxItemsV2Error(status: number, bodyText: string): string {
   try {
     const parsed = JSON.parse(bodyText) as {
-      error?: { mensaje?: string };
+      error?: {
+        mensaje?: string;
+        detalle?: Array<{ campo?: string; problema?: string }>;
+      };
     };
-    const msg = parsed.error?.mensaje?.trim();
+    const msg = parsed.error?.mensaje?.trim() ?? "";
+    const detalle = parsed.error?.detalle ?? [];
+    const campos = detalle
+      .map((d) => {
+        const campo = d.campo?.trim() ?? "";
+        const problema = d.problema?.trim() ?? "";
+        if (!campo && !problema) return "";
+        return campo && problema ? `${campo}: ${problema}` : campo || problema;
+      })
+      .filter((s) => s.length > 0);
+    if (msg && campos.length > 0) {
+      return `${msg} (${campos.slice(0, 6).join("; ")})`.slice(0, 500);
+    }
     if (msg) return msg;
   } catch {
     // cuerpo no JSON
@@ -164,11 +191,18 @@ function parseStockArray(raw: unknown): DuxV2ItemStock[] {
   const out: DuxV2ItemStock[] = [];
   for (const row of raw) {
     if (!isRecord(row)) continue;
-    const id = asFiniteNumber(row.id);
+    const id = asFiniteNumber(pick(row, ["id", "idDeposito", "id_deposito"]));
     if (id == null) continue;
     out.push({
       id,
-      stockDisponible: asFiniteNumber(row.stock_disponible),
+      stockDisponible: asFiniteNumber(
+        pick(row, [
+          "stock_disponible",
+          "stockDisponible",
+          "ctd_disponible",
+          "ctdDisponible",
+        ])
+      ),
     });
   }
   return out;
@@ -179,8 +213,10 @@ function parsePreciosArray(raw: unknown): DuxV2ItemPrecio[] {
   const out: DuxV2ItemPrecio[] = [];
   for (const row of raw) {
     if (!isRecord(row)) continue;
-    const id = asFiniteNumber(row.id);
-    const precio = asFiniteNumber(row.precio);
+    const id = asFiniteNumber(
+      pick(row, ["id", "idListaPrecio", "id_lista_precio"])
+    );
+    const precio = asFiniteNumber(pick(row, ["precio", "valor"]));
     if (id == null || precio == null) continue;
     out.push({ id, precio });
   }
@@ -191,15 +227,22 @@ function parseCodigosBarra(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];
   for (const x of raw) {
-    const s = asString(x);
-    if (s) out.push(s);
+    if (typeof x === "string") {
+      const s = asString(x);
+      if (s) out.push(s);
+      continue;
+    }
+    if (isRecord(x)) {
+      const s = asString(pick(x, ["cod_barra", "codBarra"]));
+      if (s) out.push(s);
+    }
   }
   return out;
 }
 
 function parseFichaItemV2(raw: unknown): DuxV2ItemFicha | null {
   if (!isRecord(raw)) return null;
-  const codItem = asString(raw.cod_item);
+  const codItem = asString(pick(raw, ["cod_item", "codItem"]));
   const item = asString(raw.item);
   if (!codItem || !item) return null;
   const marca = isRecord(raw.marca) ? raw.marca : null;
@@ -207,15 +250,26 @@ function parseFichaItemV2(raw: unknown): DuxV2ItemFicha | null {
   return {
     codItem,
     item,
-    porcIva: asFiniteNumber(raw.porc_iva) ?? 0,
-    costo: asFiniteNumber(raw.costo) ?? 0,
+    porcIva: asFiniteNumber(pick(raw, ["porc_iva", "porcIva"])) ?? 0,
+    costo:
+      asFiniteNumber(pick(raw, ["costo", "costo_compra", "costoCompra"])) ?? 0,
     idRubro: nestedId(raw.rubro),
-    idSubRubro: nestedId(raw.sub_rubro),
-    codigoMarca: marca ? asString(marca.codigo_marca) : null,
-    idProveedor: proveedor ? asFiniteNumber(proveedor.id_proveedor) : null,
-    codigoExterno: asString(raw.codigo_externo),
-    ctdUnidadesPorBulto: asFiniteNumber(raw.ctd_unidades_por_bulto),
-    codigosBarra: parseCodigosBarra(raw.codigos_barra),
+    idSubRubro: nestedId(pick(raw, ["sub_rubro", "subRubro"]) ?? null),
+    codigoMarca: marca
+      ? asString(pick(marca, ["codigo_marca", "codigoMarca", "cod_marca", "codMarca"]))
+      : null,
+    idProveedor: proveedor
+      ? asFiniteNumber(pick(proveedor, ["id_proveedor", "idProveedor", "id"]))
+      : null,
+    codigoExterno: asString(
+      pick(raw, ["codigo_externo", "codigoExterno"])
+    ),
+    ctdUnidadesPorBulto: asFiniteNumber(
+      pick(raw, ["ctd_unidades_por_bulto", "ctdUnidadesPorBulto"])
+    ),
+    codigosBarra: parseCodigosBarra(
+      pick(raw, ["codigos_barra", "codigosBarra"])
+    ),
     precios: parsePreciosArray(raw.precios),
     stock: parseStockArray(raw.stock),
   };
@@ -259,8 +313,13 @@ export async function getItemV2PorCod(
       respuesta: "Respuesta GET DUX no es JSON.",
     };
   }
-  const datos =
-    isRecord(parsed) && Array.isArray(parsed.datos) ? parsed.datos : [];
+  const datos = isRecord(parsed)
+    ? Array.isArray(parsed.datos)
+      ? parsed.datos
+      : Array.isArray(parsed.data)
+        ? parsed.data
+        : []
+    : [];
   const ficha = datos.length > 0 ? parseFichaItemV2(datos[0]) : null;
   if (!ficha) {
     return {
@@ -277,7 +336,7 @@ export function armarBodyGuardarItemV2(input: {
   idPersonal: number;
   idDeposito: number;
   stock: number;
-  sucursalesHabilitadas: { id_sucursal: number }[];
+  sucursalesHabilitadas: { idSucursal: number }[];
 }): DuxV2GuardarItemRequest {
   const idMoneda = getDuxIdMoneda();
   const stockMap = new Map<number, number>();
@@ -287,40 +346,38 @@ export function armarBodyGuardarItemV2(input: {
   stockMap.set(input.idDeposito, input.stock);
 
   const body: DuxV2GuardarItemRequest = {
-    id_personal: input.idPersonal,
-    tipo_producto: getDuxTipoProducto(),
-    cod_item: input.ficha.codItem,
+    idPersonal: input.idPersonal,
+    tipoProducto: getDuxTipoProducto(),
+    codItem: input.ficha.codItem,
     item: input.ficha.item,
-    id_moneda: idMoneda,
-    porc_iva: input.ficha.porcIva,
-    costo_compra: input.ficha.costo,
-    id_unidad_medida: getDuxIdUnidadMedida(),
-    sucursales_habilitadas: input.sucursalesHabilitadas,
-    stock: [...stockMap.entries()].map(([id_deposito, ctd_disponible]) => ({
-      id_deposito,
-      ctd_disponible,
+    idMoneda,
+    porcIva: input.ficha.porcIva,
+    costoCompra: input.ficha.costo,
+    idUnidadMedida: getDuxIdUnidadMedida(),
+    sucursalesHabilitadas: input.sucursalesHabilitadas,
+    stock: [...stockMap.entries()].map(([idDeposito, ctdDisponible]) => ({
+      idDeposito,
+      ctdDisponible,
     })),
   };
 
-  if (input.ficha.idRubro != null) body.id_rubro = input.ficha.idRubro;
-  if (input.ficha.idSubRubro != null) body.id_sub_rubro = input.ficha.idSubRubro;
-  if (input.ficha.codigoMarca) body.cod_marca = input.ficha.codigoMarca;
-  if (input.ficha.idProveedor != null) {
-    body.id_proveedor = input.ficha.idProveedor;
-  }
-  if (input.ficha.codigoExterno) body.codigo_externo = input.ficha.codigoExterno;
+  if (input.ficha.idRubro != null) body.idRubro = input.ficha.idRubro;
+  if (input.ficha.idSubRubro != null) body.idSubRubro = input.ficha.idSubRubro;
+  if (input.ficha.codigoMarca) body.codMarca = input.ficha.codigoMarca;
+  if (input.ficha.idProveedor != null) body.idProveedor = input.ficha.idProveedor;
+  if (input.ficha.codigoExterno) body.codigoExterno = input.ficha.codigoExterno;
   if (input.ficha.ctdUnidadesPorBulto != null) {
-    body.ctd_unidades_por_bulto = input.ficha.ctdUnidadesPorBulto;
+    body.ctdUnidadesPorBulto = input.ficha.ctdUnidadesPorBulto;
   }
   if (input.ficha.codigosBarra.length > 0) {
-    body.item_cod_barra = input.ficha.codigosBarra.map((cod_barra) => ({
-      cod_barra,
+    body.itemCodBarra = input.ficha.codigosBarra.map((codBarra) => ({
+      codBarra,
     }));
   }
   if (input.ficha.precios.length > 0) {
     body.precios = input.ficha.precios.map((p) => ({
-      id_lista_precio: p.id,
-      id_moneda: idMoneda,
+      idListaPrecio: p.id,
+      idMoneda,
       valor: p.precio,
     }));
   }
@@ -328,7 +385,7 @@ export function armarBodyGuardarItemV2(input: {
 }
 
 /**
- * PUT `/v2/items/{cod_item}?id_empresa=` — ficha completa (no es PATCH).
+ * PUT `/v2/items/{cod_item}?id_empresa=` — ficha completa en camelCase (WSERP/Jackson).
  * Contrato: https://duxsoftware.readme.io/reference/actualizar_item
  */
 export async function putItemV2(
@@ -359,15 +416,14 @@ export async function putItemV2(
 }
 
 /**
- * Ajuste de stock: GET ficha → pausa rate limit → PUT con stock del depósito actualizado.
- * El resto de la ficha se reenvía para no vaciar precios/depósitos.
+ * Ajuste de stock: GET ficha → pausa rate limit → PUT camelCase con stock del depósito.
  */
 export async function putAjusteStockItemV2(input: {
   codItem: string;
   stock: number;
   idDeposito: number;
   idPersonal: number;
-  sucursalesHabilitadas: { id_sucursal: number }[];
+  sucursalesHabilitadas: { idSucursal: number }[];
 }): Promise<DuxPutItemResult> {
   const got = await getItemV2PorCod(input.codItem);
   if (!got.ok) {

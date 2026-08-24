@@ -16,20 +16,20 @@ export function idDepositoDuxPorSucursal(
     : getIdDepositoMaipu();
 }
 
-async function sucursalesHabilitadasDux(): Promise<{ id_sucursal: number }[]> {
+async function sucursalesHabilitadasDux(): Promise<{ idSucursal: number }[]> {
   const rows = await prisma.sucursal.findMany({
     where: { idDux: { not: null } },
     select: { idDux: true },
   });
   const seen = new Set<number>();
-  const out: { id_sucursal: number }[] = [];
+  const out: { idSucursal: number }[] = [];
   for (const row of rows) {
     const raw = (row.idDux ?? "").trim();
     if (!/^\d+$/.test(raw)) continue;
     const id = Number(raw);
     if (!Number.isInteger(id) || id <= 0 || seen.has(id)) continue;
     seen.add(id);
-    out.push({ id_sucursal: id });
+    out.push({ idSucursal: id });
   }
   return out;
 }
