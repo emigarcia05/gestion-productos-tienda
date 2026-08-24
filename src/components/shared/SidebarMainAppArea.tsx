@@ -136,7 +136,7 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
 
   useEffect(() => {
     let cancelled = false;
-    let pedidosTimer: ReturnType<typeof setTimeout> | null = null;
+    let pedidosTimer: number | null = null;
     const abortTransf = new AbortController();
     let abortPedidos: AbortController | null = null;
 
