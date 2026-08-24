@@ -47,7 +47,7 @@ export default function PruebaPutStockDuxButton({ tableRef, sucursal }: Props) {
     try {
       for (let i = 0; i < filas.length; i++) {
         const fila = filas[i];
-        toast.message(`PUT DUX ${i + 1}/${filas.length}: ${fila.codItem}`);
+        toast.message(`Ajustando stock DUX ${i + 1}/${filas.length}: ${fila.codItem}`);
         const res = await probarPutAjusteStockDuxAction({
           sucursal,
           usuario: usuario.idPersonal,
@@ -89,7 +89,7 @@ export default function PruebaPutStockDuxButton({ tableRef, sucursal }: Props) {
         />
       </TooltipTrigger>
       <TooltipContent>
-        Envía a DUX solo ítems con variación (cod. tienda, stock, depósito, usuario)
+        Lee la ficha en DUX y ajusta el stock del depósito (solo ítems con variación)
       </TooltipContent>
     </Tooltip>
   );

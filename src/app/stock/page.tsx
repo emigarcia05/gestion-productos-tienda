@@ -7,6 +7,8 @@ import StockPageWithActions from "@/components/stock/StockPageWithActions";
 import { getProveedoresMercaderia } from "@/actions/proveedores";
 
 export const dynamic = "force-dynamic";
+/** GET ítem DUX + pausa 5 s + PUT en la misma Action (rate limit). */
+export const maxDuration = 60;
 
 interface Props {
   searchParams: Promise<{
