@@ -19,7 +19,7 @@ import AppModal from "@/components/shared/AppModal";
 import TransferenciaPendienteAvisoModal from "@/components/stock/TransferenciaPendienteAvisoModal";
 import { activarModoEditor } from "@/actions/sesion";
 import { listUsuariosParaInicioSesionAction } from "@/actions/globalPersonal";
-import { getIndicadorSlidenavAction } from "@/actions/stock";
+import { hayPendientesTransfOrigenAction } from "@/actions/stock";
 import {
   areaLabelMayusculas,
   getMainAppAreaById,
@@ -139,13 +139,15 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     setPendingUsuario(null);
     setPendingAreaId(null);
     if (avisarTransfPendiente) {
-      void consultarYAvisarTransfPendiente(usuario.sucursalPorDefecto);
+      window.setTimeout(() => {
+        void consultarYAvisarTransfPendiente(usuario.sucursalPorDefecto);
+      }, 0);
     }
   }
 
   async function consultarYAvisarTransfPendiente(sucursal: SucursalPreferida) {
-    const res = await getIndicadorSlidenavAction({ sucursal });
-    if (res.ok && res.data.hayTransfOrigen) {
+    const res = await hayPendientesTransfOrigenAction({ sucursal });
+    if (res.ok && res.data) {
       setTransfPendienteOpen(true);
     }
   }

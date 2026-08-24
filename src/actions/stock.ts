@@ -551,16 +551,20 @@ export async function getIndicadorSlidenavAction(
   }
   const sucursal = parsed.data.sucursal;
   try {
-    const pedidos = puede(rol, PERMISOS.pedidos.acceso)
-      ? await import("@/services/pedidosEnvio.service").then((m) =>
+    const pedidosPromise = puede(rol, PERMISOS.pedidos.acceso)
+      ? import("@/services/pedidosEnvio.service").then((m) =>
           m.contarItemsPedidoPorTipoParaSlidenav(sucursal)
         )
-      : PEDIDOS_SLIDENAV_VACIO;
-    const hayTransfOrigen = puede(rol, PERMISOS.stock.acceso)
-      ? await import("@/services/transfDepositos.service").then((m) =>
+      : Promise.resolve(PEDIDOS_SLIDENAV_VACIO);
+    const transfPromise = puede(rol, PERMISOS.stock.acceso)
+      ? import("@/services/transfDepositos.service").then((m) =>
           m.hayPendientesTransfDepositosComoOrigen(sucursal)
         )
-      : false;
+      : Promise.resolve(false);
+    const [pedidos, hayTransfOrigen] = await Promise.all([
+      pedidosPromise,
+      transfPromise,
+    ]);
     return {
       ok: true,
       data: {
@@ -574,6 +578,33 @@ export async function getIndicadorSlidenavAction(
   } catch (e) {
     console.error("[getIndicadorSlidenavAction]", e);
     return { ok: false, error: "Error al cargar indicador." };
+  }
+}
+
+/**
+ * Chequeo liviano para el aviso al login: ¿hay filas en `stock_trasn_depositos`
+ * con esta sucursal como origen? No usa el indicador de pedidos.
+ */
+export async function hayPendientesTransfOrigenAction(
+  raw: unknown
+): Promise<ActionResult<boolean>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.stock.acceso)) {
+    return { ok: true, data: false };
+  }
+  const parsed = conteosIndicadorSlidenavSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  try {
+    const { hayPendientesTransfDepositosComoOrigen } = await import(
+      "@/services/transfDepositos.service"
+    );
+    const hay = await hayPendientesTransfDepositosComoOrigen(parsed.data.sucursal);
+    return { ok: true, data: hay };
+  } catch (e) {
+    console.error("[hayPendientesTransfOrigenAction]", e);
+    return { ok: false, error: "Error al consultar transferencias." };
   }
 }
 
