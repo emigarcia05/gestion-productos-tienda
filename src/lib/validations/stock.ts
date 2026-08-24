@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 
 export const getControlStockParamsSchema = z.object({
   q: z.string().max(500).optional(),
@@ -10,4 +11,12 @@ export const getControlStockParamsSchema = z.object({
     (v) => (v === undefined || v === null || v === "" ? undefined : v),
     z.coerce.number().int().min(1).max(10_000).optional()
   ),
+});
+
+/** Un ítem con variación → PUT de prueba DUX (solo 4 campos, como el Excel). */
+export const pruebaPutAjusteStockDuxSchema = z.object({
+  sucursal: z.enum(["guaymallen", "maipu"]),
+  usuario: z.number().int().positive(),
+  codTienda: listaPreciosCodTiendaSchema,
+  stock: z.number().finite(),
 });

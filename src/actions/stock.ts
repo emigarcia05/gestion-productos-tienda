@@ -6,10 +6,14 @@ import { prisma } from "@/lib/prisma";
 import { filtroTexto } from "@/lib/busqueda";
 import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
+import { requireStockAcceso } from "@/lib/actionGates";
 import type { ActionResult } from "@/lib/types";
 import { z } from "zod";
 import { PAGE_SIZE } from "@/lib/pagination";
-import { getControlStockParamsSchema } from "@/lib/validations/stock";
+import {
+  getControlStockParamsSchema,
+  pruebaPutAjusteStockDuxSchema,
+} from "@/lib/validations/stock";
 import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import {
   conteosIndicadorSlidenavSchema,
@@ -564,6 +568,47 @@ export async function registrarExportacionExcelStock(ids: string[]): Promise<Act
     return { ok: true, data: undefined };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error al registrar exportación.";
+    return { ok: false, error: message };
+  }
+}
+
+export type PruebaPutAjusteStockDuxResult = {
+  httpStatus: number;
+  respuesta: string;
+};
+
+/**
+ * Prueba PUT DUX v2: un ítem con variación (cod_tienda, stock, deposito, usuario).
+ * No persiste ÚLT. CONTROL (eso sigue en Exportar Excel).
+ */
+export async function probarPutAjusteStockDuxAction(
+  raw: unknown
+): Promise<ActionResult<PruebaPutAjusteStockDuxResult>> {
+  const gate = await requireStockAcceso();
+  if (gate) return gate;
+  const parsed = pruebaPutAjusteStockDuxSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Datos inválidos." };
+  }
+  try {
+    const { enviarPruebaPutAjusteStockDux } = await import(
+      "@/services/duxAjusteStock.service"
+    );
+    const res = await enviarPruebaPutAjusteStockDux(parsed.data);
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `DUX ${res.httpStatus}: ${res.respuesta}`,
+      };
+    }
+    return {
+      ok: true,
+      data: { httpStatus: res.httpStatus, respuesta: res.respuesta },
+    };
+  } catch (e) {
+    console.error("[probarPutAjusteStockDuxAction]", e);
+    const message =
+      e instanceof Error ? e.message : "Error al llamar PUT DUX.";
     return { ok: false, error: message };
   }
 }

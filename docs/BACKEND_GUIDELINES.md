@@ -81,7 +81,7 @@ Convención: `puede(rol, PERMISOS.<modulo>…)` **antes** de `esEditor()`. El pr
 |------|-----|
 | Historial de pedidos | Recepción, marcar registrado, eliminar cabecera, PDF (`pedidosHistoria.ts`). Lectura: RSC o `GET /api/pedidos-historia/[id]/detalle`. |
 | Pedido urgente / tintométrico / enviar / reposición / a fábrica | Upserts de cantidades, PDF generar pedido, reglas reposición. Flujo vendedor. |
-| Stock / Trans. Depósitos | Registrar y marcar transferido (`stock_trasn_depositos`). Flujo vendedor. |
+| Stock / Trans. Depósitos | Registrar y marcar transferido (`stock_trasn_depositos`); prueba PUT ajuste stock DUX (`probarPutAjusteStockDuxAction`). Flujo vendedor. |
 | Sync DUX lista tienda | `PERMISOS.tienda.acciones.sincronizar` (`simple` y `editor`). Solo API, no Action. |
 | Ayuda vendedor · gasto eventual | `PERMISOS.ayudaVendedor.cargarGasto` (`requireCargarGastoEventual`). |
 | Envios | CRUD clientes / direcciones / envío final + PDF (`requireEnvios`). Flujo vendedor. |
@@ -267,6 +267,7 @@ URL: `/gestion-productos/tienda/comp-proveedores`. Permiso lectura/edición CX: 
 
 - Stock por depósito: `prod_tienda_stock` PK `(cod_tienda, id_deposito)`. Catálogo `prod_depositos_dux`. Lecturas: `prodTiendaStock.service.ts`.
 - Control stock / transf.: Actions en `stock.ts` (Prisma legacy en lecturas). Permiso `stock.acceso` (simple+editor).
+- **Prueba PUT ajuste stock DUX** (no reemplaza el Excel): mismos ítems con variación que Exportar Excel. UI `PruebaPutStockDuxButton` → `probarPutAjusteStockDuxAction` (`requireStockAcceso`, sin `esEditor` — excepción **§1.2.3**). Zod `pruebaPutAjusteStockDuxSchema`. Servicio `enviarPruebaPutAjusteStockDux` (`duxAjusteStock.service.ts`) mapea sucursal → `getIdDepositoGuaymallen` / `getIdDepositoMaipu` y llama `putAjusteStockItemV2` (`duxItemsV2Api.ts`): `PUT /v2/items/{cod_tienda}?id_empresa=` ([actualizar_item](https://duxsoftware.readme.io/reference/actualizar_item); `id_empresa` = `getDuxIdEmpresaCompras()`, default 2482; Bearer `DUX_API_TOKEN`). Body mínimo: `cod_tienda`, `stock` (cantidad contada), `deposito`, `usuario` (`idPersonal` del slidenav). El cliente envía **un ítem por Action** con pausa `DUX_API_BATCH_INTERVAL_MS` (rate limit DUX 1 req / 5 s; evita timeout de Vercel). No escribe `ultimaExportacionExcel`. GET v2 listar ítems no se usa; la sincro completa sigue en v1 `GET /items`.
 - **`stock_trasn_depositos`:** ledger de la transferencia (`cod_tienda` → `prod_tienda`; `cant`; `suc_origen` / `suc_destino` → `global_sucursales.id`). **Generar Transf.** persiste cantidades de la grilla (`registrarTransferenciasDepositos`) y abre el modal: **SUC. ORIGEN** = sucursal del usuario; **SUC. DESTINO** = `global_sucursales` distintas con `deposito` no vacío (`listarSucursalesTransfDepositos.tieneDeposito`); tabla COD. TIENDA / DESCRIPCIÓN TIENDA / CANTIDAD A TRANSFERIR + OK por fila (checklist local). **Transferido** borra el lote origen→destino (`marcarTransferidoTransfDepositos`) cuando todos los ítems tienen OK. CHECK `cant > 0` y sucursales distintas. Destino sin depósito se rechaza. Borrar producto cascada; borrar sucursal restringido. Ventana historial/duplicado **14 días**. No mueve stock DUX. **No** hay Excel de transferencia. Indicador slidenav: `GET /api/indicador-slidenav` (`hayTransfOrigen` si la sucursal es `suc_origen`).
 
 ### 3.5 Px Listas DUX y Px Competencia

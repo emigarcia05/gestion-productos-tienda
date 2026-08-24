@@ -67,6 +67,7 @@ function fmtFecha(d: Date | string | null): string {
 export interface TablaStockHandle {
   openPrint: () => void;
   triggerExport: () => void;
+  collectFilasVariacion: () => FilaExportStockVariacion[];
 }
 
 interface Props {
@@ -223,6 +224,11 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
 
   useImperativeHandle(ref, () => ({
     openPrint: () => handleImprimirRef.current(),
+    collectFilasVariacion: () =>
+      filasConVariacionStockParaExportar(
+        stocksEditadosRef.current,
+        itemMetaRef.current
+      ),
     triggerExport: () => {
       const filasExport = filasConVariacionStockParaExportar(
         stocksEditadosRef.current,

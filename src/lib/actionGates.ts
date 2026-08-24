@@ -77,3 +77,8 @@ export function requireCargarGastoEventual(): Promise<ActionGateFail | null> {
 export function requireEnvios(): Promise<ActionGateFail | null> {
   return requirePermiso(PERMISOS.envios.acceso, "Sin permisos para envíos.");
 }
+
+/** Control stock / transf. depósitos. */
+export function requireStockAcceso(): Promise<ActionGateFail | null> {
+  return requirePermiso(PERMISOS.stock.acceso, "Sin acceso.");
+}
