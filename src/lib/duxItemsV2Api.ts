@@ -52,18 +52,6 @@ export type DuxV2GuardarItemRequest = {
   costoCompra: number;
   idUnidadMedida: number;
   sucursalesHabilitadas: { idSucursal: number }[];
-  idRubro?: number;
-  idSubRubro?: number;
-  codMarca?: string;
-  idProveedor?: number;
-  codigoExterno?: string;
-  ctdUnidadesPorBulto?: number;
-  itemCodBarra?: { codBarra: string }[];
-  precios?: {
-    idListaPrecio: number;
-    idMoneda: number;
-    valor: number;
-  }[];
   stock: {
     idDeposito: number;
     ctdDisponible: number;
@@ -110,10 +98,12 @@ function formatDuxItemsV2Error(status: number, bodyText: string): string {
     const parsed = JSON.parse(bodyText) as {
       error?: {
         mensaje?: string;
+        id_solicitud?: string;
         detalle?: Array<{ campo?: string; problema?: string }>;
       };
     };
     const msg = parsed.error?.mensaje?.trim() ?? "";
+    const idSolicitud = parsed.error?.id_solicitud?.trim() ?? "";
     const detalle = parsed.error?.detalle ?? [];
     const campos = detalle
       .map((d) => {
@@ -123,10 +113,11 @@ function formatDuxItemsV2Error(status: number, bodyText: string): string {
         return campo && problema ? `${campo}: ${problema}` : campo || problema;
       })
       .filter((s) => s.length > 0);
+    const sufijoId = idSolicitud ? ` [${idSolicitud}]` : "";
     if (msg && campos.length > 0) {
-      return `${msg} (${campos.slice(0, 6).join("; ")})`.slice(0, 500);
+      return `${msg} (${campos.slice(0, 6).join("; ")})${sufijoId}`.slice(0, 500);
     }
-    if (msg) return msg;
+    if (msg) return `${msg}${sufijoId}`.slice(0, 500);
   } catch {
     // cuerpo no JSON
   }
@@ -318,7 +309,9 @@ export async function getItemV2PorCod(
       ? parsed.datos
       : Array.isArray(parsed.data)
         ? parsed.data
-        : []
+        : Array.isArray(parsed.results)
+          ? parsed.results
+          : []
     : [];
   const ficha = datos.length > 0 ? parseFichaItemV2(datos[0]) : null;
   if (!ficha) {
@@ -338,50 +331,27 @@ export function armarBodyGuardarItemV2(input: {
   stock: number;
   sucursalesHabilitadas: { idSucursal: number }[];
 }): DuxV2GuardarItemRequest {
-  const idMoneda = getDuxIdMoneda();
-  const stockMap = new Map<number, number>();
-  for (const s of input.ficha.stock) {
-    stockMap.set(s.id, s.stockDisponible ?? 0);
-  }
-  stockMap.set(input.idDeposito, input.stock);
-
-  const body: DuxV2GuardarItemRequest = {
+  /**
+   * Solo lo que WSERP exige (ERROR_VALIDACION) + stock de UN depósito.
+   * No reenviar precios/códigos/rubro: en PUT suelen provocar 500 en WSERP.
+   */
+  return {
     idPersonal: input.idPersonal,
     tipoProducto: getDuxTipoProducto(),
     codItem: input.ficha.codItem,
     item: input.ficha.item,
-    idMoneda,
+    idMoneda: getDuxIdMoneda(),
     porcIva: input.ficha.porcIva,
     costoCompra: input.ficha.costo,
     idUnidadMedida: getDuxIdUnidadMedida(),
     sucursalesHabilitadas: input.sucursalesHabilitadas,
-    stock: [...stockMap.entries()].map(([idDeposito, ctdDisponible]) => ({
-      idDeposito,
-      ctdDisponible,
-    })),
+    stock: [
+      {
+        idDeposito: input.idDeposito,
+        ctdDisponible: input.stock,
+      },
+    ],
   };
-
-  if (input.ficha.idRubro != null) body.idRubro = input.ficha.idRubro;
-  if (input.ficha.idSubRubro != null) body.idSubRubro = input.ficha.idSubRubro;
-  if (input.ficha.codigoMarca) body.codMarca = input.ficha.codigoMarca;
-  if (input.ficha.idProveedor != null) body.idProveedor = input.ficha.idProveedor;
-  if (input.ficha.codigoExterno) body.codigoExterno = input.ficha.codigoExterno;
-  if (input.ficha.ctdUnidadesPorBulto != null) {
-    body.ctdUnidadesPorBulto = input.ficha.ctdUnidadesPorBulto;
-  }
-  if (input.ficha.codigosBarra.length > 0) {
-    body.itemCodBarra = input.ficha.codigosBarra.map((codBarra) => ({
-      codBarra,
-    }));
-  }
-  if (input.ficha.precios.length > 0) {
-    body.precios = input.ficha.precios.map((p) => ({
-      idListaPrecio: p.id,
-      idMoneda,
-      valor: p.precio,
-    }));
-  }
-  return body;
 }
 
 /**
@@ -406,6 +376,14 @@ export async function putItemV2(
     },
     body: JSON.stringify(body),
   });
+  if (!res.ok) {
+    console.error(
+      "[duxItemsV2][putItemV2]",
+      res.status,
+      { codItem, tipoProducto: body.tipoProducto, idDeposito: body.stock[0]?.idDeposito },
+      res.text.slice(0, 400)
+    );
+  }
   return {
     httpStatus: res.status,
     ok: res.ok,
