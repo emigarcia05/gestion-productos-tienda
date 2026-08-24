@@ -333,3 +333,25 @@ export async function marcarTransferidoTransfDepositos(input: {
     return { success: false, error: message };
   }
 }
+
+/**
+ * True si la sucursal (código) figura como **SUC. ORIGEN** en `stock_trasn_depositos`.
+ */
+export async function hayPendientesTransfDepositosComoOrigen(
+  sucursalCodigo: SucursalCodigoTransf
+): Promise<boolean> {
+  try {
+    const suc = await prisma.sucursal.findUnique({
+      where: { codigo: sucursalCodigo },
+      select: { id: true },
+    });
+    if (!suc) return false;
+    const n = await prisma.stockTrasnDeposito.count({
+      where: { sucOrigen: suc.id },
+    });
+    return n > 0;
+  } catch (e) {
+    console.error("[hayPendientesTransfDepositosComoOrigen]", e);
+    return false;
+  }
+}

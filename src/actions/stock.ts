@@ -521,6 +521,8 @@ export type IndicadorSlidenavDto = {
   tintometrico: number;
   reposicion: number;
   proveedoresPedido: IndicadorSlidenavProveedorPedidoDto[];
+  /** Transferencias en `stock_trasn_depositos` con esta sucursal como origen. */
+  hayTransfOrigen: boolean;
 };
 
 const PEDIDOS_SLIDENAV_VACIO: {
@@ -536,7 +538,8 @@ const PEDIDOS_SLIDENAV_VACIO: {
 };
 
 /**
- * Conteos del indicador de slidenav: pedidos (Generar Pedido, por proveedor).
+ * Conteos del indicador de slidenav: pedidos (Generar Pedido, por proveedor)
+ * y transferencias pendientes como SUC. ORIGEN.
  */
 export async function getIndicadorSlidenavAction(
   raw: unknown
@@ -553,6 +556,11 @@ export async function getIndicadorSlidenavAction(
           m.contarItemsPedidoPorTipoParaSlidenav(sucursal)
         )
       : PEDIDOS_SLIDENAV_VACIO;
+    const hayTransfOrigen = puede(rol, PERMISOS.stock.acceso)
+      ? await import("@/services/transfDepositos.service").then((m) =>
+          m.hayPendientesTransfDepositosComoOrigen(sucursal)
+        )
+      : false;
     return {
       ok: true,
       data: {
@@ -560,6 +568,7 @@ export async function getIndicadorSlidenavAction(
         tintometrico: pedidos.tintometrico,
         reposicion: pedidos.reposicion,
         proveedoresPedido: pedidos.proveedores,
+        hayTransfOrigen,
       },
     };
   } catch (e) {

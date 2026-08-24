@@ -57,7 +57,7 @@ interface Props {
 /**
  * Modal **Generar Transf.**: dos selectores **SUC. ORIGEN** (sucursal del usuario)
  * y **SUC. DESTINO** (`global_sucursales` distintas, con `deposito` no vacío);
- * tabla Control de ítem / COD. TIENDA / DESCRIPCIÓN / CANTIDAD A TRANSFERIR / ACCIONES (OK copia Cod. Tienda);
+ * tabla Control de ítem / COD. TIENDA / DESCRIPCIÓN / CANTIDAD A TRANSFERIR / ACCIONES (OK copia Cod. Tienda; segundo clic desmarca);
  * checklist local hasta **Transferido**, que borra el lote. **Comenzar Transferencia** (debajo de los selectores, solo con origen y destino) abre DUX en pestaña nueva.
  * Cabecera del modal (selectores + botón) y `thead` fijos; scroll solo en `.contenedor-tabla-gestion`.
  */
@@ -190,6 +190,10 @@ export default function GenerarTransfDepositosModal({
   }
 
   async function handleOkItem(codTienda: string) {
+    if (okPorCodTienda[codTienda] === true) {
+      setOkPorCodTienda((prev) => ({ ...prev, [codTienda]: false }));
+      return;
+    }
     try {
       await navigator.clipboard.writeText(codTienda);
     } catch {
@@ -200,8 +204,23 @@ export default function GenerarTransfDepositosModal({
     toast.success("Cod. Tienda Copiado", { description: codTienda });
   }
 
+  const todosOk =
+    items.length > 0 && items.every((item) => okPorCodTienda[item.codTienda] === true);
+  const puedeMarcar =
+    sucOrigenId !== null &&
+    sucDestinoId !== null &&
+    todosOk &&
+    !loading;
+
   function handleTransferido() {
-    if (!sucOrigenId || !sucDestinoId || items.length === 0) return;
+    if (
+      !sucOrigenId ||
+      !sucDestinoId ||
+      items.length === 0 ||
+      !todosOk
+    ) {
+      return;
+    }
     startTransition(async () => {
       const res = await marcarTransferidoTransfDepositosAction({
         sucOrigenId,
@@ -220,14 +239,6 @@ export default function GenerarTransfDepositosModal({
       onOpenChange(false);
     });
   }
-
-  const todosOk =
-    items.length > 0 && items.every((item) => okPorCodTienda[item.codTienda] === true);
-  const puedeMarcar =
-    sucOrigenId !== null &&
-    sucDestinoId !== null &&
-    todosOk &&
-    !loading;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -251,6 +262,12 @@ export default function GenerarTransfDepositosModal({
               type="button"
               onClick={handleTransferido}
               disabled={!puedeMarcar || isPending}
+              className="disabled:cursor-not-allowed"
+              title={
+                puedeMarcar
+                  ? "Borrar el lote de esta transferencia"
+                  : "Marcá todos los ítems con OK"
+              }
             >
               Transferido
             </Button>
@@ -385,9 +402,7 @@ export default function GenerarTransfDepositosModal({
                       key={item.codTienda}
                       className={cn(
                         "transition-colors duration-100",
-                        ok
-                          ? "recepcion-fila-verificada cursor-not-allowed"
-                          : "recepcion-fila-pendiente"
+                        ok ? "recepcion-fila-verificada" : "recepcion-fila-pendiente"
                       )}
                     >
                       <TablaControlItemCelda
@@ -414,10 +429,16 @@ export default function GenerarTransfDepositosModal({
                             variant="ghost"
                             size="icon"
                             onClick={() => handleOkItem(item.codTienda)}
-                            disabled={ok || isPending}
+                            disabled={isPending}
                             className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                            aria-label="OK, copiar código de tienda"
-                            title="OK — copiar Cod. Tienda"
+                            aria-label={
+                              ok
+                                ? "Desmarcar ítem"
+                                : "OK, copiar código de tienda"
+                            }
+                            title={
+                              ok ? "Desmarcar ítem" : "OK — copiar Cod. Tienda"
+                            }
                           >
                             <Check
                               className={TABLE_ROW_ACTION_ICON_CLASS}

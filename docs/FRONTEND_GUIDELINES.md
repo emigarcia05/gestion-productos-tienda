@@ -121,7 +121,7 @@ SSOT: `src/lib/main-app-areas.ts`, `administracionNav.ts`, `marketingRoutes.ts`,
 
 **Excepción Envios · Conductor:** `AppShell` no monta el slidenav (`esRutaEnviosConductor`). El modal **Elegir Usuario** vive en el dock; al abrir Conductor directo (`/gestion-productos/envios/conductor`) no se pide usuario. El resto de la app sigue pidiéndolo.
 
-**Pendientes:** badge 0–1 (pedido); hover o click abre detalle. Pedido: solo proveedores con ítems pendientes (misma resolución que Generar Pedido) y `global_proveedores.es_fabrica = false`; hover o foco en el nombre muestra Urgente / Tintométrico / Reposición (los tres tipos, aunque el conteo sea 0). Click **PEDIDO** → Generar Pedido. No modal al entrar a Stock.
+**Pendientes:** badge = categorías con pendiente (Pedido y/o Transf., 0–2). Hover o click abre detalle. **Transf.:** si la sucursal del usuario es **SUC. ORIGEN** en `stock_trasn_depositos`; click → Trans. Depósitos con **Generar Transf.** abierto (`?generar=1`). **Pedido:** solo proveedores con ítems pendientes (misma resolución que Generar Pedido) y `global_proveedores.es_fabrica = false`; hover o foco en el nombre muestra Urgente / Tintométrico / Reposición (los tres tipos, aunque el conteo sea 0). Click **PEDIDO** → Generar Pedido. Al **iniciar sesión** (elegir usuario), si hay Transf. pendiente se abre `TransferenciaPendienteAvisoModal` (**Transferencia Pendiente!** / **Transferir Ahora**). No modal al entrar a Stock.
 
 ### 1.7 URLs
 
@@ -199,7 +199,7 @@ Nuevo shared: CVA + tokens + `"use client"` solo si hay estado/hooks. Documentar
 | `EnteroStepperInput` | Entero − / número / + (mismo patrón que Control Stock). Vacío permitido; el padre persiste en `onCommit`. `endAction?` a la derecha del + |
 | `catalogo-finder/*` | Finder |
 | `ProcesoPaso` | Card de paso secuencial (`numero`, `titulo`, `activo`). Asistente IA (`AsistenteIaProcesoPaso` es alias) |
-| `SidebarAreaSwitcher` / `SidebarMainAppArea` | Dock sesión / Pendientes (Pedido → proveedor → tipos) |
+| `SidebarAreaSwitcher` / `SidebarMainAppArea` | Dock sesión / Pendientes (Transf. + Pedido → proveedor → tipos) |
 | `ReposicionProveedorPrioritarioModal` / `SobreStockReposicionAdvertenciaModal` | Confirmaciones al generar pedido |
 | `ExportarMktSeccionesGoogleSheetsButton` | Export Marketing |
 
@@ -230,7 +230,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 ### Stock / ayuda vendedor
 
 - **Control Stock:** header Exportar / Imprimir. Sin modal de sync al entrar. Excel: ítems con variación; Check confirma sin variación.
-- **Trans. Depósitos:** origen ≠ destino; origen default = sucursal preferida. **Generar Transf.** persiste cantidades de la grilla (si hay) y abre `GenerarTransfDepositosModal` (`scrollBody={false}` `size="xl"` `max-w-[54rem]` `h-[85vh]`, 50% más ancho que `lg`): bloque fijo `grid grid-cols-2` **SUC. ORIGEN** | **SUC. DESTINO**; **Comenzar Transferencia** debajo, visible solo con origen y destino elegidos. Debajo `.contenedor-tabla-gestion` (scroll solo de filas, `thead` sticky) **Control de ítem** (`w-[8%] min-w-12`) / COD. TIENDA / **DESCRIPCIÓN** (`w-[50%]`) / CANTIDAD A TRANSFERIR / **ACCIONES**. **OK** copia `cod_tienda` al portapapeles y recién entonces marca el ítem; si falla la copia, no se verifica (se puede reintentar). Pie **Transferido** borra el lote cuando todos los ítems tienen OK.
+- **Trans. Depósitos:** origen ≠ destino; origen default = sucursal preferida. **Generar Transf.** persiste cantidades de la grilla (si hay) y abre `GenerarTransfDepositosModal` (`scrollBody={false}` `size="xl"` `max-w-[54rem]` `h-[85vh]`, 50% más ancho que `lg`): bloque fijo `grid grid-cols-2` **SUC. ORIGEN** | **SUC. DESTINO**; **Comenzar Transferencia** debajo, visible solo con origen y destino elegidos. Debajo `.contenedor-tabla-gestion` (scroll solo de filas, `thead` sticky) **Control de ítem** (`w-[8%] min-w-12`) / COD. TIENDA / **DESCRIPCIÓN** (`w-[50%]`) / CANTIDAD A TRANSFERIR / **ACCIONES**. **OK** es toggle: primer clic copia `cod_tienda` al portapapeles y marca el ítem (si falla la copia, no se verifica); segundo clic lo desmarca (FALSE). **Transferido** queda bloqueado hasta que todos los ítems estén TRUE; al clic borra el lote origen→destino en `stock_trasn_depositos`. Pendientes slidenav + aviso al login si la sucursal es SUC. ORIGEN; **Transferir Ahora** / click **Transf.** abre el mismo modal (`?generar=1`).
 - **Px Tintométrico / Calc. Litros:** CFTL `contentWidth="full"` sin FilterBar; card de cálculo. Coeficientes / rendimientos solo `editor`, en `actions` del header (**Editar Coeficientes** / **Editar Rendimientos**).
 - **Cargar Gasto:** CFTL; al entrar abre `GastoUnicoBalanceModal` (gasto eventual, mes/año AR). Header **Nuevo Gasto Eventual**.
 - **Envios · Programados:** en la tabla, la columna **ACCIONES** incluye botón toggle de entrega: si está pendiente marca **ENTREGADO** y si ya está entregado permite volver a **NO ENTREGADO**.

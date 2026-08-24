@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+import { hrefAbrirGenerarTransfDepositos } from "@/lib/transfDepositosControl";
 
 export interface SidebarMainAppAreaProps {
   /** Clases en el botón compacto. */
@@ -31,6 +32,7 @@ const VACIO: IndicadorSlidenavDto = {
   tintometrico: 0,
   reposicion: 0,
   proveedoresPedido: [],
+  hayTransfOrigen: false,
 };
 
 function FilaDetalle({
@@ -125,9 +127,9 @@ function BotonCategoriaPendiente({
 
 /**
  * Fila **Pendientes** del dock de sesión (slidenav).
- * Label **PENDIENTES** centrado; badge = 1 si hay pedido pendiente (máx. 1).
- * Hover o click: detalle lateral. Pedido lista proveedores con pendientes;
- * hover/foco en el nombre muestra Urgente / Tintométrico / Reposición.
+ * Label **PENDIENTES** centrado; badge = categorías con pendiente (Pedido y/o Transf.).
+ * Hover o click: detalle lateral. Pedido lista proveedores; Transf. si la sucursal
+ * es SUC. ORIGEN. Click **PEDIDO** → Generar Pedido; **TRANSF.** → Generar Transf.
  */
 export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProps) {
   const pathname = usePathname();
@@ -177,11 +179,20 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
   }, [pathname]);
 
   const hayPedidoPendiente = conteos.proveedoresPedido.length > 0;
-  const categoriasPendientes = hayPedidoPendiente ? 1 : 0;
+  const hayTransfPendiente = conteos.hayTransfOrigen;
+  const categoriasPendientes =
+    (hayPedidoPendiente ? 1 : 0) + (hayTransfPendiente ? 1 : 0);
+  const hayAlgunaPendiente = categoriasPendientes > 0;
 
   function irAGenerarPedido() {
     setDetalleOpen(false);
     router.push(GP_ROUTES.pedidoMercaderia.generarPedido);
+  }
+
+  function irAGenerarTransf() {
+    setDetalleOpen(false);
+    const sucursal = leerSucursalPreferida();
+    router.push(hrefAbrirGenerarTransfDepositos(sucursal));
   }
 
   return (
@@ -215,7 +226,7 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
             className={cn(
               "inline-flex min-w-5 shrink-0 items-center justify-center rounded px-1",
               "text-[10px] font-bold tabular-nums leading-none",
-              hayPedidoPendiente
+              hayAlgunaPendiente
                 ? "bg-accent2 text-foreground"
                 : "bg-sidebar-accent text-sidebar-foreground"
             )}
@@ -235,6 +246,10 @@ export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProp
           className="grid min-w-[13.5rem] grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1"
           aria-label="Detalle de pendientes"
         >
+          <BotonCategoriaPendiente label="Transf." onNavigate={irAGenerarTransf} />
+          <span className="text-xs tabular-nums leading-tight">
+            {hayTransfPendiente ? "Pendiente" : ""}
+          </span>
           <BotonCategoriaPendiente label="Pedido" onNavigate={irAGenerarPedido} />
           <div className="flex min-w-0 flex-col gap-1">
             {conteos.proveedoresPedido.map((p) => (

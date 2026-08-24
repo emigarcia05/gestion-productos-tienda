@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 interface Props {
   searchParams: Promise<{
+    generar?: string;
     origen?: string;
     destino?: string;
     q?: string;
@@ -29,6 +30,7 @@ export default async function TransfDepositosPage({ searchParams }: Props) {
   }
 
   const {
+    generar,
     origen,
     destino,
     q = "",
@@ -71,6 +73,7 @@ export default async function TransfDepositosPage({ searchParams }: Props) {
       marca={marca}
       rubro={rubro}
       paginaNum={paginaNum}
+      abrirGenerar={generar === "1"}
       paramsPagina={{
         origen: origenValido ?? "",
         destino: destinoValido ?? "",

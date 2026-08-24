@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
@@ -14,6 +14,7 @@ import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import { Button } from "@/components/ui/button";
 import { registrarTransferenciasDepositosAction } from "@/actions/stock";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
+import { avisarIndicadorSlidenav } from "@/lib/indicadorSlidenav";
 import { PAGE_SIZE } from "@/lib/pagination";
 import type { Sucursal, TransfDepositosData } from "@/actions/stock";
 
@@ -25,6 +26,7 @@ interface Props {
   marca: string;
   rubro: string;
   paginaNum: number;
+  abrirGenerar?: boolean;
   paramsPagina: Record<string, string>;
 }
 
@@ -42,13 +44,29 @@ export default function TransfDepositosPageClient({
   marca,
   rubro,
   paginaNum,
+  abrirGenerar = false,
   paramsPagina,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const tieneOrigen = origen !== null;
   const tablaRef = useRef<TablaTransfDepositosHandle>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  if (abrirGenerar && !modalOpen) {
+    setModalOpen(true);
+  }
+
+  useEffect(() => {
+    if (!abrirGenerar) return;
+    const p = new URLSearchParams();
+    for (const [clave, valor] of Object.entries(paramsPagina)) {
+      if (valor) p.set(clave, valor);
+    }
+    const query = p.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [abrirGenerar, paramsPagina, pathname, router]);
 
   const filters = (
     <FiltrosTransfDepositos
@@ -87,6 +105,7 @@ export default function TransfDepositosPageClient({
         return;
       }
       tablaRef.current?.clearCantidades();
+      avisarIndicadorSlidenav();
       setModalOpen(true);
     });
   }
@@ -136,7 +155,10 @@ export default function TransfDepositosPageClient({
         onOpenChange={setModalOpen}
         origenCodigo={origen}
         destinoCodigo={destino}
-        onTransferido={() => router.refresh()}
+        onTransferido={() => {
+          avisarIndicadorSlidenav();
+          router.refresh();
+        }}
       />
     </ClassicFilteredTableLayout>
   );

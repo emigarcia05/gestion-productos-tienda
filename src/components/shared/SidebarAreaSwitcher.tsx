@@ -16,8 +16,10 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AppModal from "@/components/shared/AppModal";
+import TransferenciaPendienteAvisoModal from "@/components/stock/TransferenciaPendienteAvisoModal";
 import { activarModoEditor } from "@/actions/sesion";
 import { listUsuariosParaInicioSesionAction } from "@/actions/globalPersonal";
+import { getIndicadorSlidenavAction } from "@/actions/stock";
 import {
   areaLabelMayusculas,
   getMainAppAreaById,
@@ -32,6 +34,7 @@ import {
   type UsuarioSesion,
 } from "@/lib/usuarioSesion";
 import { type SucursalPreferida } from "@/lib/sucursalPreferida";
+import { hrefAbrirGenerarTransfDepositos } from "@/lib/transfDepositosControl";
 import {
   puedeCambiarModulo,
   primerModuloPermitido,
@@ -80,6 +83,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   const [pendingUsuario, setPendingUsuario] = useState<UsuarioSesion | null>(null);
   const [pendingAreaId, setPendingAreaId] = useState<MainAppAreaId | null>(null);
   const [pending, startTransition] = useTransition();
+  const [transfPendienteOpen, setTransfPendienteOpen] = useState(false);
 
   const currentId = getMainAppAreaIdFromPathname(pathname);
   const puedeCambiar = usuarioSesion
@@ -119,7 +123,11 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     };
   }, [usuarioOpen]);
 
-  function persistirYNavegar(usuario: UsuarioSesion, areaId: MainAppAreaId) {
+  function persistirYNavegar(
+    usuario: UsuarioSesion,
+    areaId: MainAppAreaId,
+    avisarTransfPendiente = false
+  ) {
     guardarUsuarioSesion(usuario);
     setUsuarioSesion(usuario);
     setForceChoose(false);
@@ -130,6 +138,16 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
     setClaveOpen(false);
     setPendingUsuario(null);
     setPendingAreaId(null);
+    if (avisarTransfPendiente) {
+      void consultarYAvisarTransfPendiente(usuario.sucursalPorDefecto);
+    }
+  }
+
+  async function consultarYAvisarTransfPendiente(sucursal: SucursalPreferida) {
+    const res = await getIndicadorSlidenavAction({ sucursal });
+    if (res.ok && res.data.hayTransfOrigen) {
+      setTransfPendienteOpen(true);
+    }
   }
 
   function pedirClave(usuario: UsuarioSesion, areaId: MainAppAreaId) {
@@ -154,7 +172,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
       return;
     }
     startTransition(() => {
-      persistirYNavegar(usuario, destino);
+      persistirYNavegar(usuario, destino, true);
     });
   }
 
@@ -182,7 +200,7 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
         setError(res.error ?? "Error desconocido.");
         return;
       }
-      persistirYNavegar(pendingUsuario, pendingAreaId);
+      persistirYNavegar(pendingUsuario, pendingAreaId, true);
       router.refresh();
     });
   }
@@ -246,6 +264,13 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
   function abrirCambiarUsuario() {
     setUsuariosError("");
     setUsuarioOpen(true);
+  }
+
+  function handleTransferirAhora() {
+    setTransfPendienteOpen(false);
+    const origen =
+      usuarioSesion?.sucursalPorDefecto ?? sucursalSeleccionadaUsuario;
+    router.push(hrefAbrirGenerarTransfDepositos(origen));
   }
 
   return (
@@ -556,6 +581,12 @@ export default function SidebarAreaSwitcher({ rolActual }: Props) {
           </div>
         </AppModal>
       </Dialog>
+
+      <TransferenciaPendienteAvisoModal
+        open={transfPendienteOpen}
+        onOpenChange={setTransfPendienteOpen}
+        onTransferirAhora={handleTransferirAhora}
+      />
     </>
   );
 }
