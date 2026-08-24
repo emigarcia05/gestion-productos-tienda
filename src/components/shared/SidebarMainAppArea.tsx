@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  getIndicadorSlidenavAction,
+  EVENTO_INDICADOR_SLIDENAV,
+  INDICADOR_SLIDENAV_VACIO,
+  fetchIndicadorSlidenav,
   type IndicadorSlidenavDto,
   type IndicadorSlidenavProveedorPedidoDto,
-} from "@/actions/stock";
-import { EVENTO_INDICADOR_SLIDENAV } from "@/lib/indicadorSlidenav";
+} from "@/lib/indicadorSlidenav";
 import {
   EVENTO_SUCURSAL_PREFERIDA,
   leerSucursalPreferida,
@@ -27,13 +28,8 @@ export interface SidebarMainAppAreaProps {
   className?: string;
 }
 
-const VACIO: IndicadorSlidenavDto = {
-  urgente: 0,
-  tintometrico: 0,
-  reposicion: 0,
-  proveedoresPedido: [],
-  hayTransfOrigen: false,
-};
+/** Generar Pedido es lento; no competir con Elegir Usuario / aviso de transf. */
+const DELAY_PEDIDOS_MS = 2500;
 
 function FilaDetalle({
   label,
@@ -132,51 +128,86 @@ function BotonCategoriaPendiente({
  * es SUC. ORIGEN. Click **PEDIDO** → Generar Pedido; **TRANSF.** → Generar Transf.
  */
 export default function SidebarMainAppArea({ className }: SidebarMainAppAreaProps) {
-  const pathname = usePathname();
   const router = useRouter();
-  const [conteos, setConteos] = useState<IndicadorSlidenavDto>(VACIO);
+  const [conteos, setConteos] = useState<IndicadorSlidenavDto>(() => ({
+    ...INDICADOR_SLIDENAV_VACIO,
+  }));
   const [detalleOpen, setDetalleOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    let pedidosTimer: ReturnType<typeof setTimeout> | null = null;
+    const abortTransf = new AbortController();
+    let abortPedidos: AbortController | null = null;
 
-    async function cargar() {
+    async function cargarTransf() {
       const sucursal = leerSucursalPreferida();
       if (!sucursal) {
-        if (!cancelled) setConteos(VACIO);
+        if (!cancelled) setConteos({ ...INDICADOR_SLIDENAV_VACIO });
         return;
       }
-      const res = await getIndicadorSlidenavAction({ sucursal });
-      if (cancelled) return;
-      setConteos(res.ok ? res.data : VACIO);
+      const data = await fetchIndicadorSlidenav(
+        sucursal,
+        "transf",
+        abortTransf.signal
+      );
+      if (cancelled || !data) return;
+      setConteos((prev) => ({ ...prev, hayTransfOrigen: data.hayTransfOrigen }));
     }
 
-    function onRefresh() {
-      void cargar();
+    async function cargarPedidos(signal: AbortSignal) {
+      const sucursal = leerSucursalPreferida();
+      if (!sucursal) {
+        if (!cancelled) setConteos({ ...INDICADOR_SLIDENAV_VACIO });
+        return;
+      }
+      const data = await fetchIndicadorSlidenav(sucursal, "completo", signal);
+      if (cancelled || !data) return;
+      setConteos(data);
+    }
+
+    function schedulePedidos() {
+      if (pedidosTimer != null) window.clearTimeout(pedidosTimer);
+      abortPedidos?.abort();
+      abortPedidos = new AbortController();
+      const signal = abortPedidos.signal;
+      pedidosTimer = window.setTimeout(() => {
+        void cargarPedidos(signal);
+      }, DELAY_PEDIDOS_MS);
+    }
+
+    function onSucursalOVisible() {
+      void cargarTransf();
+      schedulePedidos();
     }
 
     function onVisible() {
-      if (document.visibilityState === "visible") void cargar();
+      if (document.visibilityState === "visible") onSucursalOVisible();
     }
 
-    void cargar();
-    window.addEventListener("focus", onRefresh);
-    window.addEventListener(EVENTO_SUCURSAL_PREFERIDA, onRefresh);
-    window.addEventListener(EVENTO_INDICADOR_SLIDENAV, onRefresh);
+    void cargarTransf();
+    schedulePedidos();
+    window.addEventListener("focus", onSucursalOVisible);
+    window.addEventListener(EVENTO_SUCURSAL_PREFERIDA, onSucursalOVisible);
+    window.addEventListener(EVENTO_INDICADOR_SLIDENAV, onSucursalOVisible);
     document.addEventListener("visibilitychange", onVisible);
     const id = window.setInterval(() => {
-      void cargar();
+      void cargarTransf();
+      schedulePedidos();
     }, 30_000);
 
     return () => {
       cancelled = true;
-      window.removeEventListener("focus", onRefresh);
-      window.removeEventListener(EVENTO_SUCURSAL_PREFERIDA, onRefresh);
-      window.removeEventListener(EVENTO_INDICADOR_SLIDENAV, onRefresh);
+      abortTransf.abort();
+      abortPedidos?.abort();
+      if (pedidosTimer != null) window.clearTimeout(pedidosTimer);
+      window.removeEventListener("focus", onSucursalOVisible);
+      window.removeEventListener(EVENTO_SUCURSAL_PREFERIDA, onSucursalOVisible);
+      window.removeEventListener(EVENTO_INDICADOR_SLIDENAV, onSucursalOVisible);
       document.removeEventListener("visibilitychange", onVisible);
       window.clearInterval(id);
     };
-  }, [pathname]);
+  }, []);
 
   const hayPedidoPendiente = conteos.proveedoresPedido.length > 0;
   const hayTransfPendiente = conteos.hayTransfOrigen;

@@ -508,78 +508,10 @@ export async function marcarTransferidoTransfDepositosAction(
   return { ok: true, data: result.data };
 }
 
-export type IndicadorSlidenavProveedorPedidoDto = {
-  proveedorId: string;
-  proveedor: string;
-  urgente: number;
-  tintometrico: number;
-  reposicion: number;
-};
-
-export type IndicadorSlidenavDto = {
-  urgente: number;
-  tintometrico: number;
-  reposicion: number;
-  proveedoresPedido: IndicadorSlidenavProveedorPedidoDto[];
-  /** Transferencias en `stock_trasn_depositos` con esta sucursal como origen. */
-  hayTransfOrigen: boolean;
-};
-
-const PEDIDOS_SLIDENAV_VACIO: {
-  urgente: number;
-  tintometrico: number;
-  reposicion: number;
-  proveedores: IndicadorSlidenavProveedorPedidoDto[];
-} = {
-  urgente: 0,
-  tintometrico: 0,
-  reposicion: 0,
-  proveedores: [],
-};
-
-/**
- * Conteos del indicador de slidenav: pedidos (Generar Pedido, por proveedor)
- * y transferencias pendientes como SUC. ORIGEN.
- */
-export async function getIndicadorSlidenavAction(
-  raw: unknown
-): Promise<ActionResult<IndicadorSlidenavDto>> {
-  const rol = await getRol();
-  const parsed = conteosIndicadorSlidenavSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, error: "Datos inválidos." };
-  }
-  const sucursal = parsed.data.sucursal;
-  try {
-    const pedidosPromise = puede(rol, PERMISOS.pedidos.acceso)
-      ? import("@/services/pedidosEnvio.service").then((m) =>
-          m.contarItemsPedidoPorTipoParaSlidenav(sucursal)
-        )
-      : Promise.resolve(PEDIDOS_SLIDENAV_VACIO);
-    const transfPromise = puede(rol, PERMISOS.stock.acceso)
-      ? import("@/services/transfDepositos.service").then((m) =>
-          m.hayPendientesTransfDepositosComoOrigen(sucursal)
-        )
-      : Promise.resolve(false);
-    const [pedidos, hayTransfOrigen] = await Promise.all([
-      pedidosPromise,
-      transfPromise,
-    ]);
-    return {
-      ok: true,
-      data: {
-        urgente: pedidos.urgente,
-        tintometrico: pedidos.tintometrico,
-        reposicion: pedidos.reposicion,
-        proveedoresPedido: pedidos.proveedores,
-        hayTransfOrigen,
-      },
-    };
-  } catch (e) {
-    console.error("[getIndicadorSlidenavAction]", e);
-    return { ok: false, error: "Error al cargar indicador." };
-  }
-}
+export type {
+  IndicadorSlidenavDto,
+  IndicadorSlidenavProveedorPedidoDto,
+} from "@/lib/indicadorSlidenav";
 
 /**
  * Chequeo liviano para el aviso al login: ¿hay filas en `stock_trasn_depositos`

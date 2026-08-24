@@ -33,6 +33,24 @@ export const conteosIndicadorSlidenavSchema = z.object({
   sucursal: sucursalCodigoSchema,
 });
 
+export const indicadorSlidenavParteSchema = z.enum(["transf", "completo"]).default("completo");
+
+export const indicadorSlidenavProveedorPedidoDtoSchema = z.object({
+  proveedorId: z.string(),
+  proveedor: z.string(),
+  urgente: z.number(),
+  tintometrico: z.number(),
+  reposicion: z.number(),
+});
+
+export const indicadorSlidenavDtoSchema = z.object({
+  urgente: z.number(),
+  tintometrico: z.number(),
+  reposicion: z.number(),
+  proveedoresPedido: z.array(indicadorSlidenavProveedorPedidoDtoSchema),
+  hayTransfOrigen: z.boolean(),
+});
+
 export const parSucursalesTransfDepositosSchema = z
   .object({
     sucOrigenId: globalSucursalIdSchema,

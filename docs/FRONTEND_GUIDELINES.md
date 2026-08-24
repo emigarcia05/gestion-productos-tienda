@@ -95,7 +95,7 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 | Tabla + filtros + selección | `ModalTablaConFiltros` (`single` / `singleConfirm` / `multi` / `multiQuantity`) |
 | Tabla de selección “vieja” ya migrada | Preferir `ModalTablaConFiltros` o `AppModal`; `modal-app` BEM sigue en call sites existentes (`SeleccionarProductoModal`) |
 
-`AppModal`: `size` `sm|md|lg|xl` (md = `max-w-lg`), `padding`, `scrollBody` (default true), `hideBodyScrollbars`, `bodyShellClassName`. Tabla + pie fijo: tabla `flex-1 min-h-0`; no `h-0`. Wizard Envios · Nuevo Envío: `size="xl"` `h-[85vh]`.
+`AppModal`: `size` `sm|md|lg|xl` (md = `max-w-lg`), `padding`, `scrollBody` (default true), `hideBodyScrollbars`, `bodyShellClassName`. Tabla + pie fijo: tabla `flex-1 min-h-0`; no `h-0`. Wizard Envios · Nuevo Envío: `size="xl"` `h-[85vh]`. No apilar dos `Dialog` a la vez: el aviso **Transferencia Pendiente!** espera a que **Elegir Usuario** cierre (~450 ms) y usa un evento de ventana si hay navegación.
 
 ### 1.5 Finder
 
@@ -121,7 +121,7 @@ SSOT: `src/lib/main-app-areas.ts`, `administracionNav.ts`, `marketingRoutes.ts`,
 
 **Excepción Envios · Conductor:** `AppShell` no monta el slidenav (`esRutaEnviosConductor`). El modal **Elegir Usuario** vive en el dock; al abrir Conductor directo (`/gestion-productos/envios/conductor`) no se pide usuario. El resto de la app sigue pidiéndolo.
 
-**Pendientes:** badge = categorías con pendiente (Pedido y/o Transf., 0–2). Hover o click abre detalle. **Transf.:** si la sucursal del usuario es **SUC. ORIGEN** en `stock_trasn_depositos`; click → Trans. Depósitos con **Generar Transf.** abierto (`?generar=1`). **Pedido:** solo proveedores con ítems pendientes (misma resolución que Generar Pedido) y `global_proveedores.es_fabrica = false`; hover o foco en el nombre muestra Urgente / Tintométrico / Reposición (los tres tipos, aunque el conteo sea 0). Click **PEDIDO** → Generar Pedido. Al **iniciar sesión** (elegir usuario), si hay Transf. pendiente se abre `TransferenciaPendienteAvisoModal` (**Transferencia Pendiente!** / **Transferir Ahora**) con un `COUNT` liviano (`hayPendientesTransfOrigenAction`), sin bloquear el cierre de **Elegir Usuario**. No modal al entrar a Stock.
+**Pendientes:** badge = categorías con pendiente (Pedido y/o Transf., 0–2). Hover o click abre detalle. **Transf.:** si la sucursal del usuario es **SUC. ORIGEN** en `stock_trasn_depositos`; click → Trans. Depósitos con **Generar Transf.** abierto (`?generar=1`). **Pedido:** solo proveedores con ítems pendientes (misma resolución que Generar Pedido) y `global_proveedores.es_fabrica = false`; hover o foco en el nombre muestra Urgente / Tintométrico / Reposición (los tres tipos, aunque el conteo sea 0). Click **PEDIDO** → Generar Pedido. Al **iniciar sesión** (elegir usuario) el picker y el aviso **no** pasan por Server Action del indicador: `GET /api/indicador-slidenav` (`parte=transf` al toque; `completo` a los 2,5 s). Next serializaba `getIndicadorSlidenavAction` (Generar Pedido ~10 s) y trababa **Elegir Usuario** + el COUNT del aviso; Radix no muestra un segundo modal si el primero sigue animando o si `router.push` desmonta el switcher. El aviso usa flag `sessionStorage` + `EVENTO_AVISO_TRANSF_PENDIENTE` y se abre ~450 ms después de cerrar **Elegir Usuario**. No modal al entrar a Stock.
 
 ### 1.7 URLs
 

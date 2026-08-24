@@ -20,7 +20,7 @@ export default function TransferenciaPendienteAvisoModal({
   onTransferirAhora,
 }: Props) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal>
       <AppModal
         size="sm"
         title="Transferencia Pendiente!"
