@@ -12,3 +12,7 @@ export const SUCURSAL_LABEL_TRANSF: Record<"guaymallen" | "maipu", string> = {
   guaymallen: "GUAYMALLÉN",
   maipu: "MAIPÚ",
 };
+
+/** Transferencia de depósitos en DUX (abre en pestaña nueva). */
+export const DUX_TRANSFERENCIA_DEPOSITOS_URL =
+  "https://erp.duxsoftware.com.ar/pages/deposito/transferenciaDep.faces";

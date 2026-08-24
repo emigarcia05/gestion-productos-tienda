@@ -431,6 +431,7 @@ export type SucursalTransfDepositoOptionDto = {
   id: string;
   codigo: string;
   nombre: string;
+  tieneDeposito: boolean;
 };
 
 export type PendienteTransfDepositoItemDto = {

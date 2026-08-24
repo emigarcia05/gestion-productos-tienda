@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -21,10 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  FiltroIndividualContainer,
-  SELECT_TRIGGER_FILTER_CLASS,
-} from "@/components/FilterBar";
+import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import {
   listarPendientesTransfDepositosAction,
   listarSucursalesTransfDepositosAction,
@@ -34,6 +32,12 @@ import {
   type SucursalTransfDepositoOptionDto,
 } from "@/actions/stock";
 import { fmtNumero } from "@/lib/format";
+import { DUX_TRANSFERENCIA_DEPOSITOS_URL } from "@/lib/transfDepositosControl";
+import {
+  TABLE_ROW_ACTION_ICON_CLASS,
+  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+} from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -47,9 +51,10 @@ interface Props {
 }
 
 /**
- * Modal **Generar Transf.**: origen = sucursal del usuario;
- * selector de destino (`global_sucursales`); tabla COD. TIENDA /
- * DESCRIPCIÓN TIENDA / CANTIDAD A TRANSFERIR; **Transferido** borra el lote.
+ * Modal **Generar Transf.**: dos selectores **SUC. ORIGEN** (sucursal del usuario)
+ * y **SUC. DESTINO** (`global_sucursales` distintas, con `deposito` no vacío);
+ * tabla COD. TIENDA / DESCRIPCIÓN TIENDA / CANTIDAD A TRANSFERIR / ACCIONES (OK);
+ * checklist local hasta **Transferido**, que borra el lote. **Comenzar Transferencia** abre DUX en pestaña nueva.
  */
 export default function GenerarTransfDepositosModal({
   open,
@@ -64,12 +69,22 @@ export default function GenerarTransfDepositosModal({
   const [sucOrigenId, setSucOrigenId] = useState<string | null>(null);
   const [sucDestinoId, setSucDestinoId] = useState<string | null>(null);
   const [items, setItems] = useState<PendienteTransfDepositoItemDto[]>([]);
+  const [okPorCodTienda, setOkPorCodTienda] = useState<Record<string, boolean>>(
+    {}
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const origenes = useMemo(() => {
+    return sucursales.filter(
+      (s) => s.tieneDeposito || s.codigo === origenCodigo
+    );
+  }, [sucursales, origenCodigo]);
+
   const destinos = useMemo(
-    () => sucursales.filter((s) => s.id !== sucOrigenId),
+    () =>
+      sucursales.filter((s) => s.tieneDeposito && s.id !== sucOrigenId),
     [sucursales, sucOrigenId]
   );
 
@@ -82,10 +97,12 @@ export default function GenerarTransfDepositosModal({
       if (!res.ok) {
         setError(res.error);
         setItems([]);
+        setOkPorCodTienda({});
         return;
       }
       setError(null);
       setItems(res.data);
+      setOkPorCodTienda({});
     },
     []
   );
@@ -98,6 +115,7 @@ export default function GenerarTransfDepositosModal({
       setLoading(true);
       setError(null);
       setItems([]);
+      setOkPorCodTienda({});
       setSucOrigenId(null);
       setSucDestinoId(null);
     });
@@ -121,8 +139,13 @@ export default function GenerarTransfDepositosModal({
       }
       setSucOrigenId(origen.id);
       const destinoPre =
-        destinoCodigo && destinoCodigo !== origenCodigo
-          ? res.data.find((s) => s.codigo === destinoCodigo)
+        destinoCodigo && destinoCodigo !== origen.codigo
+          ? res.data.find(
+              (s) =>
+                s.codigo === destinoCodigo &&
+                s.tieneDeposito &&
+                s.id !== origen.id
+            )
           : undefined;
       if (destinoPre) {
         setSucDestinoId(destinoPre.id);
@@ -136,11 +159,21 @@ export default function GenerarTransfDepositosModal({
     };
   }, [open, origenCodigo, destinoCodigo, cargarItems]);
 
+  function handleOrigenChange(value: string) {
+    const next = value === "none" ? null : value;
+    setSucOrigenId(next);
+    setSucDestinoId(null);
+    setItems([]);
+    setOkPorCodTienda({});
+    setError(null);
+  }
+
   function handleDestinoChange(value: string) {
     const next = value === "none" ? null : value;
     setSucDestinoId(next);
     if (!sucOrigenId || !next) {
       setItems([]);
+      setOkPorCodTienda({});
       setError(null);
       return;
     }
@@ -149,6 +182,10 @@ export default function GenerarTransfDepositosModal({
       await cargarItems(sucOrigenId, next);
       setLoading(false);
     });
+  }
+
+  function handleOkItem(codTienda: string) {
+    setOkPorCodTienda((prev) => ({ ...prev, [codTienda]: true }));
   }
 
   function handleTransferido() {
@@ -166,13 +203,19 @@ export default function GenerarTransfDepositosModal({
         `${res.data.borrados} transferencia${res.data.borrados !== 1 ? "s" : ""} marcada${res.data.borrados !== 1 ? "s" : ""} como transferida${res.data.borrados !== 1 ? "s" : ""}.`
       );
       setItems([]);
+      setOkPorCodTienda({});
       onTransferido?.();
       onOpenChange(false);
     });
   }
 
+  const todosOk =
+    items.length > 0 && items.every((item) => okPorCodTienda[item.codTienda] === true);
   const puedeMarcar =
-    sucOrigenId !== null && sucDestinoId !== null && items.length > 0 && !loading;
+    sucOrigenId !== null &&
+    sucDestinoId !== null &&
+    todosOk &&
+    !loading;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -200,13 +243,47 @@ export default function GenerarTransfDepositosModal({
           </>
         }
       >
-        <div className="space-y-2">
-          <ModalMicroLabel align="center">SUCURSAL DESTINO</ModalMicroLabel>
-          <FiltroIndividualContainer
-            className="w-full"
-            activo={sucDestinoId !== null}
-            onLimpiar={() => handleDestinoChange("none")}
+        <Button asChild className="w-full">
+          <a
+            href={DUX_TRANSFERENCIA_DEPOSITOS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
           >
+            Comenzar Transferencia
+          </a>
+        </Button>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <ModalMicroLabel align="center">SUC. ORIGEN</ModalMicroLabel>
+            <Select
+              value={sucOrigenId ?? "none"}
+              onValueChange={handleOrigenChange}
+              disabled={isPending}
+            >
+              <SelectTrigger
+                id="filtro-transf-origen-modal"
+                className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
+                aria-label="Sucursal origen"
+              >
+                <SelectValue placeholder="SUC. ORIGEN" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                align="start"
+                className="select-content-filtro"
+              >
+                <SelectItem value="none">SUC. ORIGEN</SelectItem>
+                {origenes.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.nombre.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex min-w-0 flex-col gap-1">
+            <ModalMicroLabel align="center">SUC. DESTINO</ModalMicroLabel>
             <Select
               value={sucDestinoId ?? "none"}
               onValueChange={handleDestinoChange}
@@ -217,7 +294,7 @@ export default function GenerarTransfDepositosModal({
                 className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
                 aria-label="Sucursal destino"
               >
-                <SelectValue placeholder="SUCURSAL DESTINO" />
+                <SelectValue placeholder="SUC. DESTINO" />
               </SelectTrigger>
               <SelectContent
                 position="popper"
@@ -225,7 +302,7 @@ export default function GenerarTransfDepositosModal({
                 align="start"
                 className="select-content-filtro"
               >
-                <SelectItem value="none">SUCURSAL DESTINO</SelectItem>
+                <SelectItem value="none">SUC. DESTINO</SelectItem>
                 {destinos.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.nombre.toUpperCase()}
@@ -233,7 +310,7 @@ export default function GenerarTransfDepositosModal({
                 ))}
               </SelectContent>
             </Select>
-          </FiltroIndividualContainer>
+          </div>
         </div>
 
         {loading ? (
@@ -260,28 +337,62 @@ export default function GenerarTransfDepositosModal({
         ) : null}
 
         {!loading && !error && items.length > 0 ? (
-          <Table variant="compact">
+          <Table variant="compact" className="tabla-recepcion-pedido">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[22%]">COD. TIENDA</TableHead>
-                <TableHead className="w-[56%]">DESCRIPCIÓN TIENDA</TableHead>
-                <TableHead className="w-[22%] text-center">
+                <TableHead className="w-[20%]">COD. TIENDA</TableHead>
+                <TableHead className="w-[48%]">DESCRIPCIÓN TIENDA</TableHead>
+                <TableHead className="w-[18%] text-center">
                   CANTIDAD A TRANSFERIR
+                </TableHead>
+                <TableHead className="w-[14%] text-center">
+                  <Check className="mx-auto h-4 w-4" aria-hidden />
+                  <span className="sr-only">OK</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.codTienda}>
-                  <TableCell className="celda-datos">{item.codTienda}</TableCell>
-                  <TableCell className="celda-datos">
-                    {item.descripcionTienda}
-                  </TableCell>
-                  <TableCell className="celda-datos text-center tabular-nums">
-                    {fmtNumero(item.cantidad)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {items.map((item) => {
+                const ok = okPorCodTienda[item.codTienda] === true;
+                return (
+                  <TableRow
+                    key={item.codTienda}
+                    className={cn(
+                      "transition-colors duration-100",
+                      ok
+                        ? "recepcion-fila-verificada cursor-not-allowed"
+                        : "recepcion-fila-pendiente"
+                    )}
+                  >
+                    <TableCell className="celda-datos">{item.codTienda}</TableCell>
+                    <TableCell className="celda-datos">
+                      {item.descripcionTienda}
+                    </TableCell>
+                    <TableCell className="celda-datos text-center tabular-nums">
+                      {fmtNumero(item.cantidad)}
+                    </TableCell>
+                    <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                      <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOkItem(item.codTienda)}
+                          disabled={ok || isPending}
+                          className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                          aria-label="OK"
+                          title="OK"
+                        >
+                          <Check
+                            className={TABLE_ROW_ACTION_ICON_CLASS}
+                            aria-hidden
+                          />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         ) : null}

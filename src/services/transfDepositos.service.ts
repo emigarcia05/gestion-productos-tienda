@@ -206,6 +206,8 @@ export type SucursalTransfDepositoOption = {
   id: string;
   codigo: string;
   nombre: string;
+  /** `global_sucursales.deposito` no vacío (trim). */
+  tieneDeposito: boolean;
 };
 
 export type PendienteTransfDepositoItem = {
@@ -214,19 +216,20 @@ export type PendienteTransfDepositoItem = {
   cantidad: number;
 };
 
-/** Sucursales de `global_sucursales` para el selector de destino. */
+/** Sucursales de `global_sucursales` para selectores origen/destino. */
 export async function listarSucursalesTransfDepositos(): Promise<
   SucursalTransfDepositoOption[]
 > {
   try {
     const rows = await prisma.sucursal.findMany({
-      select: { id: true, codigo: true, nombre: true },
+      select: { id: true, codigo: true, nombre: true, deposito: true },
       orderBy: { nombre: "asc" },
     });
     return rows.map((r) => ({
       id: r.id,
       codigo: r.codigo,
       nombre: r.nombre,
+      tieneDeposito: (r.deposito ?? "").trim() !== "",
     }));
   } catch (e) {
     console.error("[listarSucursalesTransfDepositos]", e);
@@ -243,10 +246,17 @@ async function validarParSucursales(
   }
   const rows = await prisma.sucursal.findMany({
     where: { id: { in: [sucOrigenId, sucDestinoId] } },
-    select: { id: true },
+    select: { id: true, deposito: true },
   });
   if (rows.length !== 2) {
     return { success: false, error: "Sucursal origen o destino no encontrada." };
+  }
+  const destino = rows.find((r) => r.id === sucDestinoId);
+  if (!destino || (destino.deposito ?? "").trim() === "") {
+    return {
+      success: false,
+      error: "La sucursal destino no tiene depósito.",
+    };
   }
   return { success: true, data: undefined };
 }
