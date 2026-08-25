@@ -1,3 +1,4 @@
+import { DUX_BASE_URL } from "@/lib/duxApi";
 import { getDuxIdEmpresaCompras } from "@/lib/duxComprasV2Api";
 import { DUX_API_BATCH_INTERVAL_MS } from "@/lib/duxApiBatchPolicy";
 
@@ -18,6 +19,9 @@ export type DuxPutItemResult = {
 export type DuxV2ItemStock = {
   id: number;
   stockDisponible: number | null;
+  idDetItem: number | null;
+  talle: string | null;
+  color: string | null;
 };
 
 export type DuxV2ItemPrecio = {
@@ -39,6 +43,9 @@ export type DuxV2ItemFicha = {
   codigosBarra: string[];
   precios: DuxV2ItemPrecio[];
   stock: DuxV2ItemStock[];
+  tipoProducto: string | null;
+  idUnidadMedida: number | null;
+  idMoneda: number | null;
 };
 
 /** Body PUT WSERP: camelCase (Jackson). Snake_case llega todo null. */
@@ -52,10 +59,11 @@ export type DuxV2GuardarItemRequest = {
   costoCompra: number;
   idUnidadMedida: number;
   sucursalesHabilitadas: { idSucursal: number }[];
-  stock: {
+  /** Contrato [V2ItemStockRequest](https://duxsoftware.readme.io/reference/actualizar_item): solo depósito + cantidades. */
+  stock: Array<{
     idDeposito: number;
     ctdDisponible: number;
-  }[];
+  }>;
 };
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -182,7 +190,9 @@ function parseStockArray(raw: unknown): DuxV2ItemStock[] {
   const out: DuxV2ItemStock[] = [];
   for (const row of raw) {
     if (!isRecord(row)) continue;
-    const id = asFiniteNumber(pick(row, ["id", "idDeposito", "id_deposito"]));
+    const id =
+      asFiniteNumber(pick(row, ["id_deposito", "idDeposito"])) ??
+      asFiniteNumber(pick(row, ["id"]));
     if (id == null) continue;
     out.push({
       id,
@@ -194,6 +204,9 @@ function parseStockArray(raw: unknown): DuxV2ItemStock[] {
           "ctdDisponible",
         ])
       ),
+      idDetItem: asFiniteNumber(pick(row, ["id_det_item", "idDetItem"])),
+      talle: asString(pick(row, ["talle"])),
+      color: asString(pick(row, ["color"])),
     });
   }
   return out;
@@ -231,6 +244,20 @@ function parseCodigosBarra(raw: unknown): string[] {
   return out;
 }
 
+function itemsArrayDesdeLista(parsed: unknown): unknown[] {
+  if (!isRecord(parsed)) return [];
+  if (Array.isArray(parsed.results)) return parsed.results;
+  if (Array.isArray(parsed.datos)) return parsed.datos;
+  if (Array.isArray(parsed.data)) return parsed.data;
+  return [];
+}
+
+function itemTieneVariantes(stock: DuxV2ItemStock[]): boolean {
+  return stock.some(
+    (row) => row.talle != null || row.color != null || row.idDetItem != null
+  );
+}
+
 function parseFichaItemV2(raw: unknown): DuxV2ItemFicha | null {
   if (!isRecord(raw)) return null;
   const codItem = asString(pick(raw, ["cod_item", "codItem"]));
@@ -263,56 +290,41 @@ function parseFichaItemV2(raw: unknown): DuxV2ItemFicha | null {
     ),
     precios: parsePreciosArray(raw.precios),
     stock: parseStockArray(raw.stock),
+    tipoProducto: asString(pick(raw, ["tipo_producto", "tipoProducto"])),
+    idUnidadMedida: asFiniteNumber(
+      pick(raw, ["id_unidad_medida", "idUnidadMedida"])
+    ),
+    idMoneda: asFiniteNumber(pick(raw, ["id_moneda", "idMoneda"])),
   };
 }
 
-/**
- * GET `/v2/items?cod_item=` — ficha actual (no envía id_empresa; WSERP no filtra por empresa).
- * Contrato: https://duxsoftware.readme.io/reference/listar_items
- */
-export async function getItemV2PorCod(
-  codItem: string
-): Promise<
+type GetItemResult =
   | { ok: true; ficha: DuxV2ItemFicha }
-  | { ok: false; httpStatus: number; respuesta: string }
-> {
-  const token = getDuxApiToken();
-  const url =
-    `${DUX_ITEMS_V2_BASE_URL}?cod_item=${encodeURIComponent(codItem)}` +
-    `&limit=1&offset=0`;
-  const res = await duxItemsV2Fetch(url, {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (!res.ok) {
+  | { ok: false; httpStatus: number; respuesta: string };
+
+function fichaDesdeRespuestaGet(
+  status: number,
+  text: string,
+  codItem: string
+): GetItemResult {
+  if (status < 200 || status >= 300) {
     return {
       ok: false,
-      httpStatus: res.status,
-      respuesta: formatDuxItemsV2Error(res.status, res.text),
+      httpStatus: status,
+      respuesta: formatDuxItemsV2Error(status, text),
     };
   }
   let parsed: unknown = {};
   try {
-    parsed = res.text.trim() ? JSON.parse(res.text) : {};
+    parsed = text.trim() ? JSON.parse(text) : {};
   } catch {
     return {
       ok: false,
-      httpStatus: res.status,
+      httpStatus: status,
       respuesta: "Respuesta GET DUX no es JSON.",
     };
   }
-  const datos = isRecord(parsed)
-    ? Array.isArray(parsed.datos)
-      ? parsed.datos
-      : Array.isArray(parsed.data)
-        ? parsed.data
-        : Array.isArray(parsed.results)
-          ? parsed.results
-          : []
-    : [];
+  const datos = itemsArrayDesdeLista(parsed);
   const ficha = datos.length > 0 ? parseFichaItemV2(datos[0]) : null;
   if (!ficha) {
     return {
@@ -324,6 +336,68 @@ export async function getItemV2PorCod(
   return { ok: true, ficha };
 }
 
+/**
+ * GET `/items?codigoItem=` — catálogo v1 (mismo que la sync). Auth **sin** Bearer.
+ * `stock[].id` es el depósito. Contrato: https://duxsoftware.readme.io/reference/consultar-items-1
+ */
+export async function getItemV1PorCodigo(codItem: string): Promise<GetItemResult> {
+  const token = getDuxApiToken();
+  const url =
+    `${DUX_BASE_URL}?codigoItem=${encodeURIComponent(codItem)}` +
+    `&limit=1&offset=0`;
+  const res = await duxItemsV2Fetch(url, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: token,
+    },
+  });
+  return fichaDesdeRespuestaGet(res.status, res.text, codItem);
+}
+
+/**
+ * GET `/v2/items?cod_item=` — ficha v2 (no envía id_empresa).
+ * Contrato: https://duxsoftware.readme.io/reference/listar_items
+ */
+export async function getItemV2PorCod(codItem: string): Promise<GetItemResult> {
+  const token = getDuxApiToken();
+  const url =
+    `${DUX_ITEMS_V2_BASE_URL}?cod_item=${encodeURIComponent(codItem)}` +
+    `&limit=1&offset=0`;
+  const res = await duxItemsV2Fetch(url, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return fichaDesdeRespuestaGet(res.status, res.text, codItem);
+}
+
+function armarFilasStockPut(
+  ficha: DuxV2ItemFicha,
+  idDeposito: number,
+  stockNuevo: number
+): { idDeposito: number; ctdDisponible: number }[] {
+  const seen = new Set<number>();
+  const out: { idDeposito: number; ctdDisponible: number }[] = [];
+  let matching = false;
+  for (const row of ficha.stock) {
+    if (seen.has(row.id)) continue;
+    seen.add(row.id);
+    const esDestino = row.id === idDeposito;
+    if (esDestino) matching = true;
+    out.push({
+      idDeposito: row.id,
+      ctdDisponible: esDestino ? stockNuevo : (row.stockDisponible ?? 0),
+    });
+  }
+  if (!matching) {
+    out.push({ idDeposito, ctdDisponible: stockNuevo });
+  }
+  return out;
+}
+
 export function armarBodyGuardarItemV2(input: {
   ficha: DuxV2ItemFicha;
   idPersonal: number;
@@ -332,30 +406,35 @@ export function armarBodyGuardarItemV2(input: {
   sucursalesHabilitadas: { idSucursal: number }[];
 }): DuxV2GuardarItemRequest {
   /**
-   * Solo lo que WSERP exige (ERROR_VALIDACION) + stock de UN depósito.
-   * No reenviar precios/códigos/rubro: en PUT suelen provocar 500 en WSERP.
+   * Campos Bean Validation (camelCase) + stock de **todos** los depósitos del GET.
+   * Solo se cambia `ctdDisponible` del depósito de la sucursal.
+   * No reenviar precios/códigos/rubro ni talle/color (no están en V2ItemStockRequest).
    */
+  const idUnidadMedida =
+    input.ficha.idUnidadMedida != null && input.ficha.idUnidadMedida > 0
+      ? input.ficha.idUnidadMedida
+      : getDuxIdUnidadMedida();
+  const idMoneda =
+    input.ficha.idMoneda != null && input.ficha.idMoneda > 0
+      ? input.ficha.idMoneda
+      : getDuxIdMoneda();
+  const tipoProducto = input.ficha.tipoProducto ?? getDuxTipoProducto();
   return {
     idPersonal: input.idPersonal,
-    tipoProducto: getDuxTipoProducto(),
+    tipoProducto,
     codItem: input.ficha.codItem,
     item: input.ficha.item,
-    idMoneda: getDuxIdMoneda(),
+    idMoneda,
     porcIva: input.ficha.porcIva,
     costoCompra: input.ficha.costo,
-    idUnidadMedida: getDuxIdUnidadMedida(),
+    idUnidadMedida,
     sucursalesHabilitadas: input.sucursalesHabilitadas,
-    stock: [
-      {
-        idDeposito: input.idDeposito,
-        ctdDisponible: input.stock,
-      },
-    ],
+    stock: armarFilasStockPut(input.ficha, input.idDeposito, input.stock),
   };
 }
 
 /**
- * PUT `/v2/items/{cod_item}?id_empresa=` — ficha completa en camelCase (WSERP/Jackson).
+ * PUT `/v2/items/{cod_item}?id_empresa=` — ficha en camelCase (WSERP/Jackson).
  * Contrato: https://duxsoftware.readme.io/reference/actualizar_item
  */
 export async function putItemV2(
@@ -380,7 +459,13 @@ export async function putItemV2(
     console.error(
       "[duxItemsV2][putItemV2]",
       res.status,
-      { codItem, tipoProducto: body.tipoProducto, idDeposito: body.stock[0]?.idDeposito },
+      {
+        codItem,
+        tipoProducto: body.tipoProducto,
+        idUnidadMedida: body.idUnidadMedida,
+        idMoneda: body.idMoneda,
+        depositos: body.stock.map((s) => s.idDeposito),
+      },
       res.text.slice(0, 400)
     );
   }
@@ -394,7 +479,8 @@ export async function putItemV2(
 }
 
 /**
- * Ajuste de stock: GET ficha → pausa rate limit → PUT camelCase con stock del depósito.
+ * Ajuste de stock: GET v1 (fallback v2) → pausa rate limit → PUT camelCase.
+ * Copia todos los depósitos; solo cambia el de la sucursal.
  */
 export async function putAjusteStockItemV2(input: {
   codItem: string;
@@ -403,12 +489,24 @@ export async function putAjusteStockItemV2(input: {
   idPersonal: number;
   sucursalesHabilitadas: { idSucursal: number }[];
 }): Promise<DuxPutItemResult> {
-  const got = await getItemV2PorCod(input.codItem);
+  let got = await getItemV1PorCodigo(input.codItem);
+  if (!got.ok) {
+    await sleep(DUX_API_BATCH_INTERVAL_MS);
+    got = await getItemV2PorCod(input.codItem);
+  }
   if (!got.ok) {
     return {
       httpStatus: got.httpStatus,
       ok: false,
       respuesta: got.respuesta,
+    };
+  }
+  if (itemTieneVariantes(got.ficha.stock)) {
+    return {
+      httpStatus: 400,
+      ok: false,
+      respuesta:
+        `Ítem ${input.codItem} tiene talle/color en DUX; el PUT de prueba solo cubre ítems SIMPLE.`,
     };
   }
   const body = armarBodyGuardarItemV2({

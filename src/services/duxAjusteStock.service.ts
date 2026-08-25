@@ -18,12 +18,13 @@ export function idDepositoDuxPorSucursal(
 
 async function sucursalesHabilitadasDux(): Promise<{ idSucursal: number }[]> {
   const rows = await prisma.sucursal.findMany({
-    where: { idDux: { not: null } },
-    select: { idDux: true },
+    where: { idDux: { not: null }, deposito: { not: null } },
+    select: { idDux: true, deposito: true },
   });
   const seen = new Set<number>();
   const out: { idSucursal: number }[] = [];
   for (const row of rows) {
+    if ((row.deposito ?? "").trim() === "") continue;
     const raw = (row.idDux ?? "").trim();
     if (!/^\d+$/.test(raw)) continue;
     const id = Number(raw);
