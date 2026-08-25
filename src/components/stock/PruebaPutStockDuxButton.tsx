@@ -44,31 +44,48 @@ export default function PruebaPutStockDuxButton({ tableRef, sucursal }: Props) {
     setLoading(true);
     let okCount = 0;
     let failCount = 0;
+    let sinImpacto = 0;
     try {
       for (let i = 0; i < filas.length; i++) {
         const fila = filas[i];
-        toast.message(`Ajustando stock DUX ${i + 1}/${filas.length}: ${fila.codItem}`);
+        toast.message(
+          `Ajustando stock DUX ${i + 1}/${filas.length}: ${fila.codItem} (PUT + GET de control)`
+        );
         const res = await probarPutAjusteStockDuxAction({
           sucursal,
           usuario: usuario.idPersonal,
           codTienda: fila.codItem,
           stock: fila.cantidad,
         });
-        if (res.ok) {
-          okCount += 1;
-        } else {
+        if (!res.ok) {
           failCount += 1;
           toast.error(`${fila.codItem}: ${res.error}`);
+        } else if (!res.data.impacto) {
+          sinImpacto += 1;
+          const leido = res.data.leido;
+          const leidoTxt =
+            leido == null
+              ? "GET no trajo el ítem"
+              : `GET ctd=${leido.ctdDisponible ?? "null"} stock_real=${leido.stockReal}`;
+          toast.error(
+            `${fila.codItem}: PUT ${res.data.httpStatus} dep ${res.data.enviado.idDeposito}=${res.data.enviado.ctdDisponible}. ${leidoTxt}. No impactó.`
+          );
+        } else {
+          okCount += 1;
+          const leido = res.data.leido;
+          toast.success(
+            `${fila.codItem}: DUX ahora ctd=${leido?.ctdDisponible ?? "?"} stock_real=${leido?.stockReal ?? "?"}`
+          );
         }
         if (i < filas.length - 1) {
           await sleep(DUX_API_BATCH_INTERVAL_MS);
         }
       }
-      if (failCount === 0) {
-        toast.success(`Prueba API PUT: ${okCount} ítem(s) aceptados por DUX.`);
+      if (failCount === 0 && sinImpacto === 0) {
+        toast.success(`Prueba API PUT: ${okCount} ítem(s) confirmados en GET DUX.`);
       } else {
         toast.error(
-          `Prueba API PUT: ${okCount} ok, ${failCount} error(es). Revisá el detalle.`
+          `Prueba API PUT: ${okCount} impactó, ${sinImpacto} sin cambio, ${failCount} error(es).`
         );
       }
     } finally {
@@ -89,7 +106,7 @@ export default function PruebaPutStockDuxButton({ tableRef, sucursal }: Props) {
         />
       </TooltipTrigger>
       <TooltipContent>
-        Ajusta en DUX el stock del depósito de la sucursal (solo ítems con variación)
+        PUT + GET de control: verifica si el depósito de la sucursal cambió en DUX
       </TooltipContent>
     </Tooltip>
   );

@@ -1,11 +1,13 @@
+import { DUX_API_BATCH_INTERVAL_MS } from "@/lib/duxApiBatchPolicy";
 import {
   getIdDepositoGuaymallen,
   getIdDepositoMaipu,
 } from "@/lib/duxApi";
 import {
   armarBodyGuardarItemV2,
+  getStockDepositoItemV1,
   putAjusteStockItemV2,
-  type DuxPutItemResult,
+  type DuxStockDepositoLeido,
 } from "@/lib/duxItemsV2Api";
 import { prisma } from "@/lib/prisma";
 import { obtenerIdDepositoPorCodigoSucursal } from "@/services/prodTiendaStock.service";
@@ -20,17 +22,35 @@ export async function idDepositoDuxPorSucursal(
     : getIdDepositoMaipu();
 }
 
+export type PruebaPutAjusteStockDuxDetalle = {
+  httpStatus: number;
+  ok: boolean;
+  respuesta: string;
+  enviado: { idDeposito: number; ctdDisponible: number };
+  leido: DuxStockDepositoLeido | null;
+  impacto: boolean;
+};
+
+function cantidadesCoinciden(enviada: number, leida: number | null): boolean {
+  if (leida == null || !Number.isFinite(leida)) return false;
+  return Math.abs(enviada - leida) < 0.0001;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 /**
- * PUT DUX v2 desde tablas locales: `id_personal` (slidenav), depósito de la sucursal,
- * `cod_item` + un solo `stock[]` con `ctd_disponible` = cantidad contada.
- * Ficha (`item`, `costo_compra`) desde `prod_tienda`.
+ * PUT DUX v2 desde tablas locales + GET v1 del mismo depósito para verificar impacto.
  */
 export async function enviarPruebaPutAjusteStockDux(input: {
   sucursal: "guaymallen" | "maipu";
   usuario: number;
   codTienda: string;
   stock: number;
-}): Promise<DuxPutItemResult> {
+}): Promise<PruebaPutAjusteStockDuxDetalle> {
   const personal = await prisma.globalPersonal.findUnique({
     where: { idPersonal: input.usuario },
     select: { idPersonal: true, nombrePersonal: true },
@@ -84,5 +104,39 @@ export async function enviarPruebaPutAjusteStockDux(input: {
     stock: body.stock,
   });
 
-  return putAjusteStockItemV2(body);
+  const put = await putAjusteStockItemV2(body);
+  const enviado = { idDeposito, ctdDisponible: input.stock };
+  if (!put.ok) {
+    return {
+      httpStatus: put.httpStatus,
+      ok: false,
+      respuesta: put.respuesta,
+      enviado,
+      leido: null,
+      impacto: false,
+    };
+  }
+
+  await sleep(DUX_API_BATCH_INTERVAL_MS);
+  const leido = await getStockDepositoItemV1(prod.codTienda, idDeposito);
+  const impacto =
+    leido != null &&
+    (cantidadesCoinciden(input.stock, leido.ctdDisponible) ||
+      cantidadesCoinciden(input.stock, leido.stockReal));
+
+  console.info("[duxAjusteStock] GET verificación", {
+    codItem: prod.codTienda,
+    enviado,
+    leido,
+    impacto,
+  });
+
+  return {
+    httpStatus: put.httpStatus,
+    ok: true,
+    respuesta: put.respuesta,
+    enviado,
+    leido,
+    impacto,
+  };
 }

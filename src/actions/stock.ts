@@ -575,11 +575,13 @@ export async function registrarExportacionExcelStock(ids: string[]): Promise<Act
 export type PruebaPutAjusteStockDuxResult = {
   httpStatus: number;
   respuesta: string;
+  enviado: { idDeposito: number; ctdDisponible: number };
+  leido: { ctdDisponible: number | null; stockReal: number } | null;
+  impacto: boolean;
 };
 
 /**
- * Prueba PUT DUX v2: un ítem con variación. El body se arma en el servicio
- * desde `prod_tienda` / `prod_tienda_stock` / `global_personal` / sucursal.
+ * Prueba PUT DUX v2 + GET v1 de verificación (mismo depósito).
  * No persiste ÚLT. CONTROL (eso sigue en Exportar Excel).
  */
 export async function probarPutAjusteStockDuxAction(
@@ -604,7 +606,13 @@ export async function probarPutAjusteStockDuxAction(
     }
     return {
       ok: true,
-      data: { httpStatus: res.httpStatus, respuesta: res.respuesta },
+      data: {
+        httpStatus: res.httpStatus,
+        respuesta: res.respuesta,
+        enviado: res.enviado,
+        leido: res.leido,
+        impacto: res.impacto,
+      },
     };
   } catch (e) {
     console.error("[probarPutAjusteStockDuxAction]", e);

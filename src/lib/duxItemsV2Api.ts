@@ -1,3 +1,4 @@
+import { DUX_BASE_URL, mapItem } from "@/lib/duxApi";
 import { getDuxIdEmpresaCompras } from "@/lib/duxComprasV2Api";
 
 export const DUX_ITEMS_V2_BASE_URL =
@@ -12,6 +13,11 @@ export type DuxPutItemResult = {
   httpStatus: number;
   ok: boolean;
   respuesta: string;
+};
+
+export type DuxStockDepositoLeido = {
+  ctdDisponible: number | null;
+  stockReal: number;
 };
 
 /** Body PUT: snake_case del contrato [actualizar_item](https://developers.duxsoftware.com.ar/reference/actualizar_item). */
@@ -135,6 +141,60 @@ async function duxItemsV2Fetch(
   }
 }
 
+/**
+ * GET v1 `/items?codigoItem=` (misma auth que la sync: token sin Bearer).
+ * Lee el depósito pedido para verificar si el PUT impactó.
+ */
+export async function getStockDepositoItemV1(
+  codItem: string,
+  idDeposito: number
+): Promise<DuxStockDepositoLeido | null> {
+  const token = getDuxApiToken();
+  const url =
+    `${DUX_BASE_URL}?codigoItem=${encodeURIComponent(codItem)}` +
+    `&idDeposito=${encodeURIComponent(String(idDeposito))}` +
+    `&limit=1&offset=0`;
+  const res = await duxItemsV2Fetch(url, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: token,
+    },
+  });
+  if (!res.ok) {
+    console.error(
+      "[duxItemsV2][getStockDepositoItemV1]",
+      res.status,
+      codItem,
+      idDeposito,
+      res.text.slice(0, 400)
+    );
+    return null;
+  }
+  let parsed: unknown = {};
+  try {
+    parsed = res.text.trim() ? JSON.parse(res.text) : {};
+  } catch {
+    return null;
+  }
+  const record =
+    parsed !== null && typeof parsed === "object"
+      ? (parsed as Record<string, unknown>)
+      : {};
+  const rawResults: unknown[] = Array.isArray(record.results)
+    ? record.results
+    : Array.isArray(record.datos)
+      ? record.datos
+      : [];
+  if (rawResults.length === 0) return null;
+  const item = mapItem(rawResults[0]);
+  const row = item.stocks.find((s) => s.idDeposito === idDeposito);
+  if (!row) {
+    return { ctdDisponible: null, stockReal: 0 };
+  }
+  return { ctdDisponible: row.ctdDisponible, stockReal: row.stockReal };
+}
+
 function truncarItemDux(nombre: string): string {
   const t = nombre.trim();
   return t.length <= 250 ? t : t.slice(0, 250);
@@ -186,6 +246,12 @@ export async function putItemV2(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body),
+  });
+  console.info("[duxItemsV2][putItemV2]", res.status, {
+    url,
+    stock: body.stock,
+    id_personal: body.id_personal,
+    respuesta: res.text.slice(0, 500),
   });
   if (!res.ok) {
     console.error(
