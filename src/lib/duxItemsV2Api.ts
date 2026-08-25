@@ -140,30 +140,6 @@ function truncarItemDux(nombre: string): string {
   return t.length <= 250 ? t : t.slice(0, 250);
 }
 
-function armarFilasStockPut(
-  stocksDepositos: { idDeposito: number; ctdDisponible: number }[],
-  idDeposito: number,
-  stockNuevo: number
-): { id_deposito: number; ctd_disponible: number }[] {
-  const seen = new Set<number>();
-  const out: { id_deposito: number; ctd_disponible: number }[] = [];
-  let matching = false;
-  for (const row of stocksDepositos) {
-    if (seen.has(row.idDeposito)) continue;
-    seen.add(row.idDeposito);
-    const esDestino = row.idDeposito === idDeposito;
-    if (esDestino) matching = true;
-    out.push({
-      id_deposito: row.idDeposito,
-      ctd_disponible: esDestino ? stockNuevo : row.ctdDisponible,
-    });
-  }
-  if (!matching) {
-    out.push({ id_deposito: idDeposito, ctd_disponible: stockNuevo });
-  }
-  return out;
-}
-
 /** Body PUT snake_case desde tablas locales (sin GET a DUX). */
 export function armarBodyGuardarItemV2(input: {
   codItem: string;
@@ -172,7 +148,6 @@ export function armarBodyGuardarItemV2(input: {
   idPersonal: number;
   idDeposito: number;
   stock: number;
-  stocksDepositos: { idDeposito: number; ctdDisponible: number }[];
 }): DuxV2GuardarItemRequest {
   return {
     id_personal: input.idPersonal,
@@ -184,11 +159,9 @@ export function armarBodyGuardarItemV2(input: {
     costo_compra: input.costoCompra,
     id_unidad_medida: getDuxIdUnidadMedida(),
     sucursales_habilitadas: getDuxSucursalesHabilitadasPut(),
-    stock: armarFilasStockPut(
-      input.stocksDepositos,
-      input.idDeposito,
-      input.stock
-    ),
+    stock: [
+      { id_deposito: input.idDeposito, ctd_disponible: input.stock },
+    ],
   };
 }
 

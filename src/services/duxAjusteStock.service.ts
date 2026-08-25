@@ -1,4 +1,3 @@
-import type { Prisma } from "@prisma/client";
 import {
   getIdDepositoGuaymallen,
   getIdDepositoMaipu,
@@ -21,21 +20,10 @@ export async function idDepositoDuxPorSucursal(
     : getIdDepositoMaipu();
 }
 
-function cantidadDisponibleLocal(row: {
-  ctdDisponible: Prisma.Decimal | null;
-  stockReal: number;
-}): number {
-  if (row.ctdDisponible != null) {
-    const n = Number(row.ctdDisponible);
-    if (Number.isFinite(n)) return n;
-  }
-  return row.stockReal;
-}
-
 /**
  * PUT DUX v2 desde tablas locales: `id_personal` (slidenav), depósito de la sucursal,
- * `cod_item` + `ctd_disponible` del depósito = cantidad contada; el resto de depósitos
- * y ficha (`item`, `costo_compra`) salen de `prod_tienda` / `prod_tienda_stock`.
+ * `cod_item` + un solo `stock[]` con `ctd_disponible` = cantidad contada.
+ * Ficha (`item`, `costo_compra`) desde `prod_tienda`.
  */
 export async function enviarPruebaPutAjusteStockDux(input: {
   sucursal: "guaymallen" | "maipu";
@@ -59,13 +47,6 @@ export async function enviarPruebaPutAjusteStockDux(input: {
       codTienda: true,
       descripcionTienda: true,
       costoCompra: true,
-      stocks: {
-        select: {
-          idDeposito: true,
-          stockReal: true,
-          ctdDisponible: true,
-        },
-      },
     },
   });
   if (!prod) {
@@ -85,11 +66,6 @@ export async function enviarPruebaPutAjusteStockDux(input: {
   }
 
   const idDeposito = await idDepositoDuxPorSucursal(input.sucursal);
-  const stocksDepositos = prod.stocks.map((row) => ({
-    idDeposito: row.idDeposito,
-    ctdDisponible: cantidadDisponibleLocal(row),
-  }));
-
   const body = armarBodyGuardarItemV2({
     codItem: prod.codTienda,
     item,
@@ -97,7 +73,6 @@ export async function enviarPruebaPutAjusteStockDux(input: {
     idPersonal: personal.idPersonal,
     idDeposito,
     stock: input.stock,
-    stocksDepositos,
   });
 
   console.info("[duxAjusteStock] PUT", {
