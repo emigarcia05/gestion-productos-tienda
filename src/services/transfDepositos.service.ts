@@ -273,7 +273,7 @@ export async function listarPendientesTransfDepositos(input: {
   if (!ok.success) return [];
   try {
     const rows = await prisma.stockTrasnDeposito.findMany({
-      where: {
+        where: {
         sucOrigen: input.sucOrigenId,
         sucDestino: input.sucDestinoId,
       },
