@@ -6,6 +6,8 @@ import { getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
+/** PUT Cx DUX + GET de control en la misma Action (rate limit 5 s). */
+export const maxDuration = 60;
 
 interface Props {
   searchParams: Promise<{

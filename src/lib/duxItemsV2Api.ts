@@ -31,7 +31,7 @@ export type DuxV2GuardarItemRequest = {
   costo_compra: number;
   id_unidad_medida: number;
   sucursales_habilitadas: { id_sucursal: number }[];
-  stock: Array<{
+  stock?: Array<{
     id_deposito: number;
     ctd_disponible: number;
   }>;
@@ -195,6 +195,53 @@ export async function getStockDepositoItemV1(
   return { ctdDisponible: row.ctdDisponible, stockReal: row.stockReal };
 }
 
+function parseItemV1DesdeTexto(text: string): ReturnType<typeof mapItem> | null {
+  let parsed: unknown = {};
+  try {
+    parsed = text.trim() ? JSON.parse(text) : {};
+  } catch {
+    return null;
+  }
+  const record =
+    parsed !== null && typeof parsed === "object"
+      ? (parsed as Record<string, unknown>)
+      : {};
+  const rawResults: unknown[] = Array.isArray(record.results)
+    ? record.results
+    : Array.isArray(record.datos)
+      ? record.datos
+      : [];
+  if (rawResults.length === 0) return null;
+  return mapItem(rawResults[0]);
+}
+
+/** GET v1 `/items?codigoItem=` — lee `costo` para verificar PUT de Cx Compra. */
+export async function getCostoItemV1(codItem: string): Promise<number | null> {
+  const token = getDuxApiToken();
+  const url =
+    `${DUX_BASE_URL}?codigoItem=${encodeURIComponent(codItem)}` +
+    `&limit=1&offset=0`;
+  const res = await duxItemsV2Fetch(url, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: token,
+    },
+  });
+  if (!res.ok) {
+    console.error(
+      "[duxItemsV2][getCostoItemV1]",
+      res.status,
+      codItem,
+      res.text.slice(0, 400)
+    );
+    return null;
+  }
+  const item = parseItemV1DesdeTexto(res.text);
+  if (!item || item.codItem === "") return null;
+  return item.costo;
+}
+
 function truncarItemDux(nombre: string): string {
   const t = nombre.trim();
   return t.length <= 250 ? t : t.slice(0, 250);
@@ -225,6 +272,26 @@ export function armarBodyGuardarItemV2(input: {
   };
 }
 
+/** PUT de ficha para Cx Compra: `costo_compra` nuevo, sin `stock[]` (no toca inventario). */
+export function armarBodyGuardarItemV2CostoCx(input: {
+  codItem: string;
+  item: string;
+  costoCompra: number;
+  idPersonal: number;
+}): DuxV2GuardarItemRequest {
+  return {
+    id_personal: input.idPersonal,
+    tipo_producto: getDuxTipoProducto(),
+    cod_item: input.codItem,
+    item: truncarItemDux(input.item),
+    id_moneda: getDuxIdMoneda(),
+    porc_iva: getDuxPorcIva(),
+    costo_compra: input.costoCompra,
+    id_unidad_medida: getDuxIdUnidadMedida(),
+    sucursales_habilitadas: getDuxSucursalesHabilitadasPut(),
+  };
+}
+
 /**
  * PUT `/v2/items/{cod_item}?id_empresa=` — snake_case (contrato OpenAPI).
  * Contrato: https://developers.duxsoftware.com.ar/reference/actualizar_item
@@ -249,7 +316,8 @@ export async function putItemV2(
   });
   console.info("[duxItemsV2][putItemV2]", res.status, {
     url,
-    stock: body.stock,
+    costo_compra: body.costo_compra,
+    stock: body.stock ?? [],
     id_personal: body.id_personal,
     respuesta: res.text.slice(0, 500),
   });
@@ -262,7 +330,7 @@ export async function putItemV2(
         tipo_producto: body.tipo_producto,
         id_unidad_medida: body.id_unidad_medida,
         id_moneda: body.id_moneda,
-        depositos: body.stock.map((s) => s.id_deposito),
+        depositos: body.stock?.map((s) => s.id_deposito) ?? [],
       },
       res.text.slice(0, 400)
     );

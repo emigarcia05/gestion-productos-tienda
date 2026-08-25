@@ -262,6 +262,7 @@ URL: `/gestion-productos/tienda/comp-proveedores`. Permiso lectura/edición CX: 
 - `prod_tienda.proveedor`: espejo DUX **congelado** (sync no escribe). Match histórico en `costoListaTienda.service.ts`.
 - Producto propio: `es_producto_propio`; no marcar si hay vínculos; `vincularProducto` rechaza si propio.
 - **Act. Cx.:** `exportarCostoCxDiffAction` — Excel CODIGO+COSTO para import manual DUX (sin POST ítem).
+- **Prueba PUT Cx DUX** (no reemplaza el Excel): mismos ítems que Act. Cx. UI `PruebaPutCxButton` → `probarPutCostoCxDuxAction` (`cxPxTienda.acceso` + `esEditor()`). Zod `pruebaPutCostoCxDuxSchema`. Servicio `enviarPruebaPutCostoCxDux` (`duxCostoCx.service.ts`): valida `global_personal`; `costo_compra` = `px_compra_final_sin_iva` (2 dec.); `item` = `descripcion_tienda`; **sin** `stock[]`. Tras el PUT, GET v1 `/items?codigoItem=` y compara `costo` vs lo enviado (tolerancia 0,01). HTTP 200 no implica impacto. Un ítem por Action; el cliente espera `DUX_API_BATCH_INTERVAL_MS` entre ítems. No escribe `prod_tienda.costo_compra` (espejo DUX = sincro).
 
 ### 3.4 Stock y transferencias
 

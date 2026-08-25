@@ -43,52 +43,81 @@ export function redondearCostoCxExport(px: number): number {
  * SSOT ítems Act. Cx.: `costo_compra_cod_ext`, vínculo habilitado, diff ≥ 0,01,
  * `px_compra_final_sin_iva` > 0. Usado por Excel y PDF de aumentos.
  */
+function itemCostoCxDiffDesdeRow(row: {
+  codTienda: string;
+  descripcionTienda: string | null;
+  marca: string | null;
+  rubro: string | null;
+  costoCompra: unknown;
+  costoListaProveedor: {
+    pxCompraFinalSinIva: unknown;
+    habilitado: boolean;
+  } | null;
+}): ItemCostoCxDiff | null {
+  const proveedor = row.costoListaProveedor;
+  if (!proveedor?.habilitado) return null;
+
+  const pxFinal = toNum(proveedor.pxCompraFinalSinIva);
+  if (pxFinal <= 0) return null;
+
+  const costoViejo = toNum(row.costoCompra);
+  if (!costosCompraDifieren(costoViejo, pxFinal)) return null;
+
+  const marca = row.marca?.trim() || MARCA_COSTO_CX_SIN_INFORMAR;
+  const rubro = row.rubro?.trim() || RUBRO_COSTO_CX_SIN_INFORMAR;
+  const descripcion = (row.descripcionTienda?.trim() || "Sin descripción").slice(0, 256);
+
+  return {
+    codTienda: row.codTienda,
+    descripcion,
+    marca,
+    rubro,
+    costoViejo,
+    costoNuevo: redondearCostoCxExport(pxFinal),
+  };
+}
+
+const selectItemCostoCxDiff = {
+  codTienda: true,
+  descripcionTienda: true,
+  marca: true,
+  rubro: true,
+  costoCompra: true,
+  costoListaProveedor: {
+    select: {
+      pxCompraFinalSinIva: true,
+      habilitado: true,
+    },
+  },
+} as const;
+
 export async function listarItemsCostoCxDiff(): Promise<ItemCostoCxDiff[]> {
   const rows = await prisma.prodTienda.findMany({
     where: {
       costoCompraCodExt: { not: null },
     },
-    select: {
-      codTienda: true,
-      descripcionTienda: true,
-      marca: true,
-      rubro: true,
-      costoCompra: true,
-      costoListaProveedor: {
-        select: {
-          pxCompraFinalSinIva: true,
-          habilitado: true,
-        },
-      },
-    },
+    select: selectItemCostoCxDiff,
     orderBy: { codTienda: "asc" },
   });
 
   const items: ItemCostoCxDiff[] = [];
   for (const row of rows) {
-    const proveedor = row.costoListaProveedor;
-    if (!proveedor?.habilitado) continue;
-
-    const pxFinal = toNum(proveedor.pxCompraFinalSinIva);
-    if (pxFinal <= 0) continue;
-
-    const costoViejo = toNum(row.costoCompra);
-    if (!costosCompraDifieren(costoViejo, pxFinal)) continue;
-
-    const marca = row.marca?.trim() || MARCA_COSTO_CX_SIN_INFORMAR;
-    const rubro = row.rubro?.trim() || RUBRO_COSTO_CX_SIN_INFORMAR;
-    const descripcion = (row.descripcionTienda?.trim() || "Sin descripción").slice(0, 256);
-
-    items.push({
-      codTienda: row.codTienda,
-      descripcion,
-      marca,
-      rubro,
-      costoViejo,
-      costoNuevo: redondearCostoCxExport(pxFinal),
-    });
+    const item = itemCostoCxDiffDesdeRow(row);
+    if (item) items.push(item);
   }
   return items;
+}
+
+/** Un ítem Act. Cx. por `cod_tienda`, o null si ya no hay diff válido. */
+export async function obtenerItemCostoCxDiff(
+  codTienda: string
+): Promise<ItemCostoCxDiff | null> {
+  const row = await prisma.prodTienda.findUnique({
+    where: { codTienda },
+    select: selectItemCostoCxDiff,
+  });
+  if (!row) return null;
+  return itemCostoCxDiffDesdeRow(row);
 }
 
 /**
