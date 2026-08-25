@@ -338,6 +338,7 @@ export async function getReposicionData(
       cantConf: cantCfg,
       stock,
       stockeable: getStockeableFromMap(stockeableMap, codTienda),
+      bulto: bultosMap.get(codTienda) ?? null,
     });
     return {
       idListaTienda: codTienda,

@@ -31,6 +31,7 @@ import {
   getStockeableFromMap,
   getStockSucursalPrincipal,
 } from "@/services/prodTiendaStock.service";
+import { buildMapBultosProdTienda } from "@/services/tiendaBultos.service";
 
 const TIPO_URGENTE_MERC2 = "URGENTE";
 
@@ -762,7 +763,7 @@ export interface PedidoUrgenteItem {
   confReposicion: boolean;
   /**
    * Cantidad a pedir por reposición (columna **CANT. REPO.**): misma regla que **CANT. A PEDIR**
-   * en Pedido Reposición (`cantPedirReposicionMerc2`: forma, punto, conf., stock sucursal, stockeable).
+   * en Pedido Reposición (`cantPedirReposicionMerc2`: forma, punto, conf., stock, stockeable, bulto).
    */
   cantReposicion: number;
   /** true si el ítem de proveedor está vinculado a un producto en `prod_precios_tienda`. */
@@ -879,15 +880,17 @@ async function mercaderiaMapsDesdeMerc2(
   const tiendaRepoPorCod = new Map(
     tiendaRowsRepo.map((t) => [t.codTienda.trim(), t])
   );
-  const [stockMapsRepo, stockeableMapRepo] =
+  const [stockMapsRepo, stockeableMapRepo, bultosMapRepo] =
     codTiendasRepo.length > 0
       ? await Promise.all([
           buildMapsStockSucursalesPrincipales(codTiendasRepo),
           buildMapStockeable(codTiendasRepo),
+          buildMapBultosProdTienda(codTiendasRepo),
         ])
       : [
           { maipu: new Map<string, number>(), guaymallen: new Map<string, number>() },
           new Map<string, boolean>(),
+          new Map<string, number>(),
         ];
 
   for (const k of mercaderiaRepoSet) {
@@ -902,6 +905,7 @@ async function mercaderiaMapsDesdeMerc2(
         cantConf: regla.cantConf,
         stock,
         stockeable: getStockeableFromMap(stockeableMapRepo, k),
+        bulto: bultosMapRepo.get(k) ?? null,
       });
     }
     mercaderiaMapRepo.set(k, cant);
@@ -1012,9 +1016,10 @@ async function clavesCantidadPositivaPedidoUrgente(
 
     const codTiendas = [...reglaPorCod.keys()];
     if (codTiendas.length > 0) {
-      const [stockMaps, stockeableMap] = await Promise.all([
+      const [stockMaps, stockeableMap, bultosMap] = await Promise.all([
         buildMapsStockSucursalesPrincipales(codTiendas),
         buildMapStockeable(codTiendas),
+        buildMapBultosProdTienda(codTiendas),
       ]);
       for (const k of codTiendas) {
         const regla = reglaPorCod.get(k)!;
@@ -1025,6 +1030,7 @@ async function clavesCantidadPositivaPedidoUrgente(
           cantConf: regla.cantConf,
           stock,
           stockeable: getStockeableFromMap(stockeableMap, k),
+          bulto: bultosMap.get(k) ?? null,
         });
         if (cant > 0) repoCodTiendas.add(k);
       }

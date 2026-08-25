@@ -32,9 +32,11 @@ import {
 import {
   esFormaCantFijaReposicion,
   normalizarReposicionFormaPedido,
+  type ReposicionFormaPedido,
   type ReposicionFormaPedidoFabrica,
   type ReposicionFormaPedidoVendedor,
 } from "@/lib/validations/reposicion";
+import { buildMapBultosProdTienda } from "@/services/tiendaBultos.service";
 
 const TIPO_URGENTE = "URGENTE";
 const TIPO_REPOSICION = "REPOSICION";
@@ -135,16 +137,15 @@ export async function upsertPedidoMercaderiaReposicionConfig(params: {
         codT,
         getIdDepositoPorSucursalCodigo(sucursal)
       )) ?? 0;
-    // Regla de negocio:
-    // - Solo pedir si stock <= punto de reposición.
-    // - POR_BULTO / UNIDADES_FIJAS: pedir la cantidad configurada.
-    // - UNIDADES_MAX: pedir faltante hasta la cantidad configurada.
-    const cantPedir =
-      stock <= punto
-        ? esFormaCantFijaReposicion(formaPedir)
-          ? cant
-          : Math.max(0, cant - stock)
-        : 0;
+    const bultosMap = await buildMapBultosProdTienda([codT]);
+    const cantPedir = cantPedirReposicionMerc2({
+      forma: formaPedir,
+      punto,
+      cantConf: cant,
+      stock,
+      stockeable: true,
+      bulto: bultosMap.get(codT) ?? null,
+    });
 
     await prisma.$transaction(async (tx) => {
       await tx.prodPedMerc2.deleteMany({
@@ -584,8 +585,26 @@ function proveedorEtiquetaDesdeRow(p: {
 }
 
 /**
- * Misma regla que `upsertPedidoMercaderiaReposicionConfig`: pedir solo si `stock <= punto`;
- * CANT_FIJA_* → cantidad configurada; UNIDADES_MAX → `max(0, cantConf - stock)`.
+ * Convierte `reposicion_cant_conf` a unidades a pedir.
+ * POR_BULTO: `cantConf` es cantidad de bultos; se multiplica por unidades de `prod_tienda_bultos`.
+ * Sin bulto válido (≥ 1) → 0. El resto de formas deja `cantConf` en unidades.
+ */
+export function cantConfReposicionAUnidades(
+  forma: ReposicionFormaPedido,
+  cantConf: number,
+  bulto: number | null | undefined
+): number {
+  if (forma !== "POR_BULTO") return cantConf;
+  const unPorBulto = Math.max(0, Math.floor(Number(bulto ?? 0)));
+  if (unPorBulto < 1) return 0;
+  return cantConf * unPorBulto;
+}
+
+/**
+ * Misma regla que `upsertPedidoMercaderiaReposicionConfig`: pedir solo si `stock <= punto`.
+ * UNIDADES_MAX → `max(0, cantConf - stock)` (unidades).
+ * UNIDADES_FIJAS → `cantConf` (unidades).
+ * POR_BULTO → `cantConf × bulto` (`cantConf` = bultos; `bulto` = unidades por bulto).
  */
 export function cantPedirReposicionMerc2(params: {
   forma: string | null | undefined;
@@ -593,16 +612,19 @@ export function cantPedirReposicionMerc2(params: {
   cantConf: number | null | undefined;
   stock: number;
   stockeable: boolean;
+  /** Unidades por bulto (`prod_tienda_bultos`). Obligatorio para POR_BULTO. */
+  bulto: number | null | undefined;
 }): number {
   if (!params.stockeable) return 0;
   const forma = normalizarReposicionFormaPedido(params.forma);
   if (!forma) return 0;
   const punto = Math.max(0, Math.floor(Number(params.punto ?? 0)));
   const cant = Math.max(0, Math.floor(Number(params.cantConf ?? 0)));
+  const cantEnUnidades = cantConfReposicionAUnidades(forma, cant, params.bulto);
   if (params.stock > punto) return 0;
   return esFormaCantFijaReposicion(forma)
-    ? cant
-    : Math.max(0, cant - params.stock);
+    ? cantEnUnidades
+    : Math.max(0, cantEnUnidades - params.stock);
 }
 
 export type LpRowPick = {
@@ -727,7 +749,7 @@ export async function getItemsTablaEnviarPedido(params: {
   }
 
   const codTiendasArr = [...codTiendasLookup];
-  const [ivaSaldoReposicion, lpPorCodTiendaRepos, lpRows, stockMaps, stockeableMap] =
+  const [ivaSaldoReposicion, lpPorCodTiendaRepos, lpRows, stockMaps, stockeableMap, bultosMap] =
     await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas([...codTiendasRepos]),
@@ -748,6 +770,7 @@ export async function getItemsTablaEnviarPedido(params: {
       : Promise.resolve([]),
     buildMapsStockSucursalesPrincipales(codTiendasArr),
     buildMapStockeable(codTiendasArr),
+    buildMapBultosProdTienda([...codTiendasRepos]),
   ]);
 
   const lpPorCodExt = new Map<string, LpRowPick[]>();
@@ -806,6 +829,7 @@ export async function getItemsTablaEnviarPedido(params: {
         cantConf: r.reposicionCantConf,
         stock,
         stockeable: getStockeableFromMap(stockeableMap, codTi),
+        bulto: bultosMap.get(codTi) ?? null,
       });
       // Reposición debe reflejar siempre stock/regla vigentes.
       // No usar `reposicionCantPedir` persistido porque puede quedar desfasado
@@ -1085,7 +1109,14 @@ export async function getItemsYProveedorParaEnviar(
   }
 
   const codTiendasArrPdf = [...codTiendasLookup];
-  const [ivaSaldoReposicionPdf, lpPorCodTiendaReposPdf, lpRowsPdf, stockMapsPdf, stockeableMapPdf] =
+  const [
+    ivaSaldoReposicionPdf,
+    lpPorCodTiendaReposPdf,
+    lpRowsPdf,
+    stockMapsPdf,
+    stockeableMapPdf,
+    bultosMapPdf,
+  ] =
     await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas([...codTiendasRepos]),
@@ -1106,6 +1137,7 @@ export async function getItemsYProveedorParaEnviar(
       : Promise.resolve([]),
     buildMapsStockSucursalesPrincipales(codTiendasArrPdf),
     buildMapStockeable(codTiendasArrPdf),
+    buildMapBultosProdTienda([...codTiendasRepos]),
   ]);
 
   const lpPorCodExt = new Map<string, LpRowPick[]>();
@@ -1175,6 +1207,7 @@ export async function getItemsYProveedorParaEnviar(
         cantConf: r.reposicionCantConf,
         stock,
         stockeable: getStockeableFromMap(stockeableMapPdf, codTi),
+        bulto: bultosMapPdf.get(codTi) ?? null,
       });
       // Reposición debe reflejar siempre stock/regla vigentes.
       // No usar `reposicionCantPedir` persistido porque puede quedar desfasado
@@ -1332,11 +1365,13 @@ export async function getReposicionItemsProveedorPrioritarioAlternativo(params: 
     })
   );
 
-  const [ivaSaldoReposicion, lpPorCodTiendaRepos, stockMaps, stockeableMap] = await Promise.all([
+  const [ivaSaldoReposicion, lpPorCodTiendaRepos, stockMaps, stockeableMap, bultosMap] =
+    await Promise.all([
     sumarIvaSaldoParaReposicion(),
     cargarListaPrecioReposicionPorCodTiendas([...codTiendasRepos]),
     buildMapsStockSucursalesPrincipales(codTiendasArr),
     buildMapStockeable(codTiendasArr),
+    buildMapBultosProdTienda(codTiendasArr),
   ]);
 
   const codigoSucursal = (sucursalRow.codigo ?? "").trim();
@@ -1369,6 +1404,7 @@ export async function getReposicionItemsProveedorPrioritarioAlternativo(params: 
       cantConf: r.reposicionCantConf,
       stock,
       stockeable: getStockeableFromMap(stockeableMap, codTi),
+      bulto: bultosMap.get(codTi) ?? null,
     });
     if (cantPedir <= 0) continue;
 
