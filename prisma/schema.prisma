@@ -216,12 +216,29 @@ model ComprobanteProveedor {
   @@map("fin_compras_comprobante")
 }
 
+/** Catálogo de depósitos DUX (`stock[].id` en API). Sync desde `stock[]` de cada ítem. */
+model GlobalDeposito {
+  idDeposito  Int      @id @map("id_deposito")
+  nombre      String
+  activa      Boolean  @default(true)
+  ultimaSync  DateTime @default(now()) @map("ultima_sync")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  sucursal          Sucursal?
+  stocksPorProducto ProdTiendaStock[]
+
+  @@map("global_depositos")
+}
+
 // Sucursales: código estable (guaymallen, maipu), nombre, whatsapp (emisor), id DUX y flag de habilitación para pedidos.
 model Sucursal {
   id             String   @id @default(cuid())
   codigo         String   @unique(map: "global_sucursales_codigo_key") // guaymallen | maipu | corporativo (estable en URLs y FKs)
   nombre         String
-  deposito       String?  // DEPÓSITO para exportaciones (texto para preservar formato)
+  /** Depósito DUX de esta sucursal (1 sucursal → 1 depósito). Null = sin depósito (p. ej. corporativo). */
+  idDeposito     Int?     @unique(map: "global_sucursales_id_deposito_key") @map("id_deposito")
+  depositoCatalogo GlobalDeposito? @relation(fields: [idDeposito], references: [idDeposito], onDelete: Restrict)
   whatsapp       String?  @map("whatsapp")
   pedido         Boolean  @default(true) @map("pedido")
   /**
@@ -239,7 +256,7 @@ model Sucursal {
   generaBalance  Boolean  @default(false) @map("genera_balance")
   /**
    * Si la sucursal aparece en Estadísticas Productos · Carga de Datos
-   * (columnas de la grilla periodo × sucursal). Independiente de `deposito`
+   * (columnas de la grilla periodo × sucursal). Independiente de `id_deposito`
    * y de `genera_balance`. Default `false` (opt-in); se gestiona por seed / UPDATE en DB.
    */
   generaEst      Boolean  @default(false) @map("genera_est")
@@ -874,20 +891,6 @@ model ProdTiendaPrecioEdicion {
   @@map("prod_tienda_precios_edicion")
 }
 
-/** Catálogo de depósitos DUX (`stock[].id` en API). Se alimenta en sync desde `stock[]` de cada ítem. */
-model ProdDepositoDux {
-  idDeposito  Int      @id @map("id_deposito")
-  nombre      String
-  activa      Boolean  @default(true)
-  ultimaSync  DateTime @default(now()) @map("ultima_sync")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  stocksPorProducto ProdTiendaStock[]
-
-  @@map("prod_depositos_dux")
-}
-
 /** Stock por producto × depósito DUX (`stock[]` del ítem en API). Origen de verdad multi-depósito. */
 model ProdTiendaStock {
   codTienda      String   @map("cod_tienda")
@@ -898,7 +901,7 @@ model ProdTiendaStock {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   prodTienda ProdTienda      @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
-  deposito   ProdDepositoDux @relation(fields: [idDeposito], references: [idDeposito], onDelete: Restrict)
+  deposito   GlobalDeposito  @relation(fields: [idDeposito], references: [idDeposito], onDelete: Restrict)
 
   @@id([codTienda, idDeposito])
   @@index([idDeposito], map: "prod_tienda_stock_id_deposito_idx")

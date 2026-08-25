@@ -65,7 +65,6 @@ export interface RecepcionCompraDatosPreparados {
   idProveedorDux: number;
   fechaIso: string;
   fechaImputacionContableIso: string;
-  depositoTexto: string;
   idDeposito: number;
   idEmpresa: number;
   idSucursal: number;
@@ -285,7 +284,7 @@ export async function prepararRecepcionCompraDatos(
       select: {
         total: true,
         proveedor: { select: { idProveedorDux: true, prefijo: true, iva: true } },
-        sucursal: { select: { deposito: true, codigo: true, idDux: true } },
+        sucursal: { select: { codigo: true, idDux: true, idDeposito: true } },
         items: { select: { codTienda: true, cantRecibida: true } },
       },
     });
@@ -379,7 +378,9 @@ export async function prepararRecepcionCompraDatos(
     const compRes = await reservarSiguienteComprobanteRecepcion(tipoComprobante);
     if (!compRes.success) return compRes;
 
-    const idDeposito = getIdDepositoPorSucursalCodigo(pedido.sucursal.codigo);
+    const idDeposito =
+      pedido.sucursal.idDeposito ??
+      getIdDepositoPorSucursalCodigo(pedido.sucursal.codigo);
     const idEmpresa = getDuxIdEmpresaCompras();
 
     return {
@@ -390,7 +391,6 @@ export async function prepararRecepcionCompraDatos(
         idProveedorDux,
         fechaIso,
         fechaImputacionContableIso,
-        depositoTexto: (pedido.sucursal.deposito ?? "").trim(),
         idDeposito,
         idEmpresa,
         idSucursal,

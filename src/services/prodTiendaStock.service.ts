@@ -12,10 +12,25 @@ export {
   getIdDepositoGuaymallen,
 };
 
+/**
+ * Fallback env (`DUX_ID_STOCK_*`) para filtros sync/stockeable.
+ * El mapeo de negocio es `global_sucursales.id_deposito` → `obtenerIdDepositoPorCodigoSucursal`.
+ */
 export function getIdDepositoPorSucursalCodigo(codigo: string): number {
   return codigo.trim().toLowerCase() === "maipu"
     ? getIdDepositoMaipu()
     : getIdDepositoGuaymallen();
+}
+
+/** Depósito DUX de la sucursal (`global_sucursales.id_deposito`). Null si no hay FK (p. ej. corporativo). */
+export async function obtenerIdDepositoPorCodigoSucursal(
+  codigo: string
+): Promise<number | null> {
+  const row = await prisma.sucursal.findUnique({
+    where: { codigo: codigo.trim().toLowerCase() },
+    select: { idDeposito: true },
+  });
+  return row?.idDeposito ?? null;
 }
 
 /** Filtro Prisma: ítem stockeable (ctd_disponible informado en Maipú y Guaymallén). */

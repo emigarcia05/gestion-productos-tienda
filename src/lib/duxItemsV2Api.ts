@@ -48,23 +48,43 @@ export type DuxV2ItemFicha = {
   idMoneda: number | null;
 };
 
-/** Body PUT WSERP: camelCase (Jackson). Snake_case llega todo null. */
+/** Body PUT: snake_case del contrato [actualizar_item](https://developers.duxsoftware.com.ar/reference/actualizar_item). */
 export type DuxV2GuardarItemRequest = {
-  idPersonal: number;
-  tipoProducto: string;
-  codItem: string;
+  id_personal: number;
+  tipo_producto: string;
+  cod_item: string;
   item: string;
-  idMoneda: number;
-  porcIva: number;
-  costoCompra: number;
-  idUnidadMedida: number;
-  sucursalesHabilitadas: { idSucursal: number }[];
-  /** Contrato [V2ItemStockRequest](https://duxsoftware.readme.io/reference/actualizar_item): solo depósito + cantidades. */
+  id_moneda: number;
+  porc_iva: number;
+  costo_compra: number;
+  id_unidad_medida: number;
+  sucursales_habilitadas: { id_sucursal: number }[];
   stock: Array<{
-    idDeposito: number;
-    ctdDisponible: number;
+    id_deposito: number;
+    ctd_disponible: number;
   }>;
 };
+
+/** Sucursales DUX de la empresa (PUT ítem: siempre todas). Override: `DUX_SUCURSALES_HABILITADAS=1,2,4`. */
+const DUX_SUCURSALES_HABILITADAS_DEFAULT = [1, 2, 4] as const;
+
+export function getDuxSucursalesHabilitadasPut(): { id_sucursal: number }[] {
+  const raw = process.env.DUX_SUCURSALES_HABILITADAS?.trim();
+  if (raw) {
+    const ids: number[] = [];
+    const seen = new Set<number>();
+    for (const part of raw.split(/[,\s]+/)) {
+      const n = Number(part);
+      if (!Number.isInteger(n) || n <= 0 || seen.has(n)) continue;
+      seen.add(n);
+      ids.push(n);
+    }
+    if (ids.length > 0) return ids.map((id_sucursal) => ({ id_sucursal }));
+  }
+  return DUX_SUCURSALES_HABILITADAS_DEFAULT.map((id_sucursal) => ({
+    id_sucursal,
+  }));
+}
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
@@ -378,9 +398,9 @@ function armarFilasStockPut(
   ficha: DuxV2ItemFicha,
   idDeposito: number,
   stockNuevo: number
-): { idDeposito: number; ctdDisponible: number }[] {
+): { id_deposito: number; ctd_disponible: number }[] {
   const seen = new Set<number>();
-  const out: { idDeposito: number; ctdDisponible: number }[] = [];
+  const out: { id_deposito: number; ctd_disponible: number }[] = [];
   let matching = false;
   for (const row of ficha.stock) {
     if (seen.has(row.id)) continue;
@@ -388,12 +408,12 @@ function armarFilasStockPut(
     const esDestino = row.id === idDeposito;
     if (esDestino) matching = true;
     out.push({
-      idDeposito: row.id,
-      ctdDisponible: esDestino ? stockNuevo : (row.stockDisponible ?? 0),
+      id_deposito: row.id,
+      ctd_disponible: esDestino ? stockNuevo : (row.stockDisponible ?? 0),
     });
   }
   if (!matching) {
-    out.push({ idDeposito, ctdDisponible: stockNuevo });
+    out.push({ id_deposito: idDeposito, ctd_disponible: stockNuevo });
   }
   return out;
 }
@@ -403,39 +423,33 @@ export function armarBodyGuardarItemV2(input: {
   idPersonal: number;
   idDeposito: number;
   stock: number;
-  sucursalesHabilitadas: { idSucursal: number }[];
 }): DuxV2GuardarItemRequest {
-  /**
-   * Campos Bean Validation (camelCase) + stock de **todos** los depósitos del GET.
-   * Solo se cambia `ctdDisponible` del depósito de la sucursal.
-   * No reenviar precios/códigos/rubro ni talle/color (no están en V2ItemStockRequest).
-   */
-  const idUnidadMedida =
+  const id_unidad_medida =
     input.ficha.idUnidadMedida != null && input.ficha.idUnidadMedida > 0
       ? input.ficha.idUnidadMedida
       : getDuxIdUnidadMedida();
-  const idMoneda =
+  const id_moneda =
     input.ficha.idMoneda != null && input.ficha.idMoneda > 0
       ? input.ficha.idMoneda
       : getDuxIdMoneda();
-  const tipoProducto = input.ficha.tipoProducto ?? getDuxTipoProducto();
+  const tipo_producto = input.ficha.tipoProducto ?? getDuxTipoProducto();
   return {
-    idPersonal: input.idPersonal,
-    tipoProducto,
-    codItem: input.ficha.codItem,
+    id_personal: input.idPersonal,
+    tipo_producto,
+    cod_item: input.ficha.codItem,
     item: input.ficha.item,
-    idMoneda,
-    porcIva: input.ficha.porcIva,
-    costoCompra: input.ficha.costo,
-    idUnidadMedida,
-    sucursalesHabilitadas: input.sucursalesHabilitadas,
+    id_moneda,
+    porc_iva: input.ficha.porcIva,
+    costo_compra: input.ficha.costo,
+    id_unidad_medida,
+    sucursales_habilitadas: getDuxSucursalesHabilitadasPut(),
     stock: armarFilasStockPut(input.ficha, input.idDeposito, input.stock),
   };
 }
 
 /**
- * PUT `/v2/items/{cod_item}?id_empresa=` — ficha en camelCase (WSERP/Jackson).
- * Contrato: https://duxsoftware.readme.io/reference/actualizar_item
+ * PUT `/v2/items/{cod_item}?id_empresa=` — snake_case (contrato OpenAPI).
+ * Contrato: https://developers.duxsoftware.com.ar/reference/actualizar_item
  */
 export async function putItemV2(
   codItem: string,
@@ -461,10 +475,10 @@ export async function putItemV2(
       res.status,
       {
         codItem,
-        tipoProducto: body.tipoProducto,
-        idUnidadMedida: body.idUnidadMedida,
-        idMoneda: body.idMoneda,
-        depositos: body.stock.map((s) => s.idDeposito),
+        tipo_producto: body.tipo_producto,
+        id_unidad_medida: body.id_unidad_medida,
+        id_moneda: body.id_moneda,
+        depositos: body.stock.map((s) => s.id_deposito),
       },
       res.text.slice(0, 400)
     );
@@ -479,7 +493,7 @@ export async function putItemV2(
 }
 
 /**
- * Ajuste de stock: GET v1 (fallback v2) → pausa rate limit → PUT camelCase.
+ * Ajuste de stock: GET v1 (fallback v2) → pausa rate limit → PUT snake_case.
  * Copia todos los depósitos; solo cambia el de la sucursal.
  */
 export async function putAjusteStockItemV2(input: {
@@ -487,7 +501,6 @@ export async function putAjusteStockItemV2(input: {
   stock: number;
   idDeposito: number;
   idPersonal: number;
-  sucursalesHabilitadas: { idSucursal: number }[];
 }): Promise<DuxPutItemResult> {
   let got = await getItemV1PorCodigo(input.codItem);
   if (!got.ok) {
@@ -514,7 +527,6 @@ export async function putAjusteStockItemV2(input: {
     idPersonal: input.idPersonal,
     idDeposito: input.idDeposito,
     stock: input.stock,
-    sucursalesHabilitadas: input.sucursalesHabilitadas,
   });
   await sleep(DUX_API_BATCH_INTERVAL_MS);
   return putItemV2(input.codItem, body);

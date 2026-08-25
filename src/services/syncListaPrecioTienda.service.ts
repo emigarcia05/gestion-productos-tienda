@@ -99,7 +99,7 @@ async function upsertDepositosCatalogoEnTransaccion(
   }
   for (const [idDeposito, nombre] of unicos) {
     idDepositosVistos.add(idDeposito);
-    await tx.prodDepositoDux.upsert({
+    await tx.globalDeposito.upsert({
       where: { idDeposito },
       create: {
         idDeposito,
@@ -444,7 +444,7 @@ async function finalizeSyncWorker(
   const depositosVistos = worker.meta.depositosVistos;
   if (depositosVistos.length > 0) {
     try {
-      await prisma.prodDepositoDux.updateMany({
+      await prisma.globalDeposito.updateMany({
         where: { idDeposito: { notIn: depositosVistos } },
         data: { activa: false },
       });
