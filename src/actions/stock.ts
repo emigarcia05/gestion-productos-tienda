@@ -578,7 +578,8 @@ export type PruebaPutAjusteStockDuxResult = {
 };
 
 /**
- * Prueba PUT DUX v2: un ítem con variación (cod_tienda, stock, deposito, usuario).
+ * Prueba PUT DUX v2: un ítem con variación. El body se arma en el servicio
+ * desde `prod_tienda` / `prod_tienda_stock` / `global_personal` / sucursal.
  * No persiste ÚLT. CONTROL (eso sigue en Exportar Excel).
  */
 export async function probarPutAjusteStockDuxAction(

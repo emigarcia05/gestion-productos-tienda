@@ -1,6 +1,4 @@
-import { DUX_BASE_URL } from "@/lib/duxApi";
 import { getDuxIdEmpresaCompras } from "@/lib/duxComprasV2Api";
-import { DUX_API_BATCH_INTERVAL_MS } from "@/lib/duxApiBatchPolicy";
 
 export const DUX_ITEMS_V2_BASE_URL =
   "https://erp.duxsoftware.com.ar/WSERP/rest/services/v2/items";
@@ -14,38 +12,6 @@ export type DuxPutItemResult = {
   httpStatus: number;
   ok: boolean;
   respuesta: string;
-};
-
-export type DuxV2ItemStock = {
-  id: number;
-  stockDisponible: number | null;
-  idDetItem: number | null;
-  talle: string | null;
-  color: string | null;
-};
-
-export type DuxV2ItemPrecio = {
-  id: number;
-  precio: number;
-};
-
-export type DuxV2ItemFicha = {
-  codItem: string;
-  item: string;
-  porcIva: number;
-  costo: number;
-  idRubro: number | null;
-  idSubRubro: number | null;
-  codigoMarca: string | null;
-  idProveedor: number | null;
-  codigoExterno: string | null;
-  ctdUnidadesPorBulto: number | null;
-  codigosBarra: string[];
-  precios: DuxV2ItemPrecio[];
-  stock: DuxV2ItemStock[];
-  tipoProducto: string | null;
-  idUnidadMedida: number | null;
-  idMoneda: number | null;
 };
 
 /** Body PUT: snake_case del contrato [actualizar_item](https://developers.duxsoftware.com.ar/reference/actualizar_item). */
@@ -86,41 +52,6 @@ export function getDuxSucursalesHabilitadasPut(): { id_sucursal: number }[] {
   }));
 }
 
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return v !== null && typeof v === "object" && !Array.isArray(v);
-}
-
-function pick(
-  obj: Record<string, unknown>,
-  keys: string[]
-): unknown {
-  for (const key of keys) {
-    const v = obj[key];
-    if (v !== undefined && v !== null) return v;
-  }
-  return undefined;
-}
-
-function asFiniteNumber(v: unknown): number | null {
-  if (typeof v === "number" && Number.isFinite(v)) return v;
-  if (typeof v === "string" && v.trim() !== "") {
-    const n = Number(v);
-    if (Number.isFinite(n)) return n;
-  }
-  return null;
-}
-
-function asString(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const t = v.trim();
-  return t === "" ? null : t;
-}
-
-function nestedId(v: unknown): number | null {
-  if (!isRecord(v)) return null;
-  return asFiniteNumber(pick(v, ["id", "idRubro", "idSubRubro"]));
-}
-
 function formatDuxItemsV2Error(status: number, bodyText: string): string {
   try {
     const parsed = JSON.parse(bodyText) as {
@@ -154,12 +85,6 @@ function formatDuxItemsV2Error(status: number, bodyText: string): string {
   return `HTTP ${status}`;
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
 function getDuxApiToken(): string {
   const token = process.env.DUX_API_TOKEN;
   if (!token) throw new Error("DUX_API_TOKEN no configurado.");
@@ -179,6 +104,11 @@ function getDuxIdUnidadMedida(): number {
 function getDuxTipoProducto(): string {
   const raw = process.env.DUX_TIPO_PRODUCTO?.trim();
   return raw && raw.length > 0 ? raw : "SIMPLE";
+}
+
+function getDuxPorcIva(): number {
+  const n = Number(process.env.DUX_PORC_IVA ?? "21");
+  return Number.isFinite(n) && n >= 0 ? n : 21;
 }
 
 async function duxItemsV2Fetch(
@@ -205,211 +135,27 @@ async function duxItemsV2Fetch(
   }
 }
 
-function parseStockArray(raw: unknown): DuxV2ItemStock[] {
-  if (!Array.isArray(raw)) return [];
-  const out: DuxV2ItemStock[] = [];
-  for (const row of raw) {
-    if (!isRecord(row)) continue;
-    const id =
-      asFiniteNumber(pick(row, ["id_deposito", "idDeposito"])) ??
-      asFiniteNumber(pick(row, ["id"]));
-    if (id == null) continue;
-    out.push({
-      id,
-      stockDisponible: asFiniteNumber(
-        pick(row, [
-          "stock_disponible",
-          "stockDisponible",
-          "ctd_disponible",
-          "ctdDisponible",
-        ])
-      ),
-      idDetItem: asFiniteNumber(pick(row, ["id_det_item", "idDetItem"])),
-      talle: asString(pick(row, ["talle"])),
-      color: asString(pick(row, ["color"])),
-    });
-  }
-  return out;
-}
-
-function parsePreciosArray(raw: unknown): DuxV2ItemPrecio[] {
-  if (!Array.isArray(raw)) return [];
-  const out: DuxV2ItemPrecio[] = [];
-  for (const row of raw) {
-    if (!isRecord(row)) continue;
-    const id = asFiniteNumber(
-      pick(row, ["id", "idListaPrecio", "id_lista_precio"])
-    );
-    const precio = asFiniteNumber(pick(row, ["precio", "valor"]));
-    if (id == null || precio == null) continue;
-    out.push({ id, precio });
-  }
-  return out;
-}
-
-function parseCodigosBarra(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  const out: string[] = [];
-  for (const x of raw) {
-    if (typeof x === "string") {
-      const s = asString(x);
-      if (s) out.push(s);
-      continue;
-    }
-    if (isRecord(x)) {
-      const s = asString(pick(x, ["cod_barra", "codBarra"]));
-      if (s) out.push(s);
-    }
-  }
-  return out;
-}
-
-function itemsArrayDesdeLista(parsed: unknown): unknown[] {
-  if (!isRecord(parsed)) return [];
-  if (Array.isArray(parsed.results)) return parsed.results;
-  if (Array.isArray(parsed.datos)) return parsed.datos;
-  if (Array.isArray(parsed.data)) return parsed.data;
-  return [];
-}
-
-function itemTieneVariantes(stock: DuxV2ItemStock[]): boolean {
-  return stock.some(
-    (row) => row.talle != null || row.color != null || row.idDetItem != null
-  );
-}
-
-function parseFichaItemV2(raw: unknown): DuxV2ItemFicha | null {
-  if (!isRecord(raw)) return null;
-  const codItem = asString(pick(raw, ["cod_item", "codItem"]));
-  const item = asString(raw.item);
-  if (!codItem || !item) return null;
-  const marca = isRecord(raw.marca) ? raw.marca : null;
-  const proveedor = isRecord(raw.proveedor) ? raw.proveedor : null;
-  return {
-    codItem,
-    item,
-    porcIva: asFiniteNumber(pick(raw, ["porc_iva", "porcIva"])) ?? 0,
-    costo:
-      asFiniteNumber(pick(raw, ["costo", "costo_compra", "costoCompra"])) ?? 0,
-    idRubro: nestedId(raw.rubro),
-    idSubRubro: nestedId(pick(raw, ["sub_rubro", "subRubro"]) ?? null),
-    codigoMarca: marca
-      ? asString(pick(marca, ["codigo_marca", "codigoMarca", "cod_marca", "codMarca"]))
-      : null,
-    idProveedor: proveedor
-      ? asFiniteNumber(pick(proveedor, ["id_proveedor", "idProveedor", "id"]))
-      : null,
-    codigoExterno: asString(
-      pick(raw, ["codigo_externo", "codigoExterno"])
-    ),
-    ctdUnidadesPorBulto: asFiniteNumber(
-      pick(raw, ["ctd_unidades_por_bulto", "ctdUnidadesPorBulto"])
-    ),
-    codigosBarra: parseCodigosBarra(
-      pick(raw, ["codigos_barra", "codigosBarra"])
-    ),
-    precios: parsePreciosArray(raw.precios),
-    stock: parseStockArray(raw.stock),
-    tipoProducto: asString(pick(raw, ["tipo_producto", "tipoProducto"])),
-    idUnidadMedida: asFiniteNumber(
-      pick(raw, ["id_unidad_medida", "idUnidadMedida"])
-    ),
-    idMoneda: asFiniteNumber(pick(raw, ["id_moneda", "idMoneda"])),
-  };
-}
-
-type GetItemResult =
-  | { ok: true; ficha: DuxV2ItemFicha }
-  | { ok: false; httpStatus: number; respuesta: string };
-
-function fichaDesdeRespuestaGet(
-  status: number,
-  text: string,
-  codItem: string
-): GetItemResult {
-  if (status < 200 || status >= 300) {
-    return {
-      ok: false,
-      httpStatus: status,
-      respuesta: formatDuxItemsV2Error(status, text),
-    };
-  }
-  let parsed: unknown = {};
-  try {
-    parsed = text.trim() ? JSON.parse(text) : {};
-  } catch {
-    return {
-      ok: false,
-      httpStatus: status,
-      respuesta: "Respuesta GET DUX no es JSON.",
-    };
-  }
-  const datos = itemsArrayDesdeLista(parsed);
-  const ficha = datos.length > 0 ? parseFichaItemV2(datos[0]) : null;
-  if (!ficha) {
-    return {
-      ok: false,
-      httpStatus: 404,
-      respuesta: `Ítem ${codItem} no encontrado en DUX.`,
-    };
-  }
-  return { ok: true, ficha };
-}
-
-/**
- * GET `/items?codigoItem=` — catálogo v1 (mismo que la sync). Auth **sin** Bearer.
- * `stock[].id` es el depósito. Contrato: https://duxsoftware.readme.io/reference/consultar-items-1
- */
-export async function getItemV1PorCodigo(codItem: string): Promise<GetItemResult> {
-  const token = getDuxApiToken();
-  const url =
-    `${DUX_BASE_URL}?codigoItem=${encodeURIComponent(codItem)}` +
-    `&limit=1&offset=0`;
-  const res = await duxItemsV2Fetch(url, {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      Authorization: token,
-    },
-  });
-  return fichaDesdeRespuestaGet(res.status, res.text, codItem);
-}
-
-/**
- * GET `/v2/items?cod_item=` — ficha v2 (no envía id_empresa).
- * Contrato: https://duxsoftware.readme.io/reference/listar_items
- */
-export async function getItemV2PorCod(codItem: string): Promise<GetItemResult> {
-  const token = getDuxApiToken();
-  const url =
-    `${DUX_ITEMS_V2_BASE_URL}?cod_item=${encodeURIComponent(codItem)}` +
-    `&limit=1&offset=0`;
-  const res = await duxItemsV2Fetch(url, {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return fichaDesdeRespuestaGet(res.status, res.text, codItem);
+function truncarItemDux(nombre: string): string {
+  const t = nombre.trim();
+  return t.length <= 250 ? t : t.slice(0, 250);
 }
 
 function armarFilasStockPut(
-  ficha: DuxV2ItemFicha,
+  stocksDepositos: { idDeposito: number; ctdDisponible: number }[],
   idDeposito: number,
   stockNuevo: number
 ): { id_deposito: number; ctd_disponible: number }[] {
   const seen = new Set<number>();
   const out: { id_deposito: number; ctd_disponible: number }[] = [];
   let matching = false;
-  for (const row of ficha.stock) {
-    if (seen.has(row.id)) continue;
-    seen.add(row.id);
-    const esDestino = row.id === idDeposito;
+  for (const row of stocksDepositos) {
+    if (seen.has(row.idDeposito)) continue;
+    seen.add(row.idDeposito);
+    const esDestino = row.idDeposito === idDeposito;
     if (esDestino) matching = true;
     out.push({
-      id_deposito: row.id,
-      ctd_disponible: esDestino ? stockNuevo : (row.stockDisponible ?? 0),
+      id_deposito: row.idDeposito,
+      ctd_disponible: esDestino ? stockNuevo : row.ctdDisponible,
     });
   }
   if (!matching) {
@@ -418,32 +164,31 @@ function armarFilasStockPut(
   return out;
 }
 
+/** Body PUT snake_case desde tablas locales (sin GET a DUX). */
 export function armarBodyGuardarItemV2(input: {
-  ficha: DuxV2ItemFicha;
+  codItem: string;
+  item: string;
+  costoCompra: number;
   idPersonal: number;
   idDeposito: number;
   stock: number;
+  stocksDepositos: { idDeposito: number; ctdDisponible: number }[];
 }): DuxV2GuardarItemRequest {
-  const id_unidad_medida =
-    input.ficha.idUnidadMedida != null && input.ficha.idUnidadMedida > 0
-      ? input.ficha.idUnidadMedida
-      : getDuxIdUnidadMedida();
-  const id_moneda =
-    input.ficha.idMoneda != null && input.ficha.idMoneda > 0
-      ? input.ficha.idMoneda
-      : getDuxIdMoneda();
-  const tipo_producto = input.ficha.tipoProducto ?? getDuxTipoProducto();
   return {
     id_personal: input.idPersonal,
-    tipo_producto,
-    cod_item: input.ficha.codItem,
-    item: input.ficha.item,
-    id_moneda,
-    porc_iva: input.ficha.porcIva,
-    costo_compra: input.ficha.costo,
-    id_unidad_medida,
+    tipo_producto: getDuxTipoProducto(),
+    cod_item: input.codItem,
+    item: truncarItemDux(input.item),
+    id_moneda: getDuxIdMoneda(),
+    porc_iva: getDuxPorcIva(),
+    costo_compra: input.costoCompra,
+    id_unidad_medida: getDuxIdUnidadMedida(),
     sucursales_habilitadas: getDuxSucursalesHabilitadasPut(),
-    stock: armarFilasStockPut(input.ficha, input.idDeposito, input.stock),
+    stock: armarFilasStockPut(
+      input.stocksDepositos,
+      input.idDeposito,
+      input.stock
+    ),
   };
 }
 
@@ -493,41 +238,10 @@ export async function putItemV2(
 }
 
 /**
- * Ajuste de stock: GET v1 (fallback v2) → pausa rate limit → PUT snake_case.
- * Copia todos los depósitos; solo cambia el de la sucursal.
+ * PUT de ajuste: body armado en el servicio desde tablas locales (sin GET).
  */
-export async function putAjusteStockItemV2(input: {
-  codItem: string;
-  stock: number;
-  idDeposito: number;
-  idPersonal: number;
-}): Promise<DuxPutItemResult> {
-  let got = await getItemV1PorCodigo(input.codItem);
-  if (!got.ok) {
-    await sleep(DUX_API_BATCH_INTERVAL_MS);
-    got = await getItemV2PorCod(input.codItem);
-  }
-  if (!got.ok) {
-    return {
-      httpStatus: got.httpStatus,
-      ok: false,
-      respuesta: got.respuesta,
-    };
-  }
-  if (itemTieneVariantes(got.ficha.stock)) {
-    return {
-      httpStatus: 400,
-      ok: false,
-      respuesta:
-        `Ítem ${input.codItem} tiene talle/color en DUX; el PUT de prueba solo cubre ítems SIMPLE.`,
-    };
-  }
-  const body = armarBodyGuardarItemV2({
-    ficha: got.ficha,
-    idPersonal: input.idPersonal,
-    idDeposito: input.idDeposito,
-    stock: input.stock,
-  });
-  await sleep(DUX_API_BATCH_INTERVAL_MS);
-  return putItemV2(input.codItem, body);
+export async function putAjusteStockItemV2(
+  body: DuxV2GuardarItemRequest
+): Promise<DuxPutItemResult> {
+  return putItemV2(body.cod_item, body);
 }

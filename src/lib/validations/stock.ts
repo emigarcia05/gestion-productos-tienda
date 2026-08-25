@@ -13,7 +13,7 @@ export const getControlStockParamsSchema = z.object({
   ),
 });
 
-/** Un ítem con variación → PUT de prueba DUX (solo 4 campos, como el Excel). */
+/** Un ítem con variación → PUT DUX (usuario, sucursal, cod_tienda, cantidad contada). */
 export const pruebaPutAjusteStockDuxSchema = z.object({
   sucursal: z.enum(["guaymallen", "maipu"]),
   usuario: z.number().int().positive(),

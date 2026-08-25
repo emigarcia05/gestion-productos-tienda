@@ -24,7 +24,7 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Prueba PUT DUX: mismos ítems que Exportar Excel (solo variación).
- * Body: cod_tienda, stock, deposito, usuario.
+ * Usuario slidenav + sucursal del filtro; el servidor completa ficha y stock[] desde tablas.
  */
 export default function PruebaPutStockDuxButton({ tableRef, sucursal }: Props) {
   const [loading, setLoading] = useState(false);
@@ -89,7 +89,7 @@ export default function PruebaPutStockDuxButton({ tableRef, sucursal }: Props) {
         />
       </TooltipTrigger>
       <TooltipContent>
-        Lee la ficha en DUX y ajusta el stock del depósito (solo ítems con variación)
+        Ajusta en DUX el stock del depósito de la sucursal (solo ítems con variación)
       </TooltipContent>
     </Tooltip>
   );
