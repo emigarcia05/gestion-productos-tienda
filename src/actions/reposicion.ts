@@ -494,7 +494,7 @@ export async function upsertReglaReposicion(raw: unknown): Promise<ActionResult<
     if (bulto == null || bulto < 1) {
       return {
         ok: false,
-        error: "Completá Un. que viene en un bulto cerrado.",
+        error: "Completá Un. por bulto.",
       };
     }
   }
