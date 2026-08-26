@@ -10,6 +10,7 @@ import { generarPdfPedido } from "@/lib/generarPdfPedido";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
 import * as pedidosHistoriaService from "@/services/pedidosHistoria.service";
+import { fechaFacturaIsoSchema } from "@/services/exportRecepcionPedidoExcel.service";
 
 /**
  * Wrapper de seguridad para Server Actions del módulo:
@@ -37,6 +38,7 @@ const marcarRegistradoSchema = z.object({
     .number()
     .finite()
     .refine((n) => n !== 0, "Total inválido."),
+  fechaRecepcionIso: fechaFacturaIsoSchema,
 });
 
 const guardarRecepcionSchema = z.object({
@@ -54,6 +56,7 @@ const guardarRecepcionSchema = z.object({
       })
     )
     .min(1, "Debe existir al menos un ítem."),
+  fechaRecepcionIso: fechaFacturaIsoSchema.optional(),
 });
 
 const eliminarPedidoHistoriaSchema = z.object({
@@ -122,6 +125,7 @@ export async function marcarPedidoHistoriaRegistradoAction(
     const res = await pedidosHistoriaService.marcarPedidoHistoriaRegistrado({
       pedidoHistoriaId: parsed.data.pedidoHistoriaId,
       totalPedido: parsed.data.totalPedido,
+      fechaRecepcionIso: parsed.data.fechaRecepcionIso,
     });
     if (!res.success) return { ok: false, error: res.error };
 
@@ -145,6 +149,7 @@ export async function guardarRecepcionPedidoHistoriaAction(
     const res = await pedidosHistoriaService.guardarRecepcionPedidoHistoria({
       pedidoHistoriaId: parsed.data.pedidoHistoriaId,
       items: parsed.data.items,
+      fechaRecepcionIso: parsed.data.fechaRecepcionIso,
     });
     if (!res.success) return { ok: false, error: res.error };
 
@@ -173,4 +178,23 @@ export async function eliminarPedidoHistoriaAction(
     revalidatePath("/pedidos/historial");
     return { ok: true, data: undefined };
   });
+}
+
+export async function listarPedidosHistoriaRecepcionadosParaNotaCreditoAction(): Promise<
+  ActionResult<pedidosHistoriaService.PedidoHistoriaRecepcionadoNc[]>
+> {
+  return ejecutarActionSegura(
+    "listarPedidosHistoriaRecepcionadosParaNotaCredito",
+    async () => {
+      const rol = await getRol();
+      if (!puede(rol, PERMISOS.pedidos.acceso)) {
+        return { ok: false, error: "Sin permisos para pedidos." };
+      }
+
+      const res =
+        await pedidosHistoriaService.listarPedidosHistoriaRecepcionadosParaNotaCredito();
+      if (!res.success) return { ok: false, error: res.error };
+      return { ok: true, data: res.data };
+    }
+  );
 }

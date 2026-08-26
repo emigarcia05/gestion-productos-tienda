@@ -31,11 +31,13 @@ import PedidoHistoriaBorrarConfirmModal from "@/components/pedidos/PedidoHistori
 import FiltrosHistorialPedidos, {
   type EstadoFiltroPedido,
 } from "@/components/pedidos/FiltrosHistorialPedidos";
-import { Eye, PackageCheck, Trash2 } from "lucide-react";
+import { Eye, FileText, PackageCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { descargarPdfBase64 } from "@/lib/descargarPdfBase64";
 import { descargarPdfPedidoHistoriaAction } from "@/actions/pedidosHistoria";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
+import ToolbarActionButton from "@/components/shared/ToolbarActionButton";
+import GenerarNotaCreditoModal from "@/components/pedidos/GenerarNotaCreditoModal";
 
 type PedidoHistoriaResumenClient = Omit<PedidoHistoriaResumen, "generadoAt" | "registradoAt"> & {
   generadoAt: string;
@@ -79,6 +81,8 @@ export default function HistorialPedidosPageClient({
   const [borrarOpen, setBorrarOpen] = useState(false);
   const [borrarId, setBorrarId] = useState<string | null>(null);
   const [descargandoPdfId, setDescargandoPdfId] = useState<string | null>(null);
+  const [notaCreditoOpen, setNotaCreditoOpen] = useState(false);
+  const [pedidoNcElegidoId, setPedidoNcElegidoId] = useState<string | null>(null);
 
   const showingEmpty = items.length === 0;
   const COL_WIDTHS_PCT = [18, 28, 18, 14, 22] as const;
@@ -132,16 +136,28 @@ export default function HistorialPedidosPageClient({
   }
 
   return (
-    <ClassicFilteredTableLayout title={title} subtitle={subtitle} filters={
-      <FiltrosHistorialPedidos
-        proveedores={proveedores}
-        proveedorId={proveedorId}
-        sucursalCodigo={sucursalCodigo}
-        estado={estado}
-        q={q}
-        total={total}
-      />
-    }>
+    <ClassicFilteredTableLayout
+      title={title}
+      subtitle={subtitle}
+      actions={
+        <ToolbarActionButton
+          type="button"
+          label="Generar Nota Crédito"
+          icon={<FileText aria-hidden />}
+          className="h-10 px-4"
+          onClick={() => setNotaCreditoOpen(true)}
+        />
+      }
+      filters={
+        <FiltrosHistorialPedidos
+          proveedores={proveedores}
+          proveedorId={proveedorId}
+          sucursalCodigo={sucursalCodigo}
+          estado={estado}
+          q={q}
+          total={total}
+        />
+      }>
       <div className="flex h-full min-h-0 flex-col gap-0">
         <Card className="card-tabla-envoltorio">
           <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
@@ -311,6 +327,21 @@ export default function HistorialPedidosPageClient({
             if (!v) setBorrarId(null);
           }}
           pedidoHistoriaId={borrarId}
+        />
+        <GenerarNotaCreditoModal
+          open={notaCreditoOpen}
+          onOpenChange={(v) => {
+            setNotaCreditoOpen(v);
+            if (!v) setPedidoNcElegidoId(null);
+          }}
+          pedidoElegidoId={pedidoNcElegidoId}
+          onVerPedido={(id) => {
+            setLecturaId(id);
+            setLecturaOpen(true);
+          }}
+          onElegirPedido={(id) => {
+            setPedidoNcElegidoId(id);
+          }}
         />
       </div>
     </ClassicFilteredTableLayout>

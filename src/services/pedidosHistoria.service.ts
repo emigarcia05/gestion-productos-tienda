@@ -7,8 +7,27 @@ import type {
 } from "@/services/pedidosEnvio.service";
 import { getItemsYProveedorParaEnviar } from "@/services/pedidosEnvio.service";
 import { PAGE_SIZE, skipForPagina, totalPaginasFromTotal } from "@/lib/pagination";
+import {
+  dateToIsoYmdArgentina,
+  isoYmdFromPrismaDateOnly,
+} from "@/lib/fechaArgentina";
+import { fechaFacturaIsoSchema } from "@/services/exportRecepcionPedidoExcel.service";
 
 const COD_TIENDA_FALLBACK = "1503";
+const LISTA_NC_MAX = 200;
+
+function dateFromIsoYmd(isoYmd: string): Date {
+  return new Date(`${isoYmd}T12:00:00.000Z`);
+}
+
+function fechaRecepcionIsoDesdePedido(
+  fechaRecepcion: Date | null,
+  registradoAt: Date | null
+): string | null {
+  if (fechaRecepcion) return isoYmdFromPrismaDateOnly(fechaRecepcion);
+  if (registradoAt) return dateToIsoYmdArgentina(registradoAt);
+  return null;
+}
 
 /**
  * Prefijo de log uniforme para todo el módulo de historial de pedidos.
@@ -110,6 +129,10 @@ export interface PedidoHistoriaDetalle {
    * Misma regla que `generadoAt`: en wire, ISO string o `null`.
    */
   registradoAt: Date | string | null;
+  /**
+   * FECHA FACTURA / recepción persistida (`YYYY-MM-DD`). `null` si nunca se registró.
+   */
+  fechaRecepcionIso: string | null;
   total: number | null;
   estado: PedidoHistoriaEstado;
   proveedorId: string;
@@ -156,6 +179,7 @@ export function serializarPedidoHistoriaDetalleParaCliente(
     id: String(d.id),
     generadoAt,
     registradoAt,
+    fechaRecepcionIso: d.fechaRecepcionIso,
     total: total == null || !Number.isFinite(total) ? null : total,
     estado: d.estado,
     proveedorId: String(d.proveedorId),
@@ -275,6 +299,7 @@ export async function getPedidoHistoriaDetalle(params: {
         generadoAt: true,
         estado: true,
         registradoAt: true,
+        fechaRecepcion: true,
         total: true,
         proveedorId: true,
         sucursalId: true,
@@ -328,6 +353,10 @@ export async function getPedidoHistoriaDetalle(params: {
         id: pedido.id,
         generadoAt: pedido.generadoAt,
         registradoAt: pedido.registradoAt,
+        fechaRecepcionIso: fechaRecepcionIsoDesdePedido(
+          pedido.fechaRecepcion,
+          pedido.registradoAt
+        ),
         total: pedido.total == null ? null : Number(pedido.total),
         estado: normalizarEstadoPedidoHistoria(pedido.estado),
         proveedorId: pedido.proveedorId,
@@ -462,6 +491,51 @@ export async function listarPedidosHistoria(params: {
   }
 }
 
+export type PedidoHistoriaRecepcionadoNc = {
+  id: string;
+  fechaRecepcionIso: string | null;
+  proveedorNombre: string;
+  total: number | null;
+};
+
+/** Pedidos RECEPCIONADO para el picker de nota de crédito (más recientes primero). */
+export async function listarPedidosHistoriaRecepcionadosParaNotaCredito(): Promise<
+  ServiceResult<PedidoHistoriaRecepcionadoNc[]>
+> {
+  try {
+    const rows = await prisma.pedidoHistoria.findMany({
+      where: { estado: "RECEPCIONADO" },
+      orderBy: [
+        { fechaRecepcion: { sort: "desc", nulls: "last" } },
+        { registradoAt: "desc" },
+      ],
+      take: LISTA_NC_MAX,
+      select: {
+        id: true,
+        fechaRecepcion: true,
+        registradoAt: true,
+        total: true,
+        proveedor: { select: { nombre: true } },
+      },
+    });
+
+    return {
+      success: true,
+      data: rows.map((r) => ({
+        id: r.id,
+        fechaRecepcionIso: fechaRecepcionIsoDesdePedido(r.fechaRecepcion, r.registradoAt),
+        proveedorNombre: r.proveedor?.nombre ?? "",
+        total: r.total == null ? null : Number(r.total),
+      })),
+    };
+  } catch (e) {
+    logServiceError("listarPedidosHistoriaRecepcionadosParaNotaCredito", e);
+    const msg =
+      e instanceof Error ? e.message : "Error al listar pedidos recepcionados.";
+    return { success: false, error: msg };
+  }
+}
+
 export async function guardarRecepcionPedidoHistoria(params: {
   pedidoHistoriaId: string;
   items: Array<{
@@ -470,6 +544,7 @@ export async function guardarRecepcionPedidoHistoria(params: {
     cantPedida: number;
     cantRecibida: number | null;
   }>;
+  fechaRecepcionIso?: string;
 }): Promise<ServiceResult<void>> {
   const id = params.pedidoHistoriaId.trim();
   if (!id) return { success: false, error: "ID inválido." };
@@ -543,6 +618,14 @@ export async function guardarRecepcionPedidoHistoria(params: {
           },
         });
       }
+
+      const fechaParsed = fechaFacturaIsoSchema.safeParse(params.fechaRecepcionIso);
+      if (fechaParsed.success) {
+        await tx.pedidoHistoria.update({
+          where: { id },
+          data: { fechaRecepcion: dateFromIsoYmd(fechaParsed.data) },
+        });
+      }
     });
 
     return { success: true, data: undefined };
@@ -557,12 +640,17 @@ export async function guardarRecepcionPedidoHistoria(params: {
 export async function marcarPedidoHistoriaRegistrado(params: {
   pedidoHistoriaId: string;
   totalPedido: number;
+  fechaRecepcionIso: string;
 }): Promise<ServiceResult<void>> {
-  const { pedidoHistoriaId, totalPedido } = params;
+  const { pedidoHistoriaId, totalPedido, fechaRecepcionIso } = params;
   const id = pedidoHistoriaId.trim();
   if (!id) return { success: false, error: "ID inválido." };
   if (!Number.isFinite(totalPedido) || totalPedido === 0) {
     return { success: false, error: "Total inválido." };
+  }
+  const fechaParsed = fechaFacturaIsoSchema.safeParse(fechaRecepcionIso);
+  if (!fechaParsed.success) {
+    return { success: false, error: "Fecha de recepción inválida." };
   }
 
   try {
@@ -573,6 +661,7 @@ export async function marcarPedidoHistoriaRegistrado(params: {
       data: {
         estado: "RECEPCIONADO",
         registradoAt: new Date(),
+        fechaRecepcion: dateFromIsoYmd(fechaParsed.data),
         total: new Prisma.Decimal(totalPedido.toFixed(2)),
       },
     });

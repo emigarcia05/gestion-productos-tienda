@@ -1072,6 +1072,12 @@ model PedidoHistoria {
   generadoAt    DateTime @default(now()) @map("generado_at")
   estado        String   @default("PENDIENTE") @map("estado") // PENDIENTE | RECEPCIONADO
   registradoAt  DateTime? @map("registrado_at")
+  /**
+   * Fecha de recepción / factura (calendario AR, `YYYY-MM-DD`).
+   * Es la FECHA FACTURA del modal de recepción; se persiste al marcar RECEPCIONADO.
+   * Distinto de `registrado_at` (instante en que se registró en DUX).
+   */
+  fechaRecepcion DateTime? @db.Date @map("fecha_recepcion")
   total         Decimal? @db.Decimal(14, 2) @map("total") // TOTAL PEDIDO de recepción; admite negativo (NC / devolución).
   proveedorId   String   @map("proveedor_id")
   sucursalId    String   @map("sucursal_id")

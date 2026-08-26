@@ -219,9 +219,9 @@ export default function PedidoHistoriaDetalleModal({
       const totalNorm = String(res.data.total);
       setTotalPedido(totalNorm);
     }
-    // Para pedidos RECEPCIONADO, alimentamos FECHA FACTURA con una fecha razonable
-    // (hoy no existe persistencia dedicada; usamos `generadoAt` del snapshot).
-    if (res.data.estado === "RECEPCIONADO") {
+    if (res.data.fechaRecepcionIso) {
+      setFechaRecepcion(res.data.fechaRecepcionIso);
+    } else if (res.data.estado === "RECEPCIONADO") {
       const d = toDate(res.data.generadoAt);
       if (d) setFechaRecepcion(dateToIsoYmdArgentina(d));
     }
@@ -500,6 +500,7 @@ export default function PedidoHistoriaDetalleModal({
       const marcar = await marcarPedidoHistoriaRegistradoAction({
         pedidoHistoriaId,
         totalPedido: Number(totalPedido),
+        fechaRecepcionIso: fechaRecepcion,
       });
       if (!marcar.ok) {
         const line =
@@ -547,6 +548,7 @@ export default function PedidoHistoriaDetalleModal({
           cantPedida: item.cantPedida,
           cantRecibida: item.cantRecibida,
         })),
+        fechaRecepcionIso: fechaRecepcion.trim() || undefined,
       });
       if (!res.ok) {
         const line = res.error ?? "Error al guardar la recepción.";
