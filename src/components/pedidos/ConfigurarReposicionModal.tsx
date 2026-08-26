@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
@@ -75,6 +75,34 @@ function parseCantReposicionInput(raw: string): number | null {
   return n;
 }
 
+function EtiquetaCampoReposicion({ children }: { children?: string }) {
+  return (
+    <Label className="flex h-12 w-full items-center justify-center px-1 text-xs font-medium text-foreground">
+      <span className="line-clamp-3 w-full text-center leading-tight">{children}</span>
+    </Label>
+  );
+}
+
+function ColumnaCampoReposicion({
+  oculta = false,
+  children,
+}: {
+  oculta?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 flex-col items-center gap-1",
+        oculta && "invisible pointer-events-none select-none"
+      )}
+      aria-hidden={oculta}
+    >
+      {children}
+    </div>
+  );
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -132,27 +160,16 @@ export default function ConfigurarReposicionModal({
   const puntoResuelto = parsePuntoReposicionInput(puntoInput) !== null;
   const unidadesPorBulto = parseCantReposicionInput(unidadesBultoInput);
   const hayUnPorBulto = unidadesPorBulto !== null;
-  const mostrarPunto = esFormaBulto
-    ? hayUnPorBulto
-    : tieneConfigInicial || Boolean(formaPedir);
-  const mostrarCant = esFormaBulto
-    ? hayUnPorBulto && puntoResuelto
-    : tieneConfigInicial || (Boolean(formaPedir) && puntoResuelto);
-  const invisPunto = !esFormaBulto && !mostrarPunto;
-  const invisCant = !esFormaBulto && !mostrarCant;
+  const mostrarPuntoUnMax = tieneConfigInicial || Boolean(formaPedir);
+  const mostrarCantUnMax =
+    tieneConfigInicial || (Boolean(formaPedir) && puntoResuelto);
+  const ocultarPuntoBulto = !hayUnPorBulto;
+  const ocultarBultosTotales = !hayUnPorBulto || !puntoResuelto;
   const bultosReposicion = parseCantReposicionInput(cantInput);
   const unTotales =
     esFormaBulto && bultosReposicion !== null && unidadesPorBulto !== null
       ? bultosReposicion * unidadesPorBulto
       : null;
-  const claseEtiquetaCampo =
-    "min-h-10 justify-center px-1 text-xs font-medium text-foreground text-center leading-tight";
-  let gridFormaClass = "grid-cols-3";
-  if (esFormaBulto) {
-    if (!hayUnPorBulto) gridFormaClass = "grid-cols-2";
-    else if (!puntoResuelto) gridFormaClass = "grid-cols-3";
-    else gridFormaClass = "grid-cols-5";
-  }
 
   const handleAgregarProductos = (seleccionados: ItemSelectorReposicion[]) => {
     setProductosAdicionales((prev) => {
@@ -244,10 +261,7 @@ export default function ConfigurarReposicionModal({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <AppModal
           title="Configurar Reposición"
-          className={cn(
-            "max-h-[100vh]",
-            esFormaBulto ? "max-w-[56rem]" : "max-w-[40rem]"
-          )}
+          className="max-w-[56rem] max-h-[100vh]"
           actions={
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -266,13 +280,9 @@ export default function ConfigurarReposicionModal({
             </div>
 
             <div className="flex flex-col gap-3">
-              <div
-                className={cn("grid gap-4 items-center", gridFormaClass)}
-              >
-              <div className="flex flex-col items-center gap-1">
-                <Label className={claseEtiquetaCampo}>
-                  FORMA PEDIR
-                </Label>
+              <div className="grid w-full grid-cols-5 items-start gap-4">
+              <ColumnaCampoReposicion>
+                <EtiquetaCampoReposicion>FORMA PEDIR</EtiquetaCampoReposicion>
                 <Select
                   value={formaPedir || "none"}
                   onValueChange={(v) =>
@@ -287,7 +297,7 @@ export default function ConfigurarReposicionModal({
                     }
                   }
                 >
-                  <SelectTrigger className="w-full text-center">
+                  <SelectTrigger className="w-full min-w-0 text-center">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper" side="bottom" align="start">
@@ -298,103 +308,101 @@ export default function ConfigurarReposicionModal({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </ColumnaCampoReposicion>
 
               {esFormaBulto ? (
-                <div className="flex flex-col items-center gap-1">
-                  <Label className={claseEtiquetaCampo}>
-                    UN. POR BULTO
-                  </Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={unidadesBultoInput}
-                    onChange={(e) => setUnidadesBultoInput(e.target.value)}
-                    className="tabular-nums text-center"
-                    aria-label="Unidades por bulto"
-                  />
-                </div>
-              ) : null}
-
-              {esFormaBulto && !mostrarPunto ? null : (
-                <div
-                  className={cn(
-                    "flex flex-col items-center gap-1",
-                    invisPunto && "invisible pointer-events-none select-none"
-                  )}
-                  aria-hidden={invisPunto}
-                >
-                  <Label className={claseEtiquetaCampo}>
-                    {esFormaBulto ? "PUNTO REPOSICIÓN (EN UN.)" : "PUNTO REPOSICIÓN"}
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={puntoInput}
-                    onChange={(e) => setPuntoInput(e.target.value)}
-                    className="tabular-nums text-center"
-                    aria-label="Punto reposición"
-                    tabIndex={invisPunto ? -1 : 0}
-                  />
-                </div>
+                <>
+                  <ColumnaCampoReposicion>
+                    <EtiquetaCampoReposicion>UN. POR BULTO</EtiquetaCampoReposicion>
+                    <Input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={unidadesBultoInput}
+                      onChange={(e) => setUnidadesBultoInput(e.target.value)}
+                      className="min-w-0 tabular-nums text-center"
+                      aria-label="Unidades por bulto"
+                    />
+                  </ColumnaCampoReposicion>
+                  <ColumnaCampoReposicion oculta={ocultarPuntoBulto}>
+                    <EtiquetaCampoReposicion>
+                      PUNTO REPOSICIÓN (EN UN.)
+                    </EtiquetaCampoReposicion>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={puntoInput}
+                      onChange={(e) => setPuntoInput(e.target.value)}
+                      className="min-w-0 tabular-nums text-center"
+                      aria-label="Punto reposición"
+                      tabIndex={ocultarPuntoBulto ? -1 : 0}
+                    />
+                  </ColumnaCampoReposicion>
+                  <ColumnaCampoReposicion oculta={ocultarBultosTotales}>
+                    <EtiquetaCampoReposicion>BULTOS REPOSICIÓN</EtiquetaCampoReposicion>
+                    <Input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={cantInput}
+                      onChange={(e) => setCantInput(e.target.value)}
+                      className="min-w-0 tabular-nums text-center"
+                      aria-label="Bultos reposición"
+                      tabIndex={ocultarBultosTotales ? -1 : 0}
+                    />
+                  </ColumnaCampoReposicion>
+                  <ColumnaCampoReposicion oculta={ocultarBultosTotales}>
+                    <EtiquetaCampoReposicion>UN. TOTALES</EtiquetaCampoReposicion>
+                    <Input
+                      type="text"
+                      value={unTotales === null ? "" : fmtNumero(unTotales)}
+                      readOnly
+                      aria-readonly="true"
+                      className="min-w-0 tabular-nums text-center"
+                      aria-label="Unidades totales"
+                      tabIndex={ocultarBultosTotales ? -1 : 0}
+                    />
+                  </ColumnaCampoReposicion>
+                </>
+              ) : (
+                <>
+                  <ColumnaCampoReposicion oculta={!mostrarPuntoUnMax}>
+                    <EtiquetaCampoReposicion>PUNTO REPOSICIÓN</EtiquetaCampoReposicion>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={puntoInput}
+                      onChange={(e) => setPuntoInput(e.target.value)}
+                      className="min-w-0 tabular-nums text-center"
+                      aria-label="Punto reposición"
+                      tabIndex={!mostrarPuntoUnMax ? -1 : 0}
+                    />
+                  </ColumnaCampoReposicion>
+                  <ColumnaCampoReposicion oculta={!mostrarCantUnMax}>
+                    <EtiquetaCampoReposicion>UN. MÁXIMAS</EtiquetaCampoReposicion>
+                    <Input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={cantInput}
+                      onChange={(e) => setCantInput(e.target.value)}
+                      className="min-w-0 tabular-nums text-center"
+                      aria-label="Cantidad reposición"
+                      tabIndex={!mostrarCantUnMax ? -1 : 0}
+                    />
+                  </ColumnaCampoReposicion>
+                  <ColumnaCampoReposicion oculta>
+                    <EtiquetaCampoReposicion />
+                    <Input type="text" readOnly tabIndex={-1} className="min-w-0" aria-hidden />
+                  </ColumnaCampoReposicion>
+                  <ColumnaCampoReposicion oculta>
+                    <EtiquetaCampoReposicion />
+                    <Input type="text" readOnly tabIndex={-1} className="min-w-0" aria-hidden />
+                  </ColumnaCampoReposicion>
+                </>
               )}
-
-              {esFormaBulto && mostrarCant ? (
-                  <>
-                    <div className="flex flex-col items-center gap-1">
-                      <Label className={claseEtiquetaCampo}>
-                        BULTOS REPOSICIÓN
-                      </Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={cantInput}
-                        onChange={(e) => setCantInput(e.target.value)}
-                        className="tabular-nums text-center"
-                        aria-label="Bultos reposición"
-                      />
-                    </div>
-                    <div className="flex flex-col items-center gap-1">
-                      <Label className={claseEtiquetaCampo}>
-                        UN. TOTALES
-                      </Label>
-                      <Input
-                        type="text"
-                        value={unTotales === null ? "" : fmtNumero(unTotales)}
-                        readOnly
-                        aria-readonly="true"
-                        className="tabular-nums text-center"
-                        aria-label="Unidades totales"
-                      />
-                    </div>
-                  </>
-              ) : null}
-              {!esFormaBulto ? (
-                <div
-                  className={cn(
-                    "flex flex-col items-center gap-1",
-                    invisCant && "invisible pointer-events-none select-none"
-                  )}
-                  aria-hidden={invisCant}
-                >
-                  <Label className={claseEtiquetaCampo}>
-                    UN. MÁXIMAS
-                  </Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={cantInput}
-                    onChange={(e) => setCantInput(e.target.value)}
-                    className="tabular-nums text-center"
-                    aria-label="Cantidad reposición"
-                    tabIndex={invisCant ? -1 : 0}
-                  />
-                </div>
-              ) : null}
             </div>
             </div>
 
