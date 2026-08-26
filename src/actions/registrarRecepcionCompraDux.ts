@@ -13,7 +13,11 @@ import { registrarRecepcionCompraDux } from "@/services/registrarRecepcionCompra
 const registrarRecepcionCompraDuxSchema = z.object({
   pedidoHistoriaId: z.string().cuid("ID inválido."),
   fechaFacturaIso: fechaFacturaIsoSchema,
-  totalPedidoIngreso: z.coerce.number().positive().optional(),
+  totalPedidoIngreso: z.coerce
+    .number()
+    .finite()
+    .refine((n) => n !== 0)
+    .optional(),
   decisionFiscal: z.boolean().optional(),
   idPersonal: z.coerce.number().int().positive().optional(),
 });

@@ -12,6 +12,23 @@ import { toast } from "sonner";
 
 const EMPTY: { items: ProductoTiendaRowBusqueda[]; total: number } = { items: [], total: 0 };
 
+function parseCantRecibidaDraft(raw: string): number | null {
+  const t = raw.trim();
+  if (t === "" || t === "-") return null;
+  const n = Number(t);
+  if (!Number.isFinite(n)) return null;
+  const i = Math.trunc(n);
+  return i === 0 ? null : i;
+}
+
+function sanitizeEnteroConSignoInput(raw: string, maxDigits = 6): string {
+  const t = raw.replace(/[^\d-]/g, "");
+  const neg = t.startsWith("-");
+  const digits = t.replace(/-/g, "").slice(0, maxDigits);
+  if (neg) return digits === "" ? "-" : `-${digits}`;
+  return digits;
+}
+
 export default function AgregarProductosModal({
   open,
   onOpenChange,
@@ -77,7 +94,7 @@ export default function AgregarProductosModal({
     []
   );
 
-  const cantRecibidaValida = Math.max(0, Math.floor(Number(cantRecibida) || 0)) > 0;
+  const cantRecibidaValida = parseCantRecibidaDraft(cantRecibida) != null;
 
   const filterContent = (
     <div className="flex w-full flex-col gap-2">
@@ -98,14 +115,12 @@ export default function AgregarProductosModal({
           onLimpiar={() => setCantRecibida("")}
         >
           <Input
-            type="number"
-            min={1}
-            step={1}
+            type="text"
             inputMode="numeric"
             placeholder="CANT."
             aria-label="Cant. Recibida (nuevo ítem)"
             value={cantRecibida}
-            onChange={(e) => setCantRecibida(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            onChange={(e) => setCantRecibida(sanitizeEnteroConSignoInput(e.target.value))}
             className="h-10 w-full min-w-0 text-center tabular-nums input-filtro-unificado"
           />
         </FiltroIndividualContainer>
@@ -132,9 +147,9 @@ export default function AgregarProductosModal({
       confirmSingleLabel="AGREGAR PRODUCTO"
       confirmSingleDisabled={!cantRecibidaValida}
       onConfirmSingle={async (row) => {
-        const cant = Math.max(0, Math.floor(Number(cantRecibida) || 0));
-        if (cant <= 0) {
-          toast.error("Ingresá una Cant. Recibida mayor a 0.");
+        const cant = parseCantRecibidaDraft(cantRecibida);
+        if (cant == null) {
+          toast.error("Ingresá una Cant. Recibida distinta de 0.");
           throw new Error("Cantidad inválida");
         }
         await onAgregar(row, cant);

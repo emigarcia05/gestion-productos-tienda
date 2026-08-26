@@ -1072,7 +1072,7 @@ model PedidoHistoria {
   generadoAt    DateTime @default(now()) @map("generado_at")
   estado        String   @default("PENDIENTE") @map("estado") // PENDIENTE | RECEPCIONADO
   registradoAt  DateTime? @map("registrado_at")
-  total         Decimal? @db.Decimal(14, 2) @map("total")
+  total         Decimal? @db.Decimal(14, 2) @map("total") // TOTAL PEDIDO de recepción; admite negativo (NC / devolución).
   proveedorId   String   @map("proveedor_id")
   sucursalId    String   @map("sucursal_id")
   items         PedidoHistoriaItem[]
@@ -1092,7 +1092,7 @@ model PedidoHistoriaItem {
   pedidoHistoriaId String @map("pedido_historia_id")
   codTienda        String @map("cod_tienda")
   cantPedida       Int    @map("cant_pedida") @default(0)
-  cantRecibida     Int?   @map("cant_recibida")
+  cantRecibida     Int?   @map("cant_recibida") // Unidades recibidas; admite negativo. `null` = sin confirmar.
 
   pedidoHistoria PedidoHistoria @relation(fields: [pedidoHistoriaId], references: [id], onDelete: Cascade)
   createdAt       DateTime       @default(now()) @map("created_at")

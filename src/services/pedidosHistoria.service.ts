@@ -481,7 +481,7 @@ export async function guardarRecepcionPedidoHistoria(params: {
     cantRecibida:
       item.cantRecibida == null
         ? null
-        : Math.max(0, Math.floor(Number(item.cantRecibida) || 0)),
+        : Math.trunc(Number(item.cantRecibida)),
   }));
 
   const keys = itemsNormalizados.map((item) => `${item.codTienda}::${item.id ?? "new"}`);
@@ -561,7 +561,7 @@ export async function marcarPedidoHistoriaRegistrado(params: {
   const { pedidoHistoriaId, totalPedido } = params;
   const id = pedidoHistoriaId.trim();
   if (!id) return { success: false, error: "ID inválido." };
-  if (!Number.isFinite(totalPedido) || totalPedido <= 0) {
+  if (!Number.isFinite(totalPedido) || totalPedido === 0) {
     return { success: false, error: "Total inválido." };
   }
 

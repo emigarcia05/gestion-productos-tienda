@@ -33,7 +33,10 @@ async function ejecutarActionSegura<T>(
 
 const marcarRegistradoSchema = z.object({
   pedidoHistoriaId: prismaCuidSchema,
-  totalPedido: z.coerce.number().positive("Total inválido."),
+  totalPedido: z.coerce
+    .number()
+    .finite()
+    .refine((n) => n !== 0, "Total inválido."),
 });
 
 const guardarRecepcionSchema = z.object({
@@ -47,7 +50,7 @@ const guardarRecepcionSchema = z.object({
         ),
         codTienda: z.string().min(1, "Cod. tienda inválido."),
         cantPedida: z.coerce.number().int().min(0, "Cant. pedida inválida."),
-        cantRecibida: z.coerce.number().int().min(0, "Cant. recibida inválida").nullable(),
+        cantRecibida: z.coerce.number().int().min(-1_000_000).max(1_000_000).nullable(),
       })
     )
     .min(1, "Debe existir al menos un ítem."),

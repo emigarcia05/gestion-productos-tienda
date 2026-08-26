@@ -43,6 +43,35 @@ export function montoArCentsToDisplayWithCurrency(
   return `${currencySymbol}${montoArCentsToDisplayBody(cents)}`;
 }
 
+/** Centavos con signo desde normalizado (`"-12.34"` → -1234). Vacío / inválido → 0. */
+export function montoArSignedNormalizedStringToCents(norm: string): number {
+  const t = norm.trim();
+  if (t === "" || t === "-") return 0;
+  const n = Number(t);
+  if (!Number.isFinite(n)) return 0;
+  const cents = Math.round(n * 100);
+  const mag = Math.min(Math.abs(cents), MONTO_AR_MASK_MAX_CENTS);
+  return cents < 0 ? -mag : mag;
+}
+
+export function montoArSignedCentsToNormalizedString(cents: number): string {
+  const mag = Math.min(Math.abs(Math.trunc(cents)), MONTO_AR_MASK_MAX_CENTS);
+  const magStr = montoArCentsToNormalizedString(mag);
+  return cents < 0 && mag !== 0 ? `-${magStr}` : magStr;
+}
+
+/** Visual `$1.234,56` o `$-1.234,56`. */
+export function montoArSignedCentsToDisplayWithCurrency(
+  cents: number,
+  currencySymbol: string = "$"
+): string {
+  const mag = Math.abs(Math.trunc(cents));
+  const body = montoArCentsToDisplayBody(mag);
+  return cents < 0 && mag !== 0
+    ? `${currencySymbol}-${body}`
+    : `${currencySymbol}${body}`;
+}
+
 /** Pesos enteros (p. ej. saldo) como en la máscara: siempre `$` + miles + `,00`. */
 export function montoArPesosEnterosToDisplay(pesos: number): string {
   if (!Number.isFinite(pesos) || pesos <= 0) {

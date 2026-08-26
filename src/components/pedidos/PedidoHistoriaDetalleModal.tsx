@@ -66,8 +66,18 @@ function mensajeErrorDesconocido(e: unknown): string {
 }
 
 function parseIntSafe(value: string): number {
-  const n = Math.max(0, Math.floor(Number(value) || 0));
+  const t = value.trim();
+  if (t === "" || t === "-") return 0;
+  const n = Math.trunc(Number(t));
   return Number.isFinite(n) ? n : 0;
+}
+
+function sanitizeEnteroConSignoInput(raw: string, maxDigits = 6): string {
+  const t = raw.replace(/[^\d-]/g, "");
+  const neg = t.startsWith("-");
+  const digits = t.replace(/-/g, "").slice(0, maxDigits);
+  if (neg) return digits === "" ? "-" : `-${digits}`;
+  return digits;
 }
 
 function toDate(value: string | Date | null | undefined): Date | null {
@@ -106,11 +116,11 @@ const MODAL_SECTION_CARD_CLASS = "min-w-0 bg-transparent";
 
 const MODAL_RESUMEN_PANEL_CLASS = "min-w-0 bg-transparent";
 
-/** Total normalizado (`totalPedido`) distinto de vacío y mayor que 0. */
-function totalPedidoMontoPositivo(norm: string): boolean {
-  if (norm === "") return false;
+/** Total normalizado (`totalPedido`) distinto de vacío y distinto de 0 (admite negativo). */
+function totalPedidoMontoValido(norm: string): boolean {
+  if (norm === "" || norm === "-") return false;
   const n = Number(norm);
-  return Number.isFinite(n) && n > 0;
+  return Number.isFinite(n) && n !== 0;
 }
 
 interface Props {
@@ -205,7 +215,7 @@ export default function PedidoHistoriaDetalleModal({
       }
       return merged;
     });
-    if (res.data.total != null && Number.isFinite(res.data.total) && res.data.total > 0) {
+    if (res.data.total != null && Number.isFinite(res.data.total) && res.data.total !== 0) {
       const totalNorm = String(res.data.total);
       setTotalPedido(totalNorm);
     }
@@ -350,9 +360,9 @@ export default function PedidoHistoriaDetalleModal({
     if (locked) return;
     if (fechaRecepcion.trim() === "") return;
     if (!detalle) return;
-    const cant = Math.max(0, Math.floor(Number(cantRecibida) || 0));
-    if (cant <= 0) {
-      toast.error("Ingresá una Cant. Recibida mayor a 0.");
+    const cant = Math.trunc(Number(cantRecibida));
+    if (!Number.isFinite(cant) || cant === 0) {
+      toast.error("Ingresá una Cant. Recibida distinta de 0.");
       return;
     }
     const codNormalizado = producto.codTienda.trim();
@@ -373,7 +383,7 @@ export default function PedidoHistoriaDetalleModal({
             id: tempId,
             codTienda: codNormalizado,
             descripcionTienda: producto.descripcionTienda,
-            cantPedida: cant,
+            cantPedida: Math.max(0, cant),
             cantRecibida: cant,
           },
         ],
@@ -393,7 +403,7 @@ export default function PedidoHistoriaDetalleModal({
     if (locked || busy) return;
     if (fechaRecepcion.trim() === "") return;
     const current = parseIntSafe(editingValue);
-    const next = Math.max(0, current + delta);
+    const next = current + delta;
     setEditingValue(next === 0 ? "" : String(next));
   }
 
@@ -431,7 +441,7 @@ export default function PedidoHistoriaDetalleModal({
     !busy &&
     fechaFacturaOk &&
     checklistCompleto &&
-    totalPedidoMontoPositivo(totalPedido);
+    totalPedidoMontoValido(totalPedido);
 
   /**
    * Abre el modal "¿La compra genera comprobante fiscal?" si el proveedor
@@ -893,12 +903,12 @@ export default function PedidoHistoriaDetalleModal({
                                 </Button>
                                 <Input
                                   ref={cantRecEditingInputRef}
-                                  type="number"
-                                  min={0}
-                                  step={1}
+                                  type="text"
                                   inputMode="numeric"
                                   value={editingValue}
-                                  onChange={(e) => setEditingValue(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                  onChange={(e) =>
+                                    setEditingValue(sanitizeEnteroConSignoInput(e.target.value))
+                                  }
                                   data-edit-input={item.id}
                                   onBlur={() => {
                                     if (
@@ -1045,6 +1055,7 @@ export default function PedidoHistoriaDetalleModal({
                     <div className="celda-datos celda-datos--flush-left celda-datos--flush-right col-start-5 flex min-w-0 items-center justify-start gap-0 border-b-0">
                       <MontoArInput
                         variant="totalPedido"
+                        allowNegative
                         disabled={locked || loading || !totalPedidoInputHabilitado}
                         valueNormalized={totalPedido}
                         onValueNormalizedChange={setTotalPedido}

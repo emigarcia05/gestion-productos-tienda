@@ -9,6 +9,9 @@ import {
   montoArCentsToNormalizedString,
   montoArCentsToDisplayWithCurrency,
   montoArNormalizedStringToCents,
+  montoArSignedCentsToDisplayWithCurrency,
+  montoArSignedCentsToNormalizedString,
+  montoArSignedNormalizedStringToCents,
 } from "@/lib/montoArMask";
 
 const montoArInputVariants = cva("", {
@@ -38,24 +41,35 @@ export type MontoArInputProps = Omit<
      * al borrar hasta 0 centavos se emite `""`. Default `false` (comportamiento histórico).
      */
     treatEmptyNormalizedAsBlank?: boolean;
+    /** Tecla `-` / pegado con signo: persiste normalizado negativo (`"-123.45"`). */
+    allowNegative?: boolean;
   };
 
 export default function MontoArInput({
   valueNormalized,
   onValueNormalizedChange,
   treatEmptyNormalizedAsBlank = false,
+  allowNegative = false,
   variant,
   className,
   disabled,
   ...props
 }: MontoArInputProps) {
   const overwriteOnNextInputRef = useRef(true);
-  const centsValue = useMemo(() => montoArNormalizedStringToCents(valueNormalized), [valueNormalized]);
+  const centsValue = useMemo(
+    () =>
+      allowNegative
+        ? montoArSignedNormalizedStringToCents(valueNormalized)
+        : montoArNormalizedStringToCents(valueNormalized),
+    [allowNegative, valueNormalized]
+  );
 
   const display = useMemo(() => {
     if (treatEmptyNormalizedAsBlank && valueNormalized.trim() === "") return "";
-    return montoArCentsToDisplayWithCurrency(centsValue, "$");
-  }, [centsValue, treatEmptyNormalizedAsBlank, valueNormalized]);
+    return allowNegative
+      ? montoArSignedCentsToDisplayWithCurrency(centsValue, "$")
+      : montoArCentsToDisplayWithCurrency(centsValue, "$");
+  }, [allowNegative, centsValue, treatEmptyNormalizedAsBlank, valueNormalized]);
 
   return (
     <Input
@@ -88,23 +102,41 @@ export default function MontoArInput({
           key === "Home" ||
           key === "End";
 
+        if (allowNegative && key === "-") {
+          event.preventDefault();
+          if (centsValue === 0 && valueNormalized.trim() === "") return;
+          onValueNormalizedChange(montoArSignedCentsToNormalizedString(-centsValue));
+          return;
+        }
+
         if (isDigit) {
           event.preventDefault();
-          const base = overwriteOnNextInputRef.current ? 0 : centsValue;
-          const next = Math.min(base * 10 + Number(key), MONTO_AR_MASK_MAX_CENTS);
+          const mag = Math.abs(centsValue);
+          const base = overwriteOnNextInputRef.current ? 0 : mag;
+          const nextMag = Math.min(base * 10 + Number(key), MONTO_AR_MASK_MAX_CENTS);
           overwriteOnNextInputRef.current = false;
-          onValueNormalizedChange(montoArCentsToNormalizedString(next));
+          const keepNeg = allowNegative && centsValue < 0 && nextMag !== 0;
+          const next = keepNeg ? -nextMag : nextMag;
+          onValueNormalizedChange(
+            allowNegative
+              ? montoArSignedCentsToNormalizedString(next)
+              : montoArCentsToNormalizedString(nextMag)
+          );
           return;
         }
 
         if (key === "Backspace" || key === "Delete") {
           event.preventDefault();
           overwriteOnNextInputRef.current = false;
-          const next = Math.floor(centsValue / 10);
+          const mag = Math.abs(centsValue);
+          const nextMag = Math.floor(mag / 10);
+          const keepNeg = allowNegative && centsValue < 0 && nextMag !== 0;
           const normalized =
-            treatEmptyNormalizedAsBlank && next === 0
+            treatEmptyNormalizedAsBlank && nextMag === 0
               ? ""
-              : montoArCentsToNormalizedString(next);
+              : allowNegative
+                ? montoArSignedCentsToNormalizedString(keepNeg ? -nextMag : nextMag)
+                : montoArCentsToNormalizedString(nextMag);
           onValueNormalizedChange(normalized);
           return;
         }
@@ -117,12 +149,18 @@ export default function MontoArInput({
         if (disabled) return;
         overwriteOnNextInputRef.current = false;
         const text = event.clipboardData.getData("text");
+        const pasteNeg = allowNegative && text.trim().startsWith("-");
         const digits = text.replace(/\D/g, "");
         if (!digits) return;
         const pastedCents = Number(digits);
         if (!Number.isFinite(pastedCents)) return;
-        const next = Math.min(pastedCents, MONTO_AR_MASK_MAX_CENTS);
-        onValueNormalizedChange(montoArCentsToNormalizedString(next));
+        const nextMag = Math.min(pastedCents, MONTO_AR_MASK_MAX_CENTS);
+        const next = pasteNeg && nextMag !== 0 ? -nextMag : nextMag;
+        onValueNormalizedChange(
+          allowNegative
+            ? montoArSignedCentsToNormalizedString(next)
+            : montoArCentsToNormalizedString(nextMag)
+        );
       }}
       className={cn(montoArInputVariants({ variant }), className)}
       {...props}

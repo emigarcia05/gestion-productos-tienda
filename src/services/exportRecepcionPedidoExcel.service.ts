@@ -198,7 +198,7 @@ function distribuirPreciosDiferenciales(params: {
   const sumaCantidades = cantidades.reduce((acc, c) => acc + c, 0);
   const totalObjetivoUnits = toPrecioUnits(totalObjetivo);
   const precioBaseUnits =
-    sumaCantidades > 0 ? Math.round(totalObjetivoUnits / sumaCantidades) : 0;
+    sumaCantidades !== 0 ? Math.round(totalObjetivoUnits / sumaCantidades) : 0;
 
   const preciosUnits = cantidades.map(() => precioBaseUnits);
   const deltas = cantidades.map(() => 0);
@@ -333,12 +333,12 @@ export async function prepararRecepcionCompraDatos(
         codTienda: it.codTienda,
         cantRecibida: Number(it.cantRecibida ?? 0),
       }))
-      .filter((it) => Number.isFinite(it.cantRecibida) && it.cantRecibida > 0);
+      .filter((it) => Number.isFinite(it.cantRecibida) && it.cantRecibida !== 0);
 
     if (itemsRecibidos.length === 0) {
       return {
         success: false,
-        error: "El pedido no tiene ítems con cantidad recibida mayor a cero.",
+        error: "El pedido no tiene ítems con cantidad recibida distinta de cero.",
       };
     }
 
@@ -347,9 +347,9 @@ export async function prepararRecepcionCompraDatos(
 
     const totalPersistido = pedido.total == null ? null : Number(pedido.total);
     const totalParaPrecio =
-      totalPedidoIngreso != null && Number.isFinite(totalPedidoIngreso) && totalPedidoIngreso > 0
+      totalPedidoIngreso != null && Number.isFinite(totalPedidoIngreso) && totalPedidoIngreso !== 0
         ? totalPedidoIngreso
-        : totalPersistido != null && Number.isFinite(totalPersistido) && totalPersistido > 0
+        : totalPersistido != null && Number.isFinite(totalPersistido) && totalPersistido !== 0
           ? totalPersistido
           : null;
 
@@ -362,6 +362,13 @@ export async function prepararRecepcionCompraDatos(
     }
 
     const cantidades = itemsRecibidos.map((it) => it.cantRecibida);
+    const sumaCantidades = cantidades.reduce((acc, c) => acc + c, 0);
+    if (sumaCantidades === 0) {
+      return {
+        success: false,
+        error: "La suma de cantidades recibidas no puede ser cero.",
+      };
+    }
     const totalNetoDistribucion = totalBrutoConIva21ANetoParaRecepcion(totalParaPrecio);
     const { precios, diferencia } = distribuirPreciosDiferenciales({
       cantidades,
