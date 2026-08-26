@@ -33,22 +33,19 @@ import SelectorProductosReposicionModal from "./SelectorProductosReposicionModal
 import type { ItemReposicion, SucursalReposicion, FormaPedirReposicionOption } from "@/actions/reposicion";
 import { upsertReglaReposicion } from "@/actions/reposicion";
 import type { ItemSelectorReposicion } from "@/actions/reposicion";
-import { fmtNumero } from "@/lib/format";
 import {
   REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS,
   REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES,
   reposicionFormaPedidoVendedorSchema,
 } from "@/lib/validations/reposicion";
 
-function formaPedirOptions(hayBulto: boolean): {
+function formaPedirOptions(): {
   value: FormaPedirReposicionOption;
   label: string;
 }[] {
   return [
     { value: "", label: "—" },
-    ...REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES.filter(
-      (value) => value !== "POR_BULTO" || hayBulto
-    ).map((value) => ({
+    ...REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES.map((value) => ({
       value,
       label: REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS[value],
     })),
@@ -94,21 +91,16 @@ export default function ConfigurarReposicionModal({
   const [formaPedir, setFormaPedir] = useState<FormaPedirReposicionOption>(item.formaPedir || "");
   const [puntoInput, setPuntoInput] = useState("");
   const [cantInput, setCantInput] = useState("");
+  const [unidadesBultoInput, setUnidadesBultoInput] = useState("");
   const [productosAdicionales, setProductosAdicionales] = useState<ItemSelectorReposicion[]>([]);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
-  const hayBulto = hayBultoConfigurado(item.bulto);
-  const opcionesForma = formaPedirOptions(hayBulto);
+  const opcionesForma = formaPedirOptions();
 
   useEffect(() => {
     if (open) {
-      const formaInicial =
-        item.formaPedir === "POR_BULTO" &&
-        !hayBultoConfigurado(item.bulto)
-          ? ""
-          : item.formaPedir || "";
-      setFormaPedir(formaInicial);
+      setFormaPedir(item.formaPedir || "");
       const guardado = Boolean(item.idReposicion) || Boolean(item.formaPedir);
       if (guardado) {
         setPuntoInput(String(item.puntoReposicion));
@@ -117,6 +109,9 @@ export default function ConfigurarReposicionModal({
         setPuntoInput("");
         setCantInput("");
       }
+      setUnidadesBultoInput(
+        hayBultoConfigurado(item.bulto) ? String(item.bulto) : ""
+      );
       setProductosAdicionales([]);
     }
   }, [
@@ -132,20 +127,14 @@ export default function ConfigurarReposicionModal({
 
   const nombreProducto = item.descripcionTienda ?? "—";
   const esFormaBulto = formaPedir === "POR_BULTO";
-  const esFormaUnidadesMaximas = formaPedir === "UNIDADES_MAX";
-  const tituloCant = esFormaBulto ? "BULTO" : esFormaUnidadesMaximas ? "UN. MÁXIMAS" : "";
   const tieneConfigInicial = Boolean(item.idReposicion) || Boolean(item.formaPedir);
   const puntoResuelto = parsePuntoReposicionInput(puntoInput) !== null;
   const mostrarPunto = tieneConfigInicial || Boolean(formaPedir);
-  const mostrarCant = tieneConfigInicial || (Boolean(formaPedir) && puntoResuelto);
-  const mostrarTotalEnUnidades = esFormaBulto && puntoResuelto;
+  const mostrarCant =
+    !esFormaBulto && (tieneConfigInicial || (Boolean(formaPedir) && puntoResuelto));
   const invisPunto = !mostrarPunto;
   const invisCant = !mostrarCant;
-  const bultoCantidad = parseCantReposicionInput(cantInput);
-  const totalEnUnidades =
-    esFormaBulto && item.bulto != null && bultoCantidad !== null
-      ? bultoCantidad * item.bulto
-      : null;
+  const unidadesPorBulto = parseCantReposicionInput(unidadesBultoInput);
   const claseEtiquetaCampo =
     "min-h-10 justify-center px-1 text-xs font-medium text-foreground text-center leading-tight";
 
@@ -175,16 +164,19 @@ export default function ConfigurarReposicionModal({
       toast.error("Seleccioná Forma Pedir.");
       return;
     }
-    if (formaParsed.data === "POR_BULTO" && !hayBulto) {
-      toast.error("BULTO solo está disponible si el producto tiene bulto configurado.");
-      return;
+    if (formaParsed.data === "POR_BULTO") {
+      if (unidadesPorBulto === null) {
+        toast.error("Completá Un. que viene en un bulto cerrado.");
+        return;
+      }
     }
     const punto = parsePuntoReposicionInput(puntoInput);
     if (punto === null) {
       toast.error("Completá Punto Reposición.");
       return;
     }
-    const cantNum = parseCantReposicionInput(cantInput);
+    const cantNum =
+      formaParsed.data === "POR_BULTO" ? 1 : parseCantReposicionInput(cantInput);
     if (cantNum === null) {
       toast.error("Completá Cant. Reposición (mín. 1).");
       return;
@@ -205,6 +197,11 @@ export default function ConfigurarReposicionModal({
           formaPedir: formaParsed.data,
           puntoReposicion: punto,
           cant: cantNum,
+          ...(formaParsed.data === "POR_BULTO" &&
+          t.codTienda === item.codTienda &&
+          unidadesPorBulto !== null
+            ? { unidadesPorBulto }
+            : {}),
         });
         if (!res.ok) {
           toast.error(res.error ?? "Error al guardar.");
@@ -250,7 +247,7 @@ export default function ConfigurarReposicionModal({
               <div
                 className={cn(
                   "grid gap-4 items-center",
-                  esFormaBulto && mostrarTotalEnUnidades ? "grid-cols-4" : "grid-cols-3"
+                  esFormaBulto ? "grid-cols-2" : "grid-cols-3"
                 )}
               >
               <div className="flex flex-col items-center gap-1">
@@ -306,45 +303,46 @@ export default function ConfigurarReposicionModal({
                 />
               </div>
 
-              <div
-                className={cn(
-                  "flex flex-col items-center gap-1",
-                  invisCant && "invisible pointer-events-none select-none"
-                )}
-                aria-hidden={invisCant}
-              >
+              {esFormaBulto ? null : (
+                <div
+                  className={cn(
+                    "flex flex-col items-center gap-1",
+                    invisCant && "invisible pointer-events-none select-none"
+                  )}
+                  aria-hidden={invisCant}
+                >
+                  <Label className={claseEtiquetaCampo}>
+                    UN. MÁXIMAS
+                  </Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={cantInput}
+                    onChange={(e) => setCantInput(e.target.value)}
+                    className="tabular-nums text-center"
+                    aria-label="Cantidad reposición"
+                    tabIndex={invisCant ? -1 : 0}
+                  />
+                </div>
+              )}
+            </div>
+            {esFormaBulto ? (
+              <div className="flex flex-col items-center gap-1">
                 <Label className={claseEtiquetaCampo}>
-                  {tituloCant}
+                  Un. que viene en un bulto cerrado
                 </Label>
                 <Input
                   type="number"
                   min={1}
                   step={1}
-                  value={cantInput}
-                  onChange={(e) => setCantInput(e.target.value)}
-                  className="tabular-nums text-center"
-                  aria-label="Cantidad reposición"
-                  tabIndex={invisCant ? -1 : 0}
+                  value={unidadesBultoInput}
+                  onChange={(e) => setUnidadesBultoInput(e.target.value)}
+                  className="w-32 tabular-nums text-center"
+                  aria-label="Unidades que vienen en un bulto cerrado"
                 />
               </div>
-
-              {mostrarTotalEnUnidades ? (
-                <div className="flex flex-col items-center gap-1">
-                  <Label className={claseEtiquetaCampo}>
-                    TOTAL EN UN.
-                  </Label>
-                  <Input
-                    type="text"
-                    value={totalEnUnidades === null ? "" : fmtNumero(totalEnUnidades)}
-                    readOnly
-                    aria-readonly="true"
-                    className="tabular-nums text-center"
-                    aria-label="Total en unidades"
-                    tabIndex={0}
-                  />
-                </div>
-              ) : null}
-            </div>
+            ) : null}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -355,6 +353,7 @@ export default function ConfigurarReposicionModal({
                   size="icon"
                   className="h-9 w-9 shrink-0"
                   onClick={() => setSelectorOpen(true)}
+                  disabled={esFormaBulto && unidadesPorBulto === null}
                   aria-label="Agregar productos con esta configuración"
                 >
                   <Plus className="h-4 w-4" />
@@ -421,7 +420,7 @@ export default function ConfigurarReposicionModal({
         open={selectorOpen}
         onOpenChange={setSelectorOpen}
         sucursal={sucursal}
-        bultoReferencia={item.bulto ?? null}
+        bultoReferencia={esFormaBulto ? unidadesPorBulto : item.bulto ?? null}
         onConfirmar={handleAgregarProductos}
         excludeIds={[item.idListaTienda]}
       />

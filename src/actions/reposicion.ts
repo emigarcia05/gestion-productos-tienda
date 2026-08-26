@@ -24,7 +24,8 @@ import {
   elegirListaPrecioProveedorReposicion,
   sumarIvaSaldoParaReposicion,
 } from "@/services/pedidosReposicionProveedor.service";
-import { buildMapBultosProdTienda } from "@/services/tiendaBultos.service";
+import { buildMapBultosProdTienda, guardarBultoProdTienda } from "@/services/tiendaBultos.service";
+import { REVALIDATE_CX_COMPRA } from "@/lib/gestionProductosRoutes";
 import {
   getReposicionParamsSchema,
   productosReposicionSelectorSchema,
@@ -457,6 +458,7 @@ const upsertReglaSchema = z.object({
   formaPedir: reposicionFormaPedidoVendedorSchema,
   puntoReposicion: z.number().int().min(0, "Punto reposición inválido"),
   cant: z.number().int().min(1, "Cant. reposición requerida"),
+  unidadesPorBulto: z.number().int().min(1).max(1_000_000).optional(),
 });
 
 /**
@@ -475,18 +477,24 @@ export async function upsertReglaReposicion(raw: unknown): Promise<ActionResult<
     const first = Object.values(msg).flat().find(Boolean);
     return { ok: false, error: (first as string) ?? "Datos inválidos." };
   }
-  const { sucursalCodigo, codTienda, formaPedir, puntoReposicion, cant } =
+  const { sucursalCodigo, codTienda, formaPedir, puntoReposicion, cant, unidadesPorBulto } =
     parsed.data;
   if (!(await sucursalPedidoHabilitada(sucursalCodigo))) {
     return { ok: false, error: "La sucursal no está habilitada para pedidos." };
   }
   if (formaPedir === "POR_BULTO") {
+    if (unidadesPorBulto != null) {
+      const saved = await guardarBultoProdTienda(codTienda, unidadesPorBulto);
+      if (!saved.success) {
+        return { ok: false, error: saved.error };
+      }
+    }
     const bultosMap = await buildMapBultosProdTienda([codTienda]);
     const bulto = bultosMap.get(codTienda);
     if (bulto == null || bulto < 1) {
       return {
         ok: false,
-        error: "BULTO solo está disponible si el producto tiene bulto configurado.",
+        error: "Completá Un. que viene en un bulto cerrado.",
       };
     }
   }
@@ -497,10 +505,15 @@ export async function upsertReglaReposicion(raw: unknown): Promise<ActionResult<
       codTienda,
       formaPedir,
       puntoReposicion,
-      cantConf: cant,
+      cantConf: formaPedir === "POR_BULTO" ? 1 : cant,
     });
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/pedidos/reposicion");
+    if (formaPedir === "POR_BULTO" && unidadesPorBulto != null) {
+      for (const path of REVALIDATE_CX_COMPRA) {
+        revalidatePath(path);
+      }
+    }
     return { ok: true, data: undefined };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error al guardar la regla.";
