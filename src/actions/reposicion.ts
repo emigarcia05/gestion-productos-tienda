@@ -505,7 +505,7 @@ export async function upsertReglaReposicion(raw: unknown): Promise<ActionResult<
       codTienda,
       formaPedir,
       puntoReposicion,
-      cantConf: formaPedir === "POR_BULTO" ? 1 : cant,
+      cantConf: cant,
     });
     if (!result.ok) return { ok: false, error: result.error };
     revalidatePath("/pedidos/reposicion");

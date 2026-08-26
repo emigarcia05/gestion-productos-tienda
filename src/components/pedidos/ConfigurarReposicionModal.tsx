@@ -33,6 +33,7 @@ import SelectorProductosReposicionModal from "./SelectorProductosReposicionModal
 import type { ItemReposicion, SucursalReposicion, FormaPedirReposicionOption } from "@/actions/reposicion";
 import { upsertReglaReposicion } from "@/actions/reposicion";
 import type { ItemSelectorReposicion } from "@/actions/reposicion";
+import { fmtNumero } from "@/lib/format";
 import {
   REPOSICION_FORMA_PEDIDO_VENDEDOR_LABELS,
   REPOSICION_FORMA_PEDIDO_VENDEDOR_VALUES,
@@ -131,10 +132,15 @@ export default function ConfigurarReposicionModal({
   const puntoResuelto = parsePuntoReposicionInput(puntoInput) !== null;
   const mostrarPunto = tieneConfigInicial || Boolean(formaPedir);
   const mostrarCant =
-    !esFormaBulto && (tieneConfigInicial || (Boolean(formaPedir) && puntoResuelto));
+    tieneConfigInicial || (Boolean(formaPedir) && puntoResuelto);
   const invisPunto = !mostrarPunto;
   const invisCant = !mostrarCant;
   const unidadesPorBulto = parseCantReposicionInput(unidadesBultoInput);
+  const bultosReposicion = parseCantReposicionInput(cantInput);
+  const unTotales =
+    esFormaBulto && bultosReposicion !== null && unidadesPorBulto !== null
+      ? bultosReposicion * unidadesPorBulto
+      : null;
   const claseEtiquetaCampo =
     "min-h-10 justify-center px-1 text-xs font-medium text-foreground text-center leading-tight";
 
@@ -175,10 +181,13 @@ export default function ConfigurarReposicionModal({
       toast.error("Completá Punto Reposición.");
       return;
     }
-    const cantNum =
-      formaParsed.data === "POR_BULTO" ? 1 : parseCantReposicionInput(cantInput);
+    const cantNum = parseCantReposicionInput(cantInput);
     if (cantNum === null) {
-      toast.error("Completá Cant. Reposición (mín. 1).");
+      toast.error(
+        formaParsed.data === "POR_BULTO"
+          ? "Completá Bultos Reposición (mín. 1)."
+          : "Completá Cant. Reposición (mín. 1)."
+      );
       return;
     }
 
@@ -247,7 +256,7 @@ export default function ConfigurarReposicionModal({
               <div
                 className={cn(
                   "grid gap-4 items-center",
-                  esFormaBulto ? "grid-cols-2" : "grid-cols-3"
+                  esFormaBulto ? "grid-cols-4" : "grid-cols-3"
                 )}
               >
               <div className="flex flex-col items-center gap-1">
@@ -303,7 +312,51 @@ export default function ConfigurarReposicionModal({
                 />
               </div>
 
-              {esFormaBulto ? null : (
+              {esFormaBulto ? (
+                <>
+                  <div
+                    className={cn(
+                      "flex flex-col items-center gap-1",
+                      invisCant && "invisible pointer-events-none select-none"
+                    )}
+                    aria-hidden={invisCant}
+                  >
+                    <Label className={claseEtiquetaCampo}>
+                      BULTOS REPOSICIÓN
+                    </Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={cantInput}
+                      onChange={(e) => setCantInput(e.target.value)}
+                      className="tabular-nums text-center"
+                      aria-label="Bultos reposición"
+                      tabIndex={invisCant ? -1 : 0}
+                    />
+                  </div>
+                  <div
+                    className={cn(
+                      "flex flex-col items-center gap-1",
+                      invisCant && "invisible pointer-events-none select-none"
+                    )}
+                    aria-hidden={invisCant}
+                  >
+                    <Label className={claseEtiquetaCampo}>
+                      UN. TOTALES
+                    </Label>
+                    <Input
+                      type="text"
+                      value={unTotales === null ? "" : fmtNumero(unTotales)}
+                      readOnly
+                      aria-readonly="true"
+                      className="tabular-nums text-center"
+                      aria-label="Unidades totales"
+                      tabIndex={invisCant ? -1 : 0}
+                    />
+                  </div>
+                </>
+              ) : (
                 <div
                   className={cn(
                     "flex flex-col items-center gap-1",
@@ -328,9 +381,9 @@ export default function ConfigurarReposicionModal({
               )}
             </div>
             {esFormaBulto ? (
-              <div className="flex flex-col items-center gap-1">
-                <Label className={claseEtiquetaCampo}>
-                  Un. que viene en un bulto cerrado
+              <div className="flex flex-row items-center justify-center gap-3">
+                <Label className="px-1 text-xs font-medium text-foreground text-center leading-tight whitespace-nowrap">
+                  UN. QUE VIENE EN UN BULTO CERRADO
                 </Label>
                 <Input
                   type="number"
@@ -338,7 +391,7 @@ export default function ConfigurarReposicionModal({
                   step={1}
                   value={unidadesBultoInput}
                   onChange={(e) => setUnidadesBultoInput(e.target.value)}
-                  className="w-32 tabular-nums text-center"
+                  className="w-32 shrink-0 tabular-nums text-center"
                   aria-label="Unidades que vienen en un bulto cerrado"
                 />
               </div>
