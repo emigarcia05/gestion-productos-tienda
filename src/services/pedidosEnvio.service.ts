@@ -586,7 +586,7 @@ function proveedorEtiquetaDesdeRow(p: {
 
 /**
  * Convierte `reposicion_cant_conf` a unidades a pedir.
- * POR_BULTO: `cantConf` es cantidad de bultos; se multiplica por unidades de `prod_tienda_bultos`.
+ * POR_BULTO: `cantConf` es cantidad de bultos; se multiplica por unidades de `prod_tienda.bulto`.
  * Sin bulto válido (≥ 1) → 0. El resto de formas deja `cantConf` en unidades.
  */
 export function cantConfReposicionAUnidades(
@@ -612,7 +612,7 @@ export function cantPedirReposicionMerc2(params: {
   cantConf: number | null | undefined;
   stock: number;
   stockeable: boolean;
-  /** Unidades por bulto (`prod_tienda_bultos`). Obligatorio para POR_BULTO. */
+  /** Unidades por bulto (`prod_tienda.bulto`). Obligatorio para POR_BULTO. */
   bulto: number | null | undefined;
 }): number {
   if (!params.stockeable) return 0;

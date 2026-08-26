@@ -1,46 +1,55 @@
 import type { ServiceResult } from "@/types";
 import { prisma } from "@/lib/prisma";
 
+/** `null` o menor a 1 = vacío en UI. */
+export function bultoProdTiendaValido(
+  bulto: number | null | undefined
+): number | null {
+  if (bulto == null || bulto < 1) return null;
+  return bulto;
+}
+
 /**
- * Mapa `cod_tienda` → bulto (solo filas con valor). Ausente = vacío en UI.
+ * Mapa `cod_tienda` → bulto (solo ítems con valor ≥ 1). Ausente = vacío en UI.
  */
 export async function buildMapBultosProdTienda(
   codTiendas: string[]
 ): Promise<Map<string, number>> {
   if (codTiendas.length === 0) return new Map();
-  const rows = await prisma.prodTiendaBulto.findMany({
-    where: { codTienda: { in: codTiendas } },
+  const rows = await prisma.prodTienda.findMany({
+    where: {
+      codTienda: { in: codTiendas },
+      bulto: { gte: 1 },
+    },
     select: { codTienda: true, bulto: true },
   });
-  return new Map(rows.map((r) => [r.codTienda, r.bulto]));
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    const n = bultoProdTiendaValido(r.bulto);
+    if (n != null) map.set(r.codTienda, n);
+  }
+  return map;
 }
 
 /**
- * Upsert si `bulto` es entero ≥ 1; sin valor se elimina la fila (BULTO vacío).
+ * Persiste `prod_tienda.bulto`. Entero ≥ 1; `null` deja la columna vacía.
  */
 export async function guardarBultoProdTienda(
   codTienda: string,
   bulto: number | null
 ): Promise<ServiceResult<{ bulto: number | null }>> {
-  const existe = await prisma.prodTienda.findUnique({
-    where: { codTienda },
-    select: { codTienda: true },
-  });
-  if (!existe) {
-    return { success: false, error: "Ítem de tienda no encontrado." };
+  if (bulto != null && (!Number.isInteger(bulto) || bulto < 1)) {
+    return { success: false, error: "Bulto inválido." };
   }
 
   try {
-    if (bulto == null) {
-      await prisma.prodTiendaBulto.deleteMany({ where: { codTienda } });
-      return { success: true, data: { bulto: null } };
-    }
-
-    await prisma.prodTiendaBulto.upsert({
+    const updated = await prisma.prodTienda.updateMany({
       where: { codTienda },
-      create: { codTienda, bulto },
-      update: { bulto },
+      data: { bulto },
     });
+    if (updated.count === 0) {
+      return { success: false, error: "Ítem de tienda no encontrado." };
+    }
     return { success: true, data: { bulto } };
   } catch (e) {
     console.error("[tiendaBultos][guardarBultoProdTienda]", e);

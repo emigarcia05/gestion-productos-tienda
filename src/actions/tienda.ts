@@ -20,7 +20,7 @@ import {
   getStockeableFromMap,
 } from "@/services/prodTiendaStock.service";
 import { setProductoPropioTienda } from "@/services/productoPropioTienda.service";
-import { buildMapBultosProdTienda } from "@/services/tiendaBultos.service";
+import { bultoProdTiendaValido } from "@/services/tiendaBultos.service";
 import { setProductoPropioTiendaSchema } from "@/lib/validations/productoPropioTienda";
 import { revalidatePath } from "next/cache";
 import { esEditor } from "@/lib/sesion";
@@ -140,7 +140,7 @@ export interface ItemTiendaParaTabla {
   cxProd: CxProdDatosFila;
   /** Producto propio TiendaColor (sin vínculos a lista proveedor). */
   esProductoPropio: boolean;
-  /** Unidades por bulto (`prod_tienda_bultos`); `null` = vacío. */
+  /** Unidades por bulto (`prod_tienda.bulto`); `null` = vacío. */
   bulto: number | null;
 }
 
@@ -318,11 +318,10 @@ export async function getTiendaPageData(params: {
     }))
   );
   const codTiendasPage = rows.map((r) => r.codTienda);
-  const [pxListaMap, stockMaps, stockeableMap, bultosMap] = await Promise.all([
+  const [pxListaMap, stockMaps, stockeableMap] = await Promise.all([
     buildMapPrecioListaPrincipal(codTiendasPage),
     buildMapsStockSucursalesPrincipales(codTiendasPage),
     buildMapStockeable(codTiendasPage),
-    buildMapBultosProdTienda(codTiendasPage),
   ]);
 
   const items: ItemTiendaParaTabla[] = rows.map((r) => {
@@ -348,7 +347,7 @@ export async function getTiendaPageData(params: {
       _count: { productos: r._count.listaPreciosProveedores },
       cxProd: cxProdMap.get(r.codTienda) ?? CX_PROD_FILA_VACIA,
       esProductoPropio: r.esProductoPropio,
-      bulto: bultosMap.get(r.codTienda) ?? null,
+      bulto: bultoProdTiendaValido(r.bulto),
     };
   });
 

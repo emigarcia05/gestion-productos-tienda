@@ -13,6 +13,7 @@ import {
   buildMapStockPorDeposito,
   getIdDepositoPorSucursalCodigo,
 } from "@/services/prodTiendaStock.service";
+import { bultoProdTiendaValido } from "@/services/tiendaBultos.service";
 import { buildMapCantAPedirAFabricaPorProveedor } from "@/services/pedidosEnvio.service";
 import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
 
@@ -42,7 +43,7 @@ export type ProductoPedidoAFabricaItem = {
   /** `prod_precios_provee.cod_tienda` si hay fila en `prod_tienda`; si no, `null`. */
   codTienda: string | null;
   /**
-   * Vinculado: unidades de `prod_tienda_bultos` (`null` = sin configurar).
+   * Vinculado: unidades de `prod_tienda.bulto` (`null` = sin configurar).
    * Sin vínculo: siempre `null` (celda vacía).
    */
   bulto: number | null;
@@ -228,7 +229,7 @@ async function opcionesCampoTienda(
  * Lista productos de `prod_precios_provee` del proveedor, solo si `es_fabrica = true`.
  * Vínculo con tienda: `prod_precios_provee.cod_tienda` → `prod_tienda.cod_tienda`.
  * Descripción: vinculada → `descripcion_tienda`; si no → `descripcion_proveedor`.
- * BULTO: vinculado → `prod_tienda_bultos`; si no → vacío.
+ * BULTO: vinculado → `prod_tienda.bulto`; si no → vacío.
  * Solo filas `habilitado = true`. Filtros opcionales: marca / rubro / sub_rubro (tienda) + q.
  * Por cada sucursal `genera_est = true`: **STOCK ACTUAL** + **PROM. VTA.**
  */
@@ -262,7 +263,7 @@ export async function listarProductosPorProveedorFabrica(
         prodTienda: {
           select: {
             descripcionTienda: true,
-            bulto: { select: { bulto: true } },
+            bulto: true,
           },
         },
       },
@@ -309,7 +310,7 @@ export async function listarProductosPorProveedorFabrica(
     const descripcion = vinculado
       ? (f.prodTienda?.descripcionTienda?.trim() ?? "")
       : f.descripcionProveedor;
-    const bulto = vinculado ? (f.prodTienda?.bulto?.bulto ?? null) : null;
+    const bulto = vinculado ? bultoProdTiendaValido(f.prodTienda?.bulto) : null;
     const porSucursal = emptyPorSucursal(sucursales);
     if (codTienda) {
       for (const s of sucursales) {

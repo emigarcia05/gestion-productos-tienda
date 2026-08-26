@@ -24,7 +24,7 @@ import {
   elegirListaPrecioProveedorReposicion,
   sumarIvaSaldoParaReposicion,
 } from "@/services/pedidosReposicionProveedor.service";
-import { buildMapBultosProdTienda, guardarBultoProdTienda } from "@/services/tiendaBultos.service";
+import { bultoProdTiendaValido, buildMapBultosProdTienda, guardarBultoProdTienda } from "@/services/tiendaBultos.service";
 import { REVALIDATE_CX_COMPRA } from "@/lib/gestionProductosRoutes";
 import {
   getReposicionParamsSchema,
@@ -58,7 +58,7 @@ export interface ItemReposicion {
   cantPedidaReposicion: number;
   /** Cantidad a pedir recalculada (stock / forma); misma regla que Generar pedido. */
   cantPedir: number;
-  /** Unidades por bulto (`prod_tienda_bultos`). `null` = sin fila / vacío. */
+  /** Unidades por bulto (`prod_tienda.bulto`). `null` = vacío. */
   bulto: number | null;
 }
 
@@ -309,13 +309,12 @@ export async function getReposicionData(
   }
 
   const codTiendasPage = rows.map((r) => r.codTienda.trim()).filter(Boolean);
-  const [ivaSaldoReposicion, lpPorCodTienda, stockMaps, stockeableMap, bultosMap] =
+  const [ivaSaldoReposicion, lpPorCodTienda, stockMaps, stockeableMap] =
     await Promise.all([
       sumarIvaSaldoParaReposicion(),
       cargarListaPrecioReposicionPorCodTiendas(codTiendasPage),
       buildMapsStockSucursalesPrincipales(codTiendasPage),
       buildMapStockeable(codTiendasPage),
-      buildMapBultosProdTienda(codTiendasPage),
     ]);
 
   const items: ItemReposicion[] = rows.map((r) => {
@@ -333,13 +332,14 @@ export async function getReposicionData(
     const punto = regla?.puntoReposicion ?? 0;
     const cantCfg = regla?.cant ?? 0;
     const cantPedidaDb = regla?.cantPedidaReposicion ?? 0;
+    const bulto = bultoProdTiendaValido(r.bulto);
     const cantAPedir = cantPedirReposicionMerc2({
       forma,
       punto,
       cantConf: cantCfg,
       stock,
       stockeable: getStockeableFromMap(stockeableMap, codTienda),
-      bulto: bultosMap.get(codTienda) ?? null,
+      bulto,
     });
     return {
       idListaTienda: codTienda,
@@ -355,7 +355,7 @@ export async function getReposicionData(
       cant: cantCfg,
       cantPedidaReposicion: cantPedidaDb,
       cantPedir: cantAPedir,
-      bulto: bultosMap.get(codTienda) ?? null,
+      bulto,
     };
   });
 
@@ -393,6 +393,7 @@ const getProductosReposicionSelectorSchema = z.object({
 
 /**
  * Productos de lista_tienda con proveedor para el selector del modal "Agregar configuración".
+ * Incluye ítems con `bulto` vacío o con el mismo `bultoReferencia` (al guardar se persiste ese valor).
  * Búsqueda por descripción; máximo SELECTOR_LIMIT resultados.
  */
 export async function getProductosReposicionSelector(
@@ -409,34 +410,22 @@ export async function getProductosReposicionSelector(
   const parsedQ = productosReposicionSelectorSchema.safeParse({ q: parsed.data.q });
   const qNorm = parsedQ.success ? parsedQ.data.q : "";
 
-  const bultoRows = await prisma.prodTiendaBulto.findMany({
-    where: { bulto: bultoReferencia },
-    select: { codTienda: true },
-  });
-  const codTiendasBulto = bultoRows.map((r) => r.codTienda).filter(Boolean);
-  if (codTiendasBulto.length === 0) return [];
-
-  const proveedorRows = await prisma.listaPrecioProveedor.findMany({
-    where: {
-      habilitado: true,
-      codTiendaVinculo: { in: codTiendasBulto },
-      proveedor: { esFabrica: false },
-    },
-    select: { codTiendaVinculo: true },
-    distinct: ["codTiendaVinculo"],
-  });
-  const codTiendasPermitidos = proveedorRows
-    .map((r) => (r.codTiendaVinculo ?? "").trim())
-    .filter((v) => v.length > 0);
-  if (codTiendasPermitidos.length === 0) return [];
-
   const textFilter = filtroTexto(qNorm, ["descripcionTienda", "codTienda"]);
   const whereParts: Prisma.ProdTiendaWhereInput[] = [
-    { codTienda: { in: codTiendasPermitidos } },
+    {
+      listaPreciosProveedores: {
+        some: {
+          habilitado: true,
+          proveedor: { esFabrica: false },
+        },
+      },
+    },
+    {
+      OR: [{ bulto: null }, { bulto: bultoReferencia }],
+    },
   ];
   if (textFilter.AND?.length) whereParts.push(textFilter);
-  const where: Prisma.ProdTiendaWhereInput =
-    whereParts.length > 1 ? { AND: whereParts } : whereParts[0];
+  const where: Prisma.ProdTiendaWhereInput = { AND: whereParts };
 
   const rows = await prisma.prodTienda.findMany({
     where,

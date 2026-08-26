@@ -929,6 +929,9 @@ model ProdTienda {
   compararCompetencia Boolean @default(false) @map("comparar_competencia")
   /// Competidor de referencia para PX de **1 - GENERAL** (Px Listas). Sync DUX no modifica.
   competenciaIdPxListaGeneral String? @map("competencia_id_px_lista_general")
+  /// Unidades por bulto. `null` = vacío (Cx Compra / Reposición). Entero ≥ 1.
+  /// CHECK SQL `prod_tienda_bulto_positivo`. Sync DUX no escribe esta columna.
+  bulto Int?
 
   marcaRelation           Marca?   @relation(fields: [idMarca], references: [id], onDelete: SetNull)
   listaPreciosProveedores ListaPrecioProveedor[] // vínculos por prod_precios_provee.cod_tienda → esta PK
@@ -938,25 +941,11 @@ model ProdTienda {
   preciosLista            ProdTiendaPrecio[]
   preciosListaEdicion     ProdTiendaPrecioEdicion[]
   stocks                  ProdTiendaStock[]
-  bulto                   ProdTiendaBulto?
   estPorProd              EstPorProd[]
   stockTrasnDepositos      StockTrasnDeposito[]
 
   @@index([competenciaIdPxListaGeneral], map: "prod_tienda_competencia_id_px_lista_general_idx")
   @@map("prod_tienda")
-}
-
-/**
- * Unidades por bulto del ítem tienda. 1:1 con `prod_tienda` (PK = `cod_tienda`).
- * Sin fila = BULTO vacío en Cx Compra. `bulto` siempre entero positivo.
- */
-model ProdTiendaBulto {
-  codTienda String @id @map("cod_tienda")
-  bulto     Int    @map("bulto")
-
-  prodTienda ProdTienda @relation(fields: [codTienda], references: [codTienda], onDelete: Cascade)
-
-  @@map("prod_tienda_bultos")
 }
 
 /**

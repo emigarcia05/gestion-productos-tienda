@@ -233,9 +233,7 @@ export default function ConfigurarReposicionModal({
           formaPedir: formaParsed.data,
           puntoReposicion: punto,
           cant: cantNum,
-          ...(formaParsed.data === "POR_BULTO" &&
-          t.codTienda === item.codTienda &&
-          unidadesPorBulto !== null
+          ...(formaParsed.data === "POR_BULTO" && unidadesPorBulto !== null
             ? { unidadesPorBulto }
             : {}),
         });

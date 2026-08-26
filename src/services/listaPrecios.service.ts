@@ -31,7 +31,7 @@ import {
   getStockeableFromMap,
   getStockSucursalPrincipal,
 } from "@/services/prodTiendaStock.service";
-import { buildMapBultosProdTienda } from "@/services/tiendaBultos.service";
+import { bultoProdTiendaValido, buildMapBultosProdTienda } from "@/services/tiendaBultos.service";
 
 const TIPO_URGENTE_MERC2 = "URGENTE";
 
@@ -874,23 +874,22 @@ async function mercaderiaMapsDesdeMerc2(
           where: { codTienda: { in: codTiendasRepo } },
           select: {
             codTienda: true,
+            bulto: true,
           },
         })
       : [];
   const tiendaRepoPorCod = new Map(
     tiendaRowsRepo.map((t) => [t.codTienda.trim(), t])
   );
-  const [stockMapsRepo, stockeableMapRepo, bultosMapRepo] =
+  const [stockMapsRepo, stockeableMapRepo] =
     codTiendasRepo.length > 0
       ? await Promise.all([
           buildMapsStockSucursalesPrincipales(codTiendasRepo),
           buildMapStockeable(codTiendasRepo),
-          buildMapBultosProdTienda(codTiendasRepo),
         ])
       : [
           { maipu: new Map<string, number>(), guaymallen: new Map<string, number>() },
           new Map<string, boolean>(),
-          new Map<string, number>(),
         ];
 
   for (const k of mercaderiaRepoSet) {
@@ -905,7 +904,7 @@ async function mercaderiaMapsDesdeMerc2(
         cantConf: regla.cantConf,
         stock,
         stockeable: getStockeableFromMap(stockeableMapRepo, k),
-        bulto: bultosMapRepo.get(k) ?? null,
+        bulto: bultoProdTiendaValido(tienda.bulto),
       });
     }
     mercaderiaMapRepo.set(k, cant);
