@@ -29,12 +29,16 @@ import {
   marcarPedidoHistoriaRegistradoAction,
 } from "@/actions/pedidosHistoria";
 import { fetchPedidoHistoriaDetalle } from "@/lib/fetchPedidoHistoriaDetalle";
+import { DUX_NUEVA_NOTA_CREDITO_DEBITO_VENTA_URL } from "@/lib/notaCreditoDux";
 import { registrarRecepcionCompraDuxAction } from "@/actions/registrarRecepcionCompraDux";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ConfirmarComprobanteFiscalModal from "@/components/pedidos/ConfirmarComprobanteFiscalModal";
 import ElegirPersonalRecepcionModal, {
   type PersonalRecepcionSeleccion,
 } from "@/components/pedidos/ElegirPersonalRecepcionModal";
+import GenerarNotaCreditoDuxModal, {
+  type NotaCreditoDuxItem,
+} from "@/components/pedidos/GenerarNotaCreditoDuxModal";
 import MontoArInput from "@/components/shared/MontoArInput";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
@@ -181,6 +185,10 @@ export default function PedidoHistoriaDetalleModal({
     nroComprobante: string;
     idCompra: number | null;
   } | null>(null);
+  const [generarNcDuxOpen, setGenerarNcDuxOpen] = useState(false);
+  const [itemsGenerarNcDux, setItemsGenerarNcDux] = useState<NotaCreditoDuxItem[]>(
+    []
+  );
 
   const fechaInputRef = useRef<HTMLInputElement>(null);
   const busquedaAgregarRef = useRef<HTMLInputElement>(null);
@@ -281,6 +289,8 @@ export default function PedidoHistoriaDetalleModal({
       setElegirPersonalOpen(false);
       setRecepcionDuxExitoOpen(false);
       setRecepcionDuxExitoData(null);
+      setGenerarNcDuxOpen(false);
+      setItemsGenerarNcDux([]);
     });
 
     void (async () => {
@@ -505,15 +515,6 @@ export default function PedidoHistoriaDetalleModal({
   async function onSeleccionarPersonal(item: PersonalRecepcionSeleccion) {
     if (!pedidoHistoriaId || guardando === "post") return;
 
-    if (esNotaCredito) {
-      decisionFiscalMetodoPostRef.current = undefined;
-      setElegirPersonalOpen(false);
-      toast.info(
-        "La nota de crédito aún no se registra en DUX. El pedido original no se modificó."
-      );
-      return;
-    }
-
     setGuardando("post");
     try {
       const guardadoOk = await persistirRecepcionActual();
@@ -644,6 +645,28 @@ export default function PedidoHistoriaDetalleModal({
                     if (locked) return;
                     if (guardando) return;
 
+                    if (esNotaCredito) {
+                      const itemsNc: NotaCreditoDuxItem[] = itemsOrdenados
+                        .filter(
+                          (it) =>
+                            it.cantRecibida != null && it.cantRecibida !== 0
+                        )
+                        .map((it) => ({
+                          id: it.id,
+                          codTienda: it.codTienda,
+                          descripcionTienda: it.descripcionTienda,
+                          cant: it.cantRecibida ?? 0,
+                        }));
+                      window.open(
+                        DUX_NUEVA_NOTA_CREDITO_DEBITO_VENTA_URL,
+                        "_blank",
+                        "noopener,noreferrer"
+                      );
+                      setItemsGenerarNcDux(itemsNc);
+                      setGenerarNcDuxOpen(true);
+                      return;
+                    }
+
                     const decision = await pedirDecisionFiscalSiAplica();
                     if (decision === "cancelado") return;
                     decisionFiscalMetodoPostRef.current =
@@ -654,7 +677,7 @@ export default function PedidoHistoriaDetalleModal({
                     !puedeRegistrarEnDux || bloquearNavegacionModalPorEdicionCantidad
                   }
                 >
-                  Registrar En Dux
+                  {esNotaCredito ? "Generar Nota Crédito" : "Registrar En Dux"}
                 </Button>
               ) : (
                 <>
@@ -1115,6 +1138,15 @@ export default function PedidoHistoriaDetalleModal({
         </AppModal>
       </Dialog>
 
+      <GenerarNotaCreditoDuxModal
+        open={generarNcDuxOpen}
+        onOpenChange={setGenerarNcDuxOpen}
+        items={itemsGenerarNcDux}
+        onNotaGenerada={() => {
+          setGenerarNcDuxOpen(false);
+          handleModalOpenChange(false);
+        }}
+      />
       <AgregarProductosModal
         open={agregarProductosOpen}
         onOpenChange={setAgregarProductosOpen}
