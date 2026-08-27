@@ -6,8 +6,10 @@
 
 const RE_LETRA_GUION = /^([A-Za-z])-(\d+)-(\d+)$/;
 
-/** Fila fija **NOTA_CREDITO** (`c-00000-00000001`). */
+/** Fila fija **NOTA_CREDITO** (`X-00000-########`). */
 export const PROD_PED_ULT_COMP_ID_NOTA_CREDITO = 3;
+/** Letra fija del correlativo de nota de crédito. */
+export const NOTA_CREDITO_LETRA = "X";
 
 function powBig10(exp: number): bigint {
   let out = BigInt(1);
@@ -52,7 +54,7 @@ export function incrementarUltimoComprobanteFacturaAfip(raw: string): string {
   return incrementarLetraGuionBloques(raw, letra, "FACTURA");
 }
 
-/** `c-00000-00000000` → `c-00000-00000001` (letra siempre minúscula). */
+/** `X-00000-00000002` → `X-00000-00000003` (letra siempre `X`). */
 export function incrementarNumeroNotaCredito(raw: string): string {
-  return incrementarLetraGuionBloques(raw, "c", "NOTA_CREDITO");
+  return incrementarLetraGuionBloques(raw, NOTA_CREDITO_LETRA, "NOTA_CREDITO");
 }

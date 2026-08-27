@@ -128,7 +128,7 @@ function DatoNcCopiable({
  * (Control de ítem / COD. TIENDA / DESCRIPCIÓN / CANT. / ACCIONES).
  * **OK** copia `cod_tienda`; **Nota Generada** exige todos TRUE.
  * Cabecera: **PROVEEDOR** + **Nº COMPROBANTE** (copiar). Pie: **PRECIO UNITARIO** (copiar).
- * **Nº COMPROBANTE** `c-00000-########`: preview al abrir; **Nota Generada** persiste +1 en `prod_ped_ult_comp`.
+ * **Nº COMPROBANTE** `X-00000-########`: preview al abrir; **Nota Generada** persiste +1 en `prod_ped_ult_comp`.
  */
 export default function GenerarNotaCreditoDuxModal({
   open,
@@ -371,7 +371,7 @@ export default function GenerarNotaCreditoDuxModal({
           aria-label="Precio unitario a colocar en todos los ítems"
           className="shrink-0 flex flex-col gap-2 border-t border-border bg-background py-2"
         >
-          <p className={cn("text-sm text-foreground")}>
+          <p className={cn("text-sm text-foreground text-center")}>
             Una vez agregado todos los item, copiá y pegá este valor en la columna{" "}
             <strong className="font-semibold">Precio Unitario</strong>
           </p>

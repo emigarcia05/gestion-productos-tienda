@@ -44,7 +44,7 @@ export async function obtenerSiguienteNumeroNotaCredito(): Promise<
 }
 
 /**
- * Reserva el siguiente `c-00000-########` (SELECT FOR UPDATE + incremento).
+ * Reserva el siguiente `X-00000-########` (SELECT FOR UPDATE + incremento).
  */
 export async function reservarSiguienteNumeroNotaCredito(): Promise<
   ServiceResult<{ numero: string }>
