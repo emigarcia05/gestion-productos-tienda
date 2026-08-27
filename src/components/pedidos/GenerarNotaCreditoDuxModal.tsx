@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { fmtNumero } from "@/lib/format";
 import { montoArSignedCentsToDisplayWithCurrency } from "@/lib/montoArMask";
-import { DUX_NUEVA_NOTA_CREDITO_DEBITO_VENTA_URL } from "@/lib/notaCreditoDux";
+import { DUX_NUEVA_NOTA_CREDITO_DEBITO_COMPRA_URL } from "@/lib/notaCreditoDux";
 import {
   obtenerSiguienteNumeroNotaCreditoAction,
   reservarSiguienteNumeroNotaCreditoAction,
@@ -261,7 +261,7 @@ export default function GenerarNotaCreditoDuxModal({
         <div className="flex shrink-0 flex-col gap-4">
           <Button asChild className="w-full">
             <a
-              href={DUX_NUEVA_NOTA_CREDITO_DEBITO_VENTA_URL}
+              href={DUX_NUEVA_NOTA_CREDITO_DEBITO_COMPRA_URL}
               target="_blank"
               rel="noopener noreferrer"
             >

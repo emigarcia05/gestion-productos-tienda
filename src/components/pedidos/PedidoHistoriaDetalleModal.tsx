@@ -29,7 +29,7 @@ import {
   marcarPedidoHistoriaRegistradoAction,
 } from "@/actions/pedidosHistoria";
 import { fetchPedidoHistoriaDetalle } from "@/lib/fetchPedidoHistoriaDetalle";
-import { DUX_NUEVA_NOTA_CREDITO_DEBITO_VENTA_URL } from "@/lib/notaCreditoDux";
+import { DUX_NUEVA_NOTA_CREDITO_DEBITO_COMPRA_URL } from "@/lib/notaCreditoDux";
 import { registrarRecepcionCompraDuxAction } from "@/actions/registrarRecepcionCompraDux";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ConfirmarComprobanteFiscalModal from "@/components/pedidos/ConfirmarComprobanteFiscalModal";
@@ -662,7 +662,7 @@ export default function PedidoHistoriaDetalleModal({
                           cant: it.cantRecibida ?? 0,
                         }));
                       window.open(
-                        DUX_NUEVA_NOTA_CREDITO_DEBITO_VENTA_URL,
+                        DUX_NUEVA_NOTA_CREDITO_DEBITO_COMPRA_URL,
                         "_blank",
                         "noopener,noreferrer"
                       );

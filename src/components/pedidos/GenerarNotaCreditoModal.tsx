@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import AppModal from "@/components/shared/AppModal";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -98,6 +99,7 @@ export default function GenerarNotaCreditoModal({
               <br />
               Seguí las indicaciones para saber qué dato colocar en cada casillero.
             </p>
+            <Separator className={cn("bg-border/60")} />
             <p className={cn("text-sm font-semibold text-foreground")}>
               ELEGÍ EL PEDIDO DEL CUAL QUERÉS GENERAR LA NOTA DE CRÉDITO
             </p>
