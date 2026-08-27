@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
@@ -127,12 +127,18 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pedidoHistoriaId: string | null;
+  /**
+   * `nota-credito`: mismo layout que recepción, título **Nota Crédito**.
+   * Borrador local: no persiste ni POST DUX sobre el pedido origen.
+   */
+  variante?: "recepcion" | "nota-credito";
 }
 
 export default function PedidoHistoriaDetalleModal({
   open,
   onOpenChange,
   pedidoHistoriaId,
+  variante = "recepcion",
 }: Props) {
   const [detalle, setDetalle] = useState<PedidoHistoriaDetalle | null>(null);
   const [loading, setLoading] = useState(false);
@@ -180,9 +186,11 @@ export default function PedidoHistoriaDetalleModal({
   const busquedaAgregarRef = useRef<HTMLInputElement>(null);
   const cantRecEditingInputRef = useRef<HTMLInputElement>(null);
 
+  const esNotaCredito = variante === "nota-credito";
   const estado: PedidoHistoriaEstado | null = detalle ? detalle.estado : null;
   const bloqueadoPorEstado = estado === "RECEPCIONADO";
-  const locked = bloqueadoPorEstado && !modoCorreccionRecepcionado;
+  const locked =
+    !esNotaCredito && bloqueadoPorEstado && !modoCorreccionRecepcionado;
   const busy = guardando != null || loading;
 
   const generadoAtStr = useMemo(() => {
@@ -190,10 +198,11 @@ export default function PedidoHistoriaDetalleModal({
     return d ? formatDdMmHhMmArgentina(d) : "";
   }, [detalle?.generadoAt]);
 
-  async function cargarDetalle(
-    id: string,
-    options?: { preserveChecklist?: boolean }
-  ): Promise<PedidoHistoriaDetalle | null> {
+  const cargarDetalle = useCallback(
+    async (
+      id: string,
+      options?: { preserveChecklist?: boolean }
+    ): Promise<PedidoHistoriaDetalle | null> => {
     const res = await fetchPedidoHistoriaDetalle(id);
     if (!res.ok) {
       setDetalle(null);
@@ -202,19 +211,36 @@ export default function PedidoHistoriaDetalleModal({
       return null;
     }
     const detalleNormalizado = res.data;
-    setDetalle(detalleNormalizado);
-    const checklistInicial = buildChecklistConfirmadoInicial(
-      detalleNormalizado.items,
-      detalleNormalizado.estado
-    );
+    const detalleParaUi: PedidoHistoriaDetalle = esNotaCredito
+      ? {
+          ...detalleNormalizado,
+          items: detalleNormalizado.items.map((it) => ({
+            ...it,
+            cantRecibida: null,
+          })),
+          total: null,
+          fechaRecepcionIso: null,
+        }
+      : detalleNormalizado;
+    setDetalle(detalleParaUi);
+    const checklistInicial = esNotaCredito
+      ? {}
+      : buildChecklistConfirmadoInicial(
+          detalleParaUi.items,
+          detalleParaUi.estado
+        );
     setCheckListConfirmedByItem((prev) => {
       if (!options?.preserveChecklist) return checklistInicial;
       const merged = { ...checklistInicial };
-      for (const item of detalleNormalizado.items) {
+      for (const item of detalleParaUi.items) {
         if (prev[item.id] === true) merged[item.id] = true;
       }
       return merged;
     });
+    if (esNotaCredito) {
+      setErrorMsg(null);
+      return detalleParaUi;
+    }
     if (res.data.total != null && Number.isFinite(res.data.total) && res.data.total !== 0) {
       const totalNorm = String(res.data.total);
       setTotalPedido(totalNorm);
@@ -226,8 +252,8 @@ export default function PedidoHistoriaDetalleModal({
       if (d) setFechaRecepcion(dateToIsoYmdArgentina(d));
     }
     setErrorMsg(null);
-    return detalleNormalizado;
-  }
+    return detalleParaUi;
+  }, [esNotaCredito]);
 
   useEffect(() => {
     if (!open || !pedidoHistoriaId) return;
@@ -267,7 +293,7 @@ export default function PedidoHistoriaDetalleModal({
         setLoading(false);
       }
     })();
-  }, [open, pedidoHistoriaId]);
+  }, [open, pedidoHistoriaId, cargarDetalle]);
 
   useEffect(() => {
     if (!open || locked || loading) return;
@@ -479,6 +505,15 @@ export default function PedidoHistoriaDetalleModal({
   async function onSeleccionarPersonal(item: PersonalRecepcionSeleccion) {
     if (!pedidoHistoriaId || guardando === "post") return;
 
+    if (esNotaCredito) {
+      decisionFiscalMetodoPostRef.current = undefined;
+      setElegirPersonalOpen(false);
+      toast.info(
+        "La nota de crédito aún no se registra en DUX. El pedido original no se modificó."
+      );
+      return;
+    }
+
     setGuardando("post");
     try {
       const guardadoOk = await persistirRecepcionActual();
@@ -538,6 +573,7 @@ export default function PedidoHistoriaDetalleModal({
   }
 
   async function persistirRecepcionActual(): Promise<boolean> {
+    if (esNotaCredito) return true;
     if (!pedidoHistoriaId || !detalle) return false;
     try {
       const res = await guardarRecepcionPedidoHistoriaAction({
@@ -579,7 +615,7 @@ export default function PedidoHistoriaDetalleModal({
     <>
       <Dialog open={open} onOpenChange={handleModalOpenChange}>
         <AppModal
-          title="Recepcion Pedido"
+          title={esNotaCredito ? "Nota Crédito" : "Recepcion Pedido"}
           scrollBody={false}
           size="xl"
           className="max-w-[66rem] h-[95vh] max-h-[95vh]"
@@ -668,7 +704,7 @@ export default function PedidoHistoriaDetalleModal({
             inert={bloquearNavegacionModalPorEdicionCantidad ? true : undefined}
           >
             <h2 id="pedido-historia-resumen-title" className="sr-only">
-              Resumen del pedido
+              {esNotaCredito ? "Resumen de la nota de crédito" : "Resumen del pedido"}
             </h2>
             <div
               className={cn(
@@ -739,7 +775,9 @@ export default function PedidoHistoriaDetalleModal({
                 id="pedido-historia-agregar-recepcion-titulo"
                 className="sr-only"
               >
-                AGREGAR PRODUCTO A LA RECEPCIÓN
+                {esNotaCredito
+                  ? "AGREGAR PRODUCTO A LA NOTA DE CRÉDITO"
+                  : "AGREGAR PRODUCTO A LA RECEPCIÓN"}
               </span>
               <div className="flex w-full min-w-0 flex-row items-center justify-between gap-x-10 pt-1 pb-0">
                 <div className="flex min-w-0 max-w-[36rem] flex-1 items-center gap-2">

@@ -83,6 +83,10 @@ export default function HistorialPedidosPageClient({
   const [descargandoPdfId, setDescargandoPdfId] = useState<string | null>(null);
   const [notaCreditoOpen, setNotaCreditoOpen] = useState(false);
   const [pedidoNcElegidoId, setPedidoNcElegidoId] = useState<string | null>(null);
+  const [notaCreditoAsistenteOpen, setNotaCreditoAsistenteOpen] = useState(false);
+  const [notaCreditoAsistenteId, setNotaCreditoAsistenteId] = useState<string | null>(
+    null
+  );
 
   const showingEmpty = items.length === 0;
   const COL_WIDTHS_PCT = [18, 28, 18, 14, 22] as const;
@@ -309,6 +313,15 @@ export default function HistorialPedidosPageClient({
           }}
           pedidoHistoriaId={recepcionId}
         />
+        <PedidoHistoriaDetalleModal
+          open={notaCreditoAsistenteOpen}
+          onOpenChange={(v) => {
+            setNotaCreditoAsistenteOpen(v);
+            if (!v) setNotaCreditoAsistenteId(null);
+          }}
+          pedidoHistoriaId={notaCreditoAsistenteId}
+          variante="nota-credito"
+        />
         <PedidoHistoriaLecturaModal
           open={lecturaOpen}
           onOpenChange={(v) => {
@@ -341,6 +354,9 @@ export default function HistorialPedidosPageClient({
           }}
           onElegirPedido={(id) => {
             setPedidoNcElegidoId(id);
+            setNotaCreditoAsistenteId(id);
+            setNotaCreditoAsistenteOpen(true);
+            setNotaCreditoOpen(false);
           }}
         />
       </div>
