@@ -91,13 +91,15 @@ export default function GenerarNotaCreditoModal({
         }
       >
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className={cn("shrink-0 flex flex-col gap-2 pb-3")}>
+          <div className={cn("shrink-0 flex flex-col gap-2 pb-3 text-center")}>
             <p className={cn("text-sm text-foreground")}>
-              Esta herramienta es un asistente para crear la NC en DUX. Seguir las
-              indicaciones y te asistirá para que sepas qué dato colocar en cada casillero.
+              Esta herramienta es un asistente para{" "}
+              <strong className="font-semibold">crear la Nota de Crédito en DUX</strong>.
+              <br />
+              Seguí las indicaciones para saber qué dato colocar en cada casillero.
             </p>
             <p className={cn("text-sm font-semibold text-foreground")}>
-              Elegí el pedido del cual querés generar la Nota de Crédito
+              ELEGÍ EL PEDIDO DEL CUAL QUERÉS GENERAR LA NOTA DE CRÉDITO
             </p>
           </div>
           {errorMsg ? (

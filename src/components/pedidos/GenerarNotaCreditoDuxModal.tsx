@@ -369,8 +369,12 @@ export default function GenerarNotaCreditoDuxModal({
 
         <section
           aria-label="Precio unitario a colocar en todos los ítems"
-          className="shrink-0 border-t border-border bg-background py-2"
+          className="shrink-0 flex flex-col gap-2 border-t border-border bg-background py-2"
         >
+          <p className={cn("text-sm text-foreground")}>
+            Una vez agregado todos los item, copiá y pegá este valor en la columna{" "}
+            <strong className="font-semibold">Precio Unitario</strong>
+          </p>
           <DatoNcCopiable
             stacked={false}
             label="PRECIO UNITARIO A COLOCAR EN TODOS LOS ITEM"
