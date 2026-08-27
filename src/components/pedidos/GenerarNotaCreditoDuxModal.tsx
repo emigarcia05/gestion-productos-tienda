@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Check } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -47,21 +47,95 @@ interface Props {
   items: NotaCreditoDuxItem[];
   /** TOTAL PEDIDO de la NC (normalizado, admite negativo). */
   totalNc: number;
+  proveedorNombre: string;
   onNotaGenerada?: () => void;
+}
+
+async function copiarDatoNc(texto: string, toastTitle: string): Promise<void> {
+  const t = texto.trim();
+  if (t === "") return;
+  try {
+    await navigator.clipboard.writeText(t);
+    toast.success(toastTitle, { description: t });
+  } catch {
+    toast.error("No se pudo copiar.");
+  }
+}
+
+function DatoNcCopiable({
+  label,
+  value,
+  toastTitle,
+  ariaLabelCopiar,
+  stacked = true,
+}: {
+  label: string;
+  value: string;
+  toastTitle: string;
+  ariaLabelCopiar: string;
+  /** `true`: label arriba, valor + copiar abajo. `false`: label a la izquierda (pie). */
+  stacked?: boolean;
+}) {
+  const vacio = value.trim() === "";
+  const copiar = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className={cn(
+        TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+        "!size-7 max-h-7 min-h-7 min-w-7 shrink-0 !p-0"
+      )}
+      aria-label={ariaLabelCopiar}
+      title={ariaLabelCopiar}
+      disabled={vacio}
+      onClick={() => void copiarDatoNc(value, toastTitle)}
+    >
+      <Copy className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+    </Button>
+  );
+  const valor = (
+    <p className="min-w-0 truncate text-sm font-semibold tabular-nums text-foreground whitespace-nowrap">
+      {value}
+    </p>
+  );
+
+  if (stacked) {
+    return (
+      <div className="flex min-w-0 flex-col gap-1">
+        <ModalMicroLabel>{label}</ModalMicroLabel>
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          {valor}
+          {copiar}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-3">
+      <ModalMicroLabel>{label}</ModalMicroLabel>
+      <div className="flex min-w-0 items-center justify-end gap-2 shrink-0">
+        {valor}
+        {copiar}
+      </div>
+    </div>
+  );
 }
 
 /**
  * Checklist para cargar la NC en DUX: mismo cascarón que **Generar Transf.**
  * (Control de ítem / COD. TIENDA / DESCRIPCIÓN / CANT. / ACCIONES).
  * **OK** copia `cod_tienda`; **Nota Generada** exige todos TRUE.
- * Pie: **PRECIO UNITARIO A COLOCAR EN TODOS LOS ITEM** = TOTAL / suma CANT. (2 decimales).
- * **NRO. COMPROBANTE** `c-00000-########`: preview al abrir; **Nota Generada** persiste +1 en `prod_ped_ult_comp`.
+ * Cabecera: **PROVEEDOR** + **Nº COMPROBANTE** (copiar). Pie: **PRECIO UNITARIO** (copiar).
+ * **Nº COMPROBANTE** `c-00000-########`: preview al abrir; **Nota Generada** persiste +1 en `prod_ped_ult_comp`.
  */
 export default function GenerarNotaCreditoDuxModal({
   open,
   onOpenChange,
   items,
   totalNc,
+  proveedorNombre,
   onNotaGenerada,
 }: Props) {
   const [okPorItemId, setOkPorItemId] = useState<Record<string, boolean>>({});
@@ -194,6 +268,20 @@ export default function GenerarNotaCreditoDuxModal({
               Generar Nota Crédito
             </a>
           </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <DatoNcCopiable
+              label="PROVEEDOR"
+              value={proveedorNombre}
+              toastTitle="Proveedor Copiado"
+              ariaLabelCopiar="Copiar proveedor"
+            />
+            <DatoNcCopiable
+              label="Nº COMPROBANTE"
+              value={numeroNc}
+              toastTitle="Nº Comprobante Copiado"
+              ariaLabelCopiar="Copiar número de comprobante"
+            />
+          </div>
         </div>
 
         <div
@@ -280,25 +368,16 @@ export default function GenerarNotaCreditoDuxModal({
         </div>
 
         <section
-          aria-label="Precio unitario y número de comprobante"
+          aria-label="Precio unitario a colocar en todos los ítems"
           className="shrink-0 border-t border-border bg-background py-2"
         >
-          <div className="flex min-w-0 flex-col gap-2">
-            <div className="flex min-w-0 items-center justify-between gap-3">
-              <ModalMicroLabel>
-                PRECIO UNITARIO A COLOCAR EN TODOS LOS ITEM
-              </ModalMicroLabel>
-              <p className="text-sm font-semibold tabular-nums text-foreground whitespace-nowrap">
-                {precioUnitarioDisplay}
-              </p>
-            </div>
-            <div className="flex min-w-0 items-center justify-between gap-3">
-              <ModalMicroLabel>NRO. COMPROBANTE</ModalMicroLabel>
-              <p className="text-sm font-semibold tabular-nums text-foreground whitespace-nowrap">
-                {numeroNc}
-              </p>
-            </div>
-          </div>
+          <DatoNcCopiable
+            stacked={false}
+            label="PRECIO UNITARIO A COLOCAR EN TODOS LOS ITEM"
+            value={precioUnitarioDisplay}
+            toastTitle="Px. Unitario Copiado"
+            ariaLabelCopiar="Copiar precio unitario"
+          />
         </section>
       </AppModal>
     </Dialog>
