@@ -1109,7 +1109,7 @@ model PedidoHistoriaItem {
   @@map("prod_ped_historial_merc")
 }
 
-/// Dos filas fijas (`id` 1 y 2): último **COMPROBANTE** por tipo de Excel de recepción (`Comprobante_Compra` vs `FACTURA`).
+/// Filas fijas: `id` 1 Comprobante_Compra, 2 FACTURA (Excel recepción), 3 NOTA_CREDITO (`c-00000-########`).
 model ProdPedUltComp {
   id               Int    @id
   tipoComprobante  String @map("tipo_comprobante")

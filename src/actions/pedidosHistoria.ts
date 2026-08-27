@@ -10,6 +10,7 @@ import { generarPdfPedido } from "@/lib/generarPdfPedido";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 import { SUCURSAL_LABEL_PEDIDO, type SucursalPedido } from "@/lib/pedidos";
 import * as pedidosHistoriaService from "@/services/pedidosHistoria.service";
+import * as notaCreditoNumeroService from "@/services/notaCreditoNumero.service";
 import { fechaFacturaIsoSchema } from "@/services/exportRecepcionPedidoExcel.service";
 
 /**
@@ -197,4 +198,36 @@ export async function listarPedidosHistoriaRecepcionadosParaNotaCreditoAction():
       return { ok: true, data: res.data };
     }
   );
+}
+
+export async function obtenerSiguienteNumeroNotaCreditoAction(): Promise<
+  ActionResult<{ numero: string }>
+> {
+  return ejecutarActionSegura("obtenerSiguienteNumeroNotaCredito", async () => {
+    const rol = await getRol();
+    if (!puede(rol, PERMISOS.pedidos.acceso)) {
+      return { ok: false, error: "Sin permisos para pedidos." };
+    }
+
+    const res = await notaCreditoNumeroService.obtenerSiguienteNumeroNotaCredito();
+    if (!res.success) return { ok: false, error: res.error };
+    return { ok: true, data: res.data };
+  });
+}
+
+export async function reservarSiguienteNumeroNotaCreditoAction(): Promise<
+  ActionResult<{ numero: string }>
+> {
+  return ejecutarActionSegura("reservarSiguienteNumeroNotaCredito", async () => {
+    const rol = await getRol();
+    if (!puede(rol, PERMISOS.pedidos.acceso)) {
+      return { ok: false, error: "Sin permisos para pedidos." };
+    }
+
+    const res = await notaCreditoNumeroService.reservarSiguienteNumeroNotaCredito();
+    if (!res.success) return { ok: false, error: res.error };
+
+    revalidatePath("/pedidos/historial");
+    return { ok: true, data: res.data };
+  });
 }

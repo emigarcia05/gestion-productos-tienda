@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
+import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -16,7 +17,12 @@ import {
   EmptyTableRow,
 } from "@/components/ui/table";
 import { fmtNumero } from "@/lib/format";
+import { montoArSignedCentsToDisplayWithCurrency } from "@/lib/montoArMask";
 import { DUX_NUEVA_NOTA_CREDITO_DEBITO_VENTA_URL } from "@/lib/notaCreditoDux";
+import {
+  obtenerSiguienteNumeroNotaCreditoAction,
+  reservarSiguienteNumeroNotaCreditoAction,
+} from "@/actions/pedidosHistoria";
 import {
   TablaControlItemCelda,
   TablaControlItemHead,
@@ -39,6 +45,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   items: NotaCreditoDuxItem[];
+  /** TOTAL PEDIDO de la NC (normalizado, admite negativo). */
+  totalNc: number;
   onNotaGenerada?: () => void;
 }
 
@@ -46,20 +54,39 @@ interface Props {
  * Checklist para cargar la NC en DUX: mismo cascarón que **Generar Transf.**
  * (Control de ítem / COD. TIENDA / DESCRIPCIÓN / CANT. / ACCIONES).
  * **OK** copia `cod_tienda`; **Nota Generada** exige todos TRUE.
+ * Pie: **PRECIO UNITARIO A COLOCAR EN TODOS LOS ITEM** = TOTAL / suma CANT. (2 decimales).
+ * **NRO. COMPROBANTE** `c-00000-########`: preview al abrir; **Nota Generada** persiste +1 en `prod_ped_ult_comp`.
  */
 export default function GenerarNotaCreditoDuxModal({
   open,
   onOpenChange,
   items,
+  totalNc,
   onNotaGenerada,
 }: Props) {
   const [okPorItemId, setOkPorItemId] = useState<Record<string, boolean>>({});
+  const [numeroNc, setNumeroNc] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
     queueMicrotask(() => {
       setOkPorItemId({});
+      setNumeroNc("");
     });
+    void (async () => {
+      const res = await obtenerSiguienteNumeroNotaCreditoAction();
+      if (cancelled) return;
+      if (!res.ok) {
+        toast.error(res.error ?? "Error al leer el correlativo de nota de crédito.");
+        return;
+      }
+      setNumeroNc(res.data.numero);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [open, items]);
 
   async function handleOkItem(item: NotaCreditoDuxItem) {
@@ -80,14 +107,51 @@ export default function GenerarNotaCreditoDuxModal({
   const todosOk =
     items.length > 0 && items.every((item) => okPorItemId[item.id] === true);
 
+  const precioUnitarioDisplay = useMemo(() => {
+    const sumaCant = items.reduce((acc, it) => acc + it.cant, 0);
+    if (
+      sumaCant === 0 ||
+      !Number.isFinite(sumaCant) ||
+      !Number.isFinite(totalNc)
+    ) {
+      return "";
+    }
+    const unitario = totalNc / sumaCant;
+    if (!Number.isFinite(unitario)) return "";
+    return montoArSignedCentsToDisplayWithCurrency(Math.round(unitario * 100));
+  }, [items, totalNc]);
+
   function handleNotaGenerada() {
-    if (!todosOk) return;
-    onNotaGenerada?.();
-    onOpenChange(false);
+    if (!todosOk || isPending) return;
+    startTransition(async () => {
+      const res = await reservarSiguienteNumeroNotaCreditoAction();
+      if (!res.ok) {
+        toast.error(res.error ?? "Error al asignar el correlativo de nota de crédito.");
+        return;
+      }
+      const numero = res.data.numero;
+      setNumeroNc(numero);
+      try {
+        await navigator.clipboard.writeText(numero);
+        toast.success("Nota Generada", { description: numero });
+      } catch {
+        toast.success("Nota Generada", {
+          description: `${numero} (no se pudo copiar)`,
+        });
+      }
+      onNotaGenerada?.();
+      onOpenChange(false);
+    });
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && isPending) return;
+        onOpenChange(next);
+      }}
+    >
       <AppModal
         size="xl"
         className="h-[85vh] max-h-[85vh] max-w-[54rem]"
@@ -100,13 +164,14 @@ export default function GenerarNotaCreditoDuxModal({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isPending}
             >
               Cerrar
             </Button>
             <Button
               type="button"
               onClick={handleNotaGenerada}
-              disabled={!todosOk}
+              disabled={!todosOk || isPending}
               className="disabled:cursor-not-allowed"
               title={
                 todosOk
@@ -213,6 +278,28 @@ export default function GenerarNotaCreditoDuxModal({
             </TableBody>
           </Table>
         </div>
+
+        <section
+          aria-label="Precio unitario y número de comprobante"
+          className="shrink-0 border-t border-border bg-background py-2"
+        >
+          <div className="flex min-w-0 flex-col gap-2">
+            <div className="flex min-w-0 items-center justify-between gap-3">
+              <ModalMicroLabel>
+                PRECIO UNITARIO A COLOCAR EN TODOS LOS ITEM
+              </ModalMicroLabel>
+              <p className="text-sm font-semibold tabular-nums text-foreground whitespace-nowrap">
+                {precioUnitarioDisplay}
+              </p>
+            </div>
+            <div className="flex min-w-0 items-center justify-between gap-3">
+              <ModalMicroLabel>NRO. COMPROBANTE</ModalMicroLabel>
+              <p className="text-sm font-semibold tabular-nums text-foreground whitespace-nowrap">
+                {numeroNc}
+              </p>
+            </div>
+          </div>
+        </section>
       </AppModal>
     </Dialog>
   );

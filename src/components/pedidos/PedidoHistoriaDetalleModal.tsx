@@ -189,6 +189,7 @@ export default function PedidoHistoriaDetalleModal({
   const [itemsGenerarNcDux, setItemsGenerarNcDux] = useState<NotaCreditoDuxItem[]>(
     []
   );
+  const [totalGenerarNcDux, setTotalGenerarNcDux] = useState(0);
 
   const fechaInputRef = useRef<HTMLInputElement>(null);
   const busquedaAgregarRef = useRef<HTMLInputElement>(null);
@@ -291,6 +292,7 @@ export default function PedidoHistoriaDetalleModal({
       setRecepcionDuxExitoData(null);
       setGenerarNcDuxOpen(false);
       setItemsGenerarNcDux([]);
+      setTotalGenerarNcDux(0);
     });
 
     void (async () => {
@@ -663,6 +665,7 @@ export default function PedidoHistoriaDetalleModal({
                         "noopener,noreferrer"
                       );
                       setItemsGenerarNcDux(itemsNc);
+                      setTotalGenerarNcDux(Number(totalPedido));
                       setGenerarNcDuxOpen(true);
                       return;
                     }
@@ -1142,6 +1145,7 @@ export default function PedidoHistoriaDetalleModal({
         open={generarNcDuxOpen}
         onOpenChange={setGenerarNcDuxOpen}
         items={itemsGenerarNcDux}
+        totalNc={totalGenerarNcDux}
         onNotaGenerada={() => {
           setGenerarNcDuxOpen(false);
           handleModalOpenChange(false);
