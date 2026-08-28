@@ -9,6 +9,7 @@ import { exportarCostoCxDiffAction } from "@/actions/cxPxTienda";
 import { exportarResumenAumentosPxAction } from "@/actions/pxCompetencia";
 import { descargarExcelCostoCx } from "@/lib/exportCostoCxExcelClient";
 import { descargarPdfResumenAumentosPx } from "@/lib/exportPxPdfClient";
+import { DUX_NUEVO_IMPORTADOR_URL } from "@/lib/duxImportador";
 import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";
 import ModalExportarInformeAumento from "@/components/tienda/ModalExportarInformeAumento";
 
@@ -28,6 +29,7 @@ export default function ActCxButton() {
   }
 
   async function handleActCx() {
+    window.open(DUX_NUEVO_IMPORTADOR_URL, "_blank", "noopener,noreferrer");
     setExportando(true);
     try {
       const res = await exportarCostoCxDiffAction();
@@ -83,7 +85,7 @@ export default function ActCxButton() {
         </TooltipTrigger>
         <TooltipContent>
           Exporta Excel (CODIGO + COSTO) con diferencias respecto al proveedor BASE
-          para importar en DUX
+          para importar en DUX y abre el importador DUX
         </TooltipContent>
       </Tooltip>
     </>
