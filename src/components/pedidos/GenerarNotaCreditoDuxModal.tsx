@@ -235,7 +235,7 @@ export default function GenerarNotaCreditoDuxModal({
     >
       <AppModal
         size="xl"
-        className="h-[95vh] max-h-[95vh] max-w-[54rem]"
+        className="h-[95vh] max-h-[95vh] max-w-[66rem]"
         title="Generar Nota Crédito"
         scrollBody={false}
         bodyShellClassName="h-full min-h-0"
@@ -390,13 +390,19 @@ export default function GenerarNotaCreditoDuxModal({
           tituloLado="izquierda"
           className="shrink-0 p-3"
         >
-          <DatoNcCopiable
-            stacked={false}
-            label=""
-            value={precioUnitarioDisplay}
-            toastTitle="Px. Unitario Copiado"
-            ariaLabelCopiar="Copiar precio unitario"
-          />
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <p className={cn("min-w-0 text-sm text-foreground")}>
+              En todos los item, completar este monto en la columna{" "}
+              <strong className="font-semibold">Precio Unitario</strong> Con IVA
+            </p>
+            <DatoNcCopiable
+              stacked={false}
+              label=""
+              value={precioUnitarioDisplay}
+              toastTitle="Px. Unitario Copiado"
+              ariaLabelCopiar="Copiar precio unitario"
+            />
+          </div>
         </ProcesoPaso>
 
         <ProcesoPaso
