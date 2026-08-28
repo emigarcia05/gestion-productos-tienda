@@ -127,11 +127,9 @@ function DatoNcCopiable({
   );
 }
 
-type NcDuxPaso = 1 | 2 | 3;
-
 /**
- * Wizard DUX de NC en 3 `ProcesoPaso`: cabecera → detalles (checklist + px.) → finalizar.
- * **OK** copia `cod_tienda`; **Nota Generada** (paso 3) exige todos TRUE y reserva `prod_ped_ult_comp` id=3 (`X-00000-########`).
+ * Checklist DUX de NC: 3 `ProcesoPaso` en una pantalla (`tituloLado="izquierda"`).
+ * **OK** copia `cod_tienda`; **Nota Generada** exige todos TRUE y reserva `prod_ped_ult_comp` id=3 (`X-00000-########`).
  */
 export default function GenerarNotaCreditoDuxModal({
   open,
@@ -144,7 +142,6 @@ export default function GenerarNotaCreditoDuxModal({
 }: Props) {
   const [okPorItemId, setOkPorItemId] = useState<Record<string, boolean>>({});
   const [numeroNc, setNumeroNc] = useState("");
-  const [paso, setPaso] = useState<NcDuxPaso>(1);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -153,7 +150,6 @@ export default function GenerarNotaCreditoDuxModal({
     queueMicrotask(() => {
       setOkPorItemId({});
       setNumeroNc("");
-      setPaso(1);
     });
     void (async () => {
       const res = await obtenerSiguienteNumeroNotaCreditoAction();
@@ -186,7 +182,6 @@ export default function GenerarNotaCreditoDuxModal({
 
   const todosOk =
     items.length > 0 && items.every((item) => okPorItemId[item.id] === true);
-  const puedeSiguiente = paso === 1 || (paso === 2 && todosOk);
 
   const fechaDisplay = useMemo(() => {
     const iso = fechaFacturaIso.trim();
@@ -208,18 +203,8 @@ export default function GenerarNotaCreditoDuxModal({
     return montoArSignedCentsToDisplayWithCurrency(Math.round(unitario * 100));
   }, [items, totalNc]);
 
-  function handleAtras() {
-    if (isPending) return;
-    setPaso((prev) => (prev === 1 ? prev : ((prev - 1) as NcDuxPaso)));
-  }
-
-  function handleSiguiente() {
-    if (isPending || !puedeSiguiente) return;
-    setPaso((prev) => (prev === 3 ? prev : ((prev + 1) as NcDuxPaso)));
-  }
-
   function handleNotaGenerada() {
-    if (paso !== 3 || !todosOk || isPending) return;
+    if (!todosOk || isPending) return;
     startTransition(async () => {
       const res = await reservarSiguienteNumeroNotaCreditoAction();
       if (!res.ok) {
@@ -255,9 +240,9 @@ export default function GenerarNotaCreditoDuxModal({
         title="Generar Nota Crédito"
         scrollBody={false}
         bodyShellClassName="h-full min-h-0"
-        bodyClassName="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden"
+        bodyClassName="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden"
         actions={
-          <div className="flex w-full items-center justify-between gap-2">
+          <>
             <Button
               type="button"
               variant="outline"
@@ -266,52 +251,29 @@ export default function GenerarNotaCreditoDuxModal({
             >
               Cerrar
             </Button>
-            <div className="flex gap-2">
-              {paso > 1 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleAtras}
-                  disabled={isPending}
-                >
-                  Atrás
-                </Button>
-              ) : null}
-              {paso < 3 ? (
-                <Button
-                  type="button"
-                  onClick={handleSiguiente}
-                  disabled={isPending || !puedeSiguiente}
-                  className="disabled:cursor-not-allowed"
-                  title={
-                    paso === 2 && !todosOk
-                      ? "Marcá todos los ítems con OK"
-                      : undefined
-                  }
-                >
-                  Siguiente
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={handleNotaGenerada}
-                  disabled={!todosOk || isPending}
-                  className="disabled:cursor-not-allowed"
-                  title={
-                    todosOk
-                      ? "Cerrar el asistente de nota de crédito"
-                      : "Marcá todos los ítems con OK"
-                  }
-                >
-                  Nota Generada
-                </Button>
-              )}
-            </div>
-          </div>
+            <Button
+              type="button"
+              onClick={handleNotaGenerada}
+              disabled={!todosOk || isPending}
+              className="disabled:cursor-not-allowed"
+              title={
+                todosOk
+                  ? "Cerrar el asistente de nota de crédito"
+                  : "Marcá todos los ítems con OK"
+              }
+            >
+              Nota Generada
+            </Button>
+          </>
         }
       >
-        {paso === 1 ? (
-          <ProcesoPaso numero={1} titulo="Completar Cabecera" activo>
+        <ProcesoPaso
+          numero={1}
+          titulo="Completar Cabecera"
+          activo
+          tituloLado="izquierda"
+          className="p-3"
+        >
             <Button asChild className="w-full">
               <a
                 href={DUX_NUEVA_NOTA_CREDITO_DEBITO_COMPRA_URL}
@@ -341,16 +303,15 @@ export default function GenerarNotaCreditoDuxModal({
                 ariaLabelCopiar="Copiar fecha"
               />
             </div>
-          </ProcesoPaso>
-        ) : null}
+        </ProcesoPaso>
 
-        {paso === 2 ? (
-          <ProcesoPaso
-            numero={2}
-            titulo="Completar Detalles"
-            activo
-            className="min-h-0 flex-1 shrink"
-          >
+        <ProcesoPaso
+          numero={2}
+          titulo="Completar Detalles"
+          activo
+          tituloLado="izquierda"
+          className="min-h-0 flex-1 shrink p-3"
+        >
             <div
               className="contenedor-tabla-gestion no-scroll-x min-h-0 flex-1"
               style={{ height: "auto" }}
@@ -450,11 +411,15 @@ export default function GenerarNotaCreditoDuxModal({
                 ariaLabelCopiar="Copiar precio unitario"
               />
             </section>
-          </ProcesoPaso>
-        ) : null}
+        </ProcesoPaso>
 
-        {paso === 3 ? (
-          <ProcesoPaso numero={3} titulo="Finalizar" activo>
+        <ProcesoPaso
+          numero={3}
+          titulo="Finalizar"
+          activo
+          tituloLado="izquierda"
+          className="p-3"
+        >
             <p className={cn("text-sm text-foreground text-center")}>
               En la sección{" "}
               <strong className="font-semibold">Percepciones / Impuestos</strong>,
@@ -464,7 +429,6 @@ export default function GenerarNotaCreditoDuxModal({
               <strong className="font-semibold">Generar</strong> la Nota de Crédito
             </p>
           </ProcesoPaso>
-        ) : null}
       </AppModal>
     </Dialog>
   );
