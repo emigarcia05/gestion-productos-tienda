@@ -19,7 +19,7 @@ const registrarRecepcionCompraDuxSchema = z.object({
     .refine((n) => n !== 0)
     .optional(),
   decisionFiscal: z.boolean().optional(),
-  idPersonal: z.coerce.number().int().positive().optional(),
+  idPersonal: z.coerce.number().int().positive(),
 });
 
 export async function registrarRecepcionCompraDuxAction(

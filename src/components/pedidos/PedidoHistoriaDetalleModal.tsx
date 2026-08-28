@@ -33,15 +33,13 @@ import { DUX_NUEVA_NOTA_CREDITO_DEBITO_COMPRA_URL } from "@/lib/notaCreditoDux";
 import { registrarRecepcionCompraDuxAction } from "@/actions/registrarRecepcionCompraDux";
 import AgregarProductosModal from "@/components/pedidos/AgregarProductosModal";
 import ConfirmarComprobanteFiscalModal from "@/components/pedidos/ConfirmarComprobanteFiscalModal";
-import ElegirPersonalRecepcionModal, {
-  type PersonalRecepcionSeleccion,
-} from "@/components/pedidos/ElegirPersonalRecepcionModal";
 import GenerarNotaCreditoDuxModal, {
   type NotaCreditoDuxItem,
 } from "@/components/pedidos/GenerarNotaCreditoDuxModal";
 import MontoArInput from "@/components/shared/MontoArInput";
 import ModalMicroLabel from "@/components/shared/ModalMicroLabel";
 import { cn } from "@/lib/utils";
+import { leerUsuarioSesion } from "@/lib/usuarioSesion";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -175,10 +173,6 @@ export default function PedidoHistoriaDetalleModal({
   const decisionFiscalResolverRef = useRef<
     ((value: DecisionFiscalResult) => void) | null
   >(null);
-  /** Modal selector de personal DUX antes de **Registrar En Dux**. */
-  const [elegirPersonalOpen, setElegirPersonalOpen] = useState(false);
-  /** Decisión fiscal pendiente del flujo **Registrar En Dux** (se consume al elegir personal). */
-  const decisionFiscalMetodoPostRef = useRef<boolean | undefined>(undefined);
   /** Modal de éxito tras POST DUX + marcado RECEPCIONADO. */
   const [recepcionDuxExitoOpen, setRecepcionDuxExitoOpen] = useState(false);
   const [recepcionDuxExitoData, setRecepcionDuxExitoData] = useState<{
@@ -191,6 +185,7 @@ export default function PedidoHistoriaDetalleModal({
   );
   const [totalGenerarNcDux, setTotalGenerarNcDux] = useState(0);
   const [proveedorGenerarNcDux, setProveedorGenerarNcDux] = useState("");
+  const [fechaGenerarNcDux, setFechaGenerarNcDux] = useState("");
 
   const fechaInputRef = useRef<HTMLInputElement>(null);
   const busquedaAgregarRef = useRef<HTMLInputElement>(null);
@@ -287,14 +282,13 @@ export default function PedidoHistoriaDetalleModal({
         decisionFiscalResolverRef.current = null;
       }
       setConfirmarFiscalOpen(false);
-      decisionFiscalMetodoPostRef.current = undefined;
-      setElegirPersonalOpen(false);
       setRecepcionDuxExitoOpen(false);
       setRecepcionDuxExitoData(null);
       setGenerarNcDuxOpen(false);
       setItemsGenerarNcDux([]);
       setTotalGenerarNcDux(0);
       setProveedorGenerarNcDux("");
+      setFechaGenerarNcDux("");
     });
 
     void (async () => {
@@ -516,7 +510,10 @@ export default function PedidoHistoriaDetalleModal({
     setConfirmarFiscalOpen(next);
   }
 
-  async function onSeleccionarPersonal(item: PersonalRecepcionSeleccion) {
+  async function registrarRecepcionEnDux(params: {
+    idPersonal: number;
+    decisionFiscal: boolean | undefined;
+  }) {
     if (!pedidoHistoriaId || guardando === "post") return;
 
     setGuardando("post");
@@ -528,8 +525,8 @@ export default function PedidoHistoriaDetalleModal({
         pedidoHistoriaId,
         fechaFacturaIso: fechaRecepcion,
         totalPedidoIngreso: Number(totalPedido),
-        decisionFiscal: decisionFiscalMetodoPostRef.current,
-        idPersonal: item.idPersonal,
+        decisionFiscal: params.decisionFiscal,
+        idPersonal: params.idPersonal,
       });
       if (!res.ok) {
         const line = res.error ?? "Error al registrar la compra en DUX.";
@@ -561,19 +558,9 @@ export default function PedidoHistoriaDetalleModal({
     }
   }
 
-  function onOpenChangeElegirPersonal(next: boolean) {
-    if (!next && guardando === "post") return;
-    if (!next) {
-      decisionFiscalMetodoPostRef.current = undefined;
-    }
-    setElegirPersonalOpen(next);
-  }
-
   function cerrarFlujoRecepcionDuxExitosa() {
     setRecepcionDuxExitoOpen(false);
     setRecepcionDuxExitoData(null);
-    decisionFiscalMetodoPostRef.current = undefined;
-    setElegirPersonalOpen(false);
     handleModalOpenChange(false);
   }
 
@@ -669,15 +656,26 @@ export default function PedidoHistoriaDetalleModal({
                       setItemsGenerarNcDux(itemsNc);
                       setTotalGenerarNcDux(Number(totalPedido));
                       setProveedorGenerarNcDux(detalle?.proveedorNombre ?? "");
+                      setFechaGenerarNcDux(fechaRecepcion);
                       setGenerarNcDuxOpen(true);
+                      return;
+                    }
+
+                    const usuario = leerUsuarioSesion();
+                    if (!usuario) {
+                      toast.error(
+                        "Elegí un usuario en el slidenav antes de registrar en DUX."
+                      );
                       return;
                     }
 
                     const decision = await pedirDecisionFiscalSiAplica();
                     if (decision === "cancelado") return;
-                    decisionFiscalMetodoPostRef.current =
-                      typeof decision === "boolean" ? decision : undefined;
-                    setElegirPersonalOpen(true);
+                    await registrarRecepcionEnDux({
+                      idPersonal: usuario.idPersonal,
+                      decisionFiscal:
+                        typeof decision === "boolean" ? decision : undefined,
+                    });
                   }}
                   disabled={
                     !puedeRegistrarEnDux || bloquearNavegacionModalPorEdicionCantidad
@@ -1150,6 +1148,7 @@ export default function PedidoHistoriaDetalleModal({
         items={itemsGenerarNcDux}
         totalNc={totalGenerarNcDux}
         proveedorNombre={proveedorGenerarNcDux}
+        fechaFacturaIso={fechaGenerarNcDux}
         onNotaGenerada={() => {
           setGenerarNcDuxOpen(false);
           handleModalOpenChange(false);
@@ -1168,12 +1167,6 @@ export default function PedidoHistoriaDetalleModal({
         onOpenChange={onOpenChangeConfirmarFiscal}
         onSeleccionar={onSeleccionarDecisionFiscal}
         pending={guardando != null}
-      />
-      <ElegirPersonalRecepcionModal
-        open={elegirPersonalOpen}
-        onOpenChange={onOpenChangeElegirPersonal}
-        onSeleccionar={onSeleccionarPersonal}
-        pending={guardando === "post"}
       />
       <Dialog
         open={recepcionDuxExitoOpen}

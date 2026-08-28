@@ -8,7 +8,6 @@ import { USUARIOS_PATH } from "@/lib/usuarios";
 import { actualizarUsuarioPersonalSchema } from "@/lib/validations/globalPersonal";
 import {
   actualizarUsuarioPersonal,
-  listGlobalPersonal,
   listUsuariosParaInicioSesion,
   type GlobalPersonalItem,
 } from "@/services/globalPersonal.service";
@@ -24,24 +23,6 @@ function firstZodErrorMessage(error: {
     [...Object.values(flattened.fieldErrors).flat(), ...flattened.formErrors][0] ??
     "Datos inválidos."
   );
-}
-
-export async function listGlobalPersonalAction(): Promise<
-  ActionResult<GlobalPersonalItem[]>
-> {
-  try {
-    const rol = await getRol();
-    if (!puede(rol, PERMISOS.pedidos.acceso)) {
-      return { ok: false, error: "Sin permisos para pedidos." };
-    }
-
-    const items = await listGlobalPersonal();
-    return { ok: true, data: items };
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    console.error("[globalPersonal][action][listGlobalPersonal]", message);
-    return { ok: false, error: "Error al listar el personal." };
-  }
 }
 
 export async function listUsuariosParaInicioSesionAction(): Promise<
