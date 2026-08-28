@@ -385,7 +385,7 @@ export async function contarProductosVariacionPxListaAction(
 }
 
 /**
- * Suma `variacion` (±, 2 dec.) a `prod_precios_provee.px_lista_proveedor` (piso 0).
+ * Aplica `variacion` % (±, 2 dec.) a `prod_precios_provee.px_lista_proveedor`: `px * (1 + variacion/100)` (piso 0).
  * Alcance: proveedor obligatorio; marca opcional; rubro opcional solo con marca.
  */
 export async function aplicarVariacionPxListaMasivaAction(

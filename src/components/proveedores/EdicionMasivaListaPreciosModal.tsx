@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import MontoArInput from "@/components/shared/MontoArInput";
+import PorcentajeCentInput from "@/components/shared/PorcentajeCentInput";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -25,8 +26,8 @@ import {
 import {
   montoArNumberToNormalizedString,
   montoArNormalizedStringToPesosNumber,
-  montoArSignedNormalizedStringToCents,
 } from "@/lib/montoArMask";
+import { parsePorcentajeCentSignedNormalized } from "@/lib/porcentajeCentMask";
 import { roundPrecioListaTienda } from "@/lib/calculos";
 import { cn } from "@/lib/utils";
 
@@ -104,12 +105,10 @@ function isFilaMode(props: Props): props is FilaProps {
   return props.mode === "fila";
 }
 
-function pesosFromVariacionNorm(norm: string): number | null {
-  const t = norm.trim();
-  if (t === "" || t === "-") return null;
-  const cents = montoArSignedNormalizedStringToCents(t);
-  if (cents === 0) return null;
-  return cents / 100;
+function porcentajeFromVariacionNorm(norm: string): number | null {
+  const n = parsePorcentajeCentSignedNormalized(norm);
+  if (n == null || n === 0) return null;
+  return n;
 }
 
 export default function EdicionMasivaListaPreciosModal(props: Props) {
@@ -227,9 +226,9 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
       toast.error("Seleccioná un proveedor.");
       return;
     }
-    const variacion = pesosFromVariacionNorm(variacionNorm);
+    const variacion = porcentajeFromVariacionNorm(variacionNorm);
     if (variacion == null) {
-      toast.error("Ingresá una variación distinta de 0, con hasta 2 decimales.");
+      toast.error("Ingresá un porcentaje de variación distinto de 0.");
       return;
     }
     if (rubroNombre && !marcaNombre) {
@@ -264,7 +263,7 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   }
 
   const titulo = filaMode ? "Editar producto" : "Edición Masiva";
-  const variacionLista = pesosFromVariacionNorm(variacionNorm) != null;
+  const variacionLista = porcentajeFromVariacionNorm(variacionNorm) != null;
   const confirmarMasivaHabilitado =
     !!proveedorId &&
     variacionLista &&
@@ -419,14 +418,15 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
         </ModalFormRow>
 
         <ModalFormRow id="edicion-masiva-variacion" label="VARIACIÓN">
-          <MontoArInput
+          <PorcentajeCentInput
             id="edicion-masiva-variacion"
             placeholder="—"
             valueNormalized={variacionNorm}
             onValueNormalizedChange={setVariacionNorm}
-            treatEmptyNormalizedAsBlank
             allowNegative
-            className={INPUT_CONTROL_CLASS}
+            pctSuffixAlwaysVisible
+            treatEmptyNormalizedAsBlank
+            className={cn(INPUT_CONTROL_CLASS, "h-9")}
           />
         </ModalFormRow>
       </div>

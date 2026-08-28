@@ -772,7 +772,7 @@ export async function contarProductosParaVariacionPxLista(
 }
 
 /**
- * Suma `variacion` a `px_lista_proveedor` (2 dec. en el delta; resultado a 4 dec., piso 0).
+ * Aplica `variacion` % a `px_lista_proveedor`: `px * (1 + variacion/100)` (2 dec. en el %; resultado a 4 dec., piso 0).
  * Alcance: proveedor mercadería + marca/rubro opcionales (rubro solo con marca, validado en Zod).
  */
 export async function aplicarVariacionPxListaProveedorMasivo(
@@ -783,8 +783,8 @@ export async function aplicarVariacionPxListaProveedorMasivo(
 ): Promise<{ actualizados: number; error?: string }> {
   const prov = proveedorId.trim();
   if (!prov) return { actualizados: 0, error: "El proveedor es obligatorio." };
-  if (!Number.isFinite(variacion) || variacion === 0) {
-    return { actualizados: 0, error: "La variación debe ser un número distinto de 0." };
+  if (!Number.isFinite(variacion) || variacion === 0 || Math.abs(variacion) > 99.99) {
+    return { actualizados: 0, error: "La variación debe ser un porcentaje distinto de 0 (hasta 99,99 %)." };
   }
 
   const marca = marcaNombre?.trim() || null;
@@ -793,7 +793,7 @@ export async function aplicarVariacionPxListaProveedorMasivo(
   try {
     const actualizados = await prisma.$executeRawUnsafe(
       `UPDATE prod_precios_provee p
-       SET px_lista_proveedor = GREATEST(ROUND(p.px_lista_proveedor + $1::numeric, 4), 0),
+       SET px_lista_proveedor = GREATEST(ROUND(p.px_lista_proveedor * (1 + $1::numeric / 100), 4), 0),
            updated_at = CURRENT_TIMESTAMP
        FROM global_proveedores g
        WHERE p.id_proveedor = g.id

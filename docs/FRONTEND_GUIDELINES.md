@@ -191,7 +191,7 @@ Nuevo shared: CVA + tokens + `"use client"` solo si hay estado/hooks. Documentar
 | `DuxSyncStyleButton` | Dos líneas + swap hover (Sync slidenav) |
 | `MensajeProceso` | “X de Y” / sidebar |
 | `ModalMicroLabel` / `ModalSiNoChoice` / `ModalFeedbackRegion` | Labels, SÍ/NO, feedback |
-| `MontoArInput` / `MontoArSaldoEnteroInput` / `PorcentajeCentInput` / `PorcentajeEnteroMaskInput` / `PxListaEnteroInput` | Máscaras AR. `MontoArInput` `allowNegative` en TOTAL PEDIDO de recepción y VARIACIÓN de Edición Masiva (lista precios). |
+| `MontoArInput` / `MontoArSaldoEnteroInput` / `PorcentajeCentInput` / `PorcentajeEnteroMaskInput` / `PxListaEnteroInput` | Máscaras AR. `MontoArInput` `allowNegative` en TOTAL PEDIDO de recepción. `PorcentajeCentInput` `allowNegative` + sufijo `%` fijo (`.input-mascara-sufijo`, no editable) en VARIACIÓN de Edición Masiva. |
 | `SelectSearchInput` | Buscador de desplegables |
 | `FiltroRangoFechasCalendarioModal` | Rango de fechas |
 | `TablaSubencabezadoSeccionRow` | Subencabezado en tbody |
@@ -230,7 +230,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 
 ### Proveedores
 
-- **Lista Precios** (`/proveedores/lista-precios`): botón **Edición Masiva** (`EdicionMasivaListaPreciosModal` modo header): PROVEEDOR obligatorio, MARCA opcional, RUBRO opcional (Select habilitado solo con MARCA), VARIACIÓN ± 2 dec. obligatoria (`MontoArInput` `allowNegative`). Confirmar suma la variación a `px_lista_proveedor` (piso 0). No exige filtro de página. El lápiz de fila sigue siendo SET de marca/rubro/px lista.
+- **Lista Precios** (`/proveedores/lista-precios`): botón **Edición Masiva** (`EdicionMasivaListaPreciosModal` modo header): PROVEEDOR obligatorio, MARCA opcional, RUBRO opcional (Select habilitado solo con MARCA), VARIACIÓN ± % 2 dec. obligatoria (`PorcentajeCentInput` `allowNegative`, sufijo `%` fijo no editable). Confirmar aplica `px_lista_proveedor * (1 + variación/100)` (piso 0; p. ej. $100 y 4% → $104; −4% → $96). No exige filtro de página. El lápiz de fila sigue siendo SET de marca/rubro/px lista.
 
 ### Stock / ayuda vendedor
 

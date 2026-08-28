@@ -71,7 +71,7 @@ export type VariacionPxListaMasivaFiltrosInput = z.infer<typeof variacionPxLista
 
 /**
  * Variación masiva de `prod_precios_provee.px_lista_proveedor`.
- * Proveedor y variación obligatorios; marca opcional; rubro opcional solo con marca.
+ * Proveedor y variación % obligatorios; marca opcional; rubro opcional solo con marca.
  */
 export const aplicarVariacionPxListaMasivaSchema = z
   .object({
@@ -81,6 +81,8 @@ export const aplicarVariacionPxListaMasivaSchema = z
     variacion: z
       .number()
       .finite()
+      .min(-99.99, "La variación admite hasta 99,99 %.")
+      .max(99.99, "La variación admite hasta 99,99 %.")
       .refine((n) => n !== 0, "La variación debe ser distinta de 0.")
       .refine(tieneMaxDosDecimales, "La variación admite hasta 2 decimales."),
   })
