@@ -99,7 +99,7 @@ export default function ListaPreciosPageClient({
         )}
         {puedeEdicionMasiva && (
           <EdicionMasivaListaPreciosModal
-            filtrosSnapshot={filtrosExportSnapshot}
+            proveedores={proveedores}
             marcas={marcas}
             rubros={rubros}
             onSuccess={handleEdicionSuccess}

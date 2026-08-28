@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { REVALIDATE_LISTA_PRECIOS } from "@/lib/gestionProductosRoutes";
 import {
   actualizarListaPreciosMasivo,
+  aplicarVariacionPxListaProveedorMasivo,
+  contarProductosParaVariacionPxLista,
   crearProductoListaPrecio,
   eliminarListaPrecioProveedor,
   getListaPreciosConTiendaFiltrada,
@@ -21,6 +23,8 @@ import { z } from "zod";
 import {
   listaPreciosCodExtListSchema,
   actualizacionMasivaListaPreciosSchema,
+  aplicarVariacionPxListaMasivaSchema,
+  variacionPxListaMasivaFiltrosSchema,
   listaPreciosFiltrosLecturaSchema,
   listaPreciosFiltrosExportSchema,
   crearProductoListaPrecioSchema,
@@ -28,7 +32,12 @@ import {
 } from "@/lib/validations/listaPrecios";
 
 export type { ActualizacionMasivaListaPrecios, FilaListaPrecioParaCliente } from "@/services/listaPrecios.service";
-export type { ListaPreciosFiltrosLecturaInput, ListaPreciosFiltrosExportInput, CrearProductoListaPrecioInput } from "@/lib/validations/listaPrecios";
+export type {
+  ListaPreciosFiltrosLecturaInput,
+  ListaPreciosFiltrosExportInput,
+  CrearProductoListaPrecioInput,
+  AplicarVariacionPxListaMasivaInput,
+} from "@/lib/validations/listaPrecios";
 
 export interface ListaPreciosConOpcionesResult {
   filas: FilaListaPrecioParaCliente[];
@@ -334,6 +343,86 @@ export async function actualizarListaPreciosMasivoAction(
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error al actualizar la lista de precios.";
     return { ok: false, error: message };
+  }
+}
+
+function primerErrorZod(error: z.ZodError): string {
+  const flat = error.flatten();
+  const msg = [...Object.values(flat.fieldErrors).flat(), ...flat.formErrors].find(
+    (m): m is string => typeof m === "string" && m.length > 0
+  );
+  return msg ?? "Datos inválidos.";
+}
+
+/**
+ * Conteo de filas alcanzadas por una variación masiva de `px_lista_proveedor`.
+ * Mismo alcance que `aplicarVariacionPxListaMasivaAction` (sin aplicar el delta).
+ */
+export async function contarProductosVariacionPxListaAction(
+  raw: unknown
+): Promise<ActionResult<{ total: number }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
+    return { ok: false, error: "Sin permisos para edición masiva." };
+  }
+
+  const parsed = variacionPxListaMasivaFiltrosSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: primerErrorZod(parsed.error) };
+  }
+
+  try {
+    const total = await contarProductosParaVariacionPxLista(
+      parsed.data.proveedorId,
+      parsed.data.marcaNombre,
+      parsed.data.rubroNombre
+    );
+    return { ok: true, data: { total } };
+  } catch (e) {
+    console.error("[listaPrecios][contarProductosVariacionPxLista]", e);
+    return { ok: false, error: "No se pudo contar los productos." };
+  }
+}
+
+/**
+ * Suma `variacion` (±, 2 dec.) a `prod_precios_provee.px_lista_proveedor` (piso 0).
+ * Alcance: proveedor obligatorio; marca opcional; rubro opcional solo con marca.
+ */
+export async function aplicarVariacionPxListaMasivaAction(
+  raw: unknown
+): Promise<ActionResult<{ actualizados: number }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.listaPrecios.acciones.edicionMasiva)) {
+    return { ok: false, error: "Sin permisos para edición masiva." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const parsed = aplicarVariacionPxListaMasivaSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: primerErrorZod(parsed.error) };
+  }
+
+  try {
+    const { proveedorId, marcaNombre, rubroNombre, variacion } = parsed.data;
+    const result = await aplicarVariacionPxListaProveedorMasivo(
+      proveedorId,
+      variacion,
+      marcaNombre,
+      rubroNombre
+    );
+    if (result.error) return { ok: false, error: result.error };
+    if (result.actualizados === 0) {
+      return { ok: false, error: "Ningún producto coincide con los filtros." };
+    }
+    for (const path of REVALIDATE_LISTA_PRECIOS) {
+      revalidatePath(path);
+    }
+    return { ok: true, data: { actualizados: result.actualizados } };
+  } catch (e) {
+    console.error("[listaPrecios][aplicarVariacionPxListaMasiva]", e);
+    return { ok: false, error: "Error al aplicar la variación de precio." };
   }
 }
 

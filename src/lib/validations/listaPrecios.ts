@@ -27,6 +27,67 @@ export const actualizacionMasivaListaPreciosSchema = z.object({
 
 export type ActualizacionMasivaListaPreciosInput = z.infer<typeof actualizacionMasivaListaPreciosSchema>;
 
+function textoOpcionalListaPrecios(s: string | undefined): string | undefined {
+  return s && s.length > 0 ? s : undefined;
+}
+
+const marcaNombreOpcionalSchema = z
+  .string()
+  .trim()
+  .max(200)
+  .optional()
+  .transform(textoOpcionalListaPrecios);
+
+const rubroNombreOpcionalSchema = z
+  .string()
+  .trim()
+  .max(200)
+  .optional()
+  .transform(textoOpcionalListaPrecios);
+
+function refineRubroExigeMarca(
+  val: { marcaNombre?: string; rubroNombre?: string },
+  ctx: z.RefinementCtx
+): void {
+  if (val.rubroNombre && !val.marcaNombre) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Elegí una marca antes de filtrar por rubro.",
+      path: ["rubroNombre"],
+    });
+  }
+}
+
+/** Filtros de alcance para variación masiva de `px_lista_proveedor` (sin el delta). */
+export const variacionPxListaMasivaFiltrosSchema = z
+  .object({
+    proveedorId: prismaCuidSchema,
+    marcaNombre: marcaNombreOpcionalSchema,
+    rubroNombre: rubroNombreOpcionalSchema,
+  })
+  .superRefine(refineRubroExigeMarca);
+
+export type VariacionPxListaMasivaFiltrosInput = z.infer<typeof variacionPxListaMasivaFiltrosSchema>;
+
+/**
+ * Variación masiva de `prod_precios_provee.px_lista_proveedor`.
+ * Proveedor y variación obligatorios; marca opcional; rubro opcional solo con marca.
+ */
+export const aplicarVariacionPxListaMasivaSchema = z
+  .object({
+    proveedorId: prismaCuidSchema,
+    marcaNombre: marcaNombreOpcionalSchema,
+    rubroNombre: rubroNombreOpcionalSchema,
+    variacion: z
+      .number()
+      .finite()
+      .refine((n) => n !== 0, "La variación debe ser distinta de 0.")
+      .refine(tieneMaxDosDecimales, "La variación admite hasta 2 decimales."),
+  })
+  .superRefine(refineRubroExigeMarca);
+
+export type AplicarVariacionPxListaMasivaInput = z.infer<typeof aplicarVariacionPxListaMasivaSchema>;
+
 /** Opciones de filtro admitidas en listados de lista de precios (objeto estricto). */
 export const listaPreciosOpcionesFiltroSchema = z
   .object({

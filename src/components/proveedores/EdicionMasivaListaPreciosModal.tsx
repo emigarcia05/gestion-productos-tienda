@@ -17,16 +17,24 @@ import {
 } from "@/components/ui/select";
 import {
   actualizarListaPreciosMasivoAction,
+  aplicarVariacionPxListaMasivaAction,
+  contarProductosVariacionPxListaAction,
   type ActualizacionMasivaListaPrecios,
   type FilaListaPrecioParaCliente,
 } from "@/actions/listaPrecios";
-import type { ListaPreciosFiltrosExportSnapshot } from "@/components/proveedores/ExportarListaPreciosButton";
 import {
   montoArNumberToNormalizedString,
   montoArNormalizedStringToPesosNumber,
+  montoArSignedNormalizedStringToCents,
 } from "@/lib/montoArMask";
 import { roundPrecioListaTienda } from "@/lib/calculos";
 import { cn } from "@/lib/utils";
+
+interface ProveedorOption {
+  id: string;
+  nombre: string;
+  prefijo: string;
+}
 
 interface MarcaOption {
   id: string;
@@ -79,7 +87,7 @@ interface BaseProps {
 
 interface MasivaProps extends BaseProps {
   mode?: "masiva";
-  filtrosSnapshot: ListaPreciosFiltrosExportSnapshot;
+  proveedores: ProveedorOption[];
   disabled?: boolean;
 }
 
@@ -96,6 +104,14 @@ function isFilaMode(props: Props): props is FilaProps {
   return props.mode === "fila";
 }
 
+function pesosFromVariacionNorm(norm: string): number | null {
+  const t = norm.trim();
+  if (t === "" || t === "-") return null;
+  const cents = montoArSignedNormalizedStringToCents(t);
+  if (cents === 0) return null;
+  return cents / 100;
+}
+
 export default function EdicionMasivaListaPreciosModal(props: Props) {
   const { marcas, rubros, onSuccess } = props;
   const filaMode = isFilaMode(props);
@@ -105,20 +121,16 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
   const setOpen = filaMode ? props.onOpenChange : setOpenMasiva;
 
   const [pending, setPending] = useState(false);
+  const [proveedorId, setProveedorId] = useState("");
   const [marcaNombre, setMarcaNombre] = useState("");
   const [rubroNombre, setRubroNombre] = useState("");
   const [pxListaProveedorNorm, setPxListaProveedorNorm] = useState("");
+  const [variacionNorm, setVariacionNorm] = useState("");
+  const [cantidadAfectados, setCantidadAfectados] = useState(0);
+  const [conteoPendiente, setConteoPendiente] = useState(false);
   const filaActual = filaMode ? props.fila : null;
 
-  const filtrosSnapshot = filaMode ? null : props.filtrosSnapshot;
-  const totalFiltrados =
-    filtrosSnapshot?.hasFilterActive && filtrosSnapshot.filtros ? filtrosSnapshot.total : 0;
-
-  const filteredIds = filaMode
-    ? filaActual
-      ? [filaActual.id]
-      : []
-    : [];
+  const filteredIds = filaMode ? (filaActual ? [filaActual.id] : []) : [];
 
   useEffect(() => {
     if (!filaMode || !open || !filaActual) return;
@@ -127,59 +139,81 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     setPxListaProveedorNorm(montoArNumberToNormalizedString(Number(filaActual.pxListaProveedor) || 0));
   }, [filaMode, open, filaActual]);
 
+  useEffect(() => {
+    if (filaMode || !open) return;
+    setProveedorId("");
+    setMarcaNombre("");
+    setRubroNombre("");
+    setVariacionNorm("");
+    setCantidadAfectados(0);
+    setConteoPendiente(false);
+  }, [filaMode, open]);
+
+  useEffect(() => {
+    if (filaMode || !open || !proveedorId) {
+      if (!filaMode) {
+        setCantidadAfectados(0);
+        setConteoPendiente(false);
+      }
+      return;
+    }
+
+    let cancelled = false;
+    setConteoPendiente(true);
+    void (async () => {
+      const result = await contarProductosVariacionPxListaAction({
+        proveedorId,
+        marcaNombre: marcaNombre || undefined,
+        rubroNombre: rubroNombre || undefined,
+      });
+      if (cancelled) return;
+      setCantidadAfectados(result.ok ? result.data.total : 0);
+      setConteoPendiente(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filaMode, open, proveedorId, marcaNombre, rubroNombre]);
+
   function resetForm() {
+    setProveedorId("");
     setMarcaNombre("");
     setRubroNombre("");
     setPxListaProveedorNorm("");
+    setVariacionNorm("");
+    setCantidadAfectados(0);
   }
 
-  function buildPayload(): ActualizacionMasivaListaPrecios {
+  function buildPayloadFila(): ActualizacionMasivaListaPrecios {
     const data: ActualizacionMasivaListaPrecios = {};
     if (marcaNombre) data.marca = marcaNombre;
     if (rubroNombre) data.rubro = rubroNombre;
-
-    if (filaMode) {
-      const norm = pxListaProveedorNorm.trim();
-      if (norm !== "") {
-        data.pxListaProveedor = roundPrecioListaTienda(montoArNormalizedStringToPesosNumber(norm));
-      }
+    const norm = pxListaProveedorNorm.trim();
+    if (norm !== "") {
+      data.pxListaProveedor = roundPrecioListaTienda(montoArNormalizedStringToPesosNumber(norm));
     }
-
     return data;
   }
 
-  async function handleGuardar() {
-    const data = buildPayload();
+  async function handleGuardarFila() {
+    const data = buildPayloadFila();
     if (Object.keys(data).length === 0) {
       toast.error("Ingresá al menos un valor para actualizar.");
       return;
     }
-    if (filaMode) {
-      if (filteredIds.length === 0) {
-        toast.error("No hay producto seleccionado.");
-        return;
-      }
-    } else if (!filtrosSnapshot?.hasFilterActive || !filtrosSnapshot.filtros || totalFiltrados === 0) {
-      toast.error("No hay productos en el filtro actual.");
+    if (filteredIds.length === 0) {
+      toast.error("No hay producto seleccionado.");
       return;
     }
     setPending(true);
     try {
-      const result = await actualizarListaPreciosMasivoAction(
-        filaMode
-          ? { ids: filteredIds, data }
-          : { filtros: filtrosSnapshot!.filtros!, data }
-      );
+      const result = await actualizarListaPreciosMasivoAction({ ids: filteredIds, data });
       if (!result.ok) {
         toast.error(result.error ?? "Error al actualizar.");
         return;
       }
-      const n = result.data?.actualizados ?? 0;
-      toast.success(
-        filaMode
-          ? "Producto actualizado."
-          : `Se actualizaron ${n} producto${n !== 1 ? "s" : ""}.`
-      );
+      toast.success("Producto actualizado.");
       setOpen(false);
       resetForm();
       onSuccess?.();
@@ -188,17 +222,59 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     }
   }
 
-  const cantidad = filaMode ? filteredIds.length : totalFiltrados;
-  const titulo = filaMode ? "Editar producto" : "Edición Masiva";
+  async function handleConfirmarMasiva() {
+    if (!proveedorId) {
+      toast.error("Seleccioná un proveedor.");
+      return;
+    }
+    const variacion = pesosFromVariacionNorm(variacionNorm);
+    if (variacion == null) {
+      toast.error("Ingresá una variación distinta de 0, con hasta 2 decimales.");
+      return;
+    }
+    if (rubroNombre && !marcaNombre) {
+      toast.error("Elegí una marca antes de filtrar por rubro.");
+      return;
+    }
+    if (cantidadAfectados === 0) {
+      toast.error("Ningún producto coincide con los filtros.");
+      return;
+    }
 
-  const formulario = (
+    setPending(true);
+    try {
+      const result = await aplicarVariacionPxListaMasivaAction({
+        proveedorId,
+        marcaNombre: marcaNombre || undefined,
+        rubroNombre: rubroNombre || undefined,
+        variacion,
+      });
+      if (!result.ok) {
+        toast.error(result.error ?? "Error al aplicar la variación.");
+        return;
+      }
+      const n = result.data?.actualizados ?? 0;
+      toast.success(`Se actualizaron ${n} producto${n !== 1 ? "s" : ""}.`);
+      setOpen(false);
+      resetForm();
+      onSuccess?.();
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const titulo = filaMode ? "Editar producto" : "Edición Masiva";
+  const variacionLista = pesosFromVariacionNorm(variacionNorm) != null;
+  const confirmarMasivaHabilitado =
+    !!proveedorId &&
+    variacionLista &&
+    cantidadAfectados > 0 &&
+    !conteoPendiente &&
+    !pending &&
+    !(rubroNombre && !marcaNombre);
+
+  const formularioFila = (
     <div className="flex flex-col gap-4">
-      {!filaMode && (
-        <p className="text-sm">
-          Se aplicará a los <strong>{cantidad.toLocaleString()}</strong> producto
-          {cantidad !== 1 ? "s" : ""} del filtro actual.
-        </p>
-      )}
       {filaMode && props.fila && (
         <p className="text-sm">
           <strong>{props.fila.codExt}</strong>
@@ -208,21 +284,17 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
       )}
 
       <div className={cn(FORM_GRID_CLASS, "py-1")}>
-        {filaMode && (
-          <>
-            <ModalFormRow id="pxListaProveedor" label="PX. LISTA PROVEEDOR">
-              <MontoArInput
-                id="pxListaProveedor"
-                placeholder="—"
-                valueNormalized={pxListaProveedorNorm}
-                onValueNormalizedChange={setPxListaProveedorNorm}
-                treatEmptyNormalizedAsBlank
-                className={INPUT_CONTROL_CLASS}
-              />
-            </ModalFormRow>
-            <ModalFormDivider />
-          </>
-        )}
+        <ModalFormRow id="pxListaProveedor" label="PX. LISTA PROVEEDOR">
+          <MontoArInput
+            id="pxListaProveedor"
+            placeholder="—"
+            valueNormalized={pxListaProveedorNorm}
+            onValueNormalizedChange={setPxListaProveedorNorm}
+            treatEmptyNormalizedAsBlank
+            className={INPUT_CONTROL_CLASS}
+          />
+        </ModalFormRow>
+        <ModalFormDivider />
 
         <ModalFormRow id="marca" label="MARCA">
           <Select value={marcaNombre || "none"} onValueChange={(v) => setMarcaNombre(v === "none" ? "" : v)}>
@@ -259,6 +331,108 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
     </div>
   );
 
+  const formularioMasiva = !filaMode ? (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm">
+        {!proveedorId
+          ? "Seleccioná un proveedor para ver el alcance."
+          : conteoPendiente
+            ? "Contando productos…"
+            : cantidadAfectados === 0
+              ? "Ningún producto coincide con los filtros."
+              : `Se aplicará a ${cantidadAfectados.toLocaleString("es-AR")} producto${cantidadAfectados !== 1 ? "s" : ""}. Los precios no bajan de 0.`}
+      </p>
+
+      <div className={cn(FORM_GRID_CLASS, "py-1")}>
+        <ModalFormRow id="edicion-masiva-proveedor" label="PROVEEDOR">
+          <Select
+            value={proveedorId}
+            onValueChange={(v) => {
+              setProveedorId(v);
+              setMarcaNombre("");
+              setRubroNombre("");
+            }}
+          >
+            <SelectTrigger
+              id="edicion-masiva-proveedor"
+              className={cn("input-filtro-unificado", INPUT_CONTROL_CLASS)}
+            >
+              <SelectValue placeholder="SELECCIONAR PROVEEDOR" />
+            </SelectTrigger>
+            <SelectContent>
+              {props.proveedores.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.prefijo ? `[${p.prefijo}] ${p.nombre}` : p.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </ModalFormRow>
+
+        <ModalFormRow id="edicion-masiva-marca" label="MARCA">
+          <Select
+            value={marcaNombre || "none"}
+            onValueChange={(v) => {
+              setMarcaNombre(v === "none" ? "" : v);
+              setRubroNombre("");
+            }}
+          >
+            <SelectTrigger
+              id="edicion-masiva-marca"
+              className={cn("input-filtro-unificado", INPUT_CONTROL_CLASS)}
+            >
+              <SelectValue placeholder="SELECCIONAR MARCA" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">—</SelectItem>
+              {marcas.map((m) => (
+                <SelectItem key={m.id} value={m.nombre}>
+                  {m.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </ModalFormRow>
+
+        <ModalFormRow id="edicion-masiva-rubro" label="RUBRO">
+          <Select
+            value={rubroNombre || "none"}
+            onValueChange={(v) => setRubroNombre(v === "none" ? "" : v)}
+            disabled={!marcaNombre}
+          >
+            <SelectTrigger
+              id="edicion-masiva-rubro"
+              className={cn("input-filtro-unificado", INPUT_CONTROL_CLASS)}
+              disabled={!marcaNombre}
+            >
+              <SelectValue placeholder="SELECCIONAR RUBRO" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">—</SelectItem>
+              {rubros.map((r) => (
+                <SelectItem key={r.id} value={r.nombre}>
+                  {r.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </ModalFormRow>
+
+        <ModalFormRow id="edicion-masiva-variacion" label="VARIACIÓN">
+          <MontoArInput
+            id="edicion-masiva-variacion"
+            placeholder="—"
+            valueNormalized={variacionNorm}
+            onValueNormalizedChange={setVariacionNorm}
+            treatEmptyNormalizedAsBlank
+            allowNegative
+            className={INPUT_CONTROL_CLASS}
+          />
+        </ModalFormRow>
+      </div>
+    </div>
+  ) : null;
+
   if (filaMode) {
     if (!props.fila) return null;
     return (
@@ -270,13 +444,13 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
               <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
                 Cancelar
               </Button>
-              <Button type="button" onClick={handleGuardar} disabled={pending}>
+              <Button type="button" onClick={() => void handleGuardarFila()} disabled={pending}>
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
               </Button>
             </>
           }
         >
-          {formulario}
+          {formularioFila}
         </AppModal>
       </Dialog>
     );
@@ -290,12 +464,7 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
           variant="default"
           size="default"
           className="btn-primario-gestion gap-2 shrink-0"
-          disabled={
-            props.disabled ||
-            !props.filtrosSnapshot.hasFilterActive ||
-            !props.filtrosSnapshot.filtros ||
-            totalFiltrados === 0
-          }
+          disabled={props.disabled}
         >
           <Pencil className="h-4 w-4 shrink-0" />
           Edición Masiva
@@ -308,13 +477,18 @@ export default function EdicionMasivaListaPreciosModal(props: Props) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
               Cancelar
             </Button>
-            <Button type="button" onClick={handleGuardar} disabled={pending}>
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
+            <Button
+              type="button"
+              onClick={() => void handleConfirmarMasiva()}
+              disabled={!confirmarMasivaHabilitado}
+              className="gap-2 min-w-[7.5rem]"
+            >
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar"}
             </Button>
           </>
         }
       >
-        {formulario}
+        {formularioMasiva}
       </AppModal>
     </Dialog>
   );

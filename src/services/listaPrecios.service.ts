@@ -746,6 +746,73 @@ export async function actualizarListaPreciosMasivo(
   }
 }
 
+function whereVariacionPxListaMasiva(
+  proveedorId: string,
+  marcaNombre?: string,
+  rubroNombre?: string
+): Prisma.ListaPrecioProveedorWhereInput {
+  const andParts: Prisma.ListaPrecioProveedorWhereInput[] = [
+    { proveedor: { proveedorMercaderia: true } },
+    { idProveedor: proveedorId.trim() },
+  ];
+  aplicaFiltroMarcaRubro(andParts, "marca", marcaNombre);
+  aplicaFiltroMarcaRubro(andParts, "rubro", rubroNombre);
+  return { AND: andParts };
+}
+
+/** Conteo de filas que recibirán la variación masiva de `px_lista_proveedor`. */
+export async function contarProductosParaVariacionPxLista(
+  proveedorId: string,
+  marcaNombre?: string,
+  rubroNombre?: string
+): Promise<number> {
+  return prisma.listaPrecioProveedor.count({
+    where: whereVariacionPxListaMasiva(proveedorId, marcaNombre, rubroNombre),
+  });
+}
+
+/**
+ * Suma `variacion` a `px_lista_proveedor` (2 dec. en el delta; resultado a 4 dec., piso 0).
+ * Alcance: proveedor mercadería + marca/rubro opcionales (rubro solo con marca, validado en Zod).
+ */
+export async function aplicarVariacionPxListaProveedorMasivo(
+  proveedorId: string,
+  variacion: number,
+  marcaNombre?: string,
+  rubroNombre?: string
+): Promise<{ actualizados: number; error?: string }> {
+  const prov = proveedorId.trim();
+  if (!prov) return { actualizados: 0, error: "El proveedor es obligatorio." };
+  if (!Number.isFinite(variacion) || variacion === 0) {
+    return { actualizados: 0, error: "La variación debe ser un número distinto de 0." };
+  }
+
+  const marca = marcaNombre?.trim() || null;
+  const rubro = rubroNombre?.trim() || null;
+
+  try {
+    const actualizados = await prisma.$executeRawUnsafe(
+      `UPDATE prod_precios_provee p
+       SET px_lista_proveedor = GREATEST(ROUND(p.px_lista_proveedor + $1::numeric, 4), 0),
+           updated_at = CURRENT_TIMESTAMP
+       FROM global_proveedores g
+       WHERE p.id_proveedor = g.id
+         AND g.proveedor_mercaderia = true
+         AND p.id_proveedor = $2
+         AND ($3::text IS NULL OR p.marca = $3)
+         AND ($4::text IS NULL OR p.rubro = $4)`,
+      variacion,
+      prov,
+      marca,
+      rubro
+    );
+    return { actualizados: Number(actualizados) };
+  } catch (e) {
+    console.error("[listaPrecios][aplicarVariacionPxListaProveedorMasivo]", e);
+    return { actualizados: 0, error: "Error al aplicar la variación de precio." };
+  }
+}
+
 // ─── Pedido Urgente: ítems con descripción unificada ─────────────────
 
 export interface PedidoUrgenteItem {
