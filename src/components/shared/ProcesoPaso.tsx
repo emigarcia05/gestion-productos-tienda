@@ -56,7 +56,7 @@ export default function ProcesoPaso({
       className={cn(
         "flex min-h-0 gap-3 rounded-lg border border-border bg-card p-4",
         tituloLado === "izquierda"
-          ? "flex-row items-start"
+          ? "flex-row items-stretch"
           : "shrink-0 flex-col",
         !activo && "pointer-events-none opacity-50",
         className
@@ -64,7 +64,9 @@ export default function ProcesoPaso({
       aria-disabled={!activo}
     >
       {encabezado}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">{children}</div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+        {children}
+      </div>
     </div>
   );
 }

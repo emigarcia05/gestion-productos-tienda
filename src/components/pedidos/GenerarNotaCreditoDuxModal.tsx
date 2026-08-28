@@ -20,7 +20,6 @@ import {
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import { fmtNumero } from "@/lib/format";
 import { montoArSignedCentsToDisplayWithCurrency } from "@/lib/montoArMask";
-import { DUX_NUEVA_NOTA_CREDITO_DEBITO_COMPRA_URL } from "@/lib/notaCreditoDux";
 import {
   obtenerSiguienteNumeroNotaCreditoAction,
   reservarSiguienteNumeroNotaCreditoAction,
@@ -107,7 +106,7 @@ function DatoNcCopiable({
   if (stacked) {
     return (
       <div className="flex min-w-0 flex-col gap-1">
-        <ModalMicroLabel>{label}</ModalMicroLabel>
+        {label.trim() === "" ? null : <ModalMicroLabel>{label}</ModalMicroLabel>}
         <div className="flex min-w-0 items-center justify-between gap-2">
           {valor}
           {copiar}
@@ -118,7 +117,7 @@ function DatoNcCopiable({
 
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <ModalMicroLabel>{label}</ModalMicroLabel>
+      {label.trim() === "" ? null : <ModalMicroLabel>{label}</ModalMicroLabel>}
       <div className="flex min-w-0 items-center justify-end gap-2 shrink-0">
         {valor}
         {copiar}
@@ -128,7 +127,7 @@ function DatoNcCopiable({
 }
 
 /**
- * Checklist DUX de NC: 3 `ProcesoPaso` en una pantalla (`tituloLado="izquierda"`).
+ * Checklist DUX de NC: 4 `ProcesoPaso` en una pantalla (`tituloLado="izquierda"`).
  * **OK** copia `cod_tienda`; **Nota Generada** exige todos TRUE y reserva `prod_ped_ult_comp` id=3 (`X-00000-########`).
  */
 export default function GenerarNotaCreditoDuxModal({
@@ -236,11 +235,11 @@ export default function GenerarNotaCreditoDuxModal({
     >
       <AppModal
         size="xl"
-        className="h-[85vh] max-h-[85vh] max-w-[54rem]"
+        className="h-[95vh] max-h-[95vh] max-w-[54rem]"
         title="Generar Nota Crédito"
         scrollBody={false}
         bodyShellClassName="h-full min-h-0"
-        bodyClassName="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden"
+        bodyClassName="flex h-full min-h-0 flex-1 flex-col gap-3 overflow-hidden"
         actions={
           <>
             <Button
@@ -272,17 +271,8 @@ export default function GenerarNotaCreditoDuxModal({
           titulo="Completar Cabecera"
           activo
           tituloLado="izquierda"
-          className="p-3"
+          className="shrink-0 p-3"
         >
-            <Button asChild className="w-full">
-              <a
-                href={DUX_NUEVA_NOTA_CREDITO_DEBITO_COMPRA_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Generar Nota Crédito
-              </a>
-            </Button>
             <div className="grid grid-cols-3 gap-3">
               <DatoNcCopiable
                 label="PROVEEDOR"
@@ -310,12 +300,9 @@ export default function GenerarNotaCreditoDuxModal({
           titulo="Completar Detalles"
           activo
           tituloLado="izquierda"
-          className="min-h-0 flex-1 shrink p-3"
+          className="min-h-0 flex-1 overflow-hidden p-3"
         >
-            <div
-              className="contenedor-tabla-gestion no-scroll-x min-h-0 flex-1"
-              style={{ height: "auto" }}
-            >
+            <div className="contenedor-tabla-gestion no-scroll-x min-h-0 flex-1">
           <Table
             variant="compact"
             className="tabla-recepcion-pedido"
@@ -394,31 +381,30 @@ export default function GenerarNotaCreditoDuxModal({
             </TableBody>
           </Table>
             </div>
-            <section
-              aria-label="Precio unitario a colocar en todos los ítems"
-              className="shrink-0 flex flex-col gap-2 border-t border-border bg-background py-2"
-            >
-              <p className={cn("text-sm text-foreground text-center")}>
-                Una vez agregado todos los item, copiá y pegá este valor en la
-                columna{" "}
-                <strong className="font-semibold">Precio Unitario</strong>
-              </p>
-              <DatoNcCopiable
-                stacked={false}
-                label="PRECIO UNITARIO A COLOCAR EN TODOS LOS ITEM"
-                value={precioUnitarioDisplay}
-                toastTitle="Px. Unitario Copiado"
-                ariaLabelCopiar="Copiar precio unitario"
-              />
-            </section>
         </ProcesoPaso>
 
         <ProcesoPaso
           numero={3}
+          titulo="Px. Unitario"
+          activo
+          tituloLado="izquierda"
+          className="shrink-0 p-3"
+        >
+          <DatoNcCopiable
+            stacked={false}
+            label=""
+            value={precioUnitarioDisplay}
+            toastTitle="Px. Unitario Copiado"
+            ariaLabelCopiar="Copiar precio unitario"
+          />
+        </ProcesoPaso>
+
+        <ProcesoPaso
+          numero={4}
           titulo="Finalizar"
           activo
           tituloLado="izquierda"
-          className="p-3"
+          className="shrink-0 p-3"
         >
             <p className={cn("text-sm text-foreground text-center")}>
               En la sección{" "}
