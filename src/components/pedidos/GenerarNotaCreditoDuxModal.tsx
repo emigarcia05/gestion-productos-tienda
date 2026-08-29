@@ -32,7 +32,7 @@ import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
-import { cn } from "@/lib/utils";
+import { enfocarDuxNotaCreditoTab } from "@/lib/notaCreditoDux";
 
 export type NotaCreditoDuxItem = {
   id: string;
@@ -59,6 +59,7 @@ async function copiarDatoNc(texto: string, toastTitle: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(t);
     toast.success(toastTitle, { description: t });
+    enfocarDuxNotaCreditoTab();
   } catch {
     toast.error("No se pudo copiar.");
   }
@@ -128,6 +129,7 @@ function DatoNcCopiable({
 /**
  * Checklist DUX de NC: 4 `ProcesoPaso` en una pantalla (`tituloLado="izquierda"`).
  * **OK** (a la izquierda de COD. TIENDA) copia `cod_tienda`; copiar a la derecha de CANT. pega la cantidad (entero);
+ * cada copiar enfoca la pestaña DUX ya abierta (`DUX_NOTA_CREDITO_WINDOW_NAME`, sin recargar);
  * **Nota Generada** exige todos TRUE y reserva `prod_ped_ult_comp` id=3 (`X-00000-########`).
  */
 export default function GenerarNotaCreditoDuxModal({
@@ -177,6 +179,7 @@ export default function GenerarNotaCreditoDuxModal({
     }
     setOkPorItemId((prev) => ({ ...prev, [item.id]: true }));
     toast.success("Cod. Tienda Copiado", { description: item.codTienda });
+    enfocarDuxNotaCreditoTab();
   }
 
   const todosOk =
@@ -215,6 +218,7 @@ export default function GenerarNotaCreditoDuxModal({
       try {
         await navigator.clipboard.writeText(numero);
         toast.success("Nota Generada", { description: numero });
+        enfocarDuxNotaCreditoTab();
       } catch {
         toast.success("Nota Generada", {
           description: `${numero} (no se pudo copiar)`,
