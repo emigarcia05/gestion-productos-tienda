@@ -17,7 +17,7 @@ import {
   TableRow,
   EmptyTableRow,
 } from "@/components/ui/table";
-import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
+import { formatIsoYmdDdMmYyArgentina } from "@/lib/fechaArgentina";
 import { fmtNumero } from "@/lib/format";
 import { montoArSignedCentsToDisplayWithCurrency } from "@/lib/montoArMask";
 import {
@@ -189,7 +189,7 @@ export default function GenerarNotaCreditoDuxModal({
   const fechaDisplay = useMemo(() => {
     const iso = fechaFacturaIso.trim();
     if (iso === "") return "";
-    return formatIsoYmdDdMmYyyyArgentina(iso);
+    return formatIsoYmdDdMmYyArgentina(iso);
   }, [fechaFacturaIso]);
 
   const precioUnitarioDisplay = useMemo(() => {

@@ -180,6 +180,13 @@ export function formatIsoYmdDdMmYyyyArgentina(isoYmd: string): string {
   return `${d}/${m}/${y}`;
 }
 
+/** `2026-03-15` → `15/03/26` (pegado DUX: Fecha `dd/mm/aa`). */
+export function formatIsoYmdDdMmYyArgentina(isoYmd: string): string {
+  const [y, m, d] = isoYmd.split("-");
+  if (!y || !m || !d) return isoYmd;
+  return `${d}/${m}/${y.slice(-2)}`;
+}
+
 /**
  * `15/03/2026` → `2026-03-15`. Vacío si el texto no es una fecha calendario válida (`dd/mm/aaaa`).
  */

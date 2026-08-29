@@ -29,6 +29,12 @@ export const registrarTransferenciasDepositosSchema = z
     path: ["destino"],
   });
 
+/** Ítem del borrador de grilla (localStorage) hasta Generar Transf. */
+export const itemBorradorTransfDepositosSchema = z.object({
+  cantidad: z.coerce.number().int().positive().max(1_000_000),
+  descripcion: z.string().max(500).optional().default(""),
+});
+
 export const conteosIndicadorSlidenavSchema = z.object({
   sucursal: sucursalCodigoSchema,
 });

@@ -34,7 +34,8 @@ interface Props {
  * Pantalla **Stock · Trans. Depósitos**: origen/destino → marca/rubro/búsqueda;
  * grilla DESCRIPCIÓN / {origen} / → / {destino} / ACCIONES;
  * header **Generar Transf.** persiste cantidades de la grilla (si hay) y abre
- * el modal de pendientes origen→destino.
+ * el modal de pendientes origen→destino. El borrador de la grilla se conserva
+ * en `localStorage` por par origen→destino hasta ese registro.
  */
 export default function TransfDepositosPageClient({
   data,

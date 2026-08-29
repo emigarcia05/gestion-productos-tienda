@@ -18,7 +18,11 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Sucursal, TransfDepositosData } from "@/actions/stock";
+import type {
+  ItemTransfDepositos,
+  Sucursal,
+  TransfDepositosData,
+} from "@/actions/stock";
 import HistorialTransfDepositosModal from "@/components/stock/HistorialTransfDepositosModal";
 import {
   TableEmptyState,
@@ -34,8 +38,13 @@ import {
 } from "@/lib/ui-classes";
 import { formatDdMmHhMmArgentina } from "@/lib/fechaArgentina";
 import {
+  type BorradorTransfDepositos,
   SUCURSAL_LABEL_TRANSF,
   TRANSF_DEPOSITOS_VENTANA_DUPLICADO_DIAS,
+  borrarBorradorTransfDepositos,
+  claveStorageBorradorTransfDepositos,
+  guardarBorradorTransfDepositos,
+  leerBorradorTransfDepositos,
 } from "@/lib/transfDepositosControl";
 
 /** DESCRIPCIÓN · origen · flecha · destino · ACCIONES (borrar / historial / aviso). */
@@ -64,11 +73,12 @@ export type TablaTransfDepositosHandle = {
 /**
  * Grilla **Trans. Depósitos**:
  * DESCRIPCIÓN · {origen} · → · {destino} · ACCIONES (Trash2, Check historial, AlertTriangle).
- * Cantidades se conservan al paginar; se limpian al cambiar origen/destino.
+ * Cantidades se conservan al paginar y en `localStorage` por par origen→destino
+ * hasta **Generar Transf.** (entonces se borra el borrador).
  */
 const TablaTransfDepositos = forwardRef<TablaTransfDepositosHandle, Props>(
   function TablaTransfDepositos({ data, origen, destino }, ref) {
-  const [cantidades, setCantidades] = useState<Record<string, string>>({});
+  const [borrador, setBorrador] = useState<BorradorTransfDepositos>({});
   const [historial, setHistorial] = useState<{
     codTienda: string;
     descripcion: string;
@@ -78,23 +88,39 @@ const TablaTransfDepositos = forwardRef<TablaTransfDepositosHandle, Props>(
     ref,
     () => ({
       getItemsConCantidad: () =>
-        Object.entries(cantidades)
-          .map(([codTienda, raw]) => ({
+        Object.entries(borrador)
+          .map(([codTienda, item]) => ({
             codTienda,
-            cantidad: Number.parseInt(raw, 10),
+            cantidad: Number.parseInt(item.cantidad, 10),
           }))
           .filter(
             (item) => Number.isInteger(item.cantidad) && item.cantidad > 0
           ),
-      clearCantidades: () => setCantidades({}),
+      clearCantidades: () => {
+        borrarBorradorTransfDepositos(origen, destino);
+        setBorrador({});
+      },
     }),
-    [cantidades]
+    [borrador, origen, destino]
   );
 
   useEffect(() => {
     queueMicrotask(() => {
-      setCantidades({});
+      setBorrador(leerBorradorTransfDepositos(origen, destino));
     });
+  }, [origen, destino]);
+
+  useEffect(() => {
+    if (!origen || !destino || origen === destino) return;
+    const clave = claveStorageBorradorTransfDepositos(origen, destino);
+    function onStorage(e: StorageEvent) {
+      if (e.key !== clave) return;
+      queueMicrotask(() => {
+        setBorrador(leerBorradorTransfDepositos(origen, destino));
+      });
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, [origen, destino]);
 
   const origenSeleccionado = origen !== null;
@@ -113,15 +139,51 @@ const TablaTransfDepositos = forwardRef<TablaTransfDepositosHandle, Props>(
     return map;
   }, [data.controlesRecientes]);
 
-  function handleCantidad(id: string, raw: string) {
+  const idsEnPagina = useMemo(
+    () => new Set(data.items.map((item) => item.id)),
+    [data.items]
+  );
+
+  const filas = useMemo(() => {
+    const extras: ItemTransfDepositos[] = Object.entries(borrador)
+      .filter(([id, item]) => {
+        if (idsEnPagina.has(id)) return false;
+        const n = Number.parseInt(item.cantidad, 10);
+        return Number.isInteger(n) && n > 0;
+      })
+      .map(([id, item]) => ({
+        id,
+        codItem: id,
+        descripcion: item.descripcion.trim() || id,
+        marca: null,
+        rubro: null,
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id, "es"));
+    return [...extras, ...data.items];
+  }, [borrador, data.items, idsEnPagina]);
+
+  function handleCantidad(id: string, raw: string, descripcion: string) {
     const limpio = raw.replace(/[^\d]/g, "");
-    setCantidades((prev) => ({ ...prev, [id]: limpio }));
+    setBorrador((prev) => {
+      const next = { ...prev };
+      if (limpio === "") {
+        delete next[id];
+      } else {
+        next[id] = {
+          cantidad: limpio,
+          descripcion: descripcion || prev[id]?.descripcion || "",
+        };
+      }
+      guardarBorradorTransfDepositos(origen, destino, next);
+      return next;
+    });
   }
 
   function limpiarFila(id: string) {
-    setCantidades((prev) => {
+    setBorrador((prev) => {
       const next = { ...prev };
       delete next[id];
+      guardarBorradorTransfDepositos(origen, destino, next);
       return next;
     });
   }
@@ -164,7 +226,7 @@ const TablaTransfDepositos = forwardRef<TablaTransfDepositosHandle, Props>(
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.items.length === 0 && (
+          {filas.length === 0 && (
             <TableRow>
               <TableCell
                 colSpan={5}
@@ -185,8 +247,8 @@ const TablaTransfDepositos = forwardRef<TablaTransfDepositosHandle, Props>(
               </TableCell>
             </TableRow>
           )}
-          {data.items.map((item) => {
-            const cantidad = cantidades[item.id] ?? "";
+          {filas.map((item) => {
+            const cantidad = borrador[item.id]?.cantidad ?? "";
             const tieneCantidad = cantidad !== "";
             const cantidadNum = Number(cantidad);
             const dup =
@@ -205,7 +267,9 @@ const TablaTransfDepositos = forwardRef<TablaTransfDepositosHandle, Props>(
                       type="text"
                       inputMode="numeric"
                       value={cantidad}
-                      onChange={(e) => handleCantidad(item.id, e.target.value)}
+                      onChange={(e) =>
+                        handleCantidad(item.id, e.target.value, item.descripcion)
+                      }
                       className="h-6 w-14 shrink-0 self-center text-center text-sm font-normal tabular-nums"
                       aria-label={`Cantidad a transferir desde ${origenLabel}`}
                       disabled={!destinoSeleccionado}
