@@ -33,6 +33,7 @@ import {
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { enfocarDuxNotaCreditoTab } from "@/lib/notaCreditoDux";
+import { cn } from "@/lib/utils";
 
 export type NotaCreditoDuxItem = {
   id: string;
