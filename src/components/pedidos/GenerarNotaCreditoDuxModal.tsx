@@ -30,7 +30,6 @@ import {
 } from "@/components/shared/TablaControlItem";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
@@ -128,7 +127,8 @@ function DatoNcCopiable({
 
 /**
  * Checklist DUX de NC: 4 `ProcesoPaso` en una pantalla (`tituloLado="izquierda"`).
- * **OK** copia `cod_tienda`; **Nota Generada** exige todos TRUE y reserva `prod_ped_ult_comp` id=3 (`X-00000-########`).
+ * **OK** (a la izquierda de COD. TIENDA) copia `cod_tienda`; copiar a la derecha de CANT. pega la cantidad (entero);
+ * **Nota Generada** exige todos TRUE y reserva `prod_ped_ult_comp` id=3 (`X-00000-########`).
  */
 export default function GenerarNotaCreditoDuxModal({
   open,
@@ -311,15 +311,14 @@ export default function GenerarNotaCreditoDuxModal({
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TablaControlItemHead className="w-[8%] min-w-12" />
-                <TableHead className="w-[16%]">COD. TIENDA</TableHead>
+                <TableHead className="w-[26%]">COD. TIENDA</TableHead>
                 <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
                 <TableHead className="w-[16%] text-center">CANT.</TableHead>
-                <TableHead className="w-[10%] text-center">ACCIONES</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.length === 0 ? (
-                <EmptyTableRow colSpan={5} message="SIN ÍTEMS." />
+                <EmptyTableRow colSpan={4} message="SIN ÍTEMS." />
               ) : (
                 items.map((item) => {
                   const ok = okPorItemId[item.id] === true;
@@ -338,26 +337,17 @@ export default function GenerarNotaCreditoDuxModal({
                         placeholderTitle="Verificá con OK: copia el Cod. Tienda y marca el ítem."
                         className="w-[8%] min-w-12"
                       />
-                      <TableCell className="celda-datos w-[16%]">
-                        {item.codTienda}
-                      </TableCell>
-                      <TableCell
-                        className="celda-datos min-w-0 w-[50%] truncate"
-                        title={item.descripcionTienda}
-                      >
-                        {item.descripcionTienda}
-                      </TableCell>
-                      <TableCell className="celda-datos w-[16%] text-center tabular-nums">
-                        {fmtNumero(item.cant)}
-                      </TableCell>
-                      <TableCell className="celda-datos w-[10%] celda-datos--accion-relleno-fila">
-                        <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                      <TableCell className="celda-datos w-[26%]">
+                        <div className="flex items-center justify-center gap-1.5">
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             onClick={() => void handleOkItem(item)}
-                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            className={cn(
+                              TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                              "!size-7 max-h-7 min-h-7 min-w-7 shrink-0 !p-0"
+                            )}
                             aria-label={
                               ok
                                 ? "Desmarcar ítem"
@@ -368,6 +358,40 @@ export default function GenerarNotaCreditoDuxModal({
                             }
                           >
                             <Check
+                              className={TABLE_ROW_ACTION_ICON_CLASS}
+                              aria-hidden
+                            />
+                          </Button>
+                          <span className="tabular-nums">{item.codTienda}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell
+                        className="celda-datos min-w-0 w-[50%] truncate"
+                        title={item.descripcionTienda}
+                      >
+                        {item.descripcionTienda}
+                      </TableCell>
+                      <TableCell className="celda-datos w-[16%]">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span className="tabular-nums">{fmtNumero(item.cant)}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              void copiarDatoNc(
+                                String(Math.round(item.cant)),
+                                "Cant. Copiada"
+                              )
+                            }
+                            className={cn(
+                              TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                              "!size-7 max-h-7 min-h-7 min-w-7 shrink-0 !p-0"
+                            )}
+                            aria-label="Copiar cantidad"
+                            title="Copiar cantidad"
+                          >
+                            <Copy
                               className={TABLE_ROW_ACTION_ICON_CLASS}
                               aria-hidden
                             />
