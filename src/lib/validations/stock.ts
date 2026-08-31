@@ -13,14 +13,6 @@ export const getControlStockParamsSchema = z.object({
   ),
 });
 
-/** Un ítem con variación → PUT DUX (usuario, sucursal, cod_tienda, cantidad contada). */
-export const pruebaPutAjusteStockDuxSchema = z.object({
-  sucursal: z.enum(["guaymallen", "maipu"]),
-  usuario: z.number().int().positive(),
-  codTienda: listaPreciosCodTiendaSchema,
-  stock: z.number().finite(),
-});
-
 const sucursalControlStockSchema = z.enum(["guaymallen", "maipu"]);
 
 const ajusteStockControlSchema = z.object({

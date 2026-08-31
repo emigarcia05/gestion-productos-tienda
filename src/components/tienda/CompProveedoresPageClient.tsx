@@ -4,7 +4,6 @@ import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import PaginacionTabla from "@/components/shared/PaginacionTabla";
 import ActCxButton from "@/components/tienda/ActCxButton";
-import PruebaPutCxButton from "@/components/tienda/PruebaPutCxButton";
 import TablaTienda from "@/components/tienda/TablaTienda";
 import FiltrosTienda from "@/components/tienda/FiltrosTienda";
 import { PAGE_SIZE } from "@/lib/pagination";
@@ -77,7 +76,6 @@ export default function CompProveedoresPageClient({
           puedeEditarCxProd ? (
             <div className="flex shrink-0 items-center gap-2">
               <ActCxButton />
-              <PruebaPutCxButton />
             </div>
           ) : undefined
         }

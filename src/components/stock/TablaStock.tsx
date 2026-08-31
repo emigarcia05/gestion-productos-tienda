@@ -42,8 +42,6 @@ import {
   type ItemStockControlMeta,
 } from "@/lib/controlStockSesion";
 
-export type { FilaExportStockVariacion } from "@/lib/controlStockSesion";
-
 function exportarStockExcel(filas: FilaExportStockVariacion[]) {
   import("xlsx").then((XLSX) => {
     const hojaFilas = filas.map((f) => ({
@@ -68,7 +66,6 @@ function fmtFecha(d: Date | string | null): string {
 export interface TablaStockHandle {
   openPrint: () => void;
   triggerExport: () => void;
-  collectFilasVariacion: () => FilaExportStockVariacion[];
 }
 
 interface Props {
@@ -226,11 +223,6 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
 
   useImperativeHandle(ref, () => ({
     openPrint: () => handleImprimirRef.current(),
-    collectFilasVariacion: () =>
-      filasConVariacionStockParaExportar(
-        stocksEditadosRef.current,
-        itemMetaRef.current
-      ),
     triggerExport: () => {
       if (!sucursalActual) {
         toast.error("Elegí sucursal.");

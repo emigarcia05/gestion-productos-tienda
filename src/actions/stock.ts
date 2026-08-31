@@ -12,7 +12,6 @@ import { z } from "zod";
 import { PAGE_SIZE } from "@/lib/pagination";
 import {
   getControlStockParamsSchema,
-  pruebaPutAjusteStockDuxSchema,
   registrarControlStockExportacionSchema,
 } from "@/lib/validations/stock";
 import {
@@ -567,54 +566,4 @@ export async function registrarExportacionExcelStock(
   revalidatePath(GP_ROUTES.ayudaVendedor.controlStock);
   revalidatePath(GP_INTERNAL.ayudaVendedor.controlStock);
   return { ok: true, data: result.data };
-}
-
-export type PruebaPutAjusteStockDuxResult = {
-  httpStatus: number;
-  respuesta: string;
-  enviado: { idDeposito: number; ctdDisponible: number };
-  leido: { ctdDisponible: number | null; stockReal: number } | null;
-  impacto: boolean;
-};
-
-/**
- * Prueba PUT DUX v2 + GET v1 de verificación (mismo depósito).
- * No persiste ÚLT. CONTROL (eso sigue en Exportar Excel).
- */
-export async function probarPutAjusteStockDuxAction(
-  raw: unknown
-): Promise<ActionResult<PruebaPutAjusteStockDuxResult>> {
-  const gate = await requireStockAcceso();
-  if (gate) return gate;
-  const parsed = pruebaPutAjusteStockDuxSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, error: "Datos inválidos." };
-  }
-  try {
-    const { enviarPruebaPutAjusteStockDux } = await import(
-      "@/services/duxAjusteStock.service"
-    );
-    const res = await enviarPruebaPutAjusteStockDux(parsed.data);
-    if (!res.ok) {
-      return {
-        ok: false,
-        error: `DUX ${res.httpStatus}: ${res.respuesta}`,
-      };
-    }
-    return {
-      ok: true,
-      data: {
-        httpStatus: res.httpStatus,
-        respuesta: res.respuesta,
-        enviado: res.enviado,
-        leido: res.leido,
-        impacto: res.impacto,
-      },
-    };
-  } catch (e) {
-    console.error("[probarPutAjusteStockDuxAction]", e);
-    const message =
-      e instanceof Error ? e.message : "Error al llamar PUT DUX.";
-    return { ok: false, error: message };
-  }
 }

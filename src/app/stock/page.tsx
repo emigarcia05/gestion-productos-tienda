@@ -7,10 +7,6 @@ import StockPageWithActions from "@/components/stock/StockPageWithActions";
 import { getProveedoresMercaderia } from "@/actions/proveedores";
 
 export const dynamic = "force-dynamic";
-/**
- * PUT `/v2/items/{cod}?id_empresa=` + GET v1 del mismo depósito para verificar impacto.
- */
-export const maxDuration = 60;
 
 interface Props {
   searchParams: Promise<{

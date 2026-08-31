@@ -15,7 +15,6 @@ import {
 } from "@/services/costoListaTienda.service";
 import { listarFilasExportCostoCxDiff } from "@/services/exportCostoCxDiff.service";
 import type { FilaExportCostoCx } from "@/services/exportCostoCxDiff.service";
-import { pruebaPutCostoCxDuxSchema } from "@/lib/validations/cxPxTienda";
 
 const guardarCostoCxProdSchema = z.object({
   codTienda: listaPreciosCodTiendaSchema,
@@ -73,60 +72,5 @@ export async function exportarCostoCxDiffAction(): Promise<
       ok: false,
       error: e instanceof Error ? e.message : "No se pudo generar la exportación.",
     };
-  }
-}
-
-export type PruebaPutCostoCxDuxResult = {
-  httpStatus: number;
-  respuesta: string;
-  enviado: { costoCompra: number };
-  leido: { costo: number } | null;
-  impacto: boolean;
-};
-
-/**
- * Prueba PUT DUX v2 de `costo_compra` (mismos ítems que Act. Cx.).
- * Gate: `cxPxTienda.acceso` + editor. No persiste el espejo local (sigue la sincro).
- */
-export async function probarPutCostoCxDuxAction(
-  raw: unknown
-): Promise<ActionResult<PruebaPutCostoCxDuxResult>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.cxPxTienda.acceso)) {
-    return { ok: false, error: "Sin acceso." };
-  }
-  if (!(await esEditor())) {
-    return { ok: false, error: "Sin permisos de editor." };
-  }
-  const parsed = pruebaPutCostoCxDuxSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { ok: false, error: "Datos inválidos." };
-  }
-  try {
-    const { enviarPruebaPutCostoCxDux } = await import(
-      "@/services/duxCostoCx.service"
-    );
-    const res = await enviarPruebaPutCostoCxDux(parsed.data);
-    if (!res.ok) {
-      return {
-        ok: false,
-        error: `DUX ${res.httpStatus}: ${res.respuesta}`,
-      };
-    }
-    return {
-      ok: true,
-      data: {
-        httpStatus: res.httpStatus,
-        respuesta: res.respuesta,
-        enviado: res.enviado,
-        leido: res.leido,
-        impacto: res.impacto,
-      },
-    };
-  } catch (e) {
-    console.error("[probarPutCostoCxDuxAction]", e);
-    const message =
-      e instanceof Error ? e.message : "Error al llamar PUT DUX.";
-    return { ok: false, error: message };
   }
 }
