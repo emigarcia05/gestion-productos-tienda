@@ -33,9 +33,58 @@ export const SUCURSAL_LABEL_TRANSF: Record<"guaymallen" | "maipu", string> = {
   maipu: "MAIPÚ",
 };
 
-/** Transferencia de depósitos en DUX (abre en pestaña nueva). */
+/** Transferencia de depósitos en DUX. */
 export const DUX_TRANSFERENCIA_DEPOSITOS_URL =
   "https://erp.duxsoftware.com.ar/pages/deposito/transferenciaDep.faces";
+
+/** Nombre de ventana: reusa la misma pestaña (no `_blank`). Sin `noopener` para poder enfocarla. */
+export const DUX_TRANSFERENCIA_DEPOSITOS_WINDOW_NAME =
+  "dux-transferencia-depositos";
+
+let duxTransferenciaDepositosWin: Window | null = null;
+
+function esPestañaEnBlanco(win: Window): boolean {
+  try {
+    const href = win.location.href;
+    return href === "about:blank" || href === "";
+  } catch {
+    return false;
+  }
+}
+
+/** Abre (o reusa) transferencia de depósitos en DUX. Llamar en el gesto de elegir SUC. DESTINO. */
+export function abrirDuxTransferenciaDepositosTab(): void {
+  if (typeof window === "undefined") return;
+  duxTransferenciaDepositosWin = window.open(
+    DUX_TRANSFERENCIA_DEPOSITOS_URL,
+    DUX_TRANSFERENCIA_DEPOSITOS_WINDOW_NAME
+  );
+}
+
+/**
+ * Trae al frente la pestaña DUX ya abierta. No pasa la URL: no recarga el formulario.
+ * Si el usuario la cerró, vuelve a abrir DUX.
+ */
+export function enfocarDuxTransferenciaDepositosTab(): void {
+  if (typeof window === "undefined") return;
+
+  if (duxTransferenciaDepositosWin && !duxTransferenciaDepositosWin.closed) {
+    duxTransferenciaDepositosWin.focus();
+    return;
+  }
+
+  const win = window.open("", DUX_TRANSFERENCIA_DEPOSITOS_WINDOW_NAME);
+  if (!win || win.closed) {
+    abrirDuxTransferenciaDepositosTab();
+    return;
+  }
+
+  if (esPestañaEnBlanco(win)) {
+    win.location.href = DUX_TRANSFERENCIA_DEPOSITOS_URL;
+  }
+  duxTransferenciaDepositosWin = win;
+  win.focus();
+}
 
 /** Query para abrir `GenerarTransfDepositosModal` al entrar a Trans. Depósitos. */
 export const QUERY_ABRIR_GENERAR_TRANSF = "generar";

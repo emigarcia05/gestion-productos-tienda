@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { Check } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
@@ -32,14 +32,13 @@ import {
   type SucursalTransfDepositoOptionDto,
 } from "@/actions/stock";
 import { fmtNumero } from "@/lib/format";
-import { DUX_TRANSFERENCIA_DEPOSITOS_URL } from "@/lib/transfDepositosControl";
+import { enfocarDuxTransferenciaDepositosTab } from "@/lib/transfDepositosControl";
 import {
   TablaControlItemCelda,
   TablaControlItemHead,
 } from "@/components/shared/TablaControlItem";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
-  TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
 import { cn } from "@/lib/utils";
@@ -49,23 +48,39 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   /** Código de sucursal del usuario (origen de las filas). */
   origenCodigo: Sucursal | null;
-  /** Destino de la página, si hay, para preseleccionar. */
-  destinoCodigo: Sucursal | null;
   onTransferido?: () => void;
+}
+
+const BOTON_COPIAR_CELDA_CLASS = cn(
+  TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+  "!size-7 max-h-7 min-h-7 min-w-7 shrink-0 !p-0"
+);
+
+async function copiarDatoTransf(texto: string, toastTitle: string): Promise<void> {
+  const t = texto.trim();
+  if (t === "") return;
+  try {
+    await navigator.clipboard.writeText(t);
+    toast.success(toastTitle, { description: t });
+    enfocarDuxTransferenciaDepositosTab();
+  } catch {
+    toast.error("No se pudo copiar.");
+  }
 }
 
 /**
  * Modal **Generar Transf.**: dos selectores **SUC. ORIGEN** (sucursal del usuario)
  * y **SUC. DESTINO** (`global_sucursales` distintas, con `deposito` no vacío);
- * tabla Control de ítem / COD. TIENDA / DESCRIPCIÓN / CANTIDAD A TRANSFERIR / ACCIONES (OK copia Cod. Tienda; segundo clic desmarca);
- * checklist local hasta **Transferido**, que borra el lote. **Comenzar Transferencia** (debajo de los selectores, solo con origen y destino) abre DUX en pestaña nueva.
- * Cabecera del modal (selectores + botón) y `thead` fijos; scroll solo en `.contenedor-tabla-gestion`.
+ * al elegir destino abre (o enfoca) transferencia de depósitos en DUX;
+ * tabla Control de ítem / COD. TIENDA (**OK** a la izquierda del código) / DESCRIPCIÓN / CANTIDAD (copiar a la derecha);
+ * cada copiar (y OK) enfoca la pestaña DUX ya abierta sin recargar;
+ * checklist local hasta **Transferido**, que borra el lote.
+ * Cabecera del modal (selectores) y `thead` fijos; scroll solo en `.contenedor-tabla-gestion`.
  */
 export default function GenerarTransfDepositosModal({
   open,
   onOpenChange,
   origenCodigo,
-  destinoCodigo,
   onTransferido,
 }: Props) {
   const [sucursales, setSucursales] = useState<SucursalTransfDepositoOptionDto[]>(
@@ -143,26 +158,13 @@ export default function GenerarTransfDepositosModal({
         return;
       }
       setSucOrigenId(origen.id);
-      const destinoPre =
-        destinoCodigo && destinoCodigo !== origen.codigo
-          ? res.data.find(
-              (s) =>
-                s.codigo === destinoCodigo &&
-                s.tieneDeposito &&
-                s.id !== origen.id
-            )
-          : undefined;
-      if (destinoPre) {
-        setSucDestinoId(destinoPre.id);
-        await cargarItems(origen.id, destinoPre.id);
-      }
       if (!cancelled) setLoading(false);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [open, origenCodigo, destinoCodigo, cargarItems]);
+  }, [open, origenCodigo, cargarItems]);
 
   function handleOrigenChange(value: string) {
     const next = value === "none" ? null : value;
@@ -182,6 +184,7 @@ export default function GenerarTransfDepositosModal({
       setError(null);
       return;
     }
+    enfocarDuxTransferenciaDepositosTab();
     setLoading(true);
     startTransition(async () => {
       await cargarItems(sucOrigenId, next);
@@ -202,6 +205,7 @@ export default function GenerarTransfDepositosModal({
     }
     setOkPorCodTienda((prev) => ({ ...prev, [codTienda]: true }));
     toast.success("Cod. Tienda Copiado", { description: codTienda });
+    enfocarDuxTransferenciaDepositosTab();
   }
 
   const todosOk =
@@ -313,7 +317,7 @@ export default function GenerarTransfDepositosModal({
                 disabled={!sucOrigenId || isPending}
               >
                 <SelectTrigger
-                  id="filtro-transf-destino"
+                  id="filtro-transf-destino-modal"
                   className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
                   aria-label="Sucursal destino"
                 >
@@ -335,17 +339,6 @@ export default function GenerarTransfDepositosModal({
               </Select>
             </div>
           </div>
-          {sucOrigenId !== null && sucDestinoId !== null ? (
-            <Button asChild className="w-full">
-              <a
-                href={DUX_TRANSFERENCIA_DEPOSITOS_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Comenzar Transferencia
-              </a>
-            </Button>
-          ) : null}
         </div>
 
         <div
@@ -384,13 +377,10 @@ export default function GenerarTransfDepositosModal({
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TablaControlItemHead className="w-[8%] min-w-12" />
-                  <TableHead className="w-[16%]">COD. TIENDA</TableHead>
+                  <TableHead className="w-[26%]">COD. TIENDA</TableHead>
                   <TableHead className="w-[50%]">DESCRIPCIÓN</TableHead>
                   <TableHead className="w-[16%] text-center">
                     CANTIDAD A TRANSFERIR
-                  </TableHead>
-                  <TableHead className="w-[10%] text-center">
-                    ACCIONES
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -410,27 +400,15 @@ export default function GenerarTransfDepositosModal({
                         placeholderTitle="Verificá con OK: copia el Cod. Tienda y marca el ítem."
                         className="w-[8%] min-w-12"
                       />
-                      <TableCell className="celda-datos w-[16%]">
-                        {item.codTienda}
-                      </TableCell>
-                      <TableCell
-                        className="celda-datos min-w-0 w-[50%] truncate"
-                        title={item.descripcionTienda}
-                      >
-                        {item.descripcionTienda}
-                      </TableCell>
-                      <TableCell className="celda-datos w-[16%] text-center tabular-nums">
-                        {fmtNumero(item.cantidad)}
-                      </TableCell>
-                      <TableCell className="celda-datos w-[10%] celda-datos--accion-relleno-fila">
-                        <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
+                      <TableCell className="celda-datos w-[26%]">
+                        <div className="flex items-center justify-center gap-1.5">
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleOkItem(item.codTienda)}
+                            onClick={() => void handleOkItem(item.codTienda)}
                             disabled={isPending}
-                            className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                            className={BOTON_COPIAR_CELDA_CLASS}
                             aria-label={
                               ok
                                 ? "Desmarcar ítem"
@@ -441,6 +419,40 @@ export default function GenerarTransfDepositosModal({
                             }
                           >
                             <Check
+                              className={TABLE_ROW_ACTION_ICON_CLASS}
+                              aria-hidden
+                            />
+                          </Button>
+                          <span className="tabular-nums">{item.codTienda}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell
+                        className="celda-datos min-w-0 w-[50%] truncate"
+                        title={item.descripcionTienda}
+                      >
+                        {item.descripcionTienda}
+                      </TableCell>
+                      <TableCell className="celda-datos w-[16%]">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span className="tabular-nums">
+                            {fmtNumero(item.cantidad)}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              void copiarDatoTransf(
+                                String(Math.round(item.cantidad)),
+                                "Cant. Copiada"
+                              )
+                            }
+                            disabled={isPending}
+                            className={BOTON_COPIAR_CELDA_CLASS}
+                            aria-label="Copiar cantidad"
+                            title="Copiar cantidad"
+                          >
+                            <Copy
                               className={TABLE_ROW_ACTION_ICON_CLASS}
                               aria-hidden
                             />

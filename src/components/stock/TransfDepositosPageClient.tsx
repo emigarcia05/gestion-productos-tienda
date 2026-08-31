@@ -155,7 +155,6 @@ export default function TransfDepositosPageClient({
         open={modalOpen}
         onOpenChange={setModalOpen}
         origenCodigo={origen}
-        destinoCodigo={destino}
         onTransferido={() => {
           avisarIndicadorSlidenav();
           router.refresh();
