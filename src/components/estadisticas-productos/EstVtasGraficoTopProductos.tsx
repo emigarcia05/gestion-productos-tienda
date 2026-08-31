@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { EstVtasBarraProducto } from "@/lib/estVtasTypes";
-import { fmtPctParticipacion } from "@/lib/format";
+import { fmtNumero, fmtPctParticipacion } from "@/lib/format";
 
 interface Props {
   filas: EstVtasBarraProducto[];
@@ -144,13 +144,13 @@ export default function EstVtasGraficoTopProductos({
                         )}
                       </TableCell>
                       <TableCell className="celda-datos text-center text-[11px] tabular-nums !py-1">
-                        {fmtUnidades(f.totalPeriodo)}
+                        {fmtNumero(f.totalPeriodo)}
                       </TableCell>
                       <TableCell className="celda-datos text-center text-[11px] tabular-nums !py-1">
                         {fmtUnidades(f.promedioMensual)}
                       </TableCell>
                       <TableCell className="celda-datos text-center text-[11px] tabular-nums text-muted-foreground !py-1">
-                        {fmtPctParticipacion(f.totalPeriodo, totalFiltrado)}
+                        {fmtPctParticipacion(f.totalPeriodo, totalFiltrado, false)}
                       </TableCell>
                     </TableRow>
                   );

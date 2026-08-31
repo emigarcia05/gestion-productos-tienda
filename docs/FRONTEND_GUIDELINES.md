@@ -74,7 +74,7 @@ Stack: **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS 4**, **shadcn/u
 - Sin búsqueda: acciones en la misma fila (`FILTER_INLINE_ACTION_SLOT_CLASS`, a menudo `col-span-2`).
 - Contador: `FILTER_COUNT_CLASS`, texto MAYÚSCULAS (`X PRODUCTO(S)`).
 - Rango de fechas: `FilterRowDateRange` + `FiltroRangoFechasCalendarioModal`.
-- Multi-select: trigger `<button>` + panel `role="listbox"` + `SelectSearchInput` (tipo de pedido, meses/años, `MktMultiSelectCatalogo`). No `<select multiple>`.
+- Multi-select: `FiltroMultiSelect` (trigger `<button>` + panel `role="listbox"` + `SelectSearchInput`) o el mismo patrón a mano (tipo de pedido, meses/años, `MktMultiSelectCatalogo`). No `<select multiple>`.
 - Sucursal vacía en Vendedor (pedidos / stock): `useAplicarSucursalPreferidaSiVacia`. Opciones de sucursal de pedido: `global_sucursales` con `pedido = true`.
 
 ### 1.3 Tablas
@@ -193,6 +193,7 @@ Nuevo shared: CVA + tokens + `"use client"` solo si hay estado/hooks. Documentar
 | `ModalMicroLabel` / `ModalSiNoChoice` / `ModalFeedbackRegion` | Labels, SÍ/NO, feedback |
 | `MontoArInput` / `MontoArSaldoEnteroInput` / `PorcentajeCentInput` / `PorcentajeEnteroMaskInput` / `PxListaEnteroInput` | Máscaras AR. `MontoArInput` `allowNegative` en TOTAL PEDIDO de recepción. `PorcentajeCentInput` `allowNegative` + sufijo `%` fijo (`.input-mascara-sufijo`, no editable) en VARIACIÓN de Edición Masiva. |
 | `SelectSearchInput` | Buscador de desplegables |
+| `FiltroMultiSelect` | Multi-select de filtros (trigger + `listbox` + buscador). Vacío = placeholder |
 | `FiltroRangoFechasCalendarioModal` | Rango de fechas |
 | `TablaSubencabezadoSeccionRow` | Subencabezado en tbody |
 | `TablaControlItemHead` / `TablaControlItemCelda` | Columna **Control de ítem** (checklist local) |
@@ -264,8 +265,8 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 ### Estadísticas / Pedido A Fáb.
 
 - **Carga De Datos:** grilla periodo × sucursal (`tabla-est-carga-datos`); celda pendiente `.celda-est-carga-pendiente`.
-- **Configuracion:** `FilaFiltrosDesplegables` `columnas={6}` + búsqueda.
-- **Ventas:** dos FilterBar + tres gráficos (clases `.est-vtas-*`). Gráfico 1 y Top 10: `%` = Un. ítem / Un. total de los filtros actuales (`fmtPctParticipacion`; en desglose del gráfico 1 cada hijo sobre ese total, no sobre el padre). Gráfico 1: encabezados fijos **Un.** / **%** (el valor de % sin sufijo). Top 10: columna `%` (el denominador incluye productos fuera del top).
+- **Configuracion:** `FilaFiltrosDesplegables` `columnas={6}` + búsqueda. Marca / rubro / sub rubro / color / terminación / presentación: `FiltroMultiSelect` (OR dentro de cada dimensión).
+- **Ventas:** dos FilterBar + tres gráficos (clases `.est-vtas-*`). Fila 2: mismos 6 filtros multi (`FiltroMultiSelect`; OR dentro de la dimensión). Gráfico 1 y Top 10: `%` = Un. ítem / Un. total de los filtros actuales (`fmtPctParticipacion`; en desglose del gráfico 1 cada hijo sobre ese total, no sobre el padre). Un. / TO. se muestran enteros (`fmtNumero`); el % no lleva sufijo (el encabezado ya es **%**). Gráfico 1: Un. / % centrados, datos `text-foreground`, encabezados `font-bold`. Top 10: el denominador incluye productos fuera del top.
 - **Pedido A Fáb.:** dos FilterBar. Fila 1: PROVEEDOR / FECHA DE PEDIDO / TIEMPO STOCKEO / **PROD. VINCULADO** (SI = `cod_tienda` en lista; NO = sin vínculo) / STOCK QUEBRADO. Secciones: **STOCK** (`UN. ACT.` / `QUEBR.`) y **COMPRA** (FORMA **BULTO**/**UNIDAD** | BULTO si vínculo `cod_tienda` | `CANT. PED.` `EnteroStepperInput` en orden `- | input | + | check | borrar` (check copia CANT. SUGERIDA y borrar limpia el valor) | `CANT. SUG.`: UNIDAD techo entero; BULTO techo al múltiplo de `prod_tienda.bulto`). En **QUEBR.** mostrar tilde solo cuando `Stock Hasta Llegada De Pedido < 0`; si es `>= 0` dejar vacío. Si **FECHA DE PEDIDO** está vacía, el cálculo inicial usa hoy (AR) como base y proyecta provisión hasta `tiempo_entrega_en_dias`. Modal de soporte: título `INFO FORMULAS` y fórmulas alineadas a la lógica vigente de provisión/quiebre/cant. sugerida. Última columna de acciones: solo botón de detalle por sucursal (ícono `Info`). En el modal de detalle por sucursal mostrar solo `SUCURSALES` y `PROM. VTA POR DÍA` con fila final `TOTAL`; `PROM. VTA POR DÍA` admite decimal con un dígito. DESCRIPCIÓN = `descripcion_tienda` si hay vínculo, si no `descripcion_proveedor`. Header `GenerarPedidoToolbarButton` `modulo="a-fabrica"`.
 
 ### Marketing

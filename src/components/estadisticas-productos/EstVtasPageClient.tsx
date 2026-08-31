@@ -20,11 +20,17 @@ import FilterBar, {
   SELECT_TRIGGER_FILTER_CLASS,
 } from "@/components/FilterBar";
 import FiltroBusquedaInput from "@/components/shared/FiltroBusquedaInput";
+import FiltroMultiSelect from "@/components/shared/FiltroMultiSelect";
 import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
 import EstVtasGraficoBarrasMensual from "@/components/estadisticas-productos/EstVtasGraficoBarrasMensual";
 import EstVtasGraficoTopProductos from "@/components/estadisticas-productos/EstVtasGraficoTopProductos";
 import EstVtasGraficoVarianteBarras from "@/components/estadisticas-productos/EstVtasGraficoVarianteBarras";
 import { matchByMultiTerm } from "@/lib/busqueda";
+import {
+  cumpleFiltroIn,
+  cumpleFiltroListaOSentinel,
+  pruneSelected,
+} from "@/lib/estFiltrosMulti";
 import { filterItemsBySelectSearch } from "@/lib/selectSearch";
 import SelectSearchInput from "@/components/shared/SelectSearchInput";
 import {
@@ -62,6 +68,13 @@ const FILTRO_TODOS = "none";
 const FILTRO_SIN_COLOR = "__SIN_COLOR__";
 const FILTRO_SIN_TERMINACION = "__SIN_TERMINACION__";
 const FILTRO_SIN_PRESENTACION = "__SIN_PRESENTACION__";
+const EXTRA_SIN_COLOR = [{ value: FILTRO_SIN_COLOR, label: "SIN COLOR" }] as const;
+const EXTRA_SIN_TERMINACION = [
+  { value: FILTRO_SIN_TERMINACION, label: "SIN TERMINACION" },
+] as const;
+const EXTRA_SIN_PRESENTACION = [
+  { value: FILTRO_SIN_PRESENTACION, label: "SIN PRESENTACION" },
+] as const;
 
 const FOCUS_KEY = "filtros-est-vtas-focus";
 
@@ -140,12 +153,12 @@ export default function EstVtasPageClient({
     );
   }, [ventas, mesActual, anioActual]);
 
-  const [filtMarca, setFiltMarca] = useState(FILTRO_TODOS);
-  const [filtRubro, setFiltRubro] = useState(FILTRO_TODOS);
-  const [filtSubRubro, setFiltSubRubro] = useState(FILTRO_TODOS);
-  const [filtColor, setFiltColor] = useState(FILTRO_TODOS);
-  const [filtTerminacion, setFiltTerminacion] = useState(FILTRO_TODOS);
-  const [filtPresentacion, setFiltPresentacion] = useState(FILTRO_TODOS);
+  const [filtMarca, setFiltMarca] = useState<string[]>([]);
+  const [filtRubro, setFiltRubro] = useState<string[]>([]);
+  const [filtSubRubro, setFiltSubRubro] = useState<string[]>([]);
+  const [filtColor, setFiltColor] = useState<string[]>([]);
+  const [filtTerminacion, setFiltTerminacion] = useState<string[]>([]);
+  const [filtPresentacion, setFiltPresentacion] = useState<string[]>([]);
   const [filtSucursalId, setFiltSucursalId] = useState(FILTRO_TODOS);
   const [filtAnios, setFiltAnios] = useState<number[]>([periodoDefault.anio]);
   const [filtMeses, setFiltMeses] = useState<number[]>([periodoDefault.mes]);
@@ -270,16 +283,20 @@ export default function EstVtasPageClient({
 
   const rubros = useMemo(() => {
     const base =
-      filtMarca === FILTRO_TODOS
+      filtMarca.length === 0
         ? filas
-        : filas.filter((f) => f.marca === filtMarca);
+        : filas.filter((f) => filtMarca.includes(f.marca));
     return opcionesOrdenadas(base.map((f) => f.rubro));
   }, [filas, filtMarca]);
 
   const subRubros = useMemo(() => {
     let base = filas;
-    if (filtMarca !== FILTRO_TODOS) base = base.filter((f) => f.marca === filtMarca);
-    if (filtRubro !== FILTRO_TODOS) base = base.filter((f) => f.rubro === filtRubro);
+    if (filtMarca.length > 0) {
+      base = base.filter((f) => filtMarca.includes(f.marca));
+    }
+    if (filtRubro.length > 0) {
+      base = base.filter((f) => filtRubro.includes(f.rubro));
+    }
     return opcionesOrdenadas(base.map((f) => f.subRubro));
   }, [filas, filtMarca, filtRubro]);
 
@@ -299,32 +316,66 @@ export default function EstVtasPageClient({
     );
   }, [filas]);
 
+  function handleMarcaChange(nextMarcas: string[]) {
+    setFiltMarca(nextMarcas);
+    let base =
+      nextMarcas.length === 0
+        ? filas
+        : filas.filter((f) => nextMarcas.includes(f.marca));
+    const nextRubros = opcionesOrdenadas(base.map((f) => f.rubro));
+    const keptRubro = pruneSelected(filtRubro, nextRubros);
+    setFiltRubro(keptRubro);
+    if (keptRubro.length > 0) {
+      base = base.filter((f) => keptRubro.includes(f.rubro));
+    }
+    setFiltSubRubro(
+      pruneSelected(filtSubRubro, opcionesOrdenadas(base.map((f) => f.subRubro)))
+    );
+  }
+
+  function handleRubroChange(nextRubros: string[]) {
+    setFiltRubro(nextRubros);
+    let base = filas;
+    if (filtMarca.length > 0) {
+      base = base.filter((f) => filtMarca.includes(f.marca));
+    }
+    if (nextRubros.length > 0) {
+      base = base.filter((f) => nextRubros.includes(f.rubro));
+    }
+    setFiltSubRubro(
+      pruneSelected(filtSubRubro, opcionesOrdenadas(base.map((f) => f.subRubro)))
+    );
+  }
+
   const filasFiltradas = useMemo(() => {
     let out = filas;
-    if (filtMarca !== FILTRO_TODOS) {
-      out = out.filter((f) => f.marca === filtMarca);
+    if (filtMarca.length > 0) {
+      out = out.filter((f) => cumpleFiltroIn(filtMarca, f.marca));
     }
-    if (filtRubro !== FILTRO_TODOS) {
-      out = out.filter((f) => f.rubro === filtRubro);
+    if (filtRubro.length > 0) {
+      out = out.filter((f) => cumpleFiltroIn(filtRubro, f.rubro));
     }
-    if (filtSubRubro !== FILTRO_TODOS) {
-      out = out.filter((f) => f.subRubro === filtSubRubro);
+    if (filtSubRubro.length > 0) {
+      out = out.filter((f) => cumpleFiltroIn(filtSubRubro, f.subRubro));
     }
-    if (filtColor === FILTRO_SIN_COLOR) {
-      out = out.filter((f) => f.colores.length === 0);
-    } else if (filtColor !== FILTRO_TODOS) {
-      out = out.filter((f) => f.colores.includes(filtColor));
-    }
-    if (filtTerminacion === FILTRO_SIN_TERMINACION) {
-      out = out.filter((f) => f.terminaciones.length === 0);
-    } else if (filtTerminacion !== FILTRO_TODOS) {
-      out = out.filter((f) => f.terminaciones.includes(filtTerminacion));
-    }
-    if (filtPresentacion === FILTRO_SIN_PRESENTACION) {
-      out = out.filter((f) => f.presentacionEtiqueta.trim() === "");
-    } else if (filtPresentacion !== FILTRO_TODOS) {
-      out = out.filter((f) => f.presentacionEtiqueta === filtPresentacion);
-    }
+    out = out.filter((f) =>
+      cumpleFiltroListaOSentinel(filtColor, f.colores, FILTRO_SIN_COLOR)
+    );
+    out = out.filter((f) =>
+      cumpleFiltroListaOSentinel(
+        filtTerminacion,
+        f.terminaciones,
+        FILTRO_SIN_TERMINACION
+      )
+    );
+    out = out.filter((f) => {
+      const etiqueta = f.presentacionEtiqueta.trim();
+      return cumpleFiltroListaOSentinel(
+        filtPresentacion,
+        etiqueta === "" ? [] : [f.presentacionEtiqueta],
+        FILTRO_SIN_PRESENTACION
+      );
+    });
     const qTrim = qDebounced.trim();
     if (qTrim) {
       out = out.filter((f) => matchByMultiTerm([f.descripcionTienda], qTrim));
@@ -551,12 +602,12 @@ export default function EstVtasPageClient({
   }
 
   function limpiarFiltros() {
-    setFiltMarca(FILTRO_TODOS);
-    setFiltRubro(FILTRO_TODOS);
-    setFiltSubRubro(FILTRO_TODOS);
-    setFiltColor(FILTRO_TODOS);
-    setFiltTerminacion(FILTRO_TODOS);
-    setFiltPresentacion(FILTRO_TODOS);
+    setFiltMarca([]);
+    setFiltRubro([]);
+    setFiltSubRubro([]);
+    setFiltColor([]);
+    setFiltTerminacion([]);
+    setFiltPresentacion([]);
     setFiltSucursalId(FILTRO_TODOS);
     setFiltAnios([periodoDefault.anio]);
     setFiltMeses([periodoDefault.mes]);
@@ -809,189 +860,97 @@ export default function EstVtasPageClient({
             <FilterRowSelection className="w-full min-w-0">
               <FilaFiltrosDesplegables columnas={6}>
                 <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtMarca !== FILTRO_TODOS}
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={filtMarca.length > 0}
                   onLimpiar={() => {
-                    setFiltMarca(FILTRO_TODOS);
-                    setFiltRubro(FILTRO_TODOS);
-                    setFiltSubRubro(FILTRO_TODOS);
+                    setFiltMarca([]);
+                    setFiltRubro([]);
+                    setFiltSubRubro([]);
                   }}
                 >
-                  <Select
-                    value={filtMarca}
-                    onValueChange={(v) => {
-                      setFiltMarca(v);
-                      setFiltRubro(FILTRO_TODOS);
-                      setFiltSubRubro(FILTRO_TODOS);
-                    }}
-                  >
-                    <SelectTrigger className="input-filtro-unificado" aria-label="Marca">
-                      <SelectValue placeholder="MARCA" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      <SelectItem value={FILTRO_TODOS}>MARCA</SelectItem>
-                      {marcas.map((m) => (
-                        <SelectItem key={m} value={m}>
-                          {m}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FiltroMultiSelect
+                    opciones={marcas}
+                    selected={filtMarca}
+                    onChange={handleMarcaChange}
+                    placeholder="MARCA"
+                    ariaLabel="Marca"
+                  />
                 </FiltroIndividualContainer>
 
                 <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtRubro !== FILTRO_TODOS}
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={filtRubro.length > 0}
                   onLimpiar={() => {
-                    setFiltRubro(FILTRO_TODOS);
-                    setFiltSubRubro(FILTRO_TODOS);
+                    setFiltRubro([]);
+                    setFiltSubRubro([]);
                   }}
                 >
-                  <Select
-                    value={filtRubro}
-                    onValueChange={(v) => {
-                      setFiltRubro(v);
-                      setFiltSubRubro(FILTRO_TODOS);
-                    }}
-                  >
-                    <SelectTrigger className="input-filtro-unificado" aria-label="Rubro">
-                      <SelectValue placeholder="RUBRO" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      <SelectItem value={FILTRO_TODOS}>RUBRO</SelectItem>
-                      {rubros.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {r}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FiltroMultiSelect
+                    opciones={rubros}
+                    selected={filtRubro}
+                    onChange={handleRubroChange}
+                    placeholder="RUBRO"
+                    ariaLabel="Rubro"
+                  />
                 </FiltroIndividualContainer>
 
                 <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtSubRubro !== FILTRO_TODOS}
-                  onLimpiar={() => setFiltSubRubro(FILTRO_TODOS)}
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={filtSubRubro.length > 0}
+                  onLimpiar={() => setFiltSubRubro([])}
                 >
-                  <Select value={filtSubRubro} onValueChange={setFiltSubRubro}>
-                    <SelectTrigger className="input-filtro-unificado" aria-label="Sub Rubro">
-                      <SelectValue placeholder="SUB RUBRO" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      <SelectItem value={FILTRO_TODOS}>SUB RUBRO</SelectItem>
-                      {subRubros.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FiltroMultiSelect
+                    opciones={subRubros}
+                    selected={filtSubRubro}
+                    onChange={setFiltSubRubro}
+                    placeholder="SUB RUBRO"
+                    ariaLabel="Sub Rubro"
+                  />
                 </FiltroIndividualContainer>
 
                 <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtColor !== FILTRO_TODOS}
-                  onLimpiar={() => setFiltColor(FILTRO_TODOS)}
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={filtColor.length > 0}
+                  onLimpiar={() => setFiltColor([])}
                 >
-                  <Select value={filtColor} onValueChange={setFiltColor}>
-                    <SelectTrigger className="input-filtro-unificado" aria-label="Color">
-                      <SelectValue placeholder="COLOR" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      <SelectItem value={FILTRO_TODOS}>COLOR</SelectItem>
-                      {colores.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value={FILTRO_SIN_COLOR}>SIN COLOR</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FiltroMultiSelect
+                    opciones={colores}
+                    extras={EXTRA_SIN_COLOR}
+                    selected={filtColor}
+                    onChange={setFiltColor}
+                    placeholder="COLOR"
+                    ariaLabel="Color"
+                  />
                 </FiltroIndividualContainer>
 
                 <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtTerminacion !== FILTRO_TODOS}
-                  onLimpiar={() => setFiltTerminacion(FILTRO_TODOS)}
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={filtTerminacion.length > 0}
+                  onLimpiar={() => setFiltTerminacion([])}
                 >
-                  <Select value={filtTerminacion} onValueChange={setFiltTerminacion}>
-                    <SelectTrigger
-                      className="input-filtro-unificado"
-                      aria-label="Terminacion"
-                    >
-                      <SelectValue placeholder="TERMINACION" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      <SelectItem value={FILTRO_TODOS}>TERMINACION</SelectItem>
-                      {terminacionesOpciones.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value={FILTRO_SIN_TERMINACION}>
-                        SIN TERMINACION
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FiltroMultiSelect
+                    opciones={terminacionesOpciones}
+                    extras={EXTRA_SIN_TERMINACION}
+                    selected={filtTerminacion}
+                    onChange={setFiltTerminacion}
+                    placeholder="TERMINACION"
+                    ariaLabel="Terminacion"
+                  />
                 </FiltroIndividualContainer>
 
                 <FiltroIndividualContainer
-                  className={FILTER_SELECT_WRAPPER_CLASS}
-                  activo={filtPresentacion !== FILTRO_TODOS}
-                  onLimpiar={() => setFiltPresentacion(FILTRO_TODOS)}
+                  className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
+                  activo={filtPresentacion.length > 0}
+                  onLimpiar={() => setFiltPresentacion([])}
                 >
-                  <Select
-                    value={filtPresentacion}
-                    onValueChange={setFiltPresentacion}
-                  >
-                    <SelectTrigger
-                      className="input-filtro-unificado"
-                      aria-label="Presentacion"
-                    >
-                      <SelectValue placeholder="PRESENTACION" />
-                    </SelectTrigger>
-                    <SelectContent
-                      position="popper"
-                      side="bottom"
-                      align="start"
-                      className="select-content-filtro max-h-60"
-                    >
-                      <SelectItem value={FILTRO_TODOS}>PRESENTACION</SelectItem>
-                      {presentacionOpciones.map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {p}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value={FILTRO_SIN_PRESENTACION}>
-                        SIN PRESENTACION
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FiltroMultiSelect
+                    opciones={presentacionOpciones}
+                    extras={EXTRA_SIN_PRESENTACION}
+                    selected={filtPresentacion}
+                    onChange={setFiltPresentacion}
+                    placeholder="PRESENTACION"
+                    ariaLabel="Presentacion"
+                  />
                 </FiltroIndividualContainer>
               </FilaFiltrosDesplegables>
             </FilterRowSelection>

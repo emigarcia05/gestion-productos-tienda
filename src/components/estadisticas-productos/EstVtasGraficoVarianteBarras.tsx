@@ -20,7 +20,7 @@ import {
   type EstVtasGrupoDimension,
   type EstVtasSeleccionDesglose,
 } from "@/lib/estVtasTypes";
-import { fmtPctParticipacion } from "@/lib/format";
+import { fmtNumero, fmtPctParticipacion } from "@/lib/format";
 import { Trash2 } from "lucide-react";
 
 interface Props {
@@ -54,20 +54,13 @@ interface Props {
   className?: string;
 }
 
-function fmtUnidades(n: number): string {
-  return n.toLocaleString("es-AR", {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 0,
-  });
-}
-
 /** Misma grilla que cada fila: 15 % etiquetas · barras + Un. / %. */
 const EST_VTAS_FILA_GRID_CLASS =
   "grid grid-cols-[minmax(0,15%)_minmax(0,1fr)] items-center gap-x-2";
 const EST_VTAS_VALORES_WRAP_CLASS =
-  "flex shrink-0 items-baseline justify-end gap-1";
-const EST_VTAS_COL_UN_CLASS = "w-10 text-right tabular-nums";
-const EST_VTAS_COL_PCT_CLASS = "w-9 text-right tabular-nums";
+  "flex shrink-0 items-center justify-end gap-1";
+const EST_VTAS_COL_UN_CLASS = "w-10 text-right leading-none tabular-nums";
+const EST_VTAS_COL_PCT_CLASS = "w-9 text-right leading-none tabular-nums";
 
 /** Encabezados Un. / % alineados a las columnas de valor (sticky sobre el scroll). */
 function renderEncabezadosUnPct() {
@@ -86,7 +79,7 @@ function renderEncabezadosUnPct() {
           <span
             className={cn(
               EST_VTAS_COL_UN_CLASS,
-              "text-[9px] font-bold uppercase tracking-wide text-muted-foreground"
+              "text-[9px] font-bold uppercase tracking-wide text-foreground"
             )}
           >
             Un.
@@ -94,7 +87,7 @@ function renderEncabezadosUnPct() {
           <span
             className={cn(
               EST_VTAS_COL_PCT_CLASS,
-              "text-[9px] font-bold uppercase tracking-wide text-muted-foreground"
+              "text-[9px] font-bold uppercase tracking-wide text-foreground"
             )}
           >
             %
@@ -113,13 +106,10 @@ function renderValorConPct(unidades: number, totalFiltrado: number) {
       <span
         className={cn(EST_VTAS_COL_UN_CLASS, "text-[11px] text-foreground")}
       >
-        {fmtUnidades(unidades)}
+        {fmtNumero(unidades)}
       </span>
       <span
-        className={cn(
-          EST_VTAS_COL_PCT_CLASS,
-          "text-[11px] text-muted-foreground"
-        )}
+        className={cn(EST_VTAS_COL_PCT_CLASS, "text-[11px] text-foreground")}
       >
         {pct}
       </span>
@@ -133,7 +123,7 @@ function ariaUnidadesConPct(
   prefijo: string
 ): string {
   const pct = fmtPctParticipacion(unidades, totalFiltrado);
-  const base = `${prefijo}: ${fmtUnidades(unidades)} unidades vendidas`;
+  const base = `${prefijo}: ${fmtNumero(unidades)} unidades vendidas`;
   return pct ? `${base} (${pct})` : base;
 }
 
@@ -143,7 +133,7 @@ function titleUnidadesConPct(
   totalFiltrado: number
 ): string {
   const pct = fmtPctParticipacion(unidades, totalFiltrado);
-  const base = `${etiqueta}: ${fmtUnidades(unidades)}`;
+  const base = `${etiqueta}: ${fmtNumero(unidades)}`;
   return pct ? `${base} (${pct})` : base;
 }
 
