@@ -61,19 +61,68 @@ function fmtUnidades(n: number): string {
   });
 }
 
-/** Un. + % sobre el total filtrado (no sobre el máximo de las barras). */
-function renderValorConPct(unidades: number, totalFiltrado: number) {
-  const pct = fmtPctParticipacion(unidades, totalFiltrado);
+/** Misma grilla que cada fila: 15 % etiquetas · barras + Un. / %. */
+const EST_VTAS_FILA_GRID_CLASS =
+  "grid grid-cols-[minmax(0,15%)_minmax(0,1fr)] items-center gap-x-2";
+const EST_VTAS_VALORES_WRAP_CLASS =
+  "flex shrink-0 items-baseline justify-end gap-1";
+const EST_VTAS_COL_UN_CLASS = "w-10 text-right tabular-nums";
+const EST_VTAS_COL_PCT_CLASS = "w-9 text-right tabular-nums";
+
+/** Encabezados Un. / % alineados a las columnas de valor (sticky sobre el scroll). */
+function renderEncabezadosUnPct() {
   return (
-    <span className="flex shrink-0 items-baseline justify-end gap-1">
-      <span className="w-10 text-right text-[11px] tabular-nums text-foreground">
+    <div
+      className={cn(
+        EST_VTAS_FILA_GRID_CLASS,
+        "sticky top-0 z-10 h-5 bg-card"
+      )}
+      aria-hidden
+    >
+      <span className="min-w-0" />
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="min-w-0 flex-1" />
+        <span className={EST_VTAS_VALORES_WRAP_CLASS}>
+          <span
+            className={cn(
+              EST_VTAS_COL_UN_CLASS,
+              "text-[9px] font-bold uppercase tracking-wide text-muted-foreground"
+            )}
+          >
+            Un.
+          </span>
+          <span
+            className={cn(
+              EST_VTAS_COL_PCT_CLASS,
+              "text-[9px] font-bold uppercase tracking-wide text-muted-foreground"
+            )}
+          >
+            %
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Un. + participación (sin sufijo `%`: va en el encabezado de columna). */
+function renderValorConPct(unidades: number, totalFiltrado: number) {
+  const pct = fmtPctParticipacion(unidades, totalFiltrado, false);
+  return (
+    <span className={EST_VTAS_VALORES_WRAP_CLASS}>
+      <span
+        className={cn(EST_VTAS_COL_UN_CLASS, "text-[11px] text-foreground")}
+      >
         {fmtUnidades(unidades)}
       </span>
-      {pct ? (
-        <span className="min-w-[2.35rem] text-right text-[11px] tabular-nums text-muted-foreground">
-          {pct}
-        </span>
-      ) : null}
+      <span
+        className={cn(
+          EST_VTAS_COL_PCT_CLASS,
+          "text-[11px] text-muted-foreground"
+        )}
+      >
+        {pct}
+      </span>
     </span>
   );
 }
@@ -98,6 +147,8 @@ function titleUnidadesConPct(
   return pct ? `${base} (${pct})` : base;
 }
 
+/** Alto de la fila de encabezados Un. / %. */
+const EST_VTAS_ENCABEZADO_REM = 1.25;
 /** Filas visibles en el viewport del eje Y; el resto scrollea. */
 const EST_VTAS_BARRAS_FILAS_VISIBLES = 9;
 /** Alto de cada fila (barra + aire entre filas) — modo 1 dimensión. */
@@ -145,7 +196,8 @@ function claseAzulDesglose(index: number): string {
  * Título = Select píldora primary de ancho fijo (igual que Top 10 / Mes).
  * Desglose = Select con borde primary suave; basura para volver a SIN DESGLOSE.
  * Solo las barras son clicables (no las etiquetas).
- * Layout: 15% etiquetas · 85% barras (+ valor); viewport de 9 filas con scroll.
+ * Layout: 15% etiquetas · 85% barras (+ Un. / %); viewport de 9 filas con scroll.
+ * Encabezados Un. / % fijos; el valor de % no lleva sufijo.
  * Con desglose: grupos categoría → barras hijas (azules distintos + leyenda).
  */
 export default function EstVtasGraficoVarianteBarras({
@@ -182,7 +234,9 @@ export default function EstVtasGraficoVarianteBarras({
   const labelDimension = etiquetaEstVtasDimension(dimension);
   const seleccionablePlano = typeof onSeleccionar === "function";
   const seleccionableDesglose = typeof onSeleccionarDesglose === "function";
-  const plotHeightRem = EST_VTAS_BARRAS_FILAS_VISIBLES * EST_VTAS_BARRAS_FILA_REM;
+  const plotHeightRem =
+    EST_VTAS_BARRAS_FILAS_VISIBLES * EST_VTAS_BARRAS_FILA_REM +
+    (vacio ? 0 : EST_VTAS_ENCABEZADO_REM);
   const conDesglose = typeof onDesgloseChange === "function";
   const opcionesDimension = opcionesDimensionEstVtas(desglose);
   const opcionesDesglose = opcionesDesgloseEstVtas(dimension);
@@ -350,7 +404,10 @@ export default function EstVtasGraficoVarianteBarras({
                   ? "No hay ventas cargadas. Subí datos en Carga De Datos y volvé a abrir este módulo."
                   : "No hay ventas para los filtros o el periodo seleccionados. Probá otra fecha con datos cargados."}
             </p>
-          ) : modoGrupos && grupos ? (
+          ) : (
+            <>
+              {renderEncabezadosUnPct()}
+              {modoGrupos && grupos ? (
             <div className="flex flex-col gap-1 py-0.5">
               {grupos.map((g) => (
                 <div
@@ -376,7 +433,7 @@ export default function EstVtasGraficoVarianteBarras({
                     return (
                       <div
                         key={`${g.id}::${h.id}`}
-                        className="grid grid-cols-[minmax(0,15%)_minmax(0,1fr)] items-center gap-x-2"
+                        className={EST_VTAS_FILA_GRID_CLASS}
                         style={{
                           height: `${EST_VTAS_BARRAS_DESGLOSE_FILA_REM}rem`,
                         }}
@@ -463,7 +520,7 @@ export default function EstVtasGraficoVarianteBarras({
                 return (
                   <div
                     key={b.id ?? b.etiqueta}
-                    className="grid grid-cols-[minmax(0,15%)_minmax(0,1fr)] items-center gap-x-2"
+                    className={EST_VTAS_FILA_GRID_CLASS}
                     style={{ height: `${EST_VTAS_BARRAS_FILA_REM}rem` }}
                   >
                     <span
@@ -513,6 +570,8 @@ export default function EstVtasGraficoVarianteBarras({
                 );
               })}
             </div>
+              )}
+            </>
           )}
         </div>
         <div className="mt-1.5 flex shrink-0 flex-col items-center gap-1">

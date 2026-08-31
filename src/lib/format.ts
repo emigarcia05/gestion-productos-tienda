@@ -70,9 +70,14 @@ export function fmtPctDeTotal(numerador: number, denominador: number): string {
 
 /**
  * Participación de un ítem sobre un total filtrado (es-AR, compacto).
- * 1 decimal si hace falta (`15%`, `15,4%`). Denominador ≤ 0 → "".
+ * 1 decimal si hace falta (`15%` / `15,4%`). Denominador ≤ 0 → "".
+ * `conSufijo: false` cuando el `%` ya está en el encabezado de columna.
  */
-export function fmtPctParticipacion(numerador: number, denominador: number): string {
+export function fmtPctParticipacion(
+  numerador: number,
+  denominador: number,
+  conSufijo = true
+): string {
   if (
     denominador <= 0 ||
     !Number.isFinite(numerador) ||
@@ -82,8 +87,9 @@ export function fmtPctParticipacion(numerador: number, denominador: number): str
   }
   const rounded = Math.round((numerador / denominador) * 1000) / 10;
   const entero = Number.isInteger(rounded);
-  return `${rounded.toLocaleString("es-AR", {
+  const s = rounded.toLocaleString("es-AR", {
     minimumFractionDigits: entero ? 0 : 1,
     maximumFractionDigits: 1,
-  })}%`;
+  });
+  return conSufijo ? `${s}%` : s;
 }
