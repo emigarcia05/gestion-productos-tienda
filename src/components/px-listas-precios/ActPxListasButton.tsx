@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { exportarPxListasMargenAction } from "@/actions/pxListasPrecios";
 import { descargarExcelsPxListasMargen } from "@/lib/exportPxListasMargenExcelClient";
+import { DUX_NUEVO_IMPORTADOR_URL } from "@/lib/duxImportador";
 import ModalSinProductosExportar from "@/components/tienda/ModalSinProductosExportar";
 
 export default function ActPxListasButton() {
@@ -16,6 +17,7 @@ export default function ActPxListasButton() {
   const [modalSinProductos, setModalSinProductos] = useState(false);
 
   async function handleExportar() {
+    window.open(DUX_NUEVO_IMPORTADOR_URL, "_blank", "noopener,noreferrer");
     setExportando(true);
     try {
       const res = await exportarPxListasMargenAction();
@@ -69,7 +71,7 @@ export default function ActPxListasButton() {
         </TooltipTrigger>
         <TooltipContent>
           Exporta un Excel por lista DUX (CODIGO + PORC UTILIDAD) con márgenes
-          pendientes y cierra la actualización en curso
+          pendientes, cierra la actualización en curso y abre el importador DUX
         </TooltipContent>
       </Tooltip>
     </>

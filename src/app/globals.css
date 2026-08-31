@@ -1433,10 +1433,15 @@
   width: 8cqw;
 }
 
-/* Columnas fijas (DESCRIPCIÓN 42 % + CATEGORÍA M.C 8 %) al hacer scroll horizontal. */
+/*
+ * Columnas fijas (DESCRIPCIÓN 42 % + CATEGORÍA M.C 8 %) al hacer scroll horizontal.
+ * `sticky !important` gana a `tbody td { position: relative }` de `.tabla-gestion-compacta`.
+ * Sin eso, `left: 42cqw` en CATEGORÍA M.C actúa como offset relative y el nombre se pinta
+ * sobre las columnas de listas (p. ej. PORC. UTILIDAD de Mayorista).
+ */
 .tabla-px-listas-precios th.celda-px-listas-col-fija,
 .tabla-px-listas-precios td.celda-px-listas-col-fija {
-  position: sticky;
+  position: sticky !important;
   background-color: var(--tabla-row-bg, var(--card));
 }
 .tabla-px-listas-precios thead th.celda-px-listas-col-fija {
@@ -1445,6 +1450,9 @@
 }
 .tabla-px-listas-precios tbody td.celda-px-listas-col-fija {
   z-index: 11;
+}
+.tabla-px-listas-precios tbody td.celda-px-listas-col-fija-cat {
+  z-index: 12;
 }
 .tabla-px-listas-precios .celda-px-listas-col-fija-desc {
   left: 0;
@@ -1485,8 +1493,14 @@
 /*
  * Px Listas (precios multi-lista): filas 2rem + inputs directos en celda (patrón global .tabla-gestion-compacta).
  * Fondo transparente, borde #0072BB y texto negro vienen de la regla global tbody td input.
+ * El <tr> debe quedar `overflow: visible`: un overflow distinto anula sticky de DESCRIPCIÓN / CATEGORÍA M.C.
  */
-.tabla-px-listas-precios.tabla-gestion-compacta tbody tr:not(.tabla-fila-altura-auto),
+.tabla-px-listas-precios.tabla-gestion-compacta tbody tr:not(.tabla-fila-altura-auto) {
+  height: var(--tabla-body-row-min-height) !important;
+  min-height: var(--tabla-body-row-min-height) !important;
+  max-height: var(--tabla-body-row-min-height) !important;
+  overflow: visible;
+}
 .tabla-px-listas-precios.tabla-gestion-compacta tbody tr:not(.tabla-fila-altura-auto) td {
   height: var(--tabla-body-row-min-height) !important;
   min-height: var(--tabla-body-row-min-height) !important;
