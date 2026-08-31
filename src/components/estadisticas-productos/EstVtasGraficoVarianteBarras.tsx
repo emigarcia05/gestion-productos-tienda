@@ -59,8 +59,8 @@ const EST_VTAS_FILA_GRID_CLASS =
   "grid grid-cols-[minmax(0,15%)_minmax(0,1fr)] items-center gap-x-2";
 const EST_VTAS_VALORES_WRAP_CLASS =
   "flex shrink-0 items-center justify-end gap-1";
-const EST_VTAS_COL_UN_CLASS = "w-10 text-right leading-none tabular-nums";
-const EST_VTAS_COL_PCT_CLASS = "w-9 text-right leading-none tabular-nums";
+const EST_VTAS_COL_UN_CLASS = "w-10 text-center leading-none tabular-nums";
+const EST_VTAS_COL_PCT_CLASS = "w-9 text-center leading-none tabular-nums";
 
 /** Encabezados Un. / % alineados a las columnas de valor (sticky sobre el scroll). */
 function renderEncabezadosUnPct() {
