@@ -67,3 +67,23 @@ export function fmtPctDeTotal(numerador: number, denominador: number): string {
   const p = (numerador / denominador) * 100;
   return `${p.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
 }
+
+/**
+ * Participación de un ítem sobre un total filtrado (es-AR, compacto).
+ * 1 decimal si hace falta (`15%`, `15,4%`). Denominador ≤ 0 → "".
+ */
+export function fmtPctParticipacion(numerador: number, denominador: number): string {
+  if (
+    denominador <= 0 ||
+    !Number.isFinite(numerador) ||
+    !Number.isFinite(denominador)
+  ) {
+    return "";
+  }
+  const rounded = Math.round((numerador / denominador) * 1000) / 10;
+  const entero = Number.isInteger(rounded);
+  return `${rounded.toLocaleString("es-AR", {
+    minimumFractionDigits: entero ? 0 : 1,
+    maximumFractionDigits: 1,
+  })}%`;
+}

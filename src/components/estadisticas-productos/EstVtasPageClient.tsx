@@ -470,7 +470,7 @@ export default function EstVtasPageClient({
     dimension1,
   ]);
 
-  const barrasTopProductos = useMemo(() => {
+  const topProductos = useMemo(() => {
     return agregarTopProductos({
       productosFiltrados: filasFiltradas,
       ventas,
@@ -493,7 +493,7 @@ export default function EstVtasPageClient({
 
   const seleccionProductoTopValida =
     seleccionProductoTop &&
-    barrasTopProductos.some((b) => b.codTienda === seleccionProductoTop)
+    topProductos.filas.some((b) => b.codTienda === seleccionProductoTop)
       ? seleccionProductoTop
       : null;
 
@@ -1040,7 +1040,8 @@ export default function EstVtasPageClient({
           className="h-full max-h-full w-[35%] min-w-0 shrink-0 self-start"
         />
         <EstVtasGraficoTopProductos
-          filas={barrasTopProductos}
+          filas={topProductos.filas}
+          totalFiltrado={topProductos.totalUnidades}
           seleccionadoCod={seleccionProductoTopValida}
           onSeleccionar={setSeleccionProductoTop}
           sinVentasCargadas={ventas.length === 0}

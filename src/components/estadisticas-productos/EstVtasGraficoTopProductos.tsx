@@ -10,9 +10,12 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { EstVtasBarraProducto } from "@/lib/estVtasTypes";
+import { fmtPctParticipacion } from "@/lib/format";
 
 interface Props {
   filas: EstVtasBarraProducto[];
+  /** Un. totales del recorte (todos los productos filtrados, no solo el top 10). */
+  totalFiltrado: number;
   /** `codTienda` del producto seleccionado. */
   seleccionadoCod?: string | null;
   onSeleccionar?: (codTienda: string | null) => void;
@@ -29,11 +32,13 @@ function fmtUnidades(n: number): string {
 }
 
 /**
- * Top 10 productos en tabla: DESCRIPCION · TO. (total con filtros) · PM. (total / periodos).
- * Periodos = años seleccionados × meses seleccionados. Columnas 70 % / 15 % / 15 %.
+ * Top 10 productos en tabla: DESCRIPCION · TO. (total con filtros) · PM. · %.
+ * Periodos = años seleccionados × meses seleccionados.
+ * % = TO. / Un. total del recorte filtrado (no del top 10). Columnas 61 % / 13 % / 13 % / 13 %.
  */
 export default function EstVtasGraficoTopProductos({
   filas,
+  totalFiltrado,
   seleccionadoCod = null,
   onSeleccionar,
   vacioPorDependencia = null,
@@ -75,9 +80,10 @@ export default function EstVtasGraficoTopProductos({
           <div className="min-h-0 flex-1 overflow-auto border border-border">
             <Table className="tabla-gestion-compacta w-full table-fixed">
               <colgroup>
-                <col className="w-[70%]" />
-                <col className="w-[15%]" />
-                <col className="w-[15%]" />
+                <col className="w-[61%]" />
+                <col className="w-[13%]" />
+                <col className="w-[13%]" />
+                <col className="w-[13%]" />
               </colgroup>
               <TableHeader>
                 <TableRow>
@@ -90,6 +96,12 @@ export default function EstVtasGraficoTopProductos({
                     title="Promedio = Total / (años × meses filtrados)"
                   >
                     PM.
+                  </TableHead>
+                  <TableHead
+                    className="text-center"
+                    title="Participación = TO. / Un. total de los filtros"
+                  >
+                    %
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -136,6 +148,9 @@ export default function EstVtasGraficoTopProductos({
                       </TableCell>
                       <TableCell className="celda-datos text-center text-[11px] tabular-nums !py-1">
                         {fmtUnidades(f.promedioMensual)}
+                      </TableCell>
+                      <TableCell className="celda-datos text-center text-[11px] tabular-nums text-muted-foreground !py-1">
+                        {fmtPctParticipacion(f.totalPeriodo, totalFiltrado)}
                       </TableCell>
                     </TableRow>
                   );

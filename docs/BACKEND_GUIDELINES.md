@@ -320,7 +320,7 @@ Lectura: `PERMISOS.finanzas.acceso`. Mutaciones de catálogo/tesorería/IVA: + `
 
 - Hechos `est_por_prod`: unique sucursal+mes+anio+cod_tienda. Sucursales `genera_est`. **Import/verificar/borrar periodo = API** (`guardEstPorProdImportarEsEditor`), no Actions. Grilla desde `EST_POR_PROD_CARGA_DESDE` (Mayo 2026).
 - Catálogos (Actions): colores, unidades, presentaciones, terminaciones. Match sobre `descripcion_tienda`.
-- Categorización / Estadísticas Vtas: servicios `estCategorizacion` / `estVtas`; agregaciones de gráficos en cliente.
+- Categorización / Estadísticas Vtas: servicios `estCategorizacion` / `estVtas`; agregaciones de gráficos en cliente. Gráfico 1 y Top 10: % participación = Un. ítem / Un. total filtrado (`totalUnidadesGraficoEstVtas` / `agregarTopProductos.totalUnidades`).
 
 ### 3.10 Marketing
 

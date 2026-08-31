@@ -435,10 +435,17 @@ export function cantidadPeriodosFiltro(periodo: EstVtasFiltroPeriodo): number {
   return nAnios * nMeses;
 }
 
+export type EstVtasTopProductosAgregado = {
+  filas: EstVtasBarraProducto[];
+  /** Suma de Un. de todos los productos del recorte (no solo el top N). */
+  totalUnidades: number;
+};
+
 /**
  * Top N productos (gráfico 2 · tabla):
  * - TO. = suma de unidades (o suma) con filtros activos
  * - PM. = TO. / (años seleccionados × meses seleccionados)
+ * - % = TO. / `totalUnidades` (mismo recorte; incluye productos fuera del top N)
  */
 export function agregarTopProductos(params: {
   productosFiltrados: EstVtasProductoItem[];
@@ -451,9 +458,9 @@ export function agregarTopProductos(params: {
   fechaClave?: string;
   filtros?: EstVtasFiltroDimension[] | null;
   topN?: number;
-}): EstVtasBarraProducto[] {
+}): EstVtasTopProductosAgregado {
   const periodo = resolverPeriodo(params);
-  if (!periodo) return [];
+  if (!periodo) return { filas: [], totalUnidades: 0 };
 
   const topN = params.topN ?? 10;
   const nPeriodos = cantidadPeriodosFiltro(periodo);
@@ -462,7 +469,7 @@ export function agregarTopProductos(params: {
     params.filtros
   );
   const porCod = new Map(productos.map((p) => [p.codTienda, p] as const));
-  if (porCod.size === 0) return [];
+  if (porCod.size === 0) return { filas: [], totalUnidades: 0 };
 
   const totalPeriodo = new Map<string, number>();
 
@@ -484,7 +491,7 @@ export function agregarTopProductos(params: {
     );
   }
 
-  return [...totalPeriodo.entries()]
+  const todas = [...totalPeriodo.entries()]
     .map(([codTienda, total]) => {
       const prod = porCod.get(codTienda);
       const desc = prod?.descripcionTienda.trim() ?? "";
@@ -502,8 +509,10 @@ export function agregarTopProductos(params: {
         b.totalPeriodo - a.totalPeriodo ||
         a.etiqueta.localeCompare(b.etiqueta, "es") ||
         a.codTienda.localeCompare(b.codTienda, "es")
-    )
-    .slice(0, topN);
+    );
+
+  const totalUnidades = todas.reduce((acc, r) => acc + r.totalPeriodo, 0);
+  return { filas: todas.slice(0, topN), totalUnidades };
 }
 
 /** @deprecated Usar `agregarUnidadesPorEjeY`. */
@@ -517,6 +526,21 @@ export function agregarUnidadesPorVariante(params: {
   fechaClave?: string;
 }): EstVtasBarraDimension[] {
   return agregarUnidadesPorEjeY({ ...params, ejeY: "variante" });
+}
+
+/**
+ * Total de Un. del gráfico 1 (mismo recorte que las barras visibles).
+ * Plano: suma de `barras`. Desglose: suma de todos los hijos (no el máximo de una barra).
+ */
+export function totalUnidadesGraficoEstVtas(params: {
+  barras: readonly EstVtasBarraDimension[];
+  grupos?: readonly EstVtasGrupoDimension[] | null;
+}): number {
+  const grupos = params.grupos;
+  if (grupos && grupos.length > 0) {
+    return grupos.reduce((acc, g) => acc + g.unidades, 0);
+  }
+  return params.barras.reduce((acc, b) => acc + b.unidades, 0);
 }
 
 /** Helper: arma filtros de producto desde una dimensión de gráfico (ignora sucursal). */

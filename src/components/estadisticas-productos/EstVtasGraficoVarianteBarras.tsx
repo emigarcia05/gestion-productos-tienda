@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { totalUnidadesGraficoEstVtas } from "@/lib/estVtasAgregar";
 import {
   etiquetaEstVtasDimension,
   opcionesDesgloseEstVtas,
@@ -19,6 +20,7 @@ import {
   type EstVtasGrupoDimension,
   type EstVtasSeleccionDesglose,
 } from "@/lib/estVtasTypes";
+import { fmtPctParticipacion } from "@/lib/format";
 import { Trash2 } from "lucide-react";
 
 interface Props {
@@ -57,6 +59,43 @@ function fmtUnidades(n: number): string {
     maximumFractionDigits: 2,
     minimumFractionDigits: 0,
   });
+}
+
+/** Un. + % sobre el total filtrado (no sobre el máximo de las barras). */
+function renderValorConPct(unidades: number, totalFiltrado: number) {
+  const pct = fmtPctParticipacion(unidades, totalFiltrado);
+  return (
+    <span className="flex shrink-0 items-baseline justify-end gap-1">
+      <span className="w-10 text-right text-[11px] tabular-nums text-foreground">
+        {fmtUnidades(unidades)}
+      </span>
+      {pct ? (
+        <span className="min-w-[2.35rem] text-right text-[11px] tabular-nums text-muted-foreground">
+          {pct}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function ariaUnidadesConPct(
+  unidades: number,
+  totalFiltrado: number,
+  prefijo: string
+): string {
+  const pct = fmtPctParticipacion(unidades, totalFiltrado);
+  const base = `${prefijo}: ${fmtUnidades(unidades)} unidades vendidas`;
+  return pct ? `${base} (${pct})` : base;
+}
+
+function titleUnidadesConPct(
+  etiqueta: string,
+  unidades: number,
+  totalFiltrado: number
+): string {
+  const pct = fmtPctParticipacion(unidades, totalFiltrado);
+  const base = `${etiqueta}: ${fmtUnidades(unidades)}`;
+  return pct ? `${base} (${pct})` : base;
 }
 
 /** Filas visibles en el viewport del eje Y; el resto scrollea. */
@@ -133,6 +172,10 @@ export default function EstVtasGraficoVarianteBarras({
         0
       )
     : filasPlanas.reduce((m, b) => Math.max(m, b.unidades), 0);
+  const totalFiltrado = totalUnidadesGraficoEstVtas({
+    barras: filasPlanas,
+    grupos: modoGrupos ? grupos : null,
+  });
   const vacio = modoGrupos
     ? !grupos || grupos.length === 0
     : filasPlanas.length === 0;
@@ -354,8 +397,16 @@ export default function EstVtasGraficoVarianteBarras({
                             <button
                               type="button"
                               aria-pressed={activa}
-                              aria-label={`${g.etiqueta}, ${h.etiqueta}: ${fmtUnidades(h.unidades)} unidades vendidas`}
-                              title={`${h.etiqueta}: ${fmtUnidades(h.unidades)}`}
+                              aria-label={ariaUnidadesConPct(
+                                h.unidades,
+                                totalFiltrado,
+                                `${g.etiqueta}, ${h.etiqueta}`
+                              )}
+                              title={titleUnidadesConPct(
+                                h.etiqueta,
+                                h.unidades,
+                                totalFiltrado
+                              )}
                               onClick={() =>
                                 handleBarraDesgloseClick({
                                   categoria: g.etiqueta,
@@ -377,16 +428,22 @@ export default function EstVtasGraficoVarianteBarras({
                             <div
                               className="flex min-w-0 flex-1 items-center"
                               role="img"
-                              aria-label={`${g.etiqueta}, ${h.etiqueta}: ${fmtUnidades(h.unidades)} unidades vendidas`}
-                              title={`${h.etiqueta}: ${fmtUnidades(h.unidades)}`}
+                              aria-label={ariaUnidadesConPct(
+                                h.unidades,
+                                totalFiltrado,
+                                `${g.etiqueta}, ${h.etiqueta}`
+                              )}
+                              title={titleUnidadesConPct(
+                                h.etiqueta,
+                                h.unidades,
+                                totalFiltrado
+                              )}
                             >
                               {pista}
                             </div>
                           )}
 
-                          <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-foreground">
-                            {fmtUnidades(h.unidades)}
-                          </span>
+                          {renderValorConPct(h.unidades, totalFiltrado)}
                         </div>
                       </div>
                     );
@@ -421,7 +478,11 @@ export default function EstVtasGraficoVarianteBarras({
                         <button
                           type="button"
                           aria-pressed={activa}
-                          aria-label={`${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
+                          aria-label={ariaUnidadesConPct(
+                            b.unidades,
+                            totalFiltrado,
+                            b.etiqueta
+                          )}
                           onClick={() => handleBarraPlanaClick(b.etiqueta)}
                           className={cn(
                             "est-vtas-barra-btn flex min-w-0 flex-1 items-center border-0 bg-transparent p-0",
@@ -436,15 +497,17 @@ export default function EstVtasGraficoVarianteBarras({
                         <div
                           className="flex min-w-0 flex-1 items-center"
                           role="img"
-                          aria-label={`${b.etiqueta}: ${fmtUnidades(b.unidades)} unidades vendidas`}
+                          aria-label={ariaUnidadesConPct(
+                            b.unidades,
+                            totalFiltrado,
+                            b.etiqueta
+                          )}
                         >
                           {pista}
                         </div>
                       )}
 
-                      <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-foreground">
-                        {fmtUnidades(b.unidades)}
-                      </span>
+                      {renderValorConPct(b.unidades, totalFiltrado)}
                     </div>
                   </div>
                 );
