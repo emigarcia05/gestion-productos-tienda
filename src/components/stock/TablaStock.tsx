@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useImperativeHandle, forwardRef, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Check } from "lucide-react";
 import {
@@ -97,6 +98,7 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
   },
   ref
 ) {
+  const router = useRouter();
   const [imprimiendo, setImprimiendo] = useState(false);
   const [ultimosControles, setUltimosControles] = useState<Record<string, Date>>(() => {
     const m: Record<string, Date> = {};
@@ -230,6 +232,10 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
         itemMetaRef.current
       ),
     triggerExport: () => {
+      if (!sucursalActual) {
+        toast.error("Elegí sucursal.");
+        return;
+      }
       const filasExport = filasConVariacionStockParaExportar(
         stocksEditadosRef.current,
         itemMetaRef.current
@@ -247,7 +253,14 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
         exportarStockExcel(filasExport);
       }
       const ahora = new Date();
-      registrarExportacionExcelStock(idsPersistir).then((res) => {
+      registrarExportacionExcelStock({
+        sucursal: sucursalActual,
+        idsControl: idsPersistir,
+        ajustes: filasExport.map((f) => ({
+          codTienda: f.id,
+          cantidad: f.cantidad,
+        })),
+      }).then((res) => {
         if (res.ok) {
           setUltimosControles((prev) => {
             const next = { ...prev };
@@ -259,9 +272,34 @@ const TablaStock = forwardRef<TablaStockHandle, Props>(function TablaStock(
             for (const id of idsPersistir) delete next[id];
             return next;
           });
+          for (const f of filasExport) {
+            const prev = itemMetaRef.current[f.id];
+            if (prev) {
+              itemMetaRef.current[f.id] = {
+                ...prev,
+                stock: Math.round(f.cantidad),
+              };
+            }
+          }
+          setStocksEditados((prev) => {
+            const next = { ...prev };
+            for (const f of filasExport) {
+              next[f.id] = formatStockInputValor(Math.round(f.cantidad));
+            }
+            return next;
+          });
           if (filasExport.length === 0) {
             toast.success("Control registrado (sin ajustes en Excel).");
+          } else {
+            const label =
+              SUCURSALES.find((s) => s.value === sucursalActual)?.label ??
+              sucursalActual;
+            const n = res.data.stockActualizados;
+            toast.success(
+              `Stock de ${label} actualizado (${n} ítem${n !== 1 ? "s" : ""}).`
+            );
           }
+          router.refresh();
         } else {
           toast.error(res.error ?? "Error al registrar control.");
         }

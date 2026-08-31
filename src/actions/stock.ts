@@ -13,8 +13,8 @@ import { PAGE_SIZE } from "@/lib/pagination";
 import {
   getControlStockParamsSchema,
   pruebaPutAjusteStockDuxSchema,
+  registrarControlStockExportacionSchema,
 } from "@/lib/validations/stock";
-import { listaPreciosCodTiendaSchema } from "@/lib/validations/common";
 import {
   conteosIndicadorSlidenavSchema,
   listarHistorialTransfDepositosProductoSchema,
@@ -544,32 +544,29 @@ export async function hayPendientesTransfOrigenAction(
   }
 }
 
-const codTiendasExcelSchema = z.array(listaPreciosCodTiendaSchema).optional().default([]);
-
 /**
- * Registra la última exportación Excel de stock para una lista de ítems (persistente).
- * Se usa para la columna "ÚLT. EXPORT. EXCEL" en Control Stock.
+ * Exportar Excel: ÚLT. CONTROL + stock local del depósito de la sucursal.
+ * No escribe DUX. Flujo vendedor (`stock.acceso`).
  */
-export async function registrarExportacionExcelStock(ids: string[]): Promise<ActionResult<void>> {
-  const rol = await getRol();
-  if (!puede(rol, PERMISOS.stock.acceso)) {
-    return { ok: false, error: "Sin acceso." };
-  }
-  const parsed = codTiendasExcelSchema.safeParse(ids ?? []);
+export async function registrarExportacionExcelStock(
+  raw: unknown
+): Promise<ActionResult<{ stockActualizados: number }>> {
+  const gate = await requireStockAcceso();
+  if (gate) return gate;
+  const parsed = registrarControlStockExportacionSchema.safeParse(raw);
   if (!parsed.success) {
-    return { ok: false, error: "IDs inválidos." };
+    return { ok: false, error: "Datos inválidos." };
   }
-  try {
-    const ahora = new Date();
-    await prisma.prodTienda.updateMany({
-      where: { codTienda: { in: parsed.data } },
-      data: { ultimaExportacionExcel: ahora },
-    });
-    return { ok: true, data: undefined };
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Error al registrar exportación.";
-    return { ok: false, error: message };
+  const { registrarControlStockExportacion } = await import(
+    "@/services/prodTiendaStock.service"
+  );
+  const result = await registrarControlStockExportacion(parsed.data);
+  if (!result.success) {
+    return { ok: false, error: result.error };
   }
+  revalidatePath(GP_ROUTES.ayudaVendedor.controlStock);
+  revalidatePath(GP_INTERNAL.ayudaVendedor.controlStock);
+  return { ok: true, data: result.data };
 }
 
 export type PruebaPutAjusteStockDuxResult = {

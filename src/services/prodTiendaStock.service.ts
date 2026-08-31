@@ -1,10 +1,11 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import {
   computeStockeableDesdeStocks,
   getIdDepositoGuaymallen,
   getIdDepositoMaipu,
 } from "@/lib/duxApi";
 import { prisma } from "@/lib/prisma";
+import type { ServiceResult } from "@/types";
 
 export {
   computeStockeableDesdeStocks,
@@ -139,4 +140,84 @@ export function getStockSucursalPrincipal(
   const m =
     sucursalCodigo.trim().toLowerCase() === "maipu" ? maps.maipu : maps.guaymallen;
   return m.get(codTienda.trim()) ?? 0;
+}
+
+export type RegistrarControlStockExportacionInput = {
+  sucursal: "guaymallen" | "maipu";
+  idsControl: string[];
+  ajustes: { codTienda: string; cantidad: number }[];
+};
+
+export type RegistrarControlStockExportacionResult = {
+  stockActualizados: number;
+};
+
+/**
+ * ÚLT. CONTROL (`prod_tienda.ultima_exportacion_excel`) + stock local del depósito
+ * de la sucursal (`prod_tienda_stock.stock_real` / `ctd_disponible`).
+ * No toca el depósito de la otra sucursal ni DUX.
+ */
+export async function registrarControlStockExportacion(
+  input: RegistrarControlStockExportacionInput
+): Promise<ServiceResult<RegistrarControlStockExportacionResult>> {
+  try {
+    const idDeposito =
+      (await obtenerIdDepositoPorCodigoSucursal(input.sucursal)) ??
+      getIdDepositoPorSucursalCodigo(input.sucursal);
+
+    const idsUnicos = [...new Set(input.idsControl.map((id) => id.trim()))];
+    const existentes = await prisma.prodTienda.findMany({
+      where: { codTienda: { in: idsUnicos } },
+      select: { codTienda: true },
+    });
+    if (existentes.length !== idsUnicos.length) {
+      return {
+        success: false,
+        error: "Hay códigos de tienda que no existen.",
+      };
+    }
+
+    const ahora = new Date();
+    const ajustesPorCod = new Map<string, number>();
+    for (const a of input.ajustes) {
+      ajustesPorCod.set(a.codTienda.trim(), a.cantidad);
+    }
+
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.prodTienda.updateMany({
+          where: { codTienda: { in: idsUnicos } },
+          data: { ultimaExportacionExcel: ahora },
+        });
+        for (const [codTienda, cantidad] of ajustesPorCod) {
+          const stockReal = Math.round(cantidad);
+          const ctdDisponible = new Prisma.Decimal(cantidad);
+          await tx.prodTiendaStock.upsert({
+            where: {
+              codTienda_idDeposito: { codTienda, idDeposito },
+            },
+            create: {
+              codTienda,
+              idDeposito,
+              stockReal,
+              ctdDisponible,
+            },
+            update: {
+              stockReal,
+              ctdDisponible,
+            },
+          });
+        }
+      },
+      { timeout: 60_000, maxWait: 10_000 }
+    );
+
+    return {
+      success: true,
+      data: { stockActualizados: ajustesPorCod.size },
+    };
+  } catch (e) {
+    console.error("[registrarControlStockExportacion]", e);
+    return { success: false, error: "Error al registrar el control de stock." };
+  }
 }
