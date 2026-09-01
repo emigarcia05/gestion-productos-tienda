@@ -16,6 +16,7 @@ import { registrarTransferenciasDepositosAction } from "@/actions/stock";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { avisarIndicadorSlidenav } from "@/lib/indicadorSlidenav";
 import { PAGE_SIZE } from "@/lib/pagination";
+import { enfocarDuxTransferenciaDepositosTab } from "@/lib/transfDepositosControl";
 import type { Sucursal, TransfDepositosData } from "@/actions/stock";
 
 interface Props {
@@ -35,7 +36,7 @@ interface Props {
  * grilla DESCRIPCIÓN / {origen} / → / {destino} / ACCIONES;
  * header **Generar Transf.** persiste cantidades de la grilla (si hay) y abre
  * el modal de pendientes origen→destino. El borrador de la grilla se conserva
- * en `localStorage` por par origen→destino hasta ese registro.
+ * en `localStorage` por par origen→destino hasta **Transferido**.
  */
 export default function TransfDepositosPageClient({
   data,
@@ -86,6 +87,9 @@ export default function TransfDepositosPageClient({
       toast.error("Elegí sucursal origen.");
       return;
     }
+    if (destino) {
+      enfocarDuxTransferenciaDepositosTab();
+    }
     const items = tablaRef.current?.getItemsConCantidad() ?? [];
     if (items.length === 0) {
       setModalOpen(true);
@@ -105,7 +109,6 @@ export default function TransfDepositosPageClient({
         toast.error(res.error);
         return;
       }
-      tablaRef.current?.clearCantidades();
       avisarIndicadorSlidenav();
       setModalOpen(true);
     });
@@ -155,7 +158,9 @@ export default function TransfDepositosPageClient({
         open={modalOpen}
         onOpenChange={setModalOpen}
         origenCodigo={origen}
+        destinoCodigo={destino}
         onTransferido={() => {
+          tablaRef.current?.clearCantidades();
           avisarIndicadorSlidenav();
           router.refresh();
         }}

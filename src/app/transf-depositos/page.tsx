@@ -62,6 +62,7 @@ export default async function TransfDepositosPage({ searchParams }: Props) {
         marcas: [],
         rubros: [],
         controlesRecientes: [],
+        pendientes: [],
       };
 
   return (

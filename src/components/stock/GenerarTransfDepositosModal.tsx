@@ -48,6 +48,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   /** Código de sucursal del usuario (origen de las filas). */
   origenCodigo: Sucursal | null;
+  /** Destino de la página (si hay): precarga el lote pendiente en la tabla. */
+  destinoCodigo: Sucursal | null;
   onTransferido?: () => void;
 }
 
@@ -71,6 +73,8 @@ async function copiarDatoTransf(texto: string, toastTitle: string): Promise<void
 /**
  * Modal **Generar Transf.**: dos selectores **SUC. ORIGEN** (sucursal del usuario)
  * y **SUC. DESTINO** (`global_sucursales` distintas, con `deposito` no vacío);
+ * al abrir, si la página ya tiene destino, precarga el lote pendiente en la tabla
+ * (reabrir el modal sin haber pulsado Transferido muestra los mismos ítems);
  * al elegir destino abre (o enfoca) transferencia de depósitos en DUX;
  * tabla Control de ítem / COD. TIENDA (**OK** a la izquierda del código) / DESCRIPCIÓN / CANTIDAD (copiar a la derecha);
  * cada copiar (y OK) enfoca la pestaña DUX ya abierta sin recargar;
@@ -81,6 +85,7 @@ export default function GenerarTransfDepositosModal({
   open,
   onOpenChange,
   origenCodigo,
+  destinoCodigo,
   onTransferido,
 }: Props) {
   const [sucursales, setSucursales] = useState<SucursalTransfDepositoOptionDto[]>(
@@ -158,13 +163,27 @@ export default function GenerarTransfDepositosModal({
         return;
       }
       setSucOrigenId(origen.id);
+
+      const destino =
+        destinoCodigo && destinoCodigo !== origenCodigo
+          ? res.data.find(
+              (s) =>
+                s.codigo === destinoCodigo &&
+                s.tieneDeposito &&
+                s.id !== origen.id
+            )
+          : undefined;
+      if (destino) {
+        setSucDestinoId(destino.id);
+        await cargarItems(origen.id, destino.id);
+      }
       if (!cancelled) setLoading(false);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [open, origenCodigo, cargarItems]);
+  }, [open, origenCodigo, destinoCodigo, cargarItems]);
 
   function handleOrigenChange(value: string) {
     const next = value === "none" ? null : value;
