@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
-import TablaControlComprobantes from "@/components/finanzas/TablaControlComprobantes";
-import ClassicFilteredTableLayout from "@/components/shared/ClassicFilteredTableLayout";
+import ControlComprobantesPageClient from "@/components/finanzas/ControlComprobantesPageClient";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
 import { listarControlComprobantes } from "@/services/controlComprobantes.service";
+import { listarProveedoresMercaderiaPlazosPagos } from "@/services/proveedor.service";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,10 @@ export default async function ControlComprobantesPage() {
     redirect(GP_ROUTES.ayudaVendedor.pxVenta.pxVtaSugerido);
   }
   const esEditor = rol === "editor";
-  const raw = await listarControlComprobantes();
+  const [raw, proveedoresMercaderia] = await Promise.all([
+    listarControlComprobantes(),
+    listarProveedoresMercaderiaPlazosPagos(),
+  ]);
   const filas = raw.map((fila) => ({
     id: fila.id,
     fechaComp: fila.fechaComp,
@@ -32,13 +35,10 @@ export default async function ControlComprobantesPage() {
   }));
 
   return (
-    <div className="area-page-shell">
-      <ClassicFilteredTableLayout
-        title="Finanzas"
-        subtitle="Comprobantes"
-      >
-        <TablaControlComprobantes filas={filas} esEditor={esEditor} />
-      </ClassicFilteredTableLayout>
-    </div>
+    <ControlComprobantesPageClient
+      filas={filas}
+      proveedoresMercaderia={proveedoresMercaderia}
+      esEditor={esEditor}
+    />
   );
 }

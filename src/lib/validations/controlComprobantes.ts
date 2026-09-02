@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { prismaCuidSchema } from "@/lib/validations/common";
+import { plazosPagosSchema } from "@/lib/validations/proveedor";
 
 export const PLAZOS_PAGO_COMPROBANTE_PERMITIDOS = [30, 60, 90, 120, 150] as const;
 
@@ -24,4 +25,15 @@ export const actualizarPlazoPagoComprobanteSchema = z.object({
 export const toggleControladoSchema = z.object({
   id: prismaCuidSchema,
   controlado: z.boolean(),
+});
+
+export const actualizarPlazosPagosMercaderiaSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        id: prismaCuidSchema,
+        plazosPagos: plazosPagosSchema,
+      })
+    )
+    .min(1),
 });

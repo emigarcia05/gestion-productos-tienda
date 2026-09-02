@@ -104,6 +104,11 @@ function collectGroupScreens(group: AdmGroupDef): AdmScreenDef[] {
   return [...fromScreens, ...fromGroups];
 }
 
+function isGroupBranchOpen(openGroupId: string | null, groupKey: string): boolean {
+  if (openGroupId == null) return false;
+  return openGroupId === groupKey || openGroupId.startsWith(`${groupKey}:`);
+}
+
 function GroupAccordion({
   parentKey,
   group,
@@ -138,7 +143,7 @@ function GroupAccordion({
     );
   }
 
-  const isOpen = openGroupId === groupKey;
+  const isOpen = isGroupBranchOpen(openGroupId, groupKey);
   const groupActive = isAdmGroupActive(pathname, group);
   const nestedGroups = group.groups ?? [];
   const directScreens = group.screens ?? [];
@@ -146,7 +151,19 @@ function GroupAccordion({
   return (
     <Collapsible
       open={isOpen}
-      onOpenChange={(open) => onOpenChange(open ? groupKey : null)}
+      onOpenChange={(open) => {
+        if (open) {
+          onOpenChange(groupKey);
+          return;
+        }
+        if (openGroupId === groupKey) {
+          onOpenChange(parentKey.includes(":") ? parentKey : null);
+          return;
+        }
+        if (openGroupId?.startsWith(`${groupKey}:`)) {
+          onOpenChange(null);
+        }
+      }}
       className="group/adm-group"
     >
       <CollapsibleTrigger

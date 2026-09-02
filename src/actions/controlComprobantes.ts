@@ -6,12 +6,14 @@ import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
   actualizarPlazoPagoComprobanteSchema,
+  actualizarPlazosPagosMercaderiaSchema,
   toggleControladoSchema,
 } from "@/lib/validations/controlComprobantes";
 import {
   actualizarControladoComprobante,
   actualizarPlazoPagoComprobante,
 } from "@/services/controlComprobantes.service";
+import { actualizarPlazosPagosProveedoresMercaderia } from "@/services/proveedor.service";
 
 function revalidateComprobantesFinanzas() {
   revalidatePath("/finanzas");
@@ -68,6 +70,31 @@ export async function actualizarPlazoPagoComprobanteAction(
     parsed.data.id,
     parsed.data.plazoPagoDias
   );
+  if (!result.success) return { ok: false, error: result.error };
+
+  revalidateComprobantesFinanzas();
+
+  return { ok: true, data: undefined };
+}
+
+export async function actualizarPlazosPagosMercaderiaAction(
+  raw: unknown
+): Promise<ActionResult<void>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para acceder a finanzas." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Sin permisos de editor." };
+  }
+
+  const parsed = actualizarPlazosPagosMercaderiaSchema.safeParse(raw);
+  if (!parsed.success) {
+    const msg = parsed.error.issues[0]?.message ?? "Plazos de pago inválidos.";
+    return { ok: false, error: msg };
+  }
+
+  const result = await actualizarPlazosPagosProveedoresMercaderia(parsed.data.items);
   if (!result.success) return { ok: false, error: result.error };
 
   revalidateComprobantesFinanzas();

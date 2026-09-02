@@ -121,6 +121,48 @@ export async function getProveedoresMercaderia(): Promise<ProveedorListItem[]> {
   return listarProveedoresInterno({ proveedorMercaderia: true });
 }
 
+export interface ProveedorMercaderiaPlazosFila {
+  id: string;
+  nombre: string;
+  plazosPagos: string | null;
+}
+
+/** Proveedores de mercadería con plazos de pago (Comprobantes · Gestionar Venc.). */
+export async function listarProveedoresMercaderiaPlazosPagos(): Promise<
+  ProveedorMercaderiaPlazosFila[]
+> {
+  const rows = await prisma.proveedor.findMany({
+    where: { proveedorMercaderia: true },
+    select: { id: true, nombre: true, plazosPagos: true },
+    orderBy: { nombre: "asc" },
+  });
+  return rows.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    plazosPagos: p.plazosPagos ?? null,
+  }));
+}
+
+export async function actualizarPlazosPagosProveedoresMercaderia(
+  items: { id: string; plazosPagos: string | null }[]
+): Promise<ServiceResult<void>> {
+  try {
+    await prisma.$transaction(
+      items.map((item) =>
+        prisma.proveedor.updateMany({
+          where: { id: item.id, proveedorMercaderia: true },
+          data: { plazosPagos: item.plazosPagos },
+        })
+      )
+    );
+    return { success: true, data: undefined };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "No se pudieron guardar los plazos de pago.";
+    return { success: false, error: message };
+  }
+}
+
 /**
  * Lista únicamente los proveedores con `proveedor_mercaderia = false`
  * (contraparte de `getProveedoresMercaderia`). Alimenta la columna
