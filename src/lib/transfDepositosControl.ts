@@ -1,7 +1,8 @@
 /**
  * Ventana (días) compartida: historial del modal y aviso de transferencia duplicada.
  * Mismo `cod_tienda` + origen + destino + cantidad dentro de esta ventana → advertencia.
- * Borrador de grilla (antes de Generar Transf.): `localStorage` por par origen→destino.
+ * Borrador de grilla: `localStorage` por par origen→destino hasta **Transferido**.
+ * Si el local está vacío, la grilla se hidrata desde pendientes de `stock_trasn_depositos`.
  */
 
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
@@ -16,6 +17,29 @@ export type ItemBorradorTransfDepositos = {
 };
 
 export type BorradorTransfDepositos = Record<string, ItemBorradorTransfDepositos>;
+
+export type PendienteParaBorradorTransf = {
+  codTienda: string;
+  cantidad: number;
+  descripcion: string;
+};
+
+/** Convierte pendientes de `stock_trasn_depositos` al shape del borrador de grilla. */
+export function borradorDesdePendientesTransfDepositos(
+  pendientes: PendienteParaBorradorTransf[]
+): BorradorTransfDepositos {
+  const out: BorradorTransfDepositos = {};
+  for (const p of pendientes) {
+    if (!Number.isInteger(p.cantidad) || p.cantidad <= 0) continue;
+    const parsed = parseEntradaBorrador(p.codTienda, {
+      cantidad: p.cantidad,
+      descripcion: p.descripcion,
+    });
+    if (!parsed) continue;
+    out[p.codTienda] = parsed;
+  }
+  return out;
+}
 
 export const STORAGE_BORRADOR_TRANSF_DEPOSITOS_PREFIX =
   "transf-depositos-borrador-v1";
@@ -170,7 +194,7 @@ function normalizarBorradorParaGuardar(
 
 /**
  * Borrador de Cód. / Cant. de la grilla para un par origen→destino.
- * Vive hasta **Generar Transf.** (entonces se borra). No es el ledger.
+ * Vive hasta **Transferido**. No es el ledger (`stock_trasn_depositos`).
  */
 export function leerBorradorTransfDepositos(
   origen: SucursalTransfDepositos | null,

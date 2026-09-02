@@ -211,6 +211,12 @@ export type ControlTransfDepositosRecienteDto = {
   createdAtIso: string;
 };
 
+export type PendienteTransfDepositoItemDto = {
+  codTienda: string;
+  descripcionTienda: string;
+  cantidad: number;
+};
+
 export type HistorialTransfDepositosItemDto = {
   createdAtIso: string;
   cantidad: number;
@@ -231,6 +237,8 @@ export interface TransfDepositosData {
   rubros: string[];
   /** Controles del par origen→destino en la ventana anti-duplicado. */
   controlesRecientes: ControlTransfDepositosRecienteDto[];
+  /** Lote pendiente (antes de Transferido) para hidratar la grilla. */
+  pendientes: PendienteTransfDepositoItemDto[];
 }
 
 export interface GetTransfDepositosParams {
@@ -247,6 +255,7 @@ const emptyTransfDepositos: TransfDepositosData = {
   marcas: [],
   rubros: [],
   controlesRecientes: [],
+  pendientes: [],
 };
 
 /**
@@ -350,15 +359,23 @@ export async function getTransfDepositos(
     const totalPaginas = total <= 0 ? 1 : Math.ceil(total / PAGE_SIZE);
 
     let controlesRecientes: ControlTransfDepositosRecienteDto[] = [];
-    if (destinoOk && items.length > 0) {
-      const { listarControlesRecientesTransfDepositos } = await import(
-        "@/services/transfDepositos.service"
-      );
-      controlesRecientes = await listarControlesRecientesTransfDepositos(
+    let pendientes: PendienteTransfDepositoItemDto[] = [];
+    if (destinoOk) {
+      const {
+        listarControlesRecientesTransfDepositos,
+        listarPendientesTransfDepositosPorCodigos,
+      } = await import("@/services/transfDepositos.service");
+      pendientes = await listarPendientesTransfDepositosPorCodigos(
         origen,
-        destinoOk,
-        items.map((i) => i.id)
+        destinoOk
       );
+      if (items.length > 0) {
+        controlesRecientes = await listarControlesRecientesTransfDepositos(
+          origen,
+          destinoOk,
+          items.map((i) => i.id)
+        );
+      }
     }
 
     return {
@@ -368,6 +385,7 @@ export async function getTransfDepositos(
       marcas: marcasDistinct.filter((m) => m.marca != null).map((m) => m.marca!),
       rubros: rubrosDistinct.filter((r) => r.rubro != null).map((r) => r.rubro!),
       controlesRecientes,
+      pendientes,
     };
   } catch (e) {
     console.error("[getTransfDepositos]", e);
@@ -405,7 +423,7 @@ export async function listarHistorialTransfDepositosProductoAction(
 }
 
 /**
- * Persiste cantidades de la grilla en `stock_trasn_depositos`.
+ * Persiste cantidades de la grilla en `stock_trasn_depositos` (reemplaza el lote del par).
  */
 export async function registrarTransferenciasDepositosAction(
   raw: unknown
@@ -435,12 +453,6 @@ export type SucursalTransfDepositoOptionDto = {
   codigo: string;
   nombre: string;
   tieneDeposito: boolean;
-};
-
-export type PendienteTransfDepositoItemDto = {
-  codTienda: string;
-  descripcionTienda: string;
-  cantidad: number;
 };
 
 export async function listarSucursalesTransfDepositosAction(): Promise<

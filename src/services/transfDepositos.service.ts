@@ -163,8 +163,8 @@ export async function listarHistorialTransfDepositosPorProducto(
 }
 
 /**
- * Persiste ítems de la grilla en `stock_trasn_depositos`.
- * Omite check de duplicado (forzar).
+ * Reemplaza el lote pendiente del par origen→destino en `stock_trasn_depositos`
+ * (delete + create). Re-Generar Transf. no duplica filas.
  */
 export async function registrarTransferenciasDepositos(input: {
   origen: SucursalCodigoTransf;
@@ -184,13 +184,21 @@ export async function registrarTransferenciasDepositos(input: {
       return sucursales;
     }
 
-    await prisma.stockTrasnDeposito.createMany({
-      data: input.items.map((it) => ({
-        codTienda: it.codTienda,
-        cant: it.cantidad,
-        sucOrigen: sucursales.data.sucOrigen,
-        sucDestino: sucursales.data.sucDestino,
-      })),
+    await prisma.$transaction(async (tx) => {
+      await tx.stockTrasnDeposito.deleteMany({
+        where: {
+          sucOrigen: sucursales.data.sucOrigen,
+          sucDestino: sucursales.data.sucDestino,
+        },
+      });
+      await tx.stockTrasnDeposito.createMany({
+        data: input.items.map((it) => ({
+          codTienda: it.codTienda,
+          cant: it.cantidad,
+          sucOrigen: sucursales.data.sucOrigen,
+          sucDestino: sucursales.data.sucDestino,
+        })),
+      });
     });
 
     return { success: true, data: { creados: input.items.length } };
@@ -259,6 +267,22 @@ async function validarParSucursales(
     };
   }
   return { success: true, data: undefined };
+}
+
+/**
+ * Pendientes del par origen→destino por código de sucursal (grilla / hidratar borrador).
+ */
+export async function listarPendientesTransfDepositosPorCodigos(
+  origen: SucursalCodigoTransf,
+  destino: SucursalCodigoTransf
+): Promise<PendienteTransfDepositoItem[]> {
+  if (origen === destino) return [];
+  const sucursales = await idsSucursalesPorCodigo(origen, destino);
+  if (!sucursales.success) return [];
+  return listarPendientesTransfDepositos({
+    sucOrigenId: sucursales.data.sucOrigen,
+    sucDestinoId: sucursales.data.sucDestino,
+  });
 }
 
 /**
