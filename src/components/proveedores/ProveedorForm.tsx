@@ -25,7 +25,10 @@ interface Props {
     idProveedorDux?: string;
     whatsapp?: string | null;
     coeficienteTintometrico?: number;
-    plazosPagos?: string | null;
+    plazoPago1Dias?: number | null;
+    plazoPago2Dias?: number | null;
+    plazoPago3Dias?: number | null;
+    plazoPago4Dias?: number | null;
     /** Tiempo de entrega en días; null = no configurado. */
     tiempoEntregaEnDias?: number | null;
     /** Flag "Proveedor Mercadería" (solo edición: precarga SI/NO). */
@@ -100,6 +103,20 @@ export default function ProveedorForm({
     () => proveedor?.iva ?? "PREGUNTA",
   );
 
+  const PLAZO_OPTS = ["30", "60", "90", "120", "150"] as const;
+  const [plazo1, setPlazo1] = useState(() =>
+    proveedor?.plazoPago1Dias != null ? String(proveedor.plazoPago1Dias) : "30"
+  );
+  const [plazo2, setPlazo2] = useState(() =>
+    proveedor?.plazoPago2Dias != null ? String(proveedor.plazoPago2Dias) : ""
+  );
+  const [plazo3, setPlazo3] = useState(() =>
+    proveedor?.plazoPago3Dias != null ? String(proveedor.plazoPago3Dias) : ""
+  );
+  const [plazo4, setPlazo4] = useState(() =>
+    proveedor?.plazoPago4Dias != null ? String(proveedor.plazoPago4Dias) : ""
+  );
+
   useEffect(() => {
     if (!modalOpen) return;
     if (!proveedor) {
@@ -114,6 +131,10 @@ export default function ProveedorForm({
   useEffect(() => {
     if (!modalOpen) return;
     setIva(proveedor?.iva ?? "PREGUNTA");
+    setPlazo1(proveedor?.plazoPago1Dias != null ? String(proveedor.plazoPago1Dias) : "30");
+    setPlazo2(proveedor?.plazoPago2Dias != null ? String(proveedor.plazoPago2Dias) : "");
+    setPlazo3(proveedor?.plazoPago3Dias != null ? String(proveedor.plazoPago3Dias) : "");
+    setPlazo4(proveedor?.plazoPago4Dias != null ? String(proveedor.plazoPago4Dias) : "");
   }, [modalOpen, proveedor]);
 
   useEffect(() => {
@@ -265,14 +286,42 @@ export default function ProveedorForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="plazosPagos">PLAZOS PAGO (DÍAS)</Label>
-        <Input
-          id="plazosPagos"
-          name="plazosPagos"
-          placeholder="EJ: 30, 60 O 90, 120, 150"
-          defaultValue={proveedor?.plazosPagos ?? ""}
-          disabled={pending}
-        />
+        <Label>PLAZOS PAGO (DÍAS)</Label>
+        <input type="hidden" name="plazoPago1Dias" value={plazo1} />
+        <input type="hidden" name="plazoPago2Dias" value={plazo2} />
+        <input type="hidden" name="plazoPago3Dias" value={plazo3} />
+        <input type="hidden" name="plazoPago4Dias" value={plazo4} />
+        <div className="grid grid-cols-4 gap-2">
+          {(
+            [
+              { label: "1.º", value: plazo1, set: setPlazo1, required: true },
+              { label: "2.º", value: plazo2, set: setPlazo2, required: false },
+              { label: "3.º", value: plazo3, set: setPlazo3, required: false },
+              { label: "4.º", value: plazo4, set: setPlazo4, required: false },
+            ] as const
+          ).map((slot) => (
+            <div key={slot.label} className="space-y-1">
+              <span className="text-xs text-muted-foreground">{slot.label}</span>
+              <Select
+                value={slot.value || "none"}
+                onValueChange={(v) => slot.set(v === "none" ? "" : v)}
+                disabled={pending}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={slot.required ? "Oblig." : "—"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {!slot.required ? <SelectItem value="none">—</SelectItem> : null}
+                  {PLAZO_OPTS.map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-1.5">

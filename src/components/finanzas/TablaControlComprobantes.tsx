@@ -39,9 +39,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { PLAZOS_PAGO_DIAS_PERMITIDOS } from "@/lib/comprobanteCuotasPlazoPago";
 import {
-  PLAZOS_PAGO_COMPROBANTE_PERMITIDOS,
-} from "@/lib/validations/controlComprobantes";
+  formatPlanPlazosLabel,
+  resolverPlazosEfectivos,
+} from "@/lib/comprobanteCuotasPlazoPago";
 import {
   TABLE_ROW_ACTION_ICON_CLASS,
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
@@ -53,17 +55,32 @@ interface ControlComprobanteRow {
   id: string;
   fechaComp: string;
   proveedorNombre: string;
+  proveedorPrefijo: string;
   sucursalNombre: string;
   comprobante: string;
   total: string;
   montoAplicado: string;
   vencimientoSaldo: string;
   controlado: boolean;
-  plazoPagoDias: number | null;
-  plazoEfectivoDias: number;
-  plazoProveedorDefault: number;
+  plazoPago1Dias: number | null;
+  plazoPago2Dias: number | null;
+  plazoPago3Dias: number | null;
+  plazoPago4Dias: number | null;
+  proveedorPlazo1Dias: number | null;
+  proveedorPlazo2Dias: number | null;
+  proveedorPlazo3Dias: number | null;
+  proveedorPlazo4Dias: number | null;
+  planPlazosLabel: string;
   fechaVenc: string;
 }
+
+type PlanEditState = {
+  modo: "default" | "custom";
+  plazo1: string;
+  plazo2: string;
+  plazo3: string;
+  plazo4: string;
+};
 
 function fmtFechaComp(isoDate: string): string {
   if (!isoDate) return "";
@@ -81,8 +98,15 @@ function fmtMonto(s: string): string {
   })}`;
 }
 
-function plazoSelectValue(plazoPagoDias: number | null): string {
-  return plazoPagoDias == null ? "default" : String(plazoPagoDias);
+function labelPlanProveedor(fila: ControlComprobanteRow): string {
+  return formatPlanPlazosLabel(
+    resolverPlazosEfectivos(null, {
+      plazo1: fila.proveedorPlazo1Dias,
+      plazo2: fila.proveedorPlazo2Dias,
+      plazo3: fila.proveedorPlazo3Dias,
+      plazo4: fila.proveedorPlazo4Dias,
+    })
+  );
 }
 
 export default function TablaControlComprobantes({
@@ -105,9 +129,15 @@ export default function TablaControlComprobantes({
   const [filaPendienteControlado, setFilaPendienteControlado] =
     useState<ControlComprobanteRow | null>(null);
   const [filaPlazoPago, setFilaPlazoPago] = useState<ControlComprobanteRow | null>(null);
-  const [plazoSeleccionado, setPlazoSeleccionado] = useState("default");
+  const [planEdit, setPlanEdit] = useState<PlanEditState>({
+    modo: "default",
+    plazo1: "30",
+    plazo2: "",
+    plazo3: "",
+    plazo4: "",
+  });
 
-  const proveedores = [...new Set(filas.map((f) => f.proveedorNombre))]
+  const proveedores = [...new Set(filas.map((f) => f.proveedorPrefijo))]
     .filter((v) => v.trim().length > 0)
     .sort((a, b) => a.localeCompare(b, "es"));
   const sucursales = [...new Set(filas.map((f) => f.sucursalNombre))]
@@ -115,7 +145,7 @@ export default function TablaControlComprobantes({
     .sort((a, b) => a.localeCompare(b, "es"));
 
   const filasFiltradas = filas.filter((fila) => {
-    if (filtroProveedor && fila.proveedorNombre !== filtroProveedor) return false;
+    if (filtroProveedor && fila.proveedorPrefijo !== filtroProveedor) return false;
     if (filtroSucursal && fila.sucursalNombre !== filtroSucursal) return false;
     if (filtroPagado === "pendiente" && !(Number(fila.total) > Number(fila.montoAplicado))) return false;
     if (filtroVencido === "vencido" && !(Number(fila.vencimientoSaldo) > 0)) return false;
@@ -134,30 +164,41 @@ export default function TablaControlComprobantes({
     return "RANGO DE FECHAS";
   })();
 
-  const plazoPreviewDias = useMemo(() => {
-    if (!filaPlazoPago) return null;
-    if (plazoSeleccionado === "default") return filaPlazoPago.plazoProveedorDefault;
-    const n = Number(plazoSeleccionado);
-    return Number.isFinite(n) ? n : filaPlazoPago.plazoEfectivoDias;
-  }, [filaPlazoPago, plazoSeleccionado]);
-
-  const fechaVencPreview = useMemo(() => {
-    if (!filaPlazoPago || plazoPreviewDias == null) return "";
-    const iso = filaPlazoPago.fechaComp.slice(0, 10);
-    const [ys, ms, ds] = iso.split("-");
-    const y = Number(ys);
-    const m = Number(ms);
-    const d = Number(ds);
-    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return "";
-    const t = new Date(Date.UTC(y, m - 1, d));
-    t.setUTCDate(t.getUTCDate() + Math.max(1, plazoPreviewDias));
-    return t.toISOString().slice(0, 10);
-  }, [filaPlazoPago, plazoPreviewDias]);
+  const planPreviewLabel = useMemo(() => {
+    if (!filaPlazoPago) return "";
+    if (planEdit.modo === "default") return labelPlanProveedor(filaPlazoPago);
+    const plazos = resolverPlazosEfectivos(
+      {
+        plazo1: Number(planEdit.plazo1),
+        plazo2: planEdit.plazo2 ? Number(planEdit.plazo2) : null,
+        plazo3: planEdit.plazo3 ? Number(planEdit.plazo3) : null,
+        plazo4: planEdit.plazo4 ? Number(planEdit.plazo4) : null,
+      },
+      null
+    );
+    return formatPlanPlazosLabel(plazos);
+  }, [filaPlazoPago, planEdit]);
 
   function abrirModalPlazo(fila: ControlComprobanteRow) {
     if (!esEditor) return;
     setFilaPlazoPago(fila);
-    setPlazoSeleccionado(plazoSelectValue(fila.plazoPagoDias));
+    const custom = fila.plazoPago1Dias != null;
+    setPlanEdit({
+      modo: custom ? "custom" : "default",
+      plazo1: String(fila.plazoPago1Dias ?? fila.proveedorPlazo1Dias ?? 30),
+      plazo2:
+        (custom ? fila.plazoPago2Dias : fila.proveedorPlazo2Dias) != null
+          ? String(custom ? fila.plazoPago2Dias : fila.proveedorPlazo2Dias)
+          : "",
+      plazo3:
+        (custom ? fila.plazoPago3Dias : fila.proveedorPlazo3Dias) != null
+          ? String(custom ? fila.plazoPago3Dias : fila.proveedorPlazo3Dias)
+          : "",
+      plazo4:
+        (custom ? fila.plazoPago4Dias : fila.proveedorPlazo4Dias) != null
+          ? String(custom ? fila.plazoPago4Dias : fila.proveedorPlazo4Dias)
+          : "",
+    });
   }
 
   function onConfirmarControlado(fila: ControlComprobanteRow) {
@@ -185,10 +226,20 @@ export default function TablaControlComprobantes({
   function onGuardarPlazoPago() {
     if (!filaPlazoPago || !esEditor) return;
     startTransition(async () => {
-      const res = await actualizarPlazoPagoComprobanteAction({
-        id: filaPlazoPago.id,
-        plazoPagoDias: plazoSeleccionado,
-      });
+      const res =
+        planEdit.modo === "default"
+          ? await actualizarPlazoPagoComprobanteAction({
+              id: filaPlazoPago.id,
+              modo: "default",
+            })
+          : await actualizarPlazoPagoComprobanteAction({
+              id: filaPlazoPago.id,
+              modo: "custom",
+              plazo1: Number(planEdit.plazo1),
+              plazo2: planEdit.plazo2 === "" ? null : Number(planEdit.plazo2),
+              plazo3: planEdit.plazo3 === "" ? null : Number(planEdit.plazo3),
+              plazo4: planEdit.plazo4 === "" ? null : Number(planEdit.plazo4),
+            });
       if (!res.ok) {
         toast.error(res.error);
         return;
@@ -345,11 +396,10 @@ export default function TablaControlComprobantes({
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[10%] min-w-[7rem]">FECHA COMP.</TableHead>
-                <TableHead className="w-[22%] min-w-[12rem]">PROVEEDOR</TableHead>
+                <TableHead className="w-[8%] min-w-[5rem]">PROVEEDOR</TableHead>
                 <TableHead className="w-[10%] min-w-[8rem]">SUCURSAL</TableHead>
                 <TableHead className="w-[12%] min-w-[8rem]">COMPROBANTE</TableHead>
-                <TableHead className="w-[10%] min-w-[8rem]">TOTAL</TableHead>
-                <TableHead className="w-[10%] min-w-[8rem]">MONTO APLICADO</TableHead>
+                <TableHead className="w-[12%] min-w-[8rem]">SALDO</TableHead>
                 <TableHead className="w-[10%] min-w-[7rem]">PLAZO</TableHead>
                 <TableHead className="w-[10%] min-w-[7rem]">FECHA VENC.</TableHead>
                 <TableHead className="w-[10%] min-w-[8rem]">VENCIMIENTO</TableHead>
@@ -361,35 +411,39 @@ export default function TablaControlComprobantes({
             <TableBody>
               {filasFiltradas.length === 0 ? (
                 <EmptyTableRow
-                  colSpan={esEditor ? 10 : 9}
+                  colSpan={esEditor ? 9 : 8}
                   message="Sin comprobantes para mostrar."
                 />
               ) : (
                 filasFiltradas.map((fila) => {
                   const vencimiento = Number(fila.vencimientoSaldo);
-                  const plazoCustom = fila.plazoPagoDias != null;
+                  const plazoCustom = fila.plazoPago1Dias != null;
                   return (
                     <TableRow key={fila.id}>
                       <TableCell className="celda-datos celda-mono">{fmtFechaComp(fila.fechaComp)}</TableCell>
-                      <TableCell className="celda-datos text-left font-medium" title={fila.proveedorNombre}>
-                        {fila.proveedorNombre}
+                      <TableCell
+                        className="celda-datos text-left font-medium"
+                        title={fila.proveedorNombre}
+                      >
+                        {fila.proveedorPrefijo}
                       </TableCell>
                       <TableCell className="celda-datos text-left">{fila.sucursalNombre}</TableCell>
                       <TableCell className="celda-datos celda-mono">{fila.comprobante}</TableCell>
-                      <TableCell className="celda-datos celda-numero">{fmtMonto(fila.total)}</TableCell>
-                      <TableCell className="celda-datos celda-numero">{fmtMonto(fila.montoAplicado)}</TableCell>
+                      <TableCell className="celda-datos celda-numero">
+                        {fmtMonto((Number(fila.total) - Number(fila.montoAplicado)).toFixed(2))}
+                      </TableCell>
                       <TableCell
                         className={cn(
-                          "celda-datos celda-numero",
+                          "celda-datos celda-mono",
                           plazoCustom && "font-semibold text-primary"
                         )}
                         title={
                           plazoCustom
-                            ? `Personalizado (${fila.plazoEfectivoDias} días)`
-                            : `Proveedor (${fila.plazoProveedorDefault} días)`
+                            ? `Personalizado (${fila.planPlazosLabel})`
+                            : `Proveedor (${fila.planPlazosLabel})`
                         }
                       >
-                        {fila.plazoEfectivoDias}
+                        {fila.planPlazosLabel}
                       </TableCell>
                       <TableCell className="celda-datos celda-mono">
                         {fmtFechaComp(fila.fechaVenc)}
@@ -540,26 +594,68 @@ export default function TablaControlComprobantes({
                 {filaPlazoPago.proveedorNombre}
               </p>
               <div className="space-y-1.5">
-                <Label htmlFor="plazoPagoComprobante">PLAZO DE PAGO (DÍAS)</Label>
-                <Select value={plazoSeleccionado} onValueChange={setPlazoSeleccionado}>
-                  <SelectTrigger id="plazoPagoComprobante" className="w-full">
-                    <SelectValue placeholder="Seleccionar plazo" />
+                <Label>MODO</Label>
+                <Select
+                  value={planEdit.modo}
+                  onValueChange={(v) =>
+                    setPlanEdit((prev) => ({
+                      ...prev,
+                      modo: v === "custom" ? "custom" : "default",
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
                   </SelectTrigger>
-                  <SelectContent position="popper" side="bottom" align="start">
+                  <SelectContent>
                     <SelectItem value="default">
-                      Proveedor ({filaPlazoPago.plazoProveedorDefault} días)
+                      Proveedor ({labelPlanProveedor(filaPlazoPago)})
                     </SelectItem>
-                    {PLAZOS_PAGO_COMPROBANTE_PERMITIDOS.map((dias) => (
-                      <SelectItem key={dias} value={String(dias)}>
-                        {dias} días
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="custom">Personalizado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              {planEdit.modo === "custom" ? (
+                <div className="grid grid-cols-4 gap-2">
+                  {(
+                    [
+                      { key: "plazo1" as const, label: "1.º", required: true },
+                      { key: "plazo2" as const, label: "2.º", required: false },
+                      { key: "plazo3" as const, label: "3.º", required: false },
+                      { key: "plazo4" as const, label: "4.º", required: false },
+                    ] as const
+                  ).map((slot) => (
+                    <div key={slot.key} className="space-y-1">
+                      <span className="text-xs text-muted-foreground">{slot.label}</span>
+                      <Select
+                        value={planEdit[slot.key] || "none"}
+                        onValueChange={(v) =>
+                          setPlanEdit((prev) => ({
+                            ...prev,
+                            [slot.key]: v === "none" ? "" : v,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={slot.required ? "Oblig." : "—"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {!slot.required ? (
+                            <SelectItem value="none">—</SelectItem>
+                          ) : null}
+                          {PLAZOS_PAGO_DIAS_PERMITIDOS.map((d) => (
+                            <SelectItem key={d} value={String(d)}>
+                              {d}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <p>
-                <span className="text-muted-foreground">Fecha vencimiento:</span>{" "}
-                {fechaVencPreview ? fmtFechaComp(fechaVencPreview) : ""}
+                <span className="text-muted-foreground">Plan efectivo:</span> {planPreviewLabel}
               </p>
             </div>
           ) : null}

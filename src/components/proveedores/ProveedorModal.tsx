@@ -19,7 +19,10 @@ export interface ProveedorParaModal {
   idProveedorDux?: string;
   whatsapp?: string | null;
   coeficienteTintometrico?: number;
-  plazosPagos?: string | null;
+  plazoPago1Dias?: number | null;
+  plazoPago2Dias?: number | null;
+  plazoPago3Dias?: number | null;
+  plazoPago4Dias?: number | null;
   /** Tiempo de entrega en días; null = no configurado. */
   tiempoEntregaEnDias?: number | null;
   /** Flag "Proveedor Mercadería" (edición). */

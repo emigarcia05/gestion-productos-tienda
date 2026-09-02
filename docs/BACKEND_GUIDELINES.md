@@ -227,7 +227,7 @@ GET de estado y POST del mismo job: **mismo guard**.
 | `es_fabrica` | Opt-in. Pedido A Fáb. + retención historial 60/14 días. |
 | `tiempo_entrega_en_dias` | Integer nullable 0–999. |
 | `coeficiente_tintometrico` | `> 0`, hasta 6 decimales. Edición masiva: `actualizarCoeficientesTintometricosAction` (`stock.acceso` + editor). |
-| `plazos_pagos` | CSV `30,60,90,…` creciente; tramos 30–150. |
+| `plazo_pago_1_dias` … `plazo_pago_4_dias` | Plan de pago (días). 1.º obligatorio en UI (default cálculo 30). 2–4 opcionales, crecientes. Valores 30–150. Cuotas iguales sobre total; pagos FIFO. |
 | `iva` | Enum `IvaProveedor`: `SIEMPRE` \| `NUNCA` \| `PREGUNTA` (default). Transversal (también `fin_bal_gasto_final.iva`). Zod: `@/lib/validations/iva.ts`. |
 | `prefijo` | Opcional; 3 letras A-Z o `null`. |
 
@@ -302,7 +302,7 @@ Permiso módulo: `PERMISOS.pedidos.acceso` (simple+editor). Ítems vivos: `prod_
 
 Lectura: `PERMISOS.finanzas.acceso`. Mutaciones de catálogo/tesorería/IVA: + `esEditor()` (`requireEditorFinanzas`).
 
-**Comprobantes DUX** (`fin_compras_comprobante`): sync por Action editor + progreso `GET /api/sync-compras-proveedor-dux/status` (`guardFinanzasLectura`). Unique natural para upsert. Ventana ~150 días AR. `id_proveedor` = `id_proveedor_dux`. **`plazo_pago_dias`** nullable: override por factura (30/60/90/120/150); null = primer plazo de `global_proveedores.plazos_pagos` (o 30). Expresión SQL compartida: `src/lib/comprobanteProveedorPlazoPagoSql.ts`. Deuda / vencimientos: `deudaProveedores.service.ts`, `vencimientosPorFecha.service.ts`. UI: `controlComprobantes.ts` + `/finanzas/control-comprobantes`.
+**Comprobantes DUX** (`fin_compras_comprobante`): sync por Action editor + progreso `GET /api/sync-compras-proveedor-dux/status` (`guardFinanzasLectura`). Unique natural para upsert. Ventana ~150 días AR. `id_proveedor` = `id_proveedor_dux`. **Plan de pago:** `plazo_pago_1_dias`…`plazo_pago_4_dias` (override; null en el 1.º = plan del proveedor). Cuotas iguales = `total / N`; `monto_aplicado` FIFO por cuota. Expansión SQL: `src/lib/comprobanteCuotasPlazoPago.ts` (`SQL_CTE_CUOTAS_MERCADERIA`). Deuda / flujo: `deudaProveedores.service.ts`, `vencimientosPorFecha.service.ts`. UI: `controlComprobantes.ts` + `/finanzas/control-comprobantes`.
 
 **Tesorería:** `CajaTesoreria.tipoCaja` usa enum `TipoCajaTesoreria`. El modelo `FinTesoreriaTipoCaja` existe en schema (seed) pero **la app no lo lee**; no dropear sin decisión explícita. Cheques: `finTesoreriaCheques.ts`.
 

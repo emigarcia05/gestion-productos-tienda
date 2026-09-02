@@ -11,15 +11,22 @@ interface ControlComprobanteRow {
   id: string;
   fechaComp: string;
   proveedorNombre: string;
+  proveedorPrefijo: string;
   sucursalNombre: string;
   comprobante: string;
   total: string;
   montoAplicado: string;
   vencimientoSaldo: string;
   controlado: boolean;
-  plazoPagoDias: number | null;
-  plazoEfectivoDias: number;
-  plazoProveedorDefault: number;
+  plazoPago1Dias: number | null;
+  plazoPago2Dias: number | null;
+  plazoPago3Dias: number | null;
+  plazoPago4Dias: number | null;
+  proveedorPlazo1Dias: number | null;
+  proveedorPlazo2Dias: number | null;
+  proveedorPlazo3Dias: number | null;
+  proveedorPlazo4Dias: number | null;
+  planPlazosLabel: string;
   fechaVenc: string;
 }
 

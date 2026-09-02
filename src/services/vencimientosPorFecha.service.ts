@@ -1,13 +1,13 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { SQL_FECHA_VENC_COMPROBANTE } from "@/lib/comprobanteProveedorPlazoPagoSql";
+import { SQL_CTE_CUOTAS_MERCADERIA } from "@/lib/comprobanteCuotasPlazoPago";
 
 /** Valor fijo de columna **Detalle** para vencimientos de comprobantes (mercadería). */
 export const FLUJO_FONDO_DETALLE_MERCADERIA = "MERCADERÍA" as const;
 
 /**
- * Líneas con saldo pendiente cuya **fecha de vencimiento** cae en `[fechaDesde, fechaHasta]`.
- * Plazo: override por comprobante → primer plazo del proveedor → 30 días.
+ * Líneas de **cuota** con saldo pendiente cuya fecha de vencimiento cae en `[fechaDesde, fechaHasta]`.
+ * Plan hasta 4 plazos; cuotas iguales; pagos FIFO.
  */
 export interface VencimientoPorFechaLinea {
   fechaVenc: string;
@@ -23,27 +23,18 @@ export async function listarVencimientosEnRango(
   fechaHasta: string
 ): Promise<VencimientoPorFechaLinea[]> {
   const rows = await prisma.$queryRaw<VencimientoPorFechaLinea[]>`
-    WITH lineas AS (
-      SELECT
-        c.id::text AS id,
-        c.fecha_comp::text AS fecha_comp,
-        p.nombre AS nombre,
-        (c.total - c.monto_aplicado) AS saldo,
-        ${Prisma.raw(SQL_FECHA_VENC_COMPROBANTE)} AS fecha_venc
-      FROM fin_compras_comprobante c
-      INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
-      WHERE c.total > c.monto_aplicado
-    )
+    WITH ${Prisma.raw(SQL_CTE_CUOTAS_MERCADERIA)}
     SELECT
-      l.fecha_venc::text AS "fechaVenc",
-      l.nombre AS nombre,
-      l.saldo AS saldo,
-      l.id AS "comprobanteId",
-      l.fecha_comp AS "fechaComp"
-    FROM lineas l
-    WHERE l.fecha_venc >= ${fechaDesde}::date
-      AND l.fecha_venc <= ${fechaHasta}::date
-    ORDER BY l.fecha_venc ASC, l.nombre ASC
+      cm.fecha_venc::text AS "fechaVenc",
+      cm.nombre AS nombre,
+      cm.saldo_cuota AS saldo,
+      (cm.id::text || ':' || cm.nro_cuota::text) AS "comprobanteId",
+      cm.fecha_comp::text AS "fechaComp"
+    FROM cuotas_mercaderia cm
+    WHERE cm.saldo_cuota > 0
+      AND cm.fecha_venc >= ${fechaDesde}::date
+      AND cm.fecha_venc <= ${fechaHasta}::date
+    ORDER BY cm.fecha_venc ASC, cm.nombre ASC, cm.nro_cuota ASC
   `;
   return rows;
 }
@@ -77,25 +68,17 @@ export function ordenarDetallesFlujoDia(
 }
 
 /**
- * Suma de saldos pendientes cuya **fecha de vencimiento** es **estrictamente anterior** a `fechaIso`
- * (misma regla de `fecha_venc` que {@link listarVencimientosEnRango}). Sirve para arrastrar a
- * Pendiente vencido antes de la ventana (insumo del **SALDO** de la primera fila en Flujo de Fondo).
+ * Suma de saldos de cuotas cuya fecha de vencimiento es estrictamente anterior a `fechaIso`.
  */
 export async function sumarSaldoVencimientosConFechaVencAnteriorA(
   fechaIso: string
 ): Promise<number> {
   const rows = await prisma.$queryRaw<[{ total: Prisma.Decimal | null }]>`
-    WITH lineas AS (
-      SELECT
-        (c.total - c.monto_aplicado) AS saldo,
-        ${Prisma.raw(SQL_FECHA_VENC_COMPROBANTE)} AS fecha_venc
-      FROM fin_compras_comprobante c
-      INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
-      WHERE c.total > c.monto_aplicado
-    )
-    SELECT COALESCE(SUM(l.saldo), 0)::numeric AS total
-    FROM lineas l
-    WHERE l.fecha_venc < ${fechaIso}::date
+    WITH ${Prisma.raw(SQL_CTE_CUOTAS_MERCADERIA)}
+    SELECT COALESCE(SUM(cm.saldo_cuota), 0)::numeric AS total
+    FROM cuotas_mercaderia cm
+    WHERE cm.saldo_cuota > 0
+      AND cm.fecha_venc < ${fechaIso}::date
   `;
   return Number(rows[0]?.total ?? 0);
 }

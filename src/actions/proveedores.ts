@@ -65,7 +65,10 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
     whatsapp: (formData.get("whatsapp") as string) ?? "",
     coeficienteTintometrico:
       (formData.get("coeficienteTintometrico") as string) ?? "",
-    plazosPagos: (formData.get("plazosPagos") as string) ?? "",
+    plazoPago1Dias: (formData.get("plazoPago1Dias") as string) ?? "",
+    plazoPago2Dias: (formData.get("plazoPago2Dias") as string) ?? "",
+    plazoPago3Dias: (formData.get("plazoPago3Dias") as string) ?? "",
+    plazoPago4Dias: (formData.get("plazoPago4Dias") as string) ?? "",
     tiempoEntregaEnDias:
       (formData.get("tiempoEntregaEnDias") as string) ?? "",
     proveedorMercaderia:
@@ -83,9 +86,13 @@ export async function crearProveedor(formData: FormData): Promise<ActionResult<{
       first.prefijo?.[0] ??
       first.whatsapp?.[0] ??
       first.coeficienteTintometrico?.[0] ??
-      first.plazosPagos?.[0] ??
+      first.plazoPago1Dias?.[0] ??
+      first.plazoPago2Dias?.[0] ??
+      first.plazoPago3Dias?.[0] ??
+      first.plazoPago4Dias?.[0] ??
       first.tiempoEntregaEnDias?.[0] ??
       first.iva?.[0] ??
+      parsed.error.issues[0]?.message ??
       "Datos inválidos.";
     return { ok: false, error: msg };
   }
@@ -128,7 +135,10 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
     whatsapp: (formData.get("whatsapp") as string) ?? "",
     coeficienteTintometrico:
       (formData.get("coeficienteTintometrico") as string) ?? "",
-    plazosPagos: (formData.get("plazosPagos") as string) ?? "",
+    plazoPago1Dias: (formData.get("plazoPago1Dias") as string) ?? "",
+    plazoPago2Dias: (formData.get("plazoPago2Dias") as string) ?? "",
+    plazoPago3Dias: (formData.get("plazoPago3Dias") as string) ?? "",
+    plazoPago4Dias: (formData.get("plazoPago4Dias") as string) ?? "",
     tiempoEntregaEnDias:
       (formData.get("tiempoEntregaEnDias") as string) ?? "",
     proveedorMercaderia:
@@ -146,9 +156,13 @@ export async function editarProveedor(id: string, formData: FormData): Promise<A
       first.prefijo?.[0] ??
       first.whatsapp?.[0] ??
       first.coeficienteTintometrico?.[0] ??
-      first.plazosPagos?.[0] ??
+      first.plazoPago1Dias?.[0] ??
+      first.plazoPago2Dias?.[0] ??
+      first.plazoPago3Dias?.[0] ??
+      first.plazoPago4Dias?.[0] ??
       first.tiempoEntregaEnDias?.[0] ??
       first.iva?.[0] ??
+      parsed.error.issues[0]?.message ??
       "Datos inválidos.";
     return { ok: false, error: msg };
   }

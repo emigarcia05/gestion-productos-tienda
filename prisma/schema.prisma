@@ -61,8 +61,16 @@ model Proveedor {
   idProveedorDux  String?  @unique(map: "global_proveedores_id_proveedor_dux_key") @map("id_proveedor_dux") // ID único del proveedor en DUX; FK desde fin_compras_comprobante
   whatsapp        String?  @map("whatsapp") // Número para envío de pedido por WhatsApp (internacional sin +)
   coeficienteTintometrico Decimal @map("coeficiente_tintometrico") @db.Decimal(12, 6) @default(1)
-  /** Días de vencimiento separados por coma (ej. 30,60). Solo valores 30, 60, 90, 120, 150; orden creciente. */
-  plazosPagos     String?  @map("plazos_pagos")
+  /**
+   * Plan de pago en días desde la fecha del comprobante (hasta 4 cuotas iguales).
+   * `plazo_pago_1_dias` es el default operativo (si null → 30 en cálculos).
+   * Plazos 2–4 opcionales; deben ser crecientes respecto del anterior.
+   * Valores permitidos en app: 30, 60, 90, 120, 150.
+   */
+  plazoPago1Dias Int? @map("plazo_pago_1_dias")
+  plazoPago2Dias Int? @map("plazo_pago_2_dias")
+  plazoPago3Dias Int? @map("plazo_pago_3_dias")
+  plazoPago4Dias Int? @map("plazo_pago_4_dias")
   /**
    * Tiempo de entrega del proveedor en días enteros (≥ 0).
    * Null = no configurado.
@@ -204,8 +212,14 @@ model ComprobanteProveedor {
   idProveedor        String   @map("id_proveedor")
   total              Decimal  @map("total") @db.Decimal(14, 2)
   montoAplicado      Decimal  @map("monto_aplicado") @db.Decimal(14, 2)
-  /** Override de plazo en días; null = primer plazo del proveedor (o 30). Valores 30–150. */
-  plazoPagoDias       Int?     @map("plazo_pago_dias")
+  /**
+   * Override de plan de pago (hasta 4 cuotas). Si `plazo_pago_1_dias` es null → plan del proveedor.
+   * Cuotas iguales sobre `total`; `monto_aplicado` se aplica FIFO 1→4.
+   */
+  plazoPago1Dias      Int?     @map("plazo_pago_1_dias")
+  plazoPago2Dias      Int?     @map("plazo_pago_2_dias")
+  plazoPago3Dias      Int?     @map("plazo_pago_3_dias")
+  plazoPago4Dias      Int?     @map("plazo_pago_4_dias")
   controlado         Boolean  @default(false)
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")

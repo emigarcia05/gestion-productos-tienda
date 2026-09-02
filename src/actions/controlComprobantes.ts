@@ -66,10 +66,17 @@ export async function actualizarPlazoPagoComprobanteAction(
     return { ok: false, error: msg };
   }
 
-  const result = await actualizarPlazoPagoComprobante(
-    parsed.data.id,
-    parsed.data.plazoPagoDias
-  );
+  const plan =
+    parsed.data.modo === "default"
+      ? null
+      : {
+          plazo1: parsed.data.plazo1,
+          plazo2: parsed.data.plazo2,
+          plazo3: parsed.data.plazo3,
+          plazo4: parsed.data.plazo4,
+        };
+
+  const result = await actualizarPlazoPagoComprobante(parsed.data.id, plan);
   if (!result.success) return { ok: false, error: result.error };
 
   revalidateComprobantesFinanzas();
@@ -94,7 +101,15 @@ export async function actualizarPlazosPagosMercaderiaAction(
     return { ok: false, error: msg };
   }
 
-  const result = await actualizarPlazosPagosProveedoresMercaderia(parsed.data.items);
+  const result = await actualizarPlazosPagosProveedoresMercaderia(
+    parsed.data.items.map((item) => ({
+      id: item.id,
+      plazoPago1Dias: item.plazo1,
+      plazoPago2Dias: item.plazo2,
+      plazoPago3Dias: item.plazo3,
+      plazoPago4Dias: item.plazo4,
+    }))
+  );
   if (!result.success) return { ok: false, error: result.error };
 
   revalidateComprobantesFinanzas();

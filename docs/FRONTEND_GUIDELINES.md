@@ -257,7 +257,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Tesorería:** 4 filtros en una fila. Pie dos filas de tarjetas (tipo de valor / disponibilidad). Cheques: tenencia ACTUALES / TRANSFERIDOS.
 - **Flujo De Fondo:** `/finanzas/venc-por-fecha` (`TablaFlujoDeFondo`). SALDO negativo: `text-destructive` en la celda. Doble clic → detalle día. **No** usar `/finanzas/flujo-de-fondo` (redirect).
 - **Venc. Provee. Merc. / Gastos:** doble clic → mismo detalle de flujo filtrado por proveedor.
-- **Comprobantes** (`/finanzas/control-comprobantes`): filtros + rango fechas. Header (editor): **Gestionar Venc.** → modal tabla proveedores mercadería × plazos pago (`global_proveedores.plazos_pagos`). Columna **ACCIONES**: **Controlado** (modal) y **Plazo De Pago** (override por comprobante).
+- **Comprobantes** (`/finanzas/control-comprobantes`): filtros + rango fechas. Columna **PROVEEDOR** = `prefijo` (tooltip = nombre). Columna **SALDO** = total − monto aplicado. Columna **PLAZO** = plan efectivo (`30, 60, 90`). Header (editor): **Gestionar Venc.** → modal con hasta 4 plazos por proveedor mercadería. **ACCIONES**: Controlado + Plazo De Pago (plan proveedor o personalizado hasta 4 cuotas iguales; pagos FIFO).
 - **Catálogo Gastos:** Finder 5 columnas. Proveedores no-mercadería desde header.
 - **Margen Contribución / Cx. Financieros:** ver PageClients; overlay COSTOS en MC (`.contenedor-tabla-gestion--mc-overlay`).
 - **Usuarios:** búsqueda + tabla; modal sucursal y módulos (mín. 1).

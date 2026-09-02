@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { SQL_FECHA_VENC_COMPROBANTE } from "@/lib/comprobanteProveedorPlazoPagoSql";
+import { SQL_CTE_CUOTAS_MERCADERIA } from "@/lib/comprobanteCuotasPlazoPago";
 import {
   FLUJO_FONDO_DETALLE_MERCADERIA,
   ordenarDetallesFlujoDia,
@@ -8,13 +8,8 @@ import {
 } from "@/services/vencimientosPorFecha.service";
 
 /**
- * Saldo por comprobante repartido en columnas según **fecha de vencimiento** vs **hoy (AR)**:
- * - `fecha_venc` = `fecha_comp` + plazo (override comprobante → proveedor → 30 días).
- * - **VENCIDA**: `fecha_venc` &lt; hoy
- * - **5 DÍAS**: hoy ≤ `fecha_venc` ≤ hoy+5
- * - **30 DÍAS**: hoy+6 … hoy+30
- * - **45 DÍAS**: hoy+31 … hoy+45
- * - **60 DÍAS**: `fecha_venc` ≥ hoy+46 (incluye vencimientos posteriores)
+ * Saldo por **cuota** repartido en columnas según fecha de vencimiento vs hoy (AR).
+ * Plan: hasta 4 plazos; cuotas iguales sobre total; pagos FIFO.
  */
 export interface DeudaProveedorFila {
   idProveedorDux: string;
@@ -29,16 +24,16 @@ export interface DeudaProveedorFila {
 
 export async function listarDeudaProveedores(): Promise<DeudaProveedorFila[]> {
   const rows = await prisma.$queryRaw<DeudaProveedorFila[]>`
-    WITH lineas AS (
+    WITH ${Prisma.raw(SQL_CTE_CUOTAS_MERCADERIA)},
+    lineas AS (
       SELECT
-        p.id_proveedor_dux AS id_proveedor_dux,
-        p.nombre AS nombre,
-        (c.total - c.monto_aplicado) AS saldo,
-        ${Prisma.raw(SQL_FECHA_VENC_COMPROBANTE)} AS fecha_venc,
+        cm.id_proveedor_dux,
+        cm.nombre,
+        cm.saldo_cuota AS saldo,
+        cm.fecha_venc,
         (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date AS hoy
-      FROM fin_compras_comprobante c
-      INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
-      WHERE c.total > c.monto_aplicado
+      FROM cuotas_mercaderia cm
+      WHERE cm.saldo_cuota > 0
     )
     SELECT
       l.id_proveedor_dux AS "idProveedorDux",
@@ -63,6 +58,7 @@ type DeudaProveedorDetalleLineaRaw = {
   comprobanteId: string;
   fechaComp: string;
   fechaVenc: string;
+  nroCuota: number;
 };
 
 export async function listarDetalleDeudaProveedoresMercaderia(): Promise<{
@@ -74,16 +70,17 @@ export async function listarDetalleDeudaProveedoresMercaderia(): Promise<{
       SELECT ((NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date)::text AS hoy
     `,
     prisma.$queryRaw<DeudaProveedorDetalleLineaRaw[]>`
+      WITH ${Prisma.raw(SQL_CTE_CUOTAS_MERCADERIA)}
       SELECT
-        p.nombre AS proveedor,
-        (c.total - c.monto_aplicado) AS saldo,
-        c.id::text AS "comprobanteId",
-        c.fecha_comp::text AS "fechaComp",
-        ${Prisma.raw(SQL_FECHA_VENC_COMPROBANTE)}::text AS "fechaVenc"
-      FROM fin_compras_comprobante c
-      INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
-      WHERE c.total > c.monto_aplicado
-      ORDER BY p.nombre ASC, c.fecha_comp ASC, c.id ASC
+        cm.nombre AS proveedor,
+        cm.saldo_cuota AS saldo,
+        (cm.id::text || ':' || cm.nro_cuota::text) AS "comprobanteId",
+        cm.fecha_comp::text AS "fechaComp",
+        cm.fecha_venc::text AS "fechaVenc",
+        cm.nro_cuota AS "nroCuota"
+      FROM cuotas_mercaderia cm
+      WHERE cm.saldo_cuota > 0
+      ORDER BY cm.nombre ASC, cm.fecha_comp ASC, cm.nro_cuota ASC
     `,
   ]);
 

@@ -4,9 +4,27 @@
 import { randomBytes } from "node:crypto";
 import { IvaProveedor } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { formatPlanPlazosLabel, resolverPlazosEfectivos } from "@/lib/comprobanteCuotasPlazoPago";
 import type { ServiceResult } from "@/types";
 
 export { IvaProveedor };
+
+function labelPlazosProveedor(p: {
+  plazoPago1Dias: number | null;
+  plazoPago2Dias: number | null;
+  plazoPago3Dias: number | null;
+  plazoPago4Dias: number | null;
+}): string | null {
+  if (p.plazoPago1Dias == null) return null;
+  return formatPlanPlazosLabel(
+    resolverPlazosEfectivos(null, {
+      plazo1: p.plazoPago1Dias,
+      plazo2: p.plazoPago2Dias,
+      plazo3: p.plazoPago3Dias,
+      plazo4: p.plazoPago4Dias,
+    })
+  );
+}
 
 export interface CreateProveedorInput {
   nombre: string;
@@ -15,8 +33,10 @@ export interface CreateProveedorInput {
   idProveedorDux?: string | null;
   whatsapp?: string | null;
   coeficienteTintometrico: number;
-  /** Días de vencimiento separados por coma (30,60,…); null si no aplica. */
-  plazosPagos?: string | null;
+  plazoPago1Dias: number;
+  plazoPago2Dias?: number | null;
+  plazoPago3Dias?: number | null;
+  plazoPago4Dias?: number | null;
   /** Tiempo de entrega en días (≥ 0); null = no configurado. */
   tiempoEntregaEnDias?: number | null;
   /** Obligatorio en alta (formulario SI/NO). */
@@ -35,7 +55,10 @@ export interface UpdateProveedorInput {
   idProveedorDux?: string | null;
   whatsapp?: string | null;
   coeficienteTintometrico: number;
-  plazosPagos?: string | null;
+  plazoPago1Dias: number;
+  plazoPago2Dias?: number | null;
+  plazoPago3Dias?: number | null;
+  plazoPago4Dias?: number | null;
   /** Tiempo de entrega en días (≥ 0); null = no configurado. */
   tiempoEntregaEnDias?: number | null;
   /** Obligatorio en edición desde el formulario. */
@@ -62,7 +85,11 @@ export interface ProveedorListItem {
   whatsapp: string | null;
   /** Coeficiente para cálculo tintométrico. */
   coeficienteTintometrico: number;
-  /** Plazos de pago en días (ej. 30,60). */
+  plazoPago1Dias: number | null;
+  plazoPago2Dias: number | null;
+  plazoPago3Dias: number | null;
+  plazoPago4Dias: number | null;
+  /** Label derivado `30, 60, 90` para listados. */
   plazosPagos: string | null;
   /** Tiempo de entrega en días; null = no configurado. */
   tiempoEntregaEnDias: number | null;
@@ -124,7 +151,10 @@ export async function getProveedoresMercaderia(): Promise<ProveedorListItem[]> {
 export interface ProveedorMercaderiaPlazosFila {
   id: string;
   nombre: string;
-  plazosPagos: string | null;
+  plazoPago1Dias: number | null;
+  plazoPago2Dias: number | null;
+  plazoPago3Dias: number | null;
+  plazoPago4Dias: number | null;
 }
 
 /** Proveedores de mercadería con plazos de pago (Comprobantes · Gestionar Venc.). */
@@ -133,25 +163,46 @@ export async function listarProveedoresMercaderiaPlazosPagos(): Promise<
 > {
   const rows = await prisma.proveedor.findMany({
     where: { proveedorMercaderia: true },
-    select: { id: true, nombre: true, plazosPagos: true },
+    select: {
+      id: true,
+      nombre: true,
+      plazoPago1Dias: true,
+      plazoPago2Dias: true,
+      plazoPago3Dias: true,
+      plazoPago4Dias: true,
+    },
     orderBy: { nombre: "asc" },
   });
   return rows.map((p) => ({
     id: p.id,
     nombre: p.nombre,
-    plazosPagos: p.plazosPagos ?? null,
+    plazoPago1Dias: p.plazoPago1Dias,
+    plazoPago2Dias: p.plazoPago2Dias,
+    plazoPago3Dias: p.plazoPago3Dias,
+    plazoPago4Dias: p.plazoPago4Dias,
   }));
 }
 
 export async function actualizarPlazosPagosProveedoresMercaderia(
-  items: { id: string; plazosPagos: string | null }[]
+  items: {
+    id: string;
+    plazoPago1Dias: number;
+    plazoPago2Dias: number | null;
+    plazoPago3Dias: number | null;
+    plazoPago4Dias: number | null;
+  }[]
 ): Promise<ServiceResult<void>> {
   try {
     await prisma.$transaction(
       items.map((item) =>
         prisma.proveedor.updateMany({
           where: { id: item.id, proveedorMercaderia: true },
-          data: { plazosPagos: item.plazosPagos },
+          data: {
+            plazoPago1Dias: item.plazoPago1Dias,
+            plazoPago2Dias: item.plazoPago2Dias,
+            plazoPago3Dias: item.plazoPago3Dias,
+            plazoPago4Dias: item.plazoPago4Dias,
+          },
         })
       )
     );
@@ -213,7 +264,11 @@ async function listarProveedoresInterno(
     idProveedorDux: p.idProveedorDux ?? null,
     whatsapp: p.whatsapp ?? null,
     coeficienteTintometrico: Number(p.coeficienteTintometrico),
-    plazosPagos: p.plazosPagos ?? null,
+    plazoPago1Dias: p.plazoPago1Dias,
+    plazoPago2Dias: p.plazoPago2Dias,
+    plazoPago3Dias: p.plazoPago3Dias,
+    plazoPago4Dias: p.plazoPago4Dias,
+    plazosPagos: labelPlazosProveedor(p),
     tiempoEntregaEnDias: p.tiempoEntregaEnDias ?? null,
     proveedorMercaderia: p.proveedorMercaderia,
     esFabrica: p.esFabrica,
@@ -231,6 +286,10 @@ export async function getProveedorById(id: string): Promise<{
   codigoUnico: string;
   whatsapp: string | null;
   coeficienteTintometrico: number;
+  plazoPago1Dias: number | null;
+  plazoPago2Dias: number | null;
+  plazoPago3Dias: number | null;
+  plazoPago4Dias: number | null;
   plazosPagos: string | null;
   tiempoEntregaEnDias: number | null;
   iva: IvaProveedor;
@@ -244,7 +303,10 @@ export async function getProveedorById(id: string): Promise<{
       codigoUnico: true,
       whatsapp: true,
       coeficienteTintometrico: true,
-      plazosPagos: true,
+      plazoPago1Dias: true,
+      plazoPago2Dias: true,
+      plazoPago3Dias: true,
+      plazoPago4Dias: true,
       tiempoEntregaEnDias: true,
       iva: true,
     },
@@ -257,7 +319,11 @@ export async function getProveedorById(id: string): Promise<{
     codigoUnico: p.codigoUnico,
     whatsapp: p.whatsapp ?? null,
     coeficienteTintometrico: Number(p.coeficienteTintometrico),
-    plazosPagos: p.plazosPagos ?? null,
+    plazoPago1Dias: p.plazoPago1Dias,
+    plazoPago2Dias: p.plazoPago2Dias,
+    plazoPago3Dias: p.plazoPago3Dias,
+    plazoPago4Dias: p.plazoPago4Dias,
+    plazosPagos: labelPlazosProveedor(p),
     tiempoEntregaEnDias: p.tiempoEntregaEnDias ?? null,
     iva: p.iva,
   };
@@ -284,7 +350,10 @@ export async function createProveedor(
       idProveedorDux: input.idProveedorDux?.trim() || null,
       whatsapp: normalizarWhatsapp(input.whatsapp),
       coeficienteTintometrico: input.coeficienteTintometrico,
-      plazosPagos: input.plazosPagos ?? null,
+      plazoPago1Dias: input.plazoPago1Dias,
+      plazoPago2Dias: input.plazoPago2Dias ?? null,
+      plazoPago3Dias: input.plazoPago3Dias ?? null,
+      plazoPago4Dias: input.plazoPago4Dias ?? null,
       tiempoEntregaEnDias: input.tiempoEntregaEnDias ?? null,
       proveedorMercaderia: input.proveedorMercaderia,
       esFabrica: input.esFabrica,
@@ -313,7 +382,10 @@ export async function updateProveedor(
       idProveedorDux: input.idProveedorDux?.trim() || null,
       whatsapp: normalizarWhatsapp(input.whatsapp),
       coeficienteTintometrico: input.coeficienteTintometrico,
-      plazosPagos: input.plazosPagos ?? null,
+      plazoPago1Dias: input.plazoPago1Dias,
+      plazoPago2Dias: input.plazoPago2Dias ?? null,
+      plazoPago3Dias: input.plazoPago3Dias ?? null,
+      plazoPago4Dias: input.plazoPago4Dias ?? null,
       tiempoEntregaEnDias: input.tiempoEntregaEnDias ?? null,
       proveedorMercaderia: input.proveedorMercaderia,
       esFabrica: input.esFabrica,

@@ -22,8 +22,7 @@ const coeficienteTintometricoSchema = z
 
 const PLAZOS_PAGO_PERMITIDOS = new Set([30, 60, 90, 120, 150]);
 
-/** Cadena canónica `30,60,90` o null si vacío. Días de vencimiento desde la fecha del comprobante. */
-export const plazosPagosSchema = z
+const plazoPagoSlotSchema = z
   .string()
   .optional()
   .default("")
@@ -31,37 +30,78 @@ export const plazosPagosSchema = z
   .transform((s) => (s === "" ? null : s))
   .superRefine((s, ctx) => {
     if (s === null) return;
-    const parts = s.split(/[\s,]+/).map((p) => p.trim()).filter(Boolean);
-    if (parts.length === 0) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Plazos inválidos." });
-      return;
-    }
-    const nums = parts.map((p) => Number.parseInt(p, 10));
-    if (nums.some((n) => !Number.isFinite(n) || !PLAZOS_PAGO_PERMITIDOS.has(n))) {
+    const n = Number.parseInt(s, 10);
+    if (!Number.isFinite(n) || !PLAZOS_PAGO_PERMITIDOS.has(n) || String(n) !== s) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Solo se permiten 30, 60, 90, 120 o 150 (separados por coma).",
+        message: "Solo se permiten 30, 60, 90, 120 o 150.",
       });
-      return;
     }
-    for (let i = 1; i < nums.length; i++) {
-      if ((nums[i] as number) <= (nums[i - 1] as number)) {
+  })
+  .transform((s) => (s === null ? null : Number.parseInt(s, 10)));
+
+/** Plan de pago proveedor: 1.º obligatorio, 2–4 opcionales, orden creciente. */
+export const planPlazosProveedorFormSchema = z
+  .object({
+    plazoPago1Dias: z
+      .string()
+      .transform((s) => (s ?? "").trim())
+      .refine((s) => s !== "", "El 1.er plazo de pago es obligatorio.")
+      .pipe(
+        z
+          .string()
+          .refine((s) => {
+            const n = Number.parseInt(s, 10);
+            return Number.isFinite(n) && PLAZOS_PAGO_PERMITIDOS.has(n) && String(n) === s;
+          }, "Solo se permiten 30, 60, 90, 120 o 150.")
+          .transform((s) => Number.parseInt(s, 10))
+      ),
+    plazoPago2Dias: plazoPagoSlotSchema,
+    plazoPago3Dias: plazoPagoSlotSchema,
+    plazoPago4Dias: plazoPagoSlotSchema,
+  })
+  .superRefine((data, ctx) => {
+    const seq = [
+      data.plazoPago1Dias,
+      data.plazoPago2Dias,
+      data.plazoPago3Dias,
+      data.plazoPago4Dias,
+    ];
+    let last: number | null = null;
+    for (let i = 0; i < seq.length; i++) {
+      const cur = seq[i] ?? null;
+      if (cur == null) {
+        for (let j = i + 1; j < seq.length; j++) {
+          if (seq[j] != null) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "No puede haber un plazo posterior si falta uno intermedio.",
+              path: [`plazoPago${j + 1}Dias`],
+            });
+            return;
+          }
+        }
+        return;
+      }
+      if (last != null && cur <= last) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Los plazos deben ir en orden creciente (ej. 30, 60).",
+          message: "Los plazos deben ir en orden creciente.",
+          path: [`plazoPago${i + 1}Dias`],
         });
         return;
       }
+      last = cur;
     }
-  })
-  .transform((s) => {
-    if (s === null || s === undefined) return null as string | null;
-    const trimmed = (s as string).trim();
-    if (trimmed === "") return null;
-    const parts = trimmed.split(/[\s,]+/).map((p) => p.trim()).filter(Boolean);
-    const nums = parts.map((p) => Number.parseInt(p, 10));
-    return nums.join(",");
   });
+
+/** @deprecated Usar planPlazosProveedorFormSchema. Compat lectura CSV legacy en migraciones. */
+export const plazosPagosSchema = z
+  .string()
+  .optional()
+  .default("")
+  .transform((s) => (s ?? "").trim())
+  .transform((s) => (s === "" ? null : s));
 
 /**
  * Flag "Proveedor Mercadería" desde el form (hidden `si` / `no`).
@@ -136,22 +176,22 @@ export const tiempoEntregaEnDiasSchema = z
   })
   .transform((s) => (s === null ? null : Number.parseInt(s, 10)));
 
-export const createProveedorSchema = z.object({
-  nombre: z
-    .string()
-    .min(1, "El nombre es obligatorio.")
-    .transform((s) => s.trim())
-    .refine((s) => s.length >= 2, "El nombre debe tener al menos 2 caracteres."),
-  prefijo: prefijoProveedorOpcionalSchema,
-  whatsapp: whatsappSchema,
-  coeficienteTintometrico: coeficienteTintometricoSchema,
-  plazosPagos: plazosPagosSchema,
-  tiempoEntregaEnDias: tiempoEntregaEnDiasSchema,
-  proveedorMercaderia: proveedorMercaderiaFormSchema,
-  esFabrica: esFabricaFormSchema,
-  iva: ivaProveedorFormSchema,
-});
-
+export const createProveedorSchema = z
+  .object({
+    nombre: z
+      .string()
+      .min(1, "El nombre es obligatorio.")
+      .transform((s) => s.trim())
+      .refine((s) => s.length >= 2, "El nombre debe tener al menos 2 caracteres."),
+    prefijo: prefijoProveedorOpcionalSchema,
+    whatsapp: whatsappSchema,
+    coeficienteTintometrico: coeficienteTintometricoSchema,
+    tiempoEntregaEnDias: tiempoEntregaEnDiasSchema,
+    proveedorMercaderia: proveedorMercaderiaFormSchema,
+    esFabrica: esFabricaFormSchema,
+    iva: ivaProveedorFormSchema,
+  })
+  .and(planPlazosProveedorFormSchema);
 export type CreateProveedorFormData = z.infer<typeof createProveedorSchema>;
 
 /** Misma validación que crear. Reutilizable en editar. */

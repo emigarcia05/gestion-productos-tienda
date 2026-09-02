@@ -1,84 +1,151 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
-  SQL_FECHA_VENC_COMPROBANTE,
-  SQL_PLAZO_PAGO_DIAS_COMPROBANTE,
-} from "@/lib/comprobanteProveedorPlazoPagoSql";
+  expandirCuotasComprobante,
+  formatPlanPlazosLabel,
+  resolverPlazosEfectivos,
+  type PlanPlazosPago,
+} from "@/lib/comprobanteCuotasPlazoPago";
 import type { ServiceResult } from "@/types/service.types";
 
 export interface ControlComprobanteFila {
   id: string;
   fechaComp: string;
   proveedorNombre: string;
+  proveedorPrefijo: string;
   sucursalNombre: string;
   comprobante: string;
   total: Prisma.Decimal;
   montoAplicado: Prisma.Decimal;
+  /** Suma de saldos de cuotas ya vencidas (FIFO). */
   vencimientoSaldo: Prisma.Decimal;
   controlado: boolean;
-  plazoPagoDias: number | null;
-  plazoEfectivoDias: number;
-  plazoProveedorDefault: number;
+  plazoPago1Dias: number | null;
+  plazoPago2Dias: number | null;
+  plazoPago3Dias: number | null;
+  plazoPago4Dias: number | null;
+  proveedorPlazo1Dias: number | null;
+  proveedorPlazo2Dias: number | null;
+  proveedorPlazo3Dias: number | null;
+  proveedorPlazo4Dias: number | null;
+  /** Plazos efectivos, ej. "30, 60, 90". */
+  planPlazosLabel: string;
+  /** Primera fecha de vencimiento con saldo &gt; 0 (o última cuota si todo pagado). */
   fechaVenc: string;
 }
 
+type ControlComprobanteRaw = {
+  id: string;
+  fechaComp: string;
+  proveedorNombre: string;
+  proveedorPrefijo: string;
+  sucursalNombre: string;
+  comprobante: string;
+  total: Prisma.Decimal;
+  montoAplicado: Prisma.Decimal;
+  controlado: boolean;
+  plazoPago1Dias: number | null;
+  plazoPago2Dias: number | null;
+  plazoPago3Dias: number | null;
+  plazoPago4Dias: number | null;
+  proveedorPlazo1Dias: number | null;
+  proveedorPlazo2Dias: number | null;
+  proveedorPlazo3Dias: number | null;
+  proveedorPlazo4Dias: number | null;
+  hoy: string;
+};
+
+function planFromCols(
+  p1: number | null,
+  p2: number | null,
+  p3: number | null,
+  p4: number | null
+): PlanPlazosPago {
+  return { plazo1: p1, plazo2: p2, plazo3: p3, plazo4: p4 };
+}
+
 /**
- * Lista comprobantes con columna de vencimiento:
- * - Si el saldo está vencido según `fecha_venc`, devuelve el saldo pendiente.
- * - Si no está vencido, devuelve 0.
+ * Lista comprobantes; vencimiento = suma de saldos de cuotas con fecha_venc &lt; hoy.
  */
 export async function listarControlComprobantes(): Promise<ControlComprobanteFila[]> {
-  const rows = await prisma.$queryRaw<ControlComprobanteFila[]>`
-    WITH lineas AS (
-      SELECT
-        c.id AS id,
-        c.fecha_comp::text AS fecha_comp,
-        p.nombre AS proveedor_nombre,
-        c.id_sucursal_empresa AS id_sucursal_empresa,
-        COALESCE(s.nombre, c.id_sucursal_empresa) AS sucursal_nombre,
-        c.comprobante AS comprobante,
-        c.total AS total,
-        c.monto_aplicado AS monto_aplicado,
-        (c.total - c.monto_aplicado) AS saldo,
-        c.controlado AS controlado,
-        c.plazo_pago_dias AS plazo_pago_dias,
-        (${Prisma.raw(SQL_PLAZO_PAGO_DIAS_COMPROBANTE)}) AS plazo_efectivo_dias,
-        COALESCE(
-          CASE
-            WHEN trim(split_part(COALESCE(p.plazos_pagos, ''), ',', 1)) ~ '^[0-9]+$'
-            THEN trim(split_part(p.plazos_pagos, ',', 1))::int
-            ELSE NULL
-          END,
-          30
-        ) AS plazo_proveedor_default,
-        ${Prisma.raw(SQL_FECHA_VENC_COMPROBANTE)} AS fecha_venc,
-        (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date AS hoy
-      FROM fin_compras_comprobante c
-      INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
-      LEFT JOIN global_sucursales s ON COALESCE(s.id_dux, '') = c.id_sucursal_empresa
-    )
+  const rows = await prisma.$queryRaw<ControlComprobanteRaw[]>`
     SELECT
-      l.id AS id,
-      l.fecha_comp AS "fechaComp",
-      l.proveedor_nombre AS "proveedorNombre",
-      l.sucursal_nombre AS "sucursalNombre",
-      l.comprobante AS comprobante,
-      l.total AS total,
-      l.monto_aplicado AS "montoAplicado",
-      CASE
-        WHEN l.saldo > 0 AND l.fecha_venc < l.hoy THEN l.saldo
-        ELSE 0
-      END::numeric AS "vencimientoSaldo",
-      l.controlado AS controlado,
-      l.plazo_pago_dias AS "plazoPagoDias",
-      l.plazo_efectivo_dias AS "plazoEfectivoDias",
-      l.plazo_proveedor_default AS "plazoProveedorDefault",
-      l.fecha_venc::text AS "fechaVenc"
-    FROM lineas l
-    ORDER BY l.fecha_comp ASC, l.proveedor_nombre ASC, l.comprobante ASC
+      c.id AS id,
+      c.fecha_comp::text AS "fechaComp",
+      p.nombre AS "proveedorNombre",
+      COALESCE(p.prefijo, '') AS "proveedorPrefijo",
+      COALESCE(s.nombre, c.id_sucursal_empresa) AS "sucursalNombre",
+      c.comprobante AS comprobante,
+      c.total AS total,
+      c.monto_aplicado AS "montoAplicado",
+      c.controlado AS controlado,
+      c.plazo_pago_1_dias AS "plazoPago1Dias",
+      c.plazo_pago_2_dias AS "plazoPago2Dias",
+      c.plazo_pago_3_dias AS "plazoPago3Dias",
+      c.plazo_pago_4_dias AS "plazoPago4Dias",
+      p.plazo_pago_1_dias AS "proveedorPlazo1Dias",
+      p.plazo_pago_2_dias AS "proveedorPlazo2Dias",
+      p.plazo_pago_3_dias AS "proveedorPlazo3Dias",
+      p.plazo_pago_4_dias AS "proveedorPlazo4Dias",
+      ((NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date)::text AS hoy
+    FROM fin_compras_comprobante c
+    INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
+    LEFT JOIN global_sucursales s ON COALESCE(s.id_dux, '') = c.id_sucursal_empresa
+    ORDER BY c.fecha_comp ASC, COALESCE(p.prefijo, p.nombre) ASC, c.comprobante ASC
   `;
 
-  return rows;
+  return rows.map((r) => {
+    const override = planFromCols(
+      r.plazoPago1Dias,
+      r.plazoPago2Dias,
+      r.plazoPago3Dias,
+      r.plazoPago4Dias
+    );
+    const proveedor = planFromCols(
+      r.proveedorPlazo1Dias,
+      r.proveedorPlazo2Dias,
+      r.proveedorPlazo3Dias,
+      r.proveedorPlazo4Dias
+    );
+    const plazos = resolverPlazosEfectivos(override, proveedor);
+    const cuotas = expandirCuotasComprobante({
+      fechaCompIso: r.fechaComp,
+      total: Number(r.total),
+      montoAplicado: Number(r.montoAplicado),
+      override,
+      proveedor,
+      soloConSaldo: false,
+    });
+    const hoy = r.hoy.slice(0, 10);
+    const vencidas = cuotas.filter((c) => c.saldoCuota > 0 && c.fechaVencIso < hoy);
+    const vencimientoSaldo = vencidas.reduce((acc, c) => acc + c.saldoCuota, 0);
+    const conSaldo = cuotas.filter((c) => c.saldoCuota > 0);
+    const fechaVenc =
+      conSaldo[0]?.fechaVencIso ?? cuotas[cuotas.length - 1]?.fechaVencIso ?? r.fechaComp.slice(0, 10);
+
+    return {
+      id: r.id,
+      fechaComp: r.fechaComp,
+      proveedorNombre: r.proveedorNombre,
+      proveedorPrefijo: r.proveedorPrefijo,
+      sucursalNombre: r.sucursalNombre,
+      comprobante: r.comprobante,
+      total: r.total,
+      montoAplicado: r.montoAplicado,
+      vencimientoSaldo: new Prisma.Decimal(vencimientoSaldo.toFixed(2)),
+      controlado: r.controlado,
+      plazoPago1Dias: r.plazoPago1Dias,
+      plazoPago2Dias: r.plazoPago2Dias,
+      plazoPago3Dias: r.plazoPago3Dias,
+      plazoPago4Dias: r.plazoPago4Dias,
+      proveedorPlazo1Dias: r.proveedorPlazo1Dias,
+      proveedorPlazo2Dias: r.proveedorPlazo2Dias,
+      proveedorPlazo3Dias: r.proveedorPlazo3Dias,
+      proveedorPlazo4Dias: r.proveedorPlazo4Dias,
+      planPlazosLabel: formatPlanPlazosLabel(plazos),
+      fechaVenc,
+    };
+  });
 }
 
 export async function actualizarControladoComprobante(
@@ -100,12 +167,24 @@ export async function actualizarControladoComprobante(
 
 export async function actualizarPlazoPagoComprobante(
   id: string,
-  plazoPagoDias: number | null
+  plan: PlanPlazosPago | null
 ): Promise<ServiceResult<void>> {
   try {
     await prisma.comprobanteProveedor.update({
       where: { id },
-      data: { plazoPagoDias },
+      data: plan
+        ? {
+            plazoPago1Dias: plan.plazo1,
+            plazoPago2Dias: plan.plazo2,
+            plazoPago3Dias: plan.plazo3,
+            plazoPago4Dias: plan.plazo4,
+          }
+        : {
+            plazoPago1Dias: null,
+            plazoPago2Dias: null,
+            plazoPago3Dias: null,
+            plazoPago4Dias: null,
+          },
     });
     return { success: true, data: undefined };
   } catch (error: unknown) {
