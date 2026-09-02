@@ -204,6 +204,8 @@ model ComprobanteProveedor {
   idProveedor        String   @map("id_proveedor")
   total              Decimal  @map("total") @db.Decimal(14, 2)
   montoAplicado      Decimal  @map("monto_aplicado") @db.Decimal(14, 2)
+  /** Override de plazo en días; null = primer plazo del proveedor (o 30). Valores 30–150. */
+  plazoPagoDias       Int?     @map("plazo_pago_dias")
   controlado         Boolean  @default(false)
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")

@@ -1,12 +1,13 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { SQL_FECHA_VENC_COMPROBANTE } from "@/lib/comprobanteProveedorPlazoPagoSql";
 
 /** Valor fijo de columna **Detalle** para vencimientos de comprobantes (mercadería). */
 export const FLUJO_FONDO_DETALLE_MERCADERIA = "MERCADERÍA" as const;
 
 /**
  * Líneas con saldo pendiente cuya **fecha de vencimiento** cae en `[fechaDesde, fechaHasta]`.
- * Misma regla que deuda proveedores: `fecha_comp` + primer plazo de `plazos_pagos` (o 30 días).
+ * Plazo: override por comprobante → primer plazo del proveedor → 30 días.
  */
 export interface VencimientoPorFechaLinea {
   fechaVenc: string;
@@ -28,20 +29,7 @@ export async function listarVencimientosEnRango(
         c.fecha_comp::text AS fecha_comp,
         p.nombre AS nombre,
         (c.total - c.monto_aplicado) AS saldo,
-        (
-          c.fecha_comp::date
-          + GREATEST(
-            1,
-            COALESCE(
-              CASE
-                WHEN trim(split_part(COALESCE(p.plazos_pagos, ''), ',', 1)) ~ '^[0-9]+$'
-                THEN trim(split_part(p.plazos_pagos, ',', 1))::int
-                ELSE NULL
-              END,
-              30
-            )
-          )
-        )::date AS fecha_venc
+        ${Prisma.raw(SQL_FECHA_VENC_COMPROBANTE)} AS fecha_venc
       FROM fin_compras_comprobante c
       INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
       WHERE c.total > c.monto_aplicado
@@ -100,20 +88,7 @@ export async function sumarSaldoVencimientosConFechaVencAnteriorA(
     WITH lineas AS (
       SELECT
         (c.total - c.monto_aplicado) AS saldo,
-        (
-          c.fecha_comp::date
-          + GREATEST(
-            1,
-            COALESCE(
-              CASE
-                WHEN trim(split_part(COALESCE(p.plazos_pagos, ''), ',', 1)) ~ '^[0-9]+$'
-                THEN trim(split_part(p.plazos_pagos, ',', 1))::int
-                ELSE NULL
-              END,
-              30
-            )
-          )
-        )::date AS fecha_venc
+        ${Prisma.raw(SQL_FECHA_VENC_COMPROBANTE)} AS fecha_venc
       FROM fin_compras_comprobante c
       INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
       WHERE c.total > c.monto_aplicado

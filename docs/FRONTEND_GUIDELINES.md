@@ -114,7 +114,7 @@ SSOT: `src/lib/main-app-areas.ts`, `administracionNav.ts`, `marketingRoutes.ts`,
 
 **Vendedor** (acordeón, módulos cerrados al inicio): **ENVIOS** (Programados / Conductor) → **MERCADERÍA** (Cant. Pedida → Urgente / Tintométrico / Reposición → Generar Pedido → Recepción) → **PRECIOS** (Px Sugeridos, Px Tintométricos) → **CALCULAR LTS** → **STOCK** (Control Stock, Trans. Depósitos) → **CARGAR GASTOS** → **ASISTENTE IA**. Rol `simple` ve estos módulos; CRUD de prompts IA solo `editor`.
 
-**Administración** (`AdministracionAccordionNav`): **FINANZAS** (BALANCE / OPERACIONES) → **LISTA PRECIOS** (PX TIENDA / PROVEEDORES / ANÁLISIS M.C.) → **PEDIDO A FÁB.** → **ESTADÍSTICAS** → **USUARIOS**. Un solo destino → click navega (sin chevron).
+**Administración** (`AdministracionAccordionNav`): **FINANZAS** (BALANCE / OPERACIONES → FLUJOS / COMPRAS / GASTOS) → **LISTA PRECIOS** (PX TIENDA / PROVEEDORES / ANÁLISIS M.C.) → **PEDIDO A FÁB.** → **ESTADÍSTICAS** → **USUARIOS**. Un solo destino → click navega (sin chevron).
 
 **Marketing:** **PUBLICACIONES** (Calendario, Ideas Contenido, Objetivos) → **BASE MULTIMEDIA** (Base Multimedia, Colores Marca). Lectura libre; mutaciones `editor`.
 
@@ -257,7 +257,7 @@ Patrón por defecto = **§1**. Acá solo lo que un agente rompería si copia el 
 - **Tesorería:** 4 filtros en una fila. Pie dos filas de tarjetas (tipo de valor / disponibilidad). Cheques: tenencia ACTUALES / TRANSFERIDOS.
 - **Flujo De Fondo:** `/finanzas/venc-por-fecha` (`TablaFlujoDeFondo`). SALDO negativo: `text-destructive` en la celda. Doble clic → detalle día. **No** usar `/finanzas/flujo-de-fondo` (redirect).
 - **Venc. Provee. Merc. / Gastos:** doble clic → mismo detalle de flujo filtrado por proveedor.
-- **Control Comprobantes:** fila filtros + rango fechas. CONTROLADO solo lectura; doble clic (editor) confirma marca.
+- **Comprobantes** (`/finanzas/control-comprobantes`): filtros + rango fechas. Columna **ACCIONES** (editor): botón **Controlado** (modal confirmación) y **Plazo De Pago** (modal Select: proveedor o 30–150 días). Columnas **PLAZO** / **FECHA VENC.** derivadas del override por comprobante o plazo del proveedor.
 - **Catálogo Gastos:** Finder 5 columnas. Proveedores no-mercadería desde header.
 - **Margen Contribución / Cx. Financieros:** ver PageClients; overlay COSTOS en MC (`.contenedor-tabla-gestion--mc-overlay`).
 - **Usuarios:** búsqueda + tabla; modal sucursal y módulos (mín. 1).

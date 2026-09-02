@@ -30,7 +30,7 @@ export default function FinanzasVencimientosGastosPageClient({
     <div className="area-page-shell">
       <ClassicFilteredTableLayout
         title="Finanzas"
-        subtitle="Venc. Provee. Gastos"
+        subtitle="Resumen Venc."
         className="min-h-0 flex-1"
       >
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

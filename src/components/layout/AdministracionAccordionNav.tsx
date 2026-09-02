@@ -86,38 +86,45 @@ function getSoleNavigableHrefForPillar(
     : [];
   const allScreens = [
     ...screens,
-    ...groups.flatMap((g) => g.screens),
+    ...groups.flatMap((g) => collectGroupScreens(g)),
   ];
   if (allScreens.length === 1) return allScreens[0]!.href;
   return null;
 }
 
 function getSoleScreenHrefForGroup(group: AdmGroupDef): string | null {
-  if (group.screens.length === 1) return group.screens[0]!.href;
+  const allScreens = collectGroupScreens(group);
+  if (allScreens.length === 1) return allScreens[0]!.href;
   return null;
 }
 
+function collectGroupScreens(group: AdmGroupDef): AdmScreenDef[] {
+  const fromScreens = group.screens ?? [];
+  const fromGroups = (group.groups ?? []).flatMap(collectGroupScreens);
+  return [...fromScreens, ...fromGroups];
+}
+
 function GroupAccordion({
-  pillarId,
+  parentKey,
   group,
   pathname,
   openGroupId,
   onOpenChange,
 }: {
-  pillarId: AdmPillarId;
+  parentKey: string;
   group: AdmGroupDef;
   pathname: string;
   openGroupId: string | null;
   onOpenChange: (groupId: string | null) => void;
 }) {
   const Icon = ADM_ICON_MAP[group.icon];
-  const groupKey = `${pillarId}:${group.id}`;
+  const groupKey = `${parentKey}:${group.id}`;
   const soleHref = getSoleScreenHrefForGroup(group);
   if (soleHref) {
-    const active = isAdmScreenActive(pathname, {
-      ...group.screens[0]!,
-      href: soleHref,
-    });
+    const soleScreen = collectGroupScreens(group).find((s) => s.href === soleHref);
+    const active = soleScreen
+      ? isAdmScreenActive(pathname, soleScreen)
+      : isAdmGroupActive(pathname, group);
     return (
       <Link
         href={soleHref}
@@ -133,6 +140,8 @@ function GroupAccordion({
 
   const isOpen = openGroupId === groupKey;
   const groupActive = isAdmGroupActive(pathname, group);
+  const nestedGroups = group.groups ?? [];
+  const directScreens = group.screens ?? [];
 
   return (
     <Collapsible
@@ -157,7 +166,24 @@ function GroupAccordion({
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className={TREE_PANEL_NESTED}>
-          <ScreensList screens={group.screens} pathname={pathname} />
+          {directScreens.length > 0 ? (
+            <ScreensList screens={directScreens} pathname={pathname} />
+          ) : null}
+          {nestedGroups.length > 0 ? (
+            <div className="flex flex-col gap-0.5">
+              {nestedGroups.map((nested) => (
+                <div key={nested.id}>
+                  <GroupAccordion
+                    parentKey={groupKey}
+                    group={nested}
+                    pathname={pathname}
+                    openGroupId={openGroupId}
+                    onOpenChange={onOpenChange}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -241,7 +267,7 @@ function PillarAccordion({
 
   const soleHref = getSoleNavigableHrefForPillar(pillar, puedeFn);
   if (soleHref) {
-    const soleScreen = [...screens, ...groups.flatMap((g) => g.screens)].find(
+    const soleScreen = [...screens, ...groups.flatMap((g) => collectGroupScreens(g))].find(
       (s) => s.href === soleHref
     );
     const screenActive = soleScreen
@@ -296,7 +322,7 @@ function PillarAccordion({
             {groups.map((group) => (
               <div key={group.id}>
                 <GroupAccordion
-                  pillarId={pillar.id}
+                  parentKey={pillar.id}
                   group={group}
                   pathname={pathname}
                   openGroupId={openGroupId}

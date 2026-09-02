@@ -2,7 +2,7 @@
  * Navegación del área **Administración**: 5 pilares en sidebar + árbol
  * de decisiones en acordeón vertical (`AdministracionAccordionNav`).
  *
- * FINANZAS → BALANCE | OPERACIONES → pantallas
+ * FINANZAS → BALANCE | OPERACIONES (FLUJOS / COMPRAS / GASTOS) → pantallas
  * LISTA PRECIOS → PX TIENDA | PROVEEDORES | ANÁLISIS M.C. → pantallas
  * PEDIDO A FÁB. → pantallas
  * ESTADÍSTICAS → VENTAS (pantalla) | CONFIGURACION → pantallas
@@ -61,12 +61,13 @@ export interface AdmScreenDef {
   permiso: { simple: boolean; editor: boolean };
 }
 
-/** Grupo intermedio del acordeón (abre pantallas hijas). */
+/** Grupo intermedio del acordeón (abre pantallas hijas o subgrupos). */
 export interface AdmGroupDef {
   id: string;
   label: string;
   icon: AdmIconId;
-  screens: AdmScreenDef[];
+  screens?: AdmScreenDef[];
+  groups?: AdmGroupDef[];
 }
 
 export interface AdmPillarDef {
@@ -113,7 +114,7 @@ const balanceScreens: AdmScreenDef[] = [
   },
 ];
 
-const operacionesScreens: AdmScreenDef[] = [
+const flujosScreens: AdmScreenDef[] = [
   {
     id: "tesoreria",
     label: "Tesorería",
@@ -129,32 +130,59 @@ const operacionesScreens: AdmScreenDef[] = [
     permiso: PERMISOS.finanzas.acceso,
   },
   {
-    id: "flujo-de-fondo",
-    label: "Flujo De Fondo",
+    id: "flujo-de-fondos",
+    label: "Flujo De Fondos",
     href: "/finanzas/venc-por-fecha",
     icon: "calendar-days",
     permiso: PERMISOS.finanzas.acceso,
   },
+];
+
+const comprasScreens: AdmScreenDef[] = [
   {
     id: "venc-provee-merc",
-    label: "Venc. Provee. Merc.",
+    label: "Resumen Venc.",
     href: "/finanzas/deuda-proveedores",
     icon: "wallet",
     permiso: PERMISOS.finanzas.acceso,
   },
   {
+    id: "control-comprobantes",
+    label: "Comprobantes",
+    href: "/finanzas/control-comprobantes",
+    icon: "file-search",
+    permiso: PERMISOS.finanzas.acceso,
+  },
+];
+
+const gastosScreens: AdmScreenDef[] = [
+  {
     id: "venc-provee-gastos",
-    label: "Venc. Provee. Gastos",
+    label: "Resumen Venc.",
     href: "/finanzas/vencimientos-gastos",
     icon: "calendar-clock",
     permiso: PERMISOS.finanzas.acceso,
   },
+];
+
+const operacionesGroups: AdmGroupDef[] = [
   {
-    id: "control-comprobantes",
-    label: "Control Comprobantes",
-    href: "/finanzas/control-comprobantes",
+    id: "flujos",
+    label: "FLUJOS",
+    icon: "calendar-days",
+    screens: flujosScreens,
+  },
+  {
+    id: "compras",
+    label: "COMPRAS",
     icon: "file-search",
-    permiso: PERMISOS.finanzas.acceso,
+    screens: comprasScreens,
+  },
+  {
+    id: "gastos",
+    label: "GASTOS",
+    icon: "receipt",
+    screens: gastosScreens,
   },
 ];
 
@@ -287,7 +315,7 @@ export const ADM_PILLARS: AdmPillarDef[] = [
         id: "operaciones",
         label: "OPERACIONES",
         icon: "banknote",
-        screens: operacionesScreens,
+        groups: operacionesGroups,
       },
     ],
   },
@@ -364,9 +392,15 @@ function pathnameMatchesScreen(pathname: string, href: string): boolean {
   return pathname.startsWith(`${href}/`);
 }
 
+function collectGroupScreens(group: AdmGroupDef): AdmScreenDef[] {
+  const fromScreens = group.screens ?? [];
+  const fromGroups = (group.groups ?? []).flatMap(collectGroupScreens);
+  return [...fromScreens, ...fromGroups];
+}
+
 function collectPillarScreens(pillar: AdmPillarDef): AdmScreenDef[] {
   const fromScreens = pillar.screens ?? [];
-  const fromGroups = pillar.groups?.flatMap((g) => g.screens) ?? [];
+  const fromGroups = pillar.groups?.flatMap(collectGroupScreens) ?? [];
   return [...fromScreens, ...fromGroups];
 }
 
@@ -383,7 +417,9 @@ export function isAdmScreenActive(pathname: string, screen: AdmScreenDef): boole
 }
 
 export function isAdmGroupActive(pathname: string, group: AdmGroupDef): boolean {
-  return group.screens.some((s) => isAdmScreenActive(pathname, s));
+  const screens = group.screens ?? [];
+  if (screens.some((s) => isAdmScreenActive(pathname, s))) return true;
+  return (group.groups ?? []).some((g) => isAdmGroupActive(pathname, g));
 }
 
 export function isAdmPillarActive(pathname: string, pillar: AdmPillarDef): boolean {
@@ -446,9 +482,14 @@ export function filterVisibleGroups(
   puedeFn: (permiso: { simple: boolean; editor: boolean }) => boolean
 ): AdmGroupDef[] {
   return groups
-    .map((g) => ({
-      ...g,
-      screens: filterVisibleScreens(g.screens, puedeFn),
-    }))
-    .filter((g) => g.screens.length > 0);
+    .map((g) => {
+      const nestedGroups = g.groups ? filterVisibleGroups(g.groups, puedeFn) : [];
+      const screens = g.screens ? filterVisibleScreens(g.screens, puedeFn) : [];
+      return {
+        ...g,
+        screens: screens.length > 0 ? screens : undefined,
+        groups: nestedGroups.length > 0 ? nestedGroups : undefined,
+      };
+    })
+    .filter((g) => (g.screens?.length ?? 0) > 0 || (g.groups?.length ?? 0) > 0);
 }

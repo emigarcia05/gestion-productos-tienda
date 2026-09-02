@@ -302,7 +302,7 @@ Permiso módulo: `PERMISOS.pedidos.acceso` (simple+editor). Ítems vivos: `prod_
 
 Lectura: `PERMISOS.finanzas.acceso`. Mutaciones de catálogo/tesorería/IVA: + `esEditor()` (`requireEditorFinanzas`).
 
-**Comprobantes DUX** (`fin_compras_comprobante`): sync por Action editor + progreso `GET /api/sync-compras-proveedor-dux/status` (`guardFinanzasLectura`). Unique natural para upsert. Ventana ~150 días AR. `id_proveedor` = `id_proveedor_dux`. Deuda / vencimientos: `deudaProveedores.service.ts`, `vencimientosPorFecha.service.ts`. Control: `controlComprobantes.ts`.
+**Comprobantes DUX** (`fin_compras_comprobante`): sync por Action editor + progreso `GET /api/sync-compras-proveedor-dux/status` (`guardFinanzasLectura`). Unique natural para upsert. Ventana ~150 días AR. `id_proveedor` = `id_proveedor_dux`. **`plazo_pago_dias`** nullable: override por factura (30/60/90/120/150); null = primer plazo de `global_proveedores.plazos_pagos` (o 30). Expresión SQL compartida: `src/lib/comprobanteProveedorPlazoPagoSql.ts`. Deuda / vencimientos: `deudaProveedores.service.ts`, `vencimientosPorFecha.service.ts`. UI: `controlComprobantes.ts` + `/finanzas/control-comprobantes`.
 
 **Tesorería:** `CajaTesoreria.tipoCaja` usa enum `TipoCajaTesoreria`. El modelo `FinTesoreriaTipoCaja` existe en schema (seed) pero **la app no lo lee**; no dropear sin decisión explícita. Cheques: `finTesoreriaCheques.ts`.
 

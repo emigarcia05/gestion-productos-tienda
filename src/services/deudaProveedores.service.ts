@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { SQL_FECHA_VENC_COMPROBANTE } from "@/lib/comprobanteProveedorPlazoPagoSql";
 import {
   FLUJO_FONDO_DETALLE_MERCADERIA,
   ordenarDetallesFlujoDia,
@@ -8,7 +9,7 @@ import {
 
 /**
  * Saldo por comprobante repartido en columnas según **fecha de vencimiento** vs **hoy (AR)**:
- * - `fecha_venc` = `fecha_comp` + primer entero de `global_proveedores.plazos_pagos` (CSV), mínimo 1 día; si falta o no es numérico → **30** días.
+ * - `fecha_venc` = `fecha_comp` + plazo (override comprobante → proveedor → 30 días).
  * - **VENCIDA**: `fecha_venc` &lt; hoy
  * - **5 DÍAS**: hoy ≤ `fecha_venc` ≤ hoy+5
  * - **30 DÍAS**: hoy+6 … hoy+30
@@ -33,20 +34,7 @@ export async function listarDeudaProveedores(): Promise<DeudaProveedorFila[]> {
         p.id_proveedor_dux AS id_proveedor_dux,
         p.nombre AS nombre,
         (c.total - c.monto_aplicado) AS saldo,
-        (
-          c.fecha_comp::date
-          + GREATEST(
-            1,
-            COALESCE(
-              CASE
-                WHEN trim(split_part(COALESCE(p.plazos_pagos, ''), ',', 1)) ~ '^[0-9]+$'
-                THEN trim(split_part(p.plazos_pagos, ',', 1))::int
-                ELSE NULL
-              END,
-              30
-            )
-          )
-        )::date AS fecha_venc,
+        ${Prisma.raw(SQL_FECHA_VENC_COMPROBANTE)} AS fecha_venc,
         (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date AS hoy
       FROM fin_compras_comprobante c
       INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
@@ -91,20 +79,7 @@ export async function listarDetalleDeudaProveedoresMercaderia(): Promise<{
         (c.total - c.monto_aplicado) AS saldo,
         c.id::text AS "comprobanteId",
         c.fecha_comp::text AS "fechaComp",
-        (
-          c.fecha_comp::date
-          + GREATEST(
-            1,
-            COALESCE(
-              CASE
-                WHEN trim(split_part(COALESCE(p.plazos_pagos, ''), ',', 1)) ~ '^[0-9]+$'
-                THEN trim(split_part(p.plazos_pagos, ',', 1))::int
-                ELSE NULL
-              END,
-              30
-            )
-          )
-        )::text AS "fechaVenc"
+        ${Prisma.raw(SQL_FECHA_VENC_COMPROBANTE)}::text AS "fechaVenc"
       FROM fin_compras_comprobante c
       INNER JOIN global_proveedores p ON p.id_proveedor_dux = c.id_proveedor
       WHERE c.total > c.monto_aplicado

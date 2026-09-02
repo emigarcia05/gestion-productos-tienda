@@ -25,13 +25,17 @@ export default async function ControlComprobantesPage() {
     montoAplicado: fila.montoAplicado.toFixed(2),
     vencimientoSaldo: fila.vencimientoSaldo.toFixed(2),
     controlado: fila.controlado,
+    plazoPagoDias: fila.plazoPagoDias,
+    plazoEfectivoDias: Number(fila.plazoEfectivoDias),
+    plazoProveedorDefault: Number(fila.plazoProveedorDefault),
+    fechaVenc: fila.fechaVenc,
   }));
 
   return (
     <div className="area-page-shell">
       <ClassicFilteredTableLayout
         title="Finanzas"
-        subtitle="Control Comp. Merc."
+        subtitle="Comprobantes"
       >
         <TablaControlComprobantes filas={filas} esEditor={esEditor} />
       </ClassicFilteredTableLayout>

@@ -29,7 +29,7 @@ export default function FinanzasDeudaProveedoresPageClient({
 
   return (
     <div className="area-page-shell">
-      <ClassicFilteredTableLayout title="Finanzas" subtitle="Venc. Provee. Merc.">
+      <ClassicFilteredTableLayout title="Finanzas" subtitle="Resumen Venc.">
         <TablaDeudaProveedores
           filas={filas}
           onProveedorDoubleClick={(p) => setProveedorDetalle(p)}
