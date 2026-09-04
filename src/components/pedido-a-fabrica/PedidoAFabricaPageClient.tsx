@@ -93,7 +93,7 @@ function abrirSelectorFechaPedidoNativo(el: HTMLInputElement | null) {
 /**
  * Módulo **Pedido A Fáb.** (pilar sidebar Administración).
  * Filtros 1: **PROVEEDOR** + **FECHA DE PEDIDO** + **TIEMPO STOCKEO** (días calendario) + **PROD. VINCULADO** + **STOCK QUEBRADO**.
- * Filtros 2: **MARCA** | **RUBRO** | **SUB-RUBRO** + buscar por descripción.
+ * Filtros 2: **MARCA** | **RUBRO** | **SUB-RUBRO** | **PEDIDO** (SI = CANT. PED. > 0) + buscar por descripción.
  */
 export default function PedidoAFabricaPageClient({
   proveedoresFabrica,
@@ -108,6 +108,7 @@ export default function PedidoAFabricaPageClient({
     useState<FiltroSiNoPedidoAFabrica>("");
   const [stockQuebrado, setStockQuebrado] =
     useState<FiltroSiNoPedidoAFabrica>("");
+  const [pedido, setPedido] = useState<FiltroSiNoPedidoAFabrica>("");
   const [marca, setMarca] = useState(FILTRO_TODOS);
   const [rubro, setRubro] = useState(FILTRO_TODOS);
   const [subRubro, setSubRubro] = useState(FILTRO_TODOS);
@@ -159,6 +160,7 @@ export default function PedidoAFabricaPageClient({
   const tiempoStockeoActivo = tiempoStockeo !== "";
   const prodVinculadoActivo = prodVinculado !== "";
   const stockQuebradoActivo = stockQuebrado !== "";
+  const pedidoActivo = pedido !== "";
   const marcaActiva = marca !== FILTRO_TODOS;
   const rubroActivo = rubro !== FILTRO_TODOS;
   const subRubroActivo = subRubro !== FILTRO_TODOS;
@@ -217,6 +219,7 @@ export default function PedidoAFabricaPageClient({
     setMarca(FILTRO_TODOS);
     setRubro(FILTRO_TODOS);
     setSubRubro(FILTRO_TODOS);
+    setPedido("");
     setQ("");
     setQDebounced("");
   }
@@ -381,6 +384,7 @@ export default function PedidoAFabricaPageClient({
           subRubro: subRubroActivo ? subRubro : undefined,
           q: qDebounced.trim() || undefined,
           prodVinculado: prodVinculadoActivo ? prodVinculado : undefined,
+          pedido: pedidoActivo ? pedido : undefined,
         });
         if (cancelled) return;
         setSucursales(
@@ -418,6 +422,8 @@ export default function PedidoAFabricaPageClient({
     sucursalesPedido,
     prodVinculado,
     prodVinculadoActivo,
+    pedido,
+    pedidoActivo,
   ]);
 
   const defaultSucursalGenerar =
@@ -751,6 +757,40 @@ export default function PedidoAFabricaPageClient({
                       </SelectContent>
                     </Select>
                   </FiltroIndividualContainer>
+
+                  <FiltroIndividualContainer
+                    className={FILTER_SELECT_WRAPPER_CLASS}
+                    activo={pedidoActivo}
+                    onLimpiar={() => {
+                      setPedido("");
+                      setPagina(1);
+                    }}
+                  >
+                    <Select
+                      value={pedido ?? ""}
+                      onValueChange={(v) => {
+                        setPedido(v as FiltroSiNoPedidoAFabrica);
+                        setPagina(1);
+                      }}
+                      disabled={!proveedorActivo}
+                    >
+                      <SelectTrigger
+                        className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
+                        aria-label="PEDIDO"
+                      >
+                        <SelectValue placeholder="PEDIDO" />
+                      </SelectTrigger>
+                      <SelectContent
+                        position="popper"
+                        side="bottom"
+                        align="start"
+                        className="select-content-filtro"
+                      >
+                        <SelectItem value="si">SI</SelectItem>
+                        <SelectItem value="no">NO</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FiltroIndividualContainer>
                 </FilaFiltrosDesplegables>
               </FilterRowSelection>
 
@@ -785,8 +825,13 @@ export default function PedidoAFabricaPageClient({
             onPaginaChange={setPagina}
             loading={loading}
             emptyMessage={
-              prodVinculadoActivo
-                ? "Ningún producto coincide con PROD. VINCULADO."
+              prodVinculadoActivo || pedidoActivo
+                ? `Ningún producto coincide con ${[
+                    prodVinculadoActivo ? "PROD. VINCULADO" : null,
+                    pedidoActivo ? "PEDIDO" : null,
+                  ]
+                    .filter((v): v is string => v != null)
+                    .join(" / ")}.`
                 : "Este proveedor no tiene productos en la lista de precios."
             }
             fechaPedidoIso={fechaPedidoIsoParseada}
@@ -794,6 +839,7 @@ export default function PedidoAFabricaPageClient({
             tiempoStockeo={tiempoStockeoValor}
             filtroProdVinculado={prodVinculado}
             filtroStockQuebrado={stockQuebrado}
+            filtroPedido={pedido}
             cantAPedirByCodExt={cantAPedirByCodExt}
             formaPedirByCodExt={formaPedirByCodExt}
             onCantAPedirChange={handleCantAPedirChange}

@@ -174,11 +174,15 @@ export default function InfoPromedioPedidoAFabricaModal({
               />
               <FormulaLine
                 left="Stock Quebrado"
-                right="UN. ACT. ≤ 0 o Stock Hasta Llegada De Pedido ≤ 0 (columna QUEBRADO con tilde)"
+                right="UN. ACT. ≤ 0 o Stock Hasta Llegada De Pedido ≤ 0 (filtro STOCK QUEBRADO)"
               />
               <FormulaLine
                 left="Prod. Vinculado"
                 right="Hay vínculo lista proveedor ↔ prod_tienda por cod_tienda (filtro SI/NO)"
+              />
+              <FormulaLine
+                left="Pedido"
+                right="CANT. PED. > 0 (filtro PEDIDO SI/NO)"
               />
               <FormulaLine
                 left="Tiempo Stockeo"

@@ -51,8 +51,16 @@ export async function getProductosPedidoAFabricaAction(
   const parsed = productosPedidoAFabricaFiltrosSchema.safeParse(raw);
   if (!parsed.success) return VACIO;
 
-  const { proveedorId, pagina, marca, rubro, subRubro, q, prodVinculado } =
-    parsed.data;
+  const {
+    proveedorId,
+    pagina,
+    marca,
+    rubro,
+    subRubro,
+    q,
+    prodVinculado,
+    pedido,
+  } = parsed.data;
   try {
     return await listarProductosPorProveedorFabrica(proveedorId, {
       pagina,
@@ -61,6 +69,7 @@ export async function getProductosPedidoAFabricaAction(
       subRubro,
       q,
       prodVinculado,
+      pedido,
     });
   } catch (e) {
     console.error("[getProductosPedidoAFabricaAction]", e);

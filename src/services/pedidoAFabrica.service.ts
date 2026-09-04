@@ -60,6 +60,8 @@ export type FiltrosProductosPedidoAFabrica = {
   pagina?: number;
   /** `si` = hay `prod_tienda`; `no` = sin vínculo; omitido = todos. */
   prodVinculado?: "si" | "no";
+  /** `si` = CANT. PED. persistida > 0; `no` = sin cantidad o 0; omitido = todos. */
+  pedido?: "si" | "no";
 };
 
 export type ProductosPedidoAFabricaResult = {
@@ -181,7 +183,9 @@ function filtroTextoDescripcion(
 function buildWhereLista(
   proveedorId: string,
   filtros: FiltrosProductosPedidoAFabrica,
-  exclude?: CampoFiltroTienda
+  exclude?: CampoFiltroTienda,
+  /** `cod_ext` con CANT. PED. persistida > 0 (solo si hay filtro **PEDIDO**). */
+  pedidoCodExts?: string[]
 ): Prisma.ListaPrecioProveedorWhereInput {
   const parts: Prisma.ListaPrecioProveedorWhereInput[] = [
     { idProveedor: proveedorId, habilitado: true },
@@ -205,6 +209,12 @@ function buildWhereLista(
     parts.push({ prodTienda: { isNot: null } });
   } else if (filtros.prodVinculado === "no") {
     parts.push({ prodTienda: { is: null } });
+  }
+
+  if (filtros.pedido === "si") {
+    parts.push({ codExt: { in: pedidoCodExts ?? [] } });
+  } else if (filtros.pedido === "no") {
+    parts.push({ codExt: { notIn: pedidoCodExts ?? [] } });
   }
 
   return parts.length === 1 ? parts[0]! : { AND: parts };
@@ -239,7 +249,7 @@ async function opcionesCampoTienda(
  * Vínculo con tienda: `prod_precios_provee.cod_tienda` → `prod_tienda.cod_tienda`.
  * Descripción: vinculada → `descripcion_tienda`; si no → `descripcion_proveedor`.
  * BULTO: vinculado → `prod_tienda.bulto`; si no → vacío.
- * Solo filas `habilitado = true`. Filtros opcionales: marca / rubro / sub_rubro (tienda) + q + **PROD. VINCULADO**.
+ * Solo filas `habilitado = true`. Filtros opcionales: marca / rubro / sub_rubro (tienda) + q + **PROD. VINCULADO** + **PEDIDO** (CANT. PED. persistida > 0).
  * Por cada sucursal `genera_est`: **PROM. VTA.** STOCK / UN. ACT. solo si `id_deposito` ≠ null
  * (`prod_tienda_stock.stock_real` de ese depósito).
  */
@@ -255,11 +265,28 @@ export async function listarProductosPorProveedorFabrica(
 
   const pagina = filtros.pagina ?? 1;
   const sucursales = await listarSucursalesParaPedidoAFabrica();
+  const estadoPedidoPromise = buildMapCantAPedirAFabricaPorProveedor(proveedorId);
 
-  const whereItems = buildWhereLista(proveedorId, filtros);
-  const whereMarcas = buildWhereLista(proveedorId, filtros, "marca");
-  const whereRubros = buildWhereLista(proveedorId, filtros, "rubro");
-  const whereSubRubros = buildWhereLista(proveedorId, filtros, "subRubro");
+  let pedidoCodExts: string[] | undefined;
+  if (filtros.pedido === "si" || filtros.pedido === "no") {
+    const estado = await estadoPedidoPromise;
+    pedidoCodExts = Object.keys(estado.cantAPedirByCodExt);
+  }
+
+  const whereItems = buildWhereLista(
+    proveedorId,
+    filtros,
+    undefined,
+    pedidoCodExts
+  );
+  const whereMarcas = buildWhereLista(proveedorId, filtros, "marca", pedidoCodExts);
+  const whereRubros = buildWhereLista(proveedorId, filtros, "rubro", pedidoCodExts);
+  const whereSubRubros = buildWhereLista(
+    proveedorId,
+    filtros,
+    "subRubro",
+    pedidoCodExts
+  );
 
   const [total, filas, marcas, rubros, subRubros, estadoPedido] =
     await Promise.all([
@@ -284,7 +311,7 @@ export async function listarProductosPorProveedorFabrica(
     opcionesCampoTienda(whereMarcas, "marca"),
     opcionesCampoTienda(whereRubros, "rubro"),
     opcionesCampoTienda(whereSubRubros, "subRubro"),
-    buildMapCantAPedirAFabricaPorProveedor(proveedorId),
+    estadoPedidoPromise,
   ]);
 
   const codTiendas = [

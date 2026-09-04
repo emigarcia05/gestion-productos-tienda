@@ -23,6 +23,11 @@ export const productosPedidoAFabricaFiltrosSchema = z.object({
    * NO = sin vínculo. Ausente = sin filtrar.
    */
   prodVinculado: z.enum(["si", "no"]).optional(),
+  /**
+   * SI = **CANT. PED.** persistida > 0 (`prod_ped_merc` A FÁBRICA).
+   * NO = sin cantidad o 0. Ausente = sin filtrar.
+   */
+  pedido: z.enum(["si", "no"]).optional(),
 });
 
 export type ProductosPedidoAFabricaFiltrosInput = z.infer<

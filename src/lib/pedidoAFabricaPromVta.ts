@@ -202,6 +202,18 @@ export function calcularStockAFechaLlegadaPedidoAFabrica(
   return Math.max(0, stockActual) - entrega * prom;
 }
 
+/** Filtro **PEDIDO**: hay **CANT. PED.** (> 0). Vacío, no numérico o ≤ 0 = no. */
+export function cantPedidaPedidoAFabricaEsPositiva(
+  raw: string | number | null | undefined
+): boolean {
+  if (raw == null) return false;
+  if (typeof raw === "number") return Number.isFinite(raw) && raw > 0;
+  const t = raw.trim();
+  if (t === "") return false;
+  const n = Number(t);
+  return Number.isFinite(n) && n > 0;
+}
+
 /**
  * STOCK QUEBRADO: ya está en 0 (o menos), o el stock proyectado al llegar
  * el pedido es ≤ 0. Independiente de la fecha de pedido si UN. ACT. ≤ 0.
