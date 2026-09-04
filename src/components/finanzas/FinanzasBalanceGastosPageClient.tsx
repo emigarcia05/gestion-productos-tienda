@@ -554,8 +554,8 @@ export default function FinanzasBalanceGastosPageClient({
                       align="start"
                       className="select-content-filtro"
                     >
-                      <SelectItem value="con_monto_sin_pago">CON MONTO Y PENDIENTE</SelectItem>
                       <SelectItem value="con_monto_con_pago">CON MONTO Y PAGADO</SelectItem>
+                      <SelectItem value="con_monto_sin_pago">CON MONTO Y PENDIENTE</SelectItem>
                       <SelectItem value="sin_monto">SIN MONTO</SelectItem>
                       <SelectItem value="sin_monto_o_pendiente">SIN MONTO O PENDIENTE</SelectItem>
                     </SelectContent>

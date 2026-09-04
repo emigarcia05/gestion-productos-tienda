@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { GP_ROUTES } from "@/lib/gestionProductosRoutes";
 import { PERMISOS, puede } from "@/lib/permisos";
 import { getRol } from "@/lib/sesion";
-import { mesAnioCalendarioArgentina } from "@/services/finBalGastoMensualBalance.service";
 import {
   listarFinBalVtas,
   listarSucursalesGeneraBalanceParaVtas,
@@ -18,7 +17,6 @@ export default async function FinBalVtasPage() {
   }
 
   const esEditor = rol === "editor";
-  const { mes: defaultMes, anio: defaultAnio } = mesAnioCalendarioArgentina();
   const [filas, sucursales] = await Promise.all([
     listarFinBalVtas(),
     listarSucursalesGeneraBalanceParaVtas(),
@@ -29,8 +27,6 @@ export default async function FinBalVtasPage() {
       filas={filas}
       sucursales={sucursales}
       esEditor={esEditor}
-      defaultMes={defaultMes}
-      defaultAnio={defaultAnio}
     />
   );
 }

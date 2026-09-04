@@ -138,3 +138,17 @@ export async function eliminarFinBalVtas(id: string): Promise<ServiceResult<{ id
     return { success: false, error: msg };
   }
 }
+
+/** Elimina las ventas de todas las sucursales para un mes/año. */
+export async function eliminarFinBalVtasPorPeriodo(
+  mes: number,
+  anio: number
+): Promise<ServiceResult<{ eliminados: number }>> {
+  try {
+    const res = await prisma.finBalVtas.deleteMany({ where: { mes, anio } });
+    return { success: true, data: { eliminados: res.count } };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "No se pudo eliminar el periodo.";
+    return { success: false, error: msg };
+  }
+}

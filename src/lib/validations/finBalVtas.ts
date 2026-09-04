@@ -25,3 +25,9 @@ export const eliminarFinBalVtasSchema = z.object({
   id: prismaCuidSchema,
 });
 export type EliminarFinBalVtasInput = z.infer<typeof eliminarFinBalVtasSchema>;
+
+/** Borra todas las sucursales de un mes/año. */
+export const eliminarFinBalVtasPorPeriodoSchema = mesAnioQuerySchema;
+export type EliminarFinBalVtasPorPeriodoInput = z.infer<
+  typeof eliminarFinBalVtasPorPeriodoSchema
+>;

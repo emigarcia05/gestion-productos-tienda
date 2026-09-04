@@ -56,20 +56,24 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sucursales: SucursalGeneraBalanceOption[];
-  defaultMes: number;
-  defaultAnio: number;
+  /** Periodo de la fila. Mes/año fijos. */
+  modo: "cargar" | "editar";
+  initialMes: number;
+  initialAnio: number;
 }
 
 export default function CrearFinBalVtasModal({
   open,
   onOpenChange,
   sucursales,
-  defaultMes,
-  defaultAnio,
+  modo,
+  initialMes,
+  initialAnio,
 }: Props) {
   const router = useRouter();
-  const [mes, setMes] = useState(defaultMes);
-  const [anio, setAnio] = useState(defaultAnio);
+  const tituloModal = modo === "editar" ? "EDITAR VENTAS" : "CARGAR VENTAS";
+  const [mes, setMes] = useState(initialMes);
+  const [anio, setAnio] = useState(initialAnio);
   const [montosPorSucursal, setMontosPorSucursal] = useState<MontosPorSucursal>(() =>
     montosVacios(sucursales)
   );
@@ -78,9 +82,9 @@ export default function CrearFinBalVtasModal({
 
   useEffect(() => {
     if (!open) return;
-    setMes(defaultMes);
-    setAnio(defaultAnio);
-  }, [open, defaultMes, defaultAnio]);
+    setMes(initialMes);
+    setAnio(initialAnio);
+  }, [open, initialMes, initialAnio]);
 
   const cargarMontosPeriodo = useCallback(async () => {
     if (!open || sucursales.length === 0) {
@@ -170,7 +174,7 @@ export default function CrearFinBalVtasModal({
       }}
     >
       <AppModal
-        title="Nueva Carga De Ventas"
+        title={tituloModal}
         size="md"
         className="max-w-md"
         actions={
@@ -191,7 +195,7 @@ export default function CrearFinBalVtasModal({
               <Select
                 value={String(mes)}
                 onValueChange={(v) => setMes(Number(v))}
-                disabled={inputsDisabled}
+                disabled
               >
                 <SelectTrigger id="fin-bal-vtas-nueva-mes" className="input-filtro-unificado w-full">
                   <SelectValue />
@@ -210,7 +214,7 @@ export default function CrearFinBalVtasModal({
               <Select
                 value={String(anio)}
                 onValueChange={(v) => setAnio(Number(v))}
-                disabled={inputsDisabled}
+                disabled
               >
                 <SelectTrigger id="fin-bal-vtas-nueva-anio" className="input-filtro-unificado w-full">
                   <SelectValue />

@@ -5,12 +5,14 @@ import { esEditor, getRol } from "@/lib/sesion";
 import { PERMISOS, puede } from "@/lib/permisos";
 import type { ActionResult } from "@/lib/types";
 import {
+  eliminarFinBalVtasPorPeriodoSchema,
   eliminarFinBalVtasSchema,
   guardarFinBalVtasCargaPeriodoSchema,
   listarFinBalVtasPorMesAnioSchema,
 } from "@/lib/validations/finBalVtas";
 import {
   eliminarFinBalVtas,
+  eliminarFinBalVtasPorPeriodo,
   guardarFinBalVtasCargaPeriodo,
   listarFinBalVtasPorMesAnio,
   type FinBalVtasItem,
@@ -74,6 +76,27 @@ export async function eliminarFinBalVtasAction(raw: unknown): Promise<ActionResu
     return { ok: false, error: firstZodErrorMessage(parsed.error) };
   }
   const res = await eliminarFinBalVtas(parsed.data.id);
+  if (!res.success) return { ok: false, error: res.error };
+  revalidatePath("/finanzas/balance/vtas");
+  revalidatePath("/finanzas/balance/mensual");
+  return { ok: true, data: res.data };
+}
+
+export async function eliminarFinBalVtasPorPeriodoAction(
+  raw: unknown
+): Promise<ActionResult<{ eliminados: number }>> {
+  const rol = await getRol();
+  if (!puede(rol, PERMISOS.finanzas.acceso)) {
+    return { ok: false, error: "Sin permisos para finanzas." };
+  }
+  if (!(await esEditor())) {
+    return { ok: false, error: "Solo el modo editor puede eliminar registros." };
+  }
+  const parsed = eliminarFinBalVtasPorPeriodoSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: firstZodErrorMessage(parsed.error) };
+  }
+  const res = await eliminarFinBalVtasPorPeriodo(parsed.data.mes, parsed.data.anio);
   if (!res.success) return { ok: false, error: res.error };
   revalidatePath("/finanzas/balance/vtas");
   revalidatePath("/finanzas/balance/mensual");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -37,7 +37,7 @@ import {
   TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
   TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
 } from "@/lib/ui-classes";
-import { eliminarFinBalVtasAction } from "@/actions/finBalVtas";
+import { eliminarFinBalVtasPorPeriodoAction } from "@/actions/finBalVtas";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { FinBalVtasItem, SucursalGeneraBalanceOption } from "@/services/finBalVtas.service";
@@ -63,60 +63,77 @@ const ANIOS = Array.from({ length: ANIO_MAX - ANIO_MIN + 1 }, (_, i) => ANIO_MIN
 
 const FILTRO_TODOS = "none";
 
+const TH_ACCIONES =
+  "min-w-0 tabla-bloque-secundario-head-divider text-center text-[11px] font-bold uppercase";
+const TD_ACCIONES =
+  "celda-datos min-w-0 bg-muted/25 text-muted-foreground tabla-bloque-secundario-cell-divider celda-datos--accion-relleno-fila";
+
+type ModoModalVtas = "cargar" | "editar";
+
+type PeriodoVtasRow = {
+  mes: number;
+  anio: number;
+  porSucursalId: Record<string, FinBalVtasItem | undefined>;
+};
+
 interface Props {
   filas: FinBalVtasItem[];
   sucursales: SucursalGeneraBalanceOption[];
   esEditor: boolean;
-  defaultMes: number;
-  defaultAnio: number;
 }
 
 function fmtMontoEntero(n: number) {
   return `$${fmtPrecio(n)}`;
 }
 
-function fmtFecha(d: Date | string) {
-  return new Date(d).toLocaleString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function etiquetaMes(mes: number): string {
   return MESES.find((m) => m.valor === mes)?.etiqueta ?? String(mes);
+}
+
+function agruparPorPeriodo(filas: FinBalVtasItem[]): PeriodoVtasRow[] {
+  const map = new Map<string, PeriodoVtasRow>();
+  for (const f of filas) {
+    const key = `${f.anio}-${f.mes}`;
+    let row = map.get(key);
+    if (!row) {
+      row = { mes: f.mes, anio: f.anio, porSucursalId: {} };
+      map.set(key, row);
+    }
+    row.porSucursalId[f.sucursalId] = f;
+  }
+  return [...map.values()].sort((a, b) => b.anio - a.anio || b.mes - a.mes);
 }
 
 export default function FinBalVtasPageClient({
   filas,
   sucursales,
   esEditor,
-  defaultMes,
-  defaultAnio,
 }: Props) {
   const router = useRouter();
   const [filtMes, setFiltMes] = useState<string>(FILTRO_TODOS);
   const [filtAnio, setFiltAnio] = useState<string>(FILTRO_TODOS);
   const [filtSucursalId, setFiltSucursalId] = useState<string>(FILTRO_TODOS);
-  const [modalNuevaCargaOpen, setModalNuevaCargaOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalModo, setModalModo] = useState<ModoModalVtas>("cargar");
+  const [modalMes, setModalMes] = useState(1);
+  const [modalAnio, setModalAnio] = useState(ANIO_MIN);
 
-  const filasFiltradas = useMemo(() => {
-    let out = filas;
-    if (filtMes !== FILTRO_TODOS) {
-      const m = Number(filtMes);
-      out = out.filter((f) => f.mes === m);
-    }
-    if (filtAnio !== FILTRO_TODOS) {
-      const a = Number(filtAnio);
-      out = out.filter((f) => f.anio === a);
-    }
-    if (filtSucursalId !== FILTRO_TODOS) {
-      out = out.filter((f) => f.sucursalId === filtSucursalId);
-    }
-    return out;
+  const periodosFiltrados = useMemo(() => {
+    return agruparPorPeriodo(filas).filter((p) => {
+      if (filtMes !== FILTRO_TODOS && p.mes !== Number(filtMes)) return false;
+      if (filtAnio !== FILTRO_TODOS && p.anio !== Number(filtAnio)) return false;
+      if (filtSucursalId !== FILTRO_TODOS && !p.porSucursalId[filtSucursalId]) {
+        return false;
+      }
+      return true;
+    });
   }, [filas, filtMes, filtAnio, filtSucursalId]);
+
+  const nSuc = sucursales.length;
+  const pctAcciones = esEditor ? 16 : 0;
+  const pctMes = 16;
+  const pctSuc = nSuc > 0 ? (100 - pctMes - pctAcciones) / nSuc : 0;
+  const colSpanVacio = 1 + nSuc + (esEditor ? 1 : 0);
 
   function limpiarFiltros() {
     setFiltMes(FILTRO_TODOS);
@@ -124,20 +141,34 @@ export default function FinBalVtasPageClient({
     setFiltSucursalId(FILTRO_TODOS);
   }
 
-  async function handleEliminar(id: string) {
+  function abrirModal(modo: ModoModalVtas, mes: number, anio: number) {
+    setModalModo(modo);
+    setModalMes(mes);
+    setModalAnio(anio);
+    setModalOpen(true);
+  }
+
+  async function handleEliminarPeriodo(mes: number, anio: number) {
     if (!esEditor) return;
-    if (!window.confirm("¿Eliminar este registro de ventas de balance?")) return;
-    const r = await eliminarFinBalVtasAction({ id });
+    const etiqueta = `${etiquetaMes(mes)} ${anio}`;
+    if (
+      !window.confirm(
+        `¿Eliminar las ventas de ${etiqueta} de todas las sucursales?`
+      )
+    ) {
+      return;
+    }
+    const r = await eliminarFinBalVtasPorPeriodoAction({ mes, anio });
     if (!r.ok) {
       toast.error(r.error ?? "No se pudo eliminar.");
       return;
     }
-    toast.success("Registro eliminado.");
+    toast.success("Periodo eliminado.");
     router.refresh();
   }
 
   const emptyMessage =
-    filas.length > 0 && filasFiltradas.length === 0
+    filas.length > 0 && periodosFiltrados.length === 0
       ? "Ningún registro coincide con los filtros seleccionados."
       : undefined;
 
@@ -147,18 +178,6 @@ export default function FinBalVtasPageClient({
         title="FINANZAS"
         subtitle="Ventas Mensuales"
         contentWidth="full"
-        actions={
-          esEditor ? (
-            <Button
-              type="button"
-              className="h-10 px-4 gap-2"
-              onClick={() => setModalNuevaCargaOpen(true)}
-            >
-              <Plus className="h-4 w-4 shrink-0" aria-hidden />
-              Nueva Carga
-            </Button>
-          ) : undefined
-        }
         filters={
           <FilterBar className="filtros-contenedor-tienda bg-card">
             <FilterRowSelection className="w-full min-w-0">
@@ -240,8 +259,8 @@ export default function FinBalVtasPageClient({
 
                 <div className={cn(FILTER_INLINE_ACTION_SLOT_CLASS, "col-span-2 gap-2")}>
                   <span className={FILTER_COUNT_CLASS}>
-                    {filasFiltradas.length.toLocaleString("es-AR")} REGISTRO
-                    {filasFiltradas.length === 1 ? "" : "S"}
+                    {periodosFiltrados.length.toLocaleString("es-AR")} PERIODO
+                    {periodosFiltrados.length === 1 ? "" : "S"}
                   </span>
                   <LimpiarFiltrosButton onClick={limpiarFiltros} />
                 </div>
@@ -250,63 +269,101 @@ export default function FinBalVtasPageClient({
           </FilterBar>
         }
       >
-        <div className="space-y-6">
+        <div className="flex min-h-0 flex-1 flex-col gap-2">
           {!esEditor ? (
             <p className="text-sm text-muted-foreground">
               Activá el modo editor para cargar o eliminar registros.
             </p>
           ) : null}
 
-          <section className="rounded-lg border border-border bg-card shadow-sm">
-            <div className="border-b border-border bg-muted/50 px-4 py-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide">Registros</h2>
-            </div>
-            <div className="contenedor-tabla-gestion no-scroll-x min-h-0">
-              <Table variant="compact" scrollX={false} className="tabla-gestion-compacta w-full table-fixed">
-                <colgroup>
-                  <col className="w-[20%]" />
-                  <col className="w-[24%]" />
-                  <col className="w-[20%]" />
-                  <col className={cn(esEditor ? "w-[24%]" : "w-[36%]")} />
-                  {esEditor ? <col className="w-[12%]" /> : null}
-                </colgroup>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead>PERIODO</TableHead>
-                    <TableHead>SUCURSAL</TableHead>
-                    <TableHead>MONTO</TableHead>
-                    <TableHead>ALTA</TableHead>
-                    {esEditor ? <TableHead>ACCIONES</TableHead> : null}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filasFiltradas.length === 0 ? (
-                    <EmptyTableRow
-                      colSpan={esEditor ? 5 : 4}
-                      message={emptyMessage ?? "No hay cargas registradas."}
-                    />
-                  ) : (
-                    filasFiltradas.map((f) => (
-                      <TableRow key={f.id}>
+          <div className="contenedor-tabla-gestion no-scroll-x min-h-0 flex-1">
+            <Table
+              variant="compact"
+              scrollX={false}
+              className="tabla-gestion-compacta w-full table-fixed"
+            >
+              <colgroup>
+                <col style={{ width: `${pctMes}%` }} />
+                {sucursales.map((s) => (
+                  <col key={s.id} style={{ width: `${pctSuc}%` }} />
+                ))}
+                {esEditor ? <col style={{ width: `${pctAcciones}%` }} /> : null}
+              </colgroup>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>MES</TableHead>
+                  {sucursales.map((s) => (
+                    <TableHead key={s.id} className="text-right">
+                      {s.nombre}
+                    </TableHead>
+                  ))}
+                  {esEditor ? <TableHead className={TH_ACCIONES}>ACCIONES</TableHead> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {periodosFiltrados.length === 0 ? (
+                  <EmptyTableRow
+                    colSpan={Math.max(colSpanVacio, 1)}
+                    message={emptyMessage ?? "No hay cargas registradas."}
+                  />
+                ) : (
+                  periodosFiltrados.map((p) => {
+                    const nCargadas = sucursales.filter((s) => p.porSucursalId[s.id]).length;
+                    const hayCarga = nCargadas > 0;
+                    const periodoCompleto = nSuc > 0 && nCargadas === nSuc;
+                    const etiqueta = `${etiquetaMes(p.mes)} ${p.anio}`;
+                    return (
+                      <TableRow key={`${p.anio}-${p.mes}`}>
                         <TableCell className="celda-datos font-medium">
-                          {etiquetaMes(f.mes)} {f.anio}
+                          {etiqueta}
                         </TableCell>
-                        <TableCell className="celda-datos">{f.sucursal.nombre}</TableCell>
-                        <TableCell className="celda-datos tabular-nums">{fmtMontoEntero(f.monto)}</TableCell>
-                        <TableCell className="celda-datos text-muted-foreground">
-                          {fmtFecha(f.createdAt)}
-                        </TableCell>
+                        {sucursales.map((s) => {
+                          const item = p.porSucursalId[s.id];
+                          return (
+                            <TableCell
+                              key={s.id}
+                              className="celda-datos celda-numero tabular-nums text-right"
+                            >
+                              {item ? fmtMontoEntero(item.monto) : ""}
+                            </TableCell>
+                          );
+                        })}
                         {esEditor ? (
-                          <TableCell className="celda-datos celda-datos--accion-relleno-fila">
+                          <TableCell className={TD_ACCIONES}>
                             <div className={TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS}>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
                                 className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                                aria-label={`Eliminar ventas de balance — ${f.sucursal.nombre} ${etiquetaMes(f.mes)} ${f.anio}`}
+                                disabled={periodoCompleto}
+                                aria-label={`Cargar ventas — ${etiqueta}`}
+                                title="Cargar"
+                                onClick={() => abrirModal("cargar", p.mes, p.anio)}
+                              >
+                                <Plus className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                disabled={!hayCarga}
+                                aria-label={`Editar ventas — ${etiqueta}`}
+                                title="Editar"
+                                onClick={() => abrirModal("editar", p.mes, p.anio)}
+                              >
+                                <Pencil className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                                disabled={!hayCarga}
+                                aria-label={`Eliminar ventas — ${etiqueta}`}
                                 title="Eliminar"
-                                onClick={() => void handleEliminar(f.id)}
+                                onClick={() => void handleEliminarPeriodo(p.mes, p.anio)}
                               >
                                 <Trash2 className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
                               </Button>
@@ -314,21 +371,22 @@ export default function FinBalVtasPageClient({
                           </TableCell>
                         ) : null}
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </section>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </ClassicFilteredTableLayout>
 
       <CrearFinBalVtasModal
-        open={modalNuevaCargaOpen}
-        onOpenChange={setModalNuevaCargaOpen}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
         sucursales={sucursales}
-        defaultMes={defaultMes}
-        defaultAnio={defaultAnio}
+        modo={modalModo}
+        initialMes={modalMes}
+        initialAnio={modalAnio}
       />
     </>
   );
