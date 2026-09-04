@@ -14,22 +14,22 @@ import {
 } from "@/components/ui/table";
 import AppModal from "@/components/shared/AppModal";
 import { cn } from "@/lib/utils";
-import { fmtCelda } from "@/lib/format";
-import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
+import { fmtCelda, fmtNumero } from "@/lib/format";
 import { redondearPromVtaUnDecimal } from "@/lib/pedidoAFabricaPromVta";
 import type {
   ProductoPedidoAFabricaItem,
   SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
 
+export type DetalleSucursalesPedidoAFabricaVariante = "promedio" | "stock";
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   producto: ProductoPedidoAFabricaItem | null;
   sucursales: SucursalPedidoAFabrica[];
-  tiempoEntregaEnDias: number | null;
-  tiempoStockeo: number | null;
-  formaPedir: ReposicionFormaPedidoFabrica;
+  /** `stock` = UN. ACT. por depósito/sucursal; `promedio` = PROM. VTA POR DÍA. */
+  variante?: DetalleSucursalesPedidoAFabricaVariante;
 }
 
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
@@ -38,6 +38,7 @@ interface FilaSucursalDetalle {
   id: string;
   nombre: string;
   promVtaPorDia: number | null;
+  stockActual: number | null;
 }
 
 function fmtPromVtaUnDecimal(n: number | null | undefined): string {
@@ -49,15 +50,19 @@ function fmtPromVtaUnDecimal(n: number | null | undefined): string {
 }
 
 /**
- * Detalle por sucursal de un ítem Pedido A Fáb.:
- * Muestra **SUCURSALES** y **PROM. VTA POR DÍA** + fila **TOTAL**.
+ * Detalle por sucursal de un ítem Pedido A Fáb.
+ * `promedio`: **SUCURSALES** + **PROM. VTA POR DÍA**.
+ * `stock`: **SUCURSALES** + **UN. ACT.** (stock del depósito de cada sucursal).
+ * Ambos con fila **TOTAL**.
  */
 export default function DetalleSucursalesPedidoAFabricaModal({
   open,
   onOpenChange,
   producto,
   sucursales,
+  variante = "promedio",
 }: Props) {
+  const esStock = variante === "stock";
   const titulo = producto?.descripcion?.trim()
     ? producto.descripcion
     : "Detalle por sucursal";
@@ -69,11 +74,11 @@ export default function DetalleSucursalesPedidoAFabricaModal({
 
     const filasCalc: FilaSucursalDetalle[] = sucursales.map((s) => {
       const datos = producto.porSucursal[s.id];
-      const promVtaPorDia = datos?.promVta ?? null;
       return {
         id: s.id,
         nombre: s.nombre.toLocaleUpperCase("es"),
-        promVtaPorDia,
+        promVtaPorDia: datos?.promVta ?? null,
+        stockActual: datos?.stockActual ?? null,
       };
     });
 
@@ -84,11 +89,19 @@ export default function DetalleSucursalesPedidoAFabricaModal({
       promsValidos.length > 0
         ? redondearPromVtaUnDecimal(promsValidos.reduce((acc, n) => acc + n, 0))
         : null;
+    const stocksValidos = filasCalc
+      .map((f) => f.stockActual)
+      .filter((v): v is number => v != null && !Number.isNaN(v));
+    const totalStockActual =
+      stocksValidos.length > 0
+        ? stocksValidos.reduce((acc, n) => acc + n, 0)
+        : null;
 
     return {
       filas: filasCalc,
       total: {
         promVtaPorDia: totalPromVtaPorDia,
+        stockActual: totalStockActual,
       },
     };
   }, [producto, sucursales]);
@@ -122,7 +135,7 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                     SUCURSALES
                   </TableHead>
                   <TableHead className="text-center tabla-bloque-secundario-head-divider">
-                    PROM. VTA POR DÍA
+                    {esStock ? "UN. ACT." : "PROM. VTA POR DÍA"}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -140,7 +153,9 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                         "tabla-bloque-secundario-cell-divider"
                       )}
                     >
-                      {fmtPromVtaUnDecimal(f.promVtaPorDia)}
+                      {esStock
+                        ? fmtNumero(f.stockActual)
+                        : fmtPromVtaUnDecimal(f.promVtaPorDia)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -157,7 +172,9 @@ export default function DetalleSucursalesPedidoAFabricaModal({
                         "font-bold tabla-bloque-secundario-cell-divider"
                       )}
                     >
-                      {fmtCelda(fmtPromVtaUnDecimal(total.promVtaPorDia))}
+                      {esStock
+                        ? fmtCelda(fmtNumero(total.stockActual))
+                        : fmtCelda(fmtPromVtaUnDecimal(total.promVtaPorDia))}
                     </TableCell>
                   </TableRow>
                 </TableFooter>

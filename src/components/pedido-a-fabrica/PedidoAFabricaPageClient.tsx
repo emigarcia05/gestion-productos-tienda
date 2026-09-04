@@ -195,7 +195,7 @@ export default function PedidoAFabricaPageClient({
         total.promVta,
         diasProvisionHastaLlegada
       );
-      const quebrado = esStockQuebradoPedidoAFabrica(stockHasta);
+      const quebrado = esStockQuebradoPedidoAFabrica(stockHasta, total.stockActual);
       if (stockQuebrado === "si" && !quebrado) return false;
       if (stockQuebrado === "no" && quebrado) return false;
       return true;

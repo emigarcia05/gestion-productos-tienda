@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/table";
 import PaginacionClient from "@/components/shared/PaginacionClient";
 import EnteroStepperInput from "@/components/shared/EnteroStepperInput";
-import DetalleSucursalesPedidoAFabricaModal from "@/components/pedido-a-fabrica/DetalleSucursalesPedidoAFabricaModal";
+import DetalleSucursalesPedidoAFabricaModal, {
+  type DetalleSucursalesPedidoAFabricaVariante,
+} from "@/components/pedido-a-fabrica/DetalleSucursalesPedidoAFabricaModal";
 import { cn } from "@/lib/utils";
 import { fmtNumero } from "@/lib/format";
 import {
@@ -80,8 +82,8 @@ interface Props {
 const TD_NUM = "celda-datos celda-numero tabular-nums text-center";
 
 /** Anchos fijos (suma 100 %). STOCK: UN. ACTUALES | QUEBRADO. COMPRA: FORMA | BULTO | CANT. PEDIR | CANT. SUGERIDA. */
-const PCT_DESC = 44;
-const PCT_STOCK_UNIDADES = 6;
+const PCT_DESC = 40;
+const PCT_STOCK_UNIDADES = 10;
 const PCT_STOCK_DIAS = 6;
 const PCT_FORMA = 9;
 const PCT_BULTO = 6;
@@ -141,7 +143,10 @@ function productoPasaFiltrosDerivados(
     total.promVta,
     diasProvisionHastaLlegada
   );
-  const quebrado = esStockQuebradoPedidoAFabrica(stockHastaLlegada);
+  const quebrado = esStockQuebradoPedidoAFabrica(
+    stockHastaLlegada,
+    total.stockActual
+  );
   if (filtroStockQuebrado === "si" && !quebrado) return false;
   if (filtroStockQuebrado === "no" && quebrado) return false;
   return true;
@@ -151,7 +156,8 @@ function productoPasaFiltrosDerivados(
  * Grilla Pedido A Fáb.
  * **DESCRIPCIÓN** · **STOCK** (UN. ACTUALES / QUEBRADO)
  * · **COMPRA** (FORMA / BULTO / CANT. PEDIR / CANT. SUGERIDA UNIDAD techo / BULTO múltiplo)
- * · tilde · Info.
+ * · **COMPRA** (FORMA / BULTO / CANT. PEDIR / CANT. SUGERIDA UNIDAD techo / BULTO múltiplo)
+ * · Info PROM. VTA. Info de **UN. ACT.** = stock por depósito.
  * (PROM. VTA. se calcula en backend/cliente pero no se muestra como columna.)
  */
 export default function TablaPedidoAFabrica({
@@ -174,8 +180,10 @@ export default function TablaPedidoAFabrica({
   onFormaPedirChange,
   onAplicarCantSugerida,
 }: Props) {
-  const [detalleProducto, setDetalleProducto] =
-    useState<ProductoPedidoAFabricaItem | null>(null);
+  const [detalle, setDetalle] = useState<{
+    producto: ProductoPedidoAFabricaItem;
+    variante: DetalleSucursalesPedidoAFabricaVariante;
+  } | null>(null);
 
   const productosFiltrados = useMemo(
     () =>
@@ -246,7 +254,7 @@ export default function TablaPedidoAFabrica({
               <TableHead
                 rowSpan={2}
                 className="text-center align-middle tabla-bloque-secundario-head-divider"
-                aria-label="Detalle por sucursal"
+                aria-label="Promedio de venta por sucursal"
               >
                 <div className="flex w-full items-center justify-center">
                   <Info className={TABLE_ROW_ACTION_ICON_CLASS} aria-hidden />
@@ -309,8 +317,10 @@ export default function TablaPedidoAFabrica({
                     promVtaTotal,
                     diasProvisionHastaLlegada
                   );
-                const stockQuebrado =
-                  esStockQuebradoPedidoAFabrica(stockHastaLlegada);
+                const stockQuebrado = esStockQuebradoPedidoAFabrica(
+                  stockHastaLlegada,
+                  stockUnidades
+                );
                 const formaPedir =
                   formaPedirByCodExt[p.codExt] ?? "UNIDADES_FIJAS";
                 const cantSugerida = resolverCantSugeridaPedidoAFabrica(
@@ -341,7 +351,29 @@ export default function TablaPedidoAFabrica({
                         "tabla-bloque-secundario-cell-divider"
                       )}
                     >
-                      {fmtNumero(stockUnidades)}
+                      <div
+                        className={cn(
+                          TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+                          "justify-center"
+                        )}
+                      >
+                        <span>{fmtNumero(stockUnidades)}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            setDetalle({ producto: p, variante: "stock" })
+                          }
+                          className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                          aria-label={`Ver stock por depósito: ${p.descripcion}`}
+                        >
+                          <Info
+                            className={TABLE_ROW_ACTION_ICON_CLASS}
+                            aria-hidden
+                          />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell
                       className={cn(TD_NUM, "tabla-bloque-secundario-cell")}
@@ -453,9 +485,11 @@ export default function TablaPedidoAFabrica({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => setDetalleProducto(p)}
+                          onClick={() =>
+                            setDetalle({ producto: p, variante: "promedio" })
+                          }
                           className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
-                          aria-label={`Ver detalle por sucursal: ${p.descripcion}`}
+                          aria-label={`Ver promedio de venta por sucursal: ${p.descripcion}`}
                         >
                           <Info
                             className={TABLE_ROW_ACTION_ICON_CLASS}
@@ -478,20 +512,13 @@ export default function TablaPedidoAFabrica({
       />
 
       <DetalleSucursalesPedidoAFabricaModal
-        open={detalleProducto != null}
+        open={detalle != null}
         onOpenChange={(next) => {
-          if (!next) setDetalleProducto(null);
+          if (!next) setDetalle(null);
         }}
-        producto={detalleProducto}
+        producto={detalle?.producto ?? null}
         sucursales={sucursales}
-        tiempoEntregaEnDias={tiempoEntregaEnDias}
-        tiempoStockeo={tiempoStockeo}
-        formaPedir={
-          detalleProducto
-            ? (formaPedirByCodExt[detalleProducto.codExt] ??
-              "UNIDADES_FIJAS")
-            : "UNIDADES_FIJAS"
-        }
+        variante={detalle?.variante ?? "promedio"}
       />
     </div>
   );

@@ -195,14 +195,21 @@ export function calcularStockAFechaLlegadaPedidoAFabrica(
   return Math.max(0, stockActual) - entrega * prom;
 }
 
-/** STOCK QUEBRADO: stock hasta llegada de pedido < 0. */
+/**
+ * STOCK QUEBRADO: ya está en 0 (o menos), o el stock proyectado al llegar
+ * el pedido es ≤ 0. Independiente de la fecha de pedido si UN. ACT. ≤ 0.
+ */
 export function esStockQuebradoPedidoAFabrica(
-  stockHastaLlegada: number | null | undefined
+  stockHastaLlegada: number | null | undefined,
+  stockActual?: number | null
 ): boolean {
+  if (stockActual != null && Number.isFinite(stockActual) && stockActual <= 0) {
+    return true;
+  }
   return (
     stockHastaLlegada != null &&
     Number.isFinite(stockHastaLlegada) &&
-    stockHastaLlegada < 0
+    stockHastaLlegada <= 0
   );
 }
 
