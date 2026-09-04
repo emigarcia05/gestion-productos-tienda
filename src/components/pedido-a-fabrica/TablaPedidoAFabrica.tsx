@@ -25,6 +25,7 @@ import {
   calcularDiasProvisionHastaLlegadaPedidoAFabrica,
   calcularStockAFechaLlegadaPedidoAFabrica,
   esStockQuebradoPedidoAFabrica,
+  redondearPromVtaUnDecimal,
   resolverCantSugeridaPedidoAFabrica,
 } from "@/lib/pedidoAFabricaPromVta";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
@@ -61,7 +62,7 @@ interface Props {
   tiempoEntregaEnDias: number | null;
   /** `YYYY-MM-DD` (vacío/inválido → hoy AR para cálculo de provisión). */
   fechaPedidoIso: string;
-  /** Días de stockeo del filtro **TIEMPO STOCKEO** (null si vacío). */
+  /** Días **calendario** del filtro **TIEMPO STOCKEO** (null si vacío). */
   tiempoStockeo: number | null;
   /** Filtro **PROD. VINCULADO** (`cod_tienda` en lista proveedor). */
   filtroProdVinculado: FiltroSiNoPedidoAFabrica;
@@ -111,7 +112,7 @@ export function totalPorSucursalesPedidoAFabrica(
   }
   return {
     stockActual: stock,
-    promVta: tieneProm ? prom : null,
+    promVta: tieneProm ? redondearPromVtaUnDecimal(prom) : null,
   };
 }
 
@@ -200,11 +201,15 @@ export default function TablaPedidoAFabrica({
 
   const hayFiltrosDerivados =
     filtroProdVinculado !== "" || filtroStockQuebrado !== "";
+  const etiquetasFiltrosDerivados = [
+    filtroProdVinculado !== "" ? "PROD. VINCULADO" : null,
+    filtroStockQuebrado !== "" ? "STOCK QUEBRADO" : null,
+  ].filter((v): v is string => v != null);
   const mensajeVacio =
     productos.length > 0 &&
     productosFiltrados.length === 0 &&
     hayFiltrosDerivados
-      ? "Ningún producto coincide con PROD. VINCULADO / STOCK QUEBRADO."
+      ? `Ningún producto coincide con ${etiquetasFiltrosDerivados.join(" / ")}.`
       : emptyMessage;
 
   return (

@@ -16,6 +16,7 @@ import AppModal from "@/components/shared/AppModal";
 import { cn } from "@/lib/utils";
 import { fmtCelda } from "@/lib/format";
 import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
+import { redondearPromVtaUnDecimal } from "@/lib/pedidoAFabricaPromVta";
 import type {
   ProductoPedidoAFabricaItem,
   SucursalPedidoAFabrica,
@@ -81,7 +82,7 @@ export default function DetalleSucursalesPedidoAFabricaModal({
       .filter((v): v is number => v != null && !Number.isNaN(v));
     const totalPromVtaPorDia =
       promsValidos.length > 0
-        ? promsValidos.reduce((acc, n) => acc + n, 0)
+        ? redondearPromVtaUnDecimal(promsValidos.reduce((acc, n) => acc + n, 0))
         : null;
 
     return {

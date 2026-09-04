@@ -18,6 +18,11 @@ export const productosPedidoAFabricaFiltrosSchema = z.object({
   subRubro: filtroOpcionalTexto,
   /** Buscar en descripcion_tienda (vínculo) o descripcion_proveedor. */
   q: filtroOpcionalTexto,
+  /**
+   * SI = hay fila `prod_tienda` vía `cod_tienda`.
+   * NO = sin vínculo. Ausente = sin filtrar.
+   */
+  prodVinculado: z.enum(["si", "no"]).optional(),
 });
 
 export type ProductosPedidoAFabricaFiltrosInput = z.infer<

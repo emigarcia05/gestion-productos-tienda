@@ -92,7 +92,7 @@ function abrirSelectorFechaPedidoNativo(el: HTMLInputElement | null) {
 
 /**
  * Módulo **Pedido A Fáb.** (pilar sidebar Administración).
- * Filtros 1: **PROVEEDOR** + **FECHA DE PEDIDO** + **TIEMPO STOCKEO** + **PROD. VINCULADO** + **STOCK QUEBRADO**.
+ * Filtros 1: **PROVEEDOR** + **FECHA DE PEDIDO** + **TIEMPO STOCKEO** (días calendario) + **PROD. VINCULADO** + **STOCK QUEBRADO**.
  * Filtros 2: **MARCA** | **RUBRO** | **SUB-RUBRO** + buscar por descripción.
  */
 export default function PedidoAFabricaPageClient({
@@ -209,10 +209,9 @@ export default function PedidoAFabricaPageClient({
     stockQuebrado,
   ]);
 
-  const contadorProductos =
-    prodVinculadoActivo || stockQuebradoActivo
-      ? productosVisibles.length
-      : total;
+  const contadorProductos = stockQuebradoActivo
+    ? productosVisibles.length
+    : total;
 
   function resetFiltrosCatalogo() {
     setMarca(FILTRO_TODOS);
@@ -381,6 +380,7 @@ export default function PedidoAFabricaPageClient({
           rubro: rubroActivo ? rubro : undefined,
           subRubro: subRubroActivo ? subRubro : undefined,
           q: qDebounced.trim() || undefined,
+          prodVinculado: prodVinculadoActivo ? prodVinculado : undefined,
         });
         if (cancelled) return;
         setSucursales(
@@ -416,6 +416,8 @@ export default function PedidoAFabricaPageClient({
     subRubroActivo,
     qDebounced,
     sucursalesPedido,
+    prodVinculado,
+    prodVinculadoActivo,
   ]);
 
   const defaultSucursalGenerar =
@@ -577,13 +579,17 @@ export default function PedidoAFabricaPageClient({
                   <FiltroIndividualContainer
                     className={FILTER_SELECT_WRAPPER_CLASS}
                     activo={prodVinculadoActivo}
-                    onLimpiar={() => setProdVinculado("")}
+                    onLimpiar={() => {
+                      setProdVinculado("");
+                      setPagina(1);
+                    }}
                   >
                     <Select
                       value={prodVinculado ?? ""}
-                      onValueChange={(v) =>
-                        setProdVinculado(v as FiltroSiNoPedidoAFabrica)
-                      }
+                      onValueChange={(v) => {
+                        setProdVinculado(v as FiltroSiNoPedidoAFabrica);
+                        setPagina(1);
+                      }}
                     >
                       <SelectTrigger
                         className={cn(SELECT_TRIGGER_FILTER_CLASS, "w-full")}
@@ -778,7 +784,11 @@ export default function PedidoAFabricaPageClient({
             totalPaginas={totalPaginas}
             onPaginaChange={setPagina}
             loading={loading}
-            emptyMessage="Este proveedor no tiene productos en la lista de precios."
+            emptyMessage={
+              prodVinculadoActivo
+                ? "Ningún producto coincide con PROD. VINCULADO."
+                : "Este proveedor no tiene productos en la lista de precios."
+            }
             fechaPedidoIso={fechaPedidoIsoParseada}
             tiempoEntregaEnDias={tiempoEntregaEnDias}
             tiempoStockeo={tiempoStockeoValor}

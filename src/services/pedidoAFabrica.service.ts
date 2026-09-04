@@ -27,8 +27,8 @@ export type DatosSucursalProductoPedidoAFabrica = {
   /** `stock_real` del depósito principal de la sucursal; `null` si el ítem no tiene `cod_tienda`. */
   stockActual: number | null;
   /**
-   * Promedio diario de venta (entero): suma `est_por_prod` de los 2 meses previos / 48
-   * (24 días × 2), redondeado. `null` sin vínculo tienda.
+   * Promedio diario de venta (1 decimal): suma `est_por_prod` de los 2 meses previos / 48
+   * (24 días × 2). `null` sin vínculo tienda.
    */
   promVta: number | null;
 };
@@ -57,6 +57,8 @@ export type FiltrosProductosPedidoAFabrica = {
   subRubro?: string;
   q?: string;
   pagina?: number;
+  /** `si` = hay `prod_tienda`; `no` = sin vínculo; omitido = todos. */
+  prodVinculado?: "si" | "no";
 };
 
 export type ProductosPedidoAFabricaResult = {
@@ -112,7 +114,7 @@ function emptyPorSucursal(
 
 /**
  * PROM. VTA. diario por (`cod_tienda`, `sucursal_id`):
- * suma de ventas de los 2 meses calendario previos / 48, redondeado.
+ * suma de ventas de los 2 meses calendario previos / 48, 1 decimal.
  */
 async function buildMapPromVtaDiaria(
   codTiendas: string[],
@@ -198,6 +200,12 @@ function buildWhereLista(
   const texto = filtroTextoDescripcion(filtros.q ?? "");
   if (texto) parts.push(texto);
 
+  if (filtros.prodVinculado === "si") {
+    parts.push({ prodTienda: { isNot: null } });
+  } else if (filtros.prodVinculado === "no") {
+    parts.push({ prodTienda: { is: null } });
+  }
+
   return parts.length === 1 ? parts[0]! : { AND: parts };
 }
 
@@ -230,7 +238,7 @@ async function opcionesCampoTienda(
  * Vínculo con tienda: `prod_precios_provee.cod_tienda` → `prod_tienda.cod_tienda`.
  * Descripción: vinculada → `descripcion_tienda`; si no → `descripcion_proveedor`.
  * BULTO: vinculado → `prod_tienda.bulto`; si no → vacío.
- * Solo filas `habilitado = true`. Filtros opcionales: marca / rubro / sub_rubro (tienda) + q.
+ * Solo filas `habilitado = true`. Filtros opcionales: marca / rubro / sub_rubro (tienda) + q + **PROD. VINCULADO**.
  * Por cada sucursal `genera_est = true`: **STOCK ACTUAL** + **PROM. VTA.**
  */
 export async function listarProductosPorProveedorFabrica(

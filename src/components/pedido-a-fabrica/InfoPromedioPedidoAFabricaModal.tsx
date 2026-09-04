@@ -6,6 +6,7 @@ import { Dialog } from "@/components/ui/dialog";
 import AppModal from "@/components/shared/AppModal";
 import { formatIsoYmdDdMmYyyyArgentina } from "@/lib/fechaArgentina";
 import {
+  PEDIDO_A_FABRICA_DIAS_CALENDARIO_POR_MES,
   PEDIDO_A_FABRICA_DIAS_VENTA_POR_MES,
   PEDIDO_A_FABRICA_MESES_PROM_VTA,
   calcularFechaLlegadaPedidoIso,
@@ -89,7 +90,7 @@ export default function InfoPromedioPedidoAFabricaModal({
                   <>
                     (Cantidad Vendida últimos {PEDIDO_A_FABRICA_MESES_PROM_VTA}{" "}
                     meses) / (Días en Mes × {PEDIDO_A_FABRICA_MESES_PROM_VTA}),
-                    redondeado siempre hacia arriba (techo)
+                    redondeado a 1 decimal
                   </>
                 }
               />
@@ -142,11 +143,11 @@ export default function InfoPromedioPedidoAFabricaModal({
                 right={
                   fechaStockeo != null ? (
                     <>
-                      Fecha Llegada Pedido + Tiempo Stockeo (
+                      Fecha Llegada Pedido + Tiempo Stockeo en días calendario (
                       {formatIsoYmdDdMmYyyyArgentina(fechaStockeo)})
                     </>
                   ) : (
-                    "Fecha Llegada Pedido + Tiempo Stockeo"
+                    "Fecha Llegada Pedido + Tiempo Stockeo (días calendario)"
                   )
                 }
               />
@@ -180,8 +181,24 @@ export default function InfoPromedioPedidoAFabricaModal({
                 right="Hay vínculo lista proveedor ↔ prod_tienda por cod_tienda (filtro SI/NO)"
               />
               <FormulaLine
+                left="Tiempo Stockeo"
+                right={
+                  <>
+                    días calendario (filtro TIEMPO STOCKEO).{" "}
+                    {PEDIDO_A_FABRICA_DIAS_CALENDARIO_POR_MES} calendario ={" "}
+                    {PEDIDO_A_FABRICA_DIAS_VENTA_POR_MES} hábiles de venta
+                  </>
+                }
+              />
+              <FormulaLine
                 left="Stock Para Tiempo Stockeo"
-                right="Tiempo Stockeo × Prom. Vta. total"
+                right={
+                  <>
+                    (Tiempo Stockeo × {PEDIDO_A_FABRICA_DIAS_VENTA_POR_MES} /{" "}
+                    {PEDIDO_A_FABRICA_DIAS_CALENDARIO_POR_MES}) × Prom. Vta.
+                    total
+                  </>
+                }
               />
             </ul>
             <div className="flex flex-col gap-1">

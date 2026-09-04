@@ -2,7 +2,7 @@
  * Cálculo de **PROM. VTA.** (Pedido A Fáb.).
  *
  * Ventas de los **2 meses calendario completos** anteriores al mes actual (AR),
- * divididas por **48** (24 días de venta × 2 meses) y redondeadas **siempre hacia arriba** (techo).
+ * divididas por **48** (24 días de venta × 2 meses) y redondeadas a **1 decimal**.
  */
 
 import {
@@ -13,8 +13,14 @@ import {
 import { etiquetaMesEstPorProd } from "@/lib/estPorProdPeriodo";
 import type { ReposicionFormaPedidoFabrica } from "@/lib/validations/reposicion";
 
-/** Días de venta contables por mes. */
+/** Días de venta contables (hábiles) por mes. */
 export const PEDIDO_A_FABRICA_DIAS_VENTA_POR_MES = 24;
+
+/**
+ * Días calendario de referencia por mes.
+ * **TIEMPO STOCKEO** se carga en calendario: 30 calendario = 24 hábiles.
+ */
+export const PEDIDO_A_FABRICA_DIAS_CALENDARIO_POR_MES = 30;
 
 /** Cantidad de meses previos completos que entran en el promedio. */
 export const PEDIDO_A_FABRICA_MESES_PROM_VTA = 2;
@@ -100,7 +106,21 @@ export function calcularDiasProvisionHastaLlegadaPedidoAFabrica(
 }
 
 /**
- * Fecha Stockeo = Fecha Llegada + Tiempo Stockeo.
+ * Convierte días **calendario** (input TIEMPO STOCKEO) a días **hábiles de venta**.
+ * 30 calendario = 24 hábiles.
+ */
+export function diasHabilesVentaDesdeCalendarioPedidoAFabrica(
+  diasCalendario: number
+): number {
+  if (!Number.isFinite(diasCalendario) || diasCalendario <= 0) return 0;
+  return (
+    (diasCalendario * PEDIDO_A_FABRICA_DIAS_VENTA_POR_MES) /
+    PEDIDO_A_FABRICA_DIAS_CALENDARIO_POR_MES
+  );
+}
+
+/**
+ * Fecha Stockeo = Fecha Llegada + Tiempo Stockeo (días **calendario**).
  * `null` si no hay Tiempo Stockeo válido.
  */
 export function calcularFechaStockeoPedidoIso(
@@ -122,14 +142,18 @@ export function calcularFechaStockeoPedidoIso(
   return addDaysToIsoYmdArgentina(llegada, Math.trunc(tiempoStockeo));
 }
 
+/** Redondeo half-up a 1 decimal (1,35 → 1,4; 0,83 → 0,8). */
+export function redondearPromVtaUnDecimal(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
 /**
- * Promedio diario: total vendido en los 2 meses / 48, redondeo **hacia arriba**.
- * Ej.: 1,01 → 2; 1,99 → 2; 2,01 → 3; 65/48 ≈ 1,35 → 2; 40/48 ≈ 0,83 → 1.
- * Si el cociente es entero exacto, se conserva (p. ej. 96/48 → 2).
+ * Promedio diario: total vendido en los 2 meses / 48, redondeo a **1 decimal**.
+ * Ej.: 65/48 ≈ 1,35 → 1,4; 40/48 ≈ 0,83 → 0,8; 96/48 → 2.
  */
 export function calcularPromVtaDiariaDesdeTotal(totalDosMeses: number): number {
   if (!Number.isFinite(totalDosMeses) || totalDosMeses <= 0) return 0;
-  return Math.ceil(totalDosMeses / PEDIDO_A_FABRICA_DIAS_PROM_VTA);
+  return redondearPromVtaUnDecimal(totalDosMeses / PEDIDO_A_FABRICA_DIAS_PROM_VTA);
 }
 
 /**
@@ -200,14 +224,17 @@ export type InputsCantSugeridaPedidoAFabrica = {
   promVtaTotal: number;
   /** Días de entrega del proveedor (`tiempo_entrega_en_dias`); null/undefined → 0. */
   tiempoEntregaEnDias: number | null | undefined;
-  /** Días de stockeo (filtro **TIEMPO STOCKEO**); null/undefined/negativo → sin cálculo. */
+  /**
+   * Días **calendario** del filtro **TIEMPO STOCKEO**.
+   * En cantidad se convierten a hábiles (30 → 24). null/undefined/negativo → sin cálculo.
+   */
   tiempoStockeo: number | null | undefined;
 };
 
 export type ResultadoCantSugeridaPedidoAFabrica = {
   /** Stock proyectado al llegar el pedido: stock − (entrega × prom). */
   stockAFechaLlegadaPedido: number;
-  /** Cobertura deseada al stockear: stockeo × prom. */
+  /** Cobertura deseada al stockear: días hábiles de stockeo × prom. */
   stockParaTiempoStockeo: number;
   /**
    * Cantidad cruda (≥ 0, sin redondeo de forma).
@@ -220,9 +247,9 @@ export type ResultadoCantSugeridaPedidoAFabrica = {
  * Cant. sugerida Pedido A Fáb. (TOTAL).
  *
  * - Fecha Llegada Pedido = FECHA PEDIDO + `tiempo_entrega_en_dias`
- * - Fecha Stockeo = Fecha Llegada + Tiempo Stockeo
+ * - Fecha Stockeo = Fecha Llegada + Tiempo Stockeo (calendario)
  * - Stock a Fecha Llegada = Stock Actual − (entrega × prom vta. total)
- * - Stock Para Tiempo Stockeo = Tiempo Stockeo × prom vta. total
+ * - Stock Para Tiempo Stockeo = (Tiempo Stockeo × 24 / 30) × prom vta. total
  */
 export function calcularCantSugeridaPedidoAFabrica(
   input: InputsCantSugeridaPedidoAFabrica
@@ -240,7 +267,9 @@ export function calcularCantSugeridaPedidoAFabrica(
     return null;
   }
 
-  const stockeo = Math.max(0, tiempoStockeo);
+  const stockeoCalendario = Math.max(0, tiempoStockeo);
+  const stockeoHabiles =
+    diasHabilesVentaDesdeCalendarioPedidoAFabrica(stockeoCalendario);
   const prom = Math.max(0, promVtaTotal);
   const stockAFechaLlegadaPedido =
     calcularStockAFechaLlegadaPedidoAFabrica(
@@ -248,7 +277,7 @@ export function calcularCantSugeridaPedidoAFabrica(
       promVtaTotal,
       tiempoEntregaEnDias
     ) ?? 0;
-  const stockParaTiempoStockeo = stockeo * prom;
+  const stockParaTiempoStockeo = stockeoHabiles * prom;
 
   const crudo =
     stockAFechaLlegadaPedido <= 0
