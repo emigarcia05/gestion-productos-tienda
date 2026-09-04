@@ -44,10 +44,11 @@ import {
   reposicionFormaPedidoFabricaSchema,
   type ReposicionFormaPedidoFabrica,
 } from "@/lib/validations/reposicion";
-import type {
-  DatosSucursalProductoPedidoAFabrica,
-  ProductoPedidoAFabricaItem,
-  SucursalPedidoAFabrica,
+import {
+  sucursalPedidoAFabricaTieneDeposito,
+  type DatosSucursalProductoPedidoAFabrica,
+  type ProductoPedidoAFabricaItem,
+  type SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
 
 export type FiltroSiNoPedidoAFabrica = "" | "si" | "no";
@@ -93,7 +94,7 @@ const PCT_INFO = 3;
 
 const COL_COUNT = 8;
 
-/** Suma de STOCK ACTUAL y PROM. VTA. de todas las sucursales de la fila. */
+/** Suma STOCK de sucursales con depósito y PROM. VTA. de todas (`genera_est`). */
 export function totalPorSucursalesPedidoAFabrica(
   producto: ProductoPedidoAFabricaItem,
   sucursales: SucursalPedidoAFabrica[]
@@ -102,18 +103,22 @@ export function totalPorSucursalesPedidoAFabrica(
     return { stockActual: null, promVta: null };
   }
   let stock = 0;
+  let tieneStock = false;
   let prom = 0;
   let tieneProm = false;
   for (const s of sucursales) {
     const d = producto.porSucursal[s.id];
-    stock += d?.stockActual ?? 0;
+    if (sucursalPedidoAFabricaTieneDeposito(s)) {
+      stock += d?.stockActual ?? 0;
+      tieneStock = true;
+    }
     if (d?.promVta != null && !Number.isNaN(d.promVta)) {
       prom += d.promVta;
       tieneProm = true;
     }
   }
   return {
-    stockActual: stock,
+    stockActual: tieneStock ? stock : null,
     promVta: tieneProm ? redondearPromVtaUnDecimal(prom) : null,
   };
 }
@@ -156,8 +161,7 @@ function productoPasaFiltrosDerivados(
  * Grilla Pedido A Fáb.
  * **DESCRIPCIÓN** · **STOCK** (UN. ACTUALES / QUEBRADO)
  * · **COMPRA** (FORMA / BULTO / CANT. PEDIR / CANT. SUGERIDA UNIDAD techo / BULTO múltiplo)
- * · **COMPRA** (FORMA / BULTO / CANT. PEDIR / CANT. SUGERIDA UNIDAD techo / BULTO múltiplo)
- * · Info PROM. VTA. Info de **UN. ACT.** = stock por depósito.
+ * · Info PROM. VTA. (`genera_est`). Info **UN. ACT.** = stock por depósito (`id_deposito`).
  * (PROM. VTA. se calcula en backend/cliente pero no se muestra como columna.)
  */
 export default function TablaPedidoAFabrica({
@@ -351,13 +355,10 @@ export default function TablaPedidoAFabrica({
                         "tabla-bloque-secundario-cell-divider"
                       )}
                     >
-                      <div
-                        className={cn(
-                          TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
-                          "justify-center"
-                        )}
-                      >
-                        <span>{fmtNumero(stockUnidades)}</span>
+                      <div className="grid h-full w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-1 px-1.5">
+                        <span className="min-w-0 text-right tabular-nums">
+                          {fmtNumero(stockUnidades)}
+                        </span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -365,7 +366,10 @@ export default function TablaPedidoAFabrica({
                           onClick={() =>
                             setDetalle({ producto: p, variante: "stock" })
                           }
-                          className={TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS}
+                          className={cn(
+                            TABLE_ROW_ICON_BUTTON_FILLED_BRAND_CLASS,
+                            "shrink-0"
+                          )}
                           aria-label={`Ver stock por depósito: ${p.descripcion}`}
                         >
                           <Info

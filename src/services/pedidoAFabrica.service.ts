@@ -11,7 +11,6 @@ import {
 } from "@/lib/pedidoAFabricaPromVta";
 import {
   buildMapStockPorDeposito,
-  getIdDepositoPorSucursalCodigo,
 } from "@/services/prodTiendaStock.service";
 import { bultoProdTiendaValido } from "@/services/tiendaBultos.service";
 import { buildMapCantAPedirAFabricaPorProveedor } from "@/services/pedidosEnvio.service";
@@ -21,10 +20,12 @@ export type SucursalPedidoAFabrica = {
   id: string;
   codigo: string;
   nombre: string;
+  /** `global_sucursales.id_deposito`. `null` = sin depósito (no entra en STOCK / UN. ACT.). */
+  idDeposito: number | null;
 };
 
 export type DatosSucursalProductoPedidoAFabrica = {
-  /** `stock_real` del depósito principal de la sucursal; `null` si el ítem no tiene `cod_tienda`. */
+  /** `stock_real` de `prod_tienda_stock` del depósito (`id_deposito`); `null` sin vínculo o sin depósito. */
   stockActual: number | null;
   /**
    * Promedio diario de venta (1 decimal): suma `est_por_prod` de los 2 meses previos / 48
@@ -90,16 +91,22 @@ const VACIO: ProductosPedidoAFabricaResult = {
 
 type CampoFiltroTienda = "marca" | "rubro" | "subRubro";
 
-/** Sucursales con `genera_est = true` (métricas / modal Pedido A Fáb.), orden por nombre. */
+/** Sucursales con `genera_est = true` (PROM. VTA. / modal). STOCK usa las que tienen `id_deposito`. */
 export async function listarSucursalesParaPedidoAFabrica(): Promise<
   SucursalPedidoAFabrica[]
 > {
   const rows = await prisma.sucursal.findMany({
     where: { generaEst: true },
-    select: { id: true, codigo: true, nombre: true },
+    select: { id: true, codigo: true, nombre: true, idDeposito: true },
     orderBy: { nombre: "asc" },
   });
   return rows;
+}
+
+export function sucursalPedidoAFabricaTieneDeposito(
+  s: SucursalPedidoAFabrica
+): boolean {
+  return s.idDeposito != null;
 }
 
 function emptyPorSucursal(
@@ -239,7 +246,8 @@ async function opcionesCampoTienda(
  * Descripción: vinculada → `descripcion_tienda`; si no → `descripcion_proveedor`.
  * BULTO: vinculado → `prod_tienda.bulto`; si no → vacío.
  * Solo filas `habilitado = true`. Filtros opcionales: marca / rubro / sub_rubro (tienda) + q + **PROD. VINCULADO**.
- * Por cada sucursal `genera_est = true`: **STOCK ACTUAL** + **PROM. VTA.**
+ * Por cada sucursal `genera_est`: **PROM. VTA.** STOCK / UN. ACT. solo si `id_deposito` ≠ null
+ * (`prod_tienda_stock.stock_real` de ese depósito).
  */
 export async function listarProductosPorProveedorFabrica(
   proveedorId: string,
@@ -293,15 +301,18 @@ export async function listarProductosPorProveedorFabrica(
     ),
   ];
 
-  const stockMapsByCodigo = new Map<string, Map<string, number>>();
-  const codigosUnicos = [
-    ...new Set(sucursales.map((s) => s.codigo.trim().toLowerCase())),
+  const stockMapsByDeposito = new Map<number, Map<string, number>>();
+  const idsDeposito = [
+    ...new Set(
+      sucursales
+        .map((s) => s.idDeposito)
+        .filter((id): id is number => id != null)
+    ),
   ];
   await Promise.all(
-    codigosUnicos.map(async (codigo) => {
-      const idDeposito = getIdDepositoPorSucursalCodigo(codigo);
+    idsDeposito.map(async (idDeposito) => {
       const map = await buildMapStockPorDeposito(codTiendas, idDeposito);
-      stockMapsByCodigo.set(codigo, map);
+      stockMapsByDeposito.set(idDeposito, map);
     })
   );
 
@@ -322,9 +333,10 @@ export async function listarProductosPorProveedorFabrica(
     const porSucursal = emptyPorSucursal(sucursales);
     if (codTienda) {
       for (const s of sucursales) {
-        const codigo = s.codigo.trim().toLowerCase();
-        const stockMap = stockMapsByCodigo.get(codigo);
-        const stockActual = stockMap?.get(codTienda) ?? 0;
+        const stockActual =
+          s.idDeposito != null
+            ? (stockMapsByDeposito.get(s.idDeposito)?.get(codTienda) ?? 0)
+            : null;
         const key = `${codTienda}\0${s.id}`;
         const promVta = promMap.has(key) ? (promMap.get(key) as number) : 0;
         porSucursal[s.id] = { stockActual, promVta };

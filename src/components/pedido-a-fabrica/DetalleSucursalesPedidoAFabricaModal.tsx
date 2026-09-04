@@ -16,9 +16,10 @@ import AppModal from "@/components/shared/AppModal";
 import { cn } from "@/lib/utils";
 import { fmtCelda, fmtNumero } from "@/lib/format";
 import { redondearPromVtaUnDecimal } from "@/lib/pedidoAFabricaPromVta";
-import type {
-  ProductoPedidoAFabricaItem,
-  SucursalPedidoAFabrica,
+import {
+  sucursalPedidoAFabricaTieneDeposito,
+  type ProductoPedidoAFabricaItem,
+  type SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
 
 export type DetalleSucursalesPedidoAFabricaVariante = "promedio" | "stock";
@@ -52,7 +53,7 @@ function fmtPromVtaUnDecimal(n: number | null | undefined): string {
 /**
  * Detalle por sucursal de un ítem Pedido A Fáb.
  * `promedio`: **SUCURSALES** + **PROM. VTA POR DÍA**.
- * `stock`: **SUCURSALES** + **UN. ACT.** (stock del depósito de cada sucursal).
+ * `stock`: **SUCURSALES** con `id_deposito` + **UN. ACT.** (`prod_tienda_stock.stock_real`).
  * Ambos con fila **TOTAL**.
  */
 export default function DetalleSucursalesPedidoAFabricaModal({
@@ -68,11 +69,14 @@ export default function DetalleSucursalesPedidoAFabricaModal({
     : "Detalle por sucursal";
 
   const { filas, total } = useMemo(() => {
-    if (!producto || sucursales.length === 0) {
+    const sucursalesFilas = esStock
+      ? sucursales.filter(sucursalPedidoAFabricaTieneDeposito)
+      : sucursales;
+    if (!producto || sucursalesFilas.length === 0) {
       return { filas: [] as FilaSucursalDetalle[], total: null };
     }
 
-    const filasCalc: FilaSucursalDetalle[] = sucursales.map((s) => {
+    const filasCalc: FilaSucursalDetalle[] = sucursalesFilas.map((s) => {
       const datos = producto.porSucursal[s.id];
       return {
         id: s.id,
@@ -104,7 +108,7 @@ export default function DetalleSucursalesPedidoAFabricaModal({
         stockActual: totalStockActual,
       },
     };
-  }, [producto, sucursales]);
+  }, [producto, sucursales, esStock]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -118,9 +122,11 @@ export default function DetalleSucursalesPedidoAFabricaModal({
           </Button>
         }
       >
-        {!producto || sucursales.length === 0 ? (
+        {!producto || filas.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No hay sucursales de pedido para mostrar.
+            {esStock
+              ? "No hay sucursales con depósito para mostrar."
+              : "No hay sucursales de pedido para mostrar."}
           </p>
         ) : (
           <div className="contenedor-tabla-gestion no-scroll-x min-h-0">
