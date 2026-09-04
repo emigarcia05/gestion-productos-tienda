@@ -80,6 +80,9 @@ interface Props {
   filas: FinBalVtasItem[];
   sucursales: SucursalGeneraBalanceOption[];
   esEditor: boolean;
+  /** Mes calendario AR (1–12) al renderizar la página. */
+  mesActual: number;
+  anioActual: number;
 }
 
 function fmtMontoEntero(n: number) {
@@ -90,10 +93,14 @@ function etiquetaMes(mes: number): string {
   return MESES.find((m) => m.valor === mes)?.etiqueta ?? String(mes);
 }
 
-function agruparPorPeriodo(filas: FinBalVtasItem[]): PeriodoVtasRow[] {
+function clavePeriodo(mes: number, anio: number): string {
+  return `${anio}-${mes}`;
+}
+
+function agruparPorPeriodo(filas: FinBalVtasItem[]): Map<string, PeriodoVtasRow> {
   const map = new Map<string, PeriodoVtasRow>();
   for (const f of filas) {
-    const key = `${f.anio}-${f.mes}`;
+    const key = clavePeriodo(f.mes, f.anio);
     let row = map.get(key);
     if (!row) {
       row = { mes: f.mes, anio: f.anio, porSucursalId: {} };
@@ -101,13 +108,57 @@ function agruparPorPeriodo(filas: FinBalVtasItem[]): PeriodoVtasRow[] {
     }
     row.porSucursalId[f.sucursalId] = f;
   }
-  return [...map.values()].sort((a, b) => b.anio - a.anio || b.mes - a.mes);
+  return map;
+}
+
+function periodoEsAnteriorOIgual(
+  mes: number,
+  anio: number,
+  mesRef: number,
+  anioRef: number
+): boolean {
+  return anio < anioRef || (anio === anioRef && mes <= mesRef);
+}
+
+/** De `(mesDesde, anioDesde)` hacia atrás inclusive hasta `(mesHasta, anioHasta)`. */
+function enumerarPeriodosHaciaAtras(
+  mesDesde: number,
+  anioDesde: number,
+  mesHasta: number,
+  anioHasta: number
+): { mes: number; anio: number }[] {
+  const out: { mes: number; anio: number }[] = [];
+  let mes = mesDesde;
+  let anio = anioDesde;
+  while (periodoEsAnteriorOIgual(mesHasta, anioHasta, mes, anio)) {
+    out.push({ mes, anio });
+    mes -= 1;
+    if (mes < 1) {
+      mes = 12;
+      anio -= 1;
+    }
+    if (out.length > 600) break;
+  }
+  return out;
+}
+
+function periodoMasAntiguo(filas: FinBalVtasItem[]): { mes: number; anio: number } | null {
+  if (filas.length === 0) return null;
+  let mejor = { mes: filas[0]!.mes, anio: filas[0]!.anio };
+  for (const f of filas) {
+    if (periodoEsAnteriorOIgual(f.mes, f.anio, mejor.mes, mejor.anio)) {
+      mejor = { mes: f.mes, anio: f.anio };
+    }
+  }
+  return mejor;
 }
 
 export default function FinBalVtasPageClient({
   filas,
   sucursales,
   esEditor,
+  mesActual,
+  anioActual,
 }: Props) {
   const router = useRouter();
   const [filtMes, setFiltMes] = useState<string>(FILTRO_TODOS);
@@ -115,19 +166,36 @@ export default function FinBalVtasPageClient({
   const [filtSucursalId, setFiltSucursalId] = useState<string>(FILTRO_TODOS);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalModo, setModalModo] = useState<ModoModalVtas>("cargar");
-  const [modalMes, setModalMes] = useState(1);
-  const [modalAnio, setModalAnio] = useState(ANIO_MIN);
+  const [modalMes, setModalMes] = useState(mesActual);
+  const [modalAnio, setModalAnio] = useState(anioActual);
 
   const periodosFiltrados = useMemo(() => {
-    return agruparPorPeriodo(filas).filter((p) => {
-      if (filtMes !== FILTRO_TODOS && p.mes !== Number(filtMes)) return false;
-      if (filtAnio !== FILTRO_TODOS && p.anio !== Number(filtAnio)) return false;
-      if (filtSucursalId !== FILTRO_TODOS && !p.porSucursalId[filtSucursalId]) {
-        return false;
-      }
-      return true;
-    });
-  }, [filas, filtMes, filtAnio, filtSucursalId]);
+    const porPeriodo = agruparPorPeriodo(filas);
+    const antiguo = periodoMasAntiguo(filas);
+    const mesHasta = antiguo?.mes ?? mesActual;
+    const anioHasta = antiguo?.anio ?? anioActual;
+    const hastaEsPosteriorAlActual =
+      anioHasta > anioActual || (anioHasta === anioActual && mesHasta > mesActual);
+    const rango = hastaEsPosteriorAlActual
+      ? [{ mes: mesActual, anio: anioActual }]
+      : enumerarPeriodosHaciaAtras(mesActual, anioActual, mesHasta, anioHasta);
+
+    return rango
+      .map((p) => {
+        const existente = porPeriodo.get(clavePeriodo(p.mes, p.anio));
+        return (
+          existente ?? { mes: p.mes, anio: p.anio, porSucursalId: {} }
+        );
+      })
+      .filter((p) => {
+        if (filtMes !== FILTRO_TODOS && p.mes !== Number(filtMes)) return false;
+        if (filtAnio !== FILTRO_TODOS && p.anio !== Number(filtAnio)) return false;
+        if (filtSucursalId !== FILTRO_TODOS && !p.porSucursalId[filtSucursalId]) {
+          return false;
+        }
+        return true;
+      });
+  }, [filas, filtMes, filtAnio, filtSucursalId, mesActual, anioActual]);
 
   const nSuc = sucursales.length;
   const pctAcciones = esEditor ? 16 : 0;

@@ -308,7 +308,7 @@ Lectura: `PERMISOS.finanzas.acceso`. Mutaciones de catálogo/tesorería/IVA: + `
 
 **Gastos jerárquicos:** tipo → rubro → gasto → gasto final → imputación mensual. Catálogo: `finBalGastosCatalogo.ts`. Imputaciones: `finBalGastoMensualBalance.ts`. Gasto eventual vendedor: `requireCargarGastoEventual`.
 
-**Balance mensual** (`/finanzas/balance/mensual`): solo lectura. Resumen `resumenBalanceMensualDesdeFilas` (`src/lib/balanceMensual.ts`) con imputaciones + `fin_bal_vtas`. Ventas se editan en Ventas Mensuales (`guardarFinBalVtasCargaPeriodoAction`, editor). Grilla de Ventas Mensuales: una fila por mes/año; borrar periodo = `eliminarFinBalVtasPorPeriodo` (todas las sucursales de ese mes/año). Sucursales `genera_balance`; costos de `centro_costo` sin `genera_balance` se reparte. UI de colores/grid: `FRONTEND_GUIDELINES` (Balance mensual).
+**Balance mensual** (`/finanzas/balance/mensual`): solo lectura. Resumen `resumenBalanceMensualDesdeFilas` (`src/lib/balanceMensual.ts`) con imputaciones + `fin_bal_vtas`. Ventas se editan en Ventas Mensuales (`guardarFinBalVtasCargaPeriodoAction`, editor). Grilla de Ventas Mensuales: una fila por mes/año desde el mes AR actual hasta la carga más antigua; borrar periodo = `eliminarFinBalVtasPorPeriodo` (todas las sucursales de ese mes/año). Sucursales `genera_balance`; costos de `centro_costo` sin `genera_balance` se reparte. UI de colores/grid: `FRONTEND_GUIDELINES` (Balance mensual).
 
 **IVA:** import débito, saldo manual, comparación pedido. Mutaciones editor.
 
