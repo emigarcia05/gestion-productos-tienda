@@ -199,9 +199,10 @@ export default function FinBalVtasPageClient({
 
   const nSuc = sucursales.length;
   const pctAcciones = esEditor ? 16 : 0;
-  const pctMes = 16;
-  const pctSuc = nSuc > 0 ? (100 - pctMes - pctAcciones) / nSuc : 0;
-  const colSpanVacio = 1 + nSuc + (esEditor ? 1 : 0);
+  const pctMes = 14;
+  const pctTotal = 14;
+  const pctSuc = nSuc > 0 ? (100 - pctMes - pctTotal - pctAcciones) / nSuc : 0;
+  const colSpanVacio = 2 + nSuc + (esEditor ? 1 : 0);
 
   function limpiarFiltros() {
     setFiltMes(FILTRO_TODOS);
@@ -352,6 +353,7 @@ export default function FinBalVtasPageClient({
             >
               <colgroup>
                 <col style={{ width: `${pctMes}%` }} />
+                <col style={{ width: `${pctTotal}%` }} />
                 {sucursales.map((s) => (
                   <col key={s.id} style={{ width: `${pctSuc}%` }} />
                 ))}
@@ -360,6 +362,7 @@ export default function FinBalVtasPageClient({
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead>MES</TableHead>
+                  <TableHead className="text-right">TOTAL</TableHead>
                   {sucursales.map((s) => (
                     <TableHead key={s.id} className="text-right">
                       {s.nombre}
@@ -380,10 +383,17 @@ export default function FinBalVtasPageClient({
                     const hayCarga = nCargadas > 0;
                     const periodoCompleto = nSuc > 0 && nCargadas === nSuc;
                     const etiqueta = `${etiquetaMes(p.mes)} ${p.anio}`;
+                    const totalPeriodo = sucursales.reduce((acc, s) => {
+                      const item = p.porSucursalId[s.id];
+                      return acc + (item?.monto ?? 0);
+                    }, 0);
                     return (
                       <TableRow key={`${p.anio}-${p.mes}`}>
                         <TableCell className="celda-datos font-medium">
                           {etiqueta}
+                        </TableCell>
+                        <TableCell className="celda-datos celda-numero celda-destacado tabular-nums text-right">
+                          {hayCarga ? fmtMontoEntero(totalPeriodo) : ""}
                         </TableCell>
                         {sucursales.map((s) => {
                           const item = p.porSucursalId[s.id];
