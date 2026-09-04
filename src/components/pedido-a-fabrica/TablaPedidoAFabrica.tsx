@@ -346,12 +346,17 @@ export default function TablaPedidoAFabrica({
                     </TableCell>
                     <TableCell
                       className={cn(
-                        TD_NUM,
+                        "celda-datos",
                         "tabla-bloque-secundario-cell-divider"
                       )}
                     >
-                      <div className="grid h-full w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-2">
-                        <span className="min-w-0 text-right tabular-nums">
+                      <div
+                        className={cn(
+                          TABLE_ROW_CELL_ICON_ACTIONS_FLEX_CLASS,
+                          "flex-nowrap justify-center gap-3"
+                        )}
+                      >
+                        <span className="inline-block min-w-[2.75rem] text-right tabular-nums">
                           {fmtNumero(stockUnidades)}
                         </span>
                         <Button
