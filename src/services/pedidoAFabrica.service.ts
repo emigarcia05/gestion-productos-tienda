@@ -103,12 +103,6 @@ export async function listarSucursalesParaPedidoAFabrica(): Promise<
   return rows;
 }
 
-export function sucursalPedidoAFabricaTieneDeposito(
-  s: SucursalPedidoAFabrica
-): boolean {
-  return s.idDeposito != null;
-}
-
 function emptyPorSucursal(
   sucursales: SucursalPedidoAFabrica[]
 ): Record<string, DatosSucursalProductoPedidoAFabrica> {

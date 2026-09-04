@@ -15,11 +15,13 @@ import {
 import AppModal from "@/components/shared/AppModal";
 import { cn } from "@/lib/utils";
 import { fmtCelda, fmtNumero } from "@/lib/format";
-import { redondearPromVtaUnDecimal } from "@/lib/pedidoAFabricaPromVta";
 import {
+  redondearPromVtaUnDecimal,
   sucursalPedidoAFabricaTieneDeposito,
-  type ProductoPedidoAFabricaItem,
-  type SucursalPedidoAFabrica,
+} from "@/lib/pedidoAFabricaPromVta";
+import type {
+  ProductoPedidoAFabricaItem,
+  SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
 
 export type DetalleSucursalesPedidoAFabricaVariante = "promedio" | "stock";

@@ -29,6 +29,7 @@ import {
   esStockQuebradoPedidoAFabrica,
   redondearPromVtaUnDecimal,
   resolverCantSugeridaPedidoAFabrica,
+  sucursalPedidoAFabricaTieneDeposito,
 } from "@/lib/pedidoAFabricaPromVta";
 import { SELECT_TRIGGER_FILTER_CLASS } from "@/components/FilterBar";
 import {
@@ -44,11 +45,10 @@ import {
   reposicionFormaPedidoFabricaSchema,
   type ReposicionFormaPedidoFabrica,
 } from "@/lib/validations/reposicion";
-import {
-  sucursalPedidoAFabricaTieneDeposito,
-  type DatosSucursalProductoPedidoAFabrica,
-  type ProductoPedidoAFabricaItem,
-  type SucursalPedidoAFabrica,
+import type {
+  DatosSucursalProductoPedidoAFabrica,
+  ProductoPedidoAFabricaItem,
+  SucursalPedidoAFabrica,
 } from "@/services/pedidoAFabrica.service";
 
 export type FiltroSiNoPedidoAFabrica = "" | "si" | "no";
