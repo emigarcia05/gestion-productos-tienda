@@ -35,10 +35,10 @@ function primerSearchParam(v: string | string[] | undefined): string | undefined
 
 /**
  * Parsea `mes` de la URL: `6`, `6,7,8` o varios `mes=`.
- * Legacy `todos` → `null` (redirect al default).
+ * Ausente, vacío o `todos` → `[]` (sin filtrar por mes).
  */
-function parseMesesSearchParam(mesRaw: string | string[] | undefined): number[] | null {
-  if (mesRaw === undefined) return null;
+function parseMesesSearchParam(mesRaw: string | string[] | undefined): number[] {
+  if (mesRaw === undefined) return [];
   const tokens: string[] = [];
   if (Array.isArray(mesRaw)) {
     for (const part of mesRaw) {
@@ -48,16 +48,15 @@ function parseMesesSearchParam(mesRaw: string | string[] | undefined): number[] 
     tokens.push(...mesRaw.split(","));
   }
   if (tokens.some((t) => t.trim().toLowerCase() === "todos")) {
-    return null;
+    return [];
   }
-  const meses = [
+  return [
     ...new Set(
       tokens
         .map((t) => Number.parseInt(t.trim(), 10))
         .filter((n) => Number.isInteger(n) && n >= 1 && n <= 12)
     ),
   ].sort((a, b) => a - b);
-  return meses.length > 0 ? meses : null;
 }
 
 export default async function BalanceGastosPage({ searchParams }: Props) {
@@ -80,14 +79,12 @@ export default async function BalanceGastosPage({ searchParams }: Props) {
   }
 
   const anioParsed = anioPeriodoSchema.safeParse(anioStr ?? def.anio);
-  const mesesParsed = parseMesesSearchParam(mesRaw);
-
-  if (!anioParsed.success || !mesesParsed) {
+  if (!anioParsed.success) {
     redirect(`/finanzas/balance/gastos?mes=${def.mes}&anio=${def.anio}`);
   }
 
   const anio = anioParsed.data;
-  const meses = mesesParsed;
+  const meses = parseMesesSearchParam(mesRaw);
 
   const [filas, sucursalesCentroCosto] = await Promise.all([
     listarImputacionesMensualesBalance({ meses, anio }),

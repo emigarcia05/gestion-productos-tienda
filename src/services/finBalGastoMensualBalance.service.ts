@@ -328,12 +328,12 @@ export async function cargarImputacionesMensualesDesdeCatalogo(params: {
 }
 
 /**
- * Listado del mes: imputaciones con jerarquía de gasto, proveedor y sucursal.
- * `fechaVencimientoIso` / `montoVencido`: vence en `fecha_devengo + vencimiento`; si hoy (AR) ≥ esa fecha, `montoVencido = max(0, monto - pagado)`.
+ * Listado de imputaciones del `anio` (y de `meses` si hay alguno) con jerarquía de gasto, proveedor y sucursal.
+ * `meses` vacío = todo el año. `fechaVencimientoIso` / `montoVencido`: vence en `fecha_devengo + vencimiento`; si hoy (AR) ≥ esa fecha, `montoVencido = max(0, monto - pagado)`.
  */
 export async function listarImputacionesMensualesBalance(params: {
   anio: number;
-  /** Meses calendario 1–12 a incluir (uno o varios). */
+  /** Meses calendario 1–12 a incluir. Vacío = todos los meses del `anio`. */
   meses: number[];
 }): Promise<BalanceGastoMensualFila[]> {
   const { anio } = params;
@@ -342,15 +342,16 @@ export async function listarImputacionesMensualesBalance(params: {
       params.meses.filter((m) => Number.isInteger(m) && m >= 1 && m <= 12)
     ),
   ].sort((a, b) => a - b);
-  if (mesesUnicos.length === 0) return [];
 
   const isoHoy = dateToIsoYmdArgentina(new Date());
 
   const rows = await prisma.finBalGastoMensual.findMany({
     where:
-      mesesUnicos.length === 1
-        ? { anio, mes: mesesUnicos[0] }
-        : { anio, mes: { in: mesesUnicos } },
+      mesesUnicos.length === 0
+        ? { anio }
+        : mesesUnicos.length === 1
+          ? { anio, mes: mesesUnicos[0] }
+          : { anio, mes: { in: mesesUnicos } },
     orderBy: [{ mes: "asc" }, { createdAt: "asc" }],
     include: {
       imputacionSucursal: {

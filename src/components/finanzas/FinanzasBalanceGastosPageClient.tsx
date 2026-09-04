@@ -158,13 +158,6 @@ function etiquetaMesesSeleccionados(mesesSel: number[]): string {
     .join(", ");
 }
 
-function mismosMeses(a: number[], b: number[]): boolean {
-  if (a.length !== b.length) return false;
-  const sa = [...a].sort((x, y) => x - y);
-  const sb = [...b].sort((x, y) => x - y);
-  return sa.every((v, i) => v === sb[i]);
-}
-
 export default function FinanzasBalanceGastosPageClient({
   filas,
   esEditor,
@@ -269,14 +262,15 @@ export default function FinanzasBalanceGastosPageClient({
     return out;
   }, [filas, filtTipo, filtRubro, filtGasto, filtSucursal, filtProveedor, filtEstado]);
 
-  /** Periodo: uno o más meses + `anio` (URL `mes=6,7&anio=…`). */
+  /** Periodo: cero o más meses + `anio`. Sin meses = todo el año. */
   function navegarPeriodo(nuevosMeses: number[], nuevoAnio: number) {
     const mesesNorm = [
       ...new Set(nuevosMeses.filter((m) => m >= 1 && m <= 12)),
     ].sort((a, b) => a - b);
-    if (mesesNorm.length === 0) return;
     const q = new URLSearchParams();
-    q.set("mes", mesesNorm.join(","));
+    if (mesesNorm.length > 0) {
+      q.set("mes", mesesNorm.join(","));
+    }
     q.set("anio", String(nuevoAnio));
     router.replace(`${pathname}?${q.toString()}`);
     router.refresh();
@@ -289,10 +283,6 @@ export default function FinanzasBalanceGastosPageClient({
 
   function toggleMes(mesValor: number) {
     const tiene = meses.includes(mesValor);
-    if (tiene && meses.length === 1) {
-      toast.info("Dejá al menos un mes seleccionado.");
-      return;
-    }
     const next = tiene
       ? meses.filter((m) => m !== mesValor)
       : [...meses, mesValor];
@@ -315,7 +305,7 @@ export default function FinanzasBalanceGastosPageClient({
   /** Mes concreto para alta: si hay uno solo, ese; si no, mes calendario AR. */
   const mesUnico = meses.length === 1 ? meses[0] : null;
   const mesParaAlta = mesUnico ?? mesHoy;
-  const mesesFiltroActivo = !mismosMeses(meses, [mesHoy]);
+  const mesesFiltroActivo = meses.length > 0;
   const labelMeses = etiquetaMesesSeleccionados(meses);
 
   function limpiarFiltros() {
@@ -593,7 +583,7 @@ export default function FinanzasBalanceGastosPageClient({
                 <FiltroIndividualContainer
                   className={cn(FILTER_SELECT_WRAPPER_CLASS, "relative")}
                   activo={mesesFiltroActivo}
-                  onLimpiar={() => navegarPeriodo([mesHoy], anio)}
+                  onLimpiar={() => navegarPeriodo([], anio)}
                 >
                   <div className="relative" ref={mesesMultiRef}>
                     <button
@@ -613,7 +603,14 @@ export default function FinanzasBalanceGastosPageClient({
                       aria-haspopup="listbox"
                       aria-label="Mes del periodo (selección múltiple)"
                     >
-                      <span className="truncate">{labelMeses}</span>
+                      <span
+                        className={cn(
+                          "truncate",
+                          meses.length === 0 && "text-muted-foreground"
+                        )}
+                      >
+                        {labelMeses}
+                      </span>
                       <ChevronDown className="h-4 w-4 shrink-0 opacity-50" aria-hidden />
                     </button>
                     {mesesOpen ? (
